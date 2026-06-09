@@ -57,12 +57,16 @@ export const NudgeCard = ({
 }: Props) => {
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (!autoFocusPrimary) return;
+    if (!autoFocusPrimary) {
+      return;
+    }
     const activeIsInput =
       typeof document !== 'undefined' &&
       document.activeElement instanceof HTMLElement &&
       /^(input|textarea)$/i.test(document.activeElement.tagName);
-    if (activeIsInput) return;
+    if (activeIsInput) {
+      return;
+    }
     const handle = window.setTimeout(() => {
       primaryBtnRef.current?.focus();
     }, 300);

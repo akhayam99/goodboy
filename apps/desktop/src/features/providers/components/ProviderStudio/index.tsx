@@ -25,9 +25,13 @@ export const ProviderStudio = ({ workspaceName, initialFocus, onClose }: Props) 
   );
 
   useEffect(() => {
-    if (focused !== null) return;
+    if (focused !== null) {
+      return;
+    }
     const first = ordered.find((p) => p.connection === 'connected')?.id ?? ordered[0]?.id ?? null;
-    if (first) setFocused(first);
+    if (first) {
+      setFocused(first);
+    }
   }, [focused, ordered]);
 
   const selected = ordered.find((p) => p.id === focused) ?? null;

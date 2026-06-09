@@ -13,11 +13,15 @@ export const STORAGE_PREFIXES = {
 } as const;
 
 export const wipeLocalStorage = (): void => {
-  if (typeof localStorage === 'undefined') return;
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
   const keys: string[] = [];
   for (let i = 0; i < localStorage.length; i += 1) {
     const key = localStorage.key(i);
-    if (key?.startsWith(PREFIX)) keys.push(key);
+    if (key?.startsWith(PREFIX)) {
+      keys.push(key);
+    }
   }
   for (const key of keys) localStorage.removeItem(key);
 };

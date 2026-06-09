@@ -78,7 +78,9 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
     scope.kind === 'session' ? sessions.find((s) => s.id === scope.sessionId) : undefined;
 
   useEffect(() => {
-    if (scope.kind === 'session' && !selectedSession) setScope({ kind: 'overview' });
+    if (scope.kind === 'session' && !selectedSession) {
+      setScope({ kind: 'overview' });
+    }
   }, [scope, selectedSession]);
 
   return (

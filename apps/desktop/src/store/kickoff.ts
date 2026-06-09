@@ -9,7 +9,9 @@ export const buildPlanKickoffSection = async (
     const plans = await invokeListPlansForSession(sessionId);
     const scoped = workflowRunId ? plans.filter((p) => p.workflowRunId === workflowRunId) : plans;
     const latest = scoped[scoped.length - 1] ?? null;
-    if (!latest || latest.status !== 'active') return { section: '', plan: latest };
+    if (!latest || latest.status !== 'active') {
+      return { section: '', plan: latest };
+    }
     return {
       section: ['Active plan to execute:', '', latest.bodyMd].join('\n'),
       plan: latest,
@@ -20,7 +22,11 @@ export const buildPlanKickoffSection = async (
 };
 
 export const composeKickoff = (planSection: string, baseKickoff: string): string => {
-  if (planSection.length === 0) return baseKickoff;
-  if (baseKickoff.length === 0) return planSection;
+  if (planSection.length === 0) {
+    return baseKickoff;
+  }
+  if (baseKickoff.length === 0) {
+    return planSection;
+  }
   return `${planSection}\n\n${baseKickoff}`;
 };

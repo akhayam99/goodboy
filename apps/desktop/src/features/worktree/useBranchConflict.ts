@@ -22,7 +22,9 @@ export const useBranchConflict = (
 
   useEffect(() => {
     setWorktreePath(null);
-    if (!branch || !repoPath || sessionId) return;
+    if (!branch || !repoPath || sessionId) {
+      return;
+    }
     let cancelled = false;
     worktreeList(repoPath)
       .then((list) => {
@@ -31,14 +33,20 @@ export const useBranchConflict = (
         }
       })
       .catch(() => {
-        if (!cancelled) setWorktreePath(null);
+        if (!cancelled) {
+          setWorktreePath(null);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [branch, repoPath, sessionId]);
 
-  if (sessionId) return { kind: 'session', sessionId };
-  if (worktreePath) return { kind: 'worktree', path: worktreePath };
+  if (sessionId) {
+    return { kind: 'session', sessionId };
+  }
+  if (worktreePath) {
+    return { kind: 'worktree', path: worktreePath };
+  }
   return null;
 };

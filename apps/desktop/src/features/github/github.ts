@@ -101,7 +101,9 @@ export const ghPrsForBranch = async (
   workspaceId?: string,
 ): Promise<ReadonlyArray<PullRequestState>> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
-  if (!slug) return [];
+  if (!slug) {
+    return [];
+  }
   return listPrsForBranch(tauriGhRunner, slug, branch, { cwd, workspaceId });
 };
 
@@ -111,7 +113,9 @@ export const ghPrDetailByNumber = async (
   workspaceId?: string,
 ): Promise<PrDetail | null> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
-  if (!slug) return null;
+  if (!slug) {
+    return null;
+  }
   return fetchPrDetail(tauriGhRunner, slug, prNumber, { cwd, workspaceId });
 };
 
@@ -121,7 +125,9 @@ export const ghPrHeadBranch = async (
   workspaceId?: string,
 ): Promise<string> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
-  if (!slug) throw new Error('could not detect a GitHub repository for this workspace');
+  if (!slug) {
+    throw new Error('could not detect a GitHub repository for this workspace');
+  }
   const res = await tauriGhRunner.run(
     [
       'pr',
@@ -140,7 +146,9 @@ export const ghPrHeadBranch = async (
     throw new Error(res.stderr.trim() || `gh pr view #${prNumber} exited ${res.exitCode}`);
   }
   const branch = res.stdout.trim();
-  if (!branch) throw new Error(`PR #${prNumber} has no head branch`);
+  if (!branch) {
+    throw new Error(`PR #${prNumber} has no head branch`);
+  }
   return branch;
 };
 
@@ -180,7 +188,9 @@ export const ghRepoCollaborators = async (
     ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
     { cwd, workspaceId },
   );
-  if (res.exitCode !== 0) return [];
+  if (res.exitCode !== 0) {
+    return [];
+  }
   return res.stdout
     .split('\n')
     .map((l) => l.trim())

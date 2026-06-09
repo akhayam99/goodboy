@@ -25,10 +25,16 @@ export type LifecycleExitPayload = {
 };
 
 export const currentPlatform = (): ProviderPlatform => {
-  if (typeof navigator === 'undefined') return 'linux';
+  if (typeof navigator === 'undefined') {
+    return 'linux';
+  }
   const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes('mac')) return 'darwin';
-  if (ua.includes('win')) return 'win32';
+  if (ua.includes('mac')) {
+    return 'darwin';
+  }
+  if (ua.includes('win')) {
+    return 'win32';
+  }
   return 'linux';
 };
 
@@ -38,7 +44,9 @@ export const resolveLifecycleCommand = (
   platform: ProviderPlatform = currentPlatform(),
 ): string => {
   const entry = PROVIDER_LIFECYCLE_COMMANDS[providerId];
-  if (action === 'install') return entry.install[platform];
+  if (action === 'install') {
+    return entry.install[platform];
+  }
   return entry[action];
 };
 

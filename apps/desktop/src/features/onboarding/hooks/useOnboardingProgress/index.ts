@@ -35,16 +35,24 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const needsAgentDetect = !persistedCompleted.has('agent');
   const needsPlanDetect = !persistedCompleted.has('plan');
   const anyAgent = useAppStore((s) => {
-    if (!needsAgentDetect) return false;
+    if (!needsAgentDetect) {
+      return false;
+    }
     for (const runs of Object.values(s.sessionPhaseRuns)) {
-      if (runs.length > 0) return true;
+      if (runs.length > 0) {
+        return true;
+      }
     }
     return false;
   });
   const anyPlan = useAppStore((s) => {
-    if (!needsPlanDetect) return false;
+    if (!needsPlanDetect) {
+      return false;
+    }
     for (const plans of Object.values(s.sessionPlans)) {
-      if (plans.length > 0) return true;
+      if (plans.length > 0) {
+        return true;
+      }
     }
     return false;
   });

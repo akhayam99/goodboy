@@ -28,7 +28,9 @@ export const ThinkingIndicator = ({ context }: Props) => {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    if (reduced) return;
+    if (reduced) {
+      return;
+    }
     const id = window.setInterval(() => setTick((t) => t + 1), ROTATE_MS);
     return () => window.clearInterval(id);
   }, [reduced]);

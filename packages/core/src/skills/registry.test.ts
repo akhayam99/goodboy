@@ -67,7 +67,9 @@ function makeFs(files: Record<string, string>): SkillFs {
           if (f.startsWith(`${path}/`)) {
             const rel = f.slice(`${path}/`.length);
             const firstSegment = rel.split('/')[0];
-            if (firstSegment !== undefined) subdirs.add(firstSegment);
+            if (firstSegment !== undefined) {
+              subdirs.add(firstSegment);
+            }
           }
         }
         return [...subdirs];
@@ -76,11 +78,15 @@ function makeFs(files: Record<string, string>): SkillFs {
     },
     async readFile(path: string): Promise<string> {
       const content = files[path];
-      if (content === undefined) throw new Error(`file not found: ${path}`);
+      if (content === undefined) {
+        throw new Error(`file not found: ${path}`);
+      }
       return content;
     },
     async stat(path: string): Promise<{ exists: boolean }> {
-      if (files[path] !== undefined) return { exists: true };
+      if (files[path] !== undefined) {
+        return { exists: true };
+      }
       const hasFiles = Object.keys(files).some((f) => f.startsWith(`${path}/`));
       return { exists: hasFiles };
     },

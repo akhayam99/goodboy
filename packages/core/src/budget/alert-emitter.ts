@@ -29,14 +29,22 @@ function providerAlertKind(
   result: BudgetCheckResult,
   thresholdPct: number,
 ): BudgetAlertKind | null {
-  if (result.pct >= 100) return 'provider-exceeded';
-  if (result.pct >= thresholdPct) return 'provider-threshold';
+  if (result.pct >= 100) {
+    return 'provider-exceeded';
+  }
+  if (result.pct >= thresholdPct) {
+    return 'provider-threshold';
+  }
   return null;
 }
 
 function sessionAlertKind(result: BudgetCheckResult, thresholdPct: number): BudgetAlertKind | null {
-  if (result.pct >= 100) return 'session-exceeded';
-  if (result.pct >= thresholdPct) return 'session-threshold';
+  if (result.pct >= 100) {
+    return 'session-exceeded';
+  }
+  if (result.pct >= thresholdPct) {
+    return 'session-threshold';
+  }
   return null;
 }
 

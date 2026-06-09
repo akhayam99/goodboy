@@ -19,10 +19,14 @@ export const runWorkspaceScript = (set: SetFn, get: GetFn) => {
 
     try {
       const result = await get().runScript(sessionId, script.id, cwd);
-      if (runSeqs.get(sessionId) !== seq) return;
+      if (runSeqs.get(sessionId) !== seq) {
+        return;
+      }
       write({ script, status: result.exitCode === 0 ? 'ok' : 'error', result });
     } catch (err) {
-      if (runSeqs.get(sessionId) !== seq) return;
+      if (runSeqs.get(sessionId) !== seq) {
+        return;
+      }
       write({
         script,
         status: 'error',

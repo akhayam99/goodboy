@@ -104,7 +104,9 @@ export const reduceTranscript = (
   for (let i = 0; i < events.length; i += 1) {
     const event = events[i]!;
     if (event.kind === 'assistant_text') {
-      if (textKey === null) textKey = `text-${i}`;
+      if (textKey === null) {
+        textKey = `text-${i}`;
+      }
       textBuffer += event.delta;
       continue;
     }

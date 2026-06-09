@@ -29,7 +29,9 @@ export const useWorkflowDrag = ({ enabled, onDropLibrary, onReorder }: Params) =
   onReorderRef.current = onReorder;
 
   const startLibraryDrag = (def: StepDef, e: ReactPointerEvent) => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
     e.preventDefault();
     setDrag({ kind: 'library', stepDefId: def.id, label: def.name });
     setDragPos({ x: e.clientX, y: e.clientY });
@@ -37,7 +39,9 @@ export const useWorkflowDrag = ({ enabled, onDropLibrary, onReorder }: Params) =
   };
 
   const startStepDrag = (fromIndex: number, label: string, e: ReactPointerEvent) => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
     e.preventDefault();
     setDrag({ kind: 'step', fromIndex, label });
     setDragPos({ x: e.clientX, y: e.clientY });
@@ -45,7 +49,9 @@ export const useWorkflowDrag = ({ enabled, onDropLibrary, onReorder }: Params) =
   };
 
   useEffect(() => {
-    if (!drag) return;
+    if (!drag) {
+      return;
+    }
     const prevUserSelect = document.body.style.userSelect;
     document.body.style.userSelect = 'none';
     const onMove = (e: PointerEvent) => {
@@ -58,8 +64,11 @@ export const useWorkflowDrag = ({ enabled, onDropLibrary, onReorder }: Params) =
       const d = dragRef.current;
       const di = dropIndexRef.current;
       if (d && di !== null) {
-        if (d.kind === 'library') onDropLibraryRef.current(d.stepDefId, di);
-        else onReorderRef.current(d.fromIndex, di);
+        if (d.kind === 'library') {
+          onDropLibraryRef.current(d.stepDefId, di);
+        } else {
+          onReorderRef.current(d.fromIndex, di);
+        }
       }
       setDrag(null);
       setDropIndex(null);

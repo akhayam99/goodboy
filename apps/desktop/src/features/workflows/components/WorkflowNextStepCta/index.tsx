@@ -32,16 +32,22 @@ export const pickNextWorkflowStep = (
   runs: ReadonlyArray<Agent>,
   gate?: PickNextWorkflowStepGate,
 ): Step | null => {
-  if (gate?.hasOpenQuestions || gate?.summarizerBusy) return null;
+  if (gate?.hasOpenQuestions || gate?.summarizerBusy) {
+    return null;
+  }
   const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
   for (const step of sorted) {
     const agent = runs.find((r) => r.stepId === step.id);
-    if (!agent || agent.status !== 'pending') continue;
+    if (!agent || agent.status !== 'pending') {
+      continue;
+    }
     const prevSteps = sorted.filter((s) => s.ordinal < step.ordinal);
     const allDone = prevSteps.every((s) =>
       runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
     );
-    if (allDone) return step;
+    if (allDone) {
+      return step;
+    }
     return null;
   }
   return null;
@@ -61,10 +67,14 @@ export const WorkflowNextStepCta = ({
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
   const defaults = AGENT_KIND_DEFAULTS[kind];
   const palette = AGENT_KIND_PALETTE[kind];
-  if (!next) return null;
+  if (!next) {
+    return null;
+  }
   const stepVerbosity = next.verbosity;
   const doAdvance = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setPendingConfirm(false);
     try {

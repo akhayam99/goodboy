@@ -19,7 +19,9 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   useEffect(() => {
     const onOpen = () => setOpen(true);
     const onProgress = () => {
-      if (isWizardDone()) setOpen(false);
+      if (isWizardDone()) {
+        setOpen(false);
+      }
     };
     window.addEventListener(OPEN_WIZARD_EVENT, onOpen);
     window.addEventListener('goodboy:onboarding-progress', onProgress);

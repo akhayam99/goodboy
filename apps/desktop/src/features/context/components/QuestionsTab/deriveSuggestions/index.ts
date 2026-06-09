@@ -28,7 +28,9 @@ function cleanToken(raw: string): string {
 }
 
 function isValueToken(token: string): boolean {
-  if (token.length < 2) return false;
+  if (token.length < 2) {
+    return false;
+  }
   return !SKIP_TOKENS.has(token.toLowerCase());
 }
 
@@ -45,13 +47,17 @@ function firstWord(text: string): string {
 
 export const deriveSuggestions = (question: string): ReadonlyArray<string> => {
   const trimmed = question.trim();
-  if (trimmed.length === 0) return [];
+  if (trimmed.length === 0) {
+    return [];
+  }
   const body = trimmed.replace(/\?+\s*$/, '').trim();
   const lower = body.toLowerCase();
 
   for (const sep of SEPARATORS) {
     const idx = lower.lastIndexOf(sep);
-    if (idx <= 0) continue;
+    if (idx <= 0) {
+      continue;
+    }
     const optionA = lastWord(body.slice(0, idx));
     const optionB = firstWord(body.slice(idx + sep.length));
     if (isValueToken(optionA) && isValueToken(optionB)) {
@@ -59,6 +65,8 @@ export const deriveSuggestions = (question: string): ReadonlyArray<string> => {
     }
   }
 
-  if (YES_NO_RE.test(trimmed)) return ['sì', 'no'];
+  if (YES_NO_RE.test(trimmed)) {
+    return ['sì', 'no'];
+  }
   return [];
 };

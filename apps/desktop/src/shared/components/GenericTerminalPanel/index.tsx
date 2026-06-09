@@ -95,7 +95,9 @@ export const GenericTerminalPanel = ({
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const term = new Terminal({
       convertEol: true,
@@ -113,12 +115,16 @@ export const GenericTerminalPanel = ({
     term.open(container);
 
     const fitAndSync = () => {
-      if (!container.clientWidth || !container.clientHeight) return;
+      if (!container.clientWidth || !container.clientHeight) {
+        return;
+      }
       fitAddon.fit();
       driver.resize(term.cols, term.rows);
     };
 
-    if (isActive) fitAndSync();
+    if (isActive) {
+      fitAndSync();
+    }
 
     termRef.current = term;
     fitAndSyncRef.current = fitAndSync;
@@ -155,19 +161,29 @@ export const GenericTerminalPanel = ({
         }
       })
       .then((fn) => {
-        if (mounted) unlistenOutput = fn;
-        else fn();
+        if (mounted) {
+          unlistenOutput = fn;
+        } else {
+          fn();
+        }
       });
 
     driver
       .onExit((exitCode) => {
-        if (!mounted) return;
-        if (exitMessage) term.writeln(exitMessage);
+        if (!mounted) {
+          return;
+        }
+        if (exitMessage) {
+          term.writeln(exitMessage);
+        }
         onExit?.(exitCode);
       })
       .then((fn) => {
-        if (mounted) unlistenExit = fn;
-        else fn();
+        if (mounted) {
+          unlistenExit = fn;
+        } else {
+          fn();
+        }
       });
 
     const ro = new ResizeObserver(() => {
@@ -190,7 +206,9 @@ export const GenericTerminalPanel = ({
 
   useEffect(() => {
     const term = termRef.current;
-    if (!term) return;
+    if (!term) {
+      return;
+    }
     term.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
   }, [theme]);
 
@@ -198,7 +216,9 @@ export const GenericTerminalPanel = ({
     if (isActive) {
       const id = requestAnimationFrame(() => {
         fitAndSyncRef.current?.();
-        if (!readOnly) termRef.current?.focus();
+        if (!readOnly) {
+          termRef.current?.focus();
+        }
       });
       return () => cancelAnimationFrame(id);
     }

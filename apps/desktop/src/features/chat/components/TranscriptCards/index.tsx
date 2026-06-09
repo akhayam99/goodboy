@@ -105,8 +105,12 @@ function TranscriptCardImpl({
 }
 
 function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
-  if (a === b) return true;
-  if (a.kind !== b.kind || a.key !== b.key) return false;
+  if (a === b) {
+    return true;
+  }
+  if (a.kind !== b.kind || a.key !== b.key) {
+    return false;
+  }
   if (a.kind === 'tool_call' && b.kind === 'tool_call') {
     return a.ended === b.ended && a.isError === b.isError && a.output === b.output;
   }
@@ -175,8 +179,12 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
 }
 
 function formatTokens(n: number): string {
-  if (n < 1000) return String(n);
-  if (n < 10_000) return `${(n / 1000).toFixed(1)}k`;
+  if (n < 1000) {
+    return String(n);
+  }
+  if (n < 10_000) {
+    return `${(n / 1000).toFixed(1)}k`;
+  }
   return `${Math.round(n / 1000)}k`;
 }
 
@@ -215,7 +223,9 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
 
 function formatHHMM(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
@@ -288,10 +298,14 @@ function AttachmentImage({
     setSrc(null);
     readAttachment(workingDir, attachment.relPath)
       .then((dataUrl) => {
-        if (alive) setSrc(dataUrl);
+        if (alive) {
+          setSrc(dataUrl);
+        }
       })
       .catch(() => {
-        if (alive) setFailed(true);
+        if (alive) {
+          setFailed(true);
+        }
       });
     return () => {
       alive = false;
@@ -350,7 +364,9 @@ function AttachmentFileCard({
   const isPdf = attachment.mimeType === 'application/pdf';
 
   const openPreview = () => {
-    if (!isPdf || !workingDir) return;
+    if (!isPdf || !workingDir) {
+      return;
+    }
     if (src !== null) {
       setPreviewOpen(true);
       return;
@@ -451,8 +467,12 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
   const [open, setOpen] = useState(false);
   const running = !item.ended;
   const accent = (() => {
-    if (item.isError) return 'text-danger';
-    if (running) return 'text-muted-foreground/70';
+    if (item.isError) {
+      return 'text-danger';
+    }
+    if (running) {
+      return 'text-muted-foreground/70';
+    }
     return 'text-muted-foreground';
   })();
 

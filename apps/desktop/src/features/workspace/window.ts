@@ -19,7 +19,9 @@ function inTauri(): boolean {
 }
 
 export const currentWindowLabel = (): string => {
-  if (!inTauri()) return MAIN_WINDOW_LABEL;
+  if (!inTauri()) {
+    return MAIN_WINDOW_LABEL;
+  }
   return getCurrentWindow().label;
 };
 
@@ -35,10 +37,14 @@ export const targetWorkspaceFromHash = (): WorkspaceId | null => {
 };
 
 export const focusWindow = async (label: string): Promise<boolean> => {
-  if (!inTauri()) return false;
+  if (!inTauri()) {
+    return false;
+  }
   const windows = await getAllWebviewWindows();
   const target = windows.find((w) => w.label === label);
-  if (!target) return false;
+  if (!target) {
+    return false;
+  }
   await target.unminimize().catch(() => undefined);
   await target.setFocus();
   return true;
@@ -50,7 +56,9 @@ function freshWindowLabel(): string {
 }
 
 export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Promise<void> => {
-  if (!inTauri()) return;
+  if (!inTauri()) {
+    return;
+  }
   const win = new WebviewWindow(freshWindowLabel(), {
     url: `index.html#${WORKSPACE_HASH_KEY}=${id}`,
     title,
@@ -66,24 +74,32 @@ export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Prom
 };
 
 export const setWindowTitle = async (title: string): Promise<void> => {
-  if (!inTauri()) return;
+  if (!inTauri()) {
+    return;
+  }
   await getCurrentWindow()
     .setTitle(`${title} · Goodboy`)
     .catch(() => undefined);
 };
 
 export const announcePresence = (workspaceId: WorkspaceId | null): Promise<void> => {
-  if (!inTauri()) return Promise.resolve();
+  if (!inTauri()) {
+    return Promise.resolve();
+  }
   return emit(PRESENCE_EVENT, { label: currentWindowLabel(), workspaceId });
 };
 
 export const requestPresence = (): Promise<void> => {
-  if (!inTauri()) return Promise.resolve();
+  if (!inTauri()) {
+    return Promise.resolve();
+  }
   return emit(PRESENCE_REQUEST_EVENT, {});
 };
 
 export const notifyWindowClosing = (): Promise<void> => {
-  if (!inTauri()) return Promise.resolve();
+  if (!inTauri()) {
+    return Promise.resolve();
+  }
   return emit(WINDOW_CLOSING_EVENT, { label: currentWindowLabel() });
 };
 
@@ -94,7 +110,9 @@ export type PresenceHandlers = {
 };
 
 export const listenPresence = async (handlers: PresenceHandlers): Promise<UnlistenFn> => {
-  if (!inTauri()) return () => undefined;
+  if (!inTauri()) {
+    return () => undefined;
+  }
   const offs = await Promise.all([
     listen<PresencePayload>(PRESENCE_EVENT, (event) => handlers.onPresence(event.payload)),
     listen(PRESENCE_REQUEST_EVENT, () => handlers.onRequest()),
@@ -108,6 +126,8 @@ export const listenPresence = async (handlers: PresenceHandlers): Promise<Unlist
 };
 
 export const onWindowClose = async (callback: () => void): Promise<UnlistenFn> => {
-  if (!inTauri()) return () => undefined;
+  if (!inTauri()) {
+    return () => undefined;
+  }
   return getCurrentWindow().onCloseRequested(() => callback());
 };

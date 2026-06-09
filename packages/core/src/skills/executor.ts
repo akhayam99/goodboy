@@ -66,7 +66,9 @@ function normalizePath(p: string): string {
   const parts = p.split('/').filter((s) => s.length > 0);
   const stack: string[] = [];
   for (const part of parts) {
-    if (part === '.') continue;
+    if (part === '.') {
+      continue;
+    }
     if (part === '..') {
       stack.pop();
     } else {
@@ -78,13 +80,19 @@ function normalizePath(p: string): string {
 
 function posixDirname(p: string): string {
   const slash = p.lastIndexOf('/');
-  if (slash === -1) return '.';
-  if (slash === 0) return '/';
+  if (slash === -1) {
+    return '.';
+  }
+  if (slash === 0) {
+    return '/';
+  }
   return p.slice(0, slash);
 }
 
 function joinPaths(base: string, rel: string): string {
-  if (rel.startsWith('/')) return normalizePath(rel);
+  if (rel.startsWith('/')) {
+    return normalizePath(rel);
+  }
   return normalizePath(base + '/' + rel);
 }
 

@@ -12,18 +12,24 @@ export const useProviderRefreshOnFocus = (): void => {
     let lastRunAt = 0;
 
     const schedule = (): void => {
-      if (timer !== null) window.clearTimeout(timer);
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
       timer = window.setTimeout(() => {
         timer = null;
         const elapsed = Date.now() - lastRunAt;
-        if (elapsed < REFRESH_TTL_MS) return;
+        if (elapsed < REFRESH_TTL_MS) {
+          return;
+        }
 
         const lifecycle = useAppStore.getState().providerLifecycle;
         const inFlight = Object.values(lifecycle).some(
           (l) =>
             l.phase === 'installing' || l.phase === 'connecting' || l.phase === 'disconnecting',
         );
-        if (inFlight) return;
+        if (inFlight) {
+          return;
+        }
 
         lastRunAt = Date.now();
         void refreshProviders();
@@ -32,7 +38,9 @@ export const useProviderRefreshOnFocus = (): void => {
 
     const onFocus = (): void => schedule();
     const onVisibility = (): void => {
-      if (document.visibilityState === 'visible') schedule();
+      if (document.visibilityState === 'visible') {
+        schedule();
+      }
     };
 
     window.addEventListener('focus', onFocus);
@@ -40,7 +48,9 @@ export const useProviderRefreshOnFocus = (): void => {
     return () => {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
-      if (timer !== null) window.clearTimeout(timer);
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
     };
   }, [refreshProviders]);
 };

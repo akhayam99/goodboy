@@ -259,14 +259,30 @@ export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => 
 
 export const inferAgentKindFromName = (name: string): AgentKind => {
   const lower = name.toLowerCase();
-  if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) return 'resolver';
-  if (/scout|explor|survey|map/.test(lower)) return 'scout';
-  if (/plan|design|architect|spec|product/.test(lower)) return 'planner';
-  if (/impl|build|develop|code|feature|refactor/.test(lower)) return 'implementer';
-  if (/debug|diagno|fix|repro|investig/.test(lower)) return 'debugger';
-  if (/test|qa/.test(lower)) return 'tester';
-  if (/review|verify|check|audit/.test(lower)) return 'reviewer';
-  if (/doc|readme|changelog/.test(lower)) return 'docs';
+  if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) {
+    return 'resolver';
+  }
+  if (/scout|explor|survey|map/.test(lower)) {
+    return 'scout';
+  }
+  if (/plan|design|architect|spec|product/.test(lower)) {
+    return 'planner';
+  }
+  if (/impl|build|develop|code|feature|refactor/.test(lower)) {
+    return 'implementer';
+  }
+  if (/debug|diagno|fix|repro|investig/.test(lower)) {
+    return 'debugger';
+  }
+  if (/test|qa/.test(lower)) {
+    return 'tester';
+  }
+  if (/review|verify|check|audit/.test(lower)) {
+    return 'reviewer';
+  }
+  if (/doc|readme|changelog/.test(lower)) {
+    return 'docs';
+  }
   return 'generic';
 };
 
@@ -275,9 +291,15 @@ export const resolveAgentKind = (
   firstUserText: string | null,
   override: AgentKind | null = null,
 ): AgentKind => {
-  if (override) return override;
+  if (override) {
+    return override;
+  }
   const fromName = inferAgentKindFromName(name);
-  if (fromName !== 'generic') return fromName;
-  if (!firstUserText) return 'generic';
+  if (fromName !== 'generic') {
+    return fromName;
+  }
+  if (!firstUserText) {
+    return 'generic';
+  }
   return classifyFirstTurn(firstUserText);
 };

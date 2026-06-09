@@ -5,7 +5,9 @@ import type { GetFn, SetFn } from './types';
 export const dismissSessionNudge = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, outcome: 'accepted' | 'dismissed' = 'dismissed') => {
     const nudge = get().sessionNudges[sessionId] ?? null;
-    if (!nudge) return;
+    if (!nudge) {
+      return;
+    }
     set((state) => ({
       sessionNudges: { ...state.sessionNudges, [sessionId]: null },
     }));

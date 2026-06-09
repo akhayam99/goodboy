@@ -223,7 +223,11 @@ export const guideFor = (
   providerId: ProviderId,
   action: ProviderLifecycleAction,
 ): ProviderGuide => {
-  if (action === 'install') return INSTALL_GUIDES[providerId];
-  if (action === 'login') return LOGIN_GUIDES[providerId];
+  if (action === 'install') {
+    return INSTALL_GUIDES[providerId];
+  }
+  if (action === 'login') {
+    return LOGIN_GUIDES[providerId];
+  }
   return LOGOUT_GUIDES[providerId];
 };

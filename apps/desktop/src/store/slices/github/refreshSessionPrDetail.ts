@@ -16,16 +16,26 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
     const existing = get().sessionGithub[sessionId];
     const pr = existing?.pr ?? null;
-    if (!pr) return;
-    if (!opts?.force && existing?.detailLoading) return;
+    if (!pr) {
+      return;
+    }
+    if (!opts?.force && existing?.detailLoading) {
+      return;
+    }
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
     const fresh = existing?.detailFetchedAt
       ? Date.now() - new Date(existing.detailFetchedAt).getTime()
       : Number.POSITIVE_INFINITY;
-    if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) return;
+    if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) {
+      return;
+    }
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,

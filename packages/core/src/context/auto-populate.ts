@@ -79,7 +79,9 @@ export const autoPopulateContext = async (
       text: q.text,
       suggestedAnswers: q.suggestedAnswers,
     });
-    if (res.inserted) insertedCount += 1;
+    if (res.inserted) {
+      insertedCount += 1;
+    }
   }
 
   const resolvedCount = await markOpenQuestionsResolvedByText(input.db, input.sessionId, resolved);
@@ -99,7 +101,9 @@ function normalizeQuestion(s: string): string {
 
 function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
   const n = normalizeQuestion(text);
-  if (n.length === 0) return false;
+  if (n.length === 0) {
+    return false;
+  }
   return candidates.some((c) => {
     const t = normalizeQuestion(c);
     return t.length > 0 && (n === t || n.includes(t) || t.includes(n));
@@ -108,7 +112,9 @@ function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
 
 function cryptoRandomUUID(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  if (g.crypto?.randomUUID) return g.crypto.randomUUID();
+  if (g.crypto?.randomUUID) {
+    return g.crypto.randomUUID();
+  }
   const rnd = () =>
     Math.floor(Math.random() * 0x10000)
       .toString(16)
@@ -122,7 +128,9 @@ function pushUpdate(
   key: SlotKey,
   additions: ReadonlyArray<string>,
 ): void {
-  if (additions.length === 0) return;
+  if (additions.length === 0) {
+    return;
+  }
   const existing = slots.find((s) => s.key === key)?.value ?? '';
   const merged = mergeIntoSlot(existing, additions);
   if (merged !== existing) {

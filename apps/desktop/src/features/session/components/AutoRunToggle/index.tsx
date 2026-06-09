@@ -33,7 +33,9 @@ export const AutoRunToggle = ({ session }: Props) => {
       type="button"
       disabled={!hasWorkflow}
       onClick={() => {
-        if (!hasWorkflow) return;
+        if (!hasWorkflow) {
+          return;
+        }
         void setSessionAutoRun(session.id as SessionId, !on);
       }}
       title={tooltip}

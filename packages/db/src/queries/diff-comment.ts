@@ -93,7 +93,9 @@ export const consumeDiffComments = async (
   ids: ReadonlyArray<string>,
   agentId: AgentId,
 ): Promise<void> => {
-  if (ids.length === 0) return;
+  if (ids.length === 0) {
+    return;
+  }
   const placeholders = ids.map(() => '?').join(', ');
   await db.execute(
     `UPDATE diff_comments

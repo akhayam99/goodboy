@@ -85,8 +85,12 @@ function connectionFromDetectionAndAuth(
   if (!available) {
     return detectionError ? 'error' : 'missing';
   }
-  if (!auth || auth.state === 'unknown') return 'installed_disconnected';
-  if (auth.state === 'disconnected') return 'installed_disconnected';
+  if (!auth || auth.state === 'unknown') {
+    return 'installed_disconnected';
+  }
+  if (auth.state === 'disconnected') {
+    return 'installed_disconnected';
+  }
   return 'connected';
 }
 

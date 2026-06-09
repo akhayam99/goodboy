@@ -16,7 +16,9 @@ export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUr
     const all = groupThreads(comments);
     return [...all].sort((a, b) => {
       const p = threadPriority(a) - threadPriority(b);
-      if (p !== 0) return p;
+      if (p !== 0) {
+        return p;
+      }
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
   }, [comments]);
@@ -24,9 +26,13 @@ export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUr
   const threadRefs = useRef(new Map<string, HTMLLIElement>());
   const [flashThreadId, setFlashThreadId] = useState<string | null>(null);
   useEffect(() => {
-    if (!scrollToThreadId) return;
+    if (!scrollToThreadId) {
+      return;
+    }
     const el = threadRefs.current.get(scrollToThreadId);
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setFlashThreadId(scrollToThreadId);
     const t = setTimeout(() => setFlashThreadId(null), 1600);
@@ -59,9 +65,14 @@ export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUr
             <li
               key={t.head.id}
               ref={(el) => {
-                if (!tid) return;
-                if (el) threadRefs.current.set(tid, el);
-                else threadRefs.current.delete(tid);
+                if (!tid) {
+                  return;
+                }
+                if (el) {
+                  threadRefs.current.set(tid, el);
+                } else {
+                  threadRefs.current.delete(tid);
+                }
               }}
               className={cn(
                 'rounded-lg transition-shadow',
@@ -201,13 +212,21 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
 }
 
 function formatRelative(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  if (!Number.isFinite(ms) || ms < 0) {
+    return 'just now';
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 45) return 'just now';
+  if (s < 45) {
+    return 'just now';
+  }
   const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) {
+    return `${m}m ago`;
+  }
   const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) {
+    return `${h}h ago`;
+  }
   const d = Math.round(h / 24);
   return `${d}d ago`;
 }

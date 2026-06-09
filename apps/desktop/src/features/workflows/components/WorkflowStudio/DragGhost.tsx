@@ -5,7 +5,9 @@ type Props = {
 };
 
 export const DragGhost = ({ ghost }: Props) => {
-  if (!ghost) return null;
+  if (!ghost) {
+    return null;
+  }
   return (
     <div
       className="pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border border-primary/40 bg-background/95 px-2 py-1 text-2xs font-medium text-foreground shadow-lg"

@@ -10,13 +10,19 @@ export const activateNextResolver = (set: SetFn, get: GetFn) => {
       (a) => resolveAgentKind(a.name, null, get().agentKindOverride[a.id] ?? null) === 'resolver',
     );
     const anyRunning = resolvers.some((a) => a.status === 'running');
-    if (anyRunning) return;
+    if (anyRunning) {
+      return;
+    }
     const next = resolvers
       .filter((a) => a.status === 'pending' && pending[a.id] !== undefined)
       .sort((a, b) => a.ordinal - b.ordinal)[0];
-    if (!next) return;
+    if (!next) {
+      return;
+    }
     const kickoff = pending[next.id];
-    if (kickoff === undefined) return;
+    if (kickoff === undefined) {
+      return;
+    }
     set((s) => {
       const nextPending = { ...s.pendingResolverKickoff };
       delete nextPending[next.id];

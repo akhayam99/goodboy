@@ -21,7 +21,9 @@ const IMPLEMENT_FRAME_RE =
 
 export const detectScopeMismatch = (input: string, agentKind: AgentKind): ScopeMismatch | null => {
   const trimmed = input.trim();
-  if (trimmed.length === 0) return null;
+  if (trimmed.length === 0) {
+    return null;
+  }
 
   if (agentKind === 'planner') {
     if (IMPLEMENT_VERB_RE.test(trimmed) && !PLANNING_FRAME_RE.test(trimmed)) {

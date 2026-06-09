@@ -26,15 +26,21 @@ export const RoutingIndicator = ({
   useEffect(() => {
     let cancelled = false;
     resolveProviderForTurn(sessionPreference, turnOverride, [...connectedProviders]).then((d) => {
-      if (!cancelled) setDecision(d);
+      if (!cancelled) {
+        setDecision(d);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [sessionPreference, turnOverride, connectedProviders]);
 
-  if (!decision) return null;
-  if (!SESSION_FEATURES.budget) return null;
+  if (!decision) {
+    return null;
+  }
+  if (!SESSION_FEATURES.budget) {
+    return null;
+  }
 
   if (decision.reason === 'all-exceeded') {
     return (
@@ -51,7 +57,9 @@ export const RoutingIndicator = ({
 
   const isFallback =
     decision.reason === 'fallback-budget' || decision.reason === 'fallback-disconnected';
-  if (!isFallback || !decision.fallbackFrom) return null;
+  if (!isFallback || !decision.fallbackFrom) {
+    return null;
+  }
 
   const label = decision.selectedProvider === 'anthropic' ? 'claude' : decision.selectedProvider;
   const fromLabel = decision.fallbackFrom === 'anthropic' ? 'claude' : decision.fallbackFrom;

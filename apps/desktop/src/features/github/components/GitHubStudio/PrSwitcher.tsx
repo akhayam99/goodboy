@@ -13,7 +13,9 @@ type Props = {
 export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
   const [open, setOpen] = useState(false);
   const current = prs.find((p) => p.number === selected) ?? prs[0];
-  if (!current) return null;
+  if (!current) {
+    return null;
+  }
 
   return (
     <div className="relative shrink-0">

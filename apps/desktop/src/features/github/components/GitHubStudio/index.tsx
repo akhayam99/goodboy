@@ -27,9 +27,13 @@ export const GitHubStudio = ({
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
 
   useEffect(() => {
-    if (focused !== null) return;
+    if (focused !== null) {
+      return;
+    }
     const first = groups[0]?.rows[0]?.session.id ?? null;
-    if (first) setFocused(first);
+    if (first) {
+      setFocused(first);
+    }
   }, [focused, groups]);
 
   const onInitialSession = focused === initialSessionId;

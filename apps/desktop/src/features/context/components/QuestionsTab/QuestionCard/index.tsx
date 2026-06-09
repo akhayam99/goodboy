@@ -22,10 +22,16 @@ type Props = {
 function relativeAge(isoDate: string): string {
   const diffMs = Date.now() - new Date(isoDate).getTime();
   const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) {
+    return 'just now';
+  }
+  if (mins < 60) {
+    return `${mins}m ago`;
+  }
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) {
+    return `${hrs}h ago`;
+  }
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
@@ -44,7 +50,9 @@ export const QuestionCard = ({
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    if (!justAnswered) return;
+    if (!justAnswered) {
+      return;
+    }
     setAnimate(true);
     const t = setTimeout(() => {
       setAnimate(false);

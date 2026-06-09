@@ -25,16 +25,24 @@ const AUTH_HINT_RE =
 
 function findAuthUrl(text: string): string | null {
   const matches = text.match(URL_RE);
-  if (!matches) return null;
+  if (!matches) {
+    return null;
+  }
   for (const url of matches) {
-    if (AUTH_HINT_RE.test(url)) return url;
+    if (AUTH_HINT_RE.test(url)) {
+      return url;
+    }
   }
   return null;
 }
 
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
-  if (action === 'install') return 'installing';
-  if (action === 'login') return 'connecting';
+  if (action === 'install') {
+    return 'installing';
+  }
+  if (action === 'login') {
+    return 'connecting';
+  }
   return 'disconnecting';
 }
 
@@ -45,12 +53,20 @@ function restingPhase(
   const installed = payload.status.available;
   const connected = payload.auth.state === 'connected';
   if (payload.exitCode !== 0) {
-    if (action === 'install') return installed ? 'installed' : 'error';
-    if (action === 'login') return connected ? 'connected' : 'error';
+    if (action === 'install') {
+      return installed ? 'installed' : 'error';
+    }
+    if (action === 'login') {
+      return connected ? 'connected' : 'error';
+    }
     return connected ? 'error' : 'installed';
   }
-  if (action === 'install') return installed ? 'installed' : 'error';
-  if (action === 'login') return connected ? 'connected' : 'error';
+  if (action === 'install') {
+    return installed ? 'installed' : 'error';
+  }
+  if (action === 'login') {
+    return connected ? 'connected' : 'error';
+  }
   return connected ? 'error' : 'installed';
 }
 
@@ -63,9 +79,15 @@ function statusSlotPatch(
   codexStatus?: ProviderStatus;
   geminiStatus?: ProviderStatus;
 } {
-  if (providerId === 'anthropic') return { providerStatus: status };
-  if (providerId === 'cursor') return { cursorStatus: status };
-  if (providerId === 'codex') return { codexStatus: status };
+  if (providerId === 'anthropic') {
+    return { providerStatus: status };
+  }
+  if (providerId === 'cursor') {
+    return { cursorStatus: status };
+  }
+  if (providerId === 'codex') {
+    return { codexStatus: status };
+  }
   return { geminiStatus: status };
 }
 
@@ -116,7 +138,9 @@ export const runLifecycle = async (
   let unlistenExit: () => void = () => undefined;
 
   unlistenOutput = await listenLifecycleOutput((payload) => {
-    if (payload.runId !== runId) return;
+    if (payload.runId !== runId) {
+      return;
+    }
     const chunk = atob(payload.data);
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
     if (!foundAuthUrl) {
@@ -125,7 +149,9 @@ export const runLifecycle = async (
         foundAuthUrl = true;
         set((state) => {
           const curr = state.providerLifecycle[providerId];
-          if (curr.runId !== runId) return {};
+          if (curr.runId !== runId) {
+            return {};
+          }
           return {
             providerLifecycle: {
               ...state.providerLifecycle,
@@ -138,7 +164,9 @@ export const runLifecycle = async (
   });
 
   unlistenExit = await listenLifecycleExit((payload) => {
-    if (payload.runId !== runId) return;
+    if (payload.runId !== runId) {
+      return;
+    }
     unlistenExit();
     unlistenOutput();
 

@@ -104,7 +104,9 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
   const [wipeError, setWipeError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     if (isNavSection(initialSection)) {
       setActiveSection(initialSection);
     }
@@ -133,7 +135,9 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
     setImportError(null);
     try {
       const result = await importConfig();
-      if (!result) return;
+      if (!result) {
+        return;
+      }
       setImportResult(result);
       setImportDialogOpen(true);
     } catch (err) {

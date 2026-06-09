@@ -25,8 +25,12 @@ export const groupThreads = (comments: ReadonlyArray<PrComment>): ReadonlyArray<
 };
 
 export const threadPriority = (t: CommentThread): number => {
-  if (t.head.source === 'review' && t.head.resolved === false) return 0;
-  if (t.head.source === 'issue') return 1;
+  if (t.head.source === 'review' && t.head.resolved === false) {
+    return 0;
+  }
+  if (t.head.source === 'issue') {
+    return 1;
+  }
   return 2;
 };
 

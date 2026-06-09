@@ -73,12 +73,18 @@ export const ModelPicker = ({
   const isOverride = provider !== defaultProvider || model !== defaultModel;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onClick);
     window.addEventListener('keydown', onEsc);
@@ -90,7 +96,9 @@ export const ModelPicker = ({
 
   useEffect(() => {
     const handler = () => {
-      if (!disabled) setOpen(true);
+      if (!disabled) {
+        setOpen(true);
+      }
     };
     window.addEventListener('goodboy:open-model-picker', handler);
     return () => window.removeEventListener('goodboy:open-model-picker', handler);
@@ -218,8 +226,12 @@ export const ModelPicker = ({
                 const isConnected = connectedProviders.includes(id);
                 const active = provider === id;
                 const chipTone = (() => {
-                  if (active) return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
-                  if (isConnected) return CHIP_INACTIVE;
+                  if (active) {
+                    return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
+                  }
+                  if (isConnected) {
+                    return CHIP_INACTIVE;
+                  }
                   return 'text-muted-foreground/35 hover:bg-muted/50';
                 })();
                 return (

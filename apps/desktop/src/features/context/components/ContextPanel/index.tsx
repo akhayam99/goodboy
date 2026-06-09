@@ -95,7 +95,9 @@ export const ContextPanel = ({
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      return;
+    }
     void loadSessionOpenQuestions(session.id);
   }, [isActive, session.id, loadSessionOpenQuestions]);
 
@@ -105,7 +107,9 @@ export const ContextPanel = ({
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      return;
+    }
     void loadDiffComments(session.id);
   }, [isActive, session.id, loadDiffComments]);
 
@@ -115,7 +119,9 @@ export const ContextPanel = ({
     let estimatedCostUsd = 0;
     let count = 0;
     for (const rec of sessionTelemetry) {
-      if (rec.kind !== 'summarizer') continue;
+      if (rec.kind !== 'summarizer') {
+        continue;
+      }
       inputTokens += rec.inputTokens;
       outputTokens += rec.outputTokens;
       estimatedCostUsd += rec.estimatedCostUsd;
@@ -128,7 +134,9 @@ export const ContextPanel = ({
 
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   useEffect(() => {
-    if (!isActive || !workingDir) return;
+    if (!isActive || !workingDir) {
+      return;
+    }
     let cancelled = false;
     worktreeStatus(workingDir)
       .then((status) => {
@@ -575,10 +583,14 @@ function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId }) {
   }, [sessionId, loadPendingResolutions]);
 
   const count = pending.length;
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
 
   const onPush = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     try {
       await pushAllResolutions(sessionId);
@@ -681,7 +693,9 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
 type CiState = 'success' | 'failure' | 'pending' | 'none';
 
 function computeCiState(checks: ReadonlyArray<PrCheckRun>): CiState {
-  if (checks.length === 0) return 'none';
+  if (checks.length === 0) {
+    return 'none';
+  }
   if (
     checks.some(
       (c) =>
@@ -690,8 +704,12 @@ function computeCiState(checks: ReadonlyArray<PrCheckRun>): CiState {
   ) {
     return 'failure';
   }
-  if (checks.some((c) => c.conclusion === 'pending')) return 'pending';
-  if (checks.some((c) => c.conclusion === 'success')) return 'success';
+  if (checks.some((c) => c.conclusion === 'pending')) {
+    return 'pending';
+  }
+  if (checks.some((c) => c.conclusion === 'success')) {
+    return 'success';
+  }
   return 'none';
 }
 
@@ -809,13 +827,17 @@ function firstMeaningfulLine(value: string): string {
       .replace(/^#+\s+/, '')
       .replace(/\*\*/g, '')
       .replace(/`/g, '');
-    if (t) return t;
+    if (t) {
+      return t;
+    }
   }
   return '';
 }
 
 function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
-  if (!workingDir || slot.value.length === 0) return slot;
+  if (!workingDir || slot.value.length === 0) {
+    return slot;
+  }
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   const normalized = slot.value
     .split('\n')
@@ -853,7 +875,9 @@ function SlotRow({
   const history = useSlotHistory(sessionId, slotKey);
 
   useEffect(() => {
-    if (!editing) setDraft(value);
+    if (!editing) {
+      setDraft(value);
+    }
   }, [value, editing]);
 
   const openHistory = useCallback(() => {
@@ -869,7 +893,9 @@ function SlotRow({
     [onCommit],
   );
 
-  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
+  if (slot === undefined && loading) {
+    return <SlotRowSkeleton slotKey={slotKey} />;
+  }
 
   const Icon = meta?.icon;
   const hasValue = value.length > 0;
@@ -882,7 +908,9 @@ function SlotRow({
 
   const commit = () => {
     setEditing(false);
-    if (draft !== value) onCommit(draft);
+    if (draft !== value) {
+      onCommit(draft);
+    }
   };
 
   const itemCountLabel =
@@ -983,7 +1011,9 @@ function SlotRow({
           <button
             type="button"
             onClick={() => {
-              if (isSummarizing) return;
+              if (isSummarizing) {
+                return;
+              }
               setEditing(true);
             }}
             disabled={isSummarizing}
@@ -1002,7 +1032,9 @@ function SlotRow({
         <button
           type="button"
           onClick={() => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             setEditing(true);
           }}
           disabled={isSummarizing}
@@ -1028,11 +1060,15 @@ function SlotRow({
           role={isSummarizing ? undefined : 'button'}
           tabIndex={isSummarizing ? -1 : 0}
           onClick={() => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             setEditing(true);
           }}
           onKeyDown={(e) => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setEditing(true);
@@ -1049,7 +1085,9 @@ function SlotRow({
         <button
           type="button"
           onClick={() => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             setEditing(true);
           }}
           disabled={isSummarizing}
@@ -1146,10 +1184,16 @@ function SlotHistoryDialog({
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) {
+    return 'just now';
+  }
+  if (mins < 60) {
+    return `${mins}m ago`;
+  }
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) {
+    return `${hrs}h ago`;
+  }
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
@@ -1177,7 +1221,9 @@ function SummarizerBadge({
   const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
-    if (status !== 'error') setRetrying(false);
+    if (status !== 'error') {
+      setRetrying(false);
+    }
   }, [status]);
 
   const costTooltip =
@@ -1211,7 +1257,9 @@ function SummarizerBadge({
         <button
           type="button"
           onClick={() => {
-            if (!canRetry || retrying) return;
+            if (!canRetry || retrying) {
+              return;
+            }
             setRetrying(true);
             retrySummarizer(sessionId);
           }}

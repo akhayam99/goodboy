@@ -26,7 +26,9 @@ export const Textarea = ({
 
   const resize = useCallback(() => {
     const el = ref.current;
-    if (!el || !autoGrow) return;
+    if (!el || !autoGrow) {
+      return;
+    }
     el.style.height = 'auto';
     const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx));
     el.style.height = `${next}px`;

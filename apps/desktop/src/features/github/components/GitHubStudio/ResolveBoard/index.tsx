@@ -63,8 +63,11 @@ export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
   const toggle = (id: string) =>
     setDeselected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   const toggleAll = () =>
@@ -82,7 +85,9 @@ export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
             type="checkbox"
             checked={allSelected}
             ref={(el) => {
-              if (el) el.indeterminate = !allSelected && selected.length > 0;
+              if (el) {
+                el.indeterminate = !allSelected && selected.length > 0;
+              }
             }}
             onChange={toggleAll}
             className="size-3.5 accent-primary"
@@ -295,7 +300,9 @@ function ConfigPanel({
   footer?: ReactNode;
 }) {
   const onProvider = (next: ProviderId | '') => {
-    if (next === '') return;
+    if (next === '') {
+      return;
+    }
     onChange(configFor(next));
   };
   const onModel = (model: string) =>

@@ -101,7 +101,9 @@ export const insertOpenQuestion = async (
     [input.sessionId, input.text],
   );
   const existing = existingRows[0];
-  if (!existing) throw new Error(`open_question insert failed: ${input.id}`);
+  if (!existing) {
+    throw new Error(`open_question insert failed: ${input.id}`);
+  }
   return { question: toDomain(existing), inserted: false };
 };
 
@@ -174,24 +176,36 @@ export const markOpenQuestionsResolvedByText = async (
   sessionId: SessionId,
   texts: ReadonlyArray<string>,
 ): Promise<number> => {
-  if (texts.length === 0) return 0;
+  if (texts.length === 0) {
+    return 0;
+  }
   const targets = texts.map(normalizeForMatch).filter((s) => s.length > 0);
-  if (targets.length === 0) return 0;
+  if (targets.length === 0) {
+    return 0;
+  }
 
   const rows = await db.select<OpenQuestionRow>(
     `SELECT * FROM open_questions WHERE session_id = ? AND status = 'open'`,
     [sessionId],
   );
-  if (rows.length === 0) return 0;
+  if (rows.length === 0) {
+    return 0;
+  }
 
   const toResolve: string[] = [];
   for (const row of rows) {
     const n = normalizeForMatch(row.text);
-    if (n.length === 0) continue;
+    if (n.length === 0) {
+      continue;
+    }
     const hit = targets.some((t) => n === t || n.includes(t) || t.includes(n));
-    if (hit) toResolve.push(row.id);
+    if (hit) {
+      toResolve.push(row.id);
+    }
   }
-  if (toResolve.length === 0) return 0;
+  if (toResolve.length === 0) {
+    return 0;
+  }
 
   const now = Date.now();
   for (const id of toResolve) {

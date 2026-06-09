@@ -54,12 +54,20 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
 ];
 
 function fuzzyScore(query: string, text: string): number {
-  if (query.length === 0) return 1;
+  if (query.length === 0) {
+    return 1;
+  }
   const q = query.toLowerCase();
   const t = text.toLowerCase();
-  if (t.startsWith(q)) return 3;
-  if (t.includes(` ${q}`)) return 2;
-  if (t.includes(q)) return 1;
+  if (t.startsWith(q)) {
+    return 3;
+  }
+  if (t.includes(` ${q}`)) {
+    return 2;
+  }
+  if (t.includes(q)) {
+    return 1;
+  }
   return 0;
 }
 
@@ -125,7 +133,9 @@ export const CommandPalette = ({
     }
 
     for (const s of sessions) {
-      if (s.archivedAt) continue;
+      if (s.archivedAt) {
+        continue;
+      }
       const ws = workspaces.find((w) => w.id === s.workspaceId);
       out.push({
         id: `session:${s.id}`,
@@ -312,7 +322,9 @@ export const CommandPalette = ({
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-[20vh]"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
       }}
     >
       <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-2xl">
@@ -354,7 +366,9 @@ export const CommandPalette = ({
           ) : (
             GROUP_ORDER.flatMap((group) => {
               const itemsInGroup = filtered.filter((it) => it.group === group);
-              if (itemsInGroup.length === 0) return [];
+              if (itemsInGroup.length === 0) {
+                return [];
+              }
               return [
                 <li
                   key={`group:${group}`}

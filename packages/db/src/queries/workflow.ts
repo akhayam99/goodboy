@@ -96,7 +96,9 @@ export const listWorkflows = async (
 export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflow | null> => {
   const rows = await db.select<WorkflowRow>('SELECT * FROM workflows WHERE id = ?', [id]);
   const row = rows[0];
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
 
   const stepRows = await db.select<StepRow>(
     'SELECT * FROM steps WHERE workflow_id = ? AND deleted_at IS NULL ORDER BY ordinal ASC',

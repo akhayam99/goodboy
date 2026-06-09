@@ -27,7 +27,9 @@ export const ScrollFade = ({
 
   const sync = useCallback(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const top = el.scrollTop > 1;
     const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
     setEdges((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
@@ -35,7 +37,9 @@ export const ScrollFade = ({
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     sync();
     const resize = new ResizeObserver(sync);
     resize.observe(el);

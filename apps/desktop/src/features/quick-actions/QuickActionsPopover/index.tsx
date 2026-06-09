@@ -28,7 +28,9 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         const item = items[activeIndex];
-        if (item) onSelect(item);
+        if (item) {
+          onSelect(item);
+        }
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onDismiss();

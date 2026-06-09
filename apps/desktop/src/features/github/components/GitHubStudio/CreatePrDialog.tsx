@@ -44,12 +44,18 @@ export const CreatePrDialog = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!workspaceRoot) return;
+    if (!workspaceRoot) {
+      return;
+    }
     let cancelled = false;
     void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       setBranches(list);
-      if (defaultBranch) setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+      if (defaultBranch) {
+        setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+      }
     });
     return () => {
       cancelled = true;
@@ -57,7 +63,9 @@ export const CreatePrDialog = ({
   }, [workspaceRoot, workspaceId]);
 
   const onCreate = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy('create');
     setError(null);
     try {
@@ -71,7 +79,9 @@ export const CreatePrDialog = ({
   };
 
   const onCreateWithAi = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy('ai');
     setError(null);
     try {

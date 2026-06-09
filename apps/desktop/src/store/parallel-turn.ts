@@ -82,12 +82,16 @@ export const detectParallelGroup = (
   template: Workflow,
   currentDef: Step,
 ): ParallelDetection | null => {
-  if (currentDef.parallelGroup === undefined) return null;
+  if (currentDef.parallelGroup === undefined) {
+    return null;
+  }
   const siblings = template.steps
     .filter((d) => d.parallelGroup === currentDef.parallelGroup)
     .slice()
     .sort((a, b) => a.ordinal - b.ordinal);
-  if (siblings.length < 2) return null;
+  if (siblings.length < 2) {
+    return null;
+  }
   return { currentDef, groupDefs: siblings };
 };
 
@@ -138,13 +142,17 @@ async function startMultiplexedTurnListener(
   const unlistenFn: UnlistenFn = await listen<RawTurnEnvelope>('turn_event', (event) => {
     const payload = event.payload;
     const state = states.get(payload.runId);
-    if (!state) return;
+    if (!state) {
+      return;
+    }
 
     if (payload.type === 'line' && typeof payload.line === 'string') {
       const ctx = { runId: payload.runId as ProviderRunId, now };
       for (const ev of parseProviderLine(provider, payload.line, ctx)) {
         state.onEvent(ev);
-        if (ev.kind === 'file_edit') state.collectedFiles.add(ev.path);
+        if (ev.kind === 'file_edit') {
+          state.collectedFiles.add(ev.path);
+        }
       }
     } else if (payload.type === 'end') {
       const exit = payload.exit_code ?? 0;
@@ -276,12 +284,16 @@ export const runParallelBranch = async (
     listener.registerRun(runId, {
       onEvent: (e) => {
         const cb = progressCallbacks.get(runId);
-        if (cb) cb(e);
+        if (cb) {
+          cb(e);
+        }
         effects.appendTurnEvent(orchestratingAgentId, session.id, e);
       },
       onSettle: (status, error) => {
         const r = settleResolvers.get(runId);
-        if (r) r({ status, ...(error !== undefined && { error }) });
+        if (r) {
+          r({ status, ...(error !== undefined && { error }) });
+        }
       },
       collectedFiles: new Set<string>(),
     });

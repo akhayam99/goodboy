@@ -5,7 +5,9 @@ import type { GetFn, SetFn } from './types';
 export const cancelScript = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, scriptId: WorkspaceScriptId) => {
     const curr = get().scriptRuns[sessionId]?.[scriptId];
-    if (!curr || curr.status !== 'pending') return;
+    if (!curr || curr.status !== 'pending') {
+      return;
+    }
     const cancelled: ScriptRunRecord = { ...curr, status: 'cancelled' };
     set((state) => ({
       scriptRuns: {

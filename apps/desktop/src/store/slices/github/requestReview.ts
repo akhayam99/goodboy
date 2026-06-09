@@ -5,11 +5,17 @@ import type { GetFn, SetFn } from './types';
 export const requestReview = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, reviewers: ReadonlyArray<string>) => {
     const logins = reviewers.map((r) => r.trim()).filter(Boolean);
-    if (logins.length === 0) return;
+    if (logins.length === 0) {
+      return;
+    }
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
 
     const res = await tauriGhRunner.run(
       ['pr', 'edit', String(prNumber), '--add-reviewer', logins.join(',')],

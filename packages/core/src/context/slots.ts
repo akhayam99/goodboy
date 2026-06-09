@@ -34,7 +34,9 @@ export const isSlotKey = (key: string): key is SlotKey => {
 };
 
 export const assertSlotKey: (key: string) => asserts key is SlotKey = (key) => {
-  if (!isSlotKey(key)) throw new InvalidSlotKeyError(key);
+  if (!isSlotKey(key)) {
+    throw new InvalidSlotKeyError(key);
+  }
 };
 
 export const serializeSlots = (slots: ReadonlyArray<ContextSlot>): string => {

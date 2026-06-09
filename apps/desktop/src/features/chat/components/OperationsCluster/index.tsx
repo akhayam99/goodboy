@@ -19,7 +19,9 @@ function runningTool(
 ): Extract<TranscriptItem, { kind: 'tool_call' }> | null {
   for (let i = items.length - 1; i >= 0; i -= 1) {
     const item = items[i]!;
-    if (item.kind === 'tool_call' && !item.ended) return item;
+    if (item.kind === 'tool_call' && !item.ended) {
+      return item;
+    }
   }
   return null;
 }

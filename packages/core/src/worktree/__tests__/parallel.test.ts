@@ -76,7 +76,9 @@ describe('createParallelWorktrees', () => {
     const deps = makeDeps({
       invokeWorktreeCreate: vi.fn(async (args) => {
         callCount++;
-        if (callCount === 2) throw new Error('create failed');
+        if (callCount === 2) {
+          throw new Error('create failed');
+        }
         return {
           worktreePath: `/tmp/repo-${args.branchPrefix}-${args.slug}`,
           branch: `${args.branchPrefix}/${args.slug}`,

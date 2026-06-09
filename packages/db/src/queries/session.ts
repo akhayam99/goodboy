@@ -65,7 +65,9 @@ const VALID_USER_STATUSES: ReadonlySet<SessionUserStatus> = new Set([
 ]);
 
 function toUserStatus(raw: string): SessionUserStatus {
-  if ((VALID_USER_STATUSES as ReadonlySet<string>).has(raw)) return raw as SessionUserStatus;
+  if ((VALID_USER_STATUSES as ReadonlySet<string>).has(raw)) {
+    return raw as SessionUserStatus;
+  }
   return 'wip';
 }
 
@@ -85,7 +87,9 @@ const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
 ]);
 
 function toPermissionMode(raw: string | null): ClaudePermissionMode {
-  if (raw !== null && VALID_PERMISSION_MODES.has(raw)) return raw as ClaudePermissionMode;
+  if (raw !== null && VALID_PERMISSION_MODES.has(raw)) {
+    return raw as ClaudePermissionMode;
+  }
   return 'bypassPermissions';
 }
 
@@ -181,7 +185,9 @@ export const updateSessionConfig = async (
     updates.push('provider_override = ?');
     values.push(null);
   }
-  if (updates.length === 0) return;
+  if (updates.length === 0) {
+    return;
+  }
   values.push(id);
   await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
 };
@@ -297,7 +303,9 @@ export const updateSessionPermissionMode = async (
 export const getSessionById = async (db: Database, id: SessionId): Promise<Session | null> => {
   const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
   const row = rows[0];
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   const workflowRuns = await loadWorkflowsForSession(db, id);
   return toDomain(row, [], workflowRuns);
 };
@@ -306,7 +314,9 @@ async function hydrateSessions(
   db: Database,
   rows: ReadonlyArray<SessionRow>,
 ): Promise<ReadonlyArray<Session>> {
-  if (rows.length === 0) return [];
+  if (rows.length === 0) {
+    return [];
+  }
   const sessionIds = rows.map((r) => r.id);
   const placeholders = sessionIds.map(() => '?').join(', ');
   const workflowRows = await db.select<SessionWorkflowRow & { session_id: string }>(

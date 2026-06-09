@@ -9,7 +9,9 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId) => {
     const state = get();
     const workspace = state.workspaces.find((w) => w.id === id);
-    if (!workspace) throw new Error(`workspace not found: ${id}`);
+    if (!workspace) {
+      throw new Error(`workspace not found: ${id}`);
+    }
 
     const wasCurrentWorkspace = state.currentWorkspaceId === id;
     if (wasCurrentWorkspace) {

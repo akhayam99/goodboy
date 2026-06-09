@@ -30,7 +30,9 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
 
   const [state, setState] = useState<ChipState>({ kind: 'idle' });
 
-  if (!marker || !isReviewThreadId(marker.threadId)) return null;
+  if (!marker || !isReviewThreadId(marker.threadId)) {
+    return null;
+  }
 
   if (state.kind === 'resolved' || resolvedOnGithub) {
     return (
@@ -41,12 +43,16 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
     );
   }
 
-  if (state.kind === 'dismissed') return null;
+  if (state.kind === 'dismissed') {
+    return null;
+  }
 
   const busy = state.kind === 'resolving';
 
   const markSolved = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setState({ kind: 'resolving' });
     const ok = await resolveGithubThread(sessionId, marker.threadId, { reason: marker.reason });
     setState(ok ? { kind: 'resolved' } : { kind: 'idle' });

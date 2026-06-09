@@ -11,10 +11,16 @@ export const pickFreshFailures = (
 ): ReadonlyArray<Notification> => {
   const out: Array<Notification> = [];
   for (const n of notifications) {
-    if (seen.has(n.id)) continue;
+    if (seen.has(n.id)) {
+      continue;
+    }
     seen.add(n.id);
-    if (new Date(n.ts).getTime() < since) continue;
-    if (n.severity !== 'error' && n.severity !== 'warning') continue;
+    if (new Date(n.ts).getTime() < since) {
+      continue;
+    }
+    if (n.severity !== 'error' && n.severity !== 'warning') {
+      continue;
+    }
     out.push(n);
   }
   return out;
@@ -27,9 +33,13 @@ export const notificationContext = (
 ): string | undefined => {
   const parts: Array<string> = [];
   const ws = n.workspaceId ? workspaces.find((w) => w.id === n.workspaceId) : undefined;
-  if (ws) parts.push(ws.name);
+  if (ws) {
+    parts.push(ws.name);
+  }
   const session = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : undefined;
-  if (session) parts.push(session.goal.trim() || 'untitled session');
+  if (session) {
+    parts.push(session.goal.trim() || 'untitled session');
+  }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };
 

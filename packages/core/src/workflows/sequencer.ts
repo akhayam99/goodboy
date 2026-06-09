@@ -21,7 +21,9 @@ export const nextStep = (template: Workflow, runs: ReadonlyArray<Agent>): Step |
 
 export const currentStep = (template: Workflow, runs: ReadonlyArray<Agent>): Step | null => {
   const sorted = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-  if (sorted.length === 0) return null;
+  if (sorted.length === 0) {
+    return null;
+  }
 
   if (runs.length === 0) {
     return sorted[0] ?? null;
@@ -35,26 +37,34 @@ export const currentStep = (template: Workflow, runs: ReadonlyArray<Agent>): Ste
     .sort((a, b) => {
       const aStart = a.startedAt ?? '';
       const bStart = b.startedAt ?? '';
-      if (aStart !== bStart) return bStart.localeCompare(aStart);
+      if (aStart !== bStart) {
+        return bStart.localeCompare(aStart);
+      }
       return a.ordinal - b.ordinal;
     });
   const liveStep = live
     .map((r) => (r.stepId !== undefined ? stepById.get(r.stepId) : undefined))
     .find((s): s is Step => !!s);
-  if (liveStep) return liveStep;
+  if (liveStep) {
+    return liveStep;
+  }
 
   const recent = [...runs].sort((a, b) => isStartedAt(b).localeCompare(isStartedAt(a)));
   const recentStep = recent
     .map((r) => (r.stepId !== undefined ? stepById.get(r.stepId) : undefined))
     .find((s): s is Step => !!s);
-  if (recentStep) return recentStep;
+  if (recentStep) {
+    return recentStep;
+  }
 
   return sorted[0] ?? null;
 };
 
 export const findReusableAgent = (runs: ReadonlyArray<Agent>, stepId: Step['id']): Agent | null => {
   const matches = runs.filter((r) => r.stepId === stepId);
-  if (matches.length === 0) return null;
+  if (matches.length === 0) {
+    return null;
+  }
   const sorted = [...matches].sort((a, b) => (b.startedAt ?? '').localeCompare(a.startedAt ?? ''));
   return sorted[0] ?? null;
 };

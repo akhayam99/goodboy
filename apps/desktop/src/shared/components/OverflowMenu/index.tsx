@@ -44,14 +44,18 @@ export const OverflowMenu = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('keydown', onEsc);
@@ -120,7 +124,9 @@ export const OverflowMenu = ({
                 role="menuitem"
                 disabled={item.disabled}
                 onClick={() => {
-                  if (item.disabled) return;
+                  if (item.disabled) {
+                    return;
+                  }
                   item.onClick();
                   setOpen(false);
                 }}

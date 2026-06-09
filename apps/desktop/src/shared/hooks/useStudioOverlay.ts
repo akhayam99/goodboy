@@ -14,14 +14,18 @@ export const useStudioOverlay = (onClose: () => void): StudioOverlay => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') requestClose();
+      if (e.key === 'Escape') {
+        requestClose();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [requestClose]);
 
   useEffect(() => {
-    if (!closing) return;
+    if (!closing) {
+      return;
+    }
     const t = setTimeout(onClose, EXIT_MS);
     return () => clearTimeout(t);
   }, [closing, onClose]);

@@ -58,7 +58,9 @@ async function ensureBranchAvailable(repoPath: string, branchName: string): Prom
   try {
     await git(repoPath, ['show-ref', '--verify', '--quiet', `refs/heads/${branchName}`]);
   } catch (err) {
-    if (err instanceof GitError) return;
+    if (err instanceof GitError) {
+      return;
+    }
     throw err;
   }
   throw new WorktreeError(`branch already exists: ${branchName}`);
@@ -76,9 +78,11 @@ function parsePorcelain(stdout: string): ReadonlyArray<WorktreeInfo> {
     let head = '';
 
     for (const line of lines) {
-      if (line.startsWith('worktree ')) worktreePath = line.slice('worktree '.length);
-      else if (line.startsWith('HEAD ')) head = line.slice('HEAD '.length);
-      else if (line.startsWith('branch ')) {
+      if (line.startsWith('worktree ')) {
+        worktreePath = line.slice('worktree '.length);
+      } else if (line.startsWith('HEAD ')) {
+        head = line.slice('HEAD '.length);
+      } else if (line.startsWith('branch ')) {
         const ref = line.slice('branch '.length);
         branch = ref.replace(/^refs\/heads\//, '');
       } else if (line === 'detached') {

@@ -32,9 +32,13 @@ export type ParsedQuery = {
 
 export const parseQuery = (raw: string): ParsedQuery => {
   const trimmed = raw.trimStart();
-  if (trimmed.length === 0) return { prefix: null, query: '' };
+  if (trimmed.length === 0) {
+    return { prefix: null, query: '' };
+  }
   const ch = trimmed[0]!;
   const meta = PREFIXES.find((p) => p.symbol === ch);
-  if (meta) return { prefix: meta, query: trimmed.slice(1).trim() };
+  if (meta) {
+    return { prefix: meta, query: trimmed.slice(1).trim() };
+  }
   return { prefix: null, query: trimmed };
 };

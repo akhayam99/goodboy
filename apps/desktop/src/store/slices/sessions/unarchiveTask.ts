@@ -8,7 +8,9 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const archivedList = Object.values(get().archivedSessions).flat();
     const prev = archivedList.find((s) => s.id === sessionId);
-    if (!prev) return;
+    if (!prev) {
+      return;
+    }
     const workspaceId = prev.workspaceId;
     const { archivedAt: _drop, ...restored } = prev;
     const restoredSession = restored as Session;
@@ -41,7 +43,9 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
-    if (get().currentWorkspaceId !== workspaceId) return;
+    if (get().currentWorkspaceId !== workspaceId) {
+      return;
+    }
     try {
       const [worktreeRows, runs] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
@@ -53,7 +57,9 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         if (worktreeRows.length > 0) {
           nextWorktrees[sessionId] = worktreeRows.map((r) => r.worktreePath);
           const primary = worktreeRows[0];
-          if (primary) nextBranches[sessionId] = primary.branch;
+          if (primary) {
+            nextBranches[sessionId] = primary.branch;
+          }
         }
         return {
           sessionWorktrees: nextWorktrees,

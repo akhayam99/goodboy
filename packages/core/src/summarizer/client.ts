@@ -172,7 +172,9 @@ function applyDelta(
   prev: ReadonlyArray<ContextSlot>,
   delta: ContextSlotDelta,
 ): ReadonlyArray<ContextSlot> {
-  if (delta.upserts.length === 0) return prev;
+  if (delta.upserts.length === 0) {
+    return prev;
+  }
   const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
   for (const upsert of delta.upserts) {
     const existing = byKey.get(upsert.key);
@@ -278,12 +280,18 @@ function parseDelta(raw: string): ContextSlotDelta {
 
   const upserts: ContextSlotDeltaUpsert[] = [];
   for (const entry of candidate) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const key = e.key;
     const value = e.value;
-    if (typeof key !== 'string' || !isSlotKey(key)) continue;
-    if (typeof value !== 'string') continue;
+    if (typeof key !== 'string' || !isSlotKey(key)) {
+      continue;
+    }
+    if (typeof value !== 'string') {
+      continue;
+    }
     upserts.push({ key, value });
   }
   return { upserts };
@@ -293,20 +301,28 @@ function extractJson(raw: string): string {
   const trimmed = raw.trim();
 
   const edgeFence = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i.exec(trimmed);
-  if (edgeFence?.[1]) return edgeFence[1].trim();
+  if (edgeFence?.[1]) {
+    return edgeFence[1].trim();
+  }
 
   const innerFence = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
-  if (innerFence?.[1]) return innerFence[1].trim();
+  if (innerFence?.[1]) {
+    return innerFence[1].trim();
+  }
 
   const balanced = extractBalancedJsonObject(trimmed);
-  if (balanced !== null) return balanced;
+  if (balanced !== null) {
+    return balanced;
+  }
 
   return trimmed;
 }
 
 function extractBalancedJsonObject(text: string): string | null {
   const start = text.indexOf('{');
-  if (start === -1) return null;
+  if (start === -1) {
+    return null;
+  }
   let depth = 0;
   let inString = false;
   let escaped = false;
@@ -321,17 +337,22 @@ function extractBalancedJsonObject(text: string): string | null {
         escaped = true;
         continue;
       }
-      if (ch === '"') inString = false;
+      if (ch === '"') {
+        inString = false;
+      }
       continue;
     }
     if (ch === '"') {
       inString = true;
       continue;
     }
-    if (ch === '{') depth++;
-    else if (ch === '}') {
+    if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
       depth--;
-      if (depth === 0) return text.slice(start, i + 1);
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
     }
   }
   return null;

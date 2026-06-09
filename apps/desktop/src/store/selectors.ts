@@ -73,12 +73,18 @@ const selectCurrentWorkspace = (state: AppState): Workspace | null =>
 const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
 
 function findSessionInAnyPool(state: AppState, id: string | null): Session | null {
-  if (!id) return null;
+  if (!id) {
+    return null;
+  }
   const active = state.sessions.find((s) => s.id === id);
-  if (active) return active;
+  if (active) {
+    return active;
+  }
   for (const list of Object.values(state.archivedSessions)) {
     const hit = list.find((s) => s.id === id);
-    if (hit) return hit;
+    if (hit) {
+      return hit;
+    }
   }
   return null;
 }
@@ -160,13 +166,19 @@ export const useFilesTouched = (
     sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
   );
   const lastTurnFinishedAt = useAppStore((s) => {
-    if (!sessionId) return null;
+    if (!sessionId) {
+      return null;
+    }
     const runs = s.sessionPhaseRuns[sessionId];
-    if (!runs) return null;
+    if (!runs) {
+      return null;
+    }
     let max: string | null = null;
     for (const run of runs) {
       const t = run.lastFinishedAt ?? null;
-      if (t && (max === null || t > max)) max = t;
+      if (t && (max === null || t > max)) {
+        max = t;
+      }
     }
     return max;
   });
@@ -178,13 +190,17 @@ export const useFilesTouched = (
 
   useEffect(() => {
     if (!isActive || !workingDir) {
-      if (!workingDir) setState(EMPTY_FILES_TOUCHED);
+      if (!workingDir) {
+        setState(EMPTY_FILES_TOUCHED);
+      }
       return;
     }
     let cancelled = false;
     worktreeChangedFiles(workingDir)
       .then((summary) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         setState(
           summary.paths.length === 0
             ? EMPTY_FILES_TOUCHED
@@ -197,7 +213,9 @@ export const useFilesTouched = (
         );
       })
       .catch(() => {
-        if (!cancelled) setState(EMPTY_FILES_TOUCHED);
+        if (!cancelled) {
+          setState(EMPTY_FILES_TOUCHED);
+        }
       });
     return () => {
       cancelled = true;
@@ -208,9 +226,15 @@ export const useFilesTouched = (
 };
 
 export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolean => {
-  if (isCurrentlyViewed) return false;
-  if (!agent.lastFinishedAt) return false;
-  if (!agent.lastViewedAt) return true;
+  if (isCurrentlyViewed) {
+    return false;
+  }
+  if (!agent.lastFinishedAt) {
+    return false;
+  }
+  if (!agent.lastViewedAt) {
+    return true;
+  }
   return agent.lastFinishedAt > agent.lastViewedAt;
 };
 
@@ -225,7 +249,9 @@ export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {
     (s) => sessionId !== null && s.currentSessionId === sessionId,
   );
   return useMemo(() => {
-    if (!phaseRuns) return false;
+    if (!phaseRuns) {
+      return false;
+    }
     return phaseRuns.some((r) => agentHasUnread(r, isCurrentSession && r.id === selectedAgentId));
   }, [phaseRuns, selectedAgentId, isCurrentSession]);
 };
@@ -238,8 +264,14 @@ export const useHasUnreadElsewhere = (currentId: WorkspaceId | null): boolean =>
   const presence = useAppStore((s) => s.windowPresence);
   return useMemo(() => {
     const shown = new Set<WorkspaceId>();
-    for (const ws of Object.values(presence)) if (ws) shown.add(ws);
-    for (const id of unread) if (id !== currentId && !shown.has(id)) return true;
+    for (const ws of Object.values(presence))
+      if (ws) {
+        shown.add(ws);
+      }
+    for (const id of unread)
+      if (id !== currentId && !shown.has(id)) {
+        return true;
+      }
     return false;
   }, [unread, presence, currentId]);
 };

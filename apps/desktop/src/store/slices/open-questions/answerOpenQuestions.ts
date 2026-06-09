@@ -26,7 +26,9 @@ export const answerOpenQuestions = (get: GetFn) => {
     targetAgentId: AgentId | null,
   ) => {
     const valid = pairs.filter((p) => p.answer.trim().length > 0);
-    if (valid.length === 0) return;
+    if (valid.length === 0) {
+      return;
+    }
 
     await Promise.all(valid.map((p) => markOpenQuestionAnswered(tauriDatabase, p.id, p.answer)));
     const slotChanged = await removeQuestionsFromSlot(
@@ -35,7 +37,9 @@ export const answerOpenQuestions = (get: GetFn) => {
       valid.map((p) => p.text),
     );
     await get().loadSessionOpenQuestions(sessionId);
-    if (slotChanged) await get().loadSessionSlots(sessionId);
+    if (slotChanged) {
+      await get().loadSessionSlots(sessionId);
+    }
 
     await get().sendTurn({
       sessionId,

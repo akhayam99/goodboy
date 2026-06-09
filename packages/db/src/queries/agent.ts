@@ -81,7 +81,9 @@ export const listAgentsForSessions = async (
   sessionIds: ReadonlyArray<SessionId>,
 ): Promise<Map<SessionId, ReadonlyArray<Agent>>> => {
   const out = new Map<SessionId, Agent[]>();
-  if (sessionIds.length === 0) return out;
+  if (sessionIds.length === 0) {
+    return out;
+  }
   const placeholders = sessionIds.map(() => '?').join(', ');
   const rows = await db.select<AgentRow>(
     `SELECT * FROM agents WHERE session_id IN (${placeholders}) AND deleted_at IS NULL ORDER BY session_id, ordinal ASC`,
@@ -159,7 +161,9 @@ export const updateAgentStatus = async (
     values.push(fields.completedAt);
   }
 
-  if (updates.length === 0) return;
+  if (updates.length === 0) {
+    return;
+  }
 
   values.push(id);
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
@@ -208,7 +212,9 @@ export const updateAgentConfig = async (
     updates.push('kind = ?');
     values.push(fields.kind);
   }
-  if (updates.length === 0) return;
+  if (updates.length === 0) {
+    return;
+  }
   values.push(id);
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 };

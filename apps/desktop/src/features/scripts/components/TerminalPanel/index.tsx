@@ -51,12 +51,16 @@ export const TerminalPanel = ({ sessionId, isActive, cwd }: Props) => {
       },
       onOutput: (handler) =>
         listenTerminalOutput((payload) => {
-          if (payload.sessionId !== sessionId) return;
+          if (payload.sessionId !== sessionId) {
+            return;
+          }
           handler(base64ToBytes(payload.data));
         }),
       onExit: (handler) =>
         listenTerminalExit((payload) => {
-          if (payload.sessionId !== sessionId) return;
+          if (payload.sessionId !== sessionId) {
+            return;
+          }
           handler(payload.exitCode);
         }),
     }),

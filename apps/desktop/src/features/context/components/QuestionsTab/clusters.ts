@@ -19,11 +19,17 @@ function resolveOwnerAgent(
   agentByStepId: ReadonlyMap<string, Agent>,
   agentByRunStep: ReadonlyMap<string, Agent>,
 ): Agent | null {
-  if (!q.workflowId || q.ownedByStepOrdinal == null) return null;
+  if (!q.workflowId || q.ownedByStepOrdinal == null) {
+    return null;
+  }
   const stepKey = `${q.workflowId}::${q.ownedByStepOrdinal}`;
   const step = stepsByWorkflowOrdinal.get(stepKey);
-  if (!step) return null;
-  if (q.workflowRunId) return agentByRunStep.get(`${q.workflowRunId}::${step.id}`) ?? null;
+  if (!step) {
+    return null;
+  }
+  if (q.workflowRunId) {
+    return agentByRunStep.get(`${q.workflowRunId}::${step.id}`) ?? null;
+  }
   return agentByStepId.get(step.id) ?? null;
 }
 
@@ -43,8 +49,12 @@ export const buildQuestionClusters = ({
   const agentByRunStep = new Map<string, Agent>();
   for (const a of agents) {
     agentById.set(a.id, a);
-    if (a.stepId) agentByStepId.set(a.stepId, a);
-    if (a.stepId && a.workflowRunId) agentByRunStep.set(`${a.workflowRunId}::${a.stepId}`, a);
+    if (a.stepId) {
+      agentByStepId.set(a.stepId, a);
+    }
+    if (a.stepId && a.workflowRunId) {
+      agentByRunStep.set(`${a.workflowRunId}::${a.stepId}`, a);
+    }
   }
 
   type Bucket = {
@@ -57,7 +67,9 @@ export const buildQuestionClusters = ({
   const order: string[] = [];
 
   for (const q of questions) {
-    if (q.status !== 'open') continue;
+    if (q.status !== 'open') {
+      continue;
+    }
     const owner = resolveOwnerAgent(q, stepsByWorkflowOrdinal, agentByStepId, agentByRunStep);
     const key = owner ? owner.id : '__orphan__';
     let bucket = buckets.get(key);
@@ -76,8 +88,12 @@ export const buildQuestionClusters = ({
   }
 
   const sortedKeys = [...order].sort((a, b) => {
-    if (a === '__orphan__') return 1;
-    if (b === '__orphan__') return -1;
+    if (a === '__orphan__') {
+      return 1;
+    }
+    if (b === '__orphan__') {
+      return -1;
+    }
     return order.indexOf(a) - order.indexOf(b);
   });
 

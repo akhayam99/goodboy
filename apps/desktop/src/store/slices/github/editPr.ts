@@ -10,14 +10,24 @@ export type EditPrOptions = {
 export const editPr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
 
     const args = ['pr', 'edit', String(prNumber)];
-    if (opts.title !== undefined) args.push('--title', opts.title);
-    if (opts.body !== undefined) args.push('--body', opts.body);
-    if (args.length === 3) return;
+    if (opts.title !== undefined) {
+      args.push('--title', opts.title);
+    }
+    if (opts.body !== undefined) {
+      args.push('--body', opts.body);
+    }
+    if (args.length === 3) {
+      return;
+    }
 
     const res = await tauriGhRunner.run(args, {
       cwd: workspace.rootPath,

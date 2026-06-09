@@ -14,7 +14,9 @@ export const deleteCredential = (set: SetFn, get: GetFn) => {
     const scrubbed: Array<[WorkspaceId, OverrideSettings]> = [];
     for (const [wsId, override] of Object.entries(get().workspaceOverrides)) {
       const bindings = override.providerBindings;
-      if (!bindings || !Object.values(bindings).includes(id)) continue;
+      if (!bindings || !Object.values(bindings).includes(id)) {
+        continue;
+      }
       const cleaned = Object.fromEntries(
         Object.entries(bindings).filter(([, credId]) => credId !== id),
       );

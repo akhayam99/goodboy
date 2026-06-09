@@ -52,7 +52,9 @@ export const checkProviderBudget = async (
     [provider, period],
   );
 
-  if (ruleRows.length === 0) return UNSET_RESULT;
+  if (ruleRows.length === 0) {
+    return UNSET_RESULT;
+  }
 
   const row = ruleRows[0] as BudgetRuleRow;
   const rule: BudgetRule = {
@@ -101,7 +103,9 @@ export const checkSessionBudget = async (
     [sessionId],
   );
 
-  if (budgetRows.length === 0) return UNSET_RESULT;
+  if (budgetRows.length === 0) {
+    return UNSET_RESULT;
+  }
 
   const budgetRow = budgetRows[0] as SessionBudgetRow;
   const budget: SessionBudget = {

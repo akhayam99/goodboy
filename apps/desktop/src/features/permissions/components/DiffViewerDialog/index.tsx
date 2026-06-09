@@ -77,12 +77,18 @@ function viewStorageKey(sessionId: SessionId | undefined): string | null {
 
 function readPersistedView(sessionId: SessionId | undefined): DiffView | null {
   const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') return null;
+  if (!key || typeof window === 'undefined') {
+    return null;
+  }
   try {
     const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
+    if (!raw) {
+      return null;
+    }
     const parsed = JSON.parse(raw) as DiffView;
-    if (parsed && typeof parsed === 'object' && 'kind' in parsed) return parsed;
+    if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
+      return parsed;
+    }
   } catch {
     // ignore
   }
@@ -91,7 +97,9 @@ function readPersistedView(sessionId: SessionId | undefined): DiffView | null {
 
 function writePersistedView(sessionId: SessionId | undefined, view: DiffView): void {
   const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') return;
+  if (!key || typeof window === 'undefined') {
+    return;
+  }
   try {
     window.localStorage.setItem(key, JSON.stringify(view));
   } catch {
@@ -100,30 +108,50 @@ function writePersistedView(sessionId: SessionId | undefined, view: DiffView): v
 }
 
 function loadDiffForView(worktreePath: string, view: DiffView): Promise<string> {
-  if (view.kind === 'working') return worktreeDiffWorking(worktreePath, view.scope);
-  if (view.kind === 'commit') return worktreeDiffCommit(worktreePath, view.sha);
+  if (view.kind === 'working') {
+    return worktreeDiffWorking(worktreePath, view.scope);
+  }
+  if (view.kind === 'commit') {
+    return worktreeDiffCommit(worktreePath, view.sha);
+  }
   return worktreeDiff(worktreePath);
 }
 
 function emptyStateLabel(view: DiffView, isGitAware: boolean): string {
-  if (!isGitAware) return 'No diff available';
+  if (!isGitAware) {
+    return 'No diff available';
+  }
   if (view.kind === 'working') {
-    if (view.scope === 'staged') return 'No staged changes';
-    if (view.scope === 'unstaged') return 'No unstaged changes';
+    if (view.scope === 'staged') {
+      return 'No staged changes';
+    }
+    if (view.scope === 'unstaged') {
+      return 'No unstaged changes';
+    }
     return 'Working tree clean';
   }
-  if (view.kind === 'commit') return 'This commit is empty';
+  if (view.kind === 'commit') {
+    return 'This commit is empty';
+  }
   return 'Branch matches main';
 }
 
 function emptyStateBlurb(view: DiffView, isGitAware: boolean): string | null {
-  if (!isGitAware) return null;
+  if (!isGitAware) {
+    return null;
+  }
   if (view.kind === 'working') {
-    if (view.scope === 'staged') return 'Nothing has been staged for the next commit yet.';
-    if (view.scope === 'unstaged') return 'No uncommitted edits in the working tree.';
+    if (view.scope === 'staged') {
+      return 'Nothing has been staged for the next commit yet.';
+    }
+    if (view.scope === 'unstaged') {
+      return 'No uncommitted edits in the working tree.';
+    }
     return 'No uncommitted edits and nothing staged.';
   }
-  if (view.kind === 'commit') return 'No file changes were recorded for this commit.';
+  if (view.kind === 'commit') {
+    return 'No file changes were recorded for this commit.';
+  }
   return 'Every commit on this branch is already reachable from main, nothing extra to review.';
 }
 
@@ -185,10 +213,14 @@ function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   });
 
   const collapse = (node: TreeNode) => {
-    if (node.kind !== 'dir') return;
+    if (node.kind !== 'dir') {
+      return;
+    }
     while (node.children.length === 1) {
       const only = node.children[0];
-      if (!only || only.kind !== 'dir') break;
+      if (!only || only.kind !== 'dir') {
+        break;
+      }
       node.name = node.name ? `${node.name}/${only.name}` : only.name;
       node.children = only.children;
     }
@@ -197,7 +229,9 @@ function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   for (const c of root.children) collapse(c);
 
   const aggregate = (node: TreeNode): { a: number; d: number } => {
-    if (node.kind === 'file') return { a: node.file.additions, d: node.file.deletions };
+    if (node.kind === 'file') {
+      return { a: node.file.additions, d: node.file.deletions };
+    }
     let a = 0;
     let d = 0;
     for (const c of node.children) {
@@ -212,9 +246,13 @@ function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   aggregate(root);
 
   const sort = (node: TreeNode) => {
-    if (node.kind !== 'dir') return;
+    if (node.kind !== 'dir') {
+      return;
+    }
     node.children.sort((x, y) => {
-      if (x.kind !== y.kind) return x.kind === 'dir' ? -1 : 1;
+      if (x.kind !== y.kind) {
+        return x.kind === 'dir' ? -1 : 1;
+      }
       return x.name.localeCompare(y.name);
     });
     for (const c of node.children) sort(c);
@@ -251,12 +289,16 @@ function buildNotesPrompt(notes: ReadonlyArray<DiffComment>): string {
 }
 
 function readSidebarPref(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   return window.localStorage.getItem(SIDEBAR_PREF_KEY) === '1';
 }
 
 function writeSidebarPref(collapsed: boolean): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    return;
+  }
   window.localStorage.setItem(SIDEBAR_PREF_KEY, collapsed ? '1' : '0');
 }
 
@@ -327,29 +369,39 @@ export const DiffViewerDialog = ({
   );
   const agentNameById = useMemo(() => {
     const m = new Map<AgentId, string>();
-    if (phaseRuns) for (const r of phaseRuns) m.set(r.id, r.name);
+    if (phaseRuns) {
+      for (const r of phaseRuns) m.set(r.id, r.name);
+    }
     return m;
   }, [phaseRuns]);
 
   const openCommentsByFile = useMemo(() => {
     const m = new Map<string, number>();
     for (const c of comments) {
-      if (c.status !== 'open') continue;
+      if (c.status !== 'open') {
+        continue;
+      }
       m.set(c.filePath, (m.get(c.filePath) ?? 0) + 1);
     }
     return m;
   }, [comments]);
 
   useEffect(() => {
-    if (open) setViewState(DEFAULT_VIEW);
+    if (open) {
+      setViewState(DEFAULT_VIEW);
+    }
   }, [open]);
 
   useEffect(() => {
-    if (!open || !worktreePath) return;
+    if (!open || !worktreePath) {
+      return;
+    }
     let cancelled = false;
     Promise.all([listBranchCommits(worktreePath), worktreeStatus(worktreePath)])
       .then(([c, s]) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         setCommits(c);
         setStatus(s);
       })
@@ -362,7 +414,9 @@ export const DiffViewerDialog = ({
   }, [open, worktreePath, refreshTick]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const fetcher = isGitAware
       ? () => loadDiffForView(worktreePath as string, view)
       : (loader ??
@@ -380,7 +434,9 @@ export const DiffViewerDialog = ({
     setActiveAnchor(null);
     fetcher()
       .then((raw) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         const parsed = parseUnifiedDiff(raw);
         setFiles(parsed);
         setLoading(false);
@@ -395,7 +451,9 @@ export const DiffViewerDialog = ({
         }
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         setError(formatError(err));
         setLoading(false);
       });
@@ -418,7 +476,9 @@ export const DiffViewerDialog = ({
   ]);
 
   useEffect(() => {
-    if (open && sessionId) void loadDiffComments(sessionId);
+    if (open && sessionId) {
+      void loadDiffComments(sessionId);
+    }
   }, [open, sessionId, loadDiffComments]);
 
   const toggleSidebar = () => {
@@ -432,7 +492,9 @@ export const DiffViewerDialog = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        return;
+      }
       if (e.key === 'Escape') {
         onClose();
         return;
@@ -475,7 +537,9 @@ export const DiffViewerDialog = ({
   const openComments = useMemo(() => comments.filter((c) => c.status === 'open'), [comments]);
 
   const handleProposeFixes = async () => {
-    if (!sessionId || openComments.length === 0 || spawning) return;
+    if (!sessionId || openComments.length === 0 || spawning) {
+      return;
+    }
     setSpawning(true);
     try {
       const prompt = buildNotesPrompt(openComments);
@@ -502,13 +566,17 @@ export const DiffViewerDialog = ({
   };
 
   const handleViewAgent = async (agentId: AgentId) => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      return;
+    }
     await selectAgent(sessionId, agentId);
     onClose();
   };
 
   const handleOpenInEditor = async () => {
-    if (!selected || !workingDir) return;
+    if (!selected || !workingDir) {
+      return;
+    }
     const root = workingDir.replace(/\/$/, '');
     const absPath = `${root}/${selected.path}`;
     try {
@@ -519,13 +587,17 @@ export const DiffViewerDialog = ({
   };
 
   const handleAddComment = async (anchor: DiffCommentAnchor, body: string) => {
-    if (!selected || !sessionId) return;
+    if (!selected || !sessionId) {
+      return;
+    }
     await addDiffComment(sessionId, selected.path, body, anchor);
     setActiveAnchor(null);
   };
 
   const handleAddFileLevelComment = async (body: string) => {
-    if (!selected || !sessionId) return;
+    if (!selected || !sessionId) {
+      return;
+    }
     await addDiffComment(sessionId, selected.path, body);
     setFileLevelComposerOpen(false);
   };
@@ -684,9 +756,15 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
   const subject = status?.headSubject ?? null;
   const counts: string[] = [];
   if (status) {
-    if (status.unstaged > 0) counts.push(`${status.unstaged} unstaged`);
-    if (status.staged > 0) counts.push(`${status.staged} staged`);
-    if (status.untracked > 0) counts.push(`${status.untracked} untracked`);
+    if (status.unstaged > 0) {
+      counts.push(`${status.unstaged} unstaged`);
+    }
+    if (status.staged > 0) {
+      counts.push(`${status.staged} staged`);
+    }
+    if (status.untracked > 0) {
+      counts.push(`${status.untracked} untracked`);
+    }
     if (status.hasUpstream) {
       counts.push(`ahead ${status.ahead} / behind ${status.behind}`);
     } else if (status.branch) {
@@ -1215,11 +1293,16 @@ function FileDiffPane({
   const commentsByAnchor = useMemo(() => {
     const m = new Map<string, DiffComment[]>();
     for (const c of comments) {
-      if (!c.anchor) continue;
+      if (!c.anchor) {
+        continue;
+      }
       const k = anchorKey(c.anchor);
       const arr = m.get(k);
-      if (arr) arr.push(c);
-      else m.set(k, [c]);
+      if (arr) {
+        arr.push(c);
+      } else {
+        m.set(k, [c]);
+      }
     }
     return m;
   }, [comments]);
@@ -1241,12 +1324,16 @@ function FileDiffPane({
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 
   const visibleRows = useMemo(() => {
-    if (visibleLines >= totalLines) return rows;
+    if (visibleLines >= totalLines) {
+      return rows;
+    }
     let count = 0;
     for (let i = 0; i < rows.length; i++) {
       if (rows[i]?.type === 'line') {
         count += 1;
-        if (count >= visibleLines) return rows.slice(0, i + 1);
+        if (count >= visibleLines) {
+          return rows.slice(0, i + 1);
+        }
       }
     }
     return rows;
@@ -1485,7 +1572,9 @@ function InlineComposer({
             }
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              if (trimmed.length > 0) onSubmit(trimmed);
+              if (trimmed.length > 0) {
+                onSubmit(trimmed);
+              }
             }
           }}
         />

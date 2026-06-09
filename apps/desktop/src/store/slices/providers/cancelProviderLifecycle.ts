@@ -5,7 +5,9 @@ import type { GetFn, SetFn } from './types';
 export const cancelProviderLifecycle = (set: SetFn, get: GetFn) => {
   return async (providerId: ProviderId): Promise<void> => {
     const curr = get().providerLifecycle[providerId];
-    if (!curr.runId) return;
+    if (!curr.runId) {
+      return;
+    }
     if (
       curr.phase !== 'installing' &&
       curr.phase !== 'connecting' &&

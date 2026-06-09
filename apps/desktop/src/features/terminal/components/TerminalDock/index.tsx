@@ -56,7 +56,9 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
   const spawnedRef = useRef(false);
 
   useEffect(() => {
-    if (!isActive || spawnedRef.current || tabs.length > 0) return;
+    if (!isActive || spawnedRef.current || tabs.length > 0) {
+      return;
+    }
     spawnedRef.current = true;
     addTerminalTab(sessionId, cwd);
   }, [isActive, tabs.length, sessionId, cwd, addTerminalTab]);
@@ -67,28 +69,38 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
     const terminalId = activeId;
     return {
       write: (data: string) => {
-        if (!terminalId) return;
+        if (!terminalId) {
+          return;
+        }
         void invokeTerminalWrite(terminalId, stringToBase64(data));
       },
       resize: (cols: number, rows: number) => {
-        if (!terminalId) return;
+        if (!terminalId) {
+          return;
+        }
         void invokeTerminalResize(terminalId, cols, rows);
       },
       onOutput: (handler) =>
         listenTerminalOutput((payload) => {
-          if (payload.sessionId !== terminalId) return;
+          if (payload.sessionId !== terminalId) {
+            return;
+          }
           handler(base64ToBytes(payload.data));
         }),
       onExit: (handler) =>
         listenTerminalExit((payload) => {
-          if (payload.sessionId !== terminalId) return;
+          if (payload.sessionId !== terminalId) {
+            return;
+          }
           handler(payload.exitCode);
         }),
     };
   }, [activeId]);
 
   useEffect(() => {
-    if (!activeTab) return;
+    if (!activeTab) {
+      return;
+    }
     void invokeTerminalOpen(activeTab.id, activeTab.cwd, 100, 24);
   }, [activeTab]);
 

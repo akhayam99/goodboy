@@ -173,14 +173,18 @@ async function* spawnCursor(
         continue;
       }
       if (ended) {
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         return;
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
         resolver = resolve;
         rejector = reject;
       });
-      if (value.done) return;
+      if (value.done) {
+        return;
+      }
       yield value.value;
     }
   } finally {

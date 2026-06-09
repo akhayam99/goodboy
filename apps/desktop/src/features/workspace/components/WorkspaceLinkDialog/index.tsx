@@ -17,14 +17,19 @@ type Mode = 'single' | 'multi';
 const lastSegment = (p: string): string => p.split('/').filter(Boolean).at(-1) ?? p;
 
 const commonParentDir = (paths: ReadonlyArray<string>): string => {
-  if (paths.length === 0) return '';
+  if (paths.length === 0) {
+    return '';
+  }
   const split = paths.map((p) => p.split('/'));
   const first = split[0]!;
   const shared: string[] = [];
   for (let i = 0; i < first.length; i += 1) {
     const seg = first[i];
-    if (split.every((s) => s[i] === seg)) shared.push(seg!);
-    else break;
+    if (split.every((s) => s[i] === seg)) {
+      shared.push(seg!);
+    } else {
+      break;
+    }
   }
   return shared.join('/');
 };
@@ -54,7 +59,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const pathInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setMode('single');
     setPath('');
     setValidating(false);
@@ -109,15 +116,21 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   );
 
   const suggestedContainer = useMemo(() => {
-    if (selectedWorkspaces.length < 2) return '';
+    if (selectedWorkspaces.length < 2) {
+      return '';
+    }
     const parent = commonParentDir(selectedWorkspaces.map((w) => w.rootPath));
-    if (parent.length === 0) return '';
+    if (parent.length === 0) {
+      return '';
+    }
     const mounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath));
     return `${parent}/${mounts.join('+')}`;
   }, [selectedWorkspaces, mountNames]);
 
   useEffect(() => {
-    if (!containerEdited) setContainerPath(suggestedContainer);
+    if (!containerEdited) {
+      setContainerPath(suggestedContainer);
+    }
   }, [suggestedContainer, containerEdited]);
 
   const toggleMember = useCallback((ws: Workspace) => {

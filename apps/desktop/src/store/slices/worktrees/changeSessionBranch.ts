@@ -12,13 +12,19 @@ type Args = {
 export const changeSessionBranch = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, { branch, createNew }: Args) => {
     const target = branch.trim();
-    if (!target) throw new Error('branch name cannot be empty');
+    if (!target) {
+      throw new Error('branch name cannot be empty');
+    }
     const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
     const primary = worktrees[0];
-    if (!primary) throw new Error(`no worktree found for session ${sessionId}`);
+    if (!primary) {
+      throw new Error(`no worktree found for session ${sessionId}`);
+    }
     const session = get().sessions.find((s) => s.id === sessionId);
     const workspace = session ? get().workspaces.find((w) => w.id === session.workspaceId) : null;
-    if (!workspace) throw new Error('workspace not found for session');
+    if (!workspace) {
+      throw new Error('workspace not found for session');
+    }
     await changeWorktreeBranch({
       repoPath: workspace.rootPath,
       worktreePath: primary.worktreePath,

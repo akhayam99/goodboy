@@ -10,8 +10,12 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
   const { global: g, workspaceOverride: ws, sessionOverride: sess } = input;
 
   const resolvedWorkflowId = (() => {
-    if (sess?.defaultWorkflowId !== undefined) return sess.defaultWorkflowId;
-    if (ws?.defaultWorkflowId !== undefined) return ws.defaultWorkflowId;
+    if (sess?.defaultWorkflowId !== undefined) {
+      return sess.defaultWorkflowId;
+    }
+    if (ws?.defaultWorkflowId !== undefined) {
+      return ws.defaultWorkflowId;
+    }
     return g.defaultWorkflowId;
   })();
 

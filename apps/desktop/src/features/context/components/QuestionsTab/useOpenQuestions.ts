@@ -73,7 +73,9 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
 
   beginUndo: (question) => {
     const existing = get().pendingUndo;
-    if (existing) clearTimeout(existing.timer);
+    if (existing) {
+      clearTimeout(existing.timer);
+    }
     const timer = setTimeout(() => {
       set((s) => ({
         pendingUndo: s.pendingUndo?.question.id === question.id ? null : s.pendingUndo,
@@ -84,7 +86,9 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
 
   clearUndo: () => {
     const existing = get().pendingUndo;
-    if (existing) clearTimeout(existing.timer);
+    if (existing) {
+      clearTimeout(existing.timer);
+    }
     set({ pendingUndo: null });
   },
 }));

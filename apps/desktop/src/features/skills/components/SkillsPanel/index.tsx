@@ -41,10 +41,16 @@ function validateName(
   existing: ReadonlyArray<Skill>,
   editingId?: string,
 ): string | null {
-  if (!name.trim()) return 'name is required';
-  if (!KEBAB_RE.test(name)) return 'name must be kebab-case (lowercase letters, numbers, hyphens)';
+  if (!name.trim()) {
+    return 'name is required';
+  }
+  if (!KEBAB_RE.test(name)) {
+    return 'name must be kebab-case (lowercase letters, numbers, hyphens)';
+  }
   const collision = existing.find((s) => s.name === name && s.id !== editingId);
-  if (collision) return 'name already in use';
+  if (collision) {
+    return 'name already in use';
+  }
   return null;
 }
 

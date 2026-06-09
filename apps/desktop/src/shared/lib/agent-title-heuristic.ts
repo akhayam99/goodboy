@@ -96,7 +96,9 @@ export const heuristicAgentTitle = (prompt: string): string | null => {
   if (verbIdx !== -1) {
     const slice = words.slice(verbIdx, verbIdx + 6);
     const significant = slice.filter((w, i) => i === 0 || !STOP_WORDS.has(w)).slice(0, 3);
-    if (significant.length >= 2) return significant.join(' ');
+    if (significant.length >= 2) {
+      return significant.join(' ');
+    }
   }
 
   const significant = words.filter((w) => !STOP_WORDS.has(w)).slice(0, 3);

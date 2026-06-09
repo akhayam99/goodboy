@@ -24,6 +24,8 @@ export const setSessionAutoRun = (set: SetFn, get: GetFn) => {
           : s,
       ),
     }));
-    if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
+    if (autoRun) {
+      void get().maybeAutoAdvanceWorkflow(sessionId);
+    }
   };
 };

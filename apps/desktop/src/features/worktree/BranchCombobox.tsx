@@ -49,7 +49,9 @@ export const BranchCombobox = ({
   );
 
   useEffect(() => {
-    if (value && !query) setQuery(value);
+    if (value && !query) {
+      setQuery(value);
+    }
   }, [value, query]);
 
   useEffect(() => {
@@ -57,7 +59,9 @@ export const BranchCombobox = ({
   }, [query]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -68,7 +72,9 @@ export const BranchCombobox = ({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !listRef.current) return;
+    if (!open || !listRef.current) {
+      return;
+    }
     const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
     el?.scrollIntoView({ block: 'nearest' });
   }, [highlightIdx, open]);
@@ -79,7 +85,9 @@ export const BranchCombobox = ({
       e.preventDefault();
       return;
     }
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -91,7 +99,9 @@ export const BranchCombobox = ({
         break;
       case 'Enter':
         e.preventDefault();
-        if (filtered[highlightIdx]) select(filtered[highlightIdx].name);
+        if (filtered[highlightIdx]) {
+          select(filtered[highlightIdx].name);
+        }
         break;
       case 'Escape':
         e.preventDefault();
@@ -134,7 +144,9 @@ export const BranchCombobox = ({
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
-            if (!e.target.value) onChange('');
+            if (!e.target.value) {
+              onChange('');
+            }
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
@@ -143,7 +155,9 @@ export const BranchCombobox = ({
           type="button"
           tabIndex={-1}
           onClick={() => {
-            if (disabled || branches.length === 0) return;
+            if (disabled || branches.length === 0) {
+              return;
+            }
             setOpen((v) => !v);
             inputRef.current?.focus();
           }}

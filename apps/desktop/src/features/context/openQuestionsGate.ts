@@ -5,8 +5,12 @@ export const workflowHasOpenQuestions = (
   workflowId: WorkflowId,
 ): boolean => {
   for (const q of questions) {
-    if (q.status !== 'open') continue;
-    if (!q.workflowId || q.workflowId === workflowId) return true;
+    if (q.status !== 'open') {
+      continue;
+    }
+    if (!q.workflowId || q.workflowId === workflowId) {
+      return true;
+    }
   }
   return false;
 };
@@ -16,8 +20,12 @@ export const workflowRunHasOpenQuestions = (
   workflowRunId: WorkflowRunId,
 ): boolean => {
   for (const q of questions) {
-    if (q.status !== 'open') continue;
-    if (!q.workflowRunId || q.workflowRunId === workflowRunId) return true;
+    if (q.status !== 'open') {
+      continue;
+    }
+    if (!q.workflowRunId || q.workflowRunId === workflowRunId) {
+      return true;
+    }
   }
   return false;
 };

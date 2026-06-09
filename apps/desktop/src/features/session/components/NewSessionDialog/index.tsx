@@ -32,11 +32,17 @@ const PROVIDER_LABELS: Record<ProviderId, string> = {
 };
 
 function formatError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (typeof err === 'string') {
+    return err;
+  }
   if (err && typeof err === 'object') {
     const maybe = err as { message?: unknown };
-    if (typeof maybe.message === 'string') return maybe.message;
+    if (typeof maybe.message === 'string') {
+      return maybe.message;
+    }
     try {
       return JSON.stringify(err);
     } catch {
@@ -50,7 +56,9 @@ const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {
-    if (connectedIds.has(id)) return id;
+    if (connectedIds.has(id)) {
+      return id;
+    }
   }
   return 'anthropic';
 }
@@ -130,7 +138,9 @@ const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
 function isValidBranchSlug(slug: string): boolean {
   const s = slug.trim();
-  if (!s) return false;
+  if (!s) {
+    return false;
+  }
   return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
 }
 
@@ -154,7 +164,9 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
   let text = raw;
   try {
     const parsed = JSON.parse(raw) as { result?: string };
-    if (typeof parsed.result === 'string') text = parsed.result;
+    if (typeof parsed.result === 'string') {
+      text = parsed.result;
+    }
   } catch {
     // not json, use raw
   }
@@ -207,7 +219,9 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
   const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)));
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setGoal('');
     setBranchSlug('');
     setSlugTouched(false);
@@ -234,7 +248,9 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
   }, [workspaceId]);
 
   useEffect(() => {
-    if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) return;
+    if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
+      return;
+    }
     setBranchesLoading(true);
     listLocalBranches(workspace.rootPath)
       .then(setExistingBranches)
@@ -246,13 +262,17 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
   }, [open, branchMode, branchesLoaded, workspace?.rootPath]);
 
   useEffect(() => {
-    if (slugTouched) return;
+    if (slugTouched) {
+      return;
+    }
     setBranchSlug(slugifyLive(goal));
   }, [goal, slugTouched]);
 
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
-    if (!trimmed || slugGenerating) return;
+    if (!trimmed || slugGenerating) {
+      return;
+    }
     setSlugGenerating(true);
     generateBranchSlug(trimmed, defaultProvider)
       .then((slug) => {

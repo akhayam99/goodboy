@@ -28,6 +28,8 @@ export const sameConfig = (a: CardConfig, b: CardConfig): boolean => {
 
 export const aggregateConfig = (configs: ReadonlyArray<CardConfig>): CardConfig | 'mixed' => {
   const first = configs[0];
-  if (!first) return DEFAULT_CONFIG;
+  if (!first) {
+    return DEFAULT_CONFIG;
+  }
   return configs.every((c) => sameConfig(c, first)) ? first : 'mixed';
 };

@@ -5,8 +5,12 @@ import { diffCommentsInFlight, type GetFn, type SetFn } from './types';
 
 export const loadDiffComments = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
-    if (get().diffComments[sessionId] !== undefined) return;
-    if (diffCommentsInFlight.has(sessionId)) return;
+    if (get().diffComments[sessionId] !== undefined) {
+      return;
+    }
+    if (diffCommentsInFlight.has(sessionId)) {
+      return;
+    }
     diffCommentsInFlight.add(sessionId);
     try {
       const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);

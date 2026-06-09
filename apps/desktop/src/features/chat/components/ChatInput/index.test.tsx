@@ -73,7 +73,9 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
       set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
     clearAgentDraft: (agentId) =>
       set((s) => {
-        if (!(agentId in s.agentDraft)) return s;
+        if (!(agentId in s.agentDraft)) {
+          return s;
+        }
         const next = { ...s.agentDraft };
         delete next[agentId];
         return { agentDraft: next };

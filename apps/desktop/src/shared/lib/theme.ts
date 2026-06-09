@@ -8,7 +8,9 @@ const STORAGE_KEY = STORAGE_KEYS.theme;
 function readStoredTheme(): Theme {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === 'light') return 'light';
+    if (raw === 'light') {
+      return 'light';
+    }
   } catch {}
   return 'dark';
 }

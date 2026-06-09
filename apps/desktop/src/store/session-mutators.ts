@@ -39,9 +39,13 @@ export const deriveSessionState = (
     return { kind: 'running', runId: rep.runId, startedAt: rep.startedAt };
   }
   const starting = agentStates.find((s) => s.kind === 'starting');
-  if (starting) return starting;
+  if (starting) {
+    return starting;
+  }
   const errored = agentStates.find((s) => s.kind === 'error');
-  if (errored) return errored;
+  if (errored) {
+    return errored;
+  }
   return { kind: 'idle', lastActivityAt: now };
 };
 

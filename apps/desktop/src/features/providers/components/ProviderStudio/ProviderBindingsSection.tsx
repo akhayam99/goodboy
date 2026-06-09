@@ -21,7 +21,9 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
   );
   const connected = useMemo(() => workspaces.filter((w) => !w.disconnectedAt), [workspaces]);
 
-  if (mine.length === 0 || connected.length === 0) return null;
+  if (mine.length === 0 || connected.length === 0) {
+    return null;
+  }
 
   const cliLabel = cliIdentity ? `CLI login (${cliIdentity})` : 'CLI login';
 

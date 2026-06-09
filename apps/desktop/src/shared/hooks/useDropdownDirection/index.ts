@@ -20,10 +20,14 @@ export const useDropdownDirection = (
 ): 'up' | 'down' => {
   const [direction, setDirection] = useState<'up' | 'down'>('down');
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const el = triggerRef.current;
     const rect = el?.getBoundingClientRect();
-    if (!el || !rect) return;
+    if (!el || !rect) {
+      return;
+    }
     const clipper = findClippingAncestor(el);
     const clipperRect = clipper?.getBoundingClientRect();
     const bottomBound = clipperRect ? clipperRect.bottom : window.innerHeight;

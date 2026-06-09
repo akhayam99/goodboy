@@ -13,13 +13,21 @@ type Params = {
 
 export const refreshSessionPr = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
-    if (!opts?.force && get().sessionGithub[sessionId]?.loading) return;
+    if (!opts?.force && get().sessionGithub[sessionId]?.loading) {
+      return;
+    }
     const branch = get().sessionBranches[sessionId];
-    if (!branch) return;
+    if (!branch) {
+      return;
+    }
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,

@@ -69,7 +69,9 @@ export const WorkflowPlanner = ({
   const updateOverride = (index: number, patch: Partial<StepOverrides>) => {
     setOverrides((prev) => {
       const current = prev[index];
-      if (!current) return prev;
+      if (!current) {
+        return prev;
+      }
       const next = { ...current, ...patch };
       if (patch.model) {
         const levels = modelEffortLevels(patch.model);
@@ -82,7 +84,9 @@ export const WorkflowPlanner = ({
   };
 
   const onPlan = async () => {
-    if (processText.trim().length === 0) return;
+    if (processText.trim().length === 0) {
+      return;
+    }
     setError(null);
     setPlan(null);
     setOverrides({});
@@ -111,7 +115,9 @@ export const WorkflowPlanner = ({
   };
 
   const onSave = async () => {
-    if (!plan) return;
+    if (!plan) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

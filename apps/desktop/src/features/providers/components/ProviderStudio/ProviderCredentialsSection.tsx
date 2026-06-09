@@ -32,7 +32,9 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   }, []);
 
   const onSave = useCallback(async () => {
-    if (!apiKey.trim()) return;
+    if (!apiKey.trim()) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

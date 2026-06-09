@@ -32,7 +32,9 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   }, [pr.number, pr.title, pr.body]);
 
   const save = async (field: 'title' | 'body') => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(field);
     setError(null);
     try {
@@ -59,7 +61,9 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
 
   const onPasteBody = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const text = e.clipboardData.getData('text').trim();
-    if (!IMG_URL_RE.test(text)) return;
+    if (!IMG_URL_RE.test(text)) {
+      return;
+    }
     e.preventDefault();
     const el = e.currentTarget;
     const start = el.selectionStart ?? bodyDraft.length;
@@ -68,7 +72,9 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   };
 
   const onDescClick = (e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('a, img, button')) return;
+    if ((e.target as HTMLElement).closest('a, img, button')) {
+      return;
+    }
     setEditing('body');
   };
 
@@ -81,8 +87,12 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') void save('title');
-                if (e.key === 'Escape') cancel();
+                if (e.key === 'Enter') {
+                  void save('title');
+                }
+                if (e.key === 'Escape') {
+                  cancel();
+                }
               }}
               autoFocus
               className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xl font-semibold text-foreground outline-none focus:border-primary"

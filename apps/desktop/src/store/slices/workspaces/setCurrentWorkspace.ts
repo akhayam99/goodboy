@@ -89,8 +89,12 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const recoveryNow = new Date().toISOString() as IsoDateTime;
       const sessions = await Promise.all(
         loadedSessions.map(async (s) => {
-          if (s.state.kind !== 'running') return s;
-          if (liveRunIds.has(s.state.runId)) return s;
+          if (s.state.kind !== 'running') {
+            return s;
+          }
+          if (liveRunIds.has(s.state.runId)) {
+            return s;
+          }
           const idleState: TurnState = { kind: 'idle', lastActivityAt: recoveryNow };
           await updateSessionState(tauriDatabase, s.id, idleState, recoveryNow).catch(
             () => undefined,
@@ -113,12 +117,16 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
           const primaryRow = rows[0];
-          if (primaryRow) sessionBranches[s.id] = primaryRow.branch;
+          if (primaryRow) {
+            sessionBranches[s.id] = primaryRow.branch;
+          }
         }
         const runs = agentsBySession.get(s.id) ?? [];
         sessionPhaseRuns[s.id] = runs;
         for (const run of runs) {
-          if (run.kind) kindOverridesFromDb[run.id] = run.kind as AgentKind;
+          if (run.kind) {
+            kindOverridesFromDb[run.id] = run.kind as AgentKind;
+          }
         }
       }
       const externalTasksMap: Record<string, SessionExternalTask> = {};
@@ -151,7 +159,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           invokeWorkflowList(id).catch(() => []),
           invokeStepDefList(id).catch(() => []),
         ]);
-        if (get().currentWorkspaceId !== id) return;
+        if (get().currentWorkspaceId !== id) {
+          return;
+        }
         const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
         const extraById = new Map<string, Workflow>();
         const needBackfill = get().sessions.filter((s) =>
@@ -160,7 +170,10 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         await Promise.all(
           needBackfill.map(async (s) => {
             const attached = await invokeWorkflowsForSession(s.id).catch(() => []);
-            for (const wf of attached) if (!workflowById.has(wf.id)) extraById.set(wf.id, wf);
+            for (const wf of attached)
+              if (!workflowById.has(wf.id)) {
+                extraById.set(wf.id, wf);
+              }
           }),
         );
         const resolveById = new Map<string, Workflow>([...workflowById, ...extraById]);
@@ -169,7 +182,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           const attached = [...new Set(s.workflowRuns.map((r) => r.workflowId))]
             .map((wid) => resolveById.get(wid) ?? null)
             .filter((w): w is Workflow => w !== null);
-          if (attached.length > 0) sessionWorkflows[s.id] = attached;
+          if (attached.length > 0) {
+            sessionWorkflows[s.id] = attached;
+          }
         }
         const mergedTemplates = [...phaseTemplates, ...extraById.values()];
         set((state) => ({

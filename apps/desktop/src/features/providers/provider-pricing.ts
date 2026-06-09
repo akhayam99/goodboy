@@ -50,7 +50,9 @@ export const getCodexPriceOverride = (
   model: string,
 ): CodexModelPriceOverride | null => {
   const price = priceForModel('codex', model);
-  if (price === null) return null;
+  if (price === null) {
+    return null;
+  }
   return {
     inputPerMtok: price.inputPerMtok,
     outputPerMtok: price.outputPerMtok,
@@ -65,7 +67,9 @@ export const getGeminiPriceOverride = (
   model: string,
 ): GeminiModelPriceOverride | null => {
   const price = priceForModel('gemini', model);
-  if (price === null) return null;
+  if (price === null) {
+    return null;
+  }
   return {
     inputPerMtok: price.inputPerMtok,
     outputPerMtok: price.outputPerMtok,

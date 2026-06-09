@@ -25,7 +25,9 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
 }
 
 function tryParseJson(line: string): ({ type?: string } & Record<string, unknown>) | null {
-  if (!line.startsWith('{') && !line.startsWith('[')) return null;
+  if (!line.startsWith('{') && !line.startsWith('[')) {
+    return null;
+  }
   try {
     return JSON.parse(line) as { type?: string } & Record<string, unknown>;
   } catch {
@@ -35,7 +37,9 @@ function tryParseJson(line: string): ({ type?: string } & Record<string, unknown
 
 export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
-  if (trimmed.length === 0) return [];
+  if (trimmed.length === 0) {
+    return [];
+  }
 
   const at = ctx.now();
   const payload = tryParseJson(trimmed);
@@ -48,7 +52,9 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
   switch (type) {
     case 'response.delta': {
       const delta = typeof payload['text'] === 'string' ? (payload['text'] as string) : '';
-      if (delta.length === 0) return [];
+      if (delta.length === 0) {
+        return [];
+      }
       return [{ kind: 'assistant_text', runId: ctx.runId, delta, at }];
     }
 

@@ -57,11 +57,17 @@ function fileEditFromInput(
   toolName: string,
   input: unknown,
 ): { path: string; editType: 'create' | 'modify' | 'delete' } | null {
-  if (!FILE_EDIT_TOOLS.has(toolName)) return null;
-  if (typeof input !== 'object' || input === null) return null;
+  if (!FILE_EDIT_TOOLS.has(toolName)) {
+    return null;
+  }
+  if (typeof input !== 'object' || input === null) {
+    return null;
+  }
   const record = input as Record<string, unknown>;
   const path = typeof record.file_path === 'string' ? record.file_path : null;
-  if (!path) return null;
+  if (!path) {
+    return null;
+  }
   const editType: 'create' | 'modify' | 'delete' = toolName === 'Write' ? 'create' : 'modify';
   return { path, editType };
 }
@@ -81,7 +87,9 @@ export const parseAnthropicEnvelopeLine = (
   opts: AnthropicEnvelopeParserOptions,
 ): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
-  if (trimmed.length === 0) return [];
+  if (trimmed.length === 0) {
+    return [];
+  }
 
   let payload: { type?: string } & Record<string, unknown>;
   try {

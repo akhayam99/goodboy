@@ -24,13 +24,17 @@ export const OnboardingWizard = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setStep(0);
     setClosing(false);
     containerRef.current?.focus();
   }, [open]);
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
   const last = STEP_COUNT - 1;
   const goNext = () => setStep((s) => Math.min(s + 1, last));

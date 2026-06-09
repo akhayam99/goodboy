@@ -81,7 +81,9 @@ const CTX_TAG_STYLES: ReadonlyArray<readonly [RegExp, CtxTagStyle]> = [
 function ctxStyleForTag(tag: string): CtxTagStyle {
   const stripped = tag.replace(/^ctx-?/i, '');
   for (const [re, style] of CTX_TAG_STYLES) {
-    if (re.test(tag) || re.test(stripped)) return style;
+    if (re.test(tag) || re.test(stripped)) {
+      return style;
+    }
   }
   return { ...CTX_DEFAULT, label: stripped || tag };
 }
@@ -132,8 +134,12 @@ function parseAlign(divider: string): ReadonlyArray<CellAlign> {
   return splitTableCells(divider).map((c) => {
     const left = c.startsWith(':');
     const right = c.endsWith(':');
-    if (left && right) return 'center';
-    if (right) return 'right';
+    if (left && right) {
+      return 'center';
+    }
+    if (right) {
+      return 'right';
+    }
     return 'left';
   });
 }
@@ -209,7 +215,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
         continue;
       }
-      if (firstLineRest.length > 0) buf.push(firstLineRest);
+      if (firstLineRest.length > 0) {
+        buf.push(firstLineRest);
+      }
       i++;
       let closed = false;
       while (i < lines.length) {
@@ -234,7 +242,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       const buf: string[] = [];
       while (i < lines.length) {
         const m = (lines[i] ?? '').match(QUOTE_RE);
-        if (!m) break;
+        if (!m) {
+          break;
+        }
         buf.push(m[1] ?? '');
         i++;
       }
@@ -250,7 +260,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       const items: ListItem[] = [];
       while (i < lines.length) {
         const m = (lines[i] ?? '').match(re);
-        if (!m) break;
+        if (!m) {
+          break;
+        }
         items.push({ content: m[2]!.trim(), children: [] });
         i++;
       }
@@ -535,8 +547,12 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     case 'table': {
       const alignClass = (a: CellAlign | undefined): string => {
-        if (a === 'right') return 'text-right';
-        if (a === 'center') return 'text-center';
+        if (a === 'right') {
+          return 'text-right';
+        }
+        if (a === 'center') {
+          return 'text-center';
+        }
         return 'text-left';
       };
       return (

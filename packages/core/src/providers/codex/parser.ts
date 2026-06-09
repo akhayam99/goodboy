@@ -69,7 +69,9 @@ function commandToTurnEvents(
   ctx: ParseContext,
   at: IsoDateTime,
 ): ReadonlyArray<TurnEvent> {
-  if (!item.id) return [];
+  if (!item.id) {
+    return [];
+  }
   if (phase === 'start') {
     return [
       {
@@ -102,7 +104,9 @@ function applyPatchToTurnEvents(
   ctx: ParseContext,
   at: IsoDateTime,
 ): ReadonlyArray<TurnEvent> {
-  if (!item.id) return [];
+  if (!item.id) {
+    return [];
+  }
   const events: TurnEvent[] = [
     {
       kind: 'tool_call_end',
@@ -114,7 +118,9 @@ function applyPatchToTurnEvents(
     },
   ];
   for (const change of item.changes ?? []) {
-    if (typeof change.path !== 'string') continue;
+    if (typeof change.path !== 'string') {
+      continue;
+    }
     const editType: 'create' | 'modify' | 'delete' =
       change.kind === 'create' || change.kind === 'delete' ? change.kind : 'modify';
     events.push({
@@ -142,7 +148,9 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
 
 export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
-  if (trimmed.length === 0) return [];
+  if (trimmed.length === 0) {
+    return [];
+  }
 
   let payload: { type?: string } & Record<string, unknown>;
   try {
@@ -157,7 +165,9 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
   switch (type) {
     case 'thread.started': {
       const threadId = payload['thread_id'];
-      if (typeof threadId !== 'string' || threadId.length === 0) return [];
+      if (typeof threadId !== 'string' || threadId.length === 0) {
+        return [];
+      }
       return [
         {
           kind: 'provider_session_init',
@@ -173,19 +183,29 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
 
     case 'item.started': {
       const item = payload['item'] as CodexItem | undefined;
-      if (!item || typeof item.id !== 'string') return [];
-      if (isCommandItem(item)) return commandToTurnEvents(item, 'start', ctx, at);
+      if (!item || typeof item.id !== 'string') {
+        return [];
+      }
+      if (isCommandItem(item)) {
+        return commandToTurnEvents(item, 'start', ctx, at);
+      }
       return [];
     }
 
     case 'item.completed': {
       const item = payload['item'] as CodexItem | undefined;
-      if (!item || typeof item.id !== 'string') return [];
-      if (isCommandItem(item)) return commandToTurnEvents(item, 'end', ctx, at);
+      if (!item || typeof item.id !== 'string') {
+        return [];
+      }
+      if (isCommandItem(item)) {
+        return commandToTurnEvents(item, 'end', ctx, at);
+      }
       if (isAgentMessageItem(item) && typeof item.text === 'string' && item.text.length > 0) {
         return [{ kind: 'assistant_text', runId: ctx.runId, delta: item.text, at }];
       }
-      if (isApplyPatchItem(item)) return applyPatchToTurnEvents(item, ctx, at);
+      if (isApplyPatchItem(item)) {
+        return applyPatchToTurnEvents(item, ctx, at);
+      }
       return [];
     }
 

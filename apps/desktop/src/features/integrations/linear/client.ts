@@ -56,9 +56,13 @@ export const issuePullRequests = (issue: LinearIssue): ReadonlyArray<LinearLinke
   const seen = new Set<number>();
   for (const attachment of issue.attachments?.nodes ?? []) {
     const match = attachment.url.match(PR_URL_RE);
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
     const number = Number(match[1]);
-    if (seen.has(number)) continue;
+    if (seen.has(number)) {
+      continue;
+    }
     seen.add(number);
     const rawStatus = attachment.metadata?.status;
     out.push({

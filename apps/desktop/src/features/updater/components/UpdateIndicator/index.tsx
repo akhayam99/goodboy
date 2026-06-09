@@ -16,7 +16,9 @@ export const UpdateIndicator = ({ variant }: Props) => {
   );
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  if (status !== 'available' && status !== 'downloading') return null;
+  if (status !== 'available' && status !== 'downloading') {
+    return null;
+  }
 
   const downloading = status === 'downloading';
   const title = downloading

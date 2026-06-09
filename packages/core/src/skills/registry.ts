@@ -44,7 +44,9 @@ export class SkillRegistry {
       filenames = await this.fs.readDir(skillsDir);
     } catch (err) {
       const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }));
-      if (!exists) return [];
+      if (!exists) {
+        return [];
+      }
       throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err);
     }
     return filenames
@@ -62,7 +64,9 @@ export class SkillRegistry {
       entries = await this.fs.readDir(skillsDir);
     } catch (err) {
       const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }));
-      if (!exists) return [];
+      if (!exists) {
+        return [];
+      }
       throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err);
     }
 

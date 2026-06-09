@@ -205,7 +205,9 @@ describe('migrate', () => {
     const fetched = await getWorkflow(db, workflow.id);
 
     expect(fetched).not.toBeNull();
-    if (!fetched) throw new Error('fetched should not be null');
+    if (!fetched) {
+      throw new Error('fetched should not be null');
+    }
     expect(fetched.name).toBe('Workflow');
     expect(fetched.steps).toHaveLength(2);
     expect(fetched.steps[0]!.name).toBe('Discovery');
@@ -228,7 +230,9 @@ describe('migrate', () => {
     const agents = await listAgentsForSession(db, session.id);
 
     expect(agents).toHaveLength(1);
-    if (!agents[0]) throw new Error('agents[0] should exist');
+    if (!agents[0]) {
+      throw new Error('agents[0] should exist');
+    }
     expect(agents[0].status).toBe('pending');
 
     await updateAgentStatus(db, agent.id, {
@@ -237,7 +241,9 @@ describe('migrate', () => {
     });
     const updated = await listAgentsForSession(db, session.id);
 
-    if (!updated[0]) throw new Error('updated[0] should exist');
+    if (!updated[0]) {
+      throw new Error('updated[0] should exist');
+    }
     expect(updated[0].status).toBe('completed');
     expect(updated[0].outputSummary).toBe('Found issues');
 
@@ -368,7 +374,9 @@ describe('migrate', () => {
 
     const fetched = await getGroupById(db, group1.id);
     expect(fetched).not.toBeNull();
-    if (!fetched) throw new Error('fetched should not be null');
+    if (!fetched) {
+      throw new Error('fetched should not be null');
+    }
     expect(fetched.id).toBe(group1.id);
     expect(fetched.mergeStrategy).toBe('last_write_wins');
     expect(fetched.completedAt).toBeNull();
@@ -377,7 +385,9 @@ describe('migrate', () => {
     await updateGroupCompletedAt(db, group1.id, completedAt);
     const updated = await getGroupById(db, group1.id);
     expect(updated).not.toBeNull();
-    if (!updated) throw new Error('updated should not be null');
+    if (!updated) {
+      throw new Error('updated should not be null');
+    }
     expect(updated.completedAt).toBe(completedAt);
 
     await deleteGroup(db, group1.id);

@@ -15,7 +15,9 @@ export const ProviderModalHost = () => {
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<OpenProviderModalDetail>).detail;
-      if (!detail) return;
+      if (!detail) {
+        return;
+      }
       setOpen(detail);
     };
     window.addEventListener(OPEN_PROVIDER_MODAL_EVENT, handler);

@@ -42,8 +42,12 @@ const PR_GROUP_LABELS: Record<string, string> = {
 };
 
 function groupLabel(key: string, groupMode: SessionGroupKey): string {
-  if (groupMode === 'userStatus') return USER_STATUS_GROUP_LABELS[key] ?? key;
-  if (groupMode === 'pr') return PR_GROUP_LABELS[key] ?? key;
+  if (groupMode === 'userStatus') {
+    return USER_STATUS_GROUP_LABELS[key] ?? key;
+  }
+  if (groupMode === 'pr') {
+    return PR_GROUP_LABELS[key] ?? key;
+  }
   return key;
 }
 
@@ -146,7 +150,9 @@ export const SessionActivityBar = ({
           type="button"
           onClick={() => {
             const next: ActivityTab = isArchivedView ? 'active' : 'archived';
-            if (next === 'archived') onArchivedTabOpen?.();
+            if (next === 'archived') {
+              onArchivedTabOpen?.();
+            }
             setTab(next);
           }}
           aria-pressed={isArchivedView}
@@ -197,7 +203,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const sessionCost = useMemo(() => {
     let sum = 0;
     for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') continue;
+      if (rec.kind === 'summarizer') {
+        continue;
+      }
       sum += rec.estimatedCostUsd;
     }
     return sum;

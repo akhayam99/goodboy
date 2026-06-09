@@ -9,9 +9,13 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const run = session.workflowRuns.find((r) => r.id === workflowRunId);
-    if (!run || run.discardedAt) return;
+    if (!run || run.discardedAt) {
+      return;
+    }
 
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     const directIds = new Set(
@@ -25,7 +29,9 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
     const frozen: Record<AgentId, TurnState> = {};
     for (const r of ownRuns) {
       const turn = state.agentTurnState[r.id];
-      if (turn?.kind !== 'running') continue;
+      if (turn?.kind !== 'running') {
+        continue;
+      }
       cancelledRunIds.add(turn.runId);
       await cancelTurn(turn.runId).catch(() => undefined);
       frozen[r.id] = { kind: 'idle', lastActivityAt: now };

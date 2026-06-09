@@ -2,7 +2,9 @@ export const buildResolutionReplyBody = (
   closure: { commitSha?: string; reason?: string } | undefined,
   prUrl: string | null,
 ): string | null => {
-  if (!closure) return null;
+  if (!closure) {
+    return null;
+  }
   const sha = closure.commitSha?.trim();
   if (sha && sha.length > 0) {
     const short = sha.slice(0, 7);

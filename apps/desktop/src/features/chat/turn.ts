@@ -43,7 +43,9 @@ export const encodeAuthRequiredMessage = (payload: AuthRequiredPayload): string 
 };
 
 export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload | null => {
-  if (!message.startsWith(AUTH_REQUIRED_PREFIX)) return null;
+  if (!message.startsWith(AUTH_REQUIRED_PREFIX)) {
+    return null;
+  }
   try {
     return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload;
   } catch {
@@ -107,7 +109,9 @@ export async function* runTurn(
   let error: unknown = null;
 
   const flush = () => {
-    if (!resolver) return;
+    if (!resolver) {
+      return;
+    }
     if (queue.length > 0) {
       const value = queue.shift()!;
       const r = resolver;
@@ -131,7 +135,9 @@ export async function* runTurn(
   let receivedAnyLine = false;
 
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
-    if (event.payload.runId !== args.runId) return;
+    if (event.payload.runId !== args.runId) {
+      return;
+    }
 
     switch (event.payload.type) {
       case 'line':
@@ -174,14 +180,18 @@ export async function* runTurn(
         continue;
       }
       if (ended) {
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         return;
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
         resolver = resolve;
         rejector = reject;
       });
-      if (value.done) return;
+      if (value.done) {
+        return;
+      }
       yield value.value;
     }
   } finally {

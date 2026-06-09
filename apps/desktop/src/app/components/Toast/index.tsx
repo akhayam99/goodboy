@@ -65,7 +65,9 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
 
 export const useToast = (): ToastContextValue => {
   const ctx = useContext(ToastContext);
-  if (ctx === null) throw new Error('useToast must be used inside ToastProvider');
+  if (ctx === null) {
+    throw new Error('useToast must be used inside ToastProvider');
+  }
   return ctx;
 };
 
@@ -75,7 +77,9 @@ type ToastStackProps = {
 };
 
 function ToastStack({ toasts, onDismiss }: ToastStackProps) {
-  if (toasts.length === 0) return null;
+  if (toasts.length === 0) {
+    return null;
+  }
 
   return (
     <div
@@ -111,7 +115,9 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
 
     return () => {
       cancelAnimationFrame(raf);
-      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
     };
   }, [toast.id, toast.persist, onDismiss]);
 

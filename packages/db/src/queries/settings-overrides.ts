@@ -28,7 +28,9 @@ type SessionOverrideRow = {
 };
 
 function parseBindings(raw: string | null): ProviderBindings | null {
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     return JSON.parse(raw) as ProviderBindings;
   } catch {

@@ -36,7 +36,9 @@ export const ScriptsPanel = ({ workspaceId }: Props) => {
   }, []);
 
   const onSaveDraft = useCallback(async () => {
-    if (!draft) return;
+    if (!draft) {
+      return;
+    }
     const name = draft.name.trim();
     const body = draft.body.trim();
     if (!name || !body) {

@@ -20,7 +20,9 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
   return (
     <li
       onPointerDown={(e) => {
-        if (dragDisabled) return;
+        if (dragDisabled) {
+          return;
+        }
         onStartDrag(def, e);
       }}
       className={cn(

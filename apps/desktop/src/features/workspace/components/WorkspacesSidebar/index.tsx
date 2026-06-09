@@ -184,7 +184,9 @@ export const WorkspacesSidebar = ({
     [unarchiveTaskAction],
   );
   const onArchivedTabOpen = useCallback(() => {
-    if (!currentWorkspace) return;
+    if (!currentWorkspace) {
+      return;
+    }
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
   const isCurrentArchived = !!currentSession?.archivedAt;
@@ -193,7 +195,9 @@ export const WorkspacesSidebar = ({
 
   useEffect(() => {
     const handler = () => {
-      if (!collapsed && currentWorkspace) setNewSessionOpen(true);
+      if (!collapsed && currentWorkspace) {
+        setNewSessionOpen(true);
+      }
     };
     window.addEventListener('goodboy:new-session', handler);
     return () => window.removeEventListener('goodboy:new-session', handler);
@@ -463,7 +467,9 @@ function QuickAction({
 
 function workflowKindName(workflow: Workflow): string {
   const needle = workflow.name.trim().toLowerCase();
-  if (!needle) return 'custom';
+  if (!needle) {
+    return 'custom';
+  }
   const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
   return match?.name.toLowerCase() ?? 'custom';
 }
@@ -524,21 +530,27 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   const [spawning, setSpawning] = useState(false);
 
   const latest = plans[plans.length - 1];
-  if (!latest || latest.status !== 'active') return null;
+  if (!latest || latest.status !== 'active') {
+    return null;
+  }
 
   const creator = phaseRuns.find((r) => r.id === latest.agentId);
   const creatorWorkflow = creator?.stepId
     ? (phaseTemplates.find((t) => t.steps.some((s) => s.id === creator.stepId)) ?? null)
     : null;
   if (creatorWorkflow) {
-    if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) return null;
+    if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) {
+      return null;
+    }
   } else if (openQuestions.some((q) => q.status === 'open')) {
     return null;
   }
 
   const liveStepIds = new Set<StepId>();
   for (const run of task.workflowRuns) {
-    if (run.discardedAt) continue;
+    if (run.discardedAt) {
+      continue;
+    }
     phaseTemplates
       .find((t) => t.id === run.workflowId)
       ?.steps.forEach((s) => liveStepIds.add(s.id));
@@ -550,10 +562,14 @@ function PlanReadySuggestion({ task }: { task: Session }) {
       liveStepIds.has(a.stepId) &&
       kindConsumesPlan((a.kind as AgentKind | undefined) ?? inferAgentKindFromName(a.name)),
   );
-  if (hasPendingConsumer) return null;
+  if (hasPendingConsumer) {
+    return null;
+  }
 
   const onSpawn = async () => {
-    if (spawning) return;
+    if (spawning) {
+      return;
+    }
     setSpawning(true);
     try {
       await runPlan(task.id, latest.id);
@@ -672,10 +688,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const history = s.agentRunHistory[run.id];
-        if (history) out[run.id] = history;
+        if (history) {
+          out[run.id] = history;
+        }
       }
       return out;
     }),
@@ -684,10 +704,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, AgentKind> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const kind = s.agentKindOverride[run.id];
-        if (kind) out[run.id] = kind;
+        if (kind) {
+          out[run.id] = kind;
+        }
       }
       return out;
     }),
@@ -696,10 +720,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, string> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const model = s.agentModelOverride[run.id];
-        if (model) out[run.id] = model;
+        if (model) {
+          out[run.id] = model;
+        }
       }
       return out;
     }),
@@ -723,10 +751,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const st = s.resolverState[run.id];
-        if (st) out[run.id] = st;
+        if (st) {
+          out[run.id] = st;
+        }
       }
       return out;
     }),
@@ -797,7 +829,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const agentsByRunId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
-      if (r.stepId == null || r.workflowRunId == null) continue;
+      if (r.stepId == null || r.workflowRunId == null) {
+        continue;
+      }
       const bucket = map.get(r.workflowRunId) ?? [];
       bucket.push(r);
       map.set(r.workflowRunId, bucket);
@@ -807,7 +841,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const childrenByParentId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
-      if (r.parentAgentId == null) continue;
+      if (r.parentAgentId == null) {
+        continue;
+      }
       const bucket = map.get(r.parentAgentId) ?? [];
       bucket.push(r);
       map.set(r.parentAgentId, bucket);
@@ -861,9 +897,13 @@ function AgentsSection({ task }: AgentsSectionProps) {
     async (runId: WorkflowRunId, direction: 'up' | 'down') => {
       const ids = [...task.workflowRuns].sort((a, b) => a.ordinal - b.ordinal).map((r) => r.id);
       const idx = ids.indexOf(runId);
-      if (idx === -1) return;
+      if (idx === -1) {
+        return;
+      }
       const swap = direction === 'up' ? idx - 1 : idx + 1;
-      if (swap < 0 || swap >= ids.length) return;
+      if (swap < 0 || swap >= ids.length) {
+        return;
+      }
       [ids[idx], ids[swap]] = [ids[swap]!, ids[idx]!];
       try {
         await reorderSessionWorkflows(task.id, ids);
@@ -888,7 +928,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const turnsByAgentId = useMemo(() => {
     const map = new Map<string, number>();
     for (const m of messages) {
-      if (m.role !== 'user') continue;
+      if (m.role !== 'user') {
+        continue;
+      }
       map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
     }
     return map;
@@ -897,8 +939,12 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const firstUserTextByAgentId = useMemo(() => {
     const map = new Map<string, string>();
     for (const m of messages) {
-      if (m.role !== 'user') continue;
-      if (map.has(m.agentId)) continue;
+      if (m.role !== 'user') {
+        continue;
+      }
+      if (map.has(m.agentId)) {
+        continue;
+      }
       map.set(m.agentId, m.content);
     }
     return map;
@@ -927,7 +973,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
     >();
     const telemetryByRun = new Map<string, TelemetryRecord>();
     for (const rec of telemetry) {
-      if (rec.kind !== 'turn') continue;
+      if (rec.kind !== 'turn') {
+        continue;
+      }
       const existing = telemetryByRun.get(rec.runId);
       if (!existing || existing.recordedAt < rec.recordedAt) {
         telemetryByRun.set(rec.runId, rec);
@@ -941,7 +989,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
       let turns = 0;
       for (const rid of runIds) {
         const rec = telemetryByRun.get(rid);
-        if (!rec) continue;
+        if (!rec) {
+          continue;
+        }
         inputTokens += rec.inputTokens;
         outputTokens += rec.outputTokens;
         estimatedCostUsd += rec.estimatedCostUsd;
@@ -951,21 +1001,29 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     const childIds = new Map<string, string[]>();
     for (const run of phaseRuns) {
-      if (run.parentAgentId == null) continue;
+      if (run.parentAgentId == null) {
+        continue;
+      }
       const bucket = childIds.get(run.parentAgentId) ?? [];
       bucket.push(run.id);
       childIds.set(run.parentAgentId, bucket);
     }
     const rolled = new Set<string>();
     const rollup = (id: string) => {
-      if (rolled.has(id)) return;
+      if (rolled.has(id)) {
+        return;
+      }
       rolled.add(id);
       const self = map.get(id);
-      if (!self) return;
+      if (!self) {
+        return;
+      }
       for (const cid of childIds.get(id) ?? []) {
         rollup(cid);
         const child = map.get(cid);
-        if (!child) continue;
+        if (!child) {
+          continue;
+        }
         self.inputTokens += child.inputTokens;
         self.outputTokens += child.outputTokens;
         self.estimatedCostUsd += child.estimatedCostUsd;
@@ -982,7 +1040,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
 
   const onPickAgent = (sid: AgentId) => {
-    if (sid === selectedAgentId) return;
+    if (sid === selectedAgentId) {
+      return;
+    }
     void selectAgent(task.id, sid);
   };
 
@@ -1358,7 +1418,9 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
 
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return null;
+    if (!rect) {
+      return null;
+    }
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const direction: 'up' | 'down' = spaceBelow > spaceAbove ? 'down' : 'up';
@@ -1370,17 +1432,26 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) {
+        return;
+      }
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
       setOpen(false);
     };
     const onReanchor = () => {
       const next = computeAnchor();
-      if (next) setAnchor(next);
-      else setOpen(false);
+      if (next) {
+        setAnchor(next);
+      } else {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('resize', onReanchor);
@@ -1395,7 +1466,9 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const onToggle = () => {
     if (!open) {
       const next = computeAnchor();
-      if (next) setAnchor(next);
+      if (next) {
+        setAnchor(next);
+      }
     }
     setOpen((v) => !v);
   };
@@ -1542,7 +1615,9 @@ function ScoutSubtree({
   onSelect,
 }: ScoutSubtreeProps) {
   const children = childrenByParentId.get(containerId) ?? EMPTY_ARRAY;
-  if (children.length === 0 || depth > 4) return null;
+  if (children.length === 0 || depth > 4) {
+    return null;
+  }
   const expanded = expandState.get(containerId) ?? false;
   const doneCount = children.filter(
     (c) => c.status === 'completed' || c.status === 'skipped',
@@ -1608,14 +1683,28 @@ function resolverStatus(
   pendingThreadIds: ReadonlySet<string>,
   state: ResolverState | undefined,
 ): ResolverStatus {
-  if (agent.status === 'running') return 'running';
-  if (agent.status === 'failed') return 'failed';
-  if (agent.status === 'pending') return 'pending';
+  if (agent.status === 'running') {
+    return 'running';
+  }
+  if (agent.status === 'failed') {
+    return 'failed';
+  }
+  if (agent.status === 'pending') {
+    return 'pending';
+  }
   const tid = agent.sourceThreadId;
-  if (tid != null && resolvedThreadIds.has(tid)) return 'resolved';
-  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) return 'committed';
-  if (state === 'wontfix') return 'wontfix';
-  if (state === 'awaiting') return 'awaiting';
+  if (tid != null && resolvedThreadIds.has(tid)) {
+    return 'resolved';
+  }
+  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) {
+    return 'committed';
+  }
+  if (state === 'wontfix') {
+    return 'wontfix';
+  }
+  if (state === 'awaiting') {
+    return 'awaiting';
+  }
   return 'done';
 }
 
@@ -1848,14 +1937,20 @@ function WorkflowStepRow({
   const [draft, setDraft] = useState(run.name);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   useEffect(() => {
-    if (isEditing) setDraft(run.name);
+    if (isEditing) {
+      setDraft(run.name);
+    }
   }, [isEditing, run.name]);
   useEffect(() => {
-    if (!isBlocked) setPendingConfirm(false);
+    if (!isBlocked) {
+      setPendingConfirm(false);
+    }
   }, [isBlocked]);
 
   const handleRowClick = () => {
-    if (isPendingFuture) return;
+    if (isPendingFuture) {
+      return;
+    }
     if (isStartable) {
       onStart();
     } else if (isActionable && isBlocked) {
@@ -1920,7 +2015,9 @@ function WorkflowStepRow({
   };
 
   const renderActionIndicator = () => {
-    if (run.status === 'running') return null;
+    if (run.status === 'running') {
+      return null;
+    }
     if (isActionable && isBlocked) {
       return <ArrowRight size={13} aria-hidden className="text-warning" />;
     }
@@ -1946,7 +2043,9 @@ function WorkflowStepRow({
         onClick={isEditing || isPendingFuture ? undefined : handleRowClick}
         onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
         onKeyDown={(e) => {
-          if (isEditing) return;
+          if (isEditing) {
+            return;
+          }
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             handleRowClick();
@@ -2110,10 +2209,14 @@ function AgentRow({
   const [draft, setDraft] = useState(run.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   useEffect(() => {
-    if (isEditing) setDraft(run.name);
+    if (isEditing) {
+      setDraft(run.name);
+    }
   }, [isEditing, run.name]);
   useEffect(() => {
-    if (isEditing) setConfirmingDelete(false);
+    if (isEditing) {
+      setConfirmingDelete(false);
+    }
   }, [isEditing]);
 
   return (
@@ -2124,7 +2227,9 @@ function AgentRow({
       onClick={isEditing ? undefined : onClick}
       onDoubleClick={isEditing ? undefined : onRenameStart}
       onKeyDown={(e) => {
-        if (isEditing) return;
+        if (isEditing) {
+          return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onClick();
@@ -2256,7 +2361,9 @@ function AgentRow({
 function findContextWindow(model: string): number | null {
   for (const cap of Object.values(PROVIDER_CAPABILITIES)) {
     const m = cap.models.find((mm) => mm.id === model);
-    if (m) return m.contextWindow;
+    if (m) {
+      return m.contextWindow;
+    }
   }
   return null;
 }
@@ -2296,23 +2403,39 @@ function ContextWindowBar({
   telemetry: TelemetryRecord | null;
   aggregate: AgentAggregate | null;
 }) {
-  if (!telemetry) return null;
+  if (!telemetry) {
+    return null;
+  }
   const window = findContextWindow(telemetry.model);
-  if (!window) return null;
+  if (!window) {
+    return null;
+  }
   const cumulativeInput = aggregate?.inputTokens ?? telemetry.inputTokens;
   const cumulativeOutput = aggregate?.outputTokens ?? telemetry.outputTokens;
   const used = cumulativeInput + cumulativeOutput;
   const pct = Math.min(1, used / window);
   const barTone = (() => {
-    if (pct >= 0.9) return 'bg-danger';
-    if (pct >= 0.75) return 'bg-warning';
-    if (pct >= 0.5) return 'bg-info';
+    if (pct >= 0.9) {
+      return 'bg-danger';
+    }
+    if (pct >= 0.75) {
+      return 'bg-warning';
+    }
+    if (pct >= 0.5) {
+      return 'bg-info';
+    }
     return 'bg-success';
   })();
   const iconTone = (() => {
-    if (pct >= 0.9) return 'text-danger';
-    if (pct >= 0.75) return 'text-warning';
-    if (pct >= 0.5) return 'text-info';
+    if (pct >= 0.9) {
+      return 'text-danger';
+    }
+    if (pct >= 0.75) {
+      return 'text-warning';
+    }
+    if (pct >= 0.5) {
+      return 'text-info';
+    }
     return 'text-success';
   })();
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;

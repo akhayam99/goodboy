@@ -27,7 +27,9 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
   }, []);
 
   useEffect(() => {
-    if (phase !== 'leave') return;
+    if (phase !== 'leave') {
+      return;
+    }
     exitTimerRef.current = window.setTimeout(onClose, EXIT_MS);
     return () => {
       if (exitTimerRef.current !== null) {
@@ -39,7 +41,9 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') requestClose();
+      if (event.key === 'Escape') {
+        requestClose();
+      }
     };
     window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;

@@ -90,7 +90,9 @@ export const WorkspaceSettingsDialog = ({
   const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setActive(isSection(initialSection) ? initialSection : 'general');
     setSaveState('idle');
     setError(null);

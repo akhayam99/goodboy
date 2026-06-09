@@ -4,10 +4,14 @@ import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 function unwrapError(err: unknown): string {
-  if (err instanceof Error) return err.message;
+  if (err instanceof Error) {
+    return err.message;
+  }
   if (typeof err === 'object' && err !== null && 'message' in err) {
     const { message } = err as Record<string, unknown>;
-    if (typeof message === 'string') return message;
+    if (typeof message === 'string') {
+      return message;
+    }
   }
   return String(err);
 }

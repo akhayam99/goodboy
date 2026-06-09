@@ -23,7 +23,9 @@ function alertMessage(alert: BudgetAlert): string {
 
 export const AlertBanner = ({ alerts, onDismiss }: Props) => {
   const active = alerts.filter((a) => !a.dismissedAt);
-  if (active.length === 0) return null;
+  if (active.length === 0) {
+    return null;
+  }
 
   return (
     <ul className="flex flex-col gap-1.5">

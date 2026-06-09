@@ -7,7 +7,9 @@ function nextOrdinal(tabs: readonly TerminalTab[]): number {
   for (const tab of tabs) {
     const trailing = Number.parseInt(tab.id.slice(tab.id.lastIndexOf('t') + 1), 10);
     const ordinal = Number.isNaN(trailing) ? 1 : trailing;
-    if (ordinal > max) max = ordinal;
+    if (ordinal > max) {
+      max = ordinal;
+    }
   }
   return max + 1;
 }

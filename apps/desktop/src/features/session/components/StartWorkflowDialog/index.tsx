@@ -45,7 +45,9 @@ export const StartWorkflowDialog = ({ open, onClose, session }: Props) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const hasPresets = phaseTemplates.some((t) => t.isPreset !== false && !t.deletedAt);
     setSelection(hasPresets ? null : { kind: 'custom' });
     setCustomId('');
@@ -66,7 +68,9 @@ export const StartWorkflowDialog = ({ open, onClose, session }: Props) => {
   const canSpawn = effectiveId !== '' && !busy;
 
   const onSpawn = async () => {
-    if (effectiveId === '') return;
+    if (effectiveId === '') {
+      return;
+    }
     setError(null);
     setBusy(true);
     try {

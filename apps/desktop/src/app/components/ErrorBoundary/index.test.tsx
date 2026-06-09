@@ -8,7 +8,9 @@ import { ErrorBoundary } from './index';
 afterEach(cleanup);
 
 function Boom({ throwNow }: { throwNow: boolean }): null {
-  if (throwNow) throw new Error('kaboom');
+  if (throwNow) {
+    throw new Error('kaboom');
+  }
   return null;
 }
 

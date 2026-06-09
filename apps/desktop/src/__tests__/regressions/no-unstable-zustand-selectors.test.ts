@@ -7,7 +7,9 @@ const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
 
 function listSourceFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    if (SKIP_SEGMENTS.has(entry)) continue;
+    if (SKIP_SEGMENTS.has(entry)) {
+      continue;
+    }
     const full = join(dir, entry);
     const stats = statSync(full);
     if (stats.isDirectory()) {
@@ -34,8 +36,9 @@ function extractCallBody(
   let depth = 0;
   for (let i = openParenIdx; i < source.length; i++) {
     const ch = source[i];
-    if (ch === '(') depth++;
-    else if (ch === ')') {
+    if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
       depth--;
       if (depth === 0) {
         return { body: source.slice(openParenIdx + 1, i), endIdx: i + 1 };
@@ -76,13 +79,21 @@ function checkFile(path: string): BadCall[] {
   while ((match = USE_APP_STORE_CALL.exec(content)) !== null) {
     const openParen = match.index + match[0].length - 1;
     const extracted = extractCallBody(content, openParen);
-    if (!extracted) continue;
+    if (!extracted) {
+      continue;
+    }
     const { body } = extracted;
-    if (body.includes('useShallow(')) continue;
-    if (SAFE_OPT_OUT_COMMENT.test(body)) continue;
+    if (body.includes('useShallow(')) {
+      continue;
+    }
+    if (SAFE_OPT_OUT_COMMENT.test(body)) {
+      continue;
+    }
     const tail = selectorTail(body);
     const isUnstable = UNSTABLE_TAIL_PATTERNS.some((re) => re.test(tail));
-    if (!isUnstable) continue;
+    if (!isUnstable) {
+      continue;
+    }
     bad.push({
       file: relative(SRC_ROOT, path).split(sep).join('/'),
       line: lineOf(content, match.index),

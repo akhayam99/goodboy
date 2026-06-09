@@ -6,11 +6,17 @@ import type { GetFn, SetFn } from './types';
 export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, observedBranch: string) => {
     const trimmed = observedBranch.trim();
-    if (!trimmed) return;
-    if (get().sessionBranches[sessionId] === trimmed) return;
+    if (!trimmed) {
+      return;
+    }
+    if (get().sessionBranches[sessionId] === trimmed) {
+      return;
+    }
     const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
     const primary = worktrees[0];
-    if (!primary) return;
+    if (!primary) {
+      return;
+    }
     if (primary.branch !== trimmed) {
       await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, trimmed);
     }

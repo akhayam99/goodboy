@@ -26,12 +26,16 @@ const SCOPE_LABEL: Record<'working' | 'unstaged' | 'staged' | 'all', string> = {
 
 function viewLabel(view: DiffView, commits: ReadonlyArray<BranchCommit>): string {
   if (view.kind === 'working') {
-    if (view.scope === 'all') return 'working tree';
+    if (view.scope === 'all') {
+      return 'working tree';
+    }
     return SCOPE_LABEL[view.scope];
   }
   if (view.kind === 'commit') {
     const found = commits.find((c) => c.sha === view.sha);
-    if (found) return `commit ${found.shortSha}`;
+    if (found) {
+      return `commit ${found.shortSha}`;
+    }
     return `commit ${view.sha.slice(0, 7)}`;
   }
   return 'branch vs main';
@@ -40,18 +44,34 @@ function viewLabel(view: DiffView, commits: ReadonlyArray<BranchCommit>): string
 function relativeTime(ts: number): string {
   const now = Date.now() / 1000;
   const delta = Math.max(0, now - ts);
-  if (delta < 60) return `${Math.floor(delta)}s`;
-  if (delta < 3600) return `${Math.floor(delta / 60)}min`;
-  if (delta < 86400) return `${Math.floor(delta / 3600)}h`;
-  if (delta < 86400 * 7) return `${Math.floor(delta / 86400)}d`;
-  if (delta < 86400 * 30) return `${Math.floor(delta / (86400 * 7))}w`;
+  if (delta < 60) {
+    return `${Math.floor(delta)}s`;
+  }
+  if (delta < 3600) {
+    return `${Math.floor(delta / 60)}min`;
+  }
+  if (delta < 86400) {
+    return `${Math.floor(delta / 3600)}h`;
+  }
+  if (delta < 86400 * 7) {
+    return `${Math.floor(delta / 86400)}d`;
+  }
+  if (delta < 86400 * 30) {
+    return `${Math.floor(delta / (86400 * 7))}w`;
+  }
   return `${Math.floor(delta / (86400 * 30))}mo`;
 }
 
 function viewEquals(a: DiffView, b: DiffView): boolean {
-  if (a.kind !== b.kind) return false;
-  if (a.kind === 'working' && b.kind === 'working') return a.scope === b.scope;
-  if (a.kind === 'commit' && b.kind === 'commit') return a.sha === b.sha;
+  if (a.kind !== b.kind) {
+    return false;
+  }
+  if (a.kind === 'working' && b.kind === 'working') {
+    return a.scope === b.scope;
+  }
+  if (a.kind === 'commit' && b.kind === 'commit') {
+    return a.sha === b.sha;
+  }
   return true;
 }
 
@@ -75,7 +95,9 @@ export const DiffViewSelector = ({
   const filterMatch = useCallback(
     (c: BranchCommit) => {
       const q = query.trim().toLowerCase();
-      if (q.length === 0) return true;
+      if (q.length === 0) {
+        return true;
+      }
       return c.shortSha.includes(q) || c.subject.toLowerCase().includes(q);
     },
     [query],
@@ -142,17 +164,25 @@ export const DiffViewSelector = ({
   const optionIndices = useMemo(
     () =>
       rows.reduce<number[]>((acc, r, i) => {
-        if (r.kind === 'option') acc.push(i);
+        if (r.kind === 'option') {
+          acc.push(i);
+        }
         return acc;
       }, []),
     [rows],
   );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const handler = (e: MouseEvent) => {
-      if (!rootRef.current) return;
-      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+      if (!rootRef.current) {
+        return;
+      }
+      if (!rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -167,12 +197,16 @@ export const DiffViewSelector = ({
   }, [open]);
 
   const moveFocus = (dir: 1 | -1) => {
-    if (optionIndices.length === 0) return;
+    if (optionIndices.length === 0) {
+      return;
+    }
     const currentPos = optionIndices.findIndex((i) => i === focusIdx);
     const startPos = currentPos === -1 ? (dir === 1 ? -1 : optionIndices.length) : currentPos;
     const nextPos = Math.max(0, Math.min(optionIndices.length - 1, startPos + dir));
     const targetIdx = optionIndices[nextPos];
-    if (targetIdx !== undefined) setFocusIdx(targetIdx);
+    if (targetIdx !== undefined) {
+      setFocusIdx(targetIdx);
+    }
   };
 
   const commitOption = (v: DiffView) => {
@@ -190,7 +224,9 @@ export const DiffViewSelector = ({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const row = rows[focusIdx];
-      if (row?.kind === 'option') commitOption(row.view);
+      if (row?.kind === 'option') {
+        commitOption(row.view);
+      }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       setOpen(false);

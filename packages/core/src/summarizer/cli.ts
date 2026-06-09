@@ -315,12 +315,18 @@ function parseDelta(raw: string): ContextSlotDelta {
 
   const upserts: ContextSlotDeltaUpsert[] = [];
   for (const entry of candidate) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const key = e.key;
     const value = e.value;
-    if (typeof key !== 'string' || !isSlotKey(key)) continue;
-    if (typeof value !== 'string') continue;
+    if (typeof key !== 'string' || !isSlotKey(key)) {
+      continue;
+    }
+    if (typeof value !== 'string') {
+      continue;
+    }
     upserts.push({ key, value });
   }
   return { upserts };
@@ -335,7 +341,9 @@ function applyDelta(
   prev: ReadonlyArray<ContextSlot>,
   delta: ContextSlotDelta,
 ): ReadonlyArray<ContextSlot> {
-  if (delta.upserts.length === 0) return prev;
+  if (delta.upserts.length === 0) {
+    return prev;
+  }
   const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
   for (const upsert of delta.upserts) {
     const existing = byKey.get(upsert.key);

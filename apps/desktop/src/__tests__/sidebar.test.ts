@@ -102,7 +102,9 @@ describe('sidebar session filtering', () => {
 describe('rename validation', () => {
   it('empty goal rejects', () => {
     const validate = (goal: string) => {
-      if (!goal.trim()) throw new Error('session name cannot be empty');
+      if (!goal.trim()) {
+        throw new Error('session name cannot be empty');
+      }
     };
     expect(() => validate('')).toThrow('session name cannot be empty');
     expect(() => validate('  ')).toThrow('session name cannot be empty');

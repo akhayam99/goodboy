@@ -6,7 +6,9 @@ import type { GetFn, SetFn } from './types';
 export const installUpdate = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     const update = getPendingUpdate();
-    if (!update) return;
+    if (!update) {
+      return;
+    }
     set({ updaterStatus: 'downloading', updateError: null });
     try {
       await update.downloadAndInstall();

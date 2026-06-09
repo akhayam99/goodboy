@@ -7,7 +7,9 @@ import type { GetFn, SetFn } from './types';
 export const setSessionConfig = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, fields: SessionConfigUpdate) => {
     const prev = get().sessions.find((s) => s.id === sessionId);
-    if (!prev) return;
+    if (!prev) {
+      return;
+    }
     const applyFields = (s: Session): Session => {
       const { verbosity, effort, modelOverride, providerOverride, ...rest } = s;
       const next: Session = { ...rest } as Session;

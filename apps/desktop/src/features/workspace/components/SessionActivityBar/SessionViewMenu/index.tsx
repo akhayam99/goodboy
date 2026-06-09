@@ -46,10 +46,14 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const updatePosition = () => {
       const el = triggerRef.current;
-      if (!el) return;
+      if (!el) {
+        return;
+      }
       const rect = el.getBoundingClientRect();
       const desiredLeft = rect.left;
       const maxLeft = window.innerWidth - MENU_WIDTH - VIEWPORT_MARGIN;
@@ -67,7 +71,9 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();

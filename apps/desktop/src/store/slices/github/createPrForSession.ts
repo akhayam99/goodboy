@@ -19,7 +19,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) throw new Error('Workspace not found for this session.');
+    if (!workspace) {
+      throw new Error('Workspace not found for this session.');
+    }
 
     const args = ['pr', 'create'];
     const hasFields = opts?.title !== undefined || opts?.body !== undefined;
@@ -29,8 +31,12 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     } else {
       args.push('--fill');
     }
-    if (opts?.base?.trim()) args.push('--base', opts.base.trim());
-    if ((opts?.draft ?? true) === true) args.push('--draft');
+    if (opts?.base?.trim()) {
+      args.push('--base', opts.base.trim());
+    }
+    if ((opts?.draft ?? true) === true) {
+      args.push('--draft');
+    }
 
     const res = await tauriGhRunner.run(args, {
       cwd: workspace.rootPath,

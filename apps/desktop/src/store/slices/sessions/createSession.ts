@@ -74,7 +74,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
     linearIssue,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
-    if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
+    if (!workspace) {
+      throw new Error(`workspace not found: ${workspaceId}`);
+    }
 
     const prefix = branchPrefix?.trim() || 'kay';
     const slugSeed =
@@ -254,7 +256,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
         kind: firstAgentKind,
         ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       });
-      if (model !== null) agentModelOverrides[singleAgent.id] = model;
+      if (model !== null) {
+        agentModelOverrides[singleAgent.id] = model;
+      }
       agentKindOverrides[singleAgent.id] = firstAgentKind;
       prespawnedRuns = [singleAgent];
     } else {
@@ -314,7 +318,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
-    if (workflowId) void get().reprocessGoalForWorkflow(session.id);
+    if (workflowId) {
+      void get().reprocessGoalForWorkflow(session.id);
+    }
 
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });

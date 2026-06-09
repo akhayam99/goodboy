@@ -429,7 +429,9 @@ describe('parallel e2e, fan-out/fan-in', () => {
     invokeParallelPhaseRunSpawnSpy.mockImplementation(
       async (args: { runs: ReadonlyArray<{ runId: string }> }) => {
         callCount++;
-        if (callCount === 2) throw new Error('spawn failed for run-b');
+        if (callCount === 2) {
+          throw new Error('spawn failed for run-b');
+        }
         return args.runs.map((r) => r.runId);
       },
     );

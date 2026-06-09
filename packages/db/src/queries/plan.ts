@@ -31,10 +31,14 @@ type PlanWithCountRow = PlanRow & {
 };
 
 function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster> | undefined {
-  if (!raw) return undefined;
+  if (!raw) {
+    return undefined;
+  }
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return undefined;
+    if (!Array.isArray(parsed)) {
+      return undefined;
+    }
     const out = parsed.filter(
       (c): c is ImplementationCluster =>
         typeof c === 'object' &&
@@ -126,7 +130,9 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
     );
     const rows = await db.select<PlanRow>(`${PLAN_SELECT} WHERE id = ?`, [activeId]);
     const row = rows[0];
-    if (!row) throw new Error(`plan update failed: ${activeId}`);
+    if (!row) {
+      throw new Error(`plan update failed: ${activeId}`);
+    }
     return toDomain(row);
   }
   await db.execute(
@@ -146,7 +152,9 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
   );
   const rows = await db.select<PlanRow>(`${PLAN_SELECT} WHERE id = ?`, [input.id]);
   const row = rows[0];
-  if (!row) throw new Error(`plan insert failed: ${input.id}`);
+  if (!row) {
+    throw new Error(`plan insert failed: ${input.id}`);
+  }
   return toDomain(row);
 };
 

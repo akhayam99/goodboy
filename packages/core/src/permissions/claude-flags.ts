@@ -23,9 +23,15 @@ function isApplicable(
   rule: PermissionRule,
   scope: { workspaceId: WorkspaceId; sessionId: SessionId },
 ): boolean {
-  if (rule.scope === 'global') return true;
-  if (rule.scope === 'session') return rule.sessionId === scope.sessionId;
-  if (rule.scope === 'workspace') return rule.workspaceId === scope.workspaceId;
+  if (rule.scope === 'global') {
+    return true;
+  }
+  if (rule.scope === 'session') {
+    return rule.sessionId === scope.sessionId;
+  }
+  if (rule.scope === 'workspace') {
+    return rule.workspaceId === scope.workspaceId;
+  }
   return false;
 }
 
@@ -37,7 +43,9 @@ export const buildClaudeFlags = (input: {
   const applicable = input.rules.filter((r) => isApplicable(r, input.scope));
 
   const sorted = [...applicable].sort((a, b) => {
-    if (b.priority !== a.priority) return b.priority - a.priority;
+    if (b.priority !== a.priority) {
+      return b.priority - a.priority;
+    }
     return SCOPE_RANK[b.scope] - SCOPE_RANK[a.scope];
   });
 
@@ -47,7 +55,9 @@ export const buildClaudeFlags = (input: {
   const disallowedTools: string[] = [];
 
   for (const rule of sorted) {
-    if (rule.decision === 'ask') continue;
+    if (rule.decision === 'ask') {
+      continue;
+    }
     const rendered = formatToolPattern(rule.pattern);
     if (rule.decision === 'allow') {
       if (!allowedSet.has(rendered)) {

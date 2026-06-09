@@ -6,11 +6,15 @@ let pendingTurnEventInserts: PendingTurnEventInsert[] = [];
 let turnEventFlushScheduled = false;
 
 function scheduleTurnEventFlush(): void {
-  if (turnEventFlushScheduled) return;
+  if (turnEventFlushScheduled) {
+    return;
+  }
   turnEventFlushScheduled = true;
   queueMicrotask(() => {
     turnEventFlushScheduled = false;
-    if (pendingTurnEventInserts.length === 0) return;
+    if (pendingTurnEventInserts.length === 0) {
+      return;
+    }
     const batch = pendingTurnEventInserts;
     pendingTurnEventInserts = [];
     void insertTurnEventsBatch(tauriDatabase, batch).catch((err) => {

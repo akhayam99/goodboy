@@ -25,6 +25,8 @@ export const CostBadge = ({ value, className, title }: Props) => {
 
 function splitDollarsCents(formatted: string): { dollars: string; cents: string } | null {
   const m = formatted.match(/^(\$\d+)(\.\d+)$/);
-  if (!m) return null;
+  if (!m) {
+    return null;
+  }
   return { dollars: m[1]!, cents: m[2]! };
 }

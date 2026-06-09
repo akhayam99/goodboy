@@ -23,11 +23,17 @@ const RIGHT_SIDEBAR_STORAGE_KEY = 'goodboy:right-sidebar-width';
 const RIGHT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
-  if (typeof localStorage === 'undefined') return def;
+  if (typeof localStorage === 'undefined') {
+    return def;
+  }
   const raw = localStorage.getItem(key);
-  if (!raw) return def;
+  if (!raw) {
+    return def;
+  }
   const parsed = parseInt(raw, 10);
-  if (Number.isNaN(parsed)) return def;
+  if (Number.isNaN(parsed)) {
+    return def;
+  }
   return Math.max(min, Math.min(max, parsed));
 }
 
@@ -109,19 +115,25 @@ export const AppShell = ({
   const draggingRef = useRef<'left' | 'right' | null>(null);
 
   useEffect(() => {
-    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
     localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
   }, [leftWidth]);
 
   useEffect(() => {
-    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
     localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, String(rightWidth));
   }, [rightWidth]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const which = draggingRef.current;
-      if (!which) return;
+      if (!which) {
+        return;
+      }
       e.preventDefault();
       if (which === 'left') {
         const next = Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, e.clientX));
@@ -135,7 +147,9 @@ export const AppShell = ({
       }
     };
     const onUp = () => {
-      if (!draggingRef.current) return;
+      if (!draggingRef.current) {
+        return;
+      }
       draggingRef.current = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
@@ -156,7 +170,9 @@ export const AppShell = ({
   };
 
   const onLeftKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+      return;
+    }
     e.preventDefault();
     const step = e.shiftKey ? 32 : 8;
     setLeftWidth((w) =>
@@ -168,7 +184,9 @@ export const AppShell = ({
   };
 
   const onRightKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+      return;
+    }
     e.preventDefault();
     const step = e.shiftKey ? 32 : 8;
     setRightWidth((w) =>

@@ -20,7 +20,9 @@ export const listMembersForWorkspaces = async (
   compositeWorkspaceIds: ReadonlyArray<WorkspaceId>,
 ): Promise<Map<WorkspaceId, ReadonlyArray<WorkspaceMember>>> => {
   const out = new Map<WorkspaceId, WorkspaceMember[]>();
-  if (compositeWorkspaceIds.length === 0) return out;
+  if (compositeWorkspaceIds.length === 0) {
+    return out;
+  }
   const placeholders = compositeWorkspaceIds.map(() => '?').join(', ');
   const rows = await db.select<WorkspaceMemberRow & { composite_workspace_id: string }>(
     `SELECT wm.composite_workspace_id, wm.member_workspace_id, wm.mount_name, w.root_path

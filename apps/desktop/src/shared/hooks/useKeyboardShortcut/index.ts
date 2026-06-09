@@ -45,10 +45,16 @@ function comboMatches(e: KeyboardEvent, combo: ShortcutCombo): boolean {
 
 function isFocusInInput(): boolean {
   const el = document.activeElement;
-  if (!el) return false;
+  if (!el) {
+    return false;
+  }
   const tag = el.tagName.toLowerCase();
-  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
-  if ((el as HTMLElement).isContentEditable) return true;
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+    return true;
+  }
+  if ((el as HTMLElement).isContentEditable) {
+    return true;
+  }
   return false;
 }
 
@@ -63,8 +69,12 @@ export const useKeyboardShortcut = (
     const parsed = parseCombo(combo);
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!comboMatches(e, parsed)) return;
-      if (ignoreInInputs && parsed.meta && isFocusInInput()) return;
+      if (!comboMatches(e, parsed)) {
+        return;
+      }
+      if (ignoreInInputs && parsed.meta && isFocusInInput()) {
+        return;
+      }
       e.preventDefault();
       handler();
     };

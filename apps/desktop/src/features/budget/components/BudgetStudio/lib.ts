@@ -44,26 +44,40 @@ export const providerLabel = (provider: string): string => {
 export const formatModel = (model: string): string => {
   let m = model.toLowerCase();
   const dash = m.indexOf('-');
-  if (dash > 0 && VENDOR_PREFIXES.includes(m.slice(0, dash))) m = m.slice(dash + 1);
+  if (dash > 0 && VENDOR_PREFIXES.includes(m.slice(0, dash))) {
+    m = m.slice(dash + 1);
+  }
   m = m.replace(/(\d)-(\d)/g, '$1.$2');
   return m.replace(/-/g, ' ');
 };
 
 export const formatTokens = (n: number): string => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  if (n >= 1_000_000) {
+    return `${(n / 1_000_000).toFixed(2)}M`;
+  }
+  if (n >= 1_000) {
+    return `${(n / 1_000).toFixed(1)}k`;
+  }
   return `${n}`;
 };
 
 export const spendBarColor = (pct: number): string => {
-  if (pct >= 1) return 'bg-danger';
-  if (pct >= 0.8) return 'bg-warning';
+  if (pct >= 1) {
+    return 'bg-danger';
+  }
+  if (pct >= 0.8) {
+    return 'bg-warning';
+  }
   return 'bg-primary';
 };
 
 export const spendStrokeColor = (pct: number): string => {
-  if (pct >= 1) return 'var(--color-danger)';
-  if (pct >= 0.8) return 'var(--color-warning)';
+  if (pct >= 1) {
+    return 'var(--color-danger)';
+  }
+  if (pct >= 0.8) {
+    return 'var(--color-warning)';
+  }
   return 'var(--color-primary)';
 };
 

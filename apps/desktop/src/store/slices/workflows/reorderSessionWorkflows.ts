@@ -6,7 +6,9 @@ import type { GetFn, SetFn } from './types';
 export const reorderSessionWorkflows = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunIds: ReadonlyArray<WorkflowRunId>) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session) {
+      throw new Error(`session not found: ${sessionId}`);
+    }
     const set1 = new Set(workflowRunIds);
     const set2 = new Set(session.workflowRuns.map((r) => r.id));
     if (set1.size !== set2.size || ![...set1].every((id) => set2.has(id))) {

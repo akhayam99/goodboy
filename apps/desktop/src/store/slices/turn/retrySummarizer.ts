@@ -5,8 +5,12 @@ import type { GetFn, SetFn } from './types';
 export const retrySummarizer = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId) => {
     const status = get().summarizerStatus[sessionId];
-    if (!status || status.status === 'running') return;
-    if (!status.lastAttempt) return;
+    if (!status || status.status === 'running') {
+      return;
+    }
+    if (!status.lastAttempt) {
+      return;
+    }
     enqueueSummarizer(
       set,
       get,

@@ -5,9 +5,13 @@ import type { GetFn, SetFn } from './types';
 
 export const autoTitleSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, title: string) => {
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      return;
+    }
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session || session.titleUserEdited) return;
+    if (!session || session.titleUserEdited) {
+      return;
+    }
     const now = new Date().toISOString() as IsoDateTime;
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, goal: title.trim() } : s)),

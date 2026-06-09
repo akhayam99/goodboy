@@ -97,7 +97,9 @@ export const updateWorkflowOrder = async (
     await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
     for (const [ordinal, runId] of workflowRunIds.entries()) {
       const prev = byRun.get(runId);
-      if (!prev) continue;
+      if (!prev) {
+        continue;
+      }
       await db.execute(
         'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [

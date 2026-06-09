@@ -75,7 +75,9 @@ export const listWorktreesForSessions = async (
   sessionIds: ReadonlyArray<SessionId>,
 ): Promise<Map<SessionId, ReadonlyArray<SessionWorktree>>> => {
   const out = new Map<SessionId, SessionWorktree[]>();
-  if (sessionIds.length === 0) return out;
+  if (sessionIds.length === 0) {
+    return out;
+  }
   const placeholders = sessionIds.map(() => '?').join(', ');
   const rows = await db.select<SessionWorktreeRow>(
     `SELECT * FROM session_worktrees WHERE session_id IN (${placeholders}) ORDER BY session_id, parallel_index ASC`,

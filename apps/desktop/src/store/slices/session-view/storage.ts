@@ -24,7 +24,9 @@ export const writeToStorage = (workspaceId: WorkspaceId, prefs: SessionViewPrefs
 export const readFromStorage = (workspaceId: WorkspaceId): SessionViewPrefs => {
   try {
     const raw = localStorage.getItem(storageKey(workspaceId));
-    if (!raw) return DEFAULT_PREFS;
+    if (!raw) {
+      return DEFAULT_PREFS;
+    }
     const parsed: unknown = JSON.parse(raw);
     if (
       typeof parsed !== 'object' ||

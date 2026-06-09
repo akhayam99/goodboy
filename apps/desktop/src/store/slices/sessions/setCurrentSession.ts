@@ -25,7 +25,9 @@ import type { GetFn, SetFn } from './types';
 
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
-    if (get().currentSessionId === id) return;
+    if (get().currentSessionId === id) {
+      return;
+    }
     const tSwitch = performance.now();
     const stateNow = get();
     const cached = id
@@ -60,7 +62,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
       sessionLoading: id ? { ...state.sessionLoading, [id]: initialLoading } : state.sessionLoading,
     }));
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     void get().loadSessionOverrides(id);
     const perf = (op: string) => {
       const t0 = performance.now();
@@ -74,7 +78,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
 
     const markDone = (key: keyof SessionLoadingFlags): void => {
       set((state) => {
-        if (state.currentSessionId !== id) return {};
+        if (state.currentSessionId !== id) {
+          return {};
+        }
         const current = state.sessionLoading[id] ?? EMPTY_LOADING;
         return {
           sessionLoading: { ...state.sessionLoading, [id]: { ...current, [key]: false } },
@@ -187,7 +193,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           for (const agent of agents) {
             const historical = agentRunIds.get(agent.id) ?? [];
             const merged: ProviderRunId[] = [...historical];
-            if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+            if (agent.runId && !merged.includes(agent.runId)) {
+              merged.push(agent.runId);
+            }
             if (merged.length > 0) {
               seededHistory[agent.id] = merged;
             }
@@ -213,7 +221,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
 
           const kindOverridesFromDb: Record<string, AgentKind> = {};
           for (const agent of agents) {
-            if (agent.kind) kindOverridesFromDb[agent.id] = agent.kind as AgentKind;
+            if (agent.kind) {
+              kindOverridesFromDb[agent.id] = agent.kind as AgentKind;
+            }
           }
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },

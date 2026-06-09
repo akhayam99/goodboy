@@ -30,7 +30,9 @@ export const drainAuditRetryQueue = async (set: SetFn): Promise<void> => {
   for (const entry of entries) {
     const backoffMs = auditRetryBackoffMs(entry.attempts);
     const msSinceUpdate = Date.now() - entry.updatedAt;
-    if (msSinceUpdate < backoffMs) continue;
+    if (msSinceUpdate < backoffMs) {
+      continue;
+    }
 
     let payload: PermissionAuditInsertPayload;
     try {

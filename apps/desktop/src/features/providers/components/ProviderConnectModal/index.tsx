@@ -68,7 +68,9 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       setDidAutoStart(false);
       return;
     }
-    if (didAutoStart) return;
+    if (didAutoStart) {
+      return;
+    }
     const resting: ReadonlyArray<ProviderLifecyclePhase> = [
       'idle',
       'cancelled',
@@ -76,12 +78,21 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       'installed',
       'connected',
     ];
-    if (!resting.includes(lifecycle.phase)) return;
-    if (initialAction === 'install' && provider?.connection !== 'missing') return;
-    if (initialAction === 'login' && provider?.connection === 'connected') return;
+    if (!resting.includes(lifecycle.phase)) {
+      return;
+    }
+    if (initialAction === 'install' && provider?.connection !== 'missing') {
+      return;
+    }
+    if (initialAction === 'login' && provider?.connection === 'connected') {
+      return;
+    }
     setDidAutoStart(true);
-    if (initialAction === 'install') void installProvider(providerId);
-    else if (initialAction === 'login') void loginProvider(providerId);
+    if (initialAction === 'install') {
+      void installProvider(providerId);
+    } else if (initialAction === 'login') {
+      void loginProvider(providerId);
+    }
   }, [
     open,
     didAutoStart,
@@ -113,8 +124,11 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       onClose();
       return;
     }
-    if (!installed) void installProvider(providerId);
-    else void loginProvider(providerId);
+    if (!installed) {
+      void installProvider(providerId);
+    } else {
+      void loginProvider(providerId);
+    }
   }, [
     inFlight,
     connected,
@@ -217,13 +231,21 @@ function primaryButton(
   installed: boolean,
   inFlight: boolean,
 ): PrimaryButton {
-  if (inFlight) return { label: 'Cancel', variant: 'secondary' };
-  if (connected) return { label: 'Done', variant: 'primary' };
+  if (inFlight) {
+    return { label: 'Cancel', variant: 'secondary' };
+  }
+  if (connected) {
+    return { label: 'Done', variant: 'primary' };
+  }
   if (phase === 'error') {
-    if (!installed) return { label: 'Retry install', variant: 'primary' };
+    if (!installed) {
+      return { label: 'Retry install', variant: 'primary' };
+    }
     return { label: 'Retry sign-in', variant: 'primary' };
   }
-  if (!installed) return { label: 'Install', variant: 'primary' };
+  if (!installed) {
+    return { label: 'Install', variant: 'primary' };
+  }
   return { label: 'Sign in', variant: 'primary' };
 }
 

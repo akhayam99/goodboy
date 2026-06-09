@@ -27,7 +27,9 @@ export const ConnectGithubDialog = ({ workspaceId, open, onClose }: Props) => {
   }, [workspaceId]);
 
   useEffect(() => {
-    if (open) void refresh();
+    if (open) {
+      void refresh();
+    }
   }, [open, refresh]);
 
   useEffect(() => {

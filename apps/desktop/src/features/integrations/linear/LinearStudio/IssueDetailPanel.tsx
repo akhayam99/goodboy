@@ -73,7 +73,9 @@ function sanitizePrefix(input: string): string {
 
 function isValidBranchSlug(slug: string): boolean {
   const s = slug.trim();
-  if (!s) return false;
+  if (!s) {
+    return false;
+  }
   return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
 }
 
@@ -83,7 +85,9 @@ function branchSlugFor(issue: LinearIssue): string {
     const idx = branchName.indexOf('/');
     const tail = idx >= 0 ? branchName.slice(idx + 1) : branchName;
     const cleaned = sanitizeSlug(tail);
-    if (cleaned.length > 0) return cleaned;
+    if (cleaned.length > 0) {
+      return cleaned;
+    }
   }
   return slugify(issue.title);
 }
@@ -135,7 +139,9 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
 
   useEffect(() => {
-    if (!issue) return;
+    if (!issue) {
+      return;
+    }
     setGoal(goalFromIssue(issue));
     setBranchSlug(branchSlugFor(issue));
     setError(null);
@@ -152,20 +158,28 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   }, [workspaceId, loadSetting]);
 
   useEffect(() => {
-    if (mode !== 'pr' || !adoptablePr?.repo || !rootPath) return;
+    if (mode !== 'pr' || !adoptablePr?.repo || !rootPath) {
+      return;
+    }
     const prNumber = adoptablePr.number;
     let cancelled = false;
     setPrResolving(true);
     setPrError(null);
     ghPrHeadBranch(rootPath, prNumber, workspaceId)
       .then((branch) => {
-        if (!cancelled) setPrBranch(branch);
+        if (!cancelled) {
+          setPrBranch(branch);
+        }
       })
       .catch((err) => {
-        if (!cancelled) setPrError(formatError(err));
+        if (!cancelled) {
+          setPrError(formatError(err));
+        }
       })
       .finally(() => {
-        if (!cancelled) setPrResolving(false);
+        if (!cancelled) {
+          setPrResolving(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -195,7 +209,9 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     setError(null);
     setBusy(true);
     try {
-      if (eraseWorktreePath && rootPath) await removeWorktree(rootPath, eraseWorktreePath);
+      if (eraseWorktreePath && rootPath) {
+        await removeWorktree(rootPath, eraseWorktreePath);
+      }
       const adoptBranch = mode === 'pr' ? (prBranch ?? undefined) : undefined;
       const { session } = await createSession({
         workspaceId,

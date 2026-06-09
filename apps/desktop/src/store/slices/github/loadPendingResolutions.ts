@@ -5,8 +5,12 @@ import { pendingResolutionsInFlight, type GetFn, type SetFn } from './types';
 
 export const loadPendingResolutions = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
-    if (get().sessionPendingResolutions[sessionId] !== undefined) return;
-    if (pendingResolutionsInFlight.has(sessionId)) return;
+    if (get().sessionPendingResolutions[sessionId] !== undefined) {
+      return;
+    }
+    if (pendingResolutionsInFlight.has(sessionId)) {
+      return;
+    }
     pendingResolutionsInFlight.add(sessionId);
     try {
       const rows = await listPendingResolutionsForSession(tauriDatabase, sessionId);

@@ -17,8 +17,12 @@ export const SCOUT_MAX_CHILDREN = 6;
 
 function resolveContainerModel(get: GetFn, container: Agent): string {
   const override = get().agentModelOverride[container.id];
-  if (override) return override;
-  if (container.modelOverride) return container.modelOverride;
+  if (override) {
+    return override;
+  }
+  if (container.modelOverride) {
+    return container.modelOverride;
+  }
   const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name);
   return AGENT_KIND_DEFAULTS[kind]?.model ?? AGENT_KIND_DEFAULTS.scout.model;
 }
@@ -72,7 +76,9 @@ function composeSelfExploreKickoff(areas: ReadonlyArray<ExtractedScoutArea>): st
 
 function scoutFanoutEnabled(get: GetFn, sessionId: SessionId): boolean {
   const session = get().sessions.find((s) => s.id === sessionId);
-  if (!session) return false;
+  if (!session) {
+    return false;
+  }
   return get().workspaceOverrides[session.workspaceId]?.scoutFanout === true;
 }
 
@@ -84,7 +90,9 @@ function emitScoutFanoutNudge(
   areaCount: number,
 ): void {
   const session = get().sessions.find((s) => s.id === sessionId);
-  if (!session) return;
+  if (!session) {
+    return;
+  }
   set((s) => ({
     sessionNudges: {
       ...s.sessionNudges,
@@ -147,7 +155,9 @@ export const fanOutScouts = async (
       { sessionId },
     );
   }
-  if (clamped.length < 2) return;
+  if (clamped.length < 2) {
+    return;
+  }
 
   synthesisStarted.delete(container.id);
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
@@ -218,12 +228,18 @@ async function maybeSynthesizeParent(
   }
 
   const siblings = childrenOf(runs, parentId);
-  if (siblings.some((s) => !TERMINAL.includes(s.status))) return;
-  if (synthesisStarted.has(parentId)) return;
+  if (siblings.some((s) => !TERMINAL.includes(s.status))) {
+    return;
+  }
+  if (synthesisStarted.has(parentId)) {
+    return;
+  }
   synthesisStarted.add(parentId);
 
   const container = runs.find((r) => r.id === parentId);
-  if (!container) return;
+  if (!container) {
+    return;
+  }
   activateAgent(
     set,
     get,
@@ -255,7 +271,9 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void> => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
-    if (!agent) return;
+    if (!agent) {
+      return;
+    }
 
     const split = extractScoutSplit(assistantText);
     if (split != null && split.length >= 2 && scoutDepth(runs, agentId) < SCOUT_DEPTH_CAP) {

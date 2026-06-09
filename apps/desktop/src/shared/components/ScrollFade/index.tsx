@@ -16,7 +16,9 @@ export const ScrollFade = ({ className, fade = 24, orientation = 'vertical', chi
 
   const update = useCallback(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     if (horizontal) {
       setAtStart(el.scrollLeft <= 1);
       setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
@@ -28,7 +30,9 @@ export const ScrollFade = ({ className, fade = 24, orientation = 'vertical', chi
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);

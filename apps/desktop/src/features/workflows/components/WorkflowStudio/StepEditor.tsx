@@ -29,7 +29,9 @@ export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose
   const onModelChange = (model: string) => {
     const levels = modelEffortLevels(model);
     const patch: Partial<DefinitionForm> = { modelOverride: model };
-    if (levels && !levels.includes(def.effort)) patch.effort = levels[0]!;
+    if (levels && !levels.includes(def.effort)) {
+      patch.effort = levels[0]!;
+    }
     onUpdate(patch);
   };
 

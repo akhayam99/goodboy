@@ -45,23 +45,33 @@ export const buildPriorTurnsBlock = (
       pendingAssistant += ev.delta;
     }
   }
-  if (pendingAssistant.length > 0) grouped.push({ role: 'assistant', text: pendingAssistant });
+  if (pendingAssistant.length > 0) {
+    grouped.push({ role: 'assistant', text: pendingAssistant });
+  }
 
-  if (grouped.length === 0) return '';
+  if (grouped.length === 0) {
+    return '';
+  }
 
   const kept: string[] = [];
   let budget = maxTokens;
   for (let i = grouped.length - 1; i >= 0; i--) {
     const line = grouped[i]!;
     const text = line.text.trim();
-    if (text.length === 0) continue;
+    if (text.length === 0) {
+      continue;
+    }
     const formatted = `${line.role}: ${text}`;
     const cost = estimateTokens(formatted);
-    if (cost > budget) break;
+    if (cost > budget) {
+      break;
+    }
     budget -= cost;
     kept.push(formatted);
   }
-  if (kept.length === 0) return '';
+  if (kept.length === 0) {
+    return '';
+  }
   kept.reverse();
   return `${PRIOR_TURNS_HEADER}\n${kept.join('\n\n')}`;
 };
@@ -69,7 +79,9 @@ export const buildPriorTurnsBlock = (
 export const getModelContextWindow = (model: string): number | null => {
   for (const caps of Object.values(PROVIDER_CAPABILITIES)) {
     const m = caps.models.find((x) => x.id === model);
-    if (m) return m.contextWindow;
+    if (m) {
+      return m.contextWindow;
+    }
   }
   return null;
 };

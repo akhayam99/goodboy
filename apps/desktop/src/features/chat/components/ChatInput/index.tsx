@@ -108,8 +108,11 @@ function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === 'string') resolve(reader.result);
-      else reject(new Error('unexpected file reader result'));
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('unexpected file reader result'));
+      }
     };
     reader.onerror = () => reject(reader.error ?? new Error('file read failed'));
     reader.readAsDataURL(file);
@@ -176,7 +179,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   );
   const sessionAgentKindOverrides = useAppStore((s) => s.agentKindOverride);
   const selectedAgentName = useAppStore((s) => {
-    if (!selectedAgentId) return null;
+    if (!selectedAgentId) {
+      return null;
+    }
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
   });
@@ -213,9 +218,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
   const setValue = useCallback(
     (next: string) => {
-      if (!selectedAgentId) return;
-      if (next.length === 0) clearAgentDraft(selectedAgentId);
-      else setAgentDraft(selectedAgentId, next);
+      if (!selectedAgentId) {
+        return;
+      }
+      if (next.length === 0) {
+        clearAgentDraft(selectedAgentId);
+      } else {
+        setAgentDraft(selectedAgentId, next);
+      }
     },
     [selectedAgentId, setAgentDraft, clearAgentDraft],
   );
@@ -420,9 +430,13 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   ]);
 
   const filteredQuickItems = useMemo<ReadonlyArray<QuickActionItem>>(() => {
-    if (!quickItems) return EMPTY_ARRAY;
+    if (!quickItems) {
+      return EMPTY_ARRAY;
+    }
     const q = parsed.query.toLowerCase();
-    if (q.length === 0) return quickItems;
+    if (q.length === 0) {
+      return quickItems;
+    }
     return quickItems.filter(
       (it) =>
         it.label.toLowerCase().includes(q) || (it.sublabel?.toLowerCase().includes(q) ?? false),
@@ -452,7 +466,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           `${skipped} file${skipped === 1 ? '' : 's'} skipped, unsupported type`,
         );
       }
-      if (allowed.length === 0) return;
+      if (allowed.length === 0) {
+        return;
+      }
       const accepted: PendingAttachment[] = [];
       for (const file of allowed) {
         if (file.size > MAX_ATTACHMENT_BYTES) {
@@ -472,7 +488,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           showToast('error', `could not read ${file.name || 'file'}`);
         }
       }
-      if (accepted.length === 0) return;
+      if (accepted.length === 0) {
+        return;
+      }
       setAttachments((prev) => {
         const room = ATTACHMENT_LIMIT - prev.length;
         if (room <= 0) {
@@ -505,7 +523,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   const onFileInputChange = (event: ReactChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
-    if (files.length > 0) void addFiles(files);
+    if (files.length > 0) {
+      void addFiles(files);
+    }
     event.target.value = '';
   };
 
@@ -520,21 +540,25 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   const setVerbosity = (level: VerbosityLevel) => {
     setVerbosityState(level);
-    if (selectedAgentId) void storeSetAgentVerbosity(session.id, selectedAgentId, level);
+    if (selectedAgentId) {
+      void storeSetAgentVerbosity(session.id, selectedAgentId, level);
+    }
   };
 
   const setSelectedProvider = (id: ProviderId | null) => {
     setSelectedProviderState(id);
     void storeSetSessionConfig(session.id, { providerOverride: id });
-    if (selectedAgentId)
+    if (selectedAgentId) {
       void storeSetAgentConfig(session.id, selectedAgentId, { providerOverride: id });
+    }
   };
 
   const setSelectedModel = (id: string | null) => {
     setSelectedModelState(id);
     void storeSetSessionConfig(session.id, { modelOverride: id });
-    if (selectedAgentId)
+    if (selectedAgentId) {
       void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
+    }
   };
 
   const onSelectProvider = (id: ProviderId) => {
@@ -544,18 +568,24 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       );
       return;
     }
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride || isRunning) {
+      return;
+    }
     setSelectedProvider(id);
     setSelectedModel(null);
   };
 
   const onSelectModel = (id: string) => {
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride || isRunning) {
+      return;
+    }
     setSelectedModel(id);
   };
 
   const onResetTurnOverride = () => {
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride || isRunning) {
+      return;
+    }
     setSelectedProvider(null);
     setSelectedModel(null);
   };
@@ -573,7 +603,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
           onNewAlerts: (alerts) => {
-            if (!SESSION_FEATURES.budget) return;
+            if (!SESSION_FEATURES.budget) {
+              return;
+            }
             for (const alert of alerts) {
               showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
             }
@@ -620,7 +652,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const editQueued = useCallback(
     (id: string) => {
       const item = queue.find((q) => q.id === id);
-      if (!item) return;
+      if (!item) {
+        return;
+      }
       setQueue((prev) => prev.filter((q) => q.id !== id));
       setValue(item.content);
       setAttachments(item.attachments);
@@ -632,7 +666,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const onSend = async () => {
     const content = value.trim();
     const atts = attachments;
-    if ((!content && atts.length === 0) || providerDisconnected) return;
+    if ((!content && atts.length === 0) || providerDisconnected) {
+      return;
+    }
     setError(null);
     setLastFailedTurn(null);
 
@@ -679,7 +715,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
 
   const recordScopeOutcome = async (outcome: NudgeOutcome) => {
-    if (!scopeNudgeEventId) return;
+    if (!scopeNudgeEventId) {
+      return;
+    }
     try {
       await updateNudgeEventOutcome(
         tauriDatabase,
@@ -694,7 +732,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
 
   const onScopeSpawn = async () => {
-    if (!scopePending) return;
+    if (!scopePending) {
+      return;
+    }
     const target = scopePending.mismatch.suggestedAgentKind;
     const content = scopePending.content;
     setScopePending(null);
@@ -708,7 +748,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
 
   const onScopeSendAnyway = async () => {
-    if (!scopePending) return;
+    if (!scopePending) {
+      return;
+    }
     const content = scopePending.content;
     const atts = scopePending.attachments;
     setScopePending(null);
@@ -725,19 +767,25 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   const onUseSuggested = async () => {
     const pending = rightSizePending;
-    if (pending === null) return;
+    if (pending === null) {
+      return;
+    }
     const suggested = rightSizeSuggested;
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
     setAttachments([]);
-    if (suggested !== null) setSelectedModel(suggested);
+    if (suggested !== null) {
+      setSelectedModel(suggested);
+    }
     await sendWith(pending.content, pending.attachments, suggested);
   };
 
   const onKeepCurrent = async () => {
     const pending = rightSizePending;
-    if (pending === null) return;
+    if (pending === null) {
+      return;
+    }
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
@@ -756,7 +804,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     if (wasRun && !isRunning && queue.length > 0) {
       const [next, ...rest] = queue;
       setQueue(rest);
-      if (next) void dispatchTurn(next.content, next.attachments, next.override);
+      if (next) {
+        void dispatchTurn(next.content, next.attachments, next.override);
+      }
     }
   }, [isRunning, queue, dispatchTurn]);
 
@@ -771,7 +821,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
     const isInsideComposer = (px: number, py: number): boolean => {
       const el = composerRef.current;
-      if (!el) return false;
+      if (!el) {
+        return false;
+      }
       const rect = el.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       const candidates: ReadonlyArray<readonly [number, number]> = [
@@ -799,7 +851,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           // folder drop would spam a toast per child.
         }
       }
-      if (dropped.length === 0) return;
+      if (dropped.length === 0) {
+        return;
+      }
       setAttachments((prev) => {
         const room = ATTACHMENT_LIMIT - prev.length;
         if (room <= 0) {
@@ -831,14 +885,19 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               break;
             case 'drop': {
               setIsDragging(false);
-              if (!isInsideComposer(p.position.x, p.position.y)) return;
+              if (!isInsideComposer(p.position.x, p.position.y)) {
+                return;
+              }
               void ingestDroppedPaths(p.paths);
               break;
             }
           }
         });
-        if (cancelled) off();
-        else unlisten = off;
+        if (cancelled) {
+          off();
+        } else {
+          unlisten = off;
+        }
       } catch (err) {
         console.warn('drag-drop listener registration failed:', err);
       }
@@ -852,7 +911,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   const lastAgentIdRef = useRef(selectedAgentId);
   useEffect(() => {
-    if (lastAgentIdRef.current === selectedAgentId) return;
+    if (lastAgentIdRef.current === selectedAgentId) {
+      return;
+    }
     const outgoingAgentId = lastAgentIdRef.current;
     lastAgentIdRef.current = selectedAgentId;
 
@@ -878,8 +939,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
     setSelectedProviderState(restoredProvider);
     setSelectedModelState(restoredModel);
-    if (restoredEffort !== null) setEffortState(restoredEffort);
-    if (restoredVerbosity !== null) setVerbosityState(restoredVerbosity);
+    if (restoredEffort !== null) {
+      setEffortState(restoredEffort);
+    }
+    if (restoredVerbosity !== null) {
+      setVerbosityState(restoredVerbosity);
+    }
 
     setAttachments([]);
     setQueue([]);
@@ -921,14 +986,20 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
-    if (effectiveModel) ids.add(effectiveModel);
+    if (effectiveModel) {
+      ids.add(effectiveModel);
+    }
     return Array.from(ids);
   }, [providerModels, effectiveModel]);
 
   const rightSizeSuggested = useMemo<string | null>(() => {
-    if (!isFirstTurnForAgent || rightSizeDismissed) return null;
+    if (!isFirstTurnForAgent || rightSizeDismissed) {
+      return null;
+    }
     const weight = assessTurnWeight(value);
-    if (weight !== 'light') return null;
+    if (weight !== 'light') {
+      return null;
+    }
     return suggestLighterModel(effectiveModel, modelCandidates);
   }, [isFirstTurnForAgent, rightSizeDismissed, value, effectiveModel, modelCandidates]);
 
@@ -1251,7 +1322,9 @@ function QueuedMessages({
   readonly onEdit: (id: string) => void;
   readonly onRemove: (id: string) => void;
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
   return (
     <div className="flex flex-col gap-1 rounded-[6px] bg-subtle/80 p-1 ring-1 ring-border-soft">
       <div className="flex items-center gap-1.5 px-1.5 pt-0.5 text-2xs text-muted-foreground">
@@ -1391,9 +1464,13 @@ function SuggestionStack({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
   const [top, ...rest] = items;
-  if (!top) return null;
+  if (!top) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-2">

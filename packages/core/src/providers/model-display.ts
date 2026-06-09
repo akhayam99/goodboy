@@ -7,7 +7,9 @@ const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelTier> = (() => {
   const map = new Map<string, ModelTier>();
   for (const provider of PROVIDER_PRIORITY) {
     for (const model of PROVIDER_CAPABILITIES[provider].models) {
-      if (!map.has(model.id)) map.set(model.id, model);
+      if (!map.has(model.id)) {
+        map.set(model.id, model);
+      }
     }
   }
   return map;

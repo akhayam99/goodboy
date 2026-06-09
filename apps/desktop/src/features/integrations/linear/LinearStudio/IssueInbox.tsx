@@ -26,7 +26,9 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return groups;
+    if (!q) {
+      return groups;
+    }
     return groups
       .map((g) => ({
         ...g,

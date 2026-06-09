@@ -11,7 +11,9 @@ export const exportConfigToFile = async (): Promise<string | null> => {
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
 
-  if (!filePath) return null;
+  if (!filePath) {
+    return null;
+  }
 
   await invoke<void>('export_config_to_file', { path: filePath });
   return filePath;
@@ -25,7 +27,9 @@ export const importConfigFromFile = async (): Promise<ConfigBundleImportResult |
   });
 
   const filePath = Array.isArray(result) ? result[0] : result;
-  if (!filePath) return null;
+  if (!filePath) {
+    return null;
+  }
 
   return invoke<ConfigBundleImportResult>('import_config_from_file', { path: filePath });
 };

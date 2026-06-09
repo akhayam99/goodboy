@@ -5,8 +5,12 @@ export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyA
   const seen = new Set<string>();
   const out: string[] = [];
   for (const ev of events) {
-    if (ev.kind !== 'file_edit') continue;
-    if (seen.has(ev.path)) continue;
+    if (ev.kind !== 'file_edit') {
+      continue;
+    }
+    if (seen.has(ev.path)) {
+      continue;
+    }
     seen.add(ev.path);
     out.push(ev.path);
   }
@@ -45,7 +49,9 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
   while ((m = QUESTION_RE.exec(text)) !== null) {
     const suggestionsRaw = (m[1] ?? '').trim();
     const body = (m[2] ?? '').trim();
-    if (body.length === 0) continue;
+    if (body.length === 0) {
+      continue;
+    }
     const suggestedAnswers =
       suggestionsRaw.length > 0
         ? suggestionsRaw
@@ -65,7 +71,9 @@ export type ExtractedPlan = {
 
 export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
   const matches = extractAll(assistantText, PLAN_RE);
-  if (matches.length === 0) return null;
+  if (matches.length === 0) {
+    return null;
+  }
   const raw = matches[matches.length - 1]!;
   return parsePlanBody(raw);
 };
@@ -80,13 +88,19 @@ function parsePlanBody(raw: string): ExtractedPlan | null {
       break;
     }
   }
-  if (firstIdx === -1) return null;
+  if (firstIdx === -1) {
+    return null;
+  }
   const titleLine = (lines[firstIdx] ?? '').trim();
   const title = titleLine.replace(/^#+\s*/, '').trim();
-  if (title.length === 0) return null;
+  if (title.length === 0) {
+    return null;
+  }
   const restLines = lines.slice(firstIdx + 1);
   let bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
-  if (bodyMd.length === 0) bodyMd = title;
+  if (bodyMd.length === 0) {
+    bodyMd = title;
+  }
   return { title, bodyMd };
 }
 
@@ -115,7 +129,9 @@ export const extractHandoff = (assistantText: string): ExtractedHandoff | null =
     const inner = m[1] ?? '';
     const attrs = parseHandoffAttrs(inner);
     const kindRaw = attrs.kind?.toLowerCase() ?? '';
-    if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) continue;
+    if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) {
+      continue;
+    }
     last = {
       kind: kindRaw as AgentKindLabel,
       reason: attrs.reason?.trim() ?? '',
@@ -132,7 +148,9 @@ function parseHandoffAttrs(inner: string): Record<string, string> {
   while ((m = HANDOFF_ATTR_RE.exec(inner)) !== null) {
     const key = (m[1] ?? '').toLowerCase();
     const value = m[2] ?? m[3] ?? m[4] ?? '';
-    if (key.length > 0) out[key] = value;
+    if (key.length > 0) {
+      out[key] = value;
+    }
   }
   return out;
 }
@@ -155,7 +173,9 @@ export const extractCommentResolved = (
     const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const commitSha = (attrs.commit ?? attrs.sha ?? '').trim();
-    if (threadId.length === 0 || commitSha.length === 0) continue;
+    if (threadId.length === 0 || commitSha.length === 0) {
+      continue;
+    }
     last = { threadId, commitSha };
   }
   return last;
@@ -182,7 +202,9 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
     const attrs = parseHandoffAttrs(m[1] ?? '');
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const reason = (attrs.reason ?? '').trim();
-    if (threadId.length === 0 || reason.length === 0) continue;
+    if (threadId.length === 0 || reason.length === 0) {
+      continue;
+    }
     last = { threadId, reason };
   }
   return last;
@@ -204,9 +226,13 @@ export const extractClustersFromMarker = (
   let m: RegExpExecArray | null;
   while ((m = CLUSTERS_RE.exec(assistantText)) !== null) {
     const inner = (m[1] ?? '').trim();
-    if (inner.length > 0) raw = inner;
+    if (inner.length > 0) {
+      raw = inner;
+    }
   }
-  if (raw === null) return null;
+  if (raw === null) {
+    return null;
+  }
 
   const json = stripJsonFences(raw);
   let parsed: unknown;
@@ -214,22 +240,30 @@ export const extractClustersFromMarker = (
     parsed = JSON.parse(json);
   } catch {
     const arr = extractJsonArray(json);
-    if (arr === null) return null;
+    if (arr === null) {
+      return null;
+    }
     try {
       parsed = JSON.parse(arr);
     } catch {
       return null;
     }
   }
-  if (!Array.isArray(parsed)) return null;
+  if (!Array.isArray(parsed)) {
+    return null;
+  }
 
   const out: ExtractedCluster[] = [];
   for (const entry of parsed) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const title = typeof e.title === 'string' ? e.title.trim() : '';
     const instructions = typeof e.instructions === 'string' ? e.instructions.trim() : '';
-    if (title.length === 0 || instructions.length === 0) continue;
+    if (title.length === 0 || instructions.length === 0) {
+      continue;
+    }
     out.push({ title, instructions });
   }
   return out.length > 0 ? out : null;
@@ -243,7 +277,9 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
     const inner = m[1] ?? '';
     const attrs = parseHandoffAttrs(inner);
     const id = (attrs.id ?? '').trim();
-    if (id.length === 0) continue;
+    if (id.length === 0) {
+      continue;
+    }
     last = { id };
   }
   return last;
@@ -264,9 +300,13 @@ export const extractScoutSplit = (
   let m: RegExpExecArray | null;
   while ((m = SCOUT_SPLIT_RE.exec(assistantText)) !== null) {
     const inner = (m[1] ?? '').trim();
-    if (inner.length > 0) raw = inner;
+    if (inner.length > 0) {
+      raw = inner;
+    }
   }
-  if (raw === null) return null;
+  if (raw === null) {
+    return null;
+  }
 
   const json = stripJsonFences(raw);
   let parsed: unknown;
@@ -274,22 +314,30 @@ export const extractScoutSplit = (
     parsed = JSON.parse(json);
   } catch {
     const arr = extractJsonArray(json);
-    if (arr === null) return null;
+    if (arr === null) {
+      return null;
+    }
     try {
       parsed = JSON.parse(arr);
     } catch {
       return null;
     }
   }
-  if (!Array.isArray(parsed)) return null;
+  if (!Array.isArray(parsed)) {
+    return null;
+  }
 
   const out: ExtractedScoutArea[] = [];
   for (const entry of parsed) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const area = typeof e.area === 'string' ? e.area.trim() : '';
     const query = typeof e.query === 'string' ? e.query.trim() : '';
-    if (area.length === 0 || query.length === 0) continue;
+    if (area.length === 0 || query.length === 0) {
+      continue;
+    }
     out.push({ area, query });
   }
   return out.length > 0 ? out : null;
@@ -303,7 +351,9 @@ function stripJsonFences(raw: string): string {
 function extractJsonArray(text: string): string | null {
   const start = text.indexOf('[');
   const end = text.lastIndexOf(']');
-  if (start === -1 || end === -1 || end <= start) return null;
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
   return text.slice(start, end + 1);
 }
 
@@ -343,20 +393,28 @@ function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const value = (m[1] ?? '').trim();
-    if (value.length > 0) out.push(value);
+    if (value.length > 0) {
+      out.push(value);
+    }
   }
   return out;
 }
 
 export const mergeIntoSlot = (existing: string, additions: ReadonlyArray<string>): string => {
-  if (additions.length === 0) return existing;
+  if (additions.length === 0) {
+    return existing;
+  }
   const lines = existing.length > 0 ? existing.split('\n') : [];
   const seen = new Set(lines.map((l) => l.trim()));
   let changed = false;
   for (const add of additions) {
     const trimmed = add.trim();
-    if (trimmed.length === 0) continue;
-    if (seen.has(trimmed)) continue;
+    if (trimmed.length === 0) {
+      continue;
+    }
+    if (seen.has(trimmed)) {
+      continue;
+    }
     seen.add(trimmed);
     lines.push(trimmed);
     changed = true;
@@ -365,14 +423,18 @@ export const mergeIntoSlot = (existing: string, additions: ReadonlyArray<string>
 };
 
 export const removeFromSlot = (existing: string, removals: ReadonlyArray<string>): string => {
-  if (removals.length === 0 || existing.length === 0) return existing;
+  if (removals.length === 0 || existing.length === 0) {
+    return existing;
+  }
   const norm = (s: string) =>
     s
       .replace(/^\s*(?:[-*]|\d+\.)\s+/, '')
       .trim()
       .toLowerCase();
   const targets = removals.map(norm).filter((s) => s.length > 0);
-  if (targets.length === 0) return existing;
+  if (targets.length === 0) {
+    return existing;
+  }
   const lines = existing.split('\n');
   const kept: string[] = [];
   let changed = false;

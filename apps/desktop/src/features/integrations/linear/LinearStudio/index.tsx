@@ -21,7 +21,9 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
   const { closing, requestClose } = useStudioOverlay(onClose);
 
   useEffect(() => {
-    if (focused !== null) return;
+    if (focused !== null) {
+      return;
+    }
     if (initialIssueId) {
       for (const group of groups) {
         const row = group.rows.find((r) => r.issue.id === initialIssueId);
@@ -32,14 +34,20 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       }
     }
     const first = groups[0]?.rows[0]?.issue ?? null;
-    if (first) setFocused(first);
+    if (first) {
+      setFocused(first);
+    }
   }, [focused, groups, initialIssueId]);
 
   const focusedRow = useMemo(() => {
-    if (!focused) return null;
+    if (!focused) {
+      return null;
+    }
     for (const group of groups) {
       const row = group.rows.find((r) => r.issue.id === focused.id);
-      if (row) return row;
+      if (row) {
+        return row;
+      }
     }
     return null;
   }, [focused, groups]);

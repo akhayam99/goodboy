@@ -5,7 +5,9 @@ type Props = {
 };
 
 export const Stepper = ({ action }: Props) => {
-  if (action === 'logout') return null;
+  if (action === 'logout') {
+    return null;
+  }
   const current = action === 'install' ? 1 : 2;
   return (
     <div

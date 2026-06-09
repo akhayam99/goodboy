@@ -62,12 +62,18 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onClick);
     window.addEventListener('keydown', onEsc);

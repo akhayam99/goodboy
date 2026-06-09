@@ -61,7 +61,9 @@ export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment
 };
 
 export const toRelPath = (absPath: string, workingDir: string): string => {
-  if (!workingDir) return absPath;
+  if (!workingDir) {
+    return absPath;
+  }
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
 };
@@ -110,7 +112,9 @@ export const enqueueSummarizer = (
   const run = (): void => {
     void runSummarizer(set, get, sessionId, turnInput, turnOutput).finally(() => {
       const q = summarizerQueues.get(sessionId);
-      if (!q) return;
+      if (!q) {
+        return;
+      }
       const next = q.queued;
       if (next) {
         q.queued = null;
@@ -158,7 +162,9 @@ async function runSummarizer(
 
   try {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     const providerId = session.providerPreference.defaultProvider;
     const summarizer = new Summarizer({ providerId, invokeFn: invoke });
@@ -320,7 +326,9 @@ export const capturePlanFromTurn = async (
 ): Promise<PlanWithCount | null> => {
   try {
     const extracted = extractPlanFromMarker(assistantText);
-    if (!extracted) return null;
+    if (!extracted) {
+      return null;
+    }
     const clusters = extractClustersFromMarker(assistantText);
     await invokeUpsertPlan({
       sessionId,
@@ -379,7 +387,9 @@ export const emitTurnNudges = async (
   capturedPlan: PlanWithCount | null,
 ): Promise<void> => {
   const session = get().sessions.find((s) => s.id === sessionId);
-  if (!session) return;
+  if (!session) {
+    return;
+  }
   const inWorkflow = session.workflowRuns.length > 0;
 
   let nextNudge: SessionNudge | null = null;
@@ -438,10 +448,14 @@ export const applyHeuristicTitle = async (
 ): Promise<void> => {
   try {
     const title = heuristicAgentTitle(prompt);
-    if (!title) return;
+    if (!title) {
+      return;
+    }
 
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId);
     const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false;

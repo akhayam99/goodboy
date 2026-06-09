@@ -114,7 +114,9 @@ function resolveLastWriteWins(
 
     candidates.sort((a, b) => {
       const timeDiff = b.completedAt.localeCompare(a.completedAt);
-      if (timeDiff !== 0) return timeDiff;
+      if (timeDiff !== 0) {
+        return timeDiff;
+      }
       return a.runId.localeCompare(b.runId);
     });
 

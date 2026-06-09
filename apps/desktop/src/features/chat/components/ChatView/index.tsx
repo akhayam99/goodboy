@@ -66,13 +66,17 @@ function useScrollPin(deps: ReadonlyArray<unknown>, resetKey?: unknown) {
 
   useEffect(() => {
     const el = scrollerRef.current;
-    if (!el || !pinned) return;
+    if (!el || !pinned) {
+      return;
+    }
     el.scrollTop = el.scrollHeight;
   }, [pinned, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onScroll = () => {
     const el = scrollerRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
     setPinned(distance < PIN_TOLERANCE_PX);
     setAtTop(el.scrollTop < PIN_TOLERANCE_PX);
@@ -150,18 +154,26 @@ function ParallelColumn({
 
 function dayKey(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return 'unknown';
+  if (Number.isNaN(d.getTime())) {
+    return 'unknown';
+  }
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
 function formatDayLabel(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
   const now = new Date();
   const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diffDays = Math.round((startOf(now) - startOf(d)) / 86_400_000);
-  if (diffDays === 0) return 'today';
-  if (diffDays === 1) return 'yesterday';
+  if (diffDays === 0) {
+    return 'today';
+  }
+  if (diffDays === 1) {
+    return 'yesterday';
+  }
   if (diffDays > 0 && diffDays < 7) {
     return d.toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase();
   }
@@ -223,14 +235,19 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   );
 
   useEffect(() => {
-    if (!isActive || !selectedAgentId || transcriptCached) return;
+    if (!isActive || !selectedAgentId || transcriptCached) {
+      return;
+    }
     void selectAgent(session.id, selectedAgentId);
   }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
 
   useEffect(() => {
-    if (!isActive || !selectedAgentId || !selectedAgentLastFinishedAt) return;
-    if (selectedAgentLastViewedAt && selectedAgentLastViewedAt >= selectedAgentLastFinishedAt)
+    if (!isActive || !selectedAgentId || !selectedAgentLastFinishedAt) {
       return;
+    }
+    if (selectedAgentLastViewedAt && selectedAgentLastViewedAt >= selectedAgentLastFinishedAt) {
+      return;
+    }
     void markAgentViewed(session.id, selectedAgentId);
   }, [
     isActive,
@@ -278,7 +295,9 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
   const allParallelTerminal = useMemo(() => {
-    if (parallelRunIds.length === 0) return false;
+    if (parallelRunIds.length === 0) {
+      return false;
+    }
     return parallelRunIds.every((rid) => {
       const run = phaseRuns.find((r) => r.runId === rid);
       return run ? TERMINAL_STATUSES.has(run.status) : false;
@@ -321,7 +340,9 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
       }
     }
     for (const run of phaseRuns) {
-      if (!run.runId) continue;
+      if (!run.runId) {
+        continue;
+      }
       const stepName = run.stepId ? stepNameById.get(run.stepId) : undefined;
       map.set(run.runId as ProviderRunId, {
         agentName: run.name,
@@ -346,7 +367,9 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   const onMergeResolve = (picks: Record<string, MergeResolution>) => {
     const resolvedPicks: Record<string, string> = {};
     for (const [file, pick] of Object.entries(picks)) {
-      if (pick !== '__skip__') resolvedPicks[file] = pick;
+      if (pick !== '__skip__') {
+        resolvedPicks[file] = pick;
+      }
     }
     void resolveMergeConflicts(session.id, resolvedPicks, terminalRunStatuses);
     setMergeDialogOpen(false);
@@ -584,14 +607,22 @@ function ChatEmptyState({ selectedAgentId, phaseRuns, hasWorkflow }: ChatEmptySt
     [selectedAgentId, phaseRuns],
   );
   const selectedKind = useMemo(() => {
-    if (!selectedAgent) return null;
+    if (!selectedAgent) {
+      return null;
+    }
     return agentKindOverride[selectedAgent.id] ?? inferAgentKindFromName(selectedAgent.name);
   }, [selectedAgent, agentKindOverride]);
 
   const scenario = useMemo<EmptyScenario>(() => {
-    if (selectedAgent && selectedKind) return 'agent_focus';
-    if (phaseRuns.length > 0) return 'pick_agent';
-    if (hasWorkflow) return 'workflow_no_agent';
+    if (selectedAgent && selectedKind) {
+      return 'agent_focus';
+    }
+    if (phaseRuns.length > 0) {
+      return 'pick_agent';
+    }
+    if (hasWorkflow) {
+      return 'workflow_no_agent';
+    }
     return 'fresh';
   }, [selectedAgent, selectedKind, phaseRuns.length, hasWorkflow]);
 

@@ -29,7 +29,9 @@ let hydratePromise: Promise<void> | null = null;
 
 export const hydrate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
-    if (hydratePromise) return hydratePromise;
+    if (hydratePromise) {
+      return hydratePromise;
+    }
     hydratePromise = (async () => {
       try {
         set({ bootPhase: 'migrating', error: null });
@@ -46,10 +48,18 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         ]);
         set((state) => {
           const next = { ...state.settings };
-          if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
-          if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
-          if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
-          if (reopenLastRaw !== null) next[SETTING_REOPEN_LAST] = reopenLastRaw;
+          if (editorBinary !== null) {
+            next[SETTING_EDITOR_BINARY] = editorBinary;
+          }
+          if (lastWorkspaceRaw !== null) {
+            next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
+          }
+          if (lastSessionRaw !== null) {
+            next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
+          }
+          if (reopenLastRaw !== null) {
+            next[SETTING_REOPEN_LAST] = reopenLastRaw;
+          }
           return { settings: next };
         });
 

@@ -77,7 +77,9 @@ export const SessionSettingsDialog = ({
   const [confirmReuse, setConfirmReuse] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setError(null);
     setBusy(false);
     setDeleteArmed(false);
@@ -96,7 +98,9 @@ export const SessionSettingsDialog = ({
 
   const armDelete = () => {
     setDeleteArmed(true);
-    if (deleteArmTimer.current !== null) window.clearTimeout(deleteArmTimer.current);
+    if (deleteArmTimer.current !== null) {
+      window.clearTimeout(deleteArmTimer.current);
+    }
     deleteArmTimer.current = window.setTimeout(() => {
       setDeleteArmed(false);
       deleteArmTimer.current = null;
@@ -104,7 +108,9 @@ export const SessionSettingsDialog = ({
   };
 
   useEffect(() => {
-    if (!branchEditOpen || !workspace?.rootPath) return;
+    if (!branchEditOpen || !workspace?.rootPath) {
+      return;
+    }
     setBranchesLoading(true);
     setConfirmReuse(false);
     setBranchTarget('');
@@ -122,7 +128,9 @@ export const SessionSettingsDialog = ({
     setCapDraft(budget?.softCapUsd != null ? String(budget.softCapUsd) : '');
   }, [budget?.softCapUsd]);
 
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const isActiveSession = sessionSummary !== null;
   const spent = isActiveSession ? (sessionSummary?.estimatedCostUsd ?? 0) : 0;
@@ -220,13 +228,18 @@ export const SessionSettingsDialog = ({
       deleteArmTimer.current = null;
     }
     setDeleteArmed(false);
-    if (archived) onUnarchive();
-    else onArchive();
+    if (archived) {
+      onUnarchive();
+    } else {
+      onArchive();
+    }
     onClose();
   };
 
   const onChangeProvider = async (next: ProviderId) => {
-    if (next === session?.providerPreference.defaultProvider) return;
+    if (next === session?.providerPreference.defaultProvider) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

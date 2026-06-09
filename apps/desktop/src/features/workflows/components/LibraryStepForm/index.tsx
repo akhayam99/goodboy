@@ -57,7 +57,9 @@ export const LibraryStepForm = ({
   const canSave = name.trim().length > 0;
 
   const submit = () => {
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     const base: StepDefUpsertArgs = {
       workspaceId,
       role,
@@ -124,7 +126,9 @@ export const LibraryStepForm = ({
             onChange={(m) => {
               const levels = modelEffortLevels(m);
               setModelOverride(m);
-              if (levels && !levels.includes(effort)) setEffort(levels[0]!);
+              if (levels && !levels.includes(effort)) {
+                setEffort(levels[0]!);
+              }
             }}
             disabled={false}
           />

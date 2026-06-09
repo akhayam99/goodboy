@@ -144,7 +144,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
   }: Input): Promise<void> => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session) {
+      throw new Error(`session not found: ${sessionId}`);
+    }
     const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
@@ -420,7 +422,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (parallelDispatch === null) {
       set((state) => {
         const prev = state.agentRunHistory[activeAgentId] ?? [];
-        if (prev.includes(runId)) return state;
+        if (prev.includes(runId)) {
+          return state;
+        }
         return {
           agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
         };
@@ -744,7 +748,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
         const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%). consider /compact`;
-        if (import.meta.env.DEV) console.warn(msg);
+        if (import.meta.env.DEV) {
+          console.warn(msg);
+        }
         set((state) => ({
           systemAlerts: [
             ...state.systemAlerts,
@@ -822,8 +828,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...claudeFlags,
       })) {
         get().appendTurnEvent(activeAgentId, sessionId, event);
-        if (event.kind === 'assistant_text') assistantText += event.delta;
-        if (event.kind === 'file_edit') filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
+        if (event.kind === 'assistant_text') {
+          assistantText += event.delta;
+        }
+        if (event.kind === 'file_edit') {
+          filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
+        }
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
           const engine = new PermissionEngine();
@@ -886,7 +896,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             if (provider === 'codex') {
               return computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model));
             }
-            if (provider === 'cursor') return computeCursorCostUsd(event.usage, model);
+            if (provider === 'cursor') {
+              return computeCursorCostUsd(event.usage, model);
+            }
             if (provider === 'gemini') {
               return computeGeminiCostUsd(event.usage, model, getGeminiPriceOverride(null, model));
             }
@@ -929,7 +941,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
               budgetAlerts: freshAlerts,
             });
-            if (newAlerts.length > 0 && onNewAlerts) onNewAlerts(newAlerts);
+            if (newAlerts.length > 0 && onNewAlerts) {
+              onNewAlerts(newAlerts);
+            }
           }
         }
 
@@ -1010,7 +1024,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             return {
               sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
               sessions: state.sessions.map((s) => {
-                if (s.id !== sessionId || !runId2) return s;
+                if (s.id !== sessionId || !runId2) {
+                  return s;
+                }
                 return {
                   ...s,
                   workflowRuns: s.workflowRuns.map((r) =>
@@ -1030,7 +1046,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             set((state) => ({
               resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
             }));
-            if (resolvedMarker || wontfixMarker) void get().activateNextResolver(sessionId);
+            if (resolvedMarker || wontfixMarker) {
+              void get().activateNextResolver(sessionId);
+            }
           }
         }
       } else if (resolvedAgentId && wasCancelled) {
@@ -1047,7 +1065,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             (r) => r.id === activeAgentId,
           ) ?? null;
         const stepLookup = (() => {
-          if (!activeAgentRow?.stepId) return undefined;
+          if (!activeAgentRow?.stepId) {
+            return undefined;
+          }
           const templates = stateForAgentCtx.phaseTemplates[session.workspaceId] ?? [];
           const sess = stateForAgentCtx.sessions.find((s) => s.id === sessionId);
           const run = activeAgentRow.workflowRunId
@@ -1055,7 +1075,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             : undefined;
           const template = run ? templates.find((t) => t.id === run.workflowId) : undefined;
           const step = template?.steps.find((s) => s.id === activeAgentRow.stepId);
-          if (template && step) return { workflowId: template.id, ordinal: step.ordinal };
+          if (template && step) {
+            return { workflowId: template.id, ordinal: step.ordinal };
+          }
           return undefined;
         })();
         const result = await autoPopulateContext({
@@ -1170,6 +1192,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
 
-    if (lastError) throw lastError;
+    if (lastError) {
+      throw lastError;
+    }
   };
 };

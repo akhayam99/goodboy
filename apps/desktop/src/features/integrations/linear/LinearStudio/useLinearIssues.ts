@@ -64,8 +64,11 @@ export const buildIssueGroups = (
       sessionId: sessionIdByExternalId.get(issue.id) ?? null,
     };
     const arr = buckets.get(key);
-    if (arr) arr.push(row);
-    else buckets.set(key, [row]);
+    if (arr) {
+      arr.push(row);
+    } else {
+      buckets.set(key, [row]);
+    }
   }
   const sortRows = (rows: LinearIssueRow[]): LinearIssueRow[] =>
     rows.sort((a, b) => b.issue.updatedAt.localeCompare(a.issue.updatedAt));
@@ -123,9 +126,13 @@ export const resolveIssueSessions = (
     }
   }
   for (const issue of issues) {
-    if (byIssue.has(issue.id)) continue;
+    if (byIssue.has(issue.id)) {
+      continue;
+    }
     const match = sessions.find((s) => sessionMatchesIssue(s, issue, sessionBranches, sessionPr));
-    if (match) byIssue.set(issue.id, match.id);
+    if (match) {
+      byIssue.set(issue.id, match.id);
+    }
   }
   return byIssue;
 };
@@ -167,7 +174,9 @@ export const useLinearIssues = (workspaceId: WorkspaceId): UseLinearIssues => {
     const map = new Map<string, SessionPrRef>();
     for (const [sessionId, gh] of Object.entries(sessionGithub)) {
       const pr = gh?.pr;
-      if (pr) map.set(sessionId, sessionPrRefFromUrl(pr.number, pr.url));
+      if (pr) {
+        map.set(sessionId, sessionPrRefFromUrl(pr.number, pr.url));
+      }
     }
     return map;
   }, [sessionGithub]);

@@ -6,9 +6,13 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
     const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number;
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (num == null || !session) return;
+    if (num == null || !session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
     const res = await tauriGhRunner.run(['pr', 'ready', String(num), '--undo'], {
       cwd: workspace.rootPath,
       workspaceId: session.workspaceId,

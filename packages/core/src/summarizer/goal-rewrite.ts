@@ -49,7 +49,9 @@ export const rewriteWorkflowGoal = async (
   input: GoalRewriteInput,
 ): Promise<string | null> => {
   const goal = input.goal.trim();
-  if (goal.length === 0 || input.stepNames.length === 0) return null;
+  if (goal.length === 0 || input.stepNames.length === 0) {
+    return null;
+  }
 
   const result = await deps.invokeFn<OneShotResult>('summarize_session', {
     args: {
@@ -60,7 +62,9 @@ export const rewriteWorkflowGoal = async (
       systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,
     },
   });
-  if ((result.exitCode ?? 0) !== 0) return null;
+  if ((result.exitCode ?? 0) !== 0) {
+    return null;
+  }
 
   const cleaned = extractText(deps.providerId, result.stdout).trim();
   return cleaned.length > 0 ? cleaned : null;

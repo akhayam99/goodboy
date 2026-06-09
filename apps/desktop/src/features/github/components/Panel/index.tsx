@@ -18,7 +18,9 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (!status) void refreshStatus();
+    if (!status) {
+      void refreshStatus();
+    }
   }, [status, refreshStatus]);
 
   const onReload = async () => {
@@ -31,7 +33,9 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
   };
 
   const onConnect = async () => {
-    if (!token.trim()) return;
+    if (!token.trim()) {
+      return;
+    }
     setSave('saving');
     setError(null);
     try {

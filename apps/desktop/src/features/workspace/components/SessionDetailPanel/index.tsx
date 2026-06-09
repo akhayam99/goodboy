@@ -45,7 +45,9 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   const [renameError, setRenameError] = useState<string | null>(null);
 
   const launchEditor = async (binary: string) => {
-    if (!worktreePath) return;
+    if (!worktreePath) {
+      return;
+    }
     try {
       await openInEditor(worktreePath, binary);
     } catch (err) {
@@ -54,7 +56,9 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   };
 
   const onRunScript = (script: WorkspaceScript) => {
-    if (!worktreePath) return;
+    if (!worktreePath) {
+      return;
+    }
     void runWorkspaceScript(session.id as SessionId, script, worktreePath);
   };
 
@@ -169,7 +173,9 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   };
 
   const onRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') void commitRename();
+    if (e.key === 'Enter') {
+      void commitRename();
+    }
     if (e.key === 'Escape') {
       setRenaming(false);
       setRenameError(null);
@@ -278,7 +284,9 @@ function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
   const sessionCost = useMemo(() => {
     let sum = 0;
     for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') continue;
+      if (rec.kind === 'summarizer') {
+        continue;
+      }
       sum += rec.estimatedCostUsd;
     }
     return sum;

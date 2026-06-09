@@ -12,9 +12,13 @@ export const openWorkspace = (get: GetFn) => {
     const myLabel = currentWindowLabel();
     const shownLabel = Object.entries(presence).find(([, ws]) => ws === id)?.[0] ?? null;
 
-    if (shownLabel === myLabel) return;
+    if (shownLabel === myLabel) {
+      return;
+    }
     if (shownLabel) {
-      if (await focusWindow(shownLabel)) return;
+      if (await focusWindow(shownLabel)) {
+        return;
+      }
     }
     if (get().currentWorkspaceId === null) {
       await get().setCurrentWorkspace(id);

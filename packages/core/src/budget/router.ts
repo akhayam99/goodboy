@@ -59,7 +59,9 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
   }
 
   for (const candidate of connectedProviders) {
-    if (candidate === preferredProvider) continue;
+    if (candidate === preferredProvider) {
+      continue;
+    }
 
     const candidateName = PROVIDER_ID_TO_NAME[candidate];
     const candidateResult = await budgetChecker.checkProviderBudget(candidateName, 'monthly');

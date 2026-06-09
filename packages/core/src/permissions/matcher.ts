@@ -26,7 +26,9 @@ function globToRegex(glob: string): RegExp {
 }
 
 export const parseArgsMatcher = (matcher: string): ((input: unknown) => boolean) => {
-  if (!matcher) return () => true;
+  if (!matcher) {
+    return () => true;
+  }
   const re = globToRegex(matcher);
   return (input: unknown) => {
     const str = stringifyInput('', input);
@@ -35,7 +37,9 @@ export const parseArgsMatcher = (matcher: string): ((input: unknown) => boolean)
 };
 
 function stringifyInput(toolName: string, input: unknown): string {
-  if (input === null || input === undefined) return '';
+  if (input === null || input === undefined) {
+    return '';
+  }
   const obj = input as Record<string, unknown>;
   if (toolName === 'Bash') {
     return typeof obj['command'] === 'string' ? obj['command'] : JSON.stringify(input);
@@ -68,7 +72,9 @@ export const parseToolPattern = (pattern: string): ToolMatcher => {
 
   return {
     matches(toolName: string, input: unknown): boolean {
-      if (toolName !== tool) return false;
+      if (toolName !== tool) {
+        return false;
+      }
       const str = stringifyInput(toolName, input);
       return argsRe.test(str);
     },
@@ -76,6 +82,8 @@ export const parseToolPattern = (pattern: string): ToolMatcher => {
 };
 
 export const formatToolPattern = (pattern: PermissionRulePattern): string => {
-  if (!pattern.argsMatcher) return pattern.tool;
+  if (!pattern.argsMatcher) {
+    return pattern.tool;
+  }
   return `${pattern.tool}(${pattern.argsMatcher})`;
 };

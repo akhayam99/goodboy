@@ -19,7 +19,9 @@ export const clusterOperations = (
   let buffer: TranscriptItem[] = [];
 
   const flush = () => {
-    if (buffer.length === 0) return;
+    if (buffer.length === 0) {
+      return;
+    }
     if (buffer.some((i) => OPERATION_KINDS.has(i.kind))) {
       rows.push({ kind: 'operations', key: `ops-${buffer[0]!.key}`, items: buffer });
     } else {

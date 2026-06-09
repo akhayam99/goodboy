@@ -58,26 +58,34 @@ function useSmoothProgress(phase: BootPhase, hasError: boolean): number {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (hasError) return;
+    if (hasError) {
+      return;
+    }
     targetRef.current = targetForPhase(phase);
   }, [phase, hasError]);
 
   useEffect(() => {
-    if (hasError) return undefined;
+    if (hasError) {
+      return undefined;
+    }
     let last = performance.now();
     const tick = (now: number) => {
       const dt = now - last;
       last = now;
       setPct((curr) => {
         const target = targetRef.current;
-        if (curr >= target) return curr;
+        if (curr >= target) {
+          return curr;
+        }
         return Math.min(target, curr + dt * RATE_PER_MS);
       });
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
   }, [hasError]);
 
@@ -101,7 +109,9 @@ export const BootSplash = ({
   const finishedRef = useRef(false);
 
   useEffect(() => {
-    if (finishedRef.current || hasError) return;
+    if (finishedRef.current || hasError) {
+      return;
+    }
     if (pct >= 100 && phase === 'ready') {
       finishedRef.current = true;
       onFinished?.();

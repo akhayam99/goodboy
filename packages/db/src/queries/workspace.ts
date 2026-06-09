@@ -35,7 +35,9 @@ async function attachMembers(
   workspaces: ReadonlyArray<Workspace>,
 ): Promise<ReadonlyArray<Workspace>> {
   const compositeIds = workspaces.filter((w) => w.kind === 'composite').map((w) => w.id);
-  if (compositeIds.length === 0) return workspaces;
+  if (compositeIds.length === 0) {
+    return workspaces;
+  }
   const membersByComposite = await listMembersForWorkspaces(db, compositeIds);
   return workspaces.map((w) =>
     w.kind === 'composite' ? { ...w, members: membersByComposite.get(w.id) ?? [] } : w,
@@ -66,7 +68,9 @@ export const getWorkspaceById = async (
 ): Promise<Workspace | null> => {
   const rows = await db.select<WorkspaceRow>('SELECT * FROM workspaces WHERE id = ?', [id]);
   const row = rows[0];
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   const [withMembers] = await attachMembers(db, [toDomain(row)]);
   return withMembers ?? null;
 };
@@ -98,7 +102,9 @@ export const findWorkspaceByRootPath = async (
     [rootPath],
   );
   const row = rows[0];
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   const [withMembers] = await attachMembers(db, [toDomain(row)]);
   return withMembers ?? null;
 };

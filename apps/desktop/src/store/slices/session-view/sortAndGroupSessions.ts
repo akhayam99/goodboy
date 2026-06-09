@@ -50,11 +50,21 @@ function userStatusBucket(status: SessionUserStatus): SessionUserStatusGroup {
 
 function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
   const pr = github?.pr;
-  if (!pr) return 'not-open';
-  if (pr.state === 'closed') return 'closed';
-  if (pr.state === 'merged') return 'merged';
-  if (pr.isDraft) return 'draft';
-  if (pr.reviewDecision === 'approved') return 'reviewed';
+  if (!pr) {
+    return 'not-open';
+  }
+  if (pr.state === 'closed') {
+    return 'closed';
+  }
+  if (pr.state === 'merged') {
+    return 'merged';
+  }
+  if (pr.isDraft) {
+    return 'draft';
+  }
+  if (pr.reviewDecision === 'approved') {
+    return 'reviewed';
+  }
   return 'reviewable';
 }
 

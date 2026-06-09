@@ -74,7 +74,9 @@ export const GithubCard = ({
   const isUserPick = userSelectedPr === pr.number;
 
   useEffect(() => {
-    if (!isUserPick) setActive(smartDefault);
+    if (!isUserPick) {
+      setActive(smartDefault);
+    }
   }, [smartDefault, isUserPick]);
 
   const selectTab = (k: GithubTabKey) => {
@@ -165,13 +167,19 @@ function AnimatedTabBody({ activeKey, children }: { activeKey: string; children:
 
   useLayoutEffect(() => {
     const el = innerRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     setHeight(el.offsetHeight);
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
-      if (!entry) return;
+      if (!entry) {
+        return;
+      }
       const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
-      if (h != null) setHeight(h);
+      if (h != null) {
+        setHeight(h);
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -239,16 +247,19 @@ function computeCiStatus(
   checks: ReadonlyArray<PrCheckRun>,
 ): TabStatus | null {
   if (checks.length === 0) {
-    if (pr.checks === 'failure')
+    if (pr.checks === 'failure') {
       return { tone: 'danger', icon: <XCircle size={9} aria-hidden />, label: 'ci failing' };
-    if (pr.checks === 'pending')
+    }
+    if (pr.checks === 'pending') {
       return {
         tone: 'warning',
         icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
         label: 'ci running',
       };
-    if (pr.checks === 'success')
+    }
+    if (pr.checks === 'success') {
       return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'ci passing' };
+    }
     return null;
   }
   const fail = checks.filter(
@@ -259,20 +270,22 @@ function computeCiStatus(
       c.conclusion === 'action_required',
   ).length;
   const pending = checks.filter((c) => c.conclusion === 'pending').length;
-  if (fail > 0)
+  if (fail > 0) {
     return {
       tone: 'danger',
       icon: <XCircle size={9} aria-hidden />,
       count: fail,
       label: `${fail} failing check${fail === 1 ? '' : 's'}`,
     };
-  if (pending > 0)
+  }
+  if (pending > 0) {
     return {
       tone: 'warning',
       icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
       count: pending,
       label: `${pending} check${pending === 1 ? '' : 's'} running`,
     };
+  }
   return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'all checks passing' };
 }
 
@@ -280,15 +293,18 @@ function computeCommentsStatus(comments: ReadonlyArray<PrComment>): TabStatus | 
   const heads = groupThreads(comments)
     .map((t) => t.head)
     .filter((c) => c.source === 'review');
-  if (heads.length === 0) return null;
+  if (heads.length === 0) {
+    return null;
+  }
   const open = heads.filter((c) => c.resolved === false).length;
-  if (open > 0)
+  if (open > 0) {
     return {
       tone: 'warning',
       icon: <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />,
       count: open,
       label: `${open} unresolved comment${open === 1 ? '' : 's'}`,
     };
+  }
   return {
     tone: 'success',
     icon: <CheckCheck size={9} aria-hidden />,
@@ -303,15 +319,16 @@ function computeReviewStatus(
 ): TabStatus | null {
   const latest = latestTerminalReviewsByAuthor(reviews);
   const changes = latest.filter((r) => r.state === 'changes_requested');
-  if (changes.length > 0)
+  if (changes.length > 0) {
     return {
       tone: 'danger',
       icon: <AlertCircle size={9} aria-hidden />,
       count: changes.length,
       label: `changes requested by ${changes.map((r) => r.author).join(', ')}`,
     };
+  }
   const approvals = latest.filter((r) => r.state === 'approved');
-  if (pr.reviewDecision === 'approved' || approvals.length > 0)
+  if (pr.reviewDecision === 'approved' || approvals.length > 0) {
     return {
       tone: 'success',
       icon: <CheckCheck size={9} aria-hidden />,
@@ -320,27 +337,34 @@ function computeReviewStatus(
           ? `approved by ${approvals.map((r) => r.author).join(', ')}`
           : 'approved',
     };
-  if (requests.length > 0)
+  }
+  if (requests.length > 0) {
     return {
       tone: 'info',
       icon: <CircleDashed size={9} aria-hidden />,
       count: requests.length,
       label: `awaiting ${requests.length} reviewer${requests.length === 1 ? '' : 's'}`,
     };
-  if (reviews.some((r) => r.state === 'commented'))
+  }
+  if (reviews.some((r) => r.state === 'commented')) {
     return {
       tone: 'muted',
       icon: <MessageSquare size={9} aria-hidden />,
       label: 'reviewer commented',
     };
+  }
   return null;
 }
 
 function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
   const now = useNow(30_000, !!fetchedAt);
-  if (!fetchedAt) return null;
+  if (!fetchedAt) {
+    return null;
+  }
   const ageMs = now - new Date(fetchedAt).getTime();
-  if (!Number.isFinite(ageMs) || ageMs < 60_000) return null;
+  if (!Number.isFinite(ageMs) || ageMs < 60_000) {
+    return null;
+  }
   return (
     <span
       className="text-[9px] text-muted-foreground/60"
@@ -457,7 +481,9 @@ export const CommentsPane = ({
       : reviewThreads.filter((t) => t.head.resolved !== true);
     return [...filtered].sort((a, b) => {
       const p = threadPriority(a) - threadPriority(b);
-      if (p !== 0) return p;
+      if (p !== 0) {
+        return p;
+      }
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
   }, [reviewThreads, showResolved]);
@@ -510,8 +536,11 @@ export const CommentsPane = ({
   const toggle = (id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -774,10 +803,18 @@ export const ReviewPane = ({
 
 function ReviewStateIcon({ state }: { state: PrReviewState }) {
   const props = { size: 10, 'aria-hidden': true } as const;
-  if (state === 'approved') return <CheckCheck {...props} className="text-success" />;
-  if (state === 'changes_requested') return <AlertCircle {...props} className="text-danger" />;
-  if (state === 'commented') return <MessageSquare {...props} className="text-muted-foreground" />;
-  if (state === 'dismissed') return <MinusCircle {...props} className="text-muted-foreground" />;
+  if (state === 'approved') {
+    return <CheckCheck {...props} className="text-success" />;
+  }
+  if (state === 'changes_requested') {
+    return <AlertCircle {...props} className="text-danger" />;
+  }
+  if (state === 'commented') {
+    return <MessageSquare {...props} className="text-muted-foreground" />;
+  }
+  if (state === 'dismissed') {
+    return <MinusCircle {...props} className="text-muted-foreground" />;
+  }
   return <CircleDashed {...props} className="text-muted-foreground" />;
 }
 
@@ -786,7 +823,9 @@ function latestTerminalReviewsByAuthor(reviews: ReadonlyArray<PrReview>): Readon
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     map.set(r.author, r);
   }
   return [...map.values()];
@@ -834,15 +873,24 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
 
 function CheckConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
   const props = { size: 11, 'aria-hidden': true } as const;
-  if (conclusion === 'success') return <Check {...props} className="text-success" />;
-  if (conclusion === 'failure') return <XCircle {...props} className="text-danger" />;
-  if (conclusion === 'pending')
+  if (conclusion === 'success') {
+    return <Check {...props} className="text-success" />;
+  }
+  if (conclusion === 'failure') {
+    return <XCircle {...props} className="text-danger" />;
+  }
+  if (conclusion === 'pending') {
     return <Clock {...props} className="text-warning motion-safe:animate-pulse" />;
-  if (conclusion === 'cancelled' || conclusion === 'timed_out')
+  }
+  if (conclusion === 'cancelled' || conclusion === 'timed_out') {
     return <CircleSlash {...props} className="text-muted-foreground" />;
-  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale')
+  }
+  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale') {
     return <MinusCircle {...props} className="text-muted-foreground" />;
-  if (conclusion === 'action_required') return <AlertCircle {...props} className="text-warning" />;
+  }
+  if (conclusion === 'action_required') {
+    return <AlertCircle {...props} className="text-warning" />;
+  }
   return <HelpCircle {...props} className="text-muted-foreground" />;
 }
 
@@ -861,7 +909,9 @@ function summarizeReview(
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     latestByAuthor.set(r.author, r);
   }
   const approvals = [...latestByAuthor.values()].filter((r) => r.state === 'approved');
@@ -916,19 +966,29 @@ export const pickSmartTab = (
       c.conclusion === 'action_required',
   );
   const hasPending = checks.some((c) => c.conclusion === 'pending');
-  if (hasFailing || hasPending) return 'ci';
-  if (pr.checks === 'failure' || pr.checks === 'pending') return 'ci';
+  if (hasFailing || hasPending) {
+    return 'ci';
+  }
+  if (pr.checks === 'failure' || pr.checks === 'pending') {
+    return 'ci';
+  }
 
   const reviews = detail?.reviews ?? [];
   const latestByAuthor = new Map<string, PrReviewState>();
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     latestByAuthor.set(r.author, r.state);
   }
-  if ([...latestByAuthor.values()].some((s) => s === 'changes_requested')) return 'review';
-  if (pr.reviewDecision === 'changes_requested') return 'review';
+  if ([...latestByAuthor.values()].some((s) => s === 'changes_requested')) {
+    return 'review';
+  }
+  if (pr.reviewDecision === 'changes_requested') {
+    return 'review';
+  }
 
   const comments = detail?.comments ?? [];
   if (comments.length > 0) {
@@ -937,29 +997,45 @@ export const pickSmartTab = (
       comments[0]!.createdAt,
     );
     const activity = branchLastActivity ?? pr.updatedAt;
-    if (last > activity) return 'comments';
+    if (last > activity) {
+      return 'comments';
+    }
   }
   return 'ci';
 };
 
 function formatDuration(ms: number | null): string {
-  if (ms === null) return '';
-  if (ms < 1_000) return `${ms}ms`;
+  if (ms === null) {
+    return '';
+  }
+  if (ms < 1_000) {
+    return `${ms}ms`;
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 60) return `${s}s`;
+  if (s < 60) {
+    return `${s}s`;
+  }
   const m = Math.floor(s / 60);
   const rs = s % 60;
   return rs > 0 ? `${m}m ${rs}s` : `${m}m`;
 }
 
 function formatRelative(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  if (!Number.isFinite(ms) || ms < 0) {
+    return 'just now';
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 45) return 'just now';
+  if (s < 45) {
+    return 'just now';
+  }
   const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) {
+    return `${m}m ago`;
+  }
   const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) {
+    return `${h}h ago`;
+  }
   const d = Math.round(h / 24);
   return `${d}d ago`;
 }

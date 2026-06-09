@@ -41,22 +41,33 @@ export const RunScriptControl = ({
 
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return null;
+    if (!rect) {
+      return null;
+    }
     return { centerX: rect.left + rect.width / 2, top: rect.bottom + 4 };
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) {
+        return;
+      }
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
       setOpen(false);
     };
     const onReanchor = () => {
       const next = computeAnchor();
-      if (next) setAnchor(next);
-      else setOpen(false);
+      if (next) {
+        setAnchor(next);
+      } else {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('resize', onReanchor);
@@ -71,14 +82,18 @@ export const RunScriptControl = ({
   const onToggle = () => {
     if (!open) {
       const next = computeAnchor();
-      if (next) setAnchor(next);
+      if (next) {
+        setAnchor(next);
+      }
     }
     setOpen((v) => !v);
   };
 
   const onRun = useCallback(
     (script: WorkspaceScript) => {
-      if (!worktreePath) return;
+      if (!worktreePath) {
+        return;
+      }
       void runScript(sessionId, script.id, worktreePath);
     },
     [runScript, sessionId, worktreePath],

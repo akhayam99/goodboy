@@ -29,9 +29,13 @@ function makeMockSpawn(
 
   const spawnFn = vi.fn().mockImplementation(() => {
     setImmediate(() => {
-      if (stdoutData) child.stdout.push(stdoutData);
+      if (stdoutData) {
+        child.stdout.push(stdoutData);
+      }
       child.stdout.push(null);
-      if (stderrData) child.stderr.push(stderrData);
+      if (stderrData) {
+        child.stderr.push(stderrData);
+      }
       child.stderr.push(null);
       setImmediate(() => child.emit('close', exitCode));
     });

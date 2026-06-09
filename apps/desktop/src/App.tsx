@@ -64,7 +64,9 @@ const KEEP_ALIVE_CAP = 5;
 function readPersistedContextOpen(id: SessionId, fallback: boolean): boolean {
   try {
     const raw = localStorage.getItem(CONTEXT_PANEL_KEY(id));
-    if (raw === null) return fallback;
+    if (raw === null) {
+      return fallback;
+    }
     return raw === '1';
   } catch {
     return fallback;
@@ -125,7 +127,9 @@ export const App = () => {
   useEffect(() => {
     void hydrate();
     void refreshPricingTable();
-    if (import.meta.env.PROD) void checkForUpdates();
+    if (import.meta.env.PROD) {
+      void checkForUpdates();
+    }
   }, [hydrate, checkForUpdates]);
 
   useGithubPolling();
@@ -136,14 +140,18 @@ export const App = () => {
   useEffect(() => {
     void applyStoredZoom();
     const onShortcut = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
+      if (!(e.metaKey || e.ctrlKey)) {
+        return;
+      }
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         window.location.reload();
         return;
       }
       const action = ZOOM_ACTIONS[e.key];
-      if (!action) return;
+      if (!action) {
+        return;
+      }
       e.preventDefault();
       void action();
     };
@@ -220,10 +228,14 @@ export const App = () => {
   useEffect(() => {
     const COMMIT_RE = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/commit\/([0-9a-f]{7,40})/i;
     const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) {
+        return;
+      }
       const anchor = (e.target as HTMLElement | null)?.closest?.('a');
       const href = anchor?.getAttribute('href');
-      if (!href) return;
+      if (!href) {
+        return;
+      }
       const commit = href.match(COMMIT_RE);
       if (commit) {
         e.preventDefault();
@@ -241,7 +253,9 @@ export const App = () => {
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape') {
+        return;
+      }
       e.preventDefault();
       const dialogs = document.querySelectorAll<HTMLDialogElement>('dialog[open]');
       dialogs[dialogs.length - 1]?.close();
@@ -256,7 +270,9 @@ export const App = () => {
       setContextHydratedFor(null);
       return;
     }
-    if (contextHydratedFor === currentSession.id) return;
+    if (contextHydratedFor === currentSession.id) {
+      return;
+    }
     const enabledSlots = slots.filter((s) => s.enabled && s.value.length > 0).length;
     const fallback = enabledSlots > 0;
     setContextOpen(readPersistedContextOpen(currentSession.id, fallback));
@@ -264,7 +280,9 @@ export const App = () => {
   }, [currentSession, slots, contextHydratedFor]);
 
   const onToggleContext = () => {
-    if (!currentSession) return;
+    if (!currentSession) {
+      return;
+    }
     setContextOpen((open) => {
       const next = !open;
       writePersistedContextOpen(currentSession.id, next);
@@ -278,9 +296,13 @@ export const App = () => {
 
   useEffect(() => {
     const id = currentSession?.id ?? null;
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     setKeepAliveIds((prev) => {
-      if (prev[prev.length - 1] === id) return prev;
+      if (prev[prev.length - 1] === id) {
+        return prev;
+      }
       const filtered = prev.filter((x) => x !== id);
       const next = [...filtered, id];
       return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
@@ -289,15 +311,21 @@ export const App = () => {
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const openDeleteSession = useCallback(() => {
-    if (currentSession) setDeleteOpen(true);
+    if (currentSession) {
+      setDeleteOpen(true);
+    }
   }, [currentSession]);
   const openArchiveSession = useCallback(() => {
-    if (currentSession) setArchiveOpen(true);
+    if (currentSession) {
+      setArchiveOpen(true);
+    }
   }, [currentSession]);
 
   useEffect(() => {
     const handler = () => {
-      if (currentSession) setDeleteOpen(true);
+      if (currentSession) {
+        setDeleteOpen(true);
+      }
     };
     window.addEventListener('goodboy:delete-session', handler);
     return () => window.removeEventListener('goodboy:delete-session', handler);
@@ -305,7 +333,9 @@ export const App = () => {
 
   useEffect(() => {
     const handler = () => {
-      if (currentSession) setArchiveOpen(true);
+      if (currentSession) {
+        setArchiveOpen(true);
+      }
     };
     window.addEventListener('goodboy:archive-session', handler);
     return () => window.removeEventListener('goodboy:archive-session', handler);
@@ -336,7 +366,9 @@ export const App = () => {
   const selectWorkspaceByIndex = useCallback(
     (idx: number) => {
       const w = workspaces[idx];
-      if (w) void openWorkspace(w.id, w.name);
+      if (w) {
+        void openWorkspace(w.id, w.name);
+      }
     },
     [workspaces, openWorkspace],
   );
@@ -344,22 +376,32 @@ export const App = () => {
   const navigateSession = useCallback(
     (delta: number) => {
       const list = currentWorkspaceSessions;
-      if (list.length === 0) return;
+      if (list.length === 0) {
+        return;
+      }
       if (!currentSession) {
         const target = delta >= 0 ? list[0] : list[list.length - 1];
-        if (target) void setCurrentSession(target.id);
+        if (target) {
+          void setCurrentSession(target.id);
+        }
         return;
       }
       const idx = list.findIndex((s) => s.id === currentSession.id);
-      if (idx === -1) return;
+      if (idx === -1) {
+        return;
+      }
       const next = list[idx + delta];
-      if (next) void setCurrentSession(next.id);
+      if (next) {
+        void setCurrentSession(next.id);
+      }
     },
     [currentWorkspaceSessions, currentSession, setCurrentSession],
   );
 
   const openNewSession = useCallback(() => {
-    if (!currentWorkspace) return;
+    if (!currentWorkspace) {
+      return;
+    }
     window.dispatchEvent(new CustomEvent('goodboy:new-session'));
   }, [currentWorkspace]);
 
@@ -375,7 +417,9 @@ export const App = () => {
   const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
 
   const commitDiffLoader = useCallback(async () => {
-    if (!commitDiff) return '';
+    if (!commitDiff) {
+      return '';
+    }
     const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null;
     if (worktree) {
       try {
@@ -411,8 +455,12 @@ export const App = () => {
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
-    if (!cid) return keepAliveIds;
-    if (keepAliveIds.includes(cid)) return keepAliveIds;
+    if (!cid) {
+      return keepAliveIds;
+    }
+    if (keepAliveIds.includes(cid)) {
+      return keepAliveIds;
+    }
     const merged = [...keepAliveIds, cid];
     return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
   }, [keepAliveIds, currentSession?.id]);
@@ -613,7 +661,9 @@ type KeepAliveChatPanelProps = {
 
 function KeepAliveChatPanel({ sessionId, isActive }: KeepAliveChatPanelProps) {
   const session = useSessionById(sessionId);
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
   return (
     <div hidden={!isActive} className="absolute inset-0">
       <ChatView session={session} isActive={isActive} />
@@ -637,7 +687,9 @@ function KeepAliveContextPanel({
   onExpand,
 }: KeepAliveContextPanelProps) {
   const session = useSessionById(sessionId);
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
   return (
     <div hidden={!isActive} className="absolute inset-0">
       <ContextPanel
@@ -776,7 +828,9 @@ function EmptyStateLogo() {
 }
 
 function KeyboardHints({ hasWorkspace }: { hasWorkspace: boolean }) {
-  if (!hasWorkspace) return null;
+  if (!hasWorkspace) {
+    return null;
+  }
   return (
     <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-2xs text-muted-foreground">
       <span className="inline-flex items-center gap-1">

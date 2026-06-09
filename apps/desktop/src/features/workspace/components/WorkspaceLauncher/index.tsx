@@ -46,7 +46,9 @@ export const WorkspaceLauncher = () => {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const picked = filtered[activeIndex];
-      if (picked) select(picked);
+      if (picked) {
+        select(picked);
+      }
     }
   };
 

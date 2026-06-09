@@ -16,7 +16,9 @@ const BADGE_CLASSES: Record<AgentStatus, string> = {
 };
 
 export const ParallelProgressPill = ({ parallelRunIds, runStatuses, onSelectRun }: Props) => {
-  if (parallelRunIds.length === 0) return null;
+  if (parallelRunIds.length === 0) {
+    return null;
+  }
 
   return (
     <div className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-subtle px-2 py-0.5">

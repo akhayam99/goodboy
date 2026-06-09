@@ -85,10 +85,18 @@ type RawPrViewForDetail = {
 
 function mapReviewState(raw: string): PrReviewState {
   const normalized = raw.toLowerCase();
-  if (normalized === 'approved') return 'approved';
-  if (normalized === 'changes_requested') return 'changes_requested';
-  if (normalized === 'dismissed') return 'dismissed';
-  if (normalized === 'pending') return 'pending';
+  if (normalized === 'approved') {
+    return 'approved';
+  }
+  if (normalized === 'changes_requested') {
+    return 'changes_requested';
+  }
+  if (normalized === 'dismissed') {
+    return 'dismissed';
+  }
+  if (normalized === 'pending') {
+    return 'pending';
+  }
   return 'commented';
 }
 
@@ -96,24 +104,48 @@ function mapCheckConclusion(raw: RawCheckRollupEntry): PrCheckConclusion {
   const status = (raw.status ?? '').toLowerCase();
   const conclusion = (raw.conclusion ?? '').toLowerCase();
   const state = (raw.state ?? '').toLowerCase();
-  if (status === 'in_progress' || status === 'queued' || status === 'pending') return 'pending';
-  if (state === 'pending') return 'pending';
-  if (conclusion === 'success' || state === 'success') return 'success';
-  if (conclusion === 'failure' || state === 'failure' || state === 'error') return 'failure';
-  if (conclusion === 'neutral') return 'neutral';
-  if (conclusion === 'cancelled') return 'cancelled';
-  if (conclusion === 'timed_out') return 'timed_out';
-  if (conclusion === 'action_required') return 'action_required';
-  if (conclusion === 'stale') return 'stale';
-  if (conclusion === 'skipped') return 'skipped';
+  if (status === 'in_progress' || status === 'queued' || status === 'pending') {
+    return 'pending';
+  }
+  if (state === 'pending') {
+    return 'pending';
+  }
+  if (conclusion === 'success' || state === 'success') {
+    return 'success';
+  }
+  if (conclusion === 'failure' || state === 'failure' || state === 'error') {
+    return 'failure';
+  }
+  if (conclusion === 'neutral') {
+    return 'neutral';
+  }
+  if (conclusion === 'cancelled') {
+    return 'cancelled';
+  }
+  if (conclusion === 'timed_out') {
+    return 'timed_out';
+  }
+  if (conclusion === 'action_required') {
+    return 'action_required';
+  }
+  if (conclusion === 'stale') {
+    return 'stale';
+  }
+  if (conclusion === 'skipped') {
+    return 'skipped';
+  }
   return 'unknown';
 }
 
 function deriveCheckDuration(raw: RawCheckRollupEntry): number | null {
-  if (!raw.startedAt || !raw.completedAt) return null;
+  if (!raw.startedAt || !raw.completedAt) {
+    return null;
+  }
   const start = Date.parse(raw.startedAt);
   const end = Date.parse(raw.completedAt);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    return null;
+  }
   return Math.max(0, end - start);
 }
 
@@ -121,7 +153,9 @@ function dedupeComments(list: ReadonlyArray<PrComment>): ReadonlyArray<PrComment
   const seen = new Set<string>();
   const out: Array<PrComment> = [];
   for (const c of list) {
-    if (seen.has(c.id)) continue;
+    if (seen.has(c.id)) {
+      continue;
+    }
     seen.add(c.id);
     out.push(c);
   }
@@ -150,7 +184,9 @@ async function fetchIssueComments(
       source: 'issue' as const,
     }));
   } catch (err) {
-    if (err instanceof GhCliError) return [];
+    if (err instanceof GhCliError) {
+      return [];
+    }
     throw err;
   }
 }
@@ -189,7 +225,9 @@ async function fetchReviewThreads(
   opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<PrComment>> {
   const [owner, name] = repo.split('/');
-  if (!owner || !name) return [];
+  if (!owner || !name) {
+    return [];
+  }
   try {
     const raw = await runJson<RawReviewThreadsResponse>(
       runner,
@@ -238,7 +276,9 @@ async function fetchReviewThreads(
     }
     return out;
   } catch (err) {
-    if (err instanceof GhCliError) return [];
+    if (err instanceof GhCliError) {
+      return [];
+    }
     throw err;
   }
 }
@@ -264,7 +304,9 @@ async function fetchPrViewDetail(
       opts,
     );
   } catch (err) {
-    if (err instanceof GhCliError) return {};
+    if (err instanceof GhCliError) {
+      return {};
+    }
     throw err;
   }
 }

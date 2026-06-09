@@ -6,7 +6,9 @@ import type { GetFn, SetFn } from './types';
 export const archiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const prev = get().sessions.find((s) => s.id === sessionId);
-    if (!prev) return;
+    if (!prev) {
+      return;
+    }
     const nowIso = new Date().toISOString() as IsoDateTime;
     const archived: Session = { ...prev, archivedAt: nowIso };
     const workspaceId = prev.workspaceId;

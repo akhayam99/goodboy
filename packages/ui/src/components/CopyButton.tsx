@@ -37,8 +37,12 @@ export const CopyButton = ({ value, label = 'text' }: CopyButtonProps) => {
   };
 
   const buttonText = (() => {
-    if (state === 'copied') return `copied: ${label}`;
-    if (state === 'error') return 'copy failed';
+    if (state === 'copied') {
+      return `copied: ${label}`;
+    }
+    if (state === 'error') {
+      return 'copy failed';
+    }
     return 'copy';
   })();
 

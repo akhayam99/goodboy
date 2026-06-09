@@ -36,7 +36,9 @@ export const ChatBreadcrumb = ({ session }: Props) => {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
 
   const workflowProgress: WorkflowProgress | null = useMemo(() => {
-    if (session.workflowRuns.length === 0) return null;
+    if (session.workflowRuns.length === 0) {
+      return null;
+    }
     const selected = selectedAgentId ? phaseRuns.find((a) => a.id === selectedAgentId) : undefined;
     const activeRun =
       (selected?.workflowRunId
@@ -44,32 +46,48 @@ export const ChatBreadcrumb = ({ session }: Props) => {
         : undefined) ??
       session.workflowRuns.find((r) => !r.discardedAt) ??
       null;
-    if (!activeRun) return null;
+    if (!activeRun) {
+      return null;
+    }
     const workflow = sessionWorkflows.find((w) => w.id === activeRun.workflowId);
-    if (!workflow) return null;
+    if (!workflow) {
+      return null;
+    }
     const total = workflow.steps.length;
-    if (total === 0) return null;
+    if (total === 0) {
+      return null;
+    }
     const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
     const runAgents = phaseRuns.filter((r) => r.workflowRunId === activeRun.id);
     let currentOrdinal = 0;
     for (let i = 0; i < sorted.length; i += 1) {
       const step = sorted[i]!;
       const agent = runAgents.find((r) => r.stepId === step.id);
-      if (agent && agent.status !== 'pending') currentOrdinal = i + 1;
+      if (agent && agent.status !== 'pending') {
+        currentOrdinal = i + 1;
+      }
     }
-    if (currentOrdinal === 0) currentOrdinal = 1;
+    if (currentOrdinal === 0) {
+      currentOrdinal = 1;
+    }
     return { workflow, currentOrdinal, total };
   }, [session.workflowRuns, sessionWorkflows, phaseRuns, selectedAgentId]);
 
   const selectedAgent: Agent | null = useMemo(() => {
-    if (!selectedAgentId) return null;
+    if (!selectedAgentId) {
+      return null;
+    }
     return phaseRuns.find((a) => a.id === selectedAgentId) ?? null;
   }, [selectedAgentId, phaseRuns]);
 
   const agentKind: AgentKind | null = useMemo(() => {
-    if (!selectedAgent) return null;
+    if (!selectedAgent) {
+      return null;
+    }
     const override = agentKindOverride[selectedAgent.id];
-    if (override) return override;
+    if (override) {
+      return override;
+    }
     return inferAgentKindFromName(selectedAgent.name);
   }, [selectedAgent, agentKindOverride]);
 

@@ -20,7 +20,9 @@ type Params = {
 export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId, toolUseId, toolName, runId, scope }: Params) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const now = new Date().toISOString() as IsoDateTime;
 
     if (scope === 'once') {

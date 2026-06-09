@@ -22,7 +22,9 @@ export const useGithubPolling = (): void => {
 
   useEffect(() => {
     const sweepIfVisible = (): void => {
-      if (document.visibilityState === 'visible') sweepGithub({ skipUnknownPr: true });
+      if (document.visibilityState === 'visible') {
+        sweepGithub({ skipUnknownPr: true });
+      }
     };
     const intervalId = window.setInterval(sweepIfVisible, POLL_INTERVAL_MS);
     document.addEventListener('visibilitychange', sweepIfVisible);

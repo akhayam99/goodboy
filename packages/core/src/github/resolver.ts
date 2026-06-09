@@ -42,16 +42,26 @@ type ClosingIssueRef = {
 };
 
 function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
-  if (raw.state === 'MERGED') return 'merged';
-  if (raw.state === 'CLOSED') return 'closed';
-  if (raw.isDraft) return 'draft';
-  if (raw.reviewDecision === 'APPROVED') return 'approved';
+  if (raw.state === 'MERGED') {
+    return 'merged';
+  }
+  if (raw.state === 'CLOSED') {
+    return 'closed';
+  }
+  if (raw.isDraft) {
+    return 'draft';
+  }
+  if (raw.reviewDecision === 'APPROVED') {
+    return 'approved';
+  }
   return 'open';
 }
 
 function deriveChecks(raw: RawPullRequest): PullRequestState['checks'] {
   const checks = raw.statusCheckRollup ?? [];
-  if (checks.length === 0) return null;
+  if (checks.length === 0) {
+    return null;
+  }
   let pending = false;
   for (const c of checks) {
     const status = c.conclusion ?? c.state ?? null;
@@ -63,14 +73,20 @@ function deriveChecks(raw: RawPullRequest): PullRequestState['checks'] {
     ) {
       return 'failure';
     }
-    if (status === 'PENDING' || status === null) pending = true;
+    if (status === 'PENDING' || status === null) {
+      pending = true;
+    }
   }
   return pending ? 'pending' : 'success';
 }
 
 function deriveMergeable(raw: RawPullRequest): boolean | null {
-  if (raw.mergeable === 'MERGEABLE') return true;
-  if (raw.mergeable === 'CONFLICTING') return false;
+  if (raw.mergeable === 'MERGEABLE') {
+    return true;
+  }
+  if (raw.mergeable === 'CONFLICTING') {
+    return false;
+  }
   return null;
 }
 
@@ -120,10 +136,14 @@ export const resolvePrForBranch = async (
   try {
     raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
   } catch (err) {
-    if (err instanceof GhCliError) return null;
+    if (err instanceof GhCliError) {
+      return null;
+    }
     throw err;
   }
-  if (raw.length === 0) return null;
+  if (raw.length === 0) {
+    return null;
+  }
   const open = raw.filter((p) => p.state === 'OPEN');
   open.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const head = open[0] ?? [...raw].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
@@ -154,14 +174,18 @@ export const listPrsForBranch = async (
   try {
     raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
   } catch (err) {
-    if (err instanceof GhCliError) return [];
+    if (err instanceof GhCliError) {
+      return [];
+    }
     throw err;
   }
   return [...raw]
     .sort((a, b) => {
       const aTerminal = a.state === 'OPEN' ? 0 : 1;
       const bTerminal = b.state === 'OPEN' ? 0 : 1;
-      if (aTerminal !== bTerminal) return aTerminal - bTerminal;
+      if (aTerminal !== bTerminal) {
+        return aTerminal - bTerminal;
+      }
       return b.updatedAt.localeCompare(a.updatedAt);
     })
     .map(toPullRequestState);
@@ -179,9 +203,13 @@ export const parseLinkedIssuesFromBody = (
   for (const match of body.matchAll(LINKED_KEYWORD_RE)) {
     const keyword = match[1]?.toLowerCase();
     const numberStr = match[2];
-    if (!keyword || !numberStr) continue;
+    if (!keyword || !numberStr) {
+      continue;
+    }
     const number = Number.parseInt(numberStr, 10);
-    if (!Number.isFinite(number)) continue;
+    if (!Number.isFinite(number)) {
+      continue;
+    }
     const closes = !keyword.startsWith('ref');
     const existing = seen.get(number);
     if (!existing || (closes && !existing.closes)) {
@@ -230,7 +258,9 @@ export const fetchLinkedIssues = async (
     }
     return [...merged.values()].sort((a, b) => a.number - b.number);
   } catch (err) {
-    if (err instanceof GhCliError) return fromBody;
+    if (err instanceof GhCliError) {
+      return fromBody;
+    }
     throw err;
   }
 };
@@ -248,7 +278,9 @@ export const detectRepoSlug = async (
         workspaceId,
       },
     );
-    if (res.exitCode !== 0) return null;
+    if (res.exitCode !== 0) {
+      return null;
+    }
     const slug = res.stdout.trim();
     return slug.length > 0 ? slug : null;
   } catch {

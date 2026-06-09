@@ -195,16 +195,22 @@ function ReviewerPicker({
   const workspaceId = useCurrentWorkspace()?.id;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
   useEffect(() => {
-    if (!open || logins !== null || !workspaceRoot) return;
+    if (!open || logins !== null || !workspaceRoot) {
+      return;
+    }
     setLoading(true);
     void ghRepoCollaborators(workspaceRoot, workspaceId)
       .then(setLogins)
@@ -279,7 +285,9 @@ function latestReviews(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     map.set(r.author, r);
   }
   return [...map.values()];
@@ -287,11 +295,15 @@ function latestReviews(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview
 
 function ReviewStateIcon({ state }: { state: PrReviewState }) {
   const props = { size: 12, 'aria-hidden': true } as const;
-  if (state === 'approved') return <CheckCheck {...props} className="shrink-0 text-success" />;
-  if (state === 'changes_requested')
+  if (state === 'approved') {
+    return <CheckCheck {...props} className="shrink-0 text-success" />;
+  }
+  if (state === 'changes_requested') {
     return <AlertCircle {...props} className="shrink-0 text-danger" />;
-  if (state === 'dismissed')
+  }
+  if (state === 'dismissed') {
     return <MinusCircle {...props} className="shrink-0 text-muted-foreground" />;
+  }
   return <Check {...props} className="shrink-0 text-muted-foreground" />;
 }
 

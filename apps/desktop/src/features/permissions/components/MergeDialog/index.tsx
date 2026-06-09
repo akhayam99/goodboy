@@ -39,7 +39,9 @@ export const MergeDialog = ({
   const allResolved = conflicts.length > 0 && conflicts.every((c) => picks[c.file] !== undefined);
 
   const onConfirm = () => {
-    if (!allResolved) return;
+    if (!allResolved) {
+      return;
+    }
     onResolve(picks);
     setPicks({});
   };

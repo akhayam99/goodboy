@@ -66,61 +66,89 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
 
   useEffect(() => {
     return () => {
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
+      if (retriggerTimerRef.current !== null) {
+        window.clearTimeout(retriggerTimerRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
-    if (open && initialPlanId) setSelectedId(initialPlanId);
+    if (open && initialPlanId) {
+      setSelectedId(initialPlanId);
+    }
   }, [open, initialPlanId]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     if (selectedId === null && plans.length > 0) {
       const fallback = plans[plans.length - 1];
-      if (fallback) setSelectedId(fallback.id);
+      if (fallback) {
+        setSelectedId(fallback.id);
+      }
     }
   }, [open, selectedId, plans]);
 
   useEffect(() => {
-    if (open && selectedId) void loadConsumptionsForPlan(selectedId);
+    if (open && selectedId) {
+      void loadConsumptionsForPlan(selectedId);
+    }
   }, [open, selectedId, loadConsumptionsForPlan]);
 
   const selected: PlanWithCount | null = plans.find((p) => p.id === selectedId) ?? null;
 
   useEffect(() => {
-    if (selected && mode === 'preview') setDraft(planToSource(selected));
+    if (selected && mode === 'preview') {
+      setDraft(planToSource(selected));
+    }
   }, [selected, mode]);
 
   useEffect(() => {
-    if (selected?.status === 'discarded' && mode === 'edit') setMode('preview');
+    if (selected?.status === 'discarded' && mode === 'edit') {
+      setMode('preview');
+    }
   }, [selected?.status, mode]);
 
   const commitEdit = useCallback(() => {
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
     const next = parsePlanSource(draft);
-    if (next.title.length === 0) return;
-    if (next.title === selected.title && next.bodyMd === selected.bodyMd) return;
+    if (next.title.length === 0) {
+      return;
+    }
+    if (next.title === selected.title && next.bodyMd === selected.bodyMd) {
+      return;
+    }
     void updatePlanBody(sessionId, selected.id, next.title, next.bodyMd);
   }, [selected, draft, sessionId, updatePlanBody]);
 
   const handleClose = useCallback(() => {
-    if (mode === 'edit') commitEdit();
+    if (mode === 'edit') {
+      commitEdit();
+    }
     setMode('preview');
     onClose();
   }, [mode, commitEdit, onClose]);
 
   const handleSelectPlan = (id: PlanId) => {
-    if (mode === 'edit') commitEdit();
+    if (mode === 'edit') {
+      commitEdit();
+    }
     setMode('preview');
     setSelectedId(id);
   };
 
   const handleTrigger = async () => {
-    if (!selected || spawning) return;
+    if (!selected || spawning) {
+      return;
+    }
     if (selected.status === 'consumed' && !retriggerArmed) {
       setRetriggerArmed(true);
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
+      if (retriggerTimerRef.current !== null) {
+        window.clearTimeout(retriggerTimerRef.current);
+      }
       retriggerTimerRef.current = window.setTimeout(() => {
         setRetriggerArmed(false);
         retriggerTimerRef.current = null;
@@ -142,7 +170,9 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
   };
 
   const handleDiscard = (plan: PlanWithCount) => {
-    if (mode === 'edit') commitEdit();
+    if (mode === 'edit') {
+      commitEdit();
+    }
     setMode('preview');
     void deletePlan(sessionId, plan.id);
   };
@@ -308,7 +338,9 @@ export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) =
                     role="tab"
                     aria-selected={mode === 'preview'}
                     onClick={() => {
-                      if (mode === 'edit') commitEdit();
+                      if (mode === 'edit') {
+                        commitEdit();
+                      }
                       setMode('preview');
                     }}
                     className={cn(
@@ -472,7 +504,9 @@ function parsePlanSource(raw: string): { title: string; bodyMd: string } {
       break;
     }
   }
-  if (firstIdx === -1) return { title: '', bodyMd: '' };
+  if (firstIdx === -1) {
+    return { title: '', bodyMd: '' };
+  }
   const titleLine = (lines[firstIdx] ?? '').trim();
   const title = titleLine.replace(/^#+\s*/, '').trim();
   const restLines = lines.slice(firstIdx + 1);

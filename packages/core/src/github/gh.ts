@@ -45,7 +45,9 @@ export type GhDetectResult = {
 export const detect = async (runner: GhRunner): Promise<GhDetectResult> => {
   try {
     const res = await runner.run(['--version']);
-    if (res.exitCode !== 0) return { available: false };
+    if (res.exitCode !== 0) {
+      return { available: false };
+    }
     const match = res.stdout.match(/gh version (\S+)/);
     return { available: true, version: match?.[1] };
   } catch {

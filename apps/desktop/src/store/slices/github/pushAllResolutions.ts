@@ -21,7 +21,9 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
     const notifyTarget = { sessionId, ...(workspace && { workspaceId: workspace.id }) };
 
     const pending = await listPendingResolutionsForSession(tauriDatabase, sessionId);
-    if (pending.length === 0) return { pushed: false, resolved: 0, failed: 0 };
+    if (pending.length === 0) {
+      return { pushed: false, resolved: 0, failed: 0 };
+    }
 
     const push = await pushSessionBranch(get, sessionId);
     if (!push.ok) {

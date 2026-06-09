@@ -9,7 +9,9 @@ type Params = { commitSha?: string; reason?: string };
 export const resolveGithubThread = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, threadId: string, closure?: Params): Promise<boolean> => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return false;
+    if (!session) {
+      return false;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     const notifyTarget = { sessionId, ...(workspace && { workspaceId: workspace.id }) };
     try {

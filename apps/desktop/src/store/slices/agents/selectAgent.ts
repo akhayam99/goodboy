@@ -10,7 +10,9 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
     const stampedAt = new Date().toISOString() as IsoDateTime;
     const prevAgentId = get().selectedAgentId[sessionId] ?? null;
     const stampAgents = new Set<AgentId>([agentId]);
-    if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
+    if (prevAgentId && prevAgentId !== agentId) {
+      stampAgents.add(prevAgentId);
+    }
 
     for (const id of stampAgents) {
       void invokeAgentMarkViewed(id, stampedAt).catch(() => undefined);
@@ -90,7 +92,9 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
             );
             set((state) => {
               const current = state.transcripts[agentId];
-              if (current && current.length > fullEvents.length) return {};
+              if (current && current.length > fullEvents.length) {
+                return {};
+              }
               return {
                 transcripts: { ...state.transcripts, [agentId]: fullEvents },
                 messages: { ...state.messages, [sessionId]: fullMessages },

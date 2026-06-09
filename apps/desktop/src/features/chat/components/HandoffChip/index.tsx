@@ -17,8 +17,12 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
 
-  if (!handoff || !session) return null;
-  if (session.workflowRuns.length > 0) return null;
+  if (!handoff || !session) {
+    return null;
+  }
+  if (session.workflowRuns.length > 0) {
+    return null;
+  }
 
   const meta = AGENT_KIND_META[handoff.kind];
   const isActiveNudge =

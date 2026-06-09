@@ -12,10 +12,14 @@ export const classifyThinkingContext = ({
 }: {
   lastItem: TranscriptItem | undefined;
 }): ThinkingContext => {
-  if (lastItem?.kind === 'file_edit') return 'edit';
+  if (lastItem?.kind === 'file_edit') {
+    return 'edit';
+  }
   if (lastItem?.kind === 'tool_call') {
     for (const [pattern, ctx] of TOOL_CONTEXT) {
-      if (pattern.test(lastItem.toolName)) return ctx;
+      if (pattern.test(lastItem.toolName)) {
+        return ctx;
+      }
     }
     return 'run';
   }

@@ -77,7 +77,9 @@ export const Dialog = ({
 
   useEffect(() => {
     const dialog = ref.current;
-    if (!dialog) return;
+    if (!dialog) {
+      return;
+    }
 
     const handleClose = () => {
       if (programmaticCloseRef.current) {
@@ -116,8 +118,12 @@ export const Dialog = ({
   }, [open, initialFocusRef]);
 
   const onBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
-    if (!closeOnBackdrop) return;
-    if (event.target === ref.current) onClose();
+    if (!closeOnBackdrop) {
+      return;
+    }
+    if (event.target === ref.current) {
+      onClose();
+    }
   };
 
   return (
@@ -125,7 +131,9 @@ export const Dialog = ({
       ref={ref}
       onClick={onBackdropClick}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') e.stopPropagation();
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+        }
       }}
       aria-labelledby={titleId}
       aria-describedby={descId}

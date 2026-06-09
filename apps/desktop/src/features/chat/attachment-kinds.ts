@@ -36,7 +36,9 @@ export const isAllowedAttachment = (file: {
   readonly name: string;
   readonly type: string;
 }): boolean => {
-  if (file.type.startsWith('image/')) return true;
+  if (file.type.startsWith('image/')) {
+    return true;
+  }
   const ext = extensionOf(file.name);
   return IMAGE_EXTENSIONS.has(ext) || ext in DOC_MIME_BY_EXTENSION;
 };
@@ -45,12 +47,16 @@ export const resolveAttachmentMime = (file: {
   readonly name: string;
   readonly type: string;
 }): string => {
-  if (file.type.length > 0) return file.type;
+  if (file.type.length > 0) {
+    return file.type;
+  }
   return DOC_MIME_BY_EXTENSION[extensionOf(file.name)] ?? 'application/octet-stream';
 };
 
 export const fileIconFor = (mimeType: string): LucideIcon => {
-  if (mimeType === 'application/json') return FileJson;
+  if (mimeType === 'application/json') {
+    return FileJson;
+  }
   if (
     mimeType === 'text/csv' ||
     mimeType === 'text/tab-separated-values' ||
@@ -58,7 +64,9 @@ export const fileIconFor = (mimeType: string): LucideIcon => {
   ) {
     return FileSpreadsheet;
   }
-  if (mimeType === 'application/xml' || mimeType === 'application/yaml') return FileCode;
+  if (mimeType === 'application/xml' || mimeType === 'application/yaml') {
+    return FileCode;
+  }
   if (
     mimeType === 'application/pdf' ||
     mimeType.startsWith('text/') ||

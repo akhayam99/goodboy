@@ -12,7 +12,9 @@ export const WorkspaceHeader = () => {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      if (!currentWorkspace) return;
+      if (!currentWorkspace) {
+        return;
+      }
       const detail = (e as CustomEvent<{ section?: string }>).detail;
       setSettingsSection(detail?.section);
       setSettingsOpen(true);
@@ -21,7 +23,9 @@ export const WorkspaceHeader = () => {
     return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
   }, [currentWorkspace]);
 
-  if (!currentWorkspace) return null;
+  if (!currentWorkspace) {
+    return null;
+  }
   const accent = workspaceAccent(currentWorkspace.id);
 
   return (

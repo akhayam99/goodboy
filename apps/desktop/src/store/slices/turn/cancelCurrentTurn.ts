@@ -8,9 +8,13 @@ import type { GetFn, SetFn } from './types';
 export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const selectedAgentId = get().selectedAgentId[sessionId] ?? null;
-    if (!selectedAgentId) return;
+    if (!selectedAgentId) {
+      return;
+    }
     const agentState = get().agentTurnState[selectedAgentId];
-    if (agentState?.kind !== 'running') return;
+    if (agentState?.kind !== 'running') {
+      return;
+    }
     cancelledRunIds.add(agentState.runId);
     await cancelTurn(agentState.runId).catch(() => undefined);
     const now = new Date().toISOString() as IsoDateTime;

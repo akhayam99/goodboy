@@ -81,7 +81,9 @@ export const parseSkillMarkdown = (
       i++;
       while (i < lines.length) {
         const nextLine = lines[i] ?? '';
-        if (nextLine.trim() === '') break;
+        if (nextLine.trim() === '') {
+          break;
+        }
         if (nextLine.trimStart().startsWith('- ')) {
           blockLines.push(nextLine);
           i++;

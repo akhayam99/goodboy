@@ -8,7 +8,9 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate) => {
     const prevRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const prevAgent = prevRuns.find((r) => r.id === agentId);
-    if (!prevAgent) return;
+    if (!prevAgent) {
+      return;
+    }
     const applyFields = (a: Agent): Agent => {
       const { verbosity, effort, modelOverride, providerOverride, ...rest } = a;
       const nextVerbosity = fields.verbosity !== undefined ? fields.verbosity : (verbosity ?? null);

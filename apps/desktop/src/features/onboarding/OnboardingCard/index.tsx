@@ -12,8 +12,12 @@ import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnbo
 export const OnboardingCard = () => {
   const progress = useOnboardingProgress();
 
-  if (progress.finished) return null;
-  if (!progress.isDone && progress.collapsed) return null;
+  if (progress.finished) {
+    return null;
+  }
+  if (!progress.isDone && progress.collapsed) {
+    return null;
+  }
 
   return (
     <div className="pointer-events-none absolute right-4 top-14 z-20">
@@ -123,7 +127,9 @@ function StepRow({ title, why, done }: StepRowProps) {
 
 export const OnboardingChip = () => {
   const progress = useOnboardingProgress();
-  if (progress.finished) return null;
+  if (progress.finished) {
+    return null;
+  }
 
   return (
     <button

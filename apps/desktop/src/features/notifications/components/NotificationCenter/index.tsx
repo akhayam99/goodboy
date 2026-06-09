@@ -35,10 +35,16 @@ function severityClass(severity: NotificationSeverity): string {
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) {
+    return 'just now';
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
@@ -62,10 +68,14 @@ export const NotificationCenter = () => {
   }, [loadNotifications]);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const updatePosition = () => {
       const el = triggerRef.current;
-      if (!el) return;
+      if (!el) {
+        return;
+      }
       const rect = el.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const desiredLeft = centerX - DROPDOWN_WIDTH / 2;

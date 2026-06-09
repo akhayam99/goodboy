@@ -45,8 +45,12 @@ export const runScript = (set: SetFn, get: GetFn) => {
     let truncated = false;
 
     unlistenOutput = await listenScriptOutput((payload) => {
-      if (payload.runId !== runId) return;
-      if (truncated) return;
+      if (payload.runId !== runId) {
+        return;
+      }
+      if (truncated) {
+        return;
+      }
       const chunk = atob(payload.data);
       if (stdoutBuf.length + chunk.length > STDOUT_CAP) {
         stdoutBuf = '…(truncated)\n' + (stdoutBuf + chunk).slice(-(STDOUT_CAP - 14));
@@ -57,11 +61,15 @@ export const runScript = (set: SetFn, get: GetFn) => {
     });
 
     unlistenExit = await listenScriptExit((payload) => {
-      if (payload.runId !== runId) return;
+      if (payload.runId !== runId) {
+        return;
+      }
       unlistenExit();
       unlistenOutput();
       const curr = get().scriptRuns[sessionId]?.[scriptId];
-      if (!curr || curr.runId !== runId) return;
+      if (!curr || curr.runId !== runId) {
+        return;
+      }
       const stdout = stdoutBuf.replace(ANSI_RE, '');
       const result: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
       writeRun({

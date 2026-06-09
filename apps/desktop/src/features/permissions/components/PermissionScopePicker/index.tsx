@@ -44,7 +44,9 @@ export const PermissionScopePicker = ({
   const [busy, setBusy] = useState(false);
 
   const handle = async (scope: PermissionScope) => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     try {
       await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
@@ -68,9 +70,12 @@ export const PermissionScopePicker = ({
   };
 
   const scopeTone = (scope: PermissionScope): string => {
-    if (scope === 'session')
+    if (scope === 'session') {
       return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90';
-    if (scope === 'deny') return 'border-danger/40 text-danger hover:bg-danger/10';
+    }
+    if (scope === 'deny') {
+      return 'border-danger/40 text-danger hover:bg-danger/10';
+    }
     return 'border-success/40 text-success hover:bg-success/10';
   };
 

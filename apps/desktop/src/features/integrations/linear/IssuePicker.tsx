@@ -25,8 +25,11 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
   const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    if (!value) setQuery('');
-    else setQuery(`${value.identifier} ${value.title}`);
+    if (!value) {
+      setQuery('');
+    } else {
+      setQuery(`${value.identifier} ${value.title}`);
+    }
   }, [value]);
 
   const fetchIssues = useCallback(async () => {
@@ -45,11 +48,15 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
 
   const openPanel = () => {
     setOpen(true);
-    if (!loaded && !loading) void fetchIssues();
+    if (!loaded && !loading) {
+      void fetchIssues();
+    }
   };
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return issues;
+    if (!query.trim()) {
+      return issues;
+    }
     const q = query.toLowerCase();
     return issues.filter(
       (i) => i.identifier.toLowerCase().includes(q) || i.title.toLowerCase().includes(q),
@@ -70,7 +77,9 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
   }, [query]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -81,7 +90,9 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
   }, [open]);
 
   useEffect(() => {
-    if (!open || !listRef.current) return;
+    if (!open || !listRef.current) {
+      return;
+    }
     const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
     el?.scrollIntoView({ block: 'nearest' });
   }, [highlightIdx, open]);
@@ -92,7 +103,9 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
       e.preventDefault();
       return;
     }
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -104,7 +117,9 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
         break;
       case 'Enter':
         e.preventDefault();
-        if (filtered[highlightIdx]) select(filtered[highlightIdx]);
+        if (filtered[highlightIdx]) {
+          select(filtered[highlightIdx]);
+        }
         break;
       case 'Escape':
         e.preventDefault();
@@ -136,7 +151,9 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
-            if (!e.target.value) onClear();
+            if (!e.target.value) {
+              onClear();
+            }
           }}
           onFocus={openPanel}
           onKeyDown={onKeyDown}
@@ -158,9 +175,14 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
           type="button"
           tabIndex={-1}
           onClick={() => {
-            if (disabled) return;
-            if (open) setOpen(false);
-            else openPanel();
+            if (disabled) {
+              return;
+            }
+            if (open) {
+              setOpen(false);
+            } else {
+              openPanel();
+            }
             inputRef.current?.focus();
           }}
           aria-label={open ? 'Close issue list' : 'Open issue list'}

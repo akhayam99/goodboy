@@ -26,7 +26,9 @@ describe.skipIf(!enabled)('CursorAdapter, integration (requires cursor-agent + a
     const events = [];
     for await (const event of adapter.spawn(request)) {
       events.push(event);
-      if (event.kind === 'done' || event.kind === 'error') break;
+      if (event.kind === 'done' || event.kind === 'error') {
+        break;
+      }
     }
 
     const textEvents = events.filter((e) => e.kind === 'assistant_text');

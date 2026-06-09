@@ -54,10 +54,14 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
     const fileMatch = line.match(FILE_HEADER);
     if (fileMatch) {
       flushHunk();
-      if (current) files.push(current);
+      if (current) {
+        files.push(current);
+      }
       const oldPath = fileMatch[1];
       const newPath = fileMatch[2];
-      if (!oldPath || !newPath) continue;
+      if (!oldPath || !newPath) {
+        continue;
+      }
       current = {
         path: newPath,
         oldPath: oldPath === newPath ? undefined : oldPath,
@@ -69,11 +73,15 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
       };
       continue;
     }
-    if (!current) continue;
+    if (!current) {
+      continue;
+    }
 
-    if (line.startsWith('new file mode')) current.status = 'added';
-    else if (line.startsWith('deleted file mode')) current.status = 'deleted';
-    else if (line.startsWith('rename from')) {
+    if (line.startsWith('new file mode')) {
+      current.status = 'added';
+    } else if (line.startsWith('deleted file mode')) {
+      current.status = 'deleted';
+    } else if (line.startsWith('rename from')) {
       current.status = 'renamed';
       current.oldPath = line.slice('rename from '.length);
     } else if (line.startsWith('rename to')) {
@@ -102,7 +110,9 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
       continue;
     }
 
-    if (!hunk) continue;
+    if (!hunk) {
+      continue;
+    }
 
     if (line.startsWith('+') && !line.startsWith('+++')) {
       hunk.lines.push({ kind: 'add', oldLine: null, newLine: newCursor, text: line.slice(1) });
@@ -126,7 +136,9 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
   }
 
   flushHunk();
-  if (current) files.push(current);
+  if (current) {
+    files.push(current);
+  }
   return files;
 };
 

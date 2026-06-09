@@ -19,15 +19,21 @@ export const addCompositeWorkspace = (set: SetFn, get: GetFn) => {
     const seenMounts = new Set<string>();
     for (const m of members) {
       const mount = m.mountName.trim();
-      if (mount.length === 0) throw new Error('every repo needs a mount name');
-      if (seenMounts.has(mount)) throw new Error(`duplicate mount name: ${mount}`);
+      if (mount.length === 0) {
+        throw new Error('every repo needs a mount name');
+      }
+      if (seenMounts.has(mount)) {
+        throw new Error(`duplicate mount name: ${mount}`);
+      }
       seenMounts.add(mount);
     }
 
     const known = get().workspaces;
     const resolved: WorkspaceMember[] = members.map((m) => {
       const ws = known.find((w) => w.id === m.workspaceId);
-      if (!ws) throw new Error('member workspace not found');
+      if (!ws) {
+        throw new Error('member workspace not found');
+      }
       if (ws.kind === 'composite') {
         throw new Error('cannot nest a multi-project workspace inside another');
       }
