@@ -1,7 +1,7 @@
 import { Check, FolderGit2 } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 
-export function WorkspaceStep({ hasWorkspace }: { hasWorkspace: boolean }) {
+export const WorkspaceStep = ({ hasWorkspace }: { hasWorkspace: boolean }) => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
@@ -32,4 +32,4 @@ export function WorkspaceStep({ hasWorkspace }: { hasWorkspace: boolean }) {
       )}
     </div>
   );
-}
+};

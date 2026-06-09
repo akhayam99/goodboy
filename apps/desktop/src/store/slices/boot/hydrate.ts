@@ -32,7 +32,7 @@ import type { GetFn, SetFn } from './types';
 // promise makes the second call wait for the first.
 let hydratePromise: Promise<void> | null = null;
 
-export function hydrate(set: SetFn, get: GetFn) {
+export const hydrate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     if (hydratePromise) return hydratePromise;
     hydratePromise = (async () => {
@@ -164,4 +164,4 @@ export function hydrate(set: SetFn, get: GetFn) {
       hydratePromise = null;
     }
   };
-}
+};

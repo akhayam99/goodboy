@@ -58,13 +58,13 @@ type NavItem = {
   readonly tone?: 'danger';
 };
 
-export function WorkspaceSettingsDialog({
+export const WorkspaceSettingsDialog = ({
   workspaceId,
   workspaceName,
   open,
   onClose,
   initialSection,
-}: Props) {
+}: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
@@ -317,7 +317,7 @@ export function WorkspaceSettingsDialog({
       </div>
     </Dialog>
   );
-}
+};
 
 /* ──────────────────────────────────────────────────────────────────── */
 /* Nav button                                                            */

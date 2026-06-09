@@ -15,6 +15,6 @@ export const AGENT_KIND_SLOTS: Partial<Record<AgentKind, ReadonlyArray<SlotKey>>
   resolver: ['files_touched'],
 };
 
-export function slotsForKind(kind: AgentKind): ReadonlyArray<SlotKey> | undefined {
+export const slotsForKind = (kind: AgentKind): ReadonlyArray<SlotKey> | undefined => {
   return AGENT_KIND_SLOTS[kind];
-}
+};

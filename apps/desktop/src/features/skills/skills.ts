@@ -16,9 +16,9 @@ export type ResolveSkillInvocationResult = {
   readonly args: ReadonlyArray<string>;
 };
 
-export async function resolveSkillInvocation(
+export const resolveSkillInvocation = async (
   input: ResolveSkillInvocationArgs,
-): Promise<ResolveSkillInvocationResult> {
+): Promise<ResolveSkillInvocationResult> => {
   const { resolvedPrompt } = await invokeSkillInvoke({
     skillId: input.skill.id,
     args: input.args,
@@ -26,7 +26,7 @@ export async function resolveSkillInvocation(
     workspaceRoot: input.workspaceRoot,
   });
   return { resolvedPrompt, skillName: input.skill.name, args: input.args };
-}
+};
 
 type RawSkillRow = {
   readonly id: string;
@@ -55,10 +55,10 @@ function rowToSkill(row: RawSkillRow): Skill {
 }
 
 // CRUD wrappers (#132).
-export async function invokeSkillList(workspaceId: WorkspaceId): Promise<Skill[]> {
+export const invokeSkillList = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
   const rows = await invoke<RawSkillRow[]>('skill_list', { workspaceId });
   return rows.map(rowToSkill);
-}
+};
 
 export type SkillUpsertArgs = {
   readonly workspaceId: WorkspaceId;
@@ -69,7 +69,7 @@ export type SkillUpsertArgs = {
   readonly filePath?: string;
 };
 
-export async function invokeSkillUpsert(args: SkillUpsertArgs): Promise<Skill> {
+export const invokeSkillUpsert = async (args: SkillUpsertArgs): Promise<Skill> => {
   const markdown = serializeSkillMarkdown(args.frontmatter, args.body);
   const row = await invoke<RawSkillRow>('skill_upsert', {
     input: {
@@ -83,16 +83,16 @@ export async function invokeSkillUpsert(args: SkillUpsertArgs): Promise<Skill> {
     },
   });
   return rowToSkill(row);
-}
+};
 
-export async function invokeSkillDelete(skillId: SkillId): Promise<void> {
+export const invokeSkillDelete = async (skillId: SkillId): Promise<void> => {
   return invoke<void>('skill_delete', { skillId });
-}
+};
 
-export async function invokeSkillRescan(workspaceId: WorkspaceId): Promise<Skill[]> {
+export const invokeSkillRescan = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
   const rows = await invoke<RawSkillRow[]>('skill_rescan', { workspaceId });
   return rows.map(rowToSkill);
-}
+};
 
 // Invoke (#133).
 type SkillInvokeArgs = {

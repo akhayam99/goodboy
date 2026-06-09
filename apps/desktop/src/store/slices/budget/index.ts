@@ -12,7 +12,7 @@ import type { GetFn, SetFn } from './types';
 export { buildProviderSpendBreakdown };
 export type { ProviderSpendEntry } from './types';
 
-export function createBudgetSlice(set: SetFn, _get: GetFn) {
+export const createBudgetSlice = (set: SetFn, _get: GetFn) => {
   return {
     loadBudgetRules: loadBudgetRules(set),
     saveBudgetRule: saveBudgetRule(set),
@@ -23,4 +23,4 @@ export function createBudgetSlice(set: SetFn, _get: GetFn) {
     loadBudgetAlerts: loadBudgetAlerts(set),
     dismissBudgetAlert: dismissBudgetAlert(set),
   };
-}
+};

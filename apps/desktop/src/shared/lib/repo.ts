@@ -6,6 +6,6 @@ export type GitRepoCheck = {
   readonly error: string | null;
 };
 
-export async function validateGitRepo(path: string): Promise<GitRepoCheck> {
+export const validateGitRepo = async (path: string): Promise<GitRepoCheck> => {
   return invoke<GitRepoCheck>('validate_git_repo', { path });
-}
+};

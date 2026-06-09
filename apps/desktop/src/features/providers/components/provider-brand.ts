@@ -14,6 +14,6 @@ export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   gemini: { icon: GeminiIcon, cssVar: '--color-provider-gemini' },
 };
 
-export function brandColor(providerId: ProviderId): string {
+export const brandColor = (providerId: ProviderId): string => {
   return `var(${PROVIDER_BRAND[providerId].cssVar})`;
-}
+};

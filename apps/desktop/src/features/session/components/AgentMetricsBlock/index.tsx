@@ -18,14 +18,14 @@ type Props = {
   readonly variant: 'workflow' | 'adhoc';
 };
 
-export function AgentMetricsBlock({
+export const AgentMetricsBlock = ({
   run,
   telemetry,
   aggregate,
   turns,
   turnsLoading,
   variant,
-}: Props) {
+}: Props) => {
   void variant;
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/85">
@@ -81,7 +81,7 @@ export function AgentMetricsBlock({
       <AgentDuration run={run} />
     </div>
   );
-}
+};
 
 function formatRelativeDuration(fromIso: string, toIso?: string): string {
   const fromMs = Date.parse(fromIso);

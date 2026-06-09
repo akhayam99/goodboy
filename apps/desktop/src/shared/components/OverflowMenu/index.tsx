@@ -32,14 +32,14 @@ type OverflowMenuProps = {
   readonly align?: 'left' | 'right';
 };
 
-export function OverflowMenu({
+export const OverflowMenu = ({
   items,
   label = 'more actions',
   triggerClassName,
   trigger,
   disabled,
   align = 'right',
-}: OverflowMenuProps) {
+}: OverflowMenuProps) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -147,4 +147,4 @@ export function OverflowMenu({
       ) : null}
     </div>
   );
-}
+};

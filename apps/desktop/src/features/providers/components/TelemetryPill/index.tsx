@@ -10,7 +10,7 @@ const PROVIDER_DOT: Record<string, string> = {
   gemini: 'bg-[var(--color-provider-gemini)]',
 };
 
-export function TelemetryPill() {
+export const TelemetryPill = () => {
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
   const providerSpend = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
@@ -64,4 +64,4 @@ export function TelemetryPill() {
       </button>
     </>
   );
-}
+};

@@ -15,14 +15,14 @@ type Props = {
   readonly onDeleteDef: (id: StepDefId) => void;
 };
 
-export function StepLibraryPalette({
+export const StepLibraryPalette = ({
   library,
   workspaceId,
   connectedProviders,
   onStartDrag,
   onSaveDef,
   onDeleteDef,
-}: Props) {
+}: Props) => {
   const [editing, setEditing] = useState<StepDefId | 'new' | null>(null);
 
   return (
@@ -92,4 +92,4 @@ export function StepLibraryPalette({
       </ul>
     </div>
   );
-}
+};

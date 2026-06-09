@@ -1,12 +1,12 @@
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types';
 
-export function createPermissionRequestEvent(params: {
+export const createPermissionRequestEvent = (params: {
   readonly runId: ProviderRunId;
   readonly toolUseId: string;
   readonly toolName: string;
   readonly input: unknown;
   readonly at: IsoDateTime;
-}): Extract<TurnEvent, { kind: 'permission_request' }> {
+}): Extract<TurnEvent, { kind: 'permission_request' }> => {
   return {
     kind: 'permission_request',
     runId: params.runId,
@@ -15,16 +15,16 @@ export function createPermissionRequestEvent(params: {
     input: params.input,
     at: params.at,
   };
-}
+};
 
-export function createPermissionDecisionEvent(params: {
+export const createPermissionDecisionEvent = (params: {
   readonly runId: ProviderRunId;
   readonly toolUseId: string;
   readonly decision: 'allow' | 'deny';
   readonly ruleId: PermissionRuleId | null;
   readonly decidedBy: 'engine' | 'user' | 'default';
   readonly at: IsoDateTime;
-}): Extract<TurnEvent, { kind: 'permission_decision' }> {
+}): Extract<TurnEvent, { kind: 'permission_decision' }> => {
   return {
     kind: 'permission_decision',
     runId: params.runId,
@@ -34,4 +34,4 @@ export function createPermissionDecisionEvent(params: {
     decidedBy: params.decidedBy,
     at: params.at,
   };
-}
+};

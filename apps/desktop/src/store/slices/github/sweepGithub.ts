@@ -21,7 +21,7 @@ type Params = { skipUnknownPr?: boolean };
 //     the app are discovered.
 // (Archived sessions are not in `state.sessions` by construction, they
 // live in `archivedSessions[workspaceId]` and are out of the poll loop.)
-export function sweepGithub(_set: SetFn, get: GetFn) {
+export const sweepGithub = (_set: SetFn, get: GetFn) => {
   return (opts?: Params) => {
     if (!get().githubStatus?.available) return;
     const { sessions, sessionBranches, sessionGithub, currentSessionId } = get();
@@ -38,4 +38,4 @@ export function sweepGithub(_set: SetFn, get: GetFn) {
       }
     }
   };
-}
+};

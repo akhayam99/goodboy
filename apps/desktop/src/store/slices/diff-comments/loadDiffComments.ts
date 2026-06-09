@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { diffCommentsInFlight, type GetFn, type SetFn } from './types';
 
-export function loadDiffComments(set: SetFn, get: GetFn) {
+export const loadDiffComments = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     // Cache hit short-circuit: ContextPanel mounts on every session switch
     // and fires this effect; without the guard the ~1s DB query repeats
@@ -23,4 +23,4 @@ export function loadDiffComments(set: SetFn, get: GetFn) {
       diffCommentsInFlight.delete(sessionId);
     }
   };
-}
+};

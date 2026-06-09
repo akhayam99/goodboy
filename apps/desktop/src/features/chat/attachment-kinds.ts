@@ -28,28 +28,28 @@ function extensionOf(fileName: string): string {
   return dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : '';
 }
 
-export function attachmentKindFor(mimeType: string): 'image' | 'file' {
+export const attachmentKindFor = (mimeType: string): 'image' | 'file' => {
   return mimeType.startsWith('image/') ? 'image' : 'file';
-}
+};
 
-export function isAllowedAttachment(file: {
+export const isAllowedAttachment = (file: {
   readonly name: string;
   readonly type: string;
-}): boolean {
+}): boolean => {
   if (file.type.startsWith('image/')) return true;
   const ext = extensionOf(file.name);
   return IMAGE_EXTENSIONS.has(ext) || ext in DOC_MIME_BY_EXTENSION;
-}
+};
 
-export function resolveAttachmentMime(file: {
+export const resolveAttachmentMime = (file: {
   readonly name: string;
   readonly type: string;
-}): string {
+}): string => {
   if (file.type.length > 0) return file.type;
   return DOC_MIME_BY_EXTENSION[extensionOf(file.name)] ?? 'application/octet-stream';
-}
+};
 
-export function fileIconFor(mimeType: string): LucideIcon {
+export const fileIconFor = (mimeType: string): LucideIcon => {
   if (mimeType === 'application/json') return FileJson;
   if (
     mimeType === 'text/csv' ||
@@ -67,4 +67,4 @@ export function fileIconFor(mimeType: string): LucideIcon {
     return FileText;
   }
   return File;
-}
+};

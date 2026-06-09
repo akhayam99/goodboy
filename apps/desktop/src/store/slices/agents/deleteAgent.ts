@@ -6,7 +6,7 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
-export function deleteAgent(set: SetFn, get: GetFn) {
+export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const agentTurn = get().agentTurnState[agentId];
     const agentRunId = agentTurn?.kind === 'running' ? agentTurn.runId : null;
@@ -79,4 +79,4 @@ export function deleteAgent(set: SetFn, get: GetFn) {
       ).catch(() => undefined);
     }
   };
-}
+};

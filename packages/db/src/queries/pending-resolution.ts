@@ -23,14 +23,14 @@ function toDomain(row: PendingResolutionRow): PendingResolution {
 
 const SELECT_COLUMNS = `id, session_id, pr_number, thread_id, commit_sha, created_at`;
 
-export async function queuePendingResolution(
+export const queuePendingResolution = async (
   db: Database,
   id: string,
   sessionId: SessionId,
   prNumber: number,
   threadId: string,
   commitSha: string,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `INSERT INTO pending_resolutions (id, session_id, pr_number, thread_id, commit_sha, created_at)
      VALUES (?, ?, ?, ?, ?, ?)
@@ -38,12 +38,12 @@ export async function queuePendingResolution(
      DO UPDATE SET commit_sha = excluded.commit_sha, created_at = excluded.created_at`,
     [id, sessionId, prNumber, threadId, commitSha, Date.now()],
   );
-}
+};
 
-export async function listPendingResolutionsForSession(
+export const listPendingResolutionsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<PendingResolution>> {
+): Promise<ReadonlyArray<PendingResolution>> => {
   const rows = await db.select<PendingResolutionRow>(
     `SELECT ${SELECT_COLUMNS}
      FROM pending_resolutions
@@ -52,15 +52,15 @@ export async function listPendingResolutionsForSession(
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function deletePendingResolution(
+export const deletePendingResolution = async (
   db: Database,
   sessionId: SessionId,
   threadId: string,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(`DELETE FROM pending_resolutions WHERE session_id = ? AND thread_id = ?`, [
     sessionId,
     threadId,
   ]);
-}
+};

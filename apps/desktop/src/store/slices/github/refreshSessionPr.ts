@@ -11,7 +11,7 @@ type Params = {
   retries?: number;
 };
 
-export function refreshSessionPr(set: SetFn, get: GetFn) {
+export const refreshSessionPr = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
     // In-flight dedup: ContextPanel's effect can refire (StrictMode, fast
     // re-activation) before the first ~1s GitHub round-trip resolves. The
@@ -126,4 +126,4 @@ export function refreshSessionPr(set: SetFn, get: GetFn) {
       },
     }));
   };
-}
+};

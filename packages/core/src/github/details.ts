@@ -271,12 +271,12 @@ async function fetchPrViewDetail(
   }
 }
 
-export async function fetchPrDetail(
+export const fetchPrDetail = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: { cwd?: string; workspaceId?: string } = {},
-): Promise<PrDetail> {
+): Promise<PrDetail> => {
   const [issueComments, reviewComments, prView] = await Promise.all([
     fetchIssueComments(runner, repo, prNumber, opts),
     fetchReviewThreads(runner, repo, prNumber, opts),
@@ -324,4 +324,4 @@ export async function fetchPrDetail(
     reviewRequests,
     checks,
   };
-}
+};

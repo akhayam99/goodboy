@@ -36,13 +36,7 @@ type SessionViewMenuProps = {
   readonly workspaceId: WorkspaceId;
 };
 
-/**
- * Linear-style "display options" trigger for the sessions rail. Portals the
- * popover to document.body via fixed coords so it escapes the rail's
- * `overflow-hidden`. State lives in zustand (`sessionViewPrefs`), this only
- * dispatches `setSessionSort` / `setSessionGroup`.
- */
-export function SessionViewMenu({ workspaceId }: SessionViewMenuProps) {
+export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   const prefs = useSessionViewPrefs(workspaceId);
   const setSessionSort = useAppStore((s) => s.setSessionSort);
   const setSessionGroup = useAppStore((s) => s.setSessionGroup);
@@ -151,7 +145,7 @@ export function SessionViewMenu({ workspaceId }: SessionViewMenuProps) {
         : null}
     </>
   );
-}
+};
 
 type MenuSectionProps = {
   readonly title: string;

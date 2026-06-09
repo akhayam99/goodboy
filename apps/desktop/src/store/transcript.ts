@@ -9,7 +9,7 @@ const selectTranscript =
   (state: AppState): ReadonlyArray<TurnEvent> =>
     agentId ? (state.transcripts[agentId] ?? EMPTY) : EMPTY;
 
-export function useTranscript(agentId: AgentId | null): ReadonlyArray<TurnEvent> {
+export const useTranscript = (agentId: AgentId | null): ReadonlyArray<TurnEvent> => {
   const idRef = useRef<AgentId | null>(agentId);
   const selectorRef = useRef<(state: AppState) => ReadonlyArray<TurnEvent>>(
     selectTranscript(agentId),
@@ -19,4 +19,4 @@ export function useTranscript(agentId: AgentId | null): ReadonlyArray<TurnEvent>
     selectorRef.current = selectTranscript(agentId);
   }
   return useAppStore(selectorRef.current);
-}
+};

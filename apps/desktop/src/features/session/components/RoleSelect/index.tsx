@@ -14,7 +14,7 @@ type Props = {
   disabled: boolean;
 };
 
-export function RoleSelect({ value, onChange, disabled }: Props) {
+export const RoleSelect = ({ value, onChange, disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
@@ -80,4 +80,4 @@ export function RoleSelect({ value, onChange, disabled }: Props) {
       ) : null}
     </div>
   );
-}
+};

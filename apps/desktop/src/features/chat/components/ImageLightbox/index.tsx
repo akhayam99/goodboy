@@ -11,19 +11,7 @@ type Props = {
 
 const EXIT_MS = 180;
 
-/**
- * Full-viewport image preview: backdrop blur, centered image, X / Esc /
- * click-outside to dismiss. Rendered via portal so it escapes any
- * `overflow: hidden` ancestor and stacks above everything.
- *
- * Three-phase lifecycle keeps mount and unmount animated:
- *   `enter`  initial paint with hidden classes
- *   `open`   visible classes applied next frame, CSS transitions in
- *   `leave`  hidden classes reapplied, parent's `onClose` fires after
- *            the exit transition so the unmount happens at the end of
- *            the animation, not the start.
- */
-export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
+export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => {
   const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
   const exitTimerRef = useRef<number | null>(null);
 
@@ -112,4 +100,4 @@ export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
     </div>,
     document.body,
   );
-}
+};

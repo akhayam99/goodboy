@@ -1,7 +1,7 @@
 import { ghStatus } from '../../../features/github/github';
 import type { SetFn } from './types';
 
-export function refreshGithubStatus(set: SetFn) {
+export const refreshGithubStatus = (set: SetFn) => {
   return async () => {
     try {
       const status = await ghStatus();
@@ -19,4 +19,4 @@ export function refreshGithubStatus(set: SetFn) {
       console.warn('gh_status failed', err);
     }
   };
-}
+};

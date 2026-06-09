@@ -746,7 +746,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createUpdaterSlice(set, get),
 }));
 
-export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettings {
+export const useResolvedSettings = (sessionId: SessionId | null): ResolvedSettings => {
   return useAppStore((state) => {
     const session = sessionId ? (state.sessions.find((s) => s.id === sessionId) ?? null) : null;
     const workspaceId = session?.workspaceId ?? null;
@@ -764,4 +764,4 @@ export function useResolvedSettings(sessionId: SessionId | null): ResolvedSettin
 
     return resolveSettings({ global: globalSettings, workspaceOverride, sessionOverride });
   });
-}
+};

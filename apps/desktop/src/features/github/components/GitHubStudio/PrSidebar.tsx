@@ -48,7 +48,7 @@ type Props = {
   readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
 };
 
-export function PrSidebar({
+export const PrSidebar = ({
   pr,
   options,
   selected,
@@ -58,7 +58,7 @@ export function PrSidebar({
   onSection,
   workspaceRoot,
   onAddReviewers,
-}: Props) {
+}: Props) => {
   const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
   const openResolveCount = useMemo(
     () =>
@@ -176,7 +176,7 @@ export function PrSidebar({
       </ScrollFade>
     </aside>
   );
-}
+};
 
 function ReviewerPicker({
   workspaceRoot,

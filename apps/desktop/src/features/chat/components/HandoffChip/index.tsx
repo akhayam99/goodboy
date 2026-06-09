@@ -10,7 +10,7 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-export function HandoffChip({ assistantText, sessionId }: Props) {
+export const HandoffChip = ({ assistantText, sessionId }: Props) => {
   const handoff = useMemo(() => extractHandoff(assistantText), [assistantText]);
   const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
   const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
@@ -50,4 +50,4 @@ export function HandoffChip({ assistantText, sessionId }: Props) {
       </button>
     </div>
   );
-}
+};

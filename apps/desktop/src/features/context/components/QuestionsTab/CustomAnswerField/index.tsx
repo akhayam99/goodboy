@@ -9,13 +9,13 @@ type Props = {
   placeholder?: string;
 };
 
-export function CustomAnswerField({
+export const CustomAnswerField = ({
   value,
   open,
   onToggle,
   onChange,
   placeholder = 'write your own answer…',
-}: Props) {
+}: Props) => {
   if (!open) {
     return (
       <button
@@ -52,4 +52,4 @@ export function CustomAnswerField({
       />
     </div>
   );
-}
+};

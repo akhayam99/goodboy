@@ -19,7 +19,7 @@ function buildBatchPrompt(pairs: ReadonlyArray<AnswerPair>): string {
   return lines.join('\n');
 }
 
-export function answerOpenQuestions(get: GetFn) {
+export const answerOpenQuestions = (get: GetFn) => {
   return async (
     sessionId: SessionId,
     pairs: ReadonlyArray<AnswerPair>,
@@ -43,4 +43,4 @@ export function answerOpenQuestions(get: GetFn) {
       agentId: targetAgentId ?? undefined,
     });
   };
-}
+};

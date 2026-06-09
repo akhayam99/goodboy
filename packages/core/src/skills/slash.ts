@@ -36,7 +36,7 @@ function tokenize(argsStr: string): ReadonlyArray<string> {
   return tokens;
 }
 
-export function parseSlashCommand(input: string): SlashCommand | null {
+export const parseSlashCommand = (input: string): SlashCommand | null => {
   const lines = input.split('\n');
   const firstNonEmpty = lines.find((l) => l.trim().length > 0);
 
@@ -58,4 +58,4 @@ export function parseSlashCommand(input: string): SlashCommand | null {
   const args = argsStr.trim().length === 0 ? [] : tokenize(argsStr);
 
   return { name, args, raw: trimmed };
-}
+};

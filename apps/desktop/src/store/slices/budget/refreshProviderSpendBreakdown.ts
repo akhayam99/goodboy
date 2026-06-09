@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { buildProviderSpendBreakdown } from './buildProviderSpendBreakdown';
 import type { SetFn } from './types';
 
-export function refreshProviderSpendBreakdown(set: SetFn) {
+export const refreshProviderSpendBreakdown = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
     const [providerSummaries, budgetRules] = await Promise.all([
       summarizeWorkspaceProviderTelemetry(tauriDatabase, workspaceId),
@@ -13,4 +13,4 @@ export function refreshProviderSpendBreakdown(set: SetFn) {
     ]);
     set({ providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules) });
   };
-}
+};

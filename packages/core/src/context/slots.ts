@@ -29,15 +29,15 @@ export class InvalidSlotKeyError extends Error {
   }
 }
 
-export function isSlotKey(key: string): key is SlotKey {
+export const isSlotKey = (key: string): key is SlotKey => {
   return SLOT_KEY_SET.has(key);
-}
+};
 
-export function assertSlotKey(key: string): asserts key is SlotKey {
+export const assertSlotKey: (key: string) => asserts key is SlotKey = (key) => {
   if (!isSlotKey(key)) throw new InvalidSlotKeyError(key);
-}
+};
 
-export function serializeSlots(slots: ReadonlyArray<ContextSlot>): string {
+export const serializeSlots = (slots: ReadonlyArray<ContextSlot>): string => {
   const byKey = new Map<SlotKey, ContextSlot>();
   for (const slot of slots) {
     if (isSlotKey(slot.key)) {
@@ -52,4 +52,4 @@ export function serializeSlots(slots: ReadonlyArray<ContextSlot>): string {
   });
 
   return sections.join('\n\n');
-}
+};

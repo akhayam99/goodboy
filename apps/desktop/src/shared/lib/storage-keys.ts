@@ -16,7 +16,7 @@ export const STORAGE_PREFIXES = {
   sessionView: `${PREFIX}session-view:`,
 } as const;
 
-export function wipeLocalStorage(): void {
+export const wipeLocalStorage = (): void => {
   if (typeof localStorage === 'undefined') return;
   const keys: string[] = [];
   for (let i = 0; i < localStorage.length; i += 1) {
@@ -24,4 +24,4 @@ export function wipeLocalStorage(): void {
     if (key?.startsWith(PREFIX)) keys.push(key);
   }
   for (const key of keys) localStorage.removeItem(key);
-}
+};

@@ -18,7 +18,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function ArchiveSessionDialog({ session, open, onClose }: Props) {
+export const ArchiveSessionDialog = ({ session, open, onClose }: Props) => {
   const archiveTask = useAppStore((s) => s.archiveTask);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,4 +60,4 @@ export function ArchiveSessionDialog({ session, open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

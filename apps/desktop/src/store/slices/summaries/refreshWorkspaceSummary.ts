@@ -5,7 +5,7 @@ import { invokeBudgetRuleList } from '../../../features/budget/budget';
 import { buildProviderSpendBreakdown } from '../budget';
 import type { SetFn } from './types';
 
-export function refreshWorkspaceSummary(set: SetFn) {
+export const refreshWorkspaceSummary = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
     const [summary, providerSummaries, budgetRules] = await Promise.all([
       summarizeWorkspaceTelemetry(tauriDatabase, workspaceId),
@@ -17,4 +17,4 @@ export function refreshWorkspaceSummary(set: SetFn) {
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     });
   };
-}
+};

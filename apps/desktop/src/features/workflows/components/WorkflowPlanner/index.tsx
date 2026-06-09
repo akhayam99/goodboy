@@ -50,14 +50,14 @@ type Props = {
 
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
-export function WorkflowPlanner({
+export const WorkflowPlanner = ({
   workspaceId,
   providerId,
   initialProcess,
   saveAsPreset = false,
   onWorkflowReady,
   onPlanChange,
-}: Props) {
+}: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const [processText, setProcessText] = useState(initialProcess);
   const [busy, setBusy] = useState(false);
@@ -280,7 +280,7 @@ export function WorkflowPlanner({
       ) : null}
     </div>
   );
-}
+};
 
 function StepCard({
   index,

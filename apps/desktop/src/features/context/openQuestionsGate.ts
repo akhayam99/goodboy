@@ -9,31 +9,31 @@ import type { OpenQuestion, WorkflowId, WorkflowRunId } from '@goodboy/types';
 // Orphans block every workflow to preserve the legacy safe-default
 // behaviour: when we don't know whose question it is, we don't assume
 // it's safe to ignore.
-export function workflowHasOpenQuestions(
+export const workflowHasOpenQuestions = (
   questions: ReadonlyArray<OpenQuestion>,
   workflowId: WorkflowId,
-): boolean {
+): boolean => {
   for (const q of questions) {
     if (q.status !== 'open') continue;
     if (!q.workflowId || q.workflowId === workflowId) return true;
   }
   return false;
-}
+};
 
-export function workflowRunHasOpenQuestions(
+export const workflowRunHasOpenQuestions = (
   questions: ReadonlyArray<OpenQuestion>,
   workflowRunId: WorkflowRunId,
-): boolean {
+): boolean => {
   for (const q of questions) {
     if (q.status !== 'open') continue;
     if (!q.workflowRunId || q.workflowRunId === workflowRunId) return true;
   }
   return false;
-}
+};
 
 // True when the session has any orphan open question (no workflowId).
 // Used at UI sites that don't have a specific workflow context (e.g. the
 // ad-hoc "create agent" button) so they still gate on legacy questions.
-export function hasOrphanOpenQuestions(questions: ReadonlyArray<OpenQuestion>): boolean {
+export const hasOrphanOpenQuestions = (questions: ReadonlyArray<OpenQuestion>): boolean => {
   return questions.some((q) => q.status === 'open' && !q.workflowId);
-}
+};

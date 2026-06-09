@@ -8,7 +8,7 @@ type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
 };
 
-export function PhaseTransitionCard({ item }: Props) {
+export const PhaseTransitionCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
   const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`;
   const timestamp = formatCardTime(item.at);
@@ -35,4 +35,4 @@ export function PhaseTransitionCard({ item }: Props) {
       </Collapsible>
     </div>
   );
-}
+};

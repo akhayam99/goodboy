@@ -23,7 +23,7 @@ import { EMPTY_LOADING } from '../../session-mutators';
 import type { SessionLoadingFlags } from '../../store';
 import type { GetFn, SetFn } from './types';
 
-export function setCurrentSession(set: SetFn, get: GetFn) {
+export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
     // No-op when the click lands on the already-current session. Pulled into
     // the action so callers can pass the action ref directly (stable ref
@@ -286,4 +286,4 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         .finally(() => endAgents());
     }
   };
-}
+};

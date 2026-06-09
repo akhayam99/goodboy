@@ -3,7 +3,7 @@ import { updateWorkflowOrder } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function reorderSessionWorkflows(set: SetFn, get: GetFn) {
+export const reorderSessionWorkflows = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunIds: ReadonlyArray<WorkflowRunId>) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -24,4 +24,4 @@ export function reorderSessionWorkflows(set: SetFn, get: GetFn) {
       ),
     }));
   };
-}
+};

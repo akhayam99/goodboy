@@ -28,7 +28,7 @@ function scheduleTurnEventFlush(): void {
   });
 }
 
-export function queueTurnEventInsert(insert: PendingTurnEventInsert): void {
+export const queueTurnEventInsert = (insert: PendingTurnEventInsert): void => {
   pendingTurnEventInserts.push(insert);
   scheduleTurnEventFlush();
-}
+};

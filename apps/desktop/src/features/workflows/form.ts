@@ -46,7 +46,7 @@ export const emptyForm = (): TemplateForm => ({
   steps: [emptyDefinition()],
 });
 
-export function templateToForm(t: Workflow): TemplateForm {
+export const templateToForm = (t: Workflow): TemplateForm => {
   return {
     name: t.name,
     description: t.description,
@@ -65,9 +65,9 @@ export function templateToForm(t: Workflow): TemplateForm {
         verbosity: d.verbosity ?? DEFAULT_VERBOSITY,
       })),
   };
-}
+};
 
-export function defFromLibraryStep(s: StepDef): DefinitionForm {
+export const defFromLibraryStep = (s: StepDef): DefinitionForm => {
   return {
     libraryStepId: s.id,
     role: s.role,
@@ -78,4 +78,4 @@ export function defFromLibraryStep(s: StepDef): DefinitionForm {
     effort: (s.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,
     verbosity: s.verbosityDefault ?? DEFAULT_VERBOSITY,
   };
-}
+};

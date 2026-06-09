@@ -4,7 +4,7 @@ import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 
-export function WorkspaceHeader() {
+export const WorkspaceHeader = () => {
   const currentWorkspace = useCurrentWorkspace();
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -79,4 +79,4 @@ export function WorkspaceHeader() {
       />
     </div>
   );
-}
+};

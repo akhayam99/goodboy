@@ -7,7 +7,7 @@ import { useAppStore, useSessions } from '../../../../store';
 // watching passively.
 const POLL_INTERVAL_MS = 5 * 60_000;
 
-export function useGithubPolling(): void {
+export const useGithubPolling = (): void => {
   const sweepGithub = useAppStore((s) => s.sweepGithub);
   const githubAvailable = useAppStore((s) => s.githubStatus?.available ?? false);
   const sessions = useSessions();
@@ -49,4 +49,4 @@ export function useGithubPolling(): void {
       document.removeEventListener('visibilitychange', sweepIfVisible);
     };
   }, [sweepGithub]);
-}
+};

@@ -3,7 +3,7 @@ import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/d
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function reconcileSessionBranch(set: SetFn, get: GetFn) {
+export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, observedBranch: string) => {
     // Catch the branch cache up to git reality. changeSessionBranch keeps DB +
     // store in sync, but an agent running `git switch` directly in the worktree
@@ -28,4 +28,4 @@ export function reconcileSessionBranch(set: SetFn, get: GetFn) {
       };
     });
   };
-}
+};

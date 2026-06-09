@@ -60,7 +60,7 @@ function toDomain(row: ProviderRunRow): ProviderRun {
   };
 }
 
-export async function insertProviderRun(db: Database, run: ProviderRun): Promise<void> {
+export const insertProviderRun = async (db: Database, run: ProviderRun): Promise<void> => {
   const { kind, payload } = splitStatus(run.status, run.routingDecision);
   await db.execute(
     `INSERT INTO provider_runs
@@ -68,13 +68,13 @@ export async function insertProviderRun(db: Database, run: ProviderRun): Promise
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [run.id, run.sessionId, run.provider, run.model, kind, payload, Date.parse(run.createdAt)],
   );
-}
+};
 
-export async function updateProviderRunStatus(
+export const updateProviderRunStatus = async (
   db: Database,
   id: ProviderRunId,
   status: ProviderRunStatus,
-): Promise<void> {
+): Promise<void> => {
   const rows = await db.select<Pick<ProviderRunRow, 'status_payload'>>(
     'SELECT status_payload FROM provider_runs WHERE id = ?',
     [id],
@@ -86,13 +86,13 @@ export async function updateProviderRunStatus(
     payload,
     id,
   ]);
-}
+};
 
-export async function getProviderRunById(
+export const getProviderRunById = async (
   db: Database,
   id: ProviderRunId,
-): Promise<ProviderRun | null> {
+): Promise<ProviderRun | null> => {
   const rows = await db.select<ProviderRunRow>('SELECT * FROM provider_runs WHERE id = ?', [id]);
   const row = rows[0];
   return row ? toDomain(row) : null;
-}
+};

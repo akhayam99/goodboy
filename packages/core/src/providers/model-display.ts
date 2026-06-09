@@ -13,6 +13,6 @@ const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelTier> = (() => {
   return map;
 })();
 
-export function getModelDescriptor(id: string): ModelTier | null {
+export const getModelDescriptor = (id: string): ModelTier | null => {
   return DESCRIPTOR_BY_ID.get(id) ?? null;
-}
+};

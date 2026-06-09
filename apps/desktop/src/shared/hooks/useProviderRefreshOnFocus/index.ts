@@ -10,23 +10,7 @@ import { useAppStore } from '../../../store/store';
 const DEBOUNCE_MS = 500;
 const REFRESH_TTL_MS = 60_000;
 
-/**
- * Re-detects CLI presence + auth state when the app regains focus or its tab
- * becomes visible again. This is the coherence backstop for changes made
- * outside the app (e.g. user runs `npm i -g @anthropic-ai/claude-code` in
- * their own shell, or `claude /logout` in another terminal).
- *
- * Three guards keep this from being a perf footgun:
- *  - DEBOUNCE_MS: collapse focus + visibilitychange firing back-to-back.
- *  - REFRESH_TTL_MS: skip if we refreshed recently. Manual refresh button +
- *    lifecycle-exit event handle the in-app cases; this only catches
- *    external machine changes, which are rare.
- *  - Skip when any provider lifecycle is in flight: we already update on
- *    PTY exit with fresh ground truth, and the running PTY itself holds
- *    auth state in a transient form (entered codes, half-typed passwords).
- *    A refresh mid-run could race against the exit handler's atomic update.
- */
-export function useProviderRefreshOnFocus(): void {
+export const useProviderRefreshOnFocus = (): void => {
   const refreshProviders = useAppStore((s) => s.refreshProviders);
 
   useEffect(() => {
@@ -65,4 +49,4 @@ export function useProviderRefreshOnFocus(): void {
       if (timer !== null) window.clearTimeout(timer);
     };
   }, [refreshProviders]);
-}
+};

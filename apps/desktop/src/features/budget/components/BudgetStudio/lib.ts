@@ -33,44 +33,44 @@ export type ModelBreakdownEntry = {
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 const VENDOR_PREFIXES = ['claude', 'anthropic', 'gemini', 'google', 'cursor'];
 
-export function toProviderId(provider: string): ProviderId | null {
+export const toProviderId = (provider: string): ProviderId | null => {
   return PROVIDER_IDS.includes(provider as ProviderId) ? (provider as ProviderId) : null;
-}
+};
 
-export function providerLabel(provider: string): string {
+export const providerLabel = (provider: string): string => {
   return provider === 'anthropic' ? 'claude' : provider;
-}
+};
 
-export function formatModel(model: string): string {
+export const formatModel = (model: string): string => {
   let m = model.toLowerCase();
   const dash = m.indexOf('-');
   if (dash > 0 && VENDOR_PREFIXES.includes(m.slice(0, dash))) m = m.slice(dash + 1);
   m = m.replace(/(\d)-(\d)/g, '$1.$2');
   return m.replace(/-/g, ' ');
-}
+};
 
-export function formatTokens(n: number): string {
+export const formatTokens = (n: number): string => {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return `${n}`;
-}
+};
 
-export function spendBarColor(pct: number): string {
+export const spendBarColor = (pct: number): string => {
   if (pct >= 1) return 'bg-danger';
   if (pct >= 0.8) return 'bg-warning';
   return 'bg-primary';
-}
+};
 
-export function spendStrokeColor(pct: number): string {
+export const spendStrokeColor = (pct: number): string => {
   if (pct >= 1) return 'var(--color-danger)';
   if (pct >= 0.8) return 'var(--color-warning)';
   return 'var(--color-primary)';
-}
+};
 
-export function sortTurns(
+export const sortTurns = (
   turns: ReadonlyArray<WorkspaceTurn>,
   key: SortKey,
-): ReadonlyArray<WorkspaceTurn> {
+): ReadonlyArray<WorkspaceTurn> => {
   const copy = [...turns];
   if (key === 'expensive') {
     copy.sort((a, b) => b.record.estimatedCostUsd - a.record.estimatedCostUsd);
@@ -78,11 +78,11 @@ export function sortTurns(
     copy.sort((a, b) => Date.parse(b.record.recordedAt) - Date.parse(a.record.recordedAt));
   }
   return copy;
-}
+};
 
-export function buildModelBreakdown(
+export const buildModelBreakdown = (
   records: ReadonlyArray<TelemetryRecord>,
-): ReadonlyArray<ModelBreakdownEntry> {
+): ReadonlyArray<ModelBreakdownEntry> => {
   const map = new Map<string, ModelBreakdownEntry>();
   for (const r of records) {
     const key = `${r.provider}//${r.model}`;
@@ -102,13 +102,13 @@ export function buildModelBreakdown(
     });
   }
   return [...map.values()].sort((a, b) => b.spentUsd - a.spentUsd);
-}
+};
 
-export function chronologicalTurnCosts(
+export const chronologicalTurnCosts = (
   records: ReadonlyArray<TelemetryRecord>,
-): ReadonlyArray<number> {
+): ReadonlyArray<number> => {
   return [...records]
     .filter((r) => r.kind === 'turn')
     .sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt))
     .map((r) => r.estimatedCostUsd);
-}
+};

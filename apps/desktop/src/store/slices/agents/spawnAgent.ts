@@ -38,7 +38,7 @@ type SpawnArgs = {
   deferKickoff?: boolean;
 };
 
-export function spawnAgent(set: SetFn, get: GetFn) {
+export const spawnAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, args: SpawnArgs): Promise<AgentId> => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
@@ -161,4 +161,4 @@ export function spawnAgent(set: SetFn, get: GetFn) {
 
     return inserted.id;
   };
-}
+};

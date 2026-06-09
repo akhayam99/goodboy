@@ -5,11 +5,7 @@ import type { AgentKindLabel } from '../first-turn-classifier';
 // exported fn is pure, caller persists via the ContextEngine. Split kept
 // extractors trivially testable and lets the store decide when to flush.
 
-/**
- * Collect the unique file paths an agent touched during a turn from its
- * `file_edit` events. Used to maintain the `files_touched` slot.
- */
-export function extractFilesTouched(events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> {
+export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const ev of events) {
@@ -19,7 +15,7 @@ export function extractFilesTouched(events: ReadonlyArray<TurnEvent>): ReadonlyA
     out.push(ev.path);
   }
   return out;
-}
+};
 
 const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
 const QUESTION_RE = /<<ctx-question(?:\s+suggestions="([^"]*)")?>>([\s\S]*?)<<\/ctx-question>>/g;
@@ -33,28 +29,18 @@ export type ExtractedQuestion = {
   readonly suggestedAnswers: ReadonlyArray<string>;
 };
 
-/**
- * Pull agent-emitted markers out of an assistant turn's full text. Agents
- * are instructed (via system prompt) to wrap durable observations like:
- *   <<ctx-decision>>switching auth to OAuth2 PKCE<</ctx-decision>>
- *   <<ctx-question>>do we need refresh tokens?<</ctx-question>>
- *   <<ctx-question suggestions="yes | no | maybe">>bounded question<</ctx-question>>
- *   <<ctx-resolved>>do we need refresh tokens?<</ctx-resolved>>
- *
- * Questions may embed pipe-separated suggested answers via the `suggestions`
- * attribute. The marker form is intentionally verbose so the model rarely
- * emits it by accident in casual prose. Whitespace inside is trimmed.
- */
-export function extractMarkers(assistantText: string): {
+export const extractMarkers = (
+  assistantText: string,
+): {
   readonly decisions: ReadonlyArray<string>;
   readonly questions: ReadonlyArray<ExtractedQuestion>;
   readonly resolved: ReadonlyArray<string>;
-} {
+} => {
   const decisions = extractAll(assistantText, DECISION_RE);
   const questions = extractQuestions(assistantText);
   const resolved = extractAll(assistantText, RESOLVED_RE);
   return { decisions, questions, resolved };
-}
+};
 
 function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
   const out: ExtractedQuestion[] = [];
@@ -81,12 +67,12 @@ export type ExtractedPlan = {
   readonly bodyMd: string;
 };
 
-export function extractPlanFromMarker(assistantText: string): ExtractedPlan | null {
+export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
   const matches = extractAll(assistantText, PLAN_RE);
   if (matches.length === 0) return null;
   const raw = matches[matches.length - 1]!;
   return parsePlanBody(raw);
-}
+};
 
 function parsePlanBody(raw: string): ExtractedPlan | null {
   const lines = raw.split('\n');
@@ -125,12 +111,7 @@ export type ExtractedHandoff = {
   readonly planId: string | null;
 };
 
-/**
- * Parse the last `<<handoff kind=... reason="..." plan=...>>` marker out of an
- * assistant turn. Agents emit it when they consider their scope done and want
- * to suggest the next agent. Self-closing format. Unknown kinds are rejected.
- */
-export function extractHandoff(assistantText: string): ExtractedHandoff | null {
+export const extractHandoff = (assistantText: string): ExtractedHandoff | null => {
   HANDOFF_RE.lastIndex = 0;
   let last: ExtractedHandoff | null = null;
   let m: RegExpExecArray | null;
@@ -146,7 +127,7 @@ export function extractHandoff(assistantText: string): ExtractedHandoff | null {
     };
   }
   return last;
-}
+};
 
 function parseHandoffAttrs(inner: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -167,17 +148,9 @@ export type ExtractedCommentResolution = {
   readonly commitSha: string;
 };
 
-/**
- * Parse a `<<comment-resolved threadId="..." commit="<sha>">>` marker out of an
- * assistant turn. Comment-resolution agents emit it after they apply the fix
- * and create a local commit, so the chat surface can offer a one-click action
- * that marks the underlying review thread resolved on github.
- *
- * Self-closing. If multiple markers exist (rare, the agent should emit one
- * after committing), the last one wins. Returns null if no well-formed marker
- * is present.
- */
-export function extractCommentResolved(assistantText: string): ExtractedCommentResolution | null {
+export const extractCommentResolved = (
+  assistantText: string,
+): ExtractedCommentResolution | null => {
   COMMENT_RESOLVED_RE.lastIndex = 0;
   let last: ExtractedCommentResolution | null = null;
   let m: RegExpExecArray | null;
@@ -190,13 +163,13 @@ export function extractCommentResolved(assistantText: string): ExtractedCommentR
     last = { threadId, commitSha };
   }
   return last;
-}
+};
 
 const REVIEW_THREAD_ID_RE = /^PRRT_/;
 
-export function isReviewThreadId(threadId: string): boolean {
+export const isReviewThreadId = (threadId: string): boolean => {
   return REVIEW_THREAD_ID_RE.test(threadId);
-}
+};
 
 const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^>]+?)>>/g;
 
@@ -205,7 +178,7 @@ export type ExtractedCommentWontfix = {
   readonly reason: string;
 };
 
-export function extractCommentWontfix(assistantText: string): ExtractedCommentWontfix | null {
+export const extractCommentWontfix = (assistantText: string): ExtractedCommentWontfix | null => {
   COMMENT_WONTFIX_RE.lastIndex = 0;
   let last: ExtractedCommentWontfix | null = null;
   let m: RegExpExecArray | null;
@@ -217,7 +190,7 @@ export function extractCommentWontfix(assistantText: string): ExtractedCommentWo
     last = { threadId, reason };
   }
   return last;
-}
+};
 
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
@@ -227,9 +200,9 @@ export type ExtractedCluster = {
   readonly instructions: string;
 };
 
-export function extractClustersFromMarker(
+export const extractClustersFromMarker = (
   assistantText: string,
-): ReadonlyArray<ExtractedCluster> | null {
+): ReadonlyArray<ExtractedCluster> | null => {
   CLUSTERS_RE.lastIndex = 0;
   let raw: string | null = null;
   let m: RegExpExecArray | null;
@@ -264,9 +237,9 @@ export function extractClustersFromMarker(
     out.push({ title, instructions });
   }
   return out.length > 0 ? out : null;
-}
+};
 
-export function extractClusterDone(assistantText: string): { readonly id: string } | null {
+export const extractClusterDone = (assistantText: string): { readonly id: string } | null => {
   CLUSTER_DONE_RE.lastIndex = 0;
   let last: { id: string } | null = null;
   let m: RegExpExecArray | null;
@@ -278,7 +251,7 @@ export function extractClusterDone(assistantText: string): { readonly id: string
     last = { id };
   }
   return last;
-}
+};
 
 const SCOUT_SPLIT_RE = /<<scout-split>>([\s\S]*?)<<\/scout-split>>/g;
 
@@ -287,7 +260,9 @@ export type ExtractedScoutArea = {
   readonly query: string;
 };
 
-export function extractScoutSplit(assistantText: string): ReadonlyArray<ExtractedScoutArea> | null {
+export const extractScoutSplit = (
+  assistantText: string,
+): ReadonlyArray<ExtractedScoutArea> | null => {
   SCOUT_SPLIT_RE.lastIndex = 0;
   let raw: string | null = null;
   let m: RegExpExecArray | null;
@@ -322,7 +297,7 @@ export function extractScoutSplit(assistantText: string): ReadonlyArray<Extracte
     out.push({ area, query });
   }
   return out.length > 0 ? out : null;
-}
+};
 
 function stripJsonFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
@@ -351,15 +326,7 @@ export type PlanReadinessResult = {
   readonly reason: 'has-open-question' | 'incomplete-markers' | 'too-few-steps' | null;
 };
 
-/**
- * Heuristic check for whether a freshly emitted plan looks complete enough to
- * justify suggesting the implementer agent. Conservative on purpose, false
- * positives mean noisy nudges. Three rejections:
- *   - body contains TODO / TBD / FIXME / ??
- *   - body has fewer than 2 bulleted/numbered steps
- *   - assistant text outside the plan block asks an open question
- */
-export function assessPlanReadiness(input: PlanReadinessInput): PlanReadinessResult {
+export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessResult => {
   if (PLAN_INCOMPLETE_RE.test(input.planBody)) {
     return { ready: false, reason: 'incomplete-markers' };
   }
@@ -372,7 +339,7 @@ export function assessPlanReadiness(input: PlanReadinessInput): PlanReadinessRes
     return { ready: false, reason: 'has-open-question' };
   }
   return { ready: true, reason: null };
-}
+};
 
 function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
   const out: string[] = [];
@@ -386,15 +353,7 @@ function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
   return out;
 }
 
-/**
- * Append `additions` to an existing newline-separated slot value, dedup'ing
- * by exact-match line. Order: existing lines first, new ones after.
- *
- * Returns the merged value. If nothing changed (every addition already
- * present), returns the original string verbatim, caller can use that to
- * skip the upsert.
- */
-export function mergeIntoSlot(existing: string, additions: ReadonlyArray<string>): string {
+export const mergeIntoSlot = (existing: string, additions: ReadonlyArray<string>): string => {
   if (additions.length === 0) return existing;
   const lines = existing.length > 0 ? existing.split('\n') : [];
   const seen = new Set(lines.map((l) => l.trim()));
@@ -408,18 +367,9 @@ export function mergeIntoSlot(existing: string, additions: ReadonlyArray<string>
     changed = true;
   }
   return changed ? lines.join('\n') : existing;
-}
+};
 
-/**
- * Remove lines from `existing` that match any string in `removals`, match is
- * case-insensitive, ignores leading list markers (`-`, `*`, `1.`), and
- * succeeds when one is a substring of the other. Used to clean up resolved
- * open questions when the agent emits `<<ctx-resolved>>` markers.
- *
- * Returns the original string verbatim if nothing matched, so the caller can
- * skip the upsert.
- */
-export function removeFromSlot(existing: string, removals: ReadonlyArray<string>): string {
+export const removeFromSlot = (existing: string, removals: ReadonlyArray<string>): string => {
   if (removals.length === 0 || existing.length === 0) return existing;
   const norm = (s: string) =>
     s
@@ -445,4 +395,4 @@ export function removeFromSlot(existing: string, removals: ReadonlyArray<string>
     kept.push(line);
   }
   return changed ? kept.join('\n') : existing;
-}
+};

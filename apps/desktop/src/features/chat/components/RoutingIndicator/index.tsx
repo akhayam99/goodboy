@@ -15,12 +15,12 @@ type Props = {
   readonly onSendAnyway?: () => void;
 };
 
-export function RoutingIndicator({
+export const RoutingIndicator = ({
   sessionPreference,
   turnOverride,
   connectedProviders,
   onSendAnyway,
-}: Props) {
+}: Props) => {
   const [decision, setDecision] = useState<RoutingDecision | null>(null);
 
   useEffect(() => {
@@ -70,4 +70,4 @@ export function RoutingIndicator({
       </span>
     </div>
   );
-}
+};

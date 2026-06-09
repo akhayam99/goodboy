@@ -11,7 +11,7 @@ type Props = {
   onOpen: () => void;
 };
 
-export function WorkspaceRow({ workspace, density, highlighted, onOpen }: Props) {
+export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props) => {
   const hasUnread = useWorkspaceHasUnread(workspace.id);
   const accent = workspaceAccent(workspace.id);
   const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : '';
@@ -52,4 +52,4 @@ export function WorkspaceRow({ workspace, density, highlighted, onOpen }: Props)
       ) : null}
     </button>
   );
-}
+};

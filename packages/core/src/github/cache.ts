@@ -26,10 +26,10 @@ export type GetPrInput = {
   force?: boolean;
 };
 
-export async function getPrForBranch(
+export const getPrForBranch = async (
   deps: PrCacheDeps,
   input: GetPrInput,
-): Promise<PullRequestState | null> {
+): Promise<PullRequestState | null> => {
   const ttl = deps.ttlMs ?? DEFAULT_PR_CACHE_TTL_MS;
   const now = deps.now ? deps.now() : new Date();
   const cached = await deps.store.get(input.repoSlug, input.branch);
@@ -51,12 +51,12 @@ export async function getPrForBranch(
     fetchedAt: now.toISOString(),
   });
   return fresh;
-}
+};
 
-export async function invalidatePrCache(
+export const invalidatePrCache = async (
   deps: Pick<PrCacheDeps, 'store'>,
   repoSlug: string,
   branch: string,
-): Promise<void> {
+): Promise<void> => {
   await deps.store.invalidate(repoSlug, branch);
-}
+};

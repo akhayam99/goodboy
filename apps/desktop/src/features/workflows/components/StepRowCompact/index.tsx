@@ -14,7 +14,7 @@ type Props = {
   readonly className?: string;
 };
 
-export function StepRowCompact({ index, kind, name, model, verbosity, className }: Props) {
+export const StepRowCompact = ({ index, kind, name, model, verbosity, className }: Props) => {
   const pal = AGENT_KIND_PALETTE[kind];
   return (
     <div className={cn('flex items-center gap-2.5', className)}>
@@ -28,4 +28,4 @@ export function StepRowCompact({ index, kind, name, model, verbosity, className 
       </span>
     </div>
   );
-}
+};

@@ -1,7 +1,7 @@
 import { FolderGit2, Plug } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 
-export function WelcomeStep() {
+export const WelcomeStep = () => {
   return (
     <div className="flex flex-col items-center gap-7 text-center">
       <div className="relative">
@@ -34,7 +34,7 @@ export function WelcomeStep() {
       </div>
     </div>
   );
-}
+};
 
 function SetupRow({
   icon,

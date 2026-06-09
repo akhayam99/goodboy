@@ -8,11 +8,7 @@ type Props = {
   readonly onDismiss: () => void;
 };
 
-/**
- * Sticky result of a `$` quick-action script run, shown above the composer.
- * Never sent to the LLM, stays until dismissed or replaced by the next run.
- */
-export function ScriptResultRow({ state, onDismiss }: Props) {
+export const ScriptResultRow = ({ state, onDismiss }: Props) => {
   const { script, status, result } = state;
   const [outputOpen, setOutputOpen] = useState(false);
 
@@ -83,7 +79,7 @@ export function ScriptResultRow({ state, onDismiss }: Props) {
       ) : null}
     </div>
   );
-}
+};
 
 function Dot({ status }: { readonly status: ScriptResultState['status'] }) {
   const color = status === 'ok' ? 'bg-success' : status === 'error' ? 'bg-danger' : 'bg-border';

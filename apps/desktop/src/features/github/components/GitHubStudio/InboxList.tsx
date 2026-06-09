@@ -10,7 +10,7 @@ type Props = {
   readonly onSelect: (sessionId: SessionId) => void;
 };
 
-export function InboxList({ groups, focusedSessionId, onSelect }: Props) {
+export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
   if (groups.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-3">
@@ -83,4 +83,4 @@ export function InboxList({ groups, focusedSessionId, onSelect }: Props) {
       ))}
     </div>
   );
-}
+};

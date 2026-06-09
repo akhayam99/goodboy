@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function reprocessGoalForWorkflow(set: SetFn, get: GetFn) {
+export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
     try {
       const state = get();
@@ -53,4 +53,4 @@ export function reprocessGoalForWorkflow(set: SetFn, get: GetFn) {
       console.error('reprocessGoalForWorkflow failed', e);
     }
   };
-}
+};

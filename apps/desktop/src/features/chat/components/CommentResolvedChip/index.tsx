@@ -34,15 +34,7 @@ function persistDismissed(threadId: string) {
   }
 }
 
-/**
- * Renders alongside an assistant turn when the agent emitted a
- * `<<comment-resolved threadId="..." commit="...">>` marker after committing
- * a fix locally. The fix is already committed, so the choice is when to
- * publish: the primary action queues it for a batched single push (resolved
- * later via the ContextPanel "Push & resolve" button), the secondary pushes
- * and resolves this one thread immediately.
- */
-export function CommentResolvedChip({ assistantText, sessionId }: Props) {
+export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
   const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText]);
   const threadId = marker?.threadId;
 
@@ -203,4 +195,4 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
       </div>
     </div>
   );
-}
+};

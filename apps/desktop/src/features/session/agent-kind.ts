@@ -21,9 +21,9 @@ export const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'generic',
 ]);
 
-export function kindConsumesPlan(kind: AgentKind): boolean {
+export const kindConsumesPlan = (kind: AgentKind): boolean => {
   return PLAN_CONSUMING_KINDS.has(kind);
-}
+};
 
 export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; persona: string }> =
   {
@@ -275,12 +275,12 @@ const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {
   writer: 'docs',
 };
 
-export function inferAgentKindFromStep(step: WorkflowLibraryStep): AgentKind {
+export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => {
   const role = step.role.toLowerCase();
   return STEP_ROLE_KIND_LOOKUP[role] ?? 'generic';
-}
+};
 
-export function inferAgentKindFromName(name: string): AgentKind {
+export const inferAgentKindFromName = (name: string): AgentKind => {
   const lower = name.toLowerCase();
   // 'resolve' must come before 'review' so a name like `resolve: bob on
   // foo.ts:42` lands as resolver, not reviewer.
@@ -293,21 +293,16 @@ export function inferAgentKindFromName(name: string): AgentKind {
   if (/review|verify|check|audit/.test(lower)) return 'reviewer';
   if (/doc|readme|changelog/.test(lower)) return 'docs';
   return 'generic';
-}
+};
 
-/**
- * Resolve the chip's display kind. Override (explicit user pick) wins,
- * else name-based inference, else first-turn classification. Conservative:
- * when nothing matches, stays `generic` (chip shows "agent").
- */
-export function resolveAgentKind(
+export const resolveAgentKind = (
   name: string,
   firstUserText: string | null,
   override: AgentKind | null = null,
-): AgentKind {
+): AgentKind => {
   if (override) return override;
   const fromName = inferAgentKindFromName(name);
   if (fromName !== 'generic') return fromName;
   if (!firstUserText) return 'generic';
   return classifyFirstTurn(firstUserText);
-}
+};

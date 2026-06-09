@@ -17,13 +17,13 @@ type Props = {
 const FIELD =
   'w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-primary' as const;
 
-export function CreatePrDialog({
+export const CreatePrDialog = ({
   sessionId,
   defaultTitle,
   closedPr,
   onClose,
   onStudioClose,
-}: Props) {
+}: Props) => {
   const createPrForSession = useAppStore((s) => s.createPrForSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
@@ -221,4 +221,4 @@ export function CreatePrDialog({
       </div>
     </Dialog>
   );
-}
+};

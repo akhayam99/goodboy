@@ -3,7 +3,7 @@ import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 
-export async function recordOutcome(id: string, outcome: NudgeOutcome): Promise<void> {
+export const recordOutcome = async (id: string, outcome: NudgeOutcome): Promise<void> => {
   try {
     await updateNudgeEventOutcome(
       tauriDatabase,
@@ -16,4 +16,4 @@ export async function recordOutcome(id: string, outcome: NudgeOutcome): Promise<
       console.warn(`[nudge-event] update failed: ${formatError(err)}`);
     }
   }
-}
+};

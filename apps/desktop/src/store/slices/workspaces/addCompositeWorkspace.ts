@@ -11,7 +11,7 @@ type Input = {
   members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>;
 };
 
-export function addCompositeWorkspace(set: SetFn, get: GetFn) {
+export const addCompositeWorkspace = (set: SetFn, get: GetFn) => {
   return async ({ name, containerPath, members }: Input): Promise<Workspace> => {
     if (members.length < 2) {
       throw new Error('a multi-project workspace needs at least two repos');
@@ -60,4 +60,4 @@ export function addCompositeWorkspace(set: SetFn, get: GetFn) {
 
     return workspace;
   };
-}
+};

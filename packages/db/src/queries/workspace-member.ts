@@ -15,10 +15,10 @@ function toDomain(row: WorkspaceMemberRow): WorkspaceMember {
   };
 }
 
-export async function listMembersForWorkspaces(
+export const listMembersForWorkspaces = async (
   db: Database,
   compositeWorkspaceIds: ReadonlyArray<WorkspaceId>,
-): Promise<Map<WorkspaceId, ReadonlyArray<WorkspaceMember>>> {
+): Promise<Map<WorkspaceId, ReadonlyArray<WorkspaceMember>>> => {
   const out = new Map<WorkspaceId, WorkspaceMember[]>();
   if (compositeWorkspaceIds.length === 0) return out;
   const placeholders = compositeWorkspaceIds.map(() => '?').join(', ');
@@ -37,13 +37,13 @@ export async function listMembersForWorkspaces(
     out.set(compositeId, bucket);
   }
   return out;
-}
+};
 
-export async function insertWorkspaceMembers(
+export const insertWorkspaceMembers = async (
   db: Database,
   compositeWorkspaceId: WorkspaceId,
   members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>,
-): Promise<void> {
+): Promise<void> => {
   const now = Date.now();
   let index = 0;
   for (const member of members) {
@@ -55,4 +55,4 @@ export async function insertWorkspaceMembers(
     );
     index += 1;
   }
-}
+};

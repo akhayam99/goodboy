@@ -161,7 +161,7 @@ function toastMessageForAlert(alert: BudgetAlert): string {
   return 'session budget exceeded';
 }
 
-export function ChatInput({ session, providerDisconnected = false }: Props) {
+export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
@@ -1262,7 +1262,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
       </div>
     </div>
   );
-}
+};
 
 type QueuedItem = {
   readonly id: string;

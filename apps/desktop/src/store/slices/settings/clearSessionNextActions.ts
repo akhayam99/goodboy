@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { SetFn } from './types';
 
-export function clearSessionNextActions(set: SetFn) {
+export const clearSessionNextActions = (set: SetFn) => {
   return (sessionId: SessionId) => {
     set((state) => {
       if (state.sessionNextActions[sessionId] === undefined) return {};
@@ -10,4 +10,4 @@ export function clearSessionNextActions(set: SetFn) {
       return { sessionNextActions: next };
     });
   };
-}
+};

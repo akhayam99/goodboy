@@ -40,7 +40,7 @@ const IMPL_OUTPUT_EXEMPT: ReadonlySet<AgentKind> = new Set([
 
 const DOC_EXTENSIONS = /\.(?:md|mdx|txt|rst)$/;
 
-export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViolation> {
+export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViolation> => {
   const { agentKind, assistantText, filesEdited } = input;
   const violations: DriftViolation[] = [];
 
@@ -76,4 +76,4 @@ export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViol
   }
 
   return violations;
-}
+};

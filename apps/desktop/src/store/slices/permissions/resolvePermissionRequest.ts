@@ -17,7 +17,7 @@ type Params = {
   scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
 };
 
-export function resolvePermissionRequest(set: SetFn, get: GetFn) {
+export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId, toolUseId, toolName, runId, scope }: Params) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) return;
@@ -50,4 +50,4 @@ export function resolvePermissionRequest(set: SetFn, get: GetFn) {
       at: now,
     });
   };
-}
+};

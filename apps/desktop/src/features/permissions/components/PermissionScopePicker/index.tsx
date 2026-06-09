@@ -31,14 +31,14 @@ type Props = {
   readonly onResolved: () => void;
 };
 
-export function PermissionScopePicker({
+export const PermissionScopePicker = ({
   sessionId,
   agentId,
   toolUseId,
   toolName,
   runId,
   onResolved,
-}: Props) {
+}: Props) => {
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
@@ -94,4 +94,4 @@ export function PermissionScopePicker({
       ))}
     </div>
   );
-}
+};

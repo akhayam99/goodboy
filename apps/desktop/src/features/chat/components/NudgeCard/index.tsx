@@ -42,7 +42,7 @@ const SEVERITY_ICON: Record<NudgeSeverity, string> = {
   success: 'text-success',
 };
 
-export function NudgeCard({
+export const NudgeCard = ({
   severity,
   icon,
   title,
@@ -54,7 +54,7 @@ export function NudgeCard({
   ariaLabel,
   testId,
   autoFocusPrimary = false,
-}: Props) {
+}: Props) => {
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!autoFocusPrimary) return;
@@ -137,4 +137,4 @@ export function NudgeCard({
       </div>
     </section>
   );
-}
+};

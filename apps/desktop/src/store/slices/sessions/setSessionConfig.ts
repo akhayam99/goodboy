@@ -4,7 +4,7 @@ import type { SessionConfigUpdate } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function setSessionConfig(set: SetFn, get: GetFn) {
+export const setSessionConfig = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, fields: SessionConfigUpdate) => {
     const prev = get().sessions.find((s) => s.id === sessionId);
     if (!prev) return;
@@ -48,4 +48,4 @@ export function setSessionConfig(set: SetFn, get: GetFn) {
       throw err;
     }
   };
-}
+};

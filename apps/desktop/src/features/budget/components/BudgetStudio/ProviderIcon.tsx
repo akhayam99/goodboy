@@ -7,7 +7,7 @@ type Props = {
   readonly withChip?: boolean;
 };
 
-export function ProviderIcon({ provider, size = 14, withChip = false }: Props) {
+export const ProviderIcon = ({ provider, size = 14, withChip = false }: Props) => {
   const id = toProviderId(provider);
   if (!id) {
     return <span className="text-2xs text-muted-foreground">{providerLabel(provider)}</span>;
@@ -32,4 +32,4 @@ export function ProviderIcon({ provider, size = 14, withChip = false }: Props) {
       <Icon size={size} aria-label={providerLabel(provider)} />
     </span>
   );
-}
+};

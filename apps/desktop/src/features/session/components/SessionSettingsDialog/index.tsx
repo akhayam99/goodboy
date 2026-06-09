@@ -35,14 +35,14 @@ type SessionSettingsDialogProps = {
 
 const DELETE_ARM_TIMEOUT_MS = 4000;
 
-export function SessionSettingsDialog({
+export const SessionSettingsDialog = ({
   sessionId,
   open,
   onClose,
   archived,
   onArchive,
   onUnarchive,
-}: SessionSettingsDialogProps) {
+}: SessionSettingsDialogProps) => {
   const session = useSessionById(sessionId);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -378,7 +378,7 @@ export function SessionSettingsDialog({
       </div>
     </Dialog>
   );
-}
+};
 
 /* ──────────────────────────────────────────────────────────────────── */
 /* Section: General                                                      */

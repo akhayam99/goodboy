@@ -11,7 +11,7 @@ export type A11yResult = {
   incomplete: axe.Result[];
 };
 
-export async function runA11yCheck(container: Element): Promise<A11yResult> {
+export const runA11yCheck = async (container: Element): Promise<A11yResult> => {
   const results = await axe.run(container, {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'best-practice'] },
   });
@@ -20,4 +20,4 @@ export async function runA11yCheck(container: Element): Promise<A11yResult> {
     passes: results.passes,
     incomplete: results.incomplete,
   };
-}
+};

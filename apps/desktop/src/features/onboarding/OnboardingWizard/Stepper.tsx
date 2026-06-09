@@ -5,7 +5,7 @@ type Props = {
   readonly total: number;
 };
 
-export function Stepper({ current, total }: Props) {
+export const Stepper = ({ current, total }: Props) => {
   return (
     <div className="flex items-center justify-center gap-2" aria-hidden>
       {Array.from({ length: total }, (_, i) => (
@@ -19,4 +19,4 @@ export function Stepper({ current, total }: Props) {
       ))}
     </div>
   );
-}
+};

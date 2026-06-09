@@ -2,7 +2,7 @@ import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
 
-export function markAgentViewed(set: SetFn, get: GetFn) {
+export const markAgentViewed = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -21,4 +21,4 @@ export function markAgentViewed(set: SetFn, get: GetFn) {
     void invokeAgentMarkViewed(agentId, stampedAt).catch(() => undefined);
     void get().refreshUnreadWorkspaces();
   };
-}
+};

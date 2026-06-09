@@ -8,7 +8,7 @@ type Props = {
   readonly className?: string;
 };
 
-export function AgentKindChip({ kind, muted, title, className }: Props) {
+export const AgentKindChip = ({ kind, muted, title, className }: Props) => {
   const palette = AGENT_KIND_PALETTE[kind];
   return (
     <span
@@ -23,4 +23,4 @@ export function AgentKindChip({ kind, muted, title, className }: Props) {
       {palette.label}
     </span>
   );
-}
+};

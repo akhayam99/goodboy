@@ -6,7 +6,7 @@ import type { GetFn, SetFn } from './types';
 
 type Params = { commitSha?: string; reason?: string };
 
-export function resolveGithubThread(_set: SetFn, get: GetFn) {
+export const resolveGithubThread = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, threadId: string, closure?: Params): Promise<boolean> => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) return false;
@@ -40,4 +40,4 @@ export function resolveGithubThread(_set: SetFn, get: GetFn) {
       return false;
     }
   };
-}
+};

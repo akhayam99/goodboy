@@ -20,7 +20,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export function StepEditor({ def, ordinal, connectedProviders, onUpdate, onClose }: Props) {
+export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose }: Props) => {
   const kind = ROLE_TO_KIND[def.role];
   const effProvider: ProviderId =
     (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
@@ -114,4 +114,4 @@ export function StepEditor({ def, ordinal, connectedProviders, onUpdate, onClose
       </div>
     </div>
   );
-}
+};

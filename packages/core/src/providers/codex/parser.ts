@@ -148,7 +148,7 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
   };
 }
 
-export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> {
+export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
   if (trimmed.length === 0) return [];
 
@@ -227,4 +227,4 @@ export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<Tu
       }
       return [];
   }
-}
+};

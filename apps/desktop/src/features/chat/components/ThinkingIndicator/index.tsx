@@ -23,7 +23,7 @@ const prefersReducedMotion = () =>
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function ThinkingIndicator({ context }: Props) {
+export const ThinkingIndicator = ({ context }: Props) => {
   const [reduced] = useState(prefersReducedMotion);
   const [tick, setTick] = useState(0);
 
@@ -49,4 +49,4 @@ export function ThinkingIndicator({ context }: Props) {
       </span>
     </div>
   );
-}
+};

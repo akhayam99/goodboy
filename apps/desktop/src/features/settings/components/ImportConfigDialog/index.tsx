@@ -9,7 +9,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function ImportConfigDialog({ open, result, error, onClose }: Props) {
+export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
   const title = error
     ? 'Import failed'
     : result?.ok
@@ -50,4 +50,4 @@ export function ImportConfigDialog({ open, result, error, onClose }: Props) {
       ) : null}
     </Dialog>
   );
-}
+};

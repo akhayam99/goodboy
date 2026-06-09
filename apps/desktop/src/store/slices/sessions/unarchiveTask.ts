@@ -4,7 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
 
-export function unarchiveTask(set: SetFn, get: GetFn) {
+export const unarchiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const archivedList = Object.values(get().archivedSessions).flat();
     const prev = archivedList.find((s) => s.id === sessionId);
@@ -70,4 +70,4 @@ export function unarchiveTask(set: SetFn, get: GetFn) {
       // Best-effort: setCurrentSession reloads on demand if the user opens it
     }
   };
-}
+};

@@ -27,7 +27,13 @@ export type MergeDialogProps = {
   onCancel: () => void;
 };
 
-export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: MergeDialogProps) {
+export const MergeDialog = ({
+  open,
+  conflicts,
+  runMeta,
+  onResolve,
+  onCancel,
+}: MergeDialogProps) => {
   const [picks, setPicks] = useState<Record<string, MergeResolution>>({});
 
   const setPick = (file: string, resolution: MergeResolution) => {
@@ -89,7 +95,7 @@ export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: M
       )}
     </Dialog>
   );
-}
+};
 
 type ConflictRowProps = {
   conflict: MergeConflict;

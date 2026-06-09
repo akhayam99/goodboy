@@ -5,7 +5,7 @@ import { cancelTurn } from '../../../features/chat/turn';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
-export function discardWorkflow(set: SetFn, get: GetFn) {
+export const discardWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
@@ -61,4 +61,4 @@ export function discardWorkflow(set: SetFn, get: GetFn) {
       await updateSessionState(tauriDatabase, sessionId, derived, now).catch(() => undefined);
     }
   };
-}
+};

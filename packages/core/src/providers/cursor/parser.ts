@@ -3,6 +3,9 @@ import { parseAnthropicEnvelopeLine, type ParseContext } from '../shared/anthrop
 
 export type { ParseContext };
 
-export function parseCursorStreamLine(line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> {
+export const parseCursorStreamLine = (
+  line: string,
+  ctx: ParseContext,
+): ReadonlyArray<TurnEvent> => {
   return parseAnthropicEnvelopeLine(line, ctx, { adapter: 'cursor', logTag: 'cursor-adapter' });
-}
+};

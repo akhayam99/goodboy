@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<ProviderConnectionState, string> = {
   error: 'error',
 };
 
-export function ProvidersRail({ providers, focusedId, onSelect }: Props) {
+export const ProvidersRail = ({ providers, focusedId, onSelect }: Props) => {
   return (
     <div className="flex flex-col gap-0.5 p-2">
       {providers.map((p) => {
@@ -71,4 +71,4 @@ export function ProvidersRail({ providers, focusedId, onSelect }: Props) {
       })}
     </div>
   );
-}
+};

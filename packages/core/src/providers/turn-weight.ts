@@ -70,7 +70,7 @@ function countDistinctAsks(text: string): number {
   return matches?.length ?? 0;
 }
 
-export function assessTurnWeight(firstTurnText: string): TurnWeight {
+export const assessTurnWeight = (firstTurnText: string): TurnWeight => {
   const text = firstTurnText ?? '';
   const trimmed = text.trim();
   if (!trimmed) return 'unknown';
@@ -98,4 +98,4 @@ export function assessTurnWeight(firstTurnText: string): TurnWeight {
   }
 
   return 'unknown';
-}
+};

@@ -262,7 +262,7 @@ function writeSidebarPref(collapsed: boolean): void {
   window.localStorage.setItem(SIDEBAR_PREF_KEY, collapsed ? '1' : '0');
 }
 
-export function DiffViewerDialog({
+export const DiffViewerDialog = ({
   open,
   onClose,
   sessionId,
@@ -275,7 +275,7 @@ export function DiffViewerDialog({
   worktreePath,
   jumpToFirstCommented = false,
   jumpToFile,
-}: DiffViewerDialogProps) {
+}: DiffViewerDialogProps) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -676,7 +676,7 @@ export function DiffViewerDialog({
       </div>
     </Dialog>
   );
-}
+};
 
 type GitStatusHeaderProps = {
   status: WorktreeStatus | null;

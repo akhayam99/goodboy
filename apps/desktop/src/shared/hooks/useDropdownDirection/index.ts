@@ -19,16 +19,11 @@ function findClippingAncestor(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-/**
- * Picks the opening direction based on the trigger's position relative
- * to its nearest clipping ancestor. Avoids the bottom-of-scroll-container
- * trap where `top-full` would push the popover into a hidden region.
- */
-export function useDropdownDirection(
+export const useDropdownDirection = (
   triggerRef: React.RefObject<HTMLElement | null>,
   open: boolean,
   expectedHeight = 200,
-): 'up' | 'down' {
+): 'up' | 'down' => {
   const [direction, setDirection] = useState<'up' | 'down'>('down');
   useEffect(() => {
     if (!open) return;
@@ -44,4 +39,4 @@ export function useDropdownDirection(
     setDirection(spaceBelow < expectedHeight && spaceAbove > spaceBelow ? 'up' : 'down');
   }, [open, triggerRef, expectedHeight]);
   return direction;
-}
+};

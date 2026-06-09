@@ -27,18 +27,18 @@ async function applyZoom(factor: number): Promise<void> {
   }
 }
 
-export async function applyStoredZoom(): Promise<void> {
+export const applyStoredZoom = async (): Promise<void> => {
   await applyZoom(readZoom());
-}
+};
 
-export async function zoomIn(): Promise<void> {
+export const zoomIn = async (): Promise<void> => {
   await applyZoom(readZoom() + ZOOM_STEP);
-}
+};
 
-export async function zoomOut(): Promise<void> {
+export const zoomOut = async (): Promise<void> => {
   await applyZoom(readZoom() - ZOOM_STEP);
-}
+};
 
-export async function zoomReset(): Promise<void> {
+export const zoomReset = async (): Promise<void> => {
   await applyZoom(1);
-}
+};

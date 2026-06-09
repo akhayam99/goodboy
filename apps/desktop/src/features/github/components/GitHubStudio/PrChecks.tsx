@@ -18,7 +18,7 @@ type Props = {
   readonly onOpenUrl: (url: string) => void;
 };
 
-export function PrChecks({ checks, pr, onOpenUrl }: Props) {
+export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
   if (checks.length === 0) {
     return (
       <EmptyState
@@ -56,7 +56,7 @@ export function PrChecks({ checks, pr, onOpenUrl }: Props) {
       ))}
     </ul>
   );
-}
+};
 
 function ConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
   const props = { size: 15, 'aria-hidden': true } as const;

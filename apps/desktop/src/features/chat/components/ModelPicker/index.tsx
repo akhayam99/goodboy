@@ -50,7 +50,7 @@ export type Props = {
   readonly onResetToDefault: () => void;
 };
 
-export function ModelPicker({
+export const ModelPicker = ({
   providers,
   models,
   provider,
@@ -67,7 +67,7 @@ export function ModelPicker({
   onSelectEffort,
   onSelectVerbosity,
   onResetToDefault,
-}: Props) {
+}: Props) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isOverride = provider !== defaultProvider || model !== defaultModel;
@@ -351,7 +351,7 @@ export function ModelPicker({
       ) : null}
     </div>
   );
-}
+};
 
 function PickerSection({
   label,

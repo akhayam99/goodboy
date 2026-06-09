@@ -10,7 +10,7 @@ type ApiKeyCheck = {
   readonly message: string | null;
 };
 
-export function createCredential(set: SetFn) {
+export const createCredential = (set: SetFn) => {
   return async (
     providerId: ProviderId,
     label: string,
@@ -35,4 +35,4 @@ export function createCredential(set: SetFn) {
     set((state) => ({ providerCredentials: [...state.providerCredentials, credential] }));
     return credential;
   };
-}
+};

@@ -18,7 +18,7 @@ function auditRetryBackoffMs(attempt: number): number {
   return AUDIT_RETRY_BACKOFF_MS[Math.min(attempt, AUDIT_RETRY_BACKOFF_MS.length - 1)] ?? 16000;
 }
 
-export async function drainAuditRetryQueue(set: SetFn): Promise<void> {
+export const drainAuditRetryQueue = async (set: SetFn): Promise<void> => {
   let entries: ReadonlyArray<AuditRetryEntry>;
   try {
     entries = await invokeAuditRetryDrain(AUDIT_RETRY_DRAIN_BATCH);
@@ -78,4 +78,4 @@ export async function drainAuditRetryQueue(set: SetFn): Promise<void> {
       }
     }
   }
-}
+};

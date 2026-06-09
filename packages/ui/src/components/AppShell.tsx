@@ -80,14 +80,14 @@ function buildLayout(opts: {
   };
 }
 
-export function AppShell({
+export const AppShell = ({
   leftSidebar,
   leftSidebarCollapsed = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
   className,
-}: AppShellProps) {
+}: AppShellProps) => {
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
@@ -260,4 +260,4 @@ export function AppShell({
       </div>
     </div>
   );
-}
+};

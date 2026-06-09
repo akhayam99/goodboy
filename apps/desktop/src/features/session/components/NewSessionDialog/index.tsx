@@ -172,7 +172,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .join('-');
 }
 
-export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }: Props) {
+export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
@@ -554,7 +554,7 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
       </div>
     </Dialog>
   );
-}
+};
 
 type Tone = 'primary' | 'success';
 

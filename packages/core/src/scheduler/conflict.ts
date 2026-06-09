@@ -43,9 +43,9 @@ export class ManualResolutionRequiredError extends Error {
   }
 }
 
-export function detectConflicts(
+export const detectConflicts = (
   touches: ReadonlyArray<RunFileTouches>,
-): ReadonlyArray<FileConflict> {
+): ReadonlyArray<FileConflict> => {
   const fileToRuns = new Map<string, ProviderRunId[]>();
 
   for (const { runId, files } of touches) {
@@ -67,11 +67,11 @@ export function detectConflicts(
   }
 
   return conflicts;
-}
+};
 
-export async function resolveConflicts(
+export const resolveConflicts = async (
   input: ConflictResolutionInput,
-): Promise<ReadonlyArray<ResolvedConflict>> {
+): Promise<ReadonlyArray<ResolvedConflict>> => {
   const { conflicts, runStatuses, strategy, manualPicks, synthesize } = input;
 
   if (conflicts.length === 0) {
@@ -87,7 +87,7 @@ export async function resolveConflicts(
   }
 
   return resolveSynthesizer(conflicts, synthesize);
-}
+};
 
 function resolveLastWriteWins(
   conflicts: ReadonlyArray<FileConflict>,

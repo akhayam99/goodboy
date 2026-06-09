@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 const POLL_INTERVAL_MS = 60 * 60_000;
 const RECHECK_TTL_MS = 30 * 60_000;
 
-export function useUpdaterPolling(): void {
+export const useUpdaterPolling = (): void => {
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
 
   useEffect(() => {
@@ -34,4 +34,4 @@ export function useUpdaterPolling(): void {
       document.removeEventListener('visibilitychange', tick);
     };
   }, [checkForUpdates]);
-}
+};

@@ -10,7 +10,7 @@ import type { ProviderLifecyclePhase } from '../../../../store/slices/providers'
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'cursor', 'gemini'];
 
-export function ProvidersStep() {
+export const ProvidersStep = () => {
   const providers = useAppStore((s) => s.providers);
   const lifecycle = useAppStore((s) => s.providerLifecycle);
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
@@ -36,7 +36,7 @@ export function ProvidersStep() {
       </ul>
     </div>
   );
-}
+};
 
 function ProviderRow({ info, phase }: { info: ProviderInfo; phase: ProviderLifecyclePhase }) {
   const Icon = PROVIDER_BRAND[info.id].icon;

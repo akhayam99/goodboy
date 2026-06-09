@@ -9,7 +9,7 @@ export type CreatePrOptions = {
   draft?: boolean;
 };
 
-export function createPrForSession(_set: SetFn, get: GetFn) {
+export const createPrForSession = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: CreatePrOptions) => {
     const branch = get().sessionBranches[sessionId];
     const session = get().sessions.find((s) => s.id === sessionId);
@@ -53,4 +53,4 @@ export function createPrForSession(_set: SetFn, get: GetFn) {
       { sessionId, workspaceId: workspace.id },
     );
   };
-}
+};

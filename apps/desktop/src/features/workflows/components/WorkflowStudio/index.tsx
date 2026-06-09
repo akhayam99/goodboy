@@ -9,7 +9,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
+export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) => {
   return (
     <StudioShell
       icon={Layers}
@@ -25,4 +25,4 @@ export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
       )}
     </StudioShell>
   );
-}
+};

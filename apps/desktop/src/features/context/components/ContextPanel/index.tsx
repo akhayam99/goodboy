@@ -75,13 +75,13 @@ const ICON_BTN =
 
 type PanelTab = 'context' | 'plans' | 'questions' | 'terminal';
 
-export function ContextPanel({
+export const ContextPanel = ({
   session,
   collapsed = false,
   onCollapse,
   onExpand,
   isActive = true,
-}: ContextPanelProps) {
+}: ContextPanelProps) => {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const loading = useSessionLoading(session.id);
@@ -330,7 +330,7 @@ export function ContextPanel({
       </div>
     </>
   );
-}
+};
 
 type TabStripProps = {
   readonly tab: PanelTab;

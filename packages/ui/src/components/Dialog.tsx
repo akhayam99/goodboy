@@ -47,7 +47,7 @@ const MIN_HEIGHT: Record<DialogSize, string> = {
 
 const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
 
-export function Dialog({
+export const Dialog = ({
   open,
   onClose,
   title,
@@ -66,7 +66,7 @@ export function Dialog({
   panel,
   panelWidthClass = 'w-48',
   panelClassName,
-}: DialogProps) {
+}: DialogProps) => {
   const ref = useRef<HTMLDialogElement>(null);
   const uid = useId();
   const titleId = title ? `${uid}-title` : undefined;
@@ -230,4 +230,4 @@ export function Dialog({
       </div>
     </dialog>
   );
-}
+};

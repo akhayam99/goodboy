@@ -16,7 +16,7 @@ type Props = {
   disabled: boolean;
 };
 
-export function VerbositySelect({ value, onChange, disabled }: Props) {
+export const VerbositySelect = ({ value, onChange, disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
@@ -81,4 +81,4 @@ export function VerbositySelect({ value, onChange, disabled }: Props) {
       ) : null}
     </div>
   );
-}
+};

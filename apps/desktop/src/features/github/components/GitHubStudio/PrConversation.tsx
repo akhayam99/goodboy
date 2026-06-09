@@ -11,7 +11,7 @@ type Props = {
   readonly onOpenUrl: (url: string) => void;
 };
 
-export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) {
+export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) => {
   const threads = useMemo(() => {
     const all = groupThreads(comments);
     return [...all].sort((a, b) => {
@@ -83,7 +83,7 @@ export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUr
       </button>
     </div>
   );
-}
+};
 
 function ConversationThread({
   thread,

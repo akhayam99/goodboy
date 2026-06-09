@@ -72,10 +72,10 @@ function toDomainWithCount(row: PlanWithCountRow): PlanWithCount {
   return { ...toDomain(row), consumptionCount: row.consumption_count };
 }
 
-export async function listPlansForSession(
+export const listPlansForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<PlanWithCount>> {
+): Promise<ReadonlyArray<PlanWithCount>> => {
   const rows = await db.select<PlanWithCountRow>(
     `SELECT p.id, p.session_id, p.agent_id, p.workflow_run_id, p.title, p.body_md, p.status,
             p.clusters_json, p.created_at, p.updated_at,
@@ -88,7 +88,7 @@ export async function listPlansForSession(
     [sessionId],
   );
   return rows.map(toDomainWithCount);
-}
+};
 
 export type UpsertPlanInput = {
   readonly id: PlanId;
@@ -102,7 +102,7 @@ export type UpsertPlanInput = {
 
 const PLAN_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, title, body_md, status, clusters_json, created_at, updated_at FROM session_plans`;
 
-export async function upsertPlan(db: Database, input: UpsertPlanInput): Promise<Plan> {
+export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<Plan> => {
   const now = Date.now();
   const clustersJson = serializeClusters(input.clusters);
   const existing = input.workflowRunId
@@ -148,37 +148,37 @@ export async function upsertPlan(db: Database, input: UpsertPlanInput): Promise<
   const row = rows[0];
   if (!row) throw new Error(`plan insert failed: ${input.id}`);
   return toDomain(row);
-}
+};
 
-export async function updatePlanStatus(
+export const updatePlanStatus = async (
   db: Database,
   id: PlanId,
   status: PlanStatus,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(`UPDATE session_plans SET status = ?, updated_at = ? WHERE id = ?`, [
     status,
     Date.now(),
     id,
   ]);
-}
+};
 
-export async function updatePlanBody(
+export const updatePlanBody = async (
   db: Database,
   id: PlanId,
   title: string,
   bodyMd: string,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(`UPDATE session_plans SET title = ?, body_md = ?, updated_at = ? WHERE id = ?`, [
     title,
     bodyMd,
     Date.now(),
     id,
   ]);
-}
+};
 
-export async function deletePlan(db: Database, id: PlanId): Promise<void> {
+export const deletePlan = async (db: Database, id: PlanId): Promise<void> => {
   await db.execute(`DELETE FROM session_plans WHERE id = ?`, [id]);
-}
+};
 
 type PlanConsumptionRow = {
   id: string;
@@ -204,10 +204,10 @@ export type AddPlanConsumptionInput = {
   readonly agentId: AgentId;
 };
 
-export async function addPlanConsumption(
+export const addPlanConsumption = async (
   db: Database,
   input: AddPlanConsumptionInput,
-): Promise<PlanConsumption> {
+): Promise<PlanConsumption> => {
   const now = Date.now();
   await db.execute(
     `INSERT INTO plan_consumptions (id, plan_id, agent_id, consumed_at) VALUES (?, ?, ?, ?)`,
@@ -227,12 +227,12 @@ export async function addPlanConsumption(
     agentName: rows[0]?.name ?? null,
     consumedAt: new Date(now).toISOString() as IsoDateTime,
   };
-}
+};
 
-export async function listConsumptionsForPlan(
+export const listConsumptionsForPlan = async (
   db: Database,
   planId: PlanId,
-): Promise<ReadonlyArray<PlanConsumption>> {
+): Promise<ReadonlyArray<PlanConsumption>> => {
   const rows = await db.select<PlanConsumptionRow>(
     `SELECT c.id, c.plan_id, c.agent_id, c.consumed_at, a.name AS agent_name
      FROM plan_consumptions c
@@ -242,4 +242,4 @@ export async function listConsumptionsForPlan(
     [planId],
   );
   return rows.map(toConsumption);
-}
+};

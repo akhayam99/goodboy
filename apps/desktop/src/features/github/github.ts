@@ -36,52 +36,52 @@ function toStatus(raw: RawGhStatus): GhTokenStatus {
   };
 }
 
-export async function ghStatus(workspaceId?: string): Promise<GhTokenStatus> {
+export const ghStatus = async (workspaceId?: string): Promise<GhTokenStatus> => {
   try {
     return toStatus(await invoke<RawGhStatus>('gh_status', { workspaceId }));
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh status check failed: ${msg}`, { cause: err });
   }
-}
+};
 
-export async function ghSetToken(token: string, workspaceId?: string): Promise<GhTokenStatus> {
+export const ghSetToken = async (token: string, workspaceId?: string): Promise<GhTokenStatus> => {
   try {
     return toStatus(await invoke<RawGhStatus>('gh_set_token', { token, workspaceId }));
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh set token failed: ${msg}`, { cause: err });
   }
-}
+};
 
-export async function ghClearToken(workspaceId?: string): Promise<void> {
+export const ghClearToken = async (workspaceId?: string): Promise<void> => {
   try {
     await invoke('gh_clear_token', { workspaceId });
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh clear token failed: ${msg}`, { cause: err });
   }
-}
+};
 
-export async function ghPrDiff(
+export const ghPrDiff = async (
   repo: string,
   pr: number,
   cwd?: string,
   workspaceId?: string,
-): Promise<string> {
+): Promise<string> => {
   try {
     return await invoke<string>('gh_pr_diff', { repo, pr, cwd, workspaceId });
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`PR diff fetch for ${repo}#${pr} failed: ${msg}`, { cause: err });
   }
-}
+};
 
-export async function gitPush(
+export const gitPush = async (
   cwd: string,
   branch: string | null,
   workspaceId?: string,
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   try {
     const raw = await invoke<RawGhRunResult>('git_push', {
       cwd,
@@ -93,33 +93,33 @@ export async function gitPush(
     const msg = formatError(err);
     throw new Error(`git push failed: ${msg}`, { cause: err });
   }
-}
+};
 
-export async function ghPrsForBranch(
+export const ghPrsForBranch = async (
   cwd: string,
   branch: string,
   workspaceId?: string,
-): Promise<ReadonlyArray<PullRequestState>> {
+): Promise<ReadonlyArray<PullRequestState>> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (!slug) return [];
   return listPrsForBranch(tauriGhRunner, slug, branch, { cwd, workspaceId });
-}
+};
 
-export async function ghPrDetailByNumber(
+export const ghPrDetailByNumber = async (
   cwd: string,
   prNumber: number,
   workspaceId?: string,
-): Promise<PrDetail | null> {
+): Promise<PrDetail | null> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (!slug) return null;
   return fetchPrDetail(tauriGhRunner, slug, prNumber, { cwd, workspaceId });
-}
+};
 
-export async function ghPrHeadBranch(
+export const ghPrHeadBranch = async (
   cwd: string,
   prNumber: number,
   workspaceId?: string,
-): Promise<string> {
+): Promise<string> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (!slug) throw new Error('could not detect a GitHub repository for this workspace');
   const res = await tauriGhRunner.run(
@@ -142,12 +142,12 @@ export async function ghPrHeadBranch(
   const branch = res.stdout.trim();
   if (!branch) throw new Error(`PR #${prNumber} has no head branch`);
   return branch;
-}
+};
 
-export async function ghBaseBranches(
+export const ghBaseBranches = async (
   cwd: string,
   workspaceId?: string,
-): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> {
+): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> => {
   const [def, list] = await Promise.all([
     tauriGhRunner.run(
       ['repo', 'view', '--json', 'defaultBranchRef', '--jq', '.defaultBranchRef.name'],
@@ -170,12 +170,12 @@ export async function ghBaseBranches(
           .filter(Boolean)
       : [];
   return { defaultBranch, branches };
-}
+};
 
-export async function ghRepoCollaborators(
+export const ghRepoCollaborators = async (
   cwd: string,
   workspaceId?: string,
-): Promise<ReadonlyArray<string>> {
+): Promise<ReadonlyArray<string>> => {
   const res = await tauriGhRunner.run(
     ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
     { cwd, workspaceId },
@@ -185,9 +185,9 @@ export async function ghRepoCollaborators(
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
-}
+};
 
-export async function ghCommitDiff(repo: string, sha: string): Promise<string> {
+export const ghCommitDiff = async (repo: string, sha: string): Promise<string> => {
   const res = await tauriGhRunner.run([
     'api',
     `repos/${repo}/commits/${sha}`,
@@ -198,7 +198,7 @@ export async function ghCommitDiff(repo: string, sha: string): Promise<string> {
     throw new Error(res.stderr.trim() || `gh api commit ${repo}@${sha} exited ${res.exitCode}`);
   }
   return res.stdout;
-}
+};
 
 export const tauriGhRunner: GhRunner = {
   async run(args: ReadonlyArray<string>, opts: GhRunOptions = {}): Promise<GhResult> {
@@ -220,7 +220,7 @@ export const tauriGhRunner: GhRunner = {
   },
 };
 
-export function createTauriPrCacheStore(db: Database): PrCacheStore {
+export const createTauriPrCacheStore = (db: Database): PrCacheStore => {
   return {
     async get(repoSlug, branch) {
       try {
@@ -252,4 +252,4 @@ export function createTauriPrCacheStore(db: Database): PrCacheStore {
       }
     },
   };
-}
+};

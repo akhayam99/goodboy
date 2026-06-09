@@ -55,7 +55,7 @@ function parseChips(raw: string): ReadonlyArray<string> {
     .filter(Boolean);
 }
 
-export function SkillsPanel({ workspaceId }: Props) {
+export const SkillsPanel = ({ workspaceId }: Props) => {
   const skills = useAppStore((s) => s.skills[workspaceId] ?? EMPTY_ARRAY);
   const loadSkills = useAppStore((s) => s.loadSkills);
   const saveSkill = useAppStore((s) => s.saveSkill);
@@ -185,7 +185,7 @@ export function SkillsPanel({ workspaceId }: Props) {
       )}
     </div>
   );
-}
+};
 
 function SkillRow({
   skill,

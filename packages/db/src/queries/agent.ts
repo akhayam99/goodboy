@@ -65,25 +65,25 @@ function toAgent(row: AgentRow): Agent {
   };
 }
 
-export async function listAgentsForSession(
+export const listAgentsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<Agent>> {
+): Promise<ReadonlyArray<Agent>> => {
   const rows = await db.select<AgentRow>(
     'SELECT * FROM agents WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toAgent);
-}
+};
 
 // Batched lookup for workspace switch: replaces
 // `Promise.all(ids.map(invokePhaseRunList))`, which serialized N IPC round trips
 // through the Rust `Mutex<Connection>`. One IN-clause query + group-by-session
 // preserves per-session ordering (ordinal ASC within each bucket).
-export async function listAgentsForSessions(
+export const listAgentsForSessions = async (
   db: Database,
   sessionIds: ReadonlyArray<SessionId>,
-): Promise<Map<SessionId, ReadonlyArray<Agent>>> {
+): Promise<Map<SessionId, ReadonlyArray<Agent>>> => {
   const out = new Map<SessionId, Agent[]>();
   if (sessionIds.length === 0) return out;
   const placeholders = sessionIds.map(() => '?').join(', ');
@@ -98,15 +98,15 @@ export async function listAgentsForSessions(
     out.set(agent.sessionId, bucket);
   }
   return out;
-}
+};
 
-export async function getAgentById(db: Database, id: AgentId): Promise<Agent | null> {
+export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | null> => {
   const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id]);
   const row = rows[0];
   return row ? toAgent(row) : null;
-}
+};
 
-export async function insertAgent(db: Database, agent: Agent): Promise<void> {
+export const insertAgent = async (db: Database, agent: Agent): Promise<void> => {
   await db.execute(
     `INSERT INTO agents
       (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at)
@@ -126,9 +126,9 @@ export async function insertAgent(db: Database, agent: Agent): Promise<void> {
       agent.completedAt ?? null,
     ],
   );
-}
+};
 
-export async function updateAgentStatus(
+export const updateAgentStatus = async (
   db: Database,
   id: AgentId,
   fields: {
@@ -138,7 +138,7 @@ export async function updateAgentStatus(
     startedAt?: IsoDateTime;
     completedAt?: IsoDateTime;
   },
-): Promise<void> {
+): Promise<void> => {
   const updates: string[] = [];
   const values: unknown[] = [];
 
@@ -167,15 +167,15 @@ export async function updateAgentStatus(
 
   values.push(id);
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
-}
+};
 
-export async function softDeleteAgent(db: Database, id: AgentId): Promise<void> {
+export const softDeleteAgent = async (db: Database, id: AgentId): Promise<void> => {
   await db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-}
+};
 
-export async function restoreAgent(db: Database, id: AgentId): Promise<void> {
+export const restoreAgent = async (db: Database, id: AgentId): Promise<void> => {
   await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
-}
+};
 
 export type AgentConfigUpdate = {
   verbosity?: 'brief' | 'normal' | 'verbose' | null;
@@ -185,11 +185,11 @@ export type AgentConfigUpdate = {
   kind?: string | null;
 };
 
-export async function updateAgentConfig(
+export const updateAgentConfig = async (
   db: Database,
   id: AgentId,
   fields: AgentConfigUpdate,
-): Promise<void> {
+): Promise<void> => {
   const updates: string[] = [];
   const values: unknown[] = [];
   if (fields.verbosity !== undefined) {
@@ -215,4 +215,4 @@ export async function updateAgentConfig(
   if (updates.length === 0) return;
   values.push(id);
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
-}
+};

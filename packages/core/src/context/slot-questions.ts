@@ -3,11 +3,11 @@ import type { Database } from '@goodboy/db';
 import { ContextEngine } from './engine';
 import { mergeIntoSlot, removeFromSlot } from './extractors';
 
-export async function removeQuestionsFromSlot(
+export const removeQuestionsFromSlot = async (
   db: Database,
   sessionId: SessionId,
   texts: ReadonlyArray<string>,
-): Promise<boolean> {
+): Promise<boolean> => {
   if (texts.length === 0) return false;
   const engine = new ContextEngine({ db });
   const slots = await engine.load(sessionId);
@@ -17,13 +17,13 @@ export async function removeQuestionsFromSlot(
   if (next === existing) return false;
   await engine.upsert(sessionId, 'open_questions', next);
   return true;
-}
+};
 
-export async function addQuestionsToSlot(
+export const addQuestionsToSlot = async (
   db: Database,
   sessionId: SessionId,
   texts: ReadonlyArray<string>,
-): Promise<boolean> {
+): Promise<boolean> => {
   if (texts.length === 0) return false;
   const engine = new ContextEngine({ db });
   const slots = await engine.load(sessionId);
@@ -32,4 +32,4 @@ export async function addQuestionsToSlot(
   if (next === existing) return false;
   await engine.upsert(sessionId, 'open_questions', next);
   return true;
-}
+};

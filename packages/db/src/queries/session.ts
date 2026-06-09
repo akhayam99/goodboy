@@ -152,11 +152,11 @@ export type SessionConfigUpdate = {
   defaultProvider?: ProviderId | null;
 };
 
-export async function updateSessionConfig(
+export const updateSessionConfig = async (
   db: Database,
   id: SessionId,
   fields: SessionConfigUpdate,
-): Promise<void> {
+): Promise<void> => {
   const updates: string[] = [];
   const values: unknown[] = [];
   if (fields.verbosity !== undefined) {
@@ -186,14 +186,14 @@ export async function updateSessionConfig(
   if (updates.length === 0) return;
   values.push(id);
   await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
-}
+};
 
 function splitState(state: TurnState): { kind: TurnState['kind']; payload: string } {
   const { kind, ...rest } = state;
   return { kind, payload: JSON.stringify(rest) };
 }
 
-export async function insertSession(db: Database, session: Session): Promise<void> {
+export const insertSession = async (db: Database, session: Session): Promise<void> => {
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
@@ -229,80 +229,80 @@ export async function insertSession(db: Database, session: Session): Promise<voi
       ],
     );
   }
-}
+};
 
-export async function updateSessionAutoRun(
+export const updateSessionAutoRun = async (
   db: Database,
   id: SessionId,
   autoRun: boolean,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE sessions SET auto_run = ?, updated_at = ? WHERE id = ?', [
     autoRun ? 1 : 0,
     Date.parse(updatedAt),
     id,
   ]);
-}
+};
 
-export async function updateSessionUserStatus(
+export const updateSessionUserStatus = async (
   db: Database,
   id: SessionId,
   status: SessionUserStatus,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE sessions SET user_status = ?, updated_at = ? WHERE id = ?', [
     status,
     Date.parse(updatedAt),
     id,
   ]);
-}
+};
 
-export async function updateSessionTitleUserEdited(
+export const updateSessionTitleUserEdited = async (
   db: Database,
   id: SessionId,
   titleUserEdited: boolean,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE sessions SET title_user_edited = ?, updated_at = ? WHERE id = ?', [
     titleUserEdited ? 1 : 0,
     Date.parse(updatedAt),
     id,
   ]);
-}
+};
 
-export async function updateSessionState(
+export const updateSessionState = async (
   db: Database,
   id: SessionId,
   state: TurnState,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   const { kind, payload } = splitState(state);
   await db.execute(
     'UPDATE sessions SET state_kind = ?, state_payload = ?, updated_at = ? WHERE id = ?',
     [kind, payload, Date.parse(updatedAt), id],
   );
-}
+};
 
-export async function updateSessionPermissionMode(
+export const updateSessionPermissionMode = async (
   db: Database,
   id: SessionId,
   permissionMode: ClaudePermissionMode,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE sessions SET permission_mode = ?, updated_at = ? WHERE id = ?', [
     permissionMode,
     Date.parse(updatedAt),
     id,
   ]);
-}
+};
 
-export async function getSessionById(db: Database, id: SessionId): Promise<Session | null> {
+export const getSessionById = async (db: Database, id: SessionId): Promise<Session | null> => {
   const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
   const row = rows[0];
   if (!row) return null;
   const workflowRuns = await loadWorkflowsForSession(db, id);
   return toDomain(row, [], workflowRuns);
-}
+};
 
 async function hydrateSessions(
   db: Database,
@@ -331,60 +331,60 @@ async function hydrateSessions(
 // slice of the store. The split keeps archived sessions out of every
 // interactive surface (palette, github polling, unread, eager loads) by
 // construction; they exist purely as historical info under the Archived tab.
-export async function listSessionsForWorkspace(
+export const listSessionsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<Session>> {
+): Promise<ReadonlyArray<Session>> => {
   const rows = await db.select<SessionRow>(
     'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NULL AND deleted_at IS NULL ORDER BY updated_at DESC',
     [workspaceId],
   );
   return hydrateSessions(db, rows);
-}
+};
 
 // Archived sessions for a workspace, sorted by archival time. Loaded lazily
 // when the Archived tab is opened — never participates in palette search,
 // github polling, unread dots, or workspace-switch eager loads.
-export async function listArchivedSessionsForWorkspace(
+export const listArchivedSessionsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<Session>> {
+): Promise<ReadonlyArray<Session>> => {
   const rows = await db.select<SessionRow>(
     'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NOT NULL AND deleted_at IS NULL ORDER BY archived_at DESC',
     [workspaceId],
   );
   return hydrateSessions(db, rows);
-}
+};
 
-export async function renameSession(
+export const renameSession = async (
   db: Database,
   id: SessionId,
   goal: string,
   updatedAt: IsoDateTime,
   titleUserEdited = true,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ?',
     [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id],
   );
-}
+};
 
-export async function deleteSession(db: Database, id: SessionId): Promise<void> {
+export const deleteSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
-}
+};
 
-export async function softDeleteSession(db: Database, id: SessionId): Promise<void> {
+export const softDeleteSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-}
+};
 
-export async function restoreSession(db: Database, id: SessionId): Promise<void> {
+export const restoreSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET deleted_at = NULL WHERE id = ?', [id]);
-}
+};
 
-export async function archiveSession(db: Database, id: SessionId): Promise<void> {
+export const archiveSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET archived_at = ? WHERE id = ?', [Date.now(), id]);
-}
+};
 
-export async function unarchiveSession(db: Database, id: SessionId): Promise<void> {
+export const unarchiveSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET archived_at = NULL WHERE id = ?', [id]);
-}
+};

@@ -28,7 +28,7 @@ function label(value: Value): string {
   return value === '' ? 'Default' : PROVIDER_LABEL[value];
 }
 
-export function ProviderSelect({ value, providers, onChange, disabled }: Props) {
+export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
@@ -104,4 +104,4 @@ export function ProviderSelect({ value, providers, onChange, disabled }: Props) 
       ) : null}
     </div>
   );
-}
+};

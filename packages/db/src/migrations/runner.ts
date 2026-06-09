@@ -14,10 +14,10 @@ export type MigrateResult = {
   readonly currentVersion: number;
 };
 
-export async function migrate(
+export const migrate = async (
   db: Database,
   migrations: ReadonlyArray<Migration> = defaultMigrations,
-): Promise<MigrateResult> {
+): Promise<MigrateResult> => {
   await db.exec(ENSURE_VERSION_TABLE);
 
   const rows = await db.select<{ version: number }>('SELECT version FROM schema_version');
@@ -46,7 +46,7 @@ export async function migrate(
 
   const currentVersion = ordered.at(-1)?.version ?? 0;
   return { applied: newlyApplied, skipped, currentVersion };
-}
+};
 
 // Self-healing apply: runs each statement individually so a benign "already
 // exists" error on an idempotent DDL (ALTER ADD COLUMN, CREATE INDEX, CREATE

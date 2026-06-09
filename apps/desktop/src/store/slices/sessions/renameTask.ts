@@ -3,7 +3,7 @@ import { renameSession as renameSessionInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function renameTask(set: SetFn, get: GetFn) {
+export const renameTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, goal: string) => {
     if (!goal.trim()) throw new Error('session name cannot be empty');
     const now = new Date().toISOString() as IsoDateTime;
@@ -23,4 +23,4 @@ export function renameTask(set: SetFn, get: GetFn) {
       throw err;
     }
   };
-}
+};

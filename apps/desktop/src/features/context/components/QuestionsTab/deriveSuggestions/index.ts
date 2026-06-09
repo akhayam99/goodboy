@@ -43,7 +43,7 @@ function firstWord(text: string): string {
   return cleanToken(words[0] ?? '');
 }
 
-export function deriveSuggestions(question: string): ReadonlyArray<string> {
+export const deriveSuggestions = (question: string): ReadonlyArray<string> => {
   const trimmed = question.trim();
   if (trimmed.length === 0) return [];
   const body = trimmed.replace(/\?+\s*$/, '').trim();
@@ -61,4 +61,4 @@ export function deriveSuggestions(question: string): ReadonlyArray<string> {
 
   if (YES_NO_RE.test(trimmed)) return ['sì', 'no'];
   return [];
-}
+};

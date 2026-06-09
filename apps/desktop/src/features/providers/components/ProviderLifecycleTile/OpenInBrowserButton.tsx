@@ -7,7 +7,7 @@ type Props = {
 
 // Surfaces a detected OAuth URL with click-through to the system browser.
 // Never auto-opens, the user owns the navigation decision.
-export function OpenInBrowserButton({ url }: Props) {
+export const OpenInBrowserButton = ({ url }: Props) => {
   return (
     <button
       type="button"
@@ -19,4 +19,4 @@ export function OpenInBrowserButton({ url }: Props) {
       <span>Open in browser</span>
     </button>
   );
-}
+};

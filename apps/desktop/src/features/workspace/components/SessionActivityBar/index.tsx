@@ -57,7 +57,7 @@ type SessionActivityBarProps = {
   onArchivedTabOpen?: () => void;
 };
 
-export function SessionActivityBar({
+export const SessionActivityBar = ({
   workspaceId,
   sessions,
   archivedSessions,
@@ -65,7 +65,7 @@ export function SessionActivityBar({
   onSelectSession,
   onNewSession,
   onArchivedTabOpen,
-}: SessionActivityBarProps) {
+}: SessionActivityBarProps) => {
   const [tab, setTab] = useState<ActivityTab>('active');
 
   const prefs = useSessionViewPrefs(workspaceId);
@@ -166,7 +166,7 @@ export function SessionActivityBar({
       </div>
     </div>
   );
-}
+};
 
 type SessionActivityItemProps = {
   session: Session;

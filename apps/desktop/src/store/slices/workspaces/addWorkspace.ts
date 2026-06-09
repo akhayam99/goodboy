@@ -17,7 +17,7 @@ type Input = {
   name?: string;
 };
 
-export function addWorkspace(set: SetFn, get: GetFn) {
+export const addWorkspace = (set: SetFn, get: GetFn) => {
   return async ({ rootPath, name }: Input): Promise<Workspace> => {
     const check = await validateGitRepo(rootPath);
     if (!check.isRepo || !check.rootPath) {
@@ -101,4 +101,4 @@ export function addWorkspace(set: SetFn, get: GetFn) {
 
     return workspace;
   };
-}
+};

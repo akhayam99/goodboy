@@ -29,10 +29,10 @@ function toDomain(row: WorkspaceIntegrationRow): WorkspaceIntegration {
   };
 }
 
-export async function upsertWorkspaceIntegration(
+export const upsertWorkspaceIntegration = async (
   db: Database,
   integration: WorkspaceIntegration,
-): Promise<void> {
+): Promise<void> => {
   const created = Date.parse(integration.createdAt);
   const updated = Date.parse(integration.updatedAt);
   await db.execute(
@@ -52,39 +52,39 @@ export async function upsertWorkspaceIntegration(
       updated,
     ],
   );
-}
+};
 
-export async function listIntegrationsForWorkspace(
+export const listIntegrationsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<WorkspaceIntegration>> {
+): Promise<ReadonlyArray<WorkspaceIntegration>> => {
   const rows = await db.select<WorkspaceIntegrationRow>(
     'SELECT * FROM workspace_integrations WHERE workspace_id = ? ORDER BY created_at ASC',
     [workspaceId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function getWorkspaceIntegration(
+export const getWorkspaceIntegration = async (
   db: Database,
   workspaceId: WorkspaceId,
   provider: WorkspaceIntegrationProvider,
-): Promise<WorkspaceIntegration | null> {
+): Promise<WorkspaceIntegration | null> => {
   const rows = await db.select<WorkspaceIntegrationRow>(
     'SELECT * FROM workspace_integrations WHERE workspace_id = ? AND provider = ? LIMIT 1',
     [workspaceId, provider],
   );
   const row = rows[0];
   return row ? toDomain(row) : null;
-}
+};
 
-export async function deleteWorkspaceIntegration(
+export const deleteWorkspaceIntegration = async (
   db: Database,
   workspaceId: WorkspaceId,
   provider: WorkspaceIntegrationProvider,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('DELETE FROM workspace_integrations WHERE workspace_id = ? AND provider = ?', [
     workspaceId,
     provider,
   ]);
-}
+};

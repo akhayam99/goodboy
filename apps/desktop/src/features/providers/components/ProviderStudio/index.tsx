@@ -16,7 +16,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) {
+export const ProviderStudio = ({ workspaceName, initialFocus, onClose }: Props) => {
   const providers = useAppStore((s) => s.providers);
   const [focused, setFocused] = useState<ProviderId | null>(initialFocus ?? null);
 
@@ -53,4 +53,4 @@ export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) 
       )}
     </StudioShell>
   );
-}
+};

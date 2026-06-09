@@ -76,13 +76,13 @@ export type Props = {
   initialQuery?: string;
 };
 
-export function CommandPalette({
+export const CommandPalette = ({
   onClose,
   onOpenSettings,
   onNewSession,
   onOpenShortcutHelp,
   initialQuery = '',
-}: Props) {
+}: Props) => {
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -420,4 +420,4 @@ export function CommandPalette({
       </div>
     </div>
   );
-}
+};

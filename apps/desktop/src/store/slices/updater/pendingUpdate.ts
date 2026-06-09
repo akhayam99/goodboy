@@ -5,10 +5,10 @@ import type { Update } from '@tauri-apps/plugin-updater';
 // module scope instead of in the store.
 let pending: Update | null = null;
 
-export function setPendingUpdate(update: Update | null): void {
+export const setPendingUpdate = (update: Update | null): void => {
   pending = update;
-}
+};
 
-export function getPendingUpdate(): Update | null {
+export const getPendingUpdate = (): Update | null => {
   return pending;
-}
+};

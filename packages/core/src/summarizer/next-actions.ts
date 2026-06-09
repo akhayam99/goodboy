@@ -58,7 +58,7 @@ const STOPWORDS = new Set([
 // Trigger: a turn has produced output, or the assistant left open questions, or
 // last_output_summary captured a decision branch worth acting on. Otherwise the
 // user is still framing, surface nothing.
-export function inferNextActions(input: InferNextActionsInput): ReadonlyArray<NextAction> {
+export const inferNextActions = (input: InferNextActionsInput): ReadonlyArray<NextAction> => {
   const slots = mapSlots(input.slotsAfter);
   const openQuestions = (slots.open_questions ?? '').trim();
   const lastOutput = (slots.last_output_summary ?? '').trim();
@@ -91,7 +91,7 @@ export function inferNextActions(input: InferNextActionsInput): ReadonlyArray<Ne
       prompt: `vai diretto e implementa ${focus}`,
     },
   ];
-}
+};
 
 function mapSlots(slots: ReadonlyArray<ContextSlot>): Record<string, string> {
   const out: Record<string, string> = {};

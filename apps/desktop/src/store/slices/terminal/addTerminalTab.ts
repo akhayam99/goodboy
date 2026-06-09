@@ -12,7 +12,7 @@ function nextOrdinal(tabs: readonly TerminalTab[]): number {
   return max + 1;
 }
 
-export function addTerminalTab(set: SetFn, get: GetFn) {
+export const addTerminalTab = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, cwd: string | null): TerminalTabId => {
     const tabs = get().terminalTabs[sessionId] ?? [];
     const n = nextOrdinal(tabs);
@@ -31,4 +31,4 @@ export function addTerminalTab(set: SetFn, get: GetFn) {
     }));
     return id;
   };
-}
+};

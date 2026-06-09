@@ -22,7 +22,7 @@ type Props = {
   readonly info: ProviderInfo | null;
 };
 
-export function ProviderDetailPanel({ info }: Props) {
+export const ProviderDetailPanel = ({ info }: Props) => {
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
@@ -31,7 +31,7 @@ export function ProviderDetailPanel({ info }: Props) {
     );
   }
   return <Detail info={info} />;
-}
+};
 
 function Detail({ info }: { readonly info: ProviderInfo }) {
   const id = info.id as ProviderId;

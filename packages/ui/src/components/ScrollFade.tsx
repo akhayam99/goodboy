@@ -15,13 +15,13 @@ export type ScrollFadeProps = {
   readonly fadeSize?: string;
 };
 
-export function ScrollFade({
+export const ScrollFade = ({
   children,
   className,
   viewportClassName,
   fadeFrom = 'background',
   fadeSize = 'h-8',
-}: ScrollFadeProps) {
+}: ScrollFadeProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ top: false, bottom: false });
 
@@ -81,4 +81,4 @@ export function ScrollFade({
       />
     </div>
   );
-}
+};

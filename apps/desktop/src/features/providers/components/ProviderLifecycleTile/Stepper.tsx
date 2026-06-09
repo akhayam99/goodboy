@@ -6,7 +6,7 @@ type Props = {
 
 // Two-step ladder rendered only during install or connect. Install is step 1,
 // the implicit follow-on connect is step 2. Logout has no stepper.
-export function Stepper({ action }: Props) {
+export const Stepper = ({ action }: Props) => {
   if (action === 'logout') return null;
   const current = action === 'install' ? 1 : 2;
   return (
@@ -23,4 +23,4 @@ export function Stepper({ action }: Props) {
       </span>
     </div>
   );
-}
+};

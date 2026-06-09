@@ -27,7 +27,7 @@ type Props = {
 // the flow advances to sign-in. Closing during an in-flight run is allowed:
 // the PTY keeps running, status returns to the tile, reopening replays
 // terminal output from the GenericTerminalPanel cache keyed by runId.
-export function ProviderConnectModal({ providerId, initialAction, onClose }: Props) {
+export const ProviderConnectModal = ({ providerId, initialAction, onClose }: Props) => {
   const open = providerId !== null;
   // Pin the active providerId across the close animation so the body keeps
   // rendering its content for the duration of the dialog's exit transition.
@@ -52,7 +52,7 @@ export function ProviderConnectModal({ providerId, initialAction, onClose }: Pro
   return (
     <ModalBody providerId={target} initialAction={pinnedAction} open={open} onClose={onClose} />
   );
-}
+};
 
 type BodyProps = {
   readonly providerId: ProviderId;

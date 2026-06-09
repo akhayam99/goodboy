@@ -59,11 +59,11 @@ const PRICES: Record<string, ModelPrice> = {
 
 const FALLBACK: ModelPrice = COMPOSER_PRICE;
 
-export function cursorPriceFor(model: string): ModelPrice {
+export const cursorPriceFor = (model: string): ModelPrice => {
   return PRICES[model] ?? FALLBACK;
-}
+};
 
-export function computeCursorCostUsd(usage: ProviderUsage, model: string): number {
+export const computeCursorCostUsd = (usage: ProviderUsage, model: string): number => {
   const price = cursorPriceFor(model);
   const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
@@ -71,4 +71,4 @@ export function computeCursorCostUsd(usage: ProviderUsage, model: string): numbe
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );
-}
+};

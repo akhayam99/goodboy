@@ -10,7 +10,7 @@ import type { GetFn } from './types';
 // implementer branch in spawnAgent is the only one that builds it).
 // In-workflow path: the next step already has a pre-created pending agent, so
 // activate that slot (routing the chosen plan) instead of inserting a duplicate.
-export function runPlan(get: GetFn) {
+export const runPlan = (get: GetFn) => {
   return async (sessionId: SessionId, planId: PlanId) => {
     const state = get();
 
@@ -83,4 +83,4 @@ export function runPlan(get: GetFn) {
     }
     await get().activateWorkflowAgent(sessionId, stepAgent.id, planId);
   };
-}
+};

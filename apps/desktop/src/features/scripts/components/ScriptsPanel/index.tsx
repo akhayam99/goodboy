@@ -11,7 +11,7 @@ type Props = {
 
 type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
 
-export function ScriptsPanel({ workspaceId }: Props) {
+export const ScriptsPanel = ({ workspaceId }: Props) => {
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const saveScript = useAppStore((s) => s.saveScript);
@@ -165,7 +165,7 @@ export function ScriptsPanel({ workspaceId }: Props) {
       </ul>
     </div>
   );
-}
+};
 
 function RowAction({
   icon,

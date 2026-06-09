@@ -18,7 +18,7 @@ export type OnboardingProgress = {
   readonly isDone: boolean;
 };
 
-export function useOnboardingProgress(): OnboardingProgress {
+export const useOnboardingProgress = (): OnboardingProgress => {
   // localStorage is the source of truth (monotonic). Re-read on a custom
   // event so manual markStepComplete calls in other components propagate.
   const [tick, setTick] = useState(0);
@@ -86,4 +86,4 @@ export function useOnboardingProgress(): OnboardingProgress {
     finished,
     isDone: completedCount >= totalCount,
   };
-}
+};

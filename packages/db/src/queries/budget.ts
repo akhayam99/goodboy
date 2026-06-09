@@ -25,7 +25,7 @@ function toBudgetRule(row: BudgetRuleRow): BudgetRule {
   };
 }
 
-export async function insertBudgetRule(db: Database, rule: BudgetRule): Promise<void> {
+export const insertBudgetRule = async (db: Database, rule: BudgetRule): Promise<void> => {
   await db.execute(
     `INSERT INTO budget_rules
       (id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at)
@@ -40,16 +40,16 @@ export async function insertBudgetRule(db: Database, rule: BudgetRule): Promise<
       rule.createdAt,
     ],
   );
-}
+};
 
-export async function listBudgetRules(db: Database): Promise<ReadonlyArray<BudgetRule>> {
+export const listBudgetRules = async (db: Database): Promise<ReadonlyArray<BudgetRule>> => {
   const rows = await db.select<BudgetRuleRow>('SELECT * FROM budget_rules ORDER BY created_at ASC');
   return rows.map(toBudgetRule);
-}
+};
 
-export async function deleteBudgetRule(db: Database, id: string): Promise<void> {
+export const deleteBudgetRule = async (db: Database, id: string): Promise<void> => {
   await db.execute('DELETE FROM budget_rules WHERE id = ?', [id]);
-}
+};
 
 type SessionBudgetRow = {
   session_id: string;
@@ -63,29 +63,29 @@ function toSessionBudget(row: SessionBudgetRow): SessionBudget {
   };
 }
 
-export async function upsertSessionBudget(
+export const upsertSessionBudget = async (
   db: Database,
   sessionId: SessionId,
   softCapUsd: number,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `INSERT INTO session_budgets (session_id, soft_cap_usd)
      VALUES (?, ?)
      ON CONFLICT(session_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd`,
     [sessionId, softCapUsd],
   );
-}
+};
 
-export async function getSessionBudget(
+export const getSessionBudget = async (
   db: Database,
   sessionId: SessionId,
-): Promise<SessionBudget | null> {
+): Promise<SessionBudget | null> => {
   const rows = await db.select<SessionBudgetRow>(
     'SELECT * FROM session_budgets WHERE session_id = ?',
     [sessionId],
   );
   return rows[0] ? toSessionBudget(rows[0]) : null;
-}
+};
 
 type BudgetAlertRow = {
   id: string;
@@ -111,7 +111,7 @@ function toBudgetAlert(row: BudgetAlertRow): BudgetAlert {
   };
 }
 
-export async function insertBudgetAlert(db: Database, alert: BudgetAlert): Promise<void> {
+export const insertBudgetAlert = async (db: Database, alert: BudgetAlert): Promise<void> => {
   await db.execute(
     `INSERT INTO budget_alerts
       (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
@@ -127,7 +127,7 @@ export async function insertBudgetAlert(db: Database, alert: BudgetAlert): Promi
       alert.dismissedAt ?? null,
     ],
   );
-}
+};
 
 export type ListBudgetAlertsOptions = {
   readonly sessionId?: SessionId;
@@ -135,10 +135,10 @@ export type ListBudgetAlertsOptions = {
   readonly undismissedOnly?: boolean;
 };
 
-export async function listBudgetAlerts(
+export const listBudgetAlerts = async (
   db: Database,
   opts?: ListBudgetAlertsOptions,
-): Promise<ReadonlyArray<BudgetAlert>> {
+): Promise<ReadonlyArray<BudgetAlert>> => {
   let query = 'SELECT * FROM budget_alerts WHERE 1 = 1';
   const params: unknown[] = [];
 
@@ -160,12 +160,12 @@ export async function listBudgetAlerts(
 
   const rows = await db.select<BudgetAlertRow>(query, params);
   return rows.map(toBudgetAlert);
-}
+};
 
-export async function dismissBudgetAlert(
+export const dismissBudgetAlert = async (
   db: Database,
   id: string,
   dismissedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE budget_alerts SET dismissed_at = ? WHERE id = ?', [dismissedAt, id]);
-}
+};

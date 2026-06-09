@@ -9,7 +9,7 @@ import {
 import { formatError } from '../../../shared/lib/errors';
 import type { GetFn, SetFn } from './types';
 
-export function runScript(set: SetFn, get: GetFn) {
+export const runScript = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
     scriptId: WorkspaceScriptId,
@@ -85,4 +85,4 @@ export function runScript(set: SetFn, get: GetFn) {
 
     return resultPromise;
   };
-}
+};

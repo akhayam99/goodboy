@@ -58,11 +58,11 @@ function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
   return 'reviewable';
 }
 
-export function sortAndGroupSessions(
+export const sortAndGroupSessions = (
   sessions: ReadonlyArray<Session>,
   prefs: SessionViewPrefs,
   githubState: Readonly<Record<SessionId, SessionGithubState>>,
-): ReadonlyArray<GroupedSessions> {
+): ReadonlyArray<GroupedSessions> => {
   const sorted = sortSessions(sessions, prefs.sort);
 
   if (prefs.group === 'none') {
@@ -98,4 +98,4 @@ export function sortAndGroupSessions(
   return (Object.keys(PR_GROUP_ORDER) as SessionPrGroup[])
     .filter((k) => buckets.has(k))
     .map((k) => ({ key: k, sessions: buckets.get(k)! }));
-}
+};

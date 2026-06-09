@@ -5,7 +5,7 @@ import {
 } from '../../../features/providers/providers';
 import type { SetFn } from './types';
 
-export function refreshProviderStatus(set: SetFn) {
+export const refreshProviderStatus = (set: SetFn) => {
   return (status: ProviderStatus) => {
     set((state) => {
       const statuses: ProviderStatuses = {
@@ -20,4 +20,4 @@ export function refreshProviderStatus(set: SetFn) {
       };
     });
   };
-}
+};

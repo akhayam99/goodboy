@@ -26,7 +26,7 @@ const STEPS: ReadonlyArray<GuideStep> = [
   },
 ];
 
-export function EmptyGuide({ onNew, hasPresets }: Props) {
+export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
   return (
     <div className="flex h-full items-center justify-center p-8">
       <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
@@ -83,4 +83,4 @@ export function EmptyGuide({ onNew, hasPresets }: Props) {
       </div>
     </div>
   );
-}
+};

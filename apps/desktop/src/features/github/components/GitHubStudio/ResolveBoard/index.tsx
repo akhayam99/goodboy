@@ -28,7 +28,7 @@ type Props = {
   readonly onOpenThread: (threadId: string) => void;
 };
 
-export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) {
+export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) => {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -155,7 +155,7 @@ export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
       </ul>
     </div>
   );
-}
+};
 
 function ResolveCard({
   thread,

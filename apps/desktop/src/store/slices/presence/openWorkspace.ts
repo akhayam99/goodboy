@@ -6,7 +6,7 @@ import {
 } from '../../../features/workspace/window';
 import type { GetFn } from './types';
 
-export function openWorkspace(get: GetFn) {
+export const openWorkspace = (get: GetFn) => {
   return async (id: WorkspaceId, title: string): Promise<void> => {
     const presence = get().windowPresence;
     const myLabel = currentWindowLabel();
@@ -22,4 +22,4 @@ export function openWorkspace(get: GetFn) {
     }
     await spawnWorkspaceWindow(id, title);
   };
-}
+};

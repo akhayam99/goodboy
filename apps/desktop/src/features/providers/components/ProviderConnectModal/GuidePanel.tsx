@@ -8,7 +8,7 @@ type Props = {
 // Sidebar inside the modal: subscription line, numbered steps, docs link.
 // Scrollable independently of the terminal so a long guide does not push the
 // PTY off-screen on small viewports.
-export function GuidePanel({ guide }: Props) {
+export const GuidePanel = ({ guide }: Props) => {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -49,4 +49,4 @@ export function GuidePanel({ guide }: Props) {
       </a>
     </div>
   );
-}
+};

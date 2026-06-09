@@ -16,7 +16,7 @@ const RESET_AFTER_MS = 1500;
 // primary embedded-PTY flow above. The OS-terminal handoff is best-effort:
 // Linux probes a few common emulators, Windows opens cmd.exe, macOS uses
 // Terminal.app; an exotic setup falls back to a copy-only toast.
-export function EscapeHatch({ command }: Props) {
+export const EscapeHatch = ({ command }: Props) => {
   const [copied, setCopied] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
@@ -85,4 +85,4 @@ export function EscapeHatch({ command }: Props) {
       ) : null}
     </div>
   );
-}
+};

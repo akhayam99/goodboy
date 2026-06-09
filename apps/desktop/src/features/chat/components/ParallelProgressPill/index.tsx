@@ -15,7 +15,7 @@ const BADGE_CLASSES: Record<AgentStatus, string> = {
   pending: 'bg-muted-foreground/25',
 };
 
-export function ParallelProgressPill({ parallelRunIds, runStatuses, onSelectRun }: Props) {
+export const ParallelProgressPill = ({ parallelRunIds, runStatuses, onSelectRun }: Props) => {
   if (parallelRunIds.length === 0) return null;
 
   return (
@@ -38,4 +38,4 @@ export function ParallelProgressPill({ parallelRunIds, runStatuses, onSelectRun 
       })}
     </div>
   );
-}
+};

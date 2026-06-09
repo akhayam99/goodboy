@@ -3,7 +3,7 @@ import { archiveSession as archiveSessionInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function archiveTask(set: SetFn, get: GetFn) {
+export const archiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const prev = get().sessions.find((s) => s.id === sessionId);
     if (!prev) return;
@@ -88,4 +88,4 @@ export function archiveTask(set: SetFn, get: GetFn) {
       };
     });
   };
-}
+};

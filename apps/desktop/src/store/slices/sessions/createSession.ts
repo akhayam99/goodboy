@@ -59,7 +59,7 @@ type Input = {
   };
 };
 
-export function createSession(set: SetFn, get: GetFn) {
+export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
     goal,
@@ -346,4 +346,4 @@ export function createSession(set: SetFn, get: GetFn) {
 
     return { session, worktree };
   };
-}
+};

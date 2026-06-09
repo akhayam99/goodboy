@@ -11,14 +11,14 @@ export type EmptyStateProps = {
   readonly className?: string;
 };
 
-export function EmptyState({
+export const EmptyState = ({
   icon: Icon,
   title,
   description,
   action,
   bordered = false,
   className,
-}: EmptyStateProps) {
+}: EmptyStateProps) => {
   return (
     <div
       className={cn(
@@ -39,4 +39,4 @@ export function EmptyState({
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
-}
+};

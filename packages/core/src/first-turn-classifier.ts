@@ -23,11 +23,11 @@ const PATTERNS: ReadonlyArray<readonly [AgentKindLabel, RegExp]> = [
   ['reviewer', /\b(review|audit)\b/i],
 ];
 
-export function classifyFirstTurn(text: string): AgentKindLabel {
+export const classifyFirstTurn = (text: string): AgentKindLabel => {
   const trimmed = text.trim();
   if (trimmed.length === 0) return 'generic';
   for (const [kind, regex] of PATTERNS) {
     if (regex.test(trimmed)) return kind;
   }
   return 'generic';
-}
+};

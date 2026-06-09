@@ -15,7 +15,7 @@ type ChipState =
   | { kind: 'resolved' }
   | { kind: 'dismissed' };
 
-export function CommentWontfixChip({ assistantText, sessionId }: Props) {
+export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
   const marker = useMemo(() => extractCommentWontfix(assistantText), [assistantText]);
   const threadId = marker?.threadId;
 
@@ -89,4 +89,4 @@ export function CommentWontfixChip({ assistantText, sessionId }: Props) {
       </div>
     </div>
   );
-}
+};

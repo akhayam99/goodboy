@@ -10,7 +10,7 @@ type Params = {
   body: string;
 };
 
-export function saveScript(get: GetFn) {
+export const saveScript = (get: GetFn) => {
   return async ({ workspaceId, id, name, body }: Params) => {
     const now = new Date().toISOString() as IsoDateTime;
     const existing = id
@@ -28,4 +28,4 @@ export function saveScript(get: GetFn) {
     await upsertWorkspaceScript(tauriDatabase, script);
     await get().loadScripts(workspaceId);
   };
-}
+};

@@ -29,7 +29,7 @@ function relativeAge(isoDate: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export function QuestionCard({
+export const QuestionCard = ({
   question,
   selectedSuggestions,
   customAnswer,
@@ -40,7 +40,7 @@ export function QuestionCard({
   onToggleCustomField,
   onDismiss,
   onClearJustAnswered,
-}: Props) {
+}: Props) => {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -129,4 +129,4 @@ export function QuestionCard({
       </div>
     </div>
   );
-}
+};

@@ -82,7 +82,7 @@ function writePersistedContextOpen(id: SessionId, open: boolean): void {
   }
 }
 
-export function App() {
+export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
@@ -638,7 +638,7 @@ export function App() {
       <OnboardingWizard />
     </ToastProvider>
   );
-}
+};
 
 type KeepAliveChatPanelProps = {
   readonly sessionId: SessionId;

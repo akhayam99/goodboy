@@ -7,7 +7,7 @@ type Props = {
   readonly size?: number;
 };
 
-export function CostRing({ pct, centerLabel, subLabel, size = 132 }: Props) {
+export const CostRing = ({ pct, centerLabel, subLabel, size = 132 }: Props) => {
   const stroke = 12;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -48,4 +48,4 @@ export function CostRing({ pct, centerLabel, subLabel, size = 132 }: Props) {
       </div>
     </div>
   );
-}
+};

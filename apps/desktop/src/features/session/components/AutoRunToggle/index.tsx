@@ -7,12 +7,7 @@ type Props = {
   readonly session: Session;
 };
 
-/**
- * Compact icon toggle for the per-session autorun flag. Only meaningful when
- * the session has a workflow attached, without one the autorun loop has
- * nothing to step through, so the control disables and dims.
- */
-export function AutoRunToggle({ session }: Props) {
+export const AutoRunToggle = ({ session }: Props) => {
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const hasWorkflow = session.workflowRuns.length > 0;
   const anyRunAuto = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
@@ -64,4 +59,4 @@ export function AutoRunToggle({ session }: Props) {
       {on ? <Zap size={13} aria-hidden /> : <ZapOff size={13} aria-hidden />}
     </button>
   );
-}
+};

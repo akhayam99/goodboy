@@ -18,7 +18,13 @@ const CHEVRON_OFFSET: Record<SelectSize, string> = {
   md: 'right-2',
 };
 
-export function Select({ className, size = 'md', block = false, children, ...rest }: SelectProps) {
+export const Select = ({
+  className,
+  size = 'md',
+  block = false,
+  children,
+  ...rest
+}: SelectProps) => {
   return (
     <span className={cn('relative items-center', block ? 'flex w-full' : 'inline-flex')}>
       <select
@@ -53,4 +59,4 @@ export function Select({ className, size = 'md', block = false, children, ...res
       </svg>
     </span>
   );
-}
+};

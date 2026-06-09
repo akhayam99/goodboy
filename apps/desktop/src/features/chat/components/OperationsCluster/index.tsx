@@ -24,14 +24,14 @@ function runningTool(
   return null;
 }
 
-export function OperationsCluster({
+export const OperationsCluster = ({
   items,
   sessionId = null,
   agentId = null,
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
-}: OperationsClusterProps) {
+}: OperationsClusterProps) => {
   const [open, setOpen] = useState(false);
   const running = runningTool(items);
   const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
@@ -113,4 +113,4 @@ export function OperationsCluster({
       ) : null}
     </div>
   );
-}
+};

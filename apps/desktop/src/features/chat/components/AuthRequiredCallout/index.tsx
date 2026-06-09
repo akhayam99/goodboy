@@ -9,7 +9,7 @@ type Props = {
   readonly onRefresh: () => void;
 };
 
-export function AuthRequiredCallout({ providerId, identity, onRefresh }: Props) {
+export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) => {
   const label = PROVIDER_LABEL_LOWER[providerId];
 
   const onConnect = () => {
@@ -40,4 +40,4 @@ export function AuthRequiredCallout({ providerId, identity, onRefresh }: Props) 
       </div>
     </div>
   );
-}
+};

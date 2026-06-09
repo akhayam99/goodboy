@@ -5,7 +5,7 @@ import {
 } from '../../../features/plans/plans';
 import type { SetFn } from './types';
 
-export function restorePlan(set: SetFn) {
+export const restorePlan = (set: SetFn) => {
   return async (sessionId: SessionId, planId: PlanId) => {
     await invokeSetPlanStatus(planId, 'active');
     const refreshed = await invokeListPlansForSession(sessionId);
@@ -13,4 +13,4 @@ export function restorePlan(set: SetFn) {
       sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
     }));
   };
-}
+};

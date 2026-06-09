@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import type { GetFn, SetFn } from './types';
 
-export function maybeAutoAdvanceWorkflow(_set: SetFn, get: GetFn) {
+export const maybeAutoAdvanceWorkflow = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
@@ -57,4 +57,4 @@ export function maybeAutoAdvanceWorkflow(_set: SetFn, get: GetFn) {
       { sessionId },
     );
   };
-}
+};

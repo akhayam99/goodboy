@@ -6,7 +6,7 @@ import { reopenDiffComment } from './reopenDiffComment';
 import { resolveDiffComment } from './resolveDiffComment';
 import type { GetFn, SetFn } from './types';
 
-export function createDiffCommentsSlice(set: SetFn, get: GetFn) {
+export const createDiffCommentsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadDiffComments: loadDiffComments(set, get),
     addDiffComment: addDiffComment(set),
@@ -15,4 +15,4 @@ export function createDiffCommentsSlice(set: SetFn, get: GetFn) {
     reopenDiffComment: reopenDiffComment(set),
     deleteDiffComment: deleteDiffComment(set),
   };
-}
+};

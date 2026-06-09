@@ -36,7 +36,7 @@ type Props = {
   readonly initialPlanId?: PlanId;
 };
 
-export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
+export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) => {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -463,7 +463,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
       </div>
     </Dialog>
   );
-}
+};
 
 function fmtTimestamp(ts: string | number): string {
   return new Date(ts).toLocaleString(undefined, {

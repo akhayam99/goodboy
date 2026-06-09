@@ -12,7 +12,7 @@ type Params = {
 
 const DETAIL_TTL_MS = 30_000;
 
-export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
+export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
     const existing = get().sessionGithub[sessionId];
     const pr = existing?.pr ?? null;
@@ -114,4 +114,4 @@ export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
       },
     }));
   };
-}
+};

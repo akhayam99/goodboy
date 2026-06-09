@@ -7,7 +7,7 @@ import type { SetFn } from './types';
 // the workflow `deletedAt` in place rather than dropping it: the preset picker
 // filters deleted ones out, but in-session resolution (which reads
 // phaseTemplates) and the per-session snapshots must keep it.
-export function deleteWorkflow(set: SetFn) {
+export const deleteWorkflow = (set: SetFn) => {
   return async (id: WorkflowId, workspaceId: WorkspaceId) => {
     await invokeWorkflowDelete(id);
     const now = new Date().toISOString() as IsoDateTime;
@@ -24,4 +24,4 @@ export function deleteWorkflow(set: SetFn) {
       };
     });
   };
-}
+};

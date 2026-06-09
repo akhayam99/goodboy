@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { pendingResolutionsInFlight, type GetFn, type SetFn } from './types';
 
-export function loadPendingResolutions(set: SetFn, get: GetFn) {
+export const loadPendingResolutions = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
     if (get().sessionPendingResolutions[sessionId] !== undefined) return;
     if (pendingResolutionsInFlight.has(sessionId)) return;
@@ -17,4 +17,4 @@ export function loadPendingResolutions(set: SetFn, get: GetFn) {
       pendingResolutionsInFlight.delete(sessionId);
     }
   };
-}
+};

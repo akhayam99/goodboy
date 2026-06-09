@@ -215,7 +215,7 @@ async function migrateOnboarding(): Promise<void> {
   localStorage.removeItem(LS_ONBOARDING_FINISHED);
 }
 
-export async function migrateLsToDb(): Promise<void> {
+export const migrateLsToDb = async (): Promise<void> => {
   if (typeof localStorage === 'undefined') return;
   if (localStorage.getItem(MIGRATED_MARKER) === '1') return;
   try {
@@ -229,4 +229,4 @@ export async function migrateLsToDb(): Promise<void> {
     // best-effort, don't block boot; next launch will retry
     console.warn('[ls-to-db migration] failed', err);
   }
-}
+};

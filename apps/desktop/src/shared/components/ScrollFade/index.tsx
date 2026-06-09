@@ -8,7 +8,7 @@ type Props = {
   readonly children: ReactNode;
 };
 
-export function ScrollFade({ className, fade = 24, orientation = 'vertical', children }: Props) {
+export const ScrollFade = ({ className, fade = 24, orientation = 'vertical', children }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(true);
@@ -54,4 +54,4 @@ export function ScrollFade({ className, fade = 24, orientation = 'vertical', chi
       {children}
     </div>
   );
-}
+};

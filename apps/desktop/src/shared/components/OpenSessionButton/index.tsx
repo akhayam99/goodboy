@@ -11,13 +11,13 @@ type Props = {
   readonly variant?: ButtonVariant;
 };
 
-export function OpenSessionButton({
+export const OpenSessionButton = ({
   sessionId,
   onOpened,
   label = 'Open session',
   size = 'sm',
   variant,
-}: Props) {
+}: Props) => {
   const openSession = useOpenSession();
   return (
     <Button size={size} variant={variant} onClick={() => openSession(sessionId, onOpened)}>
@@ -25,4 +25,4 @@ export function OpenSessionButton({
       {label}
     </Button>
   );
-}
+};

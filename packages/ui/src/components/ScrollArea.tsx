@@ -3,7 +3,7 @@ import { cn } from '../cn';
 
 export type ScrollAreaProps = ComponentProps<'div'>;
 
-export function ScrollArea({ className, ...rest }: ScrollAreaProps) {
+export const ScrollArea = ({ className, ...rest }: ScrollAreaProps) => {
   return (
     <div
       className={cn(
@@ -13,4 +13,4 @@ export function ScrollArea({ className, ...rest }: ScrollAreaProps) {
       {...rest}
     />
   );
-}
+};

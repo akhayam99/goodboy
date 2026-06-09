@@ -6,7 +6,7 @@ import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 import { CreateTokenLink } from '../../../integrations/github/CreateTokenLink';
 
-export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) {
+export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) => {
   const status = useAppStore((s) => s.githubStatus);
   const refreshStatus = useAppStore((s) => s.refreshGithubStatus);
   const setPat = useAppStore((s) => s.setGithubPat);
@@ -105,7 +105,7 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
       </p>
     </div>
   );
-}
+};
 
 function NotInstalled() {
   return (

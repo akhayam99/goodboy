@@ -5,7 +5,7 @@ import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { initialState } from '../../store';
 import type { GetFn, SetFn } from './types';
 
-export function wipeLocalDatabase(set: SetFn, get: GetFn) {
+export const wipeLocalDatabase = (set: SetFn, get: GetFn) => {
   return async () => {
     await wipeDb();
     wipeLocalStorage();
@@ -22,4 +22,4 @@ export function wipeLocalDatabase(set: SetFn, get: GetFn) {
     });
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
   };
-}
+};

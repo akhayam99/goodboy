@@ -8,7 +8,7 @@ function nextMonthlyResetLabel(now = new Date()): string {
   return next.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).toLowerCase();
 }
 
-export function ProviderUsagePill({ provider }: { provider: ProviderId }) {
+export const ProviderUsagePill = ({ provider }: { provider: ProviderId }) => {
   const breakdown = useAppStore((s) => s.providerSpendBreakdown);
   const entry = breakdown.find((e) => e.provider === provider);
   if (!entry || entry.capUsd === null || entry.capUsd <= 0) return null;
@@ -33,4 +33,4 @@ export function ProviderUsagePill({ provider }: { provider: ProviderId }) {
       {pctRemaining}% left · {reset}
     </span>
   );
-}
+};

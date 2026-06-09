@@ -3,7 +3,7 @@ import { AGENT_KIND_DEFAULTS, type AgentKind } from '../../../features/session/a
 import { invokeAgentSetKind } from '../../../features/workflows/workflows';
 import type { SetFn } from './types';
 
-export function setAgentKind(set: SetFn) {
+export const setAgentKind = (set: SetFn) => {
   return (agentId: AgentId, kind: AgentKind) => {
     set((s) => {
       const nextModelOverride = { ...s.agentModelOverride };
@@ -27,4 +27,4 @@ export function setAgentKind(set: SetFn) {
       console.warn('[store] failed to persist agent kind', err);
     });
   };
-}
+};

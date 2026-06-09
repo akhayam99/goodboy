@@ -16,7 +16,7 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-export function PresetCard({ template, active, onSelect, onDelete }: Props) {
+export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
   return (
@@ -101,4 +101,4 @@ export function PresetCard({ template, active, onSelect, onDelete }: Props) {
       )}
     </li>
   );
-}
+};

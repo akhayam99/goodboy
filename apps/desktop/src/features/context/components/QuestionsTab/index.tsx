@@ -22,7 +22,7 @@ type Props = {
   sessionId: SessionId;
 };
 
-export function QuestionsTab({ sessionId }: Props) {
+export const QuestionsTab = ({ sessionId }: Props) => {
   const {
     drafts,
     justAnswered,
@@ -264,4 +264,4 @@ export function QuestionsTab({ sessionId }: Props) {
       )}
     </div>
   );
-}
+};

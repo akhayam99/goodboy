@@ -5,11 +5,11 @@ import type { ProviderUsage } from '@goodboy/types';
 // can set per-model override prices via providerPricingConfig in app settings;
 // those overrides are applied in the desktop layer before recording telemetry.
 // Default: 0 (unmetered / cost unknown).
-export function computeCodexCostUsd(
+export const computeCodexCostUsd = (
   usage: ProviderUsage,
   _model: string,
   override: CodexModelPriceOverride | null,
-): number {
+): number => {
   if (override === null) return 0;
   const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
@@ -17,7 +17,7 @@ export function computeCodexCostUsd(
     (usage.cachedInputTokens * (override.cachedInputPerMtok ?? override.inputPerMtok)) / 1_000_000 +
     (usage.outputTokens * override.outputPerMtok) / 1_000_000
   );
-}
+};
 
 export type CodexModelPriceOverride = {
   readonly inputPerMtok: number;

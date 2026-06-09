@@ -8,7 +8,7 @@ type Props = {
   readonly active: boolean;
 };
 
-export function StepFlowConnector({ index, interior, dragging, active }: Props) {
+export const StepFlowConnector = ({ index, interior, dragging, active }: Props) => {
   return (
     <div
       data-dropindex={index}
@@ -33,4 +33,4 @@ export function StepFlowConnector({ index, interior, dragging, active }: Props) 
       ) : null}
     </div>
   );
-}
+};

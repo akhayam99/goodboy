@@ -9,7 +9,7 @@ type Props = {
   readonly cliIdentity: string | null;
 };
 
-export function ProviderBindingsSection({ providerId, cliIdentity }: Props) {
+export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
   const credentials = useAppStore((s) => s.providerCredentials);
   const workspaces = useAppStore((s) => s.workspaces);
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides);
@@ -78,4 +78,4 @@ export function ProviderBindingsSection({ providerId, cliIdentity }: Props) {
       </ul>
     </section>
   );
-}
+};

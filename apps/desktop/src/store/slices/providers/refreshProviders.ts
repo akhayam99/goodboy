@@ -10,7 +10,7 @@ import {
 } from '../../../features/providers/providers';
 import type { SetFn } from './types';
 
-export function refreshProviders(set: SetFn) {
+export const refreshProviders = (set: SetFn) => {
   return async () => {
     const [providerStatus, cursorStatus, codexStatus, geminiStatus] = await Promise.all([
       getProviderStatus('anthropic'),
@@ -45,4 +45,4 @@ export function refreshProviders(set: SetFn) {
       providers: buildProviderList(statuses, authResults),
     });
   };
-}
+};

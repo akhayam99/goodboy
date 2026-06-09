@@ -52,7 +52,7 @@ import type { SetFn, GetFn } from './slice-types';
 // The provider CLIs have no API content-block channel, files reach the model
 // only as paths named in the prompt text. Paths stay worktree-relative so they
 // resolve against the CLI's cwd and never trip the worktree-scope guard.
-export function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment>): string {
+export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string => {
   const list = refs.map((r) => `- ${r.relPath}`).join('\n');
   return [
     '[attached-files]',
@@ -61,13 +61,13 @@ export function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment
     list,
     '[/attached-files]',
   ].join('\n');
-}
+};
 
-export function toRelPath(absPath: string, workingDir: string): string {
+export const toRelPath = (absPath: string, workingDir: string): string => {
   if (!workingDir) return absPath;
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
-}
+};
 
 // Summarizer queue, one per task, max one in-flight + one queued (coalesced).
 // Prevents stacking when the user iterates faster than the summarizer completes.
@@ -91,13 +91,13 @@ function scheduleIdle(fn: () => void): void {
   }
 }
 
-export function enqueueSummarizer(
+export const enqueueSummarizer = (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   turnInput: string,
   turnOutput: string,
-): void {
+): void => {
   let queue = summarizerQueues.get(sessionId);
   if (!queue) {
     queue = { inFlight: false, queued: null };
@@ -135,7 +135,7 @@ export function enqueueSummarizer(
   };
 
   scheduleIdle(run);
-}
+};
 
 async function runSummarizer(
   set: SetFn,
@@ -327,13 +327,13 @@ async function runSummarizer(
   }
 }
 
-export async function capturePlanFromTurn(
+export const capturePlanFromTurn = async (
   set: SetFn,
   sessionId: SessionId,
   agentId: AgentId,
   assistantText: string,
   workflowRunId?: WorkflowRunId,
-): Promise<PlanWithCount | null> {
+): Promise<PlanWithCount | null> => {
   try {
     const extracted = extractPlanFromMarker(assistantText);
     if (!extracted) return null;
@@ -361,7 +361,7 @@ export async function capturePlanFromTurn(
     }
     return null;
   }
-}
+};
 
 async function recordNudgeShown(
   kind: NudgeKind,
@@ -386,14 +386,14 @@ async function recordNudgeShown(
   return id;
 }
 
-export async function emitTurnNudges(
+export const emitTurnNudges = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   agentId: AgentId,
   assistantText: string,
   capturedPlan: PlanWithCount | null,
-): Promise<void> {
+): Promise<void> => {
   const session = get().sessions.find((s) => s.id === sessionId);
   if (!session) return;
   const inWorkflow = session.workflowRuns.length > 0;
@@ -443,15 +443,15 @@ export async function emitTurnNudges(
       sessionNudges: { ...state.sessionNudges, [sessionId]: nextNudge },
     }));
   }
-}
+};
 
-export async function applyHeuristicTitle(
+export const applyHeuristicTitle = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   agentId: AgentId,
   prompt: string,
-): Promise<void> {
+): Promise<void> => {
   try {
     const title = heuristicAgentTitle(prompt);
     if (!title) return;
@@ -476,4 +476,4 @@ export async function applyHeuristicTitle(
   } catch {
     // best-effort
   }
-}
+};

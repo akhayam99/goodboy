@@ -19,7 +19,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function DeleteSessionDialog({ session, open, onClose }: Props) {
+export const DeleteSessionDialog = ({ session, open, onClose }: Props) => {
   const deleteTask = useAppStore((s) => s.deleteTask);
   const archiveTask = useAppStore((s) => s.archiveTask);
   const [busy, setBusy] = useState(false);
@@ -84,4 +84,4 @@ export function DeleteSessionDialog({ session, open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

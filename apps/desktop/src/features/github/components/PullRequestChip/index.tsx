@@ -53,9 +53,9 @@ const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   },
 };
 
-export function pullRequestMeta(state: PullRequestStateKind): PrStateMeta {
+export const pullRequestMeta = (state: PullRequestStateKind): PrStateMeta => {
   return PR_META[state];
-}
+};
 
 type Variant = 'icon' | 'compact' | 'badge';
 
@@ -67,7 +67,13 @@ type Props = {
   readonly className?: string;
 };
 
-export function PullRequestChip({ state, variant = 'icon', number, iconSize, className }: Props) {
+export const PullRequestChip = ({
+  state,
+  variant = 'icon',
+  number,
+  iconSize,
+  className,
+}: Props) => {
   const meta = PR_META[state];
   const Icon = meta.icon;
 
@@ -121,4 +127,4 @@ export function PullRequestChip({ state, variant = 'icon', number, iconSize, cla
       ) : null}
     </span>
   );
-}
+};

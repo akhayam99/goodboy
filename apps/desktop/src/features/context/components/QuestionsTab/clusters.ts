@@ -37,11 +37,11 @@ function resolveOwnerAgent(
 // can render one card stack per owner with its own "send" button. The
 // returned order is: real owners (insertion order, first time we see
 // each owner agent in the questions list), then orphans.
-export function buildQuestionClusters({
+export const buildQuestionClusters = ({
   questions,
   agents,
   workflows,
-}: BuildClustersInput): ReadonlyArray<QuestionCluster> {
+}: BuildClustersInput): ReadonlyArray<QuestionCluster> => {
   const stepsByWorkflowOrdinal = new Map<string, Step>();
   for (const wf of workflows) {
     for (const step of wf.steps) {
@@ -113,4 +113,4 @@ export function buildQuestionClusters({
       questions: bucket.questions,
     };
   });
-}
+};

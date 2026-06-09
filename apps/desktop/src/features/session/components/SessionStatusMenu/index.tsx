@@ -12,7 +12,7 @@ type Props = {
   readonly onPick: (next: SessionUserStatus) => void;
 };
 
-export function SessionStatusMenu({ status, sessionLabel, onPick }: Props) {
+export const SessionStatusMenu = ({ status, sessionLabel, onPick }: Props) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -97,4 +97,4 @@ export function SessionStatusMenu({ status, sessionLabel, onPick }: Props) {
       ) : null}
     </div>
   );
-}
+};

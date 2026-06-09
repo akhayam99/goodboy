@@ -11,7 +11,7 @@ type Props = {
   readonly sessions: ReadonlyArray<SessionSpend>;
 };
 
-export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
+export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
   return (
     <div className="flex flex-col gap-3 p-3">
       <ul className="flex flex-col gap-0.5">
@@ -118,7 +118,7 @@ export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
       ) : null}
     </div>
   );
-}
+};
 
 function GroupLabel({ label, count }: { label: string; count?: number }) {
   return (

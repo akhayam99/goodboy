@@ -88,7 +88,7 @@ function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
   }
 }
 
-export async function hydrateOnboardingFromDb(): Promise<void> {
+export const hydrateOnboardingFromDb = async (): Promise<void> => {
   const [rawProgress, rawCollapsed, rawFinished, rawWizard] = await Promise.all([
     getSetting(tauriDatabase, SETTING_PROGRESS),
     getSetting(tauriDatabase, SETTING_COLLAPSED),
@@ -100,7 +100,7 @@ export async function hydrateOnboardingFromDb(): Promise<void> {
   cache.finished = rawFinished === '1';
   cache.wizardDone = rawWizard === 'done';
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
 function flushProgress(): void {
   void setSetting(tauriDatabase, SETTING_PROGRESS, JSON.stringify({ completed: cache.completed }));
@@ -110,57 +110,57 @@ function flushFlag(key: string, on: boolean): void {
   void setSetting(tauriDatabase, key, on ? '1' : '0');
 }
 
-export function getCompleted(): ReadonlyArray<OnboardingStepId> {
+export const getCompleted = (): ReadonlyArray<OnboardingStepId> => {
   return cache.completed;
-}
+};
 
-export function markStepComplete(id: OnboardingStepId): void {
+export const markStepComplete = (id: OnboardingStepId): void => {
   if (cache.completed.includes(id)) return;
   cache.completed = [...cache.completed, id];
   flushProgress();
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function isCollapsed(): boolean {
+export const isCollapsed = (): boolean => {
   return cache.collapsed;
-}
+};
 
-export function collapse(): void {
+export const collapse = (): void => {
   if (cache.collapsed) return;
   cache.collapsed = true;
   flushFlag(SETTING_COLLAPSED, true);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function reopen(): void {
+export const reopen = (): void => {
   if (!cache.collapsed) return;
   cache.collapsed = false;
   flushFlag(SETTING_COLLAPSED, false);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function isFinished(): boolean {
+export const isFinished = (): boolean => {
   return cache.finished;
-}
+};
 
-export function finish(): void {
+export const finish = (): void => {
   if (cache.finished) return;
   cache.finished = true;
   flushFlag(SETTING_FINISHED, true);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function isWizardDone(): boolean {
+export const isWizardDone = (): boolean => {
   return cache.wizardDone;
-}
+};
 
-export function finishWizard(): void {
+export const finishWizard = (): void => {
   if (cache.wizardDone) return;
   cache.wizardDone = true;
   void setSetting(tauriDatabase, SETTING_WIZARD, 'done');
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function reopenWizard(): void {
+export const reopenWizard = (): void => {
   window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT));
-}
+};

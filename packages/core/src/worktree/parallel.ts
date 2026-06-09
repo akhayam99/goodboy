@@ -42,7 +42,7 @@ function splitParentBranch(parentBranch: string): { prefix: string; base: string
   };
 }
 
-export async function createParallelWorktrees(
+export const createParallelWorktrees = async (
   deps: ParallelWorktreeDeps,
   args: {
     sessionId: SessionId;
@@ -51,7 +51,7 @@ export async function createParallelWorktrees(
     n: number;
     slugSeed: string;
   },
-): Promise<ReadonlyArray<ParallelWorktreeResult>> {
+): Promise<ReadonlyArray<ParallelWorktreeResult>> => {
   const { prefix } = splitParentBranch(args.parentBranch);
   const created: Array<{ worktreePath: string; branch: string; index: number }> = [];
 
@@ -103,7 +103,7 @@ export async function createParallelWorktrees(
   return created
     .sort((a, b) => a.index - b.index)
     .map((c) => ({ worktreePath: c.worktreePath, branch: c.branch, parallelIndex: c.index }));
-}
+};
 
 async function rollback(
   deps: ParallelWorktreeDeps,
@@ -120,10 +120,10 @@ async function rollback(
   }
 }
 
-export async function removeParallelWorktrees(
+export const removeParallelWorktrees = async (
   deps: ParallelWorktreeDeps,
   args: { repoPath: string; sessionId: SessionId },
-): Promise<void> {
+): Promise<void> => {
   const rows = await deps.listWorktreesForSession(args.sessionId);
 
   const results = await Promise.allSettled(
@@ -139,4 +139,4 @@ export async function removeParallelWorktrees(
   }
 
   await deps.deleteWorktreesForSession(args.sessionId);
-}
+};

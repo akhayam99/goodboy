@@ -10,7 +10,7 @@ type Props = {
   readonly onSelect: (prNumber: number) => void;
 };
 
-export function PrSwitcher({ prs, selected, onSelect }: Props) {
+export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
   const [open, setOpen] = useState(false);
   const current = prs.find((p) => p.number === selected) ?? prs[0];
   if (!current) return null;
@@ -66,4 +66,4 @@ export function PrSwitcher({ prs, selected, onSelect }: Props) {
       ) : null}
     </div>
   );
-}
+};

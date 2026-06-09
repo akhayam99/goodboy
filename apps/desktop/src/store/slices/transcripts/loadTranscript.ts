@@ -3,7 +3,7 @@ import { listMessagesForAgent, listTurnEventsForAgent } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function loadTranscript(set: SetFn) {
+export const loadTranscript = (set: SetFn) => {
   return async (agentId: AgentId, sessionId: SessionId) => {
     const [messages, events] = await Promise.all([
       listMessagesForAgent(tauriDatabase, agentId),
@@ -14,4 +14,4 @@ export function loadTranscript(set: SetFn) {
       transcripts: { ...state.transcripts, [agentId]: events },
     }));
   };
-}
+};

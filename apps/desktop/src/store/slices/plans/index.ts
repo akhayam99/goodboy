@@ -7,7 +7,7 @@ import { setPlanStatus } from './setPlanStatus';
 import { updatePlanBody } from './updatePlanBody';
 import type { GetFn, SetFn } from './types';
 
-export function createPlansSlice(set: SetFn, get: GetFn) {
+export const createPlansSlice = (set: SetFn, get: GetFn) => {
   return {
     loadSessionPlans: loadSessionPlans(set),
     setPlanStatus: setPlanStatus(set),
@@ -17,4 +17,4 @@ export function createPlansSlice(set: SetFn, get: GetFn) {
     loadConsumptionsForPlan: loadConsumptionsForPlan(set),
     runPlan: runPlan(get),
   };
-}
+};

@@ -32,7 +32,7 @@ type Props = {
   readonly onSelect: (scope: BudgetScope) => void;
 };
 
-export function OverviewPanel({
+export const OverviewPanel = ({
   workspaceSummary,
   providers,
   turns,
@@ -40,7 +40,7 @@ export function OverviewPanel({
   alerts,
   onDismissAlert,
   onSelect,
-}: Props) {
+}: Props) => {
   const records = useMemo(() => turns.map((t) => t.record), [turns]);
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
   const totalTokens = (workspaceSummary?.inputTokens ?? 0) + (workspaceSummary?.outputTokens ?? 0);
@@ -105,4 +105,4 @@ export function OverviewPanel({
       <TurnsTable turns={turns} showProvider={showProvider} showSession />
     </PanelShell>
   );
-}
+};

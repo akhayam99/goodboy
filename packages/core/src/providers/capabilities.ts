@@ -106,11 +106,11 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
   },
 };
 
-export function getCapabilities(id: ProviderId): ProviderRegistryCapabilities {
+export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities => {
   return PROVIDER_CAPABILITIES[id];
-}
+};
 
-export function getDefaultTurnModel(id: ProviderId): string {
+export const getDefaultTurnModel = (id: ProviderId): string => {
   const caps = PROVIDER_CAPABILITIES[id];
   return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
-}
+};

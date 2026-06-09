@@ -17,7 +17,7 @@ type Props = {
   readonly onReset: () => void;
 };
 
-export function WorkflowsRail({
+export const WorkflowsRail = ({
   presets,
   activeId,
   editing,
@@ -28,7 +28,7 @@ export function WorkflowsRail({
   onNew,
   onDelete,
   onReset,
-}: Props) {
+}: Props) => {
   return (
     <aside className="flex w-72 shrink-0 flex-col">
       <div className="shrink-0 px-3 pb-2 pt-3">
@@ -118,4 +118,4 @@ export function WorkflowsRail({
       </div>
     </aside>
   );
-}
+};

@@ -189,7 +189,7 @@ function TranscriptSkeleton() {
   );
 }
 
-export function ChatView({ session, isActive = true }: ChatViewProps) {
+export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
@@ -599,7 +599,7 @@ export function ChatView({ session, isActive = true }: ChatViewProps) {
       />
     </div>
   );
-}
+};
 
 type ChatEmptyStateProps = {
   selectedAgentId: AgentId | null;

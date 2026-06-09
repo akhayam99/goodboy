@@ -29,7 +29,13 @@ type Props = {
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
-export function LibraryStepForm({ def, workspaceId, connectedProviders, onSave, onCancel }: Props) {
+export const LibraryStepForm = ({
+  def,
+  workspaceId,
+  connectedProviders,
+  onSave,
+  onCancel,
+}: Props) => {
   const isGlobal = def?.workspaceId === null;
   const [name, setName] = useState(def?.name ?? '');
   const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom');
@@ -141,4 +147,4 @@ export function LibraryStepForm({ def, workspaceId, connectedProviders, onSave, 
       </div>
     </div>
   );
-}
+};

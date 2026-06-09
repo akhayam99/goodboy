@@ -16,13 +16,13 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export function GitHubStudio({
+export const GitHubStudio = ({
   workspaceName,
   initialSessionId,
   initialPrNumber = null,
   initialThreadId = null,
   onClose,
-}: Props) {
+}: Props) => {
   const groups = useGithubInbox();
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
 
@@ -60,4 +60,4 @@ export function GitHubStudio({
       )}
     </StudioShell>
   );
-}
+};

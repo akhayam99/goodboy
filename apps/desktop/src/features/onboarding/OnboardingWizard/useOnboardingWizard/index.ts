@@ -8,7 +8,7 @@ export type OnboardingWizardState = {
   readonly hasWorkspace: boolean;
 };
 
-export function useOnboardingWizard(): OnboardingWizardState {
+export const useOnboardingWizard = (): OnboardingWizardState => {
   const providersConnected = useAppStore(
     (s) => s.providers.filter((p) => p.connection === 'connected').length,
   );
@@ -30,4 +30,4 @@ export function useOnboardingWizard(): OnboardingWizardState {
   }, []);
 
   return { open, providersConnected, hasWorkspace };
-}
+};

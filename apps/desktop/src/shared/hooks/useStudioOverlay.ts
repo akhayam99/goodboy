@@ -7,7 +7,7 @@ type StudioOverlay = {
   readonly requestClose: () => void;
 };
 
-export function useStudioOverlay(onClose: () => void): StudioOverlay {
+export const useStudioOverlay = (onClose: () => void): StudioOverlay => {
   const [closing, setClosing] = useState(false);
 
   const requestClose = useCallback(() => setClosing(true), []);
@@ -27,4 +27,4 @@ export function useStudioOverlay(onClose: () => void): StudioOverlay {
   }, [closing, onClose]);
 
   return { closing, requestClose };
-}
+};

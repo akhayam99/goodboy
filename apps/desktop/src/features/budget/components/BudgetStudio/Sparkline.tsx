@@ -4,7 +4,7 @@ type Props = {
   readonly values: ReadonlyArray<number>;
 };
 
-export function Sparkline({ values }: Props) {
+export const Sparkline = ({ values }: Props) => {
   if (values.length < 2) {
     return (
       <div className="flex h-20 items-center justify-center rounded-lg border border-border-soft bg-muted/10 text-2xs text-muted-foreground/70">
@@ -57,4 +57,4 @@ export function Sparkline({ values }: Props) {
       </svg>
     </div>
   );
-}
+};

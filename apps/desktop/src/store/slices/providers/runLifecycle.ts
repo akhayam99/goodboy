@@ -84,11 +84,11 @@ export type RunLifecycleArgs = {
   readonly rows?: number;
 };
 
-export async function runLifecycle(
+export const runLifecycle = async (
   set: SetFn,
   get: GetFn,
   { providerId, action, cols = 100, rows = 24 }: RunLifecycleArgs,
-): Promise<void> {
+): Promise<void> => {
   const existing = get().providerLifecycle[providerId];
   if (
     existing.phase === 'installing' ||
@@ -216,4 +216,4 @@ export async function runLifecycle(
       },
     }));
   }
-}
+};

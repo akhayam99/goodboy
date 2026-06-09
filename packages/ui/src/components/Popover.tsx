@@ -10,15 +10,14 @@ export type PopoverProps = {
   readonly innerRef?: Ref<HTMLDivElement>;
 };
 
-/**
- * Canonical popover surface: the floating card shared by every dropdown,
- * picker, and menu in the app. Centralizes the visual contract (background,
- * border, shadow, radius, base typography) so every popover reads the same.
- *
- * Positioning is the caller's responsibility, pass `style` for fixed/portal
- * placement or compose with absolute classes via `className`.
- */
-export function Popover({ children, className, style, role, ariaLabel, innerRef }: PopoverProps) {
+export const Popover = ({
+  children,
+  className,
+  style,
+  role,
+  ariaLabel,
+  innerRef,
+}: PopoverProps) => {
   return (
     <div
       ref={innerRef}
@@ -33,4 +32,4 @@ export function Popover({ children, className, style, role, ariaLabel, innerRef 
       {children}
     </div>
   );
-}
+};

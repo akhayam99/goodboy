@@ -10,7 +10,7 @@ type Props = {
   readonly agentId: AgentId | null;
 };
 
-export function PermissionRequestCard({ item, sessionId, agentId }: Props) {
+export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const [resolved, setResolved] = useState(false);
 
   const timestamp = formatCardTime(item.at);
@@ -42,4 +42,4 @@ export function PermissionRequestCard({ item, sessionId, agentId }: Props) {
       ) : null}
     </div>
   );
-}
+};

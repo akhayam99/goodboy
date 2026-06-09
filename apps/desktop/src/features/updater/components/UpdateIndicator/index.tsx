@@ -10,7 +10,7 @@ type Props = { variant: 'bar' | 'pip' };
 // been found. Click opens a confirm dialog (the app relaunches on install, so
 // we warn before interrupting running sessions). Rendered both in the status
 // bar (bar) and next to the sidebar logo (pip), à la VS Code / Claude.
-export function UpdateIndicator({ variant }: Props) {
+export const UpdateIndicator = ({ variant }: Props) => {
   const { status, version, installUpdate } = useAppStore(
     useShallow((s) => ({
       status: s.updaterStatus,
@@ -86,4 +86,4 @@ export function UpdateIndicator({ variant }: Props) {
       </Dialog>
     </>
   );
-}
+};

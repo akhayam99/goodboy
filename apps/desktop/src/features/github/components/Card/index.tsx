@@ -53,7 +53,7 @@ type Props = {
   readonly onSpawnFromReviewChanges?: () => void;
 };
 
-export function GithubCard({
+export const GithubCard = ({
   pr,
   detail,
   detailLoading,
@@ -64,7 +64,7 @@ export function GithubCard({
   onRefresh,
   onSpawnFromComment,
   onSpawnFromReviewChanges,
-}: Props) {
+}: Props) => {
   const smartDefault = useMemo(
     () => pickSmartTab(pr, detail, branchLastActivity),
     [pr, detail, branchLastActivity],
@@ -157,7 +157,7 @@ export function GithubCard({
       </AnimatedTabBody>
     </div>
   );
-}
+};
 
 function AnimatedTabBody({ activeKey, children }: { activeKey: string; children: ReactNode }) {
   const innerRef = useRef<HTMLDivElement>(null);
@@ -204,7 +204,7 @@ const TONE_PILL: Record<TabStatus['tone'], string> = {
   muted: 'bg-muted text-muted-foreground',
 };
 
-export function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
+export const TabBadge = ({ status, dim }: { status: TabStatus; dim: boolean }) => {
   const hasCount = status.count != null && status.count > 0;
   return (
     <span
@@ -221,18 +221,18 @@ export function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
       ) : null}
     </span>
   );
-}
+};
 
-export function computeTabStatus(
+export const computeTabStatus = (
   pr: PullRequestState,
   detail: PrDetail | null,
-): Record<GithubTabKey, TabStatus | null> {
+): Record<GithubTabKey, TabStatus | null> => {
   return {
     ci: computeCiStatus(pr, detail?.checks ?? []),
     comments: computeCommentsStatus(detail?.comments ?? []),
     review: computeReviewStatus(pr, detail?.reviews ?? [], detail?.reviewRequests ?? []),
   };
-}
+};
 
 function computeCiStatus(
   pr: PullRequestState,
@@ -382,7 +382,7 @@ function DetailSkeleton() {
   );
 }
 
-export function CiPane({
+export const CiPane = ({
   checks,
   pr,
   onOpenUrl,
@@ -390,7 +390,7 @@ export function CiPane({
   checks: ReadonlyArray<PrCheckRun>;
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
-}) {
+}) => {
   if (checks.length === 0) {
     return (
       <EmptyRow
@@ -421,11 +421,11 @@ export function CiPane({
       ))}
     </ul>
   );
-}
+};
 
 const COMMENT_DISPLAY_LIMIT = 5;
 
-export function CommentsPane({
+export const CommentsPane = ({
   comments,
   pr,
   onOpenUrl,
@@ -435,7 +435,7 @@ export function CommentsPane({
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
   onSpawnFromComment?: (c: PrComment) => void;
-}) {
+}) => {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
@@ -557,7 +557,7 @@ export function CommentsPane({
       {generalFooter ? <li>{generalFooter}</li> : null}
     </ul>
   );
-}
+};
 
 function CommentThreadRow({
   thread,
@@ -685,7 +685,7 @@ function CommentThreadRow({
   );
 }
 
-export function ReviewPane({
+export const ReviewPane = ({
   reviews,
   requests,
   pr,
@@ -697,7 +697,7 @@ export function ReviewPane({
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
   onSpawnFromReviewChanges?: () => void;
-}) {
+}) => {
   const summary = summarizeReview(pr, reviews, requests);
   const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews]);
   return (
@@ -773,7 +773,7 @@ export function ReviewPane({
       ) : null}
     </div>
   );
-}
+};
 
 function ReviewStateIcon({ state }: { state: PrReviewState }) {
   const props = { size: 10, 'aria-hidden': true } as const;
@@ -905,11 +905,11 @@ function summarizeReview(
   };
 }
 
-export function pickSmartTab(
+export const pickSmartTab = (
   pr: PullRequestState,
   detail: PrDetail | null,
   branchLastActivity: string | null,
-): GithubTabKey {
+): GithubTabKey => {
   const checks = detail?.checks ?? [];
   const hasFailing = checks.some(
     (c) =>
@@ -943,7 +943,7 @@ export function pickSmartTab(
     if (last > activity) return 'comments';
   }
   return 'ci';
-}
+};
 
 function formatDuration(ms: number | null): string {
   if (ms === null) return '';

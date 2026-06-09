@@ -29,7 +29,7 @@ const commonParentDir = (paths: ReadonlyArray<string>): string => {
   return shared.join('/');
 };
 
-export function WorkspaceLinkDialog({ open, onClose }: Props) {
+export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const addWorkspace = useAppStore((s) => s.addWorkspace);
   const addCompositeWorkspace = useAppStore((s) => s.addCompositeWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
@@ -429,4 +429,4 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

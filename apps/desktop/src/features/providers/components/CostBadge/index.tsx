@@ -6,7 +6,7 @@ export type Props = {
   readonly title?: string;
 };
 
-export function CostBadge({ value, className, title }: Props) {
+export const CostBadge = ({ value, className, title }: Props) => {
   const formatted = formatUsd(value);
   const split = splitDollarsCents(formatted);
   return (
@@ -21,7 +21,7 @@ export function CostBadge({ value, className, title }: Props) {
       )}
     </span>
   );
-}
+};
 
 function splitDollarsCents(formatted: string): { dollars: string; cents: string } | null {
   const m = formatted.match(/^(\$\d+)(\.\d+)$/);

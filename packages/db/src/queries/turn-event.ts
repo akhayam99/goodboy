@@ -25,7 +25,7 @@ function eventTimestamp(event: TurnEvent): number {
   return Date.now();
 }
 
-export async function insertTurnEvent(
+export const insertTurnEvent = async (
   db: Database,
   args: {
     readonly id: string;
@@ -33,13 +33,13 @@ export async function insertTurnEvent(
     readonly agentId: AgentId;
     readonly event: TurnEvent;
   },
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
      VALUES (?, ?, ?, ?, ?)`,
     [args.id, args.sessionId, args.agentId, JSON.stringify(args.event), eventTimestamp(args.event)],
   );
-}
+};
 
 export type PendingTurnEventInsert = {
   readonly id: string;
@@ -53,10 +53,10 @@ export type PendingTurnEventInsert = {
 // `Mutex<Connection>` 50-200× per second and block every reader (including a
 // freshly-clicked session-switch). Caller coalesces events between microtasks
 // and flushes through this one statement.
-export async function insertTurnEventsBatch(
+export const insertTurnEventsBatch = async (
   db: Database,
   inserts: ReadonlyArray<PendingTurnEventInsert>,
-): Promise<void> {
+): Promise<void> => {
   if (inserts.length === 0) return;
   if (inserts.length === 1) {
     const ins = inserts[0]!;
@@ -78,13 +78,13 @@ export async function insertTurnEventsBatch(
     `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at) VALUES ${placeholders}`,
     values,
   );
-}
+};
 
-export async function listTurnEventsForAgent(
+export const listTurnEventsForAgent = async (
   db: Database,
   agentId: AgentId,
   opts?: { readonly limit?: number },
-): Promise<ReadonlyArray<TurnEvent>> {
+): Promise<ReadonlyArray<TurnEvent>> => {
   // When a limit is set we return the *last* N events in ASC order — DESC +
   // reverse keeps SQLite using the agent_id+created_at index efficiently.
   // Used for fast initial paint of long sessions; background full fetch
@@ -103,23 +103,23 @@ export async function listTurnEventsForAgent(
     [agentId],
   );
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
-}
+};
 
-export async function listTurnEventsForSession(
+export const listTurnEventsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<TurnEvent>> {
+): Promise<ReadonlyArray<TurnEvent>> => {
   const rows = await db.select<TurnEventRow>(
     'SELECT * FROM turn_events WHERE session_id = ? ORDER BY created_at ASC, rowid ASC',
     [sessionId],
   );
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
-}
+};
 
-export async function listAgentRunIdsForSession(
+export const listAgentRunIdsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<Map<AgentId, ReadonlyArray<ProviderRunId>>> {
+): Promise<Map<AgentId, ReadonlyArray<ProviderRunId>>> => {
   const rows = await db.select<TurnEventRow>(
     'SELECT * FROM turn_events WHERE session_id = ? ORDER BY created_at ASC, rowid ASC',
     [sessionId],
@@ -143,4 +143,4 @@ export async function listAgentRunIdsForSession(
     result.get(agentId)!.push(runId);
   }
   return result;
-}
+};

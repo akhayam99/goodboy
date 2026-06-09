@@ -41,7 +41,7 @@ type Props = {
 //
 // The same component is reused in the connect modal at a larger size by
 // overriding heightClass, see ProviderConnectModal.
-export function InlineTerminal({ runId, isActive, heightClass = 'h-44' }: Props) {
+export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props) => {
   const driver = useMemo<TerminalDriver>(
     () => ({
       write: (data) => {
@@ -71,4 +71,4 @@ export function InlineTerminal({ runId, isActive, heightClass = 'h-44' }: Props)
       <GenericTerminalPanel terminalId={runId} driver={driver} isActive={isActive} exitMessage="" />
     </div>
   );
-}
+};

@@ -5,7 +5,7 @@ import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
 import { EMPTY_LOADING } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
-export function selectAgent(set: SetFn, get: GetFn) {
+export const selectAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     // Stamp `lastViewedAt` on both the previously-selected agent (capturing
     // "user was looking at it until now") and the newly-selected agent. The
@@ -123,4 +123,4 @@ export function selectAgent(set: SetFn, get: GetFn) {
       throw err;
     }
   };
-}
+};

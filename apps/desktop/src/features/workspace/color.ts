@@ -19,6 +19,6 @@ function hashId(id: string): number {
   return Math.abs(h);
 }
 
-export function workspaceAccent(id: WorkspaceId): string {
+export const workspaceAccent = (id: WorkspaceId): string => {
   return WORKSPACE_ACCENTS[hashId(id) % WORKSPACE_ACCENTS.length] ?? WORKSPACE_ACCENTS[0];
-}
+};

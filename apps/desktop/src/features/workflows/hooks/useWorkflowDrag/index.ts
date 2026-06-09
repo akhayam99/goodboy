@@ -14,7 +14,7 @@ type Params = {
   onReorder: (fromIndex: number, atIndex: number) => void;
 };
 
-export function useWorkflowDrag({ enabled, onDropLibrary, onReorder }: Params) {
+export const useWorkflowDrag = ({ enabled, onDropLibrary, onReorder }: Params) => {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -78,4 +78,4 @@ export function useWorkflowDrag({ enabled, onDropLibrary, onReorder }: Params) {
     : null;
 
   return { drag, dragPos, dropIndex, setDropIndex, startLibraryDrag, startStepDrag, ghost };
-}
+};

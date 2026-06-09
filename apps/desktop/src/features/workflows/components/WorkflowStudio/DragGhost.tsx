@@ -4,7 +4,7 @@ type Props = {
   readonly ghost: { label: string; x: number; y: number } | null;
 };
 
-export function DragGhost({ ghost }: Props) {
+export const DragGhost = ({ ghost }: Props) => {
   if (!ghost) return null;
   return (
     <div
@@ -15,4 +15,4 @@ export function DragGhost({ ghost }: Props) {
       {ghost.label}
     </div>
   );
-}
+};

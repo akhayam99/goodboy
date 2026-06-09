@@ -6,7 +6,7 @@ import {
 } from '../../../features/workflows/workflows';
 import type { SetFn } from './types';
 
-export function savePhaseTemplate(set: SetFn) {
+export const savePhaseTemplate = (set: SetFn) => {
   return async (template: WorkflowUpsertArgs) => {
     const saved = await invokeWorkflowUpsert(template);
     const presets = await invokeWorkflowList(template.workspaceId);
@@ -23,4 +23,4 @@ export function savePhaseTemplate(set: SetFn) {
       };
     });
   };
-}
+};

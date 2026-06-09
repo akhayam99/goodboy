@@ -16,7 +16,7 @@ type Editing = 'title' | 'body' | null;
 const IMG_URL_RE =
   /^https?:\/\/\S+(?:\.(?:png|jpe?g|gif|webp|svg)(?:\?\S*)?|\/user-attachments\/\S+|githubusercontent\.com\/\S+)$/i;
 
-export function PrOverview({ pr, sessionId, onMutated }: Props) {
+export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   const editPr = useAppStore((s) => s.editPr);
   const [editing, setEditing] = useState<Editing>(null);
   const [titleDraft, setTitleDraft] = useState(pr.title);
@@ -177,7 +177,7 @@ export function PrOverview({ pr, sessionId, onMutated }: Props) {
       </div>
     </div>
   );
-}
+};
 
 function SaveCancel({
   busy,

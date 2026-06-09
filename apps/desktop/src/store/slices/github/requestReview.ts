@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
-export function requestReview(_set: SetFn, get: GetFn) {
+export const requestReview = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, reviewers: ReadonlyArray<string>) => {
     const logins = reviewers.map((r) => r.trim()).filter(Boolean);
     if (logins.length === 0) return;
@@ -25,4 +25,4 @@ export function requestReview(_set: SetFn, get: GetFn) {
     }
     await get().refreshSessionPrDetail(sessionId, { force: true });
   };
-}
+};

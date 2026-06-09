@@ -5,7 +5,7 @@ import { cancelTurn } from '../../../features/chat/turn';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
-export function cancelCurrentTurn(set: SetFn, get: GetFn) {
+export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const selectedAgentId = get().selectedAgentId[sessionId] ?? null;
     if (!selectedAgentId) return;
@@ -18,4 +18,4 @@ export function cancelCurrentTurn(set: SetFn, get: GetFn) {
     const derived = applyAgentTurnState(set, sessionId, selectedAgentId, idleState, now);
     await updateSessionState(tauriDatabase, sessionId, derived, now).catch(() => undefined);
   };
-}
+};

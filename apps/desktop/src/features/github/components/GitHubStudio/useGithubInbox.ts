@@ -46,7 +46,7 @@ const GROUP_LABEL: Record<SessionPrGroup, string> = {
   merged: 'Merged',
 };
 
-export function useGithubInbox(): ReadonlyArray<InboxGroup> {
+export const useGithubInbox = (): ReadonlyArray<InboxGroup> => {
   const sessions = useSessions();
   const githubMap = useAppStore((s) => s.sessionGithub);
 
@@ -71,4 +71,4 @@ export function useGithubInbox(): ReadonlyArray<InboxGroup> {
       rows: sortRows(buckets.get(key)!),
     }));
   }, [sessions, githubMap]);
-}
+};

@@ -38,10 +38,10 @@ function toDomain(row: SessionWorktreeRow): SessionWorktree {
   };
 }
 
-export async function insertSessionWorktree(
+export const insertSessionWorktree = async (
   db: Database,
   worktree: SessionWorktree,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `INSERT INTO session_worktrees
       (id, session_id, worktree_path, branch, parallel_index, mount_workspace_id, mount_name, created_at)
@@ -57,26 +57,26 @@ export async function insertSessionWorktree(
       worktree.createdAt,
     ],
   );
-}
+};
 
-export async function listWorktreesForSession(
+export const listWorktreesForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<SessionWorktree>> {
+): Promise<ReadonlyArray<SessionWorktree>> => {
   const rows = await db.select<SessionWorktreeRow>(
     'SELECT * FROM session_worktrees WHERE session_id = ? ORDER BY parallel_index ASC',
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};
 
 // Batched lookup for workspace switch: replaces `Promise.all(ids.map(listWorktreesForSession))`,
 // which used to serialize N round trips through the single `Mutex<Connection>` on the Rust
 // side. One IN-clause query + group-by-session keeps the result shape per-session.
-export async function listWorktreesForSessions(
+export const listWorktreesForSessions = async (
   db: Database,
   sessionIds: ReadonlyArray<SessionId>,
-): Promise<Map<SessionId, ReadonlyArray<SessionWorktree>>> {
+): Promise<Map<SessionId, ReadonlyArray<SessionWorktree>>> => {
   const out = new Map<SessionId, SessionWorktree[]>();
   if (sessionIds.length === 0) return out;
   const placeholders = sessionIds.map(() => '?').join(', ');
@@ -91,27 +91,30 @@ export async function listWorktreesForSessions(
     out.set(wt.sessionId, bucket);
   }
   return out;
-}
+};
 
-export async function deleteWorktreesForSession(db: Database, sessionId: SessionId): Promise<void> {
+export const deleteWorktreesForSession = async (
+  db: Database,
+  sessionId: SessionId,
+): Promise<void> => {
   await db.execute('DELETE FROM session_worktrees WHERE session_id = ?', [sessionId]);
-}
+};
 
-export async function updateSessionWorktreeBranch(
+export const updateSessionWorktreeBranch = async (
   db: Database,
   sessionId: SessionId,
   parallelIndex: number,
   branch: string,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     'UPDATE session_worktrees SET branch = ? WHERE session_id = ? AND parallel_index = ?',
     [branch, sessionId, parallelIndex],
   );
-}
+};
 
-export async function listAllSessionWorktrees(
+export const listAllSessionWorktrees = async (
   db: Database,
-): Promise<ReadonlyArray<SessionWorktree>> {
+): Promise<ReadonlyArray<SessionWorktree>> => {
   const rows = await db.select<SessionWorktreeRow>('SELECT * FROM session_worktrees', []);
   return rows.map(toDomain);
-}
+};

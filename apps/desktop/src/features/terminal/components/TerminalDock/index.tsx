@@ -45,7 +45,7 @@ type Props = {
   readonly cwd: string | null;
 };
 
-export function TerminalDock({ sessionId, isActive, cwd }: Props) {
+export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
   const tabs = useAppStore((s) => s.terminalTabs[sessionId] ?? EMPTY_TABS);
   const activeId = useAppStore((s) => s.activeTerminalTab[sessionId] ?? null);
   const addTerminalTab = useAppStore((s) => s.addTerminalTab);
@@ -148,4 +148,4 @@ export function TerminalDock({ sessionId, isActive, cwd }: Props) {
       </div>
     </div>
   );
-}
+};

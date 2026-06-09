@@ -2,7 +2,7 @@ import type { ProviderId } from '@goodboy/types';
 import { invokeProviderLifecycleCancel } from '../../../features/providers/provider-lifecycle';
 import type { GetFn, SetFn } from './types';
 
-export function cancelProviderLifecycle(set: SetFn, get: GetFn) {
+export const cancelProviderLifecycle = (set: SetFn, get: GetFn) => {
   return async (providerId: ProviderId): Promise<void> => {
     const curr = get().providerLifecycle[providerId];
     if (!curr.runId) return;
@@ -23,4 +23,4 @@ export function cancelProviderLifecycle(set: SetFn, get: GetFn) {
     }));
     await invokeProviderLifecycleCancel(curr.runId);
   };
-}
+};

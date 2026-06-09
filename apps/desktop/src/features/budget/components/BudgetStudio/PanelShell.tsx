@@ -11,14 +11,14 @@ type Props = {
   readonly children: ReactNode;
 };
 
-export function PanelShell({
+export const PanelShell = ({
   icon,
   title,
   subtitle,
   action,
   maxWidthClass = 'max-w-3xl',
   children,
-}: Props) {
+}: Props) => {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
@@ -39,4 +39,4 @@ export function PanelShell({
       </div>
     </div>
   );
-}
+};

@@ -79,14 +79,14 @@ function activateChild(
   void get().sendTurn({ sessionId, agentId: childId, content });
 }
 
-export async function fanOutClusters(
+export const fanOutClusters = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   container: Agent,
   clusters: ReadonlyArray<ImplementationCluster>,
   goalTitle: string,
-): Promise<void> {
+): Promise<void> => {
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
   const baseOrdinal =
@@ -127,7 +127,7 @@ export async function fanOutClusters(
   if (first) {
     activateChild(set, get, sessionId, first, composeClusterKickoff(first, goalTitle, clusters, 0));
   }
-}
+};
 
 function findClustersPlan(
   get: GetFn,
@@ -144,7 +144,7 @@ function findClustersPlan(
   return null;
 }
 
-export function advanceClusterImplementation(set: SetFn, get: GetFn) {
+export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, childAgentId: AgentId, assistantText: string) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const child = runs.find((r) => r.id === childAgentId);
@@ -222,4 +222,4 @@ export function advanceClusterImplementation(set: SetFn, get: GetFn) {
       );
     }
   };
-}
+};

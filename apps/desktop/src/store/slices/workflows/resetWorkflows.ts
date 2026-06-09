@@ -9,10 +9,10 @@ import type { GetFn, SetFn } from './types';
 // removed default steps come back, and a soft-deleted default preset is
 // un-deleted. User-authored custom presets keep their own ids and are left
 // untouched. Reloads templates + library so the studio reflects the reset.
-export function resetWorkflows(_set: SetFn, get: GetFn) {
+export const resetWorkflows = (_set: SetFn, get: GetFn) => {
   return async (workspaceId: WorkspaceId): Promise<void> => {
     await seedWorkflowLibrary({ db: tauriDatabase }, workspaceId);
     await get().loadPhaseTemplates(workspaceId);
     await get().loadStepLibrary(workspaceId);
   };
-}
+};

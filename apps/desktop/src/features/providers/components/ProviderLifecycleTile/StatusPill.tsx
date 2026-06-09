@@ -70,7 +70,7 @@ function connectionSpec(connection: ProviderConnectionState): PillSpec {
   }
 }
 
-export function StatusPill({ phase, connection }: Props) {
+export const StatusPill = ({ phase, connection }: Props) => {
   const spec = specFor(phase, connection);
   return (
     <span className="inline-flex items-center gap-1.5 text-2xs font-medium">
@@ -78,4 +78,4 @@ export function StatusPill({ phase, connection }: Props) {
       <span className={spec.labelClass}>{spec.label}</span>
     </span>
   );
-}
+};

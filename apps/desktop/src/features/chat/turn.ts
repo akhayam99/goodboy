@@ -40,18 +40,18 @@ export type AuthRequiredPayload = {
   readonly identity: string | null;
 };
 
-export function encodeAuthRequiredMessage(payload: AuthRequiredPayload): string {
+export const encodeAuthRequiredMessage = (payload: AuthRequiredPayload): string => {
   return `${AUTH_REQUIRED_PREFIX}${JSON.stringify(payload)}`;
-}
+};
 
-export function decodeAuthRequiredMessage(message: string): AuthRequiredPayload | null {
+export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload | null => {
   if (!message.startsWith(AUTH_REQUIRED_PREFIX)) return null;
   try {
     return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload;
   } catch {
     return null;
   }
-}
+};
 
 const AUTH_ERROR_PATTERNS = [
   /not authenticated/i,
@@ -67,9 +67,9 @@ const AUTH_ERROR_PATTERNS = [
   /not signed in/i,
 ];
 
-export function isAuthErrorMessage(text: string): boolean {
+export const isAuthErrorMessage = (text: string): boolean => {
   return AUTH_ERROR_PATTERNS.some((p) => p.test(text));
-}
+};
 
 const EVENT_NAME = 'turn_event';
 
@@ -201,36 +201,31 @@ export async function* runTurn(
   }
 }
 
-export async function cancelTurn(runId: ProviderRunId): Promise<void> {
+export const cancelTurn = async (runId: ProviderRunId): Promise<void> => {
   await invoke('turn_cancel', { runId });
-}
+};
 
-export async function listLiveRunIds(): Promise<ReadonlySet<string>> {
+export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
   try {
     const ids = await invoke<string[]>('turn_list_live');
     return new Set(ids ?? []);
   } catch {
     return new Set();
   }
-}
+};
 
-/**
- * Persists a composer image into `<worktree>/.goodboy/attachments/` and returns
- * the worktree-relative path the spawned provider CLI reads it from.
- */
-export async function writeAttachment(args: {
+export const writeAttachment = async (args: {
   readonly worktreeDir: string;
   readonly attachmentId: string;
   readonly fileName: string;
   readonly dataBase64: string;
-}): Promise<string> {
+}): Promise<string> => {
   return invoke<string>('attachment_write', args);
-}
+};
 
-/** Reads a stored attachment back as a `data:` URL for display in the webview. */
-export async function readAttachment(worktreeDir: string, relPath: string): Promise<string> {
+export const readAttachment = async (worktreeDir: string, relPath: string): Promise<string> => {
   return invoke<string>('attachment_read', { worktreeDir, relPath });
-}
+};
 
 export type DroppedAttachment = {
   readonly fileName: string;
@@ -238,14 +233,9 @@ export type DroppedAttachment = {
   readonly dataBase64: string;
 };
 
-/**
- * Reads a file path the user dropped onto the composer from the OS and returns
- * its bytes as base64. Image-only on the Rust side; non-image drops surface as
- * an `UnsupportedMime` error which the caller filters silently.
- */
-export async function readDroppedAttachment(absPath: string): Promise<DroppedAttachment> {
+export const readDroppedAttachment = async (absPath: string): Promise<DroppedAttachment> => {
   return invoke<DroppedAttachment>('attachment_read_dropped', { absPath });
-}
+};
 
 type ParallelRunSpec = {
   readonly runId: ProviderRunId;
@@ -266,16 +256,8 @@ export type ParallelSpawnArgs = {
   readonly credentialId?: string;
 };
 
-/**
- * Spawn N child processes concurrently via a single Tauri invoke.
- *
- * Returns the launched `runId`s in the same order as `args.runs`.
- * Each run emits `turn_event` envelopes tagged with its own `runId`, the
- * existing `RawTurnEnvelope` listener already filters by `runId`, so no
- * frontend changes are needed for multiplexing.
- */
-export async function invokeParallelPhaseRunSpawn(
+export const invokeParallelPhaseRunSpawn = async (
   args: ParallelSpawnArgs,
-): Promise<ReadonlyArray<ProviderRunId>> {
+): Promise<ReadonlyArray<ProviderRunId>> => {
   return invoke<string[]>('parallel_agent_spawn', { args }).then((ids) => ids as ProviderRunId[]);
-}
+};

@@ -96,12 +96,12 @@ function toPullRequestState(raw: RawPullRequest): PullRequestState {
   };
 }
 
-export async function resolvePrForBranch(
+export const resolvePrForBranch = async (
   runner: GhRunner,
   repo: string,
   branch: string,
   opts: { cwd?: string; token?: string; workspaceId?: string } = {},
-): Promise<PullRequestState | null> {
+): Promise<PullRequestState | null> => {
   const args = [
     'pr',
     'list',
@@ -128,14 +128,14 @@ export async function resolvePrForBranch(
   open.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const head = open[0] ?? [...raw].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   return head ? toPullRequestState(head) : null;
-}
+};
 
-export async function listPrsForBranch(
+export const listPrsForBranch = async (
   runner: GhRunner,
   repo: string,
   branch: string,
   opts: { cwd?: string; token?: string; workspaceId?: string } = {},
-): Promise<ReadonlyArray<PullRequestState>> {
+): Promise<ReadonlyArray<PullRequestState>> => {
   const args = [
     'pr',
     'list',
@@ -165,15 +165,15 @@ export async function listPrsForBranch(
       return b.updatedAt.localeCompare(a.updatedAt);
     })
     .map(toPullRequestState);
-}
+};
 
 const LINKED_KEYWORD_RE =
   /\b(close[sd]?|fix(?:es|ed)?|resolve[sd]?|ref(?:s|erence[sd]?)?)\s+#(\d+)/gi;
 
-export function parseLinkedIssuesFromBody(
+export const parseLinkedIssuesFromBody = (
   body: string,
   repoUrl: string,
-): ReadonlyArray<LinkedIssue> {
+): ReadonlyArray<LinkedIssue> => {
   const seen = new Map<number, LinkedIssue>();
   const repoBase = repoUrl.replace(/\/pull\/\d+.*$/, '').replace(/\.git$/, '');
   for (const match of body.matchAll(LINKED_KEYWORD_RE)) {
@@ -193,14 +193,14 @@ export function parseLinkedIssuesFromBody(
     }
   }
   return [...seen.values()].sort((a, b) => a.number - b.number);
-}
+};
 
-export async function fetchLinkedIssues(
+export const fetchLinkedIssues = async (
   runner: GhRunner,
   repo: string,
   pr: PullRequestState,
   opts: { cwd?: string; token?: string; workspaceId?: string } = {},
-): Promise<ReadonlyArray<LinkedIssue>> {
+): Promise<ReadonlyArray<LinkedIssue>> => {
   const fromBody = parseLinkedIssuesFromBody(pr.body, pr.url);
   try {
     const args = [
@@ -233,13 +233,13 @@ export async function fetchLinkedIssues(
     if (err instanceof GhCliError) return fromBody;
     throw err;
   }
-}
+};
 
-export async function detectRepoSlug(
+export const detectRepoSlug = async (
   runner: GhRunner,
   cwd: string,
   workspaceId?: string,
-): Promise<string | null> {
+): Promise<string | null> => {
   try {
     const res = await runner.run(
       ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'],
@@ -254,4 +254,4 @@ export async function detectRepoSlug(
   } catch {
     return null;
   }
-}
+};

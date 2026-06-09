@@ -28,7 +28,7 @@ const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
   gemini: 'gemini',
 };
 
-export async function resolveProvider(input: ResolveProviderInput): Promise<RoutingDecision> {
+export const resolveProvider = async (input: ResolveProviderInput): Promise<RoutingDecision> => {
   const { sessionPreference, turnOverride, connectedProviders, budgetChecker, getDefaultModel } =
     input;
 
@@ -100,4 +100,4 @@ export async function resolveProvider(input: ResolveProviderInput): Promise<Rout
     reason: 'all-exceeded',
     fallbackUsed: false,
   };
-}
+};

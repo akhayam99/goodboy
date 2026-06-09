@@ -30,7 +30,7 @@ export type WorktreeInfo = {
   readonly isMain: boolean;
 };
 
-export async function createWorktree(opts: CreateWorktreeOptions): Promise<CreatedWorktree> {
+export const createWorktree = async (opts: CreateWorktreeOptions): Promise<CreatedWorktree> => {
   const slug = sanitizeSlug(opts.slug);
   const branchName = `${opts.branchPrefix}/${slug}`;
   const repoName = path.basename(opts.repoPath);
@@ -43,16 +43,16 @@ export async function createWorktree(opts: CreateWorktreeOptions): Promise<Creat
   await git(opts.repoPath, ['worktree', 'add', '-b', branchName, worktreePath]);
 
   return { worktreePath, branchName, slug };
-}
+};
 
-export async function removeWorktree(repoPath: string, worktreePath: string): Promise<void> {
+export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {
   await git(repoPath, ['worktree', 'remove', '--force', worktreePath]);
-}
+};
 
-export async function listWorktrees(repoPath: string): Promise<ReadonlyArray<WorktreeInfo>> {
+export const listWorktrees = async (repoPath: string): Promise<ReadonlyArray<WorktreeInfo>> => {
   const { stdout } = await git(repoPath, ['worktree', 'list', '--porcelain']);
   return parsePorcelain(stdout);
-}
+};
 
 async function ensureBranchAvailable(repoPath: string, branchName: string): Promise<void> {
   try {

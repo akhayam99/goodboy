@@ -31,7 +31,7 @@ type OneShotResult = {
   readonly exitCode: number | null;
 };
 
-export function buildGoalRewriteUserPrompt(input: GoalRewriteInput): string {
+export const buildGoalRewriteUserPrompt = (input: GoalRewriteInput): string => {
   const steps = input.stepNames.map((name) => `- ${name}`).join('\n');
   return [
     'CURRENT GOAL:',
@@ -42,12 +42,12 @@ export function buildGoalRewriteUserPrompt(input: GoalRewriteInput): string {
     '',
     'Rewrite the goal following your instructions. Output only the cleaned goal text.',
   ].join('\n');
-}
+};
 
-export async function rewriteWorkflowGoal(
+export const rewriteWorkflowGoal = async (
   deps: GoalRewriteDeps,
   input: GoalRewriteInput,
-): Promise<string | null> {
+): Promise<string | null> => {
   const goal = input.goal.trim();
   if (goal.length === 0 || input.stepNames.length === 0) return null;
 
@@ -64,7 +64,7 @@ export async function rewriteWorkflowGoal(
 
   const cleaned = extractText(deps.providerId, result.stdout).trim();
   return cleaned.length > 0 ? cleaned : null;
-}
+};
 
 function extractText(providerId: ProviderId, stdout: string): string {
   const trimmed = stdout.trim();

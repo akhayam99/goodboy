@@ -4,7 +4,7 @@ import { listContextSlotHistory, upsertContextSlot } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { mergeSlots, type GetFn, type SetFn } from './types';
 
-export function upsertSessionSlot(set: SetFn, get: GetFn) {
+export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, key: SlotKey, value: string) => {
     const existing = get().sessionSlots[sessionId] ?? [];
     const prev = existing.find((s) => s.key === key);
@@ -25,4 +25,4 @@ export function upsertSessionSlot(set: SetFn, get: GetFn) {
       },
     }));
   };
-}
+};

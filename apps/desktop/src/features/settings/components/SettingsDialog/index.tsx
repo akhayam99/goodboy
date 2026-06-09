@@ -85,7 +85,7 @@ function BetaChip() {
   );
 }
 
-export function SettingsDialog({ open, onClose, initialSection }: Props) {
+export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
@@ -398,7 +398,7 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
       />
     </Dialog>
   );
-}
+};
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (

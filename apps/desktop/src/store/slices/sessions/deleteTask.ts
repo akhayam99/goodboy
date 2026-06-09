@@ -5,7 +5,7 @@ import { cancelTurn } from '../../../features/chat/turn';
 import { removeWorktree } from '../../../features/worktree/worktree';
 import type { GetFn, SetFn } from './types';
 
-export function deleteTask(set: SetFn, get: GetFn) {
+export const deleteTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -54,4 +54,4 @@ export function deleteTask(set: SetFn, get: GetFn) {
       { workspaceId: sessionWorkspaceId },
     );
   };
-}
+};

@@ -21,7 +21,7 @@ type MutableFile = {
 const FILE_HEADER = /^diff --git a\/(.+) b\/(.+)$/;
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
 
-export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
+export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
   const lines = diff.split('\n');
   const files: MutableFile[] = [];
   let current: MutableFile | null = null;
@@ -129,14 +129,14 @@ export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
   flushHunk();
   if (current) files.push(current);
   return files;
-}
+};
 
-export async function fetchPrDiff(
+export const fetchPrDiff = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: { cwd?: string; token?: string; workspaceId?: string } = {},
-): Promise<PullRequestDiff> {
+): Promise<PullRequestDiff> => {
   const res = await runner.run(['pr', 'diff', String(prNumber), '--repo', repo], opts);
   if (res.exitCode !== 0) {
     throw new GhCliError(`gh pr diff exited with ${res.exitCode}`, res.stderr, res.exitCode);
@@ -145,4 +145,4 @@ export async function fetchPrDiff(
     prNumber,
     files: parseUnifiedDiff(res.stdout),
   };
-}
+};

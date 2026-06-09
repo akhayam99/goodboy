@@ -40,11 +40,11 @@ Rules:
 - The user may write in any language. Always respond with JSON regardless of input language.
   All JSON field values (workflowName, names, reasoning, promptPrefix, expectedOutput) must be in English.`;
 
-export function buildPlannerUserPrompt(input: PlannerInput): string {
+export const buildPlannerUserPrompt = (input: PlannerInput): string => {
   const parts = ['Process:', input.process];
   if (input.repoContext && input.repoContext.trim().length > 0) {
     parts.push('', 'Repository context:', input.repoContext.trim());
   }
   parts.push('', 'Return the JSON object now.');
   return parts.join('\n');
-}
+};

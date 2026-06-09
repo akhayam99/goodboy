@@ -46,8 +46,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 }));
 
-export function bootstrapTheme(): void {
+export const bootstrapTheme = (): void => {
   const stored = readStoredTheme();
   applyTheme(stored);
   useThemeStore.setState({ theme: stored });
-}
+};

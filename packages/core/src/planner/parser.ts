@@ -10,7 +10,7 @@ export class PlannerParseError extends Error {
   }
 }
 
-export function parsePlannerOutput(raw: string): PlannerOutput {
+export const parsePlannerOutput = (raw: string): PlannerOutput => {
   const stripped = stripCodeFences(raw);
   let parsed: unknown;
   try {
@@ -87,7 +87,7 @@ export function parsePlannerOutput(raw: string): PlannerOutput {
     reasoning,
     steps,
   };
-}
+};
 
 function stripCodeFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());

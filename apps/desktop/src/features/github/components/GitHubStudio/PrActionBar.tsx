@@ -49,7 +49,7 @@ type Props = {
   readonly onRefresh: () => void;
 };
 
-export function PrActionBar({
+export const PrActionBar = ({
   pr,
   sessionId,
   onOpenSession,
@@ -67,7 +67,7 @@ export function PrActionBar({
   onSetMergeConfirm,
   onOpenGithub,
   onRefresh,
-}: Props) {
+}: Props) => {
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
   const isDraft = pr.isDraft;
@@ -209,4 +209,4 @@ export function PrActionBar({
       </div>
     </div>
   );
-}
+};

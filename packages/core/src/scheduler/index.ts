@@ -60,11 +60,11 @@ export type SchedulerHandle = {
   readonly progressListeners: Set<(p: SchedulerProgress) => void>;
 };
 
-export function fanOut(
+export const fanOut = (
   deps: SchedulerDeps,
   group: ParallelGroup,
   runs: ReadonlyArray<ParallelAgent>,
-): SchedulerHandle {
+): SchedulerHandle => {
   const progressListeners: Set<(p: SchedulerProgress) => void> = new Set();
 
   const runEntries: RunEntry[] = runs.map((run) => ({ run, runId: run.runId }));
@@ -102,22 +102,22 @@ export function fanOut(
     settled,
     progressListeners,
   };
-}
+};
 
-export async function awaitMerge(handle: SchedulerHandle): Promise<MergeResult> {
+export const awaitMerge = async (handle: SchedulerHandle): Promise<MergeResult> => {
   return handle.settled;
-}
+};
 
-export function onProgress(
+export const onProgress = (
   handle: SchedulerHandle,
   cb: (p: SchedulerProgress) => void,
-): UnsubscribeFn {
+): UnsubscribeFn => {
   handle.progressListeners.add(cb);
   return () => {
     handle.progressListeners.delete(cb);
   };
-}
+};
 
-export async function cancelGroup(handle: SchedulerHandle): Promise<void> {
+export const cancelGroup = async (handle: SchedulerHandle): Promise<void> => {
   await Promise.allSettled(handle.runEntries.map(({ runId }) => handle.deps.cancelRun(runId)));
-}
+};

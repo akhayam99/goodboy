@@ -29,11 +29,11 @@ function isApplicable(
   return false;
 }
 
-export function buildClaudeFlags(input: {
+export const buildClaudeFlags = (input: {
   readonly rules: ReadonlyArray<PermissionRule>;
   readonly scope: { workspaceId: WorkspaceId; sessionId: SessionId };
   readonly permissionMode?: ClaudeFlagSet['permissionMode'];
-}): ClaudeFlagSet {
+}): ClaudeFlagSet => {
   const applicable = input.rules.filter((r) => isApplicable(r, input.scope));
 
   const sorted = [...applicable].sort((a, b) => {
@@ -63,4 +63,4 @@ export function buildClaudeFlags(input: {
   }
 
   return { allowedTools, disallowedTools, permissionMode: input.permissionMode ?? 'default' };
-}
+};

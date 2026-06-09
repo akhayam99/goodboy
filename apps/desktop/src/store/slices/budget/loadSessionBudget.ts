@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { invokeSessionBudgetGet } from '../../../features/budget/budget';
 import type { SetFn } from './types';
 
-export function loadSessionBudget(set: SetFn) {
+export const loadSessionBudget = (set: SetFn) => {
   return async (sessionId: SessionId) => {
     const budget = await invokeSessionBudgetGet(sessionId);
     if (budget !== null) {
@@ -11,4 +11,4 @@ export function loadSessionBudget(set: SetFn) {
       }));
     }
   };
-}
+};

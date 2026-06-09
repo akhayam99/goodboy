@@ -9,7 +9,7 @@ export type SectionHeaderProps = {
   readonly className?: string;
 };
 
-export function SectionHeader({ label, icon, hint, action, className }: SectionHeaderProps) {
+export const SectionHeader = ({ label, icon, hint, action, className }: SectionHeaderProps) => {
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div className="flex items-center justify-between gap-2">
@@ -22,4 +22,4 @@ export function SectionHeader({ label, icon, hint, action, className }: SectionH
       {hint ? <p className="text-2xs text-muted-foreground/70">{hint}</p> : null}
     </div>
   );
-}
+};

@@ -22,19 +22,7 @@ type WorkflowProgress = {
 
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-/**
- * Sticky 32px breadcrumb header at the top of ChatView. Shows
- * workspace › session › agent · [kind] so the user always knows
- * which agent is talking, before this header the active agent's
- * name was nowhere in the chat surface (only in the sidebar).
- *
- * Segments are interactive: workspace opens its settings, session
- * opens its settings, agent shows the kind chip. Open Linear-style
- *, segments are anchors, not just labels.
- *
- * Per plan §A.4.
- */
-export function ChatBreadcrumb({ session }: Props) {
+export const ChatBreadcrumb = ({ session }: Props) => {
   const workspace = useAppStore((s) =>
     s.workspaces.find((w) => w.id === (session.workspaceId as WorkspaceId)),
   );
@@ -156,7 +144,7 @@ export function ChatBreadcrumb({ session }: Props) {
       <Divider className="shrink-0" />
     </>
   );
-}
+};
 
 function Separator() {
   return <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />;

@@ -12,13 +12,13 @@ export type Props = {
   readonly onChangeModel: () => void;
 };
 
-export function RightSizeCard({
+export const RightSizeCard = ({
   currentModel,
   suggestedModel,
   onUseSuggested,
   onKeepCurrent,
   onChangeModel,
-}: Props) {
+}: Props) => {
   return (
     <NudgeCard
       severity="info"
@@ -56,4 +56,4 @@ export function RightSizeCard({
       }}
     />
   );
-}
+};

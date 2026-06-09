@@ -4,12 +4,12 @@ import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
-export function getCheapModel(providerId: ProviderId): string {
+export const getCheapModel = (providerId: ProviderId): string => {
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
-}
+};
 
-export function getDefaultBinary(providerId: ProviderId): string {
+export const getDefaultBinary = (providerId: ProviderId): string => {
   switch (providerId) {
     case 'anthropic':
       return 'claude';
@@ -24,7 +24,7 @@ export function getDefaultBinary(providerId: ProviderId): string {
       throw new Error(`unknown provider: ${_exhaustive}`);
     }
   }
-}
+};
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 

@@ -30,7 +30,7 @@ function stepKind(step: Workflow['steps'][number]): AgentKind {
   return step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
 }
 
-export function StartWorkflowDialog({ open, onClose, session }: Props) {
+export const StartWorkflowDialog = ({ open, onClose, session }: Props) => {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
@@ -151,7 +151,7 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
       />
     </Dialog>
   );
-}
+};
 
 function WorkflowRail({
   presets,

@@ -4,7 +4,7 @@ import { addQuestionsToSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function restoreDismissedOpenQuestion(set: SetFn, get: GetFn) {
+export const restoreDismissedOpenQuestion = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, question: OpenQuestion) => {
     await restoreOpenQuestion(tauriDatabase, question.id);
     set((state) => {
@@ -20,4 +20,4 @@ export function restoreDismissedOpenQuestion(set: SetFn, get: GetFn) {
     const slotChanged = await addQuestionsToSlot(tauriDatabase, sessionId, [question.text]);
     if (slotChanged) await get().loadSessionSlots(sessionId);
   };
-}
+};

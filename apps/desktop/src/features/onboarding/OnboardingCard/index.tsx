@@ -9,13 +9,7 @@ import {
 } from '../onboarding-store';
 import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnboardingProgress';
 
-/**
- * Progressive setup checklist. Floats top-right of the chat area. The X
- * collapses it to the sidebar chip (reopenable), it is not a permanent
- * dismiss. When all six steps land it swaps to a one-time wrap-up; closing
- * that retires onboarding for good. Per plan section G.
- */
-export function OnboardingCard() {
+export const OnboardingCard = () => {
   const progress = useOnboardingProgress();
 
   if (progress.finished) return null;
@@ -30,7 +24,7 @@ export function OnboardingCard() {
       </div>
     </div>
   );
-}
+};
 
 function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
   return (
@@ -129,12 +123,7 @@ function StepRow({ title, why, done }: StepRowProps) {
   );
 }
 
-/**
- * Compact dotted progress chip, onboarding's permanent home in the sidebar
- * footer. Visible until onboarding is finished; click reopens the checklist
- * card. Six dots fill as steps land.
- */
-export function OnboardingChip() {
+export const OnboardingChip = () => {
   const progress = useOnboardingProgress();
   if (progress.finished) return null;
 
@@ -158,4 +147,4 @@ export function OnboardingChip() {
       ))}
     </button>
   );
-}
+};

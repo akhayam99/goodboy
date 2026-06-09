@@ -34,7 +34,7 @@ function childrenOf(runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArra
   return runs.filter((r) => r.parentAgentId === parentId).sort((a, b) => a.ordinal - b.ordinal);
 }
 
-export function scoutDepth(runs: ReadonlyArray<Agent>, agentId: AgentId): number {
+export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number => {
   const seen = new Set<AgentId>();
   let depth = 0;
   let cur = runs.find((r) => r.id === agentId);
@@ -45,7 +45,7 @@ export function scoutDepth(runs: ReadonlyArray<Agent>, agentId: AgentId): number
     cur = runs.find((r) => r.id === parentId);
   }
   return depth;
-}
+};
 
 function composeScoutKickoff(area: ExtractedScoutArea, depth: number): string {
   const canSplit = depth < SCOUT_DEPTH_CAP;
@@ -129,13 +129,13 @@ function activateAgent(
   void get().sendTurn({ sessionId, agentId, content });
 }
 
-export async function fanOutScouts(
+export const fanOutScouts = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   container: Agent,
   areas: ReadonlyArray<ExtractedScoutArea>,
-): Promise<void> {
+): Promise<void> => {
   const clamped = areas.slice(0, SCOUT_MAX_CHILDREN);
   const dropped = areas.length - clamped.length;
   if (dropped > 0) {
@@ -201,7 +201,7 @@ export async function fanOutScouts(
       false,
     );
   }
-}
+};
 
 async function maybeSynthesizeParent(
   set: SetFn,
@@ -251,7 +251,7 @@ async function settleScout(
   await maybeSynthesizeParent(set, get, sessionId, agentId);
 }
 
-export function advanceScoutTree(set: SetFn, get: GetFn) {
+export const advanceScoutTree = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void> => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -273,4 +273,4 @@ export function advanceScoutTree(set: SetFn, get: GetFn) {
 
     await settleScout(set, get, sessionId, agentId, assistantText.slice(0, 2000));
   };
-}
+};

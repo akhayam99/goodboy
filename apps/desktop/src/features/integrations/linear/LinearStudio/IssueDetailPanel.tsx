@@ -103,7 +103,7 @@ function prStatusTone(status: string | null): string {
   }
 }
 
-export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Props) {
+export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const rootPath = useAppStore(
@@ -471,7 +471,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
       </div>
     </div>
   );
-}
+};
 
 function BranchModeButton({
   active,

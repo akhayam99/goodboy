@@ -2,7 +2,7 @@ import type { IsoDateTime } from '@goodboy/types';
 import { invokeBudgetAlertDismiss } from '../../../features/budget/budget';
 import type { SetFn } from './types';
 
-export function dismissBudgetAlert(set: SetFn) {
+export const dismissBudgetAlert = (set: SetFn) => {
   return async (id: string) => {
     await invokeBudgetAlertDismiss(id);
     set((state) => ({
@@ -11,4 +11,4 @@ export function dismissBudgetAlert(set: SetFn) {
       ),
     }));
   };
-}
+};

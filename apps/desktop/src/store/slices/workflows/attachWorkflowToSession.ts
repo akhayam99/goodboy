@@ -20,7 +20,7 @@ type Options = {
   autoRun?: boolean;
 };
 
-export function attachWorkflowToSession(set: SetFn, get: GetFn) {
+export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowId: WorkflowId, options?: Options) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) throw new Error(`session not found: ${sessionId}`);
@@ -104,4 +104,4 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
       void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);
     }
   };
-}
+};

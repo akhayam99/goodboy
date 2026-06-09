@@ -10,7 +10,7 @@ type Props = {
   readonly children: ReactNode;
 };
 
-export function Widget({ label, hint, action, className, children }: Props) {
+export const Widget = ({ label, hint, action, className, children }: Props) => {
   return (
     <section
       className={cn(
@@ -22,4 +22,4 @@ export function Widget({ label, hint, action, className, children }: Props) {
       {children}
     </section>
   );
-}
+};

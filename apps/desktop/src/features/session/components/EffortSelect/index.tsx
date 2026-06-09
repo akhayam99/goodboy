@@ -18,7 +18,7 @@ type Props = {
   disabled: boolean;
 };
 
-export function EffortSelect({ model, value, onChange, disabled }: Props) {
+export const EffortSelect = ({ model, value, onChange, disabled }: Props) => {
   const levels = modelEffortLevels(model);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,4 +90,4 @@ export function EffortSelect({ model, value, onChange, disabled }: Props) {
       ) : null}
     </div>
   );
-}
+};

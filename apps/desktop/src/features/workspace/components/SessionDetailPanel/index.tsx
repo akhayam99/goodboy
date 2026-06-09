@@ -23,7 +23,7 @@ type SessionDetailPanelProps = {
   onOpenSessionSettings: () => void;
 };
 
-export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDetailPanelProps) {
+export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDetailPanelProps) => {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
   const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
@@ -229,7 +229,7 @@ export function SessionDetailPanel({ session, onOpenSessionSettings }: SessionDe
       </div>
     </div>
   );
-}
+};
 
 function BranchChip({ branch }: { branch: string }) {
   const { showToast } = useToast();
@@ -387,7 +387,7 @@ type SessionMetaFooterProps = {
 // Branch identity + session cost only. Files and GitHub moved to the
 // right-hand ContextPanel tabs (plan §B), so the sidebar footer keeps just
 // the at-a-glance identity bits and stops being a vertical stack.
-export function SessionMetaFooter({ session }: SessionMetaFooterProps) {
+export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
 
   return (
@@ -402,4 +402,4 @@ export function SessionMetaFooter({ session }: SessionMetaFooterProps) {
       <SessionCostChip sessionId={session.id as SessionId} />
     </div>
   );
-}
+};

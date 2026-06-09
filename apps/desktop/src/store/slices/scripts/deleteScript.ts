@@ -3,7 +3,7 @@ import { deleteWorkspaceScript } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function deleteScript(set: SetFn) {
+export const deleteScript = (set: SetFn) => {
   return async (scriptId: WorkspaceScriptId, workspaceId: WorkspaceId) => {
     await deleteWorkspaceScript(tauriDatabase, scriptId);
     set((state) => ({
@@ -13,4 +13,4 @@ export function deleteScript(set: SetFn) {
       },
     }));
   };
-}
+};

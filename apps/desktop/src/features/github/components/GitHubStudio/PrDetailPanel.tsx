@@ -29,12 +29,12 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export function PrDetailPanel({
+export const PrDetailPanel = ({
   sessionId,
   initialPrNumber = null,
   initialThreadId = null,
   onClose,
-}: Props) {
+}: Props) => {
   const sessions = useSessions();
   const session = sessionId ? sessions.find((s) => s.id === sessionId) : undefined;
   const github = useAppStore((s) => (sessionId ? s.sessionGithub[sessionId] : null));
@@ -396,7 +396,7 @@ export function PrDetailPanel({
       ) : null}
     </div>
   );
-}
+};
 
 function SectionBody({
   detail,

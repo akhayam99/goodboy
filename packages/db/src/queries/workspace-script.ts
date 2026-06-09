@@ -23,18 +23,21 @@ function toDomain(row: WorkspaceScriptRow): WorkspaceScript {
   };
 }
 
-export async function listWorkspaceScripts(
+export const listWorkspaceScripts = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<WorkspaceScript>> {
+): Promise<ReadonlyArray<WorkspaceScript>> => {
   const rows = await db.select<WorkspaceScriptRow>(
     'SELECT * FROM workspace_scripts WHERE workspace_id = ? ORDER BY sort_order ASC, created_at ASC',
     [workspaceId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function upsertWorkspaceScript(db: Database, script: WorkspaceScript): Promise<void> {
+export const upsertWorkspaceScript = async (
+  db: Database,
+  script: WorkspaceScript,
+): Promise<void> => {
   await db.execute(
     `INSERT INTO workspace_scripts
       (id, workspace_id, name, body, sort_order, created_at, updated_at)
@@ -54,11 +57,11 @@ export async function upsertWorkspaceScript(db: Database, script: WorkspaceScrip
       Date.parse(script.updatedAt),
     ],
   );
-}
+};
 
-export async function deleteWorkspaceScript(
+export const deleteWorkspaceScript = async (
   db: Database,
   scriptId: WorkspaceScriptId,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('DELETE FROM workspace_scripts WHERE id = ?', [scriptId]);
-}
+};

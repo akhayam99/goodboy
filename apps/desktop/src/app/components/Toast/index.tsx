@@ -31,7 +31,7 @@ type ToastProviderProps = {
   children: React.ReactNode;
 };
 
-export function ToastProvider({ children }: ToastProviderProps) {
+export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
 
   const showToast = useCallback((kind: ToastKind, message: string, opts?: ShowToastOptions) => {
@@ -61,13 +61,13 @@ export function ToastProvider({ children }: ToastProviderProps) {
       <ToastStack toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>
   );
-}
+};
 
-export function useToast(): ToastContextValue {
+export const useToast = (): ToastContextValue => {
   const ctx = useContext(ToastContext);
   if (ctx === null) throw new Error('useToast must be used inside ToastProvider');
   return ctx;
-}
+};
 
 type ToastStackProps = {
   toasts: ReadonlyArray<ToastItem>;

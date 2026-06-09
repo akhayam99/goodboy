@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
-export function closePr(_set: SetFn, get: GetFn) {
+export const closePr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
     const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number;
     const session = get().sessions.find((s) => s.id === sessionId);
@@ -23,4 +23,4 @@ export function closePr(_set: SetFn, get: GetFn) {
     }
     await get().refreshSessionPr(sessionId, { force: true });
   };
-}
+};

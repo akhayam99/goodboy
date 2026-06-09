@@ -92,13 +92,13 @@ function stepForProgress(pct: number): BootStep {
   return STEPS.find((s) => pct < s.threshold) ?? LAST_STEP;
 }
 
-export function BootSplash({
+export const BootSplash = ({
   phase,
   error,
   onRetry,
   onSkipProviderDetection,
   onFinished,
-}: BootSplashProps) {
+}: BootSplashProps) => {
   const hasError = error != null;
   const pct = useSmoothProgress(phase, hasError);
   const step = stepForProgress(pct);
@@ -195,7 +195,7 @@ export function BootSplash({
       ) : null}
     </div>
   );
-}
+};
 
 function BlinkCursor() {
   return (

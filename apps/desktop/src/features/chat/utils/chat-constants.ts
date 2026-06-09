@@ -23,20 +23,20 @@ const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
 const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
 const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
 
-export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
+export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null => {
   const descriptor = getModelDescriptor(model);
   if (descriptor) return descriptor.effort;
   if (/claude-opus/i.test(model)) return OPUS_EFFORT;
   if (/claude-sonnet/i.test(model)) return SONNET_EFFORT;
   if (/gpt|codex/i.test(model)) return CODEX_EFFORT;
   return null;
-}
+};
 
-export function clampEffort(model: string, effort: EffortLevel): EffortLevel {
+export const clampEffort = (model: string, effort: EffortLevel): EffortLevel => {
   const levels = modelEffortLevels(model);
   if (!levels) return effort;
   return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort);
-}
+};
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   minimal: 'Minimal',
@@ -97,7 +97,7 @@ export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
   verbose: 'text-danger',
 };
 
-export function modelLabel(id: string): string {
+export const modelLabel = (id: string): string => {
   const descriptor = getModelDescriptor(id);
   if (descriptor) return descriptor.label;
   const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
@@ -106,7 +106,7 @@ export function modelLabel(id: string): string {
     return `${family} ${m[2]}.${m[3]}`;
   }
   return id;
-}
+};
 
 export type { ModelFamily };
 
@@ -123,7 +123,7 @@ function stripProviderPrefix(id: string): string {
   return slash >= 0 ? id.slice(slash + 1) : id;
 }
 
-export function parseModelId(id: string): ParsedModel {
+export const parseModelId = (id: string): ParsedModel => {
   const descriptor = getModelDescriptor(id);
   if (descriptor) {
     return {
@@ -201,9 +201,9 @@ export function parseModelId(id: string): ParsedModel {
   }
 
   return { family: 'other', subfamily: null, variantLabel: local };
-}
+};
 
-export function modelTier(model: string): CostTier {
+export const modelTier = (model: string): CostTier => {
   const descriptor = getModelDescriptor(model);
   if (descriptor) return descriptor.costTier;
   const known = MODEL_COST[model];
@@ -211,13 +211,13 @@ export function modelTier(model: string): CostTier {
   if (/haiku|small|mini|flash|nano|fast/i.test(model)) return 'cheap';
   if (/opus|max/i.test(model)) return 'expensive';
   return 'mid';
-}
+};
 
-export function modelWeight(model: string): number {
+export const modelWeight = (model: string): number => {
   const descriptor = getModelDescriptor(model);
   if (descriptor) return descriptor.weight;
   return MODEL_COST[model]?.weight ?? 10;
-}
+};
 
 // Heuristic floor used by the first-turn right-sizing card.
 // Never suggest Haiku, user explicitly disallows it for this workspace.
@@ -229,10 +229,10 @@ const MIN_WEIGHT_GAP = 20;
 
 const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
 
-export function suggestLighterModel(
+export const suggestLighterModel = (
   current: string,
   candidates: ReadonlyArray<string>,
-): string | null {
+): string | null => {
   const currentWeight = modelWeight(current);
   const eligible = candidates.filter((id) => {
     if (id === current) return false;
@@ -250,7 +250,7 @@ export function suggestLighterModel(
     }
   }
   return best?.id ?? null;
-}
+};
 
 export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   claude: 'Claude',
@@ -284,14 +284,14 @@ const SUBFAMILY_TIER: Record<string, CostTier> = {
   flash: 'cheap',
 };
 
-export function subfamilyLabel(family: ModelFamily, subfamily: string): string {
+export const subfamilyLabel = (family: ModelFamily, subfamily: string): string => {
   if (SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
   if (family === 'gpt' && subfamily.endsWith('-codex')) {
     return subfamily.replace('-codex', '-Codex');
   }
   return subfamily;
-}
+};
 
-export function subfamilyTier(_family: ModelFamily, subfamily: string): CostTier {
+export const subfamilyTier = (_family: ModelFamily, subfamily: string): CostTier => {
   return SUBFAMILY_TIER[subfamily] ?? 'mid';
-}
+};

@@ -32,30 +32,28 @@ export type ScriptExitPayload = {
   readonly exitCode: number;
 };
 
-/** Start a pty-backed script run. Returns immediately; output streams via events. */
-export function invokeScriptRun(
+export const invokeScriptRun = (
   scriptId: WorkspaceScriptId,
   runId: string,
   cwd: string,
   cols: number,
   rows: number,
-): Promise<void> {
+): Promise<void> => {
   return invoke<void>('workspace_script_run', { scriptId, runId, cwd, cols, rows });
-}
+};
 
-/** Interrupt an in-flight script run. No-op if the run already finished. */
-export function invokeScriptCancel(runId: string): Promise<void> {
+export const invokeScriptCancel = (runId: string): Promise<void> => {
   return invoke<void>('workspace_script_cancel', { runId });
-}
+};
 
-export function listenScriptOutput(
+export const listenScriptOutput = (
   handler: (payload: ScriptOutputPayload) => void,
-): Promise<UnlistenFn> {
+): Promise<UnlistenFn> => {
   return listen<ScriptOutputPayload>('script-output', (e) => handler(e.payload));
-}
+};
 
-export function listenScriptExit(
+export const listenScriptExit = (
   handler: (payload: ScriptExitPayload) => void,
-): Promise<UnlistenFn> {
+): Promise<UnlistenFn> => {
   return listen<ScriptExitPayload>('script-exit', (e) => handler(e.payload));
-}
+};

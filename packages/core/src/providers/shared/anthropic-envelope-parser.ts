@@ -79,11 +79,11 @@ function isToolResultBlock(block: unknown): block is ToolResultBlock {
   );
 }
 
-export function parseAnthropicEnvelopeLine(
+export const parseAnthropicEnvelopeLine = (
   line: string,
   ctx: ParseContext,
   opts: AnthropicEnvelopeParserOptions,
-): ReadonlyArray<TurnEvent> {
+): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
   if (trimmed.length === 0) return [];
 
@@ -169,7 +169,7 @@ export function parseAnthropicEnvelopeLine(
       }
       return [];
   }
-}
+};
 
 function parseAssistant(
   message: AssistantMessage | undefined,

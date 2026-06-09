@@ -12,14 +12,7 @@ type Props = {
   disabled?: boolean;
 };
 
-/**
- * Autocomplete combobox over issues assigned to the current Linear viewer.
- * Lazy-fetches on first focus to keep dialog open fast. Filtering is
- * client-side over identifier + title, Linear's search API is heavier and
- * a single fetch of the user's active queue is small enough to scan in
- * memory.
- */
-export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: Props) {
+export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: Props) => {
   const [issues, setIssues] = useState<ReadonlyArray<LinearIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -231,4 +224,4 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
       ) : null}
     </div>
   );
-}
+};

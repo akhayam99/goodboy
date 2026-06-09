@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { resolveAgentKind } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
-export function activateNextResolver(set: SetFn, get: GetFn) {
+export const activateNextResolver = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
     const pending = get().pendingResolverKickoff;
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
@@ -25,4 +25,4 @@ export function activateNextResolver(set: SetFn, get: GetFn) {
     await get().selectAgent(sessionId, next.id);
     void get().sendTurn({ sessionId, agentId: next.id, content: kickoff });
   };
-}
+};

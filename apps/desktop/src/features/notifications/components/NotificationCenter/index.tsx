@@ -46,7 +46,7 @@ function relativeTime(iso: string): string {
 const DROPDOWN_WIDTH = 320;
 const VIEWPORT_MARGIN = 8;
 
-export function NotificationCenter() {
+export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
@@ -184,7 +184,7 @@ export function NotificationCenter() {
         : null}
     </div>
   );
-}
+};
 
 type NotificationItemProps = {
   notification: Notification;

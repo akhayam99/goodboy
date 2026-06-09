@@ -27,23 +27,23 @@ function toSkill(row: SkillRow): Skill {
   };
 }
 
-export async function listSkillsForWorkspace(
+export const listSkillsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<Skill>> {
+): Promise<ReadonlyArray<Skill>> => {
   const rows = await db.select<SkillRow>(
     'SELECT * FROM skills WHERE workspace_id = ? ORDER BY created_at ASC',
     [workspaceId],
   );
   return rows.map(toSkill);
-}
+};
 
-export async function getSkillById(db: Database, skillId: SkillId): Promise<Skill | null> {
+export const getSkillById = async (db: Database, skillId: SkillId): Promise<Skill | null> => {
   const rows = await db.select<SkillRow>('SELECT * FROM skills WHERE id = ?', [skillId]);
   return rows[0] ? toSkill(rows[0]) : null;
-}
+};
 
-export async function upsertSkill(db: Database, skill: Skill): Promise<void> {
+export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => {
   await db.execute(
     `INSERT INTO skills
       (id, workspace_id, name, description, file_path, body, frontmatter_json, created_at, updated_at)
@@ -67,15 +67,15 @@ export async function upsertSkill(db: Database, skill: Skill): Promise<void> {
       skill.updatedAt,
     ],
   );
-}
+};
 
-export async function deleteSkill(db: Database, skillId: SkillId): Promise<void> {
+export const deleteSkill = async (db: Database, skillId: SkillId): Promise<void> => {
   await db.execute('DELETE FROM skills WHERE id = ?', [skillId]);
-}
+};
 
-export async function deleteSkillsForWorkspace(
+export const deleteSkillsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('DELETE FROM skills WHERE workspace_id = ?', [workspaceId]);
-}
+};

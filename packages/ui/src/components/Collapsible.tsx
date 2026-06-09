@@ -9,13 +9,13 @@ export type CollapsibleProps = {
   className?: string;
 };
 
-export function Collapsible({
+export const Collapsible = ({
   open,
   onOpenChange,
   trigger,
   children,
   className,
-}: CollapsibleProps) {
+}: CollapsibleProps) => {
   return (
     <div className={className}>
       <button
@@ -38,4 +38,4 @@ export function Collapsible({
       {open ? <div className="px-2 py-1">{children}</div> : null}
     </div>
   );
-}
+};

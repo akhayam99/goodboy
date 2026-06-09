@@ -12,7 +12,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
+export const ConnectGithubDialog = ({ workspaceId, open, onClose }: Props) => {
   const [status, setStatus] = useState<GhTokenStatus | null>(null);
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
@@ -142,4 +142,4 @@ export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

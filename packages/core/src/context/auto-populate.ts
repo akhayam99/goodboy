@@ -46,7 +46,9 @@ export type AutoPopulateResult = {
   readonly openQuestionsChanged: boolean;
 };
 
-export async function autoPopulateContext(input: AutoPopulateInput): Promise<AutoPopulateResult> {
+export const autoPopulateContext = async (
+  input: AutoPopulateInput,
+): Promise<AutoPopulateResult> => {
   const engine = new ContextEngine({ db: input.db });
   const slots = await engine.load(input.sessionId);
 
@@ -103,7 +105,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
     updatedSlots: updates.map((u) => u.key),
     openQuestionsChanged: insertedCount > 0 || resolvedCount > 0,
   };
-}
+};
 
 function normalizeQuestion(s: string): string {
   return s

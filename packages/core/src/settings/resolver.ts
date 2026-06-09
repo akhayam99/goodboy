@@ -6,11 +6,7 @@ export type ResolveSettingsInput = {
   readonly sessionOverride?: OverrideSettings | null;
 };
 
-/**
- * Pure fn, browser-safe, no I/O.
- * Resolution order: session > workspace > global (null = inherit).
- */
-export function resolveSettings(input: ResolveSettingsInput): ResolvedSettings {
+export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings => {
   const { global: g, workspaceOverride: ws, sessionOverride: sess } = input;
 
   // workflowId can be `null` (explicit "no workflow" override), so `??` cannot
@@ -29,4 +25,4 @@ export function resolveSettings(input: ResolveSettingsInput): ResolvedSettings {
     parallelEnabled: sess?.parallelEnabled ?? ws?.parallelEnabled ?? g.parallelEnabled,
     defaultVerbosity: sess?.defaultVerbosity ?? ws?.defaultVerbosity ?? g.defaultVerbosity,
   };
-}
+};

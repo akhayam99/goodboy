@@ -17,7 +17,7 @@ type Cta = {
   readonly variant: ButtonVariant;
 };
 
-export function OnboardingWizard() {
+export const OnboardingWizard = () => {
   const { open, providersConnected, hasWorkspace } = useOnboardingWizard();
   const [step, setStep] = useState(0);
   const [closing, setClosing] = useState(false);
@@ -119,4 +119,4 @@ export function OnboardingWizard() {
       </main>
     </div>
   );
-}
+};

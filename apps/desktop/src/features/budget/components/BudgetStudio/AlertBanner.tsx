@@ -21,7 +21,7 @@ function alertMessage(alert: BudgetAlert): string {
   }
 }
 
-export function AlertBanner({ alerts, onDismiss }: Props) {
+export const AlertBanner = ({ alerts, onDismiss }: Props) => {
   const active = alerts.filter((a) => !a.dismissedAt);
   if (active.length === 0) return null;
 
@@ -57,4 +57,4 @@ export function AlertBanner({ alerts, onDismiss }: Props) {
       })}
     </ul>
   );
-}
+};

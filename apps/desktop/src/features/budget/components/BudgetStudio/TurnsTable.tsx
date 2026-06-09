@@ -14,7 +14,7 @@ type Props = {
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 const PAGE_SIZE = 10;
 
-export function TurnsTable({ turns, showProvider, showSession }: Props) {
+export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);
     return stored === 'expensive' ? 'expensive' : 'recent';
@@ -121,7 +121,7 @@ export function TurnsTable({ turns, showProvider, showSession }: Props) {
       )}
     </Widget>
   );
-}
+};
 
 function SortChip({
   active,

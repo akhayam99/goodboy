@@ -41,7 +41,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
 ];
 
-export function GuideDialog({ open, onClose }: Props) {
+export const GuideDialog = ({ open, onClose }: Props) => {
   const [active, setActive] = useState<Section>('overview');
 
   return (
@@ -86,7 +86,7 @@ export function GuideDialog({ open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};
 
 function Content({ section, onJump }: { section: Section; onJump: (s: Section) => void }) {
   switch (section) {

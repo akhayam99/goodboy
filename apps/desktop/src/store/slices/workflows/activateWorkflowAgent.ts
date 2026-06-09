@@ -13,7 +13,7 @@ import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import { fanOutClusters } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
-export function activateWorkflowAgent(set: SetFn, get: GetFn) {
+export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, explicitPlanId?: PlanId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -85,4 +85,4 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
       void get().sendTurn({ sessionId, agentId, content: kickoff });
     }
   };
-}
+};

@@ -78,16 +78,10 @@ export type ParallelDetection = {
   readonly groupDefs: ReadonlyArray<Step>;
 };
 
-/**
- * Returns the sibling group iff:
- *  - currentDef has parallelGroup set
- *  - >= 2 sibling steps share the same parallelGroup
- *  - steps are sorted by ordinal (deterministic spawn order)
- */
-export function detectParallelGroup(
+export const detectParallelGroup = (
   template: Workflow,
   currentDef: Step,
-): ParallelDetection | null {
+): ParallelDetection | null => {
   if (currentDef.parallelGroup === undefined) return null;
   const siblings = template.steps
     .filter((d) => d.parallelGroup === currentDef.parallelGroup)
@@ -95,7 +89,7 @@ export function detectParallelGroup(
     .sort((a, b) => a.ordinal - b.ordinal);
   if (siblings.length < 2) return null;
   return { currentDef, groupDefs: siblings };
-}
+};
 
 // Multiplexes turn_event envelopes to per-runId callbacks. Single global
 // listener routed by runId, N independent listeners on the same Tauri
@@ -229,10 +223,10 @@ export type RunParallelBranchDeps = {
   readonly effects: ParallelBranchEffects;
 };
 
-export async function runParallelBranch(
+export const runParallelBranch = async (
   inputs: ParallelBranchInputs,
   deps: RunParallelBranchDeps,
-): Promise<ParallelBranchResult> {
+): Promise<ParallelBranchResult> => {
   const {
     session,
     orchestratingAgentId,
@@ -491,4 +485,4 @@ export async function runParallelBranch(
   } finally {
     await listener.unlisten();
   }
-}
+};

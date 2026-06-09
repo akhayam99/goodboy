@@ -7,7 +7,7 @@ type Props = {
   onToggle: () => void;
 };
 
-export function SuggestionChip({ label, selected, onToggle }: Props) {
+export const SuggestionChip = ({ label, selected, onToggle }: Props) => {
   return (
     <button
       type="button"
@@ -33,4 +33,4 @@ export function SuggestionChip({ label, selected, onToggle }: Props) {
       {label}
     </button>
   );
-}
+};

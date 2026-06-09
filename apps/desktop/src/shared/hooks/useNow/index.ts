@@ -46,7 +46,7 @@ function maybeStop(ticker: Ticker): void {
   ticker.intervalId = null;
 }
 
-export function useNow(cadenceMs: Cadence = 5_000, enabled = true): number {
+export const useNow = (cadenceMs: Cadence = 5_000, enabled = true): number => {
   const [now, setNow] = useState(() => getTicker(cadenceMs).now);
   useEffect(() => {
     if (!enabled) return;
@@ -60,4 +60,4 @@ export function useNow(cadenceMs: Cadence = 5_000, enabled = true): number {
     };
   }, [cadenceMs, enabled]);
   return now;
-}
+};

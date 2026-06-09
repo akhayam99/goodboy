@@ -13,7 +13,7 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) {
+export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const kind = ROLE_TO_KIND[def.role];
   const isGlobal = def.workspaceId === null;
@@ -109,4 +109,4 @@ export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }
       </div>
     </li>
   );
-}
+};

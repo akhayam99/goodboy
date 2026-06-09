@@ -9,7 +9,7 @@ type Props = {
   readonly onClick?: () => void;
 };
 
-export function SpendBar({ label, valueLabel, pct, colorVar, icon, onClick }: Props) {
+export const SpendBar = ({ label, valueLabel, pct, colorVar, icon, onClick }: Props) => {
   const width = `${Math.min(Math.max(pct, 0), 1) * 100}%`;
   const body = (
     <>
@@ -47,4 +47,4 @@ export function SpendBar({ label, valueLabel, pct, colorVar, icon, onClick }: Pr
       {body}
     </button>
   );
-}
+};

@@ -15,7 +15,7 @@ type Props = {
   disabled: boolean;
 };
 
-export function ModelSelect({ provider, value, onChange, disabled }: Props) {
+export const ModelSelect = ({ provider, value, onChange, disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
@@ -86,4 +86,4 @@ export function ModelSelect({ provider, value, onChange, disabled }: Props) {
       ) : null}
     </div>
   );
-}
+};

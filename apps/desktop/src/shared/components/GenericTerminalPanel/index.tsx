@@ -22,9 +22,9 @@ const MAX_CACHE_CHUNKS = 500;
 // of which component instance mounted last.
 const outputCache = new Map<string, Uint8Array[]>();
 
-export function clearTerminalCache(terminalId: string): void {
+export const clearTerminalCache = (terminalId: string): void => {
   outputCache.delete(terminalId);
-}
+};
 
 const LIGHT_THEME: ITheme = {
   background: '#f8f8f8',
@@ -84,7 +84,7 @@ type Props = {
 
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
 
-export function GenericTerminalPanel({
+export const GenericTerminalPanel = ({
   terminalId,
   driver,
   isActive,
@@ -92,7 +92,7 @@ export function GenericTerminalPanel({
   exitMessage = DEFAULT_EXIT_MESSAGE,
   onRestart,
   onExit,
-}: Props) {
+}: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAndSyncRef = useRef<(() => void) | null>(null);
@@ -232,4 +232,4 @@ export function GenericTerminalPanel({
       ) : null}
     </div>
   );
-}
+};

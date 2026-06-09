@@ -9,7 +9,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function WorkspaceSwitcher({ onClose }: Props) {
+export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,4 +97,4 @@ export function WorkspaceSwitcher({ onClose }: Props) {
       </div>
     </div>
   );
-}
+};

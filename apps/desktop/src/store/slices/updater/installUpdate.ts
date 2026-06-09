@@ -5,7 +5,7 @@ import type { GetFn, SetFn } from './types';
 
 // Downloads + installs the pending update, then relaunches into the new
 // version. On success the process is replaced, so nothing runs after relaunch.
-export function installUpdate(set: SetFn, _get: GetFn) {
+export const installUpdate = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     const update = getPendingUpdate();
     if (!update) return;
@@ -17,4 +17,4 @@ export function installUpdate(set: SetFn, _get: GetFn) {
       set({ updaterStatus: 'error', updateError: formatError(err) });
     }
   };
-}
+};

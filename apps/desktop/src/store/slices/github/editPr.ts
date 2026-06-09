@@ -7,7 +7,7 @@ export type EditPrOptions = {
   body?: string;
 };
 
-export function editPr(_set: SetFn, get: GetFn) {
+export const editPr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) return;
@@ -33,4 +33,4 @@ export function editPr(_set: SetFn, get: GetFn) {
     }
     await get().refreshSessionPr(sessionId, { force: true });
   };
-}
+};

@@ -52,19 +52,11 @@ function isFocusInInput(): boolean {
   return false;
 }
 
-/**
- * Binds a keyboard shortcut globally on window.
- *
- * combo format: "cmd+,", "cmd+/", "cmd+.", "escape"
- * Meta key (cmd) shortcuts are silently skipped when focus is inside
- * an input/textarea/select/contenteditable, so they never steal native
- * text-editing shortcuts.
- */
-export function useKeyboardShortcut(
+export const useKeyboardShortcut = (
   combo: string,
   handler: () => void,
   options: ShortcutOptions = {},
-): void {
+): void => {
   const { ignoreInInputs = true } = options;
 
   useEffect(() => {
@@ -80,4 +72,4 @@ export function useKeyboardShortcut(
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [combo, handler, ignoreInInputs]);
-}
+};

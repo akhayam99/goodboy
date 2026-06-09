@@ -36,7 +36,7 @@ import {
 import { buildProviderSpendBreakdown } from '../budget';
 import type { GetFn, SetFn } from './types';
 
-export function setCurrentWorkspace(set: SetFn, get: GetFn) {
+export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId | null) => {
     // Cancel any running turns before clearing state, orphaned Rust child processes
     // keep emitting turn_events into stale sessionIds if we don't stop them first.
@@ -234,4 +234,4 @@ export function setCurrentWorkspace(set: SetFn, get: GetFn) {
       await get().setCurrentSession(sessionsNow[0]!.id);
     }
   };
-}
+};

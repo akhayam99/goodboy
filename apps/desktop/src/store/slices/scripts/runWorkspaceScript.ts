@@ -5,7 +5,7 @@ import type { GetFn, SetFn } from './types';
 
 const runSeqs = new Map<string, number>();
 
-export function runWorkspaceScript(set: SetFn, get: GetFn) {
+export const runWorkspaceScript = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, script: WorkspaceScript, cwd: string) => {
     const seq = (runSeqs.get(sessionId) ?? 0) + 1;
     runSeqs.set(sessionId, seq);
@@ -30,4 +30,4 @@ export function runWorkspaceScript(set: SetFn, get: GetFn) {
       });
     }
   };
-}
+};

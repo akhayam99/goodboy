@@ -164,18 +164,18 @@ function rowToAgent(row: RawAgentRow): Agent {
 }
 
 // Workflow (preset) commands.
-export async function invokeWorkflowList(workspaceId: WorkspaceId): Promise<Workflow[]> {
+export const invokeWorkflowList = async (workspaceId: WorkspaceId): Promise<Workflow[]> => {
   const rows = await invoke<RawWorkflowRow[]>('workflow_list', { workspaceId });
   return rows.map(rowToWorkflow);
-}
+};
 
 // Workflows attached to a session, including ones soft-deleted from the preset
 // list. Loaded in addition to invokeWorkflowList so a session keeps showing a
 // workflow that was deleted everywhere else.
-export async function invokeWorkflowsForSession(sessionId: SessionId): Promise<Workflow[]> {
+export const invokeWorkflowsForSession = async (sessionId: SessionId): Promise<Workflow[]> => {
   const rows = await invoke<RawWorkflowRow[]>('workflows_for_session', { sessionId });
   return rows.map(rowToWorkflow);
-}
+};
 
 export type WorkflowStepUpsertArgs = {
   readonly id?: StepId;
@@ -200,7 +200,7 @@ export type WorkflowUpsertArgs = {
   readonly isPreset?: boolean;
 };
 
-export async function invokeWorkflowUpsert(args: WorkflowUpsertArgs): Promise<Workflow> {
+export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Workflow> => {
   const row = await invoke<RawWorkflowRow>('workflow_upsert', {
     input: {
       id: args.id ?? null,
@@ -224,17 +224,17 @@ export async function invokeWorkflowUpsert(args: WorkflowUpsertArgs): Promise<Wo
     },
   });
   return rowToWorkflow(row);
-}
+};
 
-export async function invokeWorkflowDelete(id: WorkflowId): Promise<void> {
+export const invokeWorkflowDelete = async (id: WorkflowId): Promise<void> => {
   return invoke<void>('workflow_delete', { id });
-}
+};
 
 // Step library (reusable StepDef) commands.
-export async function invokeStepDefList(workspaceId: WorkspaceId): Promise<StepDef[]> {
+export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepDef[]> => {
   const rows = await invoke<RawStepDefRow[]>('step_def_list', { workspaceId });
   return rows.map(rowToStepDef);
-}
+};
 
 export type StepDefUpsertArgs = {
   readonly id?: StepDefId;
@@ -249,7 +249,7 @@ export type StepDefUpsertArgs = {
   readonly verbosityDefault?: VerbosityLevel;
 };
 
-export async function invokeStepDefUpsert(args: StepDefUpsertArgs): Promise<StepDef> {
+export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<StepDef> => {
   const row = await invoke<RawStepDefRow>('step_def_upsert', {
     input: {
       id: args.id ?? null,
@@ -265,17 +265,17 @@ export async function invokeStepDefUpsert(args: StepDefUpsertArgs): Promise<Step
     },
   });
   return rowToStepDef(row);
-}
+};
 
-export async function invokeStepDefDelete(id: StepDefId): Promise<void> {
+export const invokeStepDefDelete = async (id: StepDefId): Promise<void> => {
   return invoke<void>('step_def_delete', { id });
-}
+};
 
 // Phase run commands (#156).
-export async function invokeAgentList(sessionId: SessionId): Promise<Agent[]> {
+export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> => {
   const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
   return rows.map(rowToAgent);
-}
+};
 
 export type AgentInsertArgs = {
   readonly id?: AgentId;
@@ -296,7 +296,7 @@ export type AgentInsertArgs = {
   readonly sourceCommentUrl?: string;
 };
 
-export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
+export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
   const row = await invoke<RawAgentRow>('agent_insert', {
     input: {
       id: run.id ?? null,
@@ -318,18 +318,18 @@ export async function invokeAgentInsert(run: AgentInsertArgs): Promise<Agent> {
     },
   });
   return rowToAgent(row);
-}
+};
 
-export async function invokeAgentSetKind(id: AgentId, kind: string | null): Promise<void> {
+export const invokeAgentSetKind = async (id: AgentId, kind: string | null): Promise<void> => {
   return invoke<void>('agent_set_kind', { id, kind });
-}
+};
 
-export async function invokeAgentSetVerbosity(
+export const invokeAgentSetVerbosity = async (
   id: AgentId,
   verbosity: VerbosityLevel | null,
-): Promise<void> {
+): Promise<void> => {
   return invoke<void>('agent_set_verbosity', { id, verbosity });
-}
+};
 
 export type AgentUpdateFields = {
   readonly status: AgentStatus;
@@ -339,10 +339,10 @@ export type AgentUpdateFields = {
   readonly completedAt?: IsoDateTime;
 };
 
-export async function invokeAgentUpdateStatus(
+export const invokeAgentUpdateStatus = async (
   id: AgentId,
   fields: AgentUpdateFields,
-): Promise<Agent> {
+): Promise<Agent> => {
   const row = await invoke<RawAgentRow>('agent_update_status', {
     input: {
       id,
@@ -354,26 +354,26 @@ export async function invokeAgentUpdateStatus(
     },
   });
   return rowToAgent(row);
-}
+};
 
-export async function invokeAgentSetProviderSessionId(
+export const invokeAgentSetProviderSessionId = async (
   id: AgentId,
   providerSessionId: string,
-): Promise<void> {
+): Promise<void> => {
   await invoke<void>('agent_set_provider_session_id', {
     id,
     providerSessionId,
   });
-}
+};
 
-export async function invokeAgentMarkViewed(id: AgentId, at: IsoDateTime): Promise<void> {
+export const invokeAgentMarkViewed = async (id: AgentId, at: IsoDateTime): Promise<void> => {
   await invoke<void>('agent_mark_viewed', { id, at });
-}
+};
 
-export async function invokeWorkspacesWithUnread(): Promise<ReadonlyArray<WorkspaceId>> {
+export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
   const ids = await invoke<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
-}
+};
 
 // Parallel phase group commands (#207).
 type RawParallelGroupRow = {
@@ -404,9 +404,9 @@ export type ParallelGroupCreateArgs = {
   readonly createdAt?: IsoDateTime;
 };
 
-export async function invokeParallelGroupCreate(
+export const invokeParallelGroupCreate = async (
   args: ParallelGroupCreateArgs,
-): Promise<ParallelGroup> {
+): Promise<ParallelGroup> => {
   const row = await invoke<RawParallelGroupRow>('parallel_group_create', {
     input: {
       id: args.id ?? null,
@@ -417,15 +417,15 @@ export async function invokeParallelGroupCreate(
     },
   });
   return rowToParallelGroup(row);
-}
+};
 
-export async function invokeParallelGroupUpdateCompletedAt(
+export const invokeParallelGroupUpdateCompletedAt = async (
   id: ParallelGroupId,
   completedAt: IsoDateTime,
-): Promise<ParallelGroup> {
+): Promise<ParallelGroup> => {
   const row = await invoke<RawParallelGroupRow>('parallel_group_update_completed_at', {
     id,
     completedAt,
   });
   return rowToParallelGroup(row);
-}
+};

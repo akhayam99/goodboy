@@ -9,7 +9,7 @@ type Args = {
   createNew: boolean;
 };
 
-export function changeSessionBranch(set: SetFn, get: GetFn) {
+export const changeSessionBranch = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, { branch, createNew }: Args) => {
     const target = branch.trim();
     if (!target) throw new Error('branch name cannot be empty');
@@ -37,4 +37,4 @@ export function changeSessionBranch(set: SetFn, get: GetFn) {
       };
     });
   };
-}
+};

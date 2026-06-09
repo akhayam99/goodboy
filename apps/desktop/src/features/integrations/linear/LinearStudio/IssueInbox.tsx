@@ -21,7 +21,7 @@ const STATE_DOT: Record<LinearGroupKey, string> = {
   other: 'bg-muted-foreground/40',
 };
 
-export function IssueInbox({ groups, focusedIssueId, onSelect, loading, error }: Props) {
+export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }: Props) => {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -140,4 +140,4 @@ export function IssueInbox({ groups, focusedIssueId, onSelect, loading, error }:
       )}
     </div>
   );
-}
+};

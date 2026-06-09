@@ -12,17 +12,7 @@ type Props = {
   onClose: () => void;
 };
 
-/**
- * Connect Linear via Personal Access Token. The token is verified server-
- * side by the Rust client (calls /viewer), then saved into the OS keychain.
- * Viewer + organization info is cached on the workspace_integrations row so
- * "assigned to me" filtering works without an extra roundtrip.
- *
- * Disconnect removes both the keychain entry and the DB row. Sessions that
- * already had a session_external_tasks link keep it (history preserved); the
- * picker just stops appearing in new sessions.
- */
-export function ConnectLinearDialog({ workspaceId, open, onClose }: Props) {
+export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
   // useShallow because `?? []` returns a fresh array on every missing-key
   // lookup; without shallow comparison useSyncExternalStore loops on a
   // snapshot mismatch in React 19.
@@ -151,4 +141,4 @@ export function ConnectLinearDialog({ workspaceId, open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

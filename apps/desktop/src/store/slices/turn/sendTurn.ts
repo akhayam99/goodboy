@@ -133,7 +133,7 @@ const EFFORT_FLAG: Readonly<Record<string, string>> = {
 
 const EFFORT_PROVIDERS: ReadonlySet<string> = new Set(['anthropic', 'codex']);
 
-export function sendTurn(set: SetFn, get: GetFn) {
+export const sendTurn = (set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
     agentId,
@@ -1234,4 +1234,4 @@ export function sendTurn(set: SetFn, get: GetFn) {
 
     if (lastError) throw lastError;
   };
-}
+};

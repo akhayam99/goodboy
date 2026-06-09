@@ -4,7 +4,7 @@
 // `{kind: 'io', message: 'No such file or directory'}`) rather than a wrapped
 // `Error`. A naive `String(err)` on that yields `"[object Object]"`, which is
 // what users actually saw before this helper landed.
-export function formatError(err: unknown): string {
+export const formatError = (err: unknown): string => {
   if (err instanceof Error) return err.message;
   if (typeof err === 'string') return err;
   if (
@@ -20,4 +20,4 @@ export function formatError(err: unknown): string {
   } catch {
     return String(err);
   }
-}
+};

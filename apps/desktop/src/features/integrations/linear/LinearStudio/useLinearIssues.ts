@@ -52,10 +52,10 @@ export type LinearIssueGroup = {
   readonly rows: ReadonlyArray<LinearIssueRow>;
 };
 
-export function buildIssueGroups(
+export const buildIssueGroups = (
   issues: ReadonlyArray<LinearIssue>,
   sessionIdByExternalId: ReadonlyMap<string, SessionId>,
-): ReadonlyArray<LinearIssueGroup> {
+): ReadonlyArray<LinearIssueGroup> => {
   const buckets = new Map<LinearGroupKey, LinearIssueRow[]>();
   for (const issue of issues) {
     const key = groupKeyForStateType(issue.state.type);
@@ -74,16 +74,16 @@ export function buildIssueGroups(
     label: GROUP_LABEL[key],
     rows: sortRows(buckets.get(key)!),
   }));
-}
+};
 
 export type SessionPrRef = {
   readonly number: number;
   readonly repo: string | null;
 };
 
-export function sessionPrRefFromUrl(number: number, url: string): SessionPrRef {
+export const sessionPrRefFromUrl = (number: number, url: string): SessionPrRef => {
   return { number, repo: prRepoFromUrl(url) };
-}
+};
 
 function sameRepo(a: string | null, b: string | null): boolean {
   return !a || !b ? true : a.toLowerCase() === b.toLowerCase();
@@ -108,13 +108,13 @@ function sessionMatchesIssue(
   );
 }
 
-export function resolveIssueSessions(
+export const resolveIssueSessions = (
   issues: ReadonlyArray<LinearIssue>,
   sessions: ReadonlyArray<Session>,
   sessionBranches: Readonly<Record<string, string>>,
   sessionExternalTasks: Readonly<Record<string, SessionExternalTask>>,
   sessionPr: ReadonlyMap<string, SessionPrRef>,
-): Map<string, SessionId> {
+): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
   for (const session of sessions) {
     const task = sessionExternalTasks[session.id];
@@ -128,7 +128,7 @@ export function resolveIssueSessions(
     if (match) byIssue.set(issue.id, match.id);
   }
   return byIssue;
-}
+};
 
 export type UseLinearIssues = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
@@ -137,7 +137,7 @@ export type UseLinearIssues = {
   readonly refetch: () => void;
 };
 
-export function useLinearIssues(workspaceId: WorkspaceId): UseLinearIssues {
+export const useLinearIssues = (workspaceId: WorkspaceId): UseLinearIssues => {
   const sessions = useSessions();
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -188,4 +188,4 @@ export function useLinearIssues(workspaceId: WorkspaceId): UseLinearIssues {
     error,
     refetch: () => void fetchIssues(),
   };
-}
+};

@@ -4,7 +4,7 @@ import { formatError } from '../../../shared/lib/errors';
 import { queueTurnEventInsert } from './queue';
 import type { SetFn } from './types';
 
-export function appendTurnEvent(set: SetFn) {
+export const appendTurnEvent = (set: SetFn) => {
   return (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => {
     // The set updater stays PURE — it only derives next state. The side effects
     // (DB queue + provider-session-id persist) run after, never inside the
@@ -56,4 +56,4 @@ export function appendTurnEvent(set: SetFn) {
       });
     }
   };
-}
+};

@@ -35,11 +35,11 @@ const PRICES: Record<string, ModelPrice> = {
 
 const FALLBACK: ModelPrice = PRICES['claude-sonnet-4-6']!;
 
-export function priceFor(model: string): ModelPrice {
+export const priceFor = (model: string): ModelPrice => {
   return PRICES[model] ?? FALLBACK;
-}
+};
 
-export function computeCostUsd(usage: ProviderUsage, model: string): number {
+export const computeCostUsd = (usage: ProviderUsage, model: string): number => {
   const price = priceFor(model);
   const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
@@ -47,4 +47,4 @@ export function computeCostUsd(usage: ProviderUsage, model: string): number {
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );
-}
+};

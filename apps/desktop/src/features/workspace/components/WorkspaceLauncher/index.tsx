@@ -8,7 +8,7 @@ import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
-export function WorkspaceLauncher() {
+export const WorkspaceLauncher = () => {
   const workspaces = useWorkspaces();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
@@ -117,4 +117,4 @@ export function WorkspaceLauncher() {
       </div>
     </div>
   );
-}
+};

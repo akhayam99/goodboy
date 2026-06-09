@@ -37,7 +37,7 @@ type Props = {
   readonly cwd: string | null;
 };
 
-export function TerminalPanel({ sessionId, isActive, cwd }: Props) {
+export const TerminalPanel = ({ sessionId, isActive, cwd }: Props) => {
   const openTerminal = useAppStore((s) => s.openTerminal);
   const closeTerminal = useAppStore((s) => s.closeTerminal);
 
@@ -93,4 +93,4 @@ export function TerminalPanel({ sessionId, isActive, cwd }: Props) {
       onRestart={handleRestart}
     />
   );
-}
+};

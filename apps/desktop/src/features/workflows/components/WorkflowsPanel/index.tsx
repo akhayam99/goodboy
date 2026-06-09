@@ -22,7 +22,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-export function WorkflowsPanel({ workspaceId }: Props) {
+export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const stepLibrary = useAppStore(
     (s) => s.stepLibrary[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<StepDef>),
@@ -255,4 +255,4 @@ export function WorkflowsPanel({ workspaceId }: Props) {
       <DragGhost ghost={ghost} />
     </div>
   );
-}
+};

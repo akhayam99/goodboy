@@ -18,7 +18,7 @@ function fallbackCopy(text: string): void {
   document.body.removeChild(ta);
 }
 
-export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
+export const CopyButton = ({ value, label = 'text' }: CopyButtonProps) => {
   const [state, setState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const onCopy = async () => {
@@ -47,4 +47,4 @@ export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
       {buttonText}
     </Button>
   );
-}
+};

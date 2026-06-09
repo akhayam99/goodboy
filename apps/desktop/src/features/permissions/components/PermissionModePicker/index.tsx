@@ -45,16 +45,16 @@ const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   },
 ];
 
-export function permissionModeMeta(mode: ClaudePermissionMode): ModeMeta {
+export const permissionModeMeta = (mode: ClaudePermissionMode): ModeMeta => {
   return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!;
-}
+};
 
 type Props = {
   readonly session: Session;
   readonly activeProvider: ProviderId;
 };
 
-export function PermissionModePicker({ session, activeProvider }: Props) {
+export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
@@ -153,4 +153,4 @@ export function PermissionModePicker({ session, activeProvider }: Props) {
       ) : null}
     </div>
   );
-}
+};

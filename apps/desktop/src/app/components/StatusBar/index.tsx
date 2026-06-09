@@ -7,7 +7,7 @@ type StatusBarProps = {
   onFocusWorkspaces?: () => void;
 };
 
-export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
+export const StatusBar = ({ onFocusWorkspaces }: StatusBarProps) => {
   const workspace = useCurrentWorkspace();
   const session = useCurrentSession();
   const sessionStateLabel = session?.state.kind ?? 'idle';
@@ -37,4 +37,4 @@ export function StatusBar({ onFocusWorkspaces }: StatusBarProps) {
       </div>
     </div>
   );
-}
+};

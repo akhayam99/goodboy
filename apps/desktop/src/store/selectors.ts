@@ -23,7 +23,7 @@ import { sortAndGroupSessions, type GroupedSessions } from './slices/session-vie
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'none' };
 
-export function useSessionViewPrefs(workspaceId: WorkspaceId | null): SessionViewPrefs {
+export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
     workspaceId ? (s.sessionViewPrefs[workspaceId] ?? null) : null,
   );
@@ -36,14 +36,14 @@ export function useSessionViewPrefs(workspaceId: WorkspaceId | null): SessionVie
   }, [workspaceId, prefs, getSessionViewPrefs]);
 
   return prefs ?? DEFAULT_SESSION_VIEW_PREFS;
-}
+};
 
 const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
 
-export function useSortedGroupedSessions(
+export const useSortedGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
-): ReadonlyArray<GroupedSessions> {
+): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
   const needsGithub = prefs.group === 'pr';
   // Only subscribe to the full github map when we actually group by PR.
@@ -56,7 +56,7 @@ export function useSortedGroupedSessions(
     () => sortAndGroupSessions(sessions, prefs, sessionGithub),
     [sessions, prefs, sessionGithub],
   );
-}
+};
 
 const NO_LOADING: SessionLoadingFlags = {
   agents: false,

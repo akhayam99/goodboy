@@ -4,7 +4,7 @@ import { linearDisconnect } from '../../../features/integrations/linear/client';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function disconnectLinear(set: SetFn) {
+export const disconnectLinear = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
     await linearDisconnect(workspaceId);
     await deleteIntegrationInDb(tauriDatabase, workspaceId, 'linear');
@@ -18,4 +18,4 @@ export function disconnectLinear(set: SetFn) {
       };
     });
   };
-}
+};

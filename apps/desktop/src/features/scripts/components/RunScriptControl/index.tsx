@@ -17,7 +17,11 @@ type PopoverAnchor = {
   readonly top: number;
 };
 
-export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunScriptControlProps) {
+export const RunScriptControl = ({
+  sessionId,
+  workspaceId,
+  worktreePath,
+}: RunScriptControlProps) => {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -159,7 +163,7 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
       {menu}
     </>
   );
-}
+};
 
 type ScriptRowProps = {
   readonly script: WorkspaceScript;

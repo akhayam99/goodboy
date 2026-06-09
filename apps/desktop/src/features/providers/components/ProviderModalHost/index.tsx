@@ -11,17 +11,7 @@ export type OpenProviderModalDetail = {
 // callers should use the helper, not dispatch raw CustomEvents.
 const OPEN_PROVIDER_MODAL_EVENT = 'goodboy:open-provider-modal';
 
-/**
- * App-level mount point for the provider connect modal. Listens for an
- * `OPEN_PROVIDER_MODAL_EVENT` CustomEvent so any surface can request the
- * modal (the tile in ProvidersPanel, the chat AuthRequiredCallout, future
- * onboarding cards) without prop-drilling state through the tree.
- *
- * Event detail: `{ providerId, action }`. Dispatch with
- * `window.dispatchEvent(new CustomEvent(OPEN_PROVIDER_MODAL_EVENT,
- *   { detail: { providerId, action } }))`.
- */
-export function ProviderModalHost() {
+export const ProviderModalHost = () => {
   const [open, setOpen] = useState<OpenProviderModalDetail | null>(null);
 
   useEffect(() => {
@@ -43,13 +33,13 @@ export function ProviderModalHost() {
       onClose={onClose}
     />
   );
-}
+};
 
 // Convenience dispatcher so callers do not have to remember the event name
 // or detail shape. Imported by the tile, the chat callout, and any other
 // surface that wants to summon the modal.
-export function openProviderModal(detail: OpenProviderModalDetail): void {
+export const openProviderModal = (detail: OpenProviderModalDetail): void => {
   window.dispatchEvent(
     new CustomEvent<OpenProviderModalDetail>(OPEN_PROVIDER_MODAL_EVENT, { detail }),
   );
-}
+};

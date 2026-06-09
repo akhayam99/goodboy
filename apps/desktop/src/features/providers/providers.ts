@@ -64,17 +64,17 @@ const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   supportsCheapModel: false,
 };
 
-export async function getProviderStatus(id: ProviderId): Promise<ProviderStatus> {
+export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus> => {
   return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
-}
+};
 
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
 export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
 
-export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
+export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthState> => {
   return invoke<AuthState>('check_provider_auth', { providerId });
-}
+};
 
 export type ProviderAuthResults = Readonly<Record<ProviderId, AuthState | null>>;
 
@@ -130,10 +130,10 @@ export type ProviderStatuses = {
   readonly gemini: ProviderStatus | null;
 };
 
-export function buildProviderList(
+export const buildProviderList = (
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
-): ReadonlyArray<ProviderInfo> {
+): ReadonlyArray<ProviderInfo> => {
   const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
   return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
-}
+};

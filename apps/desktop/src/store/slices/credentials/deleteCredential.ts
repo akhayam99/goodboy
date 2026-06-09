@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { credentialSecretKey } from './credentialKey';
 import type { GetFn, SetFn } from './types';
 
-export function deleteCredential(set: SetFn, get: GetFn) {
+export const deleteCredential = (set: SetFn, get: GetFn) => {
   return async (id: CredentialId): Promise<void> => {
     await invoke('secret_delete', { key: credentialSecretKey(id) });
     await deleteProviderCredential(tauriDatabase, id);
@@ -35,4 +35,4 @@ export function deleteCredential(set: SetFn, get: GetFn) {
       workspaceOverrides: nextOverrides,
     }));
   };
-}
+};

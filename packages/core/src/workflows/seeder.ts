@@ -51,10 +51,10 @@ function makeStepId(slug: string, stepName: string, workspaceId: WorkspaceId): S
   return `step_seed_${slug}_${stepSlug}_${workspaceId}` as StepId;
 }
 
-export async function seedWorkflowLibrary(
+export const seedWorkflowLibrary = async (
   deps: SeedWorkflowLibraryDeps,
   workspaceId: WorkspaceId,
-): Promise<SeedResult> {
+): Promise<SeedResult> => {
   const now = (deps.now ?? isoNow)();
   const seeded: Array<{ slug: string; workflowId: WorkflowId }> = [];
 
@@ -94,4 +94,4 @@ export async function seedWorkflowLibrary(
   }
 
   return { seeded };
-}
+};

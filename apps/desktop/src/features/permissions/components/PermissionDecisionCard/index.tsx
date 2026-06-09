@@ -14,7 +14,11 @@ const DECISION_TONE: Record<'allow' | 'deny', string> = {
   deny: 'text-danger',
 };
 
-export function PermissionDecisionCard({ item, sessionId: _sessionId, agentId: _agentId }: Props) {
+export const PermissionDecisionCard = ({
+  item,
+  sessionId: _sessionId,
+  agentId: _agentId,
+}: Props) => {
   const timestamp = formatCardTime(item.at);
 
   return (
@@ -34,4 +38,4 @@ export function PermissionDecisionCard({ item, sessionId: _sessionId, agentId: _
       </div>
     </div>
   );
-}
+};

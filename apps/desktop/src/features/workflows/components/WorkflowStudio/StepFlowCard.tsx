@@ -21,7 +21,7 @@ type Props = {
   readonly onMoveRight: () => void;
 };
 
-export function StepFlowCard({
+export const StepFlowCard = ({
   def,
   ordinal,
   total,
@@ -33,7 +33,7 @@ export function StepFlowCard({
   onRemove,
   onMoveLeft,
   onMoveRight,
-}: Props) {
+}: Props) => {
   const kind = ROLE_TO_KIND[def.role];
   const effProvider: ProviderId =
     (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
@@ -114,4 +114,4 @@ export function StepFlowCard({
       </button>
     </div>
   );
-}
+};

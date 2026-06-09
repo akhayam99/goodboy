@@ -4,11 +4,11 @@ import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 
-export function pickFreshFailures(
+export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
   seen: Set<string>,
   since: number,
-): ReadonlyArray<Notification> {
+): ReadonlyArray<Notification> => {
   const out: Array<Notification> = [];
   for (const n of notifications) {
     if (seen.has(n.id)) continue;
@@ -18,22 +18,22 @@ export function pickFreshFailures(
     out.push(n);
   }
   return out;
-}
+};
 
-export function notificationContext(
+export const notificationContext = (
   n: Notification,
   sessions: ReadonlyArray<Session>,
   workspaces: ReadonlyArray<Workspace>,
-): string | undefined {
+): string | undefined => {
   const parts: Array<string> = [];
   const ws = n.workspaceId ? workspaces.find((w) => w.id === n.workspaceId) : undefined;
   if (ws) parts.push(ws.name);
   const session = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : undefined;
   if (session) parts.push(session.goal.trim() || 'untitled session');
   return parts.length > 0 ? parts.join(' · ') : undefined;
-}
+};
 
-export function NotificationToastBridge() {
+export const NotificationToastBridge = () => {
   const notifications = useAppStore((s) => s.notifications);
   const sessions = useAppStore((s) => s.sessions);
   const workspaces = useAppStore((s) => s.workspaces);
@@ -53,4 +53,4 @@ export function NotificationToastBridge() {
   }, [notifications, sessions, workspaces, showToast]);
 
   return null;
-}
+};

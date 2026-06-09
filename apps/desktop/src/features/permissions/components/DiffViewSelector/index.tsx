@@ -55,7 +55,14 @@ function viewEquals(a: DiffView, b: DiffView): boolean {
   return true;
 }
 
-export function DiffViewSelector({ view, onChange, commits, status, filesCount, loading }: Props) {
+export const DiffViewSelector = ({
+  view,
+  onChange,
+  commits,
+  status,
+  filesCount,
+  loading,
+}: Props) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [focusIdx, setFocusIdx] = useState(0);
@@ -310,4 +317,4 @@ export function DiffViewSelector({ view, onChange, commits, status, filesCount, 
       ) : null}
     </div>
   );
-}
+};

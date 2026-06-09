@@ -1,4 +1,4 @@
-export function formatRelativeDuration(fromIso: string, toIso?: string): string {
+export const formatRelativeDuration = (fromIso: string, toIso?: string): string => {
   const fromMs = Date.parse(fromIso);
   if (Number.isNaN(fromMs)) return '';
   const toMs = toIso ? Date.parse(toIso) : Date.now();
@@ -11,4 +11,4 @@ export function formatRelativeDuration(fromIso: string, toIso?: string): string 
   if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
   return `${d}d`;
-}
+};

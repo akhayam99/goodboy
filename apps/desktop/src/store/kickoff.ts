@@ -1,10 +1,10 @@
 import type { PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../features/plans/plans';
 
-export async function buildPlanKickoffSection(
+export const buildPlanKickoffSection = async (
   sessionId: SessionId,
   workflowRunId?: WorkflowRunId,
-): Promise<{ section: string; plan: PlanWithCount | null }> {
+): Promise<{ section: string; plan: PlanWithCount | null }> => {
   try {
     const plans = await invokeListPlansForSession(sessionId);
     const scoped = workflowRunId ? plans.filter((p) => p.workflowRunId === workflowRunId) : plans;
@@ -17,10 +17,10 @@ export async function buildPlanKickoffSection(
   } catch {
     return { section: '', plan: null };
   }
-}
+};
 
-export function composeKickoff(planSection: string, baseKickoff: string): string {
+export const composeKickoff = (planSection: string, baseKickoff: string): string => {
   if (planSection.length === 0) return baseKickoff;
   if (baseKickoff.length === 0) return planSection;
   return `${planSection}\n\n${baseKickoff}`;
-}
+};

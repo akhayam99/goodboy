@@ -9,10 +9,10 @@ const CONTEXT_MARKER_HINT =
   'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>`, the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
   "the orchestrator parses these markers and persists them to this task's shared context panel, every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
 
-export function buildContextPreamble(
+export const buildContextPreamble = (
   sharedSlots: ReadonlyArray<ContextSlot>,
   slotFilter?: ReadonlyArray<SlotKey>,
-): string {
+): string => {
   const parts: string[] = [];
   const filtered = slotFilter
     ? sharedSlots.filter((s) => (slotFilter as ReadonlyArray<string>).includes(s.key))
@@ -23,16 +23,16 @@ export function buildContextPreamble(
   }
   parts.push(CONTEXT_MARKER_HINT);
   return parts.join('\n\n');
-}
+};
 
 const PRIOR_TURNS_HEADER = '## prior turns (this conversation, most recent last)';
 
 // codex/cursor are stateless per-invocation. inject recent user/assistant text
 // so they keep working memory. claude uses --resume (M1) so skip there.
-export function buildPriorTurnsBlock(
+export const buildPriorTurnsBlock = (
   transcripts: ReadonlyArray<TurnEvent>,
   maxTokens: number,
-): string {
+): string => {
   type Line = { role: 'user' | 'assistant'; text: string };
   const grouped: Line[] = [];
   let pendingAssistant = '';
@@ -66,12 +66,12 @@ export function buildPriorTurnsBlock(
   if (kept.length === 0) return '';
   kept.reverse();
   return `${PRIOR_TURNS_HEADER}\n${kept.join('\n\n')}`;
-}
+};
 
-export function getModelContextWindow(model: string): number | null {
+export const getModelContextWindow = (model: string): number | null => {
   for (const caps of Object.values(PROVIDER_CAPABILITIES)) {
     const m = caps.models.find((x) => x.id === model);
     if (m) return m.contextWindow;
   }
   return null;
-}
+};

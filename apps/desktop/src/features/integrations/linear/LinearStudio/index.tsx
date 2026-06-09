@@ -15,7 +15,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export function LinearStudio({ workspaceId, workspaceName, initialIssueId, onClose }: Props) {
+export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId);
   const [focused, setFocused] = useState<LinearIssue | null>(null);
   const { closing, requestClose } = useStudioOverlay(onClose);
@@ -118,4 +118,4 @@ export function LinearStudio({ workspaceId, workspaceName, initialIssueId, onClo
       </div>
     </div>
   );
-}
+};

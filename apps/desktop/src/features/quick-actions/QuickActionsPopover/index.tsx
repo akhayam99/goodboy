@@ -9,12 +9,7 @@ type Props = {
   readonly onDismiss: () => void;
 };
 
-/**
- * Generic prefix-action picker rendered inline above the composer. Renders
- * whatever `QuickActionItem[]` it is handed and reports the chosen one. The
- * behavior lives in `item.perform`, not here.
- */
-export function QuickActionsPopover({ items, emptyHint, onSelect, onDismiss }: Props) {
+export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: Props) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -84,4 +79,4 @@ export function QuickActionsPopover({ items, emptyHint, onSelect, onDismiss }: P
       )}
     </div>
   );
-}
+};

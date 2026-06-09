@@ -17,20 +17,23 @@ function toDomain(row: Row): GithubPrCacheEntry {
   };
 }
 
-export async function getGithubPrCache(
+export const getGithubPrCache = async (
   db: Database,
   repoSlug: string,
   branch: string,
-): Promise<GithubPrCacheEntry | null> {
+): Promise<GithubPrCacheEntry | null> => {
   const rows = await db.select<Row>(
     'SELECT branch, repo_slug, pr_json, fetched_at FROM github_pr_cache WHERE repo_slug = ? AND branch = ? LIMIT 1',
     [repoSlug, branch],
   );
   const first = rows[0];
   return first ? toDomain(first) : null;
-}
+};
 
-export async function upsertGithubPrCache(db: Database, entry: GithubPrCacheEntry): Promise<void> {
+export const upsertGithubPrCache = async (
+  db: Database,
+  entry: GithubPrCacheEntry,
+): Promise<void> => {
   await db.execute(
     `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
      VALUES (?, ?, ?, ?)
@@ -39,15 +42,15 @@ export async function upsertGithubPrCache(db: Database, entry: GithubPrCacheEntr
        fetched_at = excluded.fetched_at`,
     [entry.branch, entry.repoSlug, entry.pr ? JSON.stringify(entry.pr) : null, entry.fetchedAt],
   );
-}
+};
 
-export async function deleteGithubPrCache(
+export const deleteGithubPrCache = async (
   db: Database,
   repoSlug: string,
   branch: string,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('DELETE FROM github_pr_cache WHERE repo_slug = ? AND branch = ?', [
     repoSlug,
     branch,
   ]);
-}
+};

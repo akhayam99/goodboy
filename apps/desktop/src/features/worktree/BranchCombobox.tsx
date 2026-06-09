@@ -13,7 +13,7 @@ type Props = {
   readonly openDirection?: 'down' | 'up';
 };
 
-export function BranchCombobox({
+export const BranchCombobox = ({
   branches,
   value,
   onChange,
@@ -21,7 +21,7 @@ export function BranchCombobox({
   loading,
   excludeNames,
   openDirection = 'down',
-}: Props) {
+}: Props) => {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
@@ -190,4 +190,4 @@ export function BranchCombobox({
       ) : null}
     </div>
   );
-}
+};

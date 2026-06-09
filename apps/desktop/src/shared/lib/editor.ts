@@ -5,26 +5,26 @@ export type DetectedEditor = {
   readonly label: string;
 };
 
-export async function detectEditors(): Promise<ReadonlyArray<DetectedEditor>> {
+export const detectEditors = async (): Promise<ReadonlyArray<DetectedEditor>> => {
   return invoke<DetectedEditor[]>('detect_editors');
-}
+};
 
-export async function openInEditor(path: string, editor?: string): Promise<void> {
+export const openInEditor = async (path: string, editor?: string): Promise<void> => {
   await invoke('open_in_editor', { path, editor: editor ?? null });
-}
+};
 
-export async function openFileInWorkspace(
+export const openFileInWorkspace = async (
   workspacePath: string,
   filePath: string,
   editor?: string,
-): Promise<void> {
+): Promise<void> => {
   await invoke('open_file_in_workspace', {
     workspacePath,
     filePath,
     editor: editor ?? null,
   });
-}
+};
 
-export async function openUrl(url: string): Promise<void> {
+export const openUrl = async (url: string): Promise<void> => {
   await invoke('open_url', { url });
-}
+};

@@ -27,11 +27,11 @@ export type PickNextWorkflowStepGate = {
   readonly summarizerBusy?: boolean;
 };
 
-export function pickNextWorkflowStep(
+export const pickNextWorkflowStep = (
   workflow: Workflow,
   runs: ReadonlyArray<Agent>,
   gate?: PickNextWorkflowStepGate,
-): Step | null {
+): Step | null => {
   if (gate?.hasOpenQuestions || gate?.summarizerBusy) return null;
   const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
   for (const step of sorted) {
@@ -45,16 +45,16 @@ export function pickNextWorkflowStep(
     return null;
   }
   return null;
-}
+};
 
-export function WorkflowNextStepCta({
+export const WorkflowNextStepCta = ({
   workflow,
   runs,
   onAdvance,
   hasOpenQuestions = false,
   consumesActivePlan = false,
   className,
-}: Props) {
+}: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const next = useMemo(() => pickNextWorkflowStep(workflow, runs), [workflow, runs]);
@@ -147,4 +147,4 @@ export function WorkflowNextStepCta({
       ) : null}
     </div>
   );
-}
+};

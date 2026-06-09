@@ -1,7 +1,7 @@
 import { invokeWorkspacesWithUnread } from '../../../features/workflows/workflows';
 import type { SetFn } from './types';
 
-export function refreshUnreadWorkspaces(set: SetFn) {
+export const refreshUnreadWorkspaces = (set: SetFn) => {
   return async () => {
     try {
       const ids = await invokeWorkspacesWithUnread();
@@ -11,4 +11,4 @@ export function refreshUnreadWorkspaces(set: SetFn) {
       // selectAgent / status update.
     }
   };
-}
+};

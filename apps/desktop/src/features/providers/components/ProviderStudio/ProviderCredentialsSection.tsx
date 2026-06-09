@@ -8,7 +8,7 @@ type Props = {
   readonly providerId: ProviderId;
 };
 
-export function ProviderCredentialsSection({ providerId }: Props) {
+export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const credentials = useAppStore((s) => s.providerCredentials);
   const createCredential = useAppStore((s) => s.createCredential);
   const deleteCredential = useAppStore((s) => s.deleteCredential);
@@ -129,4 +129,4 @@ export function ProviderCredentialsSection({ providerId }: Props) {
       ) : null}
     </section>
   );
-}
+};
