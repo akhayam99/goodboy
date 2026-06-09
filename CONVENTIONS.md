@@ -109,9 +109,14 @@ Every PR closes at least one issue.
 
 ## Code rules (apply to all packages)
 
+Full TypeScript style with examples in [docs/typescript.md](./docs/typescript.md).
+
 - No `any`. Use `unknown` + type guards.
-- No default exports. Named only.
-- No comments unless explaining WHY, not WHAT.
+- No default exports, and no `export function`. Named `export const` arrows only (React class components excepted).
+- `type` never `interface`. Extend via intersection (`&`).
+- Every function we declare takes one named, destructured object param. Callbacks with an imposed signature stay positional.
+- Guard clauses with early return. No `if/else`, no inline `if` body. Compare explicitly, never coerce.
+- Zero comments. Tooling directives (`/// <reference />`) excepted.
 - No dead code. Remove, don't comment out.
 - No prop spreading without explicit type.
 - Discriminated unions for state machines.
@@ -140,12 +145,12 @@ All must pass. No green-on-warning.
 
 ## Naming conventions
 
-- **Files**: kebab-case (`provider-adapter.ts`) for utilities, PascalCase (`ProviderAdapter.tsx`) for React components.
-- **Folders**: kebab-case always.
+- **Files**: camelCase (`providerAdapter.ts`) for non-component modules, PascalCase (`ProviderAdapter.tsx`) for React components. File name matches the primary export.
+- **Folders**: lowercase for boundaries (`features/`, `shared/`); PascalCase for a component's own folder, matching the component (see [AGENTS.md](./AGENTS.md)).
 - **Components**: PascalCase. One component per file. File name matches component.
-- **Hooks**: `use<Name>` camelCase. File: `use-name.ts`.
+- **Hooks**: `use<Name>` camelCase. File / folder named `useName` (see [AGENTS.md](./AGENTS.md)).
 - **Constants**: `SCREAMING_SNAKE_CASE`.
-- **Types/interfaces**: PascalCase. No `I` prefix.
+- **Types**: PascalCase, `type` never `interface`. No `I` prefix.
 - **Booleans**: `is`, `has`, `can`, `should` prefixes.
 
 ## Workspace conventions

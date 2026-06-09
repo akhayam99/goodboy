@@ -98,8 +98,8 @@ src/
 ## Naming
 
 - Components: PascalCase, one per file (`WorkspaceList.tsx`).
-- Hooks: `use<Name>` camelCase, file `use-name.ts`.
-- Utilities/folders: kebab-case.
+- Hooks: `use<Name>` camelCase, file / folder named `useName` (see root [AGENTS.md](../../AGENTS.md)).
+- Utilities: camelCase modules. Folders: lowercase for boundaries.
 - Stores: `<feature>-store.ts` exporting `use<Feature>Store`.
 - Tauri wrappers: `<feature>/tauri.ts` exporting named functions matching command names in camelCase.
 
@@ -112,9 +112,14 @@ src/
 
 ## Code rules
 
+Full TypeScript style in root [docs/typescript.md](../../docs/typescript.md).
+
 - No `any`. `unknown` + type guards.
-- No default exports. Named only.
+- No default exports, and no `export function`. Named `export const` arrows only.
+- `type` never `interface`. Extend via intersection (`&`).
+- Every function we declare takes one named, destructured object param.
+- Guard clauses, no `if/else`, no inline `if` body. Compare explicitly, never coerce.
 - No prop spreading without explicit type.
 - Discriminated unions for state machines and command results.
 - `satisfies` over `as` for const validation.
-- No comments unless explaining WHY.
+- Zero comments. Tooling directives (`/// <reference />`) excepted.

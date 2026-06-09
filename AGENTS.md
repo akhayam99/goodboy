@@ -70,7 +70,7 @@ slices/<name>/
 ### Type naming
 
 - Since 1 file = 1 export, types are unambiguous in their file.
-- Components: `type Props = { ... }` (or `interface Props { ... }`). **Never** `XxxProps`.
+- Components: `type Props = { ... }`. **Never** `XxxProps`, **never** `interface` (see [docs/typescript.md](./docs/typescript.md)).
 - Functions / hooks / utilities: `type Params = { ... }`. **Never** `XxxParams`.
 - Domain / data types keep descriptive names (`Session`, `Workspace`, `Agent`).
 - Consumers rename via `import type { Props as XyzProps } from '...'` if disambiguation is needed at the call site.
@@ -143,11 +143,31 @@ the Homebrew cask. Signing runs under the personal Apple team (never Serenis).
 
 - TypeScript strict mode.
 - No `any`. Use `unknown` + type guards when type is uncertain.
-- No comments unless they explain WHY, not WHAT.
+- **Zero comments.** Not WHAT, not WHY, not JSDoc. Rename until the code speaks. Only required tooling directives (`/// <reference />`) are exempt.
 - No dead code. Remove, do not comment out.
 - Rust: only for Tauri commands. Business logic stays in TS.
-- Separators between regions (panes, sidebar sections, toolbar groups, dialog blocks) use the `<Divider>` component from `@goodboy/ui` (a faded hairline), rendered as a sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that define a control's own shape (buttons, inputs, popovers, chips) are fine.
-- Scrollable regions use the `<ScrollFade>` primitive (`apps/desktop/src/shared/components/ScrollFade`) instead of a bare `overflow-y-auto`. It owns the overflow and applies a top/bottom gradient mask that appears only on the edge that has hidden content, matching the chat scroll feel. Prefer a single page-level scroll (let the whole panel scroll) over many nested `max-h-* overflow` boxes.
+
+### TypeScript style
+
+Full rules with examples in [docs/typescript.md](./docs/typescript.md). The hard ones:
+
+- `type`, never `interface`. Extend via intersection (`&`), never `extends`.
+- `export const` arrow, never `export function` (React class components excepted).
+- Every function we declare takes one named, destructured object param (`Props` for components, `Params` otherwise), even single-arg helpers. Inline object literals in the signature are banned. Callbacks with an imposed signature (array iteratees, event handlers, `set`/`get`, prop callbacks) stay positional.
+- Guard clauses with early return. No `if/else`. No inline `if` body (always braces).
+- Compare explicitly, never coerce: `x != null`, `x !== ''`, `count > 0`. Booleans used directly.
+- `&&` for one conditional element, ternary only when both branches render. Never gate JSX on a raw number.
+
+### Styling
+
+Full rules in [docs/styling.md](./docs/styling.md). The hard ones:
+
+- Separation is `gap` on the parent. Margins, `space-y/x-*`, and padding-as-spacer are banned for separation.
+- Padding is surface inset only, kept compact (`p-3`/`p-4`/`p-5`).
+- Edge insets belong to the host wrapper, not the child.
+- Radius family is `rounded-lg` (8px); `rounded-md` for small controls, `rounded-full` for pills. No `rounded-xl` or larger.
+- Separators between regions (panes, sidebar sections, toolbar groups, dialog blocks) use the `<Divider>` component from `@goodboy/ui`, rendered as a sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that define a control's own shape (buttons, inputs, popovers, chips) are fine.
+- Scroll regions use the `<ScrollFade>` primitive (`apps/desktop/src/shared/components/ScrollFade`), never a bare `overflow-y-auto`. The header sits outside the fade.
 
 ---
 
@@ -185,7 +205,14 @@ Rules of thumb:
 - **Em-dashes** (`—`) anywhere in code, copy, commits, PRs, or docs. Use period, comma, colon, or parentheses.
 - **Borders as separators** (`border-t`/`border-r`/`border-b`/`border-l` on a container to divide regions). Use the `<Divider>` component instead. Control-outline borders (buttons, inputs, popovers, chips) are allowed.
 - **`any`** types. Use `unknown` + type guards.
+- **`interface`**. Use `type`; extend via intersection (`&`).
 - **`export default`**. Named exports only.
+- **`export function`**. Use `export const` arrow (React class components excepted).
+- **`if/else`** and **inline `if` bodies**. Guard-clause with early return; always brace the body.
+- **Implicit truthiness coercion** in conditions (`if (x)` on a nullable / string / number). Compare explicitly (`x != null`, `x !== ''`, `x > 0`).
+- **Positional or inline-object params** on functions we declare. One named, destructured object param.
+- **Margins, `space-y/x-*`, or padding-as-spacer for separation**. Use `gap` on the parent.
+- **Comments** of any kind. Tooling directives (`/// <reference />`) excepted.
 - **Dead code as comments**. Delete it.
 - **Modifying `main` locally** (no checkout-and-pull on main; advance via PR merge).
 - **Direct push to `main`**.
