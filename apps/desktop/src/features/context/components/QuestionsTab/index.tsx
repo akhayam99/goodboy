@@ -6,7 +6,7 @@ import {
   MessageCircleQuestion,
   Undo2,
 } from 'lucide-react';
-import { Button, EmptyState, ScrollFade, cn } from '@goodboy/ui';
+import { EmptyState, ScrollFade, cn } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestionId, SessionId, Workflow } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -18,11 +18,12 @@ import { useOpenQuestions } from './useOpenQuestions';
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-type Props = {
+interface Props {
   sessionId: SessionId;
-};
+  inlineMode?: boolean;
+}
 
-export const QuestionsTab = ({ sessionId }: Props) => {
+export function QuestionsTab({ sessionId, inlineMode = false }: Props) {
   const {
     drafts,
     justAnswered,
@@ -85,9 +86,7 @@ export const QuestionsTab = ({ sessionId }: Props) => {
           return { id: q.id, text: q.text, answer };
         })
         .filter((p) => p.answer.length > 0);
-      if (pairs.length === 0) {
-        return;
-      }
+      if (pairs.length === 0) return;
       flashAnswered(pairs.map((p) => p.id));
       await answerOpenQuestions(sessionId, pairs, cluster.ownerAgentId);
     },
@@ -97,9 +96,7 @@ export const QuestionsTab = ({ sessionId }: Props) => {
   const handleDismiss = useCallback(
     (id: OpenQuestionId) => {
       const target = questions.find((q) => q.id === id);
-      if (!target) {
-        return;
-      }
+      if (!target) return;
       void dismissOpenQuestion(sessionId, target);
       beginUndo(target);
     },
@@ -109,9 +106,7 @@ export const QuestionsTab = ({ sessionId }: Props) => {
   const handleUndo = useCallback(() => {
     const target = pendingUndo?.question;
     clearUndo();
-    if (target) {
-      void restoreDismissedOpenQuestion(sessionId, target);
-    }
+    if (target) void restoreDismissedOpenQuestion(sessionId, target);
   }, [pendingUndo, clearUndo, restoreDismissedOpenQuestion, sessionId]);
 
   const totalOpen = questions.length;
@@ -121,6 +116,7 @@ export const QuestionsTab = ({ sessionId }: Props) => {
   );
 
   if (totalOpen === 0 && !pendingUndo) {
+    if (inlineMode) return null;
     return (
       <div className="flex h-full items-center justify-center py-8">
         <EmptyState
@@ -133,31 +129,28 @@ export const QuestionsTab = ({ sessionId }: Props) => {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-0">
+    <div className={cn('flex min-h-0 flex-col gap-0', !inlineMode && 'h-full')}>
       <div className="shrink-0 px-1 pb-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageCircleQuestion size={13} aria-hidden className="text-muted-foreground" />
+            <MessageCircleQuestion size={13} aria-hidden className="text-primary" />
             <span className="text-xs font-medium text-foreground">open questions</span>
           </div>
-          <span className="text-2xs font-medium tabular-nums text-muted-foreground">
+          <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
             {totalAnswered}/{totalOpen} answered
           </span>
         </div>
         {totalOpen > 0 && (
           <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
             <div
-              className={cn(
-                'h-full rounded-full transition-[width,background-color] duration-300 ease-out',
-                totalAnswered === totalOpen ? 'bg-success/70' : 'bg-primary/70',
-              )}
+              className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
               style={{ width: `${(totalAnswered / totalOpen) * 100}%` }}
             />
           </div>
         )}
       </div>
 
-      <ScrollFade className="min-h-0 flex-1">
+      <ScrollFade className={cn('min-h-0', !inlineMode && 'flex-1')}>
         <div className="flex flex-col gap-3 pb-2 pr-0.5">
           {clusters.map((cluster) => {
             const answeredCount = cluster.questions.filter((q) => isAnswered(q.id)).length;
@@ -173,11 +166,11 @@ export const QuestionsTab = ({ sessionId }: Props) => {
               <div
                 key={cluster.ownerAgentId ?? '__orphan__'}
                 className={cn(
-                  'flex flex-col gap-2.5 rounded-xl border border-border-soft bg-subtle p-2.5 shadow-sm transition-[box-shadow,border-color] duration-200 motion-safe:animate-fade-in',
-                  complete && 'ring-1 ring-border',
+                  'flex flex-col gap-2.5 rounded-xl border bg-subtle/50 p-2.5 transition-colors duration-200',
+                  complete ? 'border-primary/40' : 'border-border-soft',
                 )}
               >
-                <header className="flex items-center justify-between gap-2.5 px-0.5">
+                <header className="flex items-center justify-between gap-2 px-0.5">
                   <div className="flex min-w-0 items-center gap-2">
                     <AgentAvatar kind={kind} size="md" className="shrink-0" />
                     <div className="flex min-w-0 flex-col">
@@ -185,12 +178,12 @@ export const QuestionsTab = ({ sessionId }: Props) => {
                         {ownerLabel}
                       </span>
                       {cluster.creatorAgentName ? (
-                        <span className="flex items-center gap-1 text-2xs text-muted-foreground">
+                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
                           <ArrowDownRight size={9} aria-hidden />
                           via {cluster.creatorAgentName}
                         </span>
                       ) : (
-                        <span className="text-2xs text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground/70">
                           {complete ? 'ready to send' : 'awaiting your answer'}
                         </span>
                       )}
@@ -198,8 +191,8 @@ export const QuestionsTab = ({ sessionId }: Props) => {
                   </div>
                   <span
                     className={cn(
-                      'flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium tabular-nums transition-colors',
-                      complete ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground',
+                      'flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums transition-colors',
+                      complete ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
                     )}
                   >
                     {complete && <CheckCircle2 size={10} aria-hidden />}
@@ -229,12 +222,15 @@ export const QuestionsTab = ({ sessionId }: Props) => {
                 </div>
 
                 {answeredCount > 0 && (
-                  <Button
+                  <button
                     type="button"
-                    variant="primary"
-                    size="md"
                     onClick={() => void handleSubmitCluster(cluster)}
-                    className="group w-full"
+                    className={cn(
+                      'group flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold',
+                      'bg-primary text-primary-foreground shadow-sm transition-all duration-150',
+                      'hover:brightness-105 active:scale-[0.99]',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    )}
                   >
                     <span>
                       send {answeredCount} answer{answeredCount !== 1 ? 's' : ''} to{' '}
@@ -243,9 +239,9 @@ export const QuestionsTab = ({ sessionId }: Props) => {
                     <ArrowRight
                       size={13}
                       aria-hidden
-                      className="motion-safe:transition-transform group-hover:translate-x-0.5"
+                      className="transition-transform group-hover:translate-x-0.5"
                     />
-                  </Button>
+                  </button>
                 )}
               </div>
             );
@@ -260,7 +256,7 @@ export const QuestionsTab = ({ sessionId }: Props) => {
             <button
               type="button"
               onClick={handleUndo}
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex items-center gap-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none"
             >
               <Undo2 size={11} />
               undo
@@ -270,4 +266,4 @@ export const QuestionsTab = ({ sessionId }: Props) => {
       )}
     </div>
   );
-};
+}

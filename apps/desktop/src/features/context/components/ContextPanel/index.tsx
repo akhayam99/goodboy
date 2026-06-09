@@ -27,22 +27,18 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { Divider, ScrollArea, ScrollFade, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
+import { Divider, ScrollFade, Textarea, Dialog, Markdown, cn } from '@goodboy/ui';
 import { SLOT_KEYS, SLOT_LABELS, type SlotKey } from '@goodboy/core';
 import type {
   ContextSlot,
   ContextSlotHistoryEntry,
-  PlanId,
   PlanStatus,
-  PlanWithCount,
   PrCheckRun,
   Session,
   SessionId,
   TelemetryRecord,
-  WorktreeStatus,
 } from '@goodboy/types';
 import { QuestionsTab } from '../QuestionsTab';
-import { PlansModal } from '../../../../features/plans/components/PlansModal';
 import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeStatus } from '../../../../features/worktree/worktree';
@@ -50,7 +46,6 @@ import { TerminalDock } from '../../../../features/terminal/components/TerminalD
 import {
   EMPTY_ARRAY,
   useAppStore,
-  useDiffComments,
   useFilesTouched,
   useSessionLoading,
   useSessionOpenQuestions,
@@ -60,28 +55,28 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 
-type ContextPanelProps = {
+interface ContextPanelProps {
   session: Session;
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
   isActive?: boolean;
-};
+}
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
 const ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-type PanelTab = 'context' | 'plans' | 'questions' | 'terminal';
+type PanelTab = 'context' | 'terminal';
 
-export const ContextPanel = ({
+export function ContextPanel({
   session,
   collapsed = false,
   onCollapse,
   onExpand,
   isActive = true,
-}: ContextPanelProps) => {
+}: ContextPanelProps) {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const loading = useSessionLoading(session.id);
@@ -90,26 +85,27 @@ export const ContextPanel = ({
     (s) => s.sessionTelemetry[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
   const plans = useSessionPlans(session.id);
+  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [tab, setTab] = useState<PanelTab>('context');
+  const [questionsExpanded, setQuestionsExpanded] = useState(true);
   const questions = useSessionOpenQuestions(session.id);
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
 
   useEffect(() => {
-    if (!isActive) {
-      return;
-    }
+    if (!isActive) return;
     void loadSessionOpenQuestions(session.id);
   }, [isActive, session.id, loadSessionOpenQuestions]);
 
+  useEffect(() => {
+    if (!isActive) return;
+    void loadSessionPlans(session.id);
+  }, [isActive, session.id, loadSessionPlans]);
+
   const filesTouched = useFilesTouched(session.id, isActive);
-  const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
-  const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
-    if (!isActive) {
-      return;
-    }
+    if (!isActive) return;
     void loadDiffComments(session.id);
   }, [isActive, session.id, loadDiffComments]);
 
@@ -119,9 +115,7 @@ export const ContextPanel = ({
     let estimatedCostUsd = 0;
     let count = 0;
     for (const rec of sessionTelemetry) {
-      if (rec.kind !== 'summarizer') {
-        continue;
-      }
+      if (rec.kind !== 'summarizer') continue;
       inputTokens += rec.inputTokens;
       outputTokens += rec.outputTokens;
       estimatedCostUsd += rec.estimatedCostUsd;
@@ -134,9 +128,7 @@ export const ContextPanel = ({
 
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   useEffect(() => {
-    if (!isActive || !workingDir) {
-      return;
-    }
+    if (!isActive || !workingDir) return;
     let cancelled = false;
     worktreeStatus(workingDir)
       .then((status) => {
@@ -181,10 +173,8 @@ export const ContextPanel = ({
     [],
   );
 
-  const plansBadge = plans.length > 0 ? plans.length : null;
-  const hasActivePlan = plans.some((p) => p.status === 'active');
-  const questionsBadge = questions.length > 0 ? questions.length : null;
   const isTerminalOpen = useAppStore((s) => s.terminalSessions[session.id as SessionId] === 'open');
+  const hasActivePlan = plans.some((p) => p.status === 'active');
 
   return (
     <>
@@ -221,10 +211,7 @@ export const ContextPanel = ({
             <TabStrip
               tab={tab}
               onPick={setTab}
-              plansBadge={plansBadge}
-              plansWarning={hasActivePlan}
               summarizerRunning={summarizer.status === 'running'}
-              questionsBadge={questionsBadge}
               isTerminalOpen={isTerminalOpen}
             />
             <div className="flex shrink-0 items-center gap-1">
@@ -260,52 +247,109 @@ export const ContextPanel = ({
           >
             <TerminalDock sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
           </div>
-          {tab !== 'terminal' && (
+          {tab !== 'terminal' ? (
             <div
               key={tab}
               className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2 motion-safe:animate-fade-in"
             >
-              {tab === 'context' ? (
-                <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-                  <ScrollFade className="flex-1" viewportClassName="p-1">
-                    <ul className="flex flex-col gap-2.5">
-                      {visibleSlotKeys.map((key) => {
-                        const slot = slotsByKey.get(key);
-                        return (
-                          <SlotRow
-                            key={key}
-                            sessionId={session.id}
-                            slotKey={key}
-                            slot={slot}
-                            loading={loading.slots}
-                            isSummarizing={summarizer.status === 'running'}
-                            onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </ScrollFade>
-                  <ChangesStrip
-                    sessionId={session.id}
-                    workingDir={workingDir}
-                    filesTouched={filesTouched}
-                  />
-                </div>
-              ) : tab === 'plans' ? (
-                <PlansTabContent sessionId={session.id} />
-              ) : (
-                <QuestionsTab sessionId={session.id} />
-              )}
+              <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+                <ScrollFade className="flex-1" viewportClassName="p-1">
+                  <ul className="flex flex-col gap-2.5">
+                    {visibleSlotKeys.slice(0, 1).map((key) => {
+                      const slot = slotsByKey.get(key);
+                      return (
+                        <SlotRow
+                          key={key}
+                          sessionId={session.id}
+                          slotKey={key}
+                          slot={slot}
+                          loading={loading.slots}
+                          isSummarizing={summarizer.status === 'running'}
+                          onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                        />
+                      );
+                    })}
+
+                    {questions.length > 0 ? (
+                      <li className="flex flex-none flex-col rounded-lg ring-1 ring-warning/60 bg-muted/40 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setQuestionsExpanded((v) => !v)}
+                          aria-expanded={questionsExpanded}
+                          className="flex items-center gap-2 p-3 text-left w-full"
+                        >
+                          <span
+                            aria-hidden
+                            className="flex size-5 shrink-0 items-center justify-center rounded-md bg-warning/10 ring-1 ring-warning/20"
+                          >
+                            <HelpCircle size={11} className="text-warning" aria-hidden />
+                          </span>
+                          <span className="flex min-w-0 flex-1 items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
+                            Open Questions
+                            <span className="inline-flex min-w-[1rem] items-center justify-center rounded-full bg-warning/20 px-1 text-[9px] font-medium normal-case tracking-normal text-warning">
+                              {questions.length}
+                            </span>
+                          </span>
+                          {questionsExpanded ? (
+                            <ChevronDown
+                              size={11}
+                              aria-hidden
+                              className="shrink-0 text-muted-foreground/50"
+                            />
+                          ) : (
+                            <ChevronRight
+                              size={11}
+                              aria-hidden
+                              className="shrink-0 text-muted-foreground/50"
+                            />
+                          )}
+                        </button>
+                        {questionsExpanded ? (
+                          <div className="px-3 pb-3">
+                            <QuestionsTab sessionId={session.id} inlineMode />
+                          </div>
+                        ) : null}
+                      </li>
+                    ) : null}
+
+                    {visibleSlotKeys.slice(1).map((key) => {
+                      const slot = slotsByKey.get(key);
+                      return (
+                        <SlotRow
+                          key={key}
+                          sessionId={session.id}
+                          slotKey={key}
+                          slot={slot}
+                          loading={loading.slots}
+                          isSummarizing={summarizer.status === 'running'}
+                          onCommit={(value) => void upsertSessionSlot(session.id, key, value)}
+                        />
+                      );
+                    })}
+                  </ul>
+                </ScrollFade>
+                <ChangesStrip
+                  sessionId={session.id}
+                  workingDir={workingDir}
+                  filesTouched={filesTouched}
+                  plans={plans}
+                  plansLoading={loading.plans}
+                  hasActivePlan={hasActivePlan}
+                />
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         <Divider />
 
-        {questions.length > 0 && (
+        {questions.length > 0 && (tab === 'terminal' || !questionsExpanded) ? (
           <button
             type="button"
-            onClick={() => setTab('questions')}
+            onClick={() => {
+              setTab('context');
+              setQuestionsExpanded(true);
+            }}
             className="flex shrink-0 items-center justify-between gap-2 border-t border-border-soft/40 bg-warning/5 px-4 py-2.5 text-xs text-warning transition-colors hover:bg-warning/10"
           >
             <span className="flex items-center gap-1.5">
@@ -316,31 +360,20 @@ export const ContextPanel = ({
             </span>
             <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
           </button>
-        )}
+        ) : null}
       </div>
     </>
   );
-};
+}
 
-type TabStripProps = {
+interface TabStripProps {
   readonly tab: PanelTab;
   readonly onPick: (next: PanelTab) => void;
-  readonly plansBadge: number | null;
-  readonly plansWarning: boolean;
   readonly summarizerRunning: boolean;
-  readonly questionsBadge: number | null;
   readonly isTerminalOpen: boolean;
-};
+}
 
-function TabStrip({
-  tab,
-  onPick,
-  plansBadge,
-  plansWarning,
-  summarizerRunning,
-  questionsBadge,
-  isTerminalOpen,
-}: TabStripProps) {
+function TabStrip({ tab, onPick, summarizerRunning, isTerminalOpen }: TabStripProps) {
   return (
     <div role="tablist" aria-label="context panel tabs" className="flex items-center gap-0.5">
       <TabButton
@@ -349,22 +382,6 @@ function TabStrip({
         icon={<BookOpen size={11} aria-hidden />}
         label="Context"
         accentDot={summarizerRunning ? 'bg-info' : null}
-      />
-      <TabButton
-        active={tab === 'plans'}
-        onClick={() => onPick('plans')}
-        icon={<ClipboardList size={11} aria-hidden />}
-        label="Plans"
-        badge={plansBadge}
-        accentDot={plansWarning ? 'bg-warning' : null}
-      />
-      <TabButton
-        active={tab === 'questions'}
-        onClick={() => onPick('questions')}
-        icon={<HelpCircle size={11} aria-hidden />}
-        label="Questions"
-        badge={questionsBadge}
-        accentDot={questionsBadge ? 'bg-warning' : null}
       />
       <TabButton
         active={tab === 'terminal'}
@@ -377,14 +394,14 @@ function TabStrip({
   );
 }
 
-type TabButtonProps = {
+interface TabButtonProps {
   readonly active: boolean;
   readonly onClick: () => void;
   readonly icon: React.ReactNode;
   readonly label: string;
   readonly badge?: number | null;
   readonly accentDot?: string | null;
-};
+}
 
 function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButtonProps) {
   return (
@@ -404,11 +421,11 @@ function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButton
     >
       {icon}
       {active ? <span>{label}</span> : null}
-      {badge !== null && badge !== undefined && (
+      {badge !== null && badge !== undefined ? (
         <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium tracking-normal text-muted-foreground">
           {badge}
         </span>
-      )}
+      ) : null}
       {accentDot ? (
         <span aria-hidden className={cn('ml-0.5 size-1.5 rounded-full', accentDot)} />
       ) : null}
@@ -416,112 +433,90 @@ function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButton
   );
 }
 
-function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
-  const plans = useSessionPlans(sessionId);
-  const loading = useSessionLoading(sessionId);
-  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [focusPlanId, setFocusPlanId] = useState<PlanId | null>(null);
-
-  useEffect(() => {
-    void loadSessionPlans(sessionId);
-  }, [sessionId, loadSessionPlans]);
-
-  if (plans.length === 0 && loading.plans) {
-    return (
-      <div className="flex flex-col gap-2 py-1">
-        <PlansSkeleton />
-      </div>
-    );
-  }
-  if (plans.length === 0) {
-    return <PlansEmpty />;
-  }
-
-  const openModal = (planId: PlanId) => {
-    setFocusPlanId(planId);
-    setModalOpen(true);
-  };
-
-  return (
-    <>
-      <ul
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1"
-        style={{ scrollbarGutter: 'stable' }}
-      >
-        {plans.map((plan, idx) => (
-          <li key={plan.id}>
-            <button
-              type="button"
-              onClick={() => openModal(plan.id)}
-              title={`Open plan ${idx + 1}, ${plan.title}`}
-              className="group flex w-full items-start gap-2 rounded-lg bg-muted/30 p-2.5 text-left ring-1 ring-border-soft transition-colors hover:bg-muted/60"
-            >
-              <span
-                aria-hidden
-                className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
-              >
-                <ClipboardList size={11} className="text-primary" aria-hidden />
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
-                    plan {idx + 1}
-                  </span>
-                  <span
-                    className={cn(
-                      'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-                      PLAN_STATUS_STYLE[plan.status],
-                    )}
-                  >
-                    {PLAN_STATUS_LABEL[plan.status]}
-                  </span>
-                </div>
-                <span className="line-clamp-2 text-xs font-medium text-foreground">
-                  {plan.title}
-                </span>
-              </div>
-              <ArrowUpRight
-                size={11}
-                aria-hidden
-                className="mt-0.5 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-foreground"
-              />
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <PlansModal
-        sessionId={sessionId}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialPlanId={focusPlanId ?? plans[plans.length - 1]?.id}
-      />
-    </>
-  );
-}
-
-type FilesTouchedShape = {
+interface FilesTouchedShape {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
   readonly additions: number;
   readonly deletions: number;
+}
+
+const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
+  active: 'bg-warning/10 text-warning',
+  consumed: 'bg-info/10 text-info',
+  superseded: 'bg-muted text-muted-foreground',
+  discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
 };
+
+const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
+  active: 'Active',
+  consumed: 'Consumed',
+  superseded: 'Superseded',
+  discarded: 'Discarded',
+};
+
+interface ChangesStripProps {
+  sessionId: SessionId;
+  workingDir: string | null;
+  filesTouched: FilesTouchedShape;
+  plans: ReadonlyArray<{ id: string; status: PlanStatus; title: string }>;
+  plansLoading: boolean;
+  hasActivePlan: boolean;
+}
 
 function ChangesStrip({
   sessionId,
   workingDir,
   filesTouched,
-}: {
-  sessionId: SessionId;
-  workingDir: string | null;
-  filesTouched: FilesTouchedShape;
-}) {
+  plans,
+  plansLoading,
+  hasActivePlan,
+}: ChangesStripProps) {
   const [diffOpen, setDiffOpen] = useState(false);
   const count = filesTouched.count;
 
+  const openPlanStudio = () =>
+    window.dispatchEvent(new CustomEvent('goodboy:open-plan-studio', { detail: { sessionId } }));
+
   return (
     <div className="flex shrink-0 flex-col gap-2 border-t border-border-soft/50 pt-2.5">
+      {plans.length === 0 && plansLoading ? (
+        <PlansSkeleton />
+      ) : (
+        <button
+          type="button"
+          onClick={openPlanStudio}
+          title="Open Plan Studio"
+          aria-label="Open Plan Studio"
+          className={cn(
+            'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 transition-colors hover:bg-foreground/5',
+            plans.length > 0
+              ? 'ring-border-soft'
+              : 'text-muted-foreground/70 ring-border-soft/40 hover:text-foreground',
+          )}
+        >
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <ClipboardList size={12} aria-hidden />
+            {plans.length > 0 ? (
+              <span className="font-medium">
+                {plans.length} plan{plans.length === 1 ? '' : 's'}
+              </span>
+            ) : (
+              <span>No plans yet. Spawn a Plan agent and ask it to map the work.</span>
+            )}
+            {hasActivePlan ? (
+              <span
+                className={cn(
+                  'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
+                  PLAN_STATUS_STYLE['active'],
+                )}
+              >
+                {PLAN_STATUS_LABEL['active']}
+              </span>
+            ) : null}
+          </span>
+          <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
+        </button>
+      )}
       <GithubStrip sessionId={sessionId} />
       <PendingResolutionsStrip sessionId={sessionId} />
       {count > 0 ? (
@@ -539,16 +534,16 @@ function ChangesStrip({
             </span>
           </span>
           <span className="inline-flex shrink-0 items-center gap-2">
-            {(filesTouched.additions > 0 || filesTouched.deletions > 0) && (
+            {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
               <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
-                {filesTouched.additions > 0 && (
+                {filesTouched.additions > 0 ? (
                   <span className="text-success">+{filesTouched.additions}</span>
-                )}
-                {filesTouched.deletions > 0 && (
+                ) : null}
+                {filesTouched.deletions > 0 ? (
                   <span className="text-danger">−{filesTouched.deletions}</span>
-                )}
+                ) : null}
               </span>
-            )}
+            ) : null}
             <ArrowUpRight size={12} aria-hidden className="opacity-70" />
           </span>
         </button>
@@ -558,7 +553,7 @@ function ChangesStrip({
           <span className="font-medium">working tree clean</span>
         </div>
       )}
-      {count > 0 && (
+      {count > 0 ? (
         <DiffViewerDialog
           open={diffOpen}
           onClose={() => setDiffOpen(false)}
@@ -567,7 +562,7 @@ function ChangesStrip({
           workingDir={workingDir ?? undefined}
           worktreePath={workingDir ?? undefined}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -583,14 +578,10 @@ function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId }) {
   }, [sessionId, loadPendingResolutions]);
 
   const count = pending.length;
-  if (count === 0) {
-    return null;
-  }
+  if (count === 0) return null;
 
   const onPush = async () => {
-    if (busy) {
-      return;
-    }
+    if (busy) return;
     setBusy(true);
     try {
       await pushAllResolutions(sessionId);
@@ -654,13 +645,13 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
           {pr ? (
             <span className="inline-flex min-w-0 items-center gap-2">
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
-              {ciState !== 'none' && <CiBadge state={ciState} />}
-              {unresolvedComments > 0 && (
+              {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
+              {unresolvedComments > 0 ? (
                 <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
                   <MessageSquare size={11} aria-hidden />
                   <span className="tabular-nums">{unresolvedComments}</span>
                 </span>
-              )}
+              ) : null}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5">
@@ -693,9 +684,7 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
 type CiState = 'success' | 'failure' | 'pending' | 'none';
 
 function computeCiState(checks: ReadonlyArray<PrCheckRun>): CiState {
-  if (checks.length === 0) {
-    return 'none';
-  }
+  if (checks.length === 0) return 'none';
   if (
     checks.some(
       (c) =>
@@ -704,12 +693,8 @@ function computeCiState(checks: ReadonlyArray<PrCheckRun>): CiState {
   ) {
     return 'failure';
   }
-  if (checks.some((c) => c.conclusion === 'pending')) {
-    return 'pending';
-  }
-  if (checks.some((c) => c.conclusion === 'success')) {
-    return 'success';
-  }
+  if (checks.some((c) => c.conclusion === 'pending')) return 'pending';
+  if (checks.some((c) => c.conclusion === 'success')) return 'success';
   return 'none';
 }
 
@@ -750,7 +735,7 @@ function PlansSkeleton() {
   );
 }
 
-type SlotMeta = {
+interface SlotMeta {
   readonly icon: LucideIcon;
   readonly iconClass: string;
   readonly iconChipBg: string;
@@ -763,7 +748,7 @@ type SlotMeta = {
   readonly defaultCollapsed?: boolean;
   readonly singleLine?: boolean;
   readonly readOnly?: boolean;
-};
+}
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
   'open_questions',
@@ -827,17 +812,13 @@ function firstMeaningfulLine(value: string): string {
       .replace(/^#+\s+/, '')
       .replace(/\*\*/g, '')
       .replace(/`/g, '');
-    if (t) {
-      return t;
-    }
+    if (t) return t;
   }
   return '';
 }
 
 function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
-  if (!workingDir || slot.value.length === 0) {
-    return slot;
-  }
+  if (!workingDir || slot.value.length === 0) return slot;
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   const normalized = slot.value
     .split('\n')
@@ -846,14 +827,14 @@ function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): Conte
   return normalized === slot.value ? slot : { ...slot, value: normalized };
 }
 
-type SlotRowProps = {
+interface SlotRowProps {
   sessionId: SessionId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
   loading?: boolean;
   isSummarizing?: boolean;
   onCommit: (value: string) => void;
-};
+}
 
 function SlotRow({
   sessionId,
@@ -875,9 +856,7 @@ function SlotRow({
   const history = useSlotHistory(sessionId, slotKey);
 
   useEffect(() => {
-    if (!editing) {
-      setDraft(value);
-    }
+    if (!editing) setDraft(value);
   }, [value, editing]);
 
   const openHistory = useCallback(() => {
@@ -893,9 +872,7 @@ function SlotRow({
     [onCommit],
   );
 
-  if (slot === undefined && loading) {
-    return <SlotRowSkeleton slotKey={slotKey} />;
-  }
+  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
 
   const Icon = meta?.icon;
   const hasValue = value.length > 0;
@@ -908,9 +885,7 @@ function SlotRow({
 
   const commit = () => {
     setEditing(false);
-    if (draft !== value) {
-      onCommit(draft);
-    }
+    if (draft !== value) onCommit(draft);
   };
 
   const itemCountLabel =
@@ -968,8 +943,7 @@ function SlotRow({
             </span>
           ) : null}
         </div>
-
-        {history.length > 0 && (
+        {history.length > 0 ? (
           <button
             type="button"
             onClick={openHistory}
@@ -979,7 +953,7 @@ function SlotRow({
           >
             <History size={11} aria-hidden />
           </button>
-        )}
+        ) : null}
         {headerToggle}
       </div>
 
@@ -1011,9 +985,7 @@ function SlotRow({
           <button
             type="button"
             onClick={() => {
-              if (isSummarizing) {
-                return;
-              }
+              if (isSummarizing) return;
               setEditing(true);
             }}
             disabled={isSummarizing}
@@ -1032,9 +1004,7 @@ function SlotRow({
         <button
           type="button"
           onClick={() => {
-            if (isSummarizing) {
-              return;
-            }
+            if (isSummarizing) return;
             setEditing(true);
           }}
           disabled={isSummarizing}
@@ -1060,15 +1030,11 @@ function SlotRow({
           role={isSummarizing ? undefined : 'button'}
           tabIndex={isSummarizing ? -1 : 0}
           onClick={() => {
-            if (isSummarizing) {
-              return;
-            }
+            if (isSummarizing) return;
             setEditing(true);
           }}
           onKeyDown={(e) => {
-            if (isSummarizing) {
-              return;
-            }
+            if (isSummarizing) return;
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setEditing(true);
@@ -1085,9 +1051,7 @@ function SlotRow({
         <button
           type="button"
           onClick={() => {
-            if (isSummarizing) {
-              return;
-            }
+            if (isSummarizing) return;
             setEditing(true);
           }}
           disabled={isSummarizing}
@@ -1113,14 +1077,14 @@ function SlotRow({
   );
 }
 
-type SlotHistoryDialogProps = {
+interface SlotHistoryDialogProps {
   label: string;
   renderAsMarkdown: boolean;
   open: boolean;
   entries: ReadonlyArray<ContextSlotHistoryEntry>;
   onRestore: (entry: ContextSlotHistoryEntry) => void;
   onClose: () => void;
-};
+}
 
 function SlotHistoryDialog({
   label,
@@ -1184,16 +1148,10 @@ function SlotHistoryDialog({
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) {
-    return 'just now';
-  }
-  if (mins < 60) {
-    return `${mins}m ago`;
-  }
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) {
-    return `${hrs}h ago`;
-  }
+  if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
@@ -1221,9 +1179,7 @@ function SummarizerBadge({
   const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
-    if (status !== 'error') {
-      setRetrying(false);
-    }
+    if (status !== 'error') setRetrying(false);
   }, [status]);
 
   const costTooltip =
@@ -1257,9 +1213,7 @@ function SummarizerBadge({
         <button
           type="button"
           onClick={() => {
-            if (!canRetry || retrying) {
-              return;
-            }
+            if (!canRetry || retrying) return;
             setRetrying(true);
             retrySummarizer(sessionId);
           }}
@@ -1282,45 +1236,4 @@ function SummarizerBadge({
   }
 
   return costPill;
-}
-
-const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
-  active: 'bg-warning/10 text-warning',
-  consumed: 'bg-info/10 text-info',
-  superseded: 'bg-muted text-muted-foreground',
-  discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
-};
-
-const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
-  active: 'Active',
-  consumed: 'Consumed',
-  superseded: 'Superseded',
-  discarded: 'Discarded',
-};
-
-function PlansEmpty() {
-  return (
-    <section className="flex flex-col gap-2 rounded-lg bg-transparent p-3 ring-1 ring-border-soft/30">
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20"
-        >
-          <ClipboardList size={11} className="text-primary" aria-hidden />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
-            Plans
-          </span>
-          <span className="text-[10px] leading-tight text-muted-foreground/60">
-            Step-by-step work queued for this session
-          </span>
-        </div>
-      </div>
-      <p className="text-[11px] leading-snug text-muted-foreground/70">
-        No plans yet. Spawn a <span className="font-medium text-foreground">Plan</span> agent and
-        ask it to map the work, its output lands here, ready to feed an Implement agent.
-      </p>
-    </section>
-  );
 }

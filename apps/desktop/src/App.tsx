@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
-import type { ProviderId, SessionId } from '@goodboy/types';
+import type { PlanId, ProviderId, SessionId } from '@goodboy/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
@@ -19,6 +19,7 @@ import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwit
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
+import { PlanStudio } from './features/plans/components/PlanStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
@@ -112,6 +113,8 @@ export const App = () => {
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
   const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
   const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
+  const [planStudioSession, setPlanStudioSession] = useState<SessionId | null>(null);
+  const [planStudioPlanId, setPlanStudioPlanId] = useState<PlanId | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
@@ -181,6 +184,21 @@ export const App = () => {
     };
     window.addEventListener('goodboy:open-github-studio', handler);
     return () => window.removeEventListener('goodboy:open-github-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          sessionId?: SessionId;
+          planId?: PlanId;
+        }>
+      ).detail;
+      setPlanStudioSession(detail?.sessionId ?? null);
+      setPlanStudioPlanId(detail?.planId ?? null);
+    };
+    window.addEventListener('goodboy:open-plan-studio', handler);
+    return () => window.removeEventListener('goodboy:open-plan-studio', handler);
   }, []);
 
   useEffect(() => {
@@ -608,6 +626,17 @@ export const App = () => {
           initialPrNumber={githubStudioPrNumber}
           initialThreadId={githubStudioThreadId}
           onClose={() => setGithubStudioOpen(false)}
+        />
+      ) : null}
+      {planStudioSession && currentWorkspace ? (
+        <PlanStudio
+          sessionId={planStudioSession}
+          workspaceName={currentWorkspace.name}
+          initialPlanId={planStudioPlanId ?? undefined}
+          onClose={() => {
+            setPlanStudioSession(null);
+            setPlanStudioPlanId(null);
+          }}
         />
       ) : null}
       {providerStudioOpen && currentWorkspace ? (
