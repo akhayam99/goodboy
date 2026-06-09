@@ -3,7 +3,7 @@ import { ExternalLink } from 'lucide-react';
 const TOKEN_CREATE_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=Goodboy';
 const TOKEN_LIST_URL = 'https://github.com/settings/tokens';
 
-export function CreateTokenLink() {
+export const CreateTokenLink = () => {
   return (
     <p className="text-[10px] leading-relaxed text-muted-foreground">
       <a
@@ -26,4 +26,4 @@ export function CreateTokenLink() {
       if your org requires it.
     </p>
   );
-}
+};

@@ -9,7 +9,7 @@ import type {
 import type { ProviderId } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkspaceOverrideRow {
+type WorkspaceOverrideRow = {
   default_provider_id: string | null;
   default_workflow_id: string | null;
   default_branch_prefix: string | null;
@@ -17,18 +17,20 @@ interface WorkspaceOverrideRow {
   default_verbosity: string | null;
   provider_bindings: string | null;
   scout_fanout: number | null;
-}
+};
 
-interface SessionOverrideRow {
+type SessionOverrideRow = {
   default_provider_id: string | null;
   default_workflow_id: string | null;
   default_branch_prefix: string | null;
   parallel_enabled: number | null;
   provider_bindings: string | null;
-}
+};
 
 function parseBindings(raw: string | null): ProviderBindings | null {
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     return JSON.parse(raw) as ProviderBindings;
   } catch {
@@ -64,10 +66,10 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
   };
 }
 
-export async function getWorkspaceOverrides(
+export const getWorkspaceOverrides = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<OverrideSettings | null> {
+): Promise<OverrideSettings | null> => {
   const rows = await db.select<WorkspaceOverrideRow>(
     `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, scout_fanout
      FROM workspaces WHERE id = ?`,
@@ -75,13 +77,13 @@ export async function getWorkspaceOverrides(
   );
   const row = rows[0];
   return row ? workspaceRowToOverride(row) : null;
-}
+};
 
-export async function setWorkspaceOverrides(
+export const setWorkspaceOverrides = async (
   db: Database,
   workspaceId: WorkspaceId,
   overrides: OverrideSettings,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `UPDATE workspaces
      SET default_provider_id = ?,
@@ -105,12 +107,12 @@ export async function setWorkspaceOverrides(
       workspaceId,
     ],
   );
-}
+};
 
-export async function getSessionOverrides(
+export const getSessionOverrides = async (
   db: Database,
   sessionId: SessionId,
-): Promise<OverrideSettings | null> {
+): Promise<OverrideSettings | null> => {
   const rows = await db.select<SessionOverrideRow>(
     `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, provider_bindings
      FROM sessions WHERE id = ?`,
@@ -118,13 +120,13 @@ export async function getSessionOverrides(
   );
   const row = rows[0];
   return row ? sessionRowToOverride(row) : null;
-}
+};
 
-export async function setSessionOverrides(
+export const setSessionOverrides = async (
   db: Database,
   sessionId: SessionId,
   overrides: OverrideSettings,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `UPDATE sessions
      SET default_provider_id = ?,
@@ -144,4 +146,4 @@ export async function setSessionOverrides(
       sessionId,
     ],
   );
-}
+};

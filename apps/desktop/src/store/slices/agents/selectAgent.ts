@@ -5,16 +5,14 @@ import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
 import { EMPTY_LOADING } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
-export function selectAgent(set: SetFn, get: GetFn) {
+export const selectAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
-    // Stamp `lastViewedAt` on both the previously-selected agent (capturing
-    // "user was looking at it until now") and the newly-selected agent. The
-    // unread selector additionally treats the currently-selected agent as
-    // viewed, so no visible flicker while you're actually on the row.
     const stampedAt = new Date().toISOString() as IsoDateTime;
     const prevAgentId = get().selectedAgentId[sessionId] ?? null;
     const stampAgents = new Set<AgentId>([agentId]);
-    if (prevAgentId && prevAgentId !== agentId) stampAgents.add(prevAgentId);
+    if (prevAgentId && prevAgentId !== agentId) {
+      stampAgents.add(prevAgentId);
+    }
 
     for (const id of stampAgents) {
       void invokeAgentMarkViewed(id, stampedAt).catch(() => undefined);
@@ -54,9 +52,6 @@ export function selectAgent(set: SetFn, get: GetFn) {
         },
       };
     });
-    // Two-phase load: phase 1 fetches the recent slice fast (~50-150ms),
-    // unblocks the chat skeleton, then phase 2 fills in older history in the
-    // background. Sessions with <= INITIAL_LIMIT events get only phase 1.
     const INITIAL_LIMIT = 50;
     const tInitial = performance.now();
     try {
@@ -84,8 +79,6 @@ export function selectAgent(set: SetFn, get: GetFn) {
         };
       });
       void get().refreshUnreadWorkspaces();
-      // Phase 2: only when the recent slice was at the limit (more older
-      // history likely exists). Fired non-awaited so the click flow returns.
       if (events.length === INITIAL_LIMIT) {
         const tFull = performance.now();
         void Promise.all([
@@ -97,11 +90,11 @@ export function selectAgent(set: SetFn, get: GetFn) {
             console.log(
               `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
             );
-            // Replace only if the agent is still selected and the in-store
-            // slice hasn't grown past the full snapshot via streaming.
             set((state) => {
               const current = state.transcripts[agentId];
-              if (current && current.length > fullEvents.length) return {};
+              if (current && current.length > fullEvents.length) {
+                return {};
+              }
               return {
                 transcripts: { ...state.transcripts, [agentId]: fullEvents },
                 messages: { ...state.messages, [sessionId]: fullMessages },
@@ -123,4 +116,4 @@ export function selectAgent(set: SetFn, get: GetFn) {
       throw err;
     }
   };
-}
+};

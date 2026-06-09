@@ -6,13 +6,13 @@ import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
 import { formatError } from '../../../shared/lib/errors';
 import { CreateTokenLink } from './CreateTokenLink';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   open: boolean;
   onClose: () => void;
-}
+};
 
-export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
+export const ConnectGithubDialog = ({ workspaceId, open, onClose }: Props) => {
   const [status, setStatus] = useState<GhTokenStatus | null>(null);
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,7 +27,9 @@ export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
   }, [workspaceId]);
 
   useEffect(() => {
-    if (open) void refresh();
+    if (open) {
+      void refresh();
+    }
   }, [open, refresh]);
 
   useEffect(() => {
@@ -142,4 +144,4 @@ export function ConnectGithubDialog({ workspaceId, open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

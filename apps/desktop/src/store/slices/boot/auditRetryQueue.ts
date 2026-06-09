@@ -11,14 +11,13 @@ import type { SetFn } from './types';
 
 const AUDIT_RETRY_MAX_ATTEMPTS = 5;
 const AUDIT_RETRY_DRAIN_BATCH = 50;
-// Exponential backoff delays (ms): attempt 0→1s, 1→2s, 2→4s, 3→8s, 4→16s.
 const AUDIT_RETRY_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000] as const;
 
 function auditRetryBackoffMs(attempt: number): number {
   return AUDIT_RETRY_BACKOFF_MS[Math.min(attempt, AUDIT_RETRY_BACKOFF_MS.length - 1)] ?? 16000;
 }
 
-export async function drainAuditRetryQueue(set: SetFn): Promise<void> {
+export const drainAuditRetryQueue = async (set: SetFn): Promise<void> => {
   let entries: ReadonlyArray<AuditRetryEntry>;
   try {
     entries = await invokeAuditRetryDrain(AUDIT_RETRY_DRAIN_BATCH);
@@ -29,10 +28,11 @@ export async function drainAuditRetryQueue(set: SetFn): Promise<void> {
   const now = () => new Date().toISOString();
 
   for (const entry of entries) {
-    // Respect backoff: skip entries updated too recently for their attempt count.
     const backoffMs = auditRetryBackoffMs(entry.attempts);
     const msSinceUpdate = Date.now() - entry.updatedAt;
-    if (msSinceUpdate < backoffMs) continue;
+    if (msSinceUpdate < backoffMs) {
+      continue;
+    }
 
     let payload: PermissionAuditInsertPayload;
     try {
@@ -78,4 +78,4 @@ export async function drainAuditRetryQueue(set: SetFn): Promise<void> {
       }
     }
   }
-}
+};

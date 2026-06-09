@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface DiffCommentRow {
+type DiffCommentRow = {
   id: string;
   session_id: string;
   file_path: string;
@@ -21,7 +21,7 @@ interface DiffCommentRow {
   consumed_by_agent_id: string | null;
   line_number: number | null;
   line_side: string | null;
-}
+};
 
 function toDomain(row: DiffCommentRow): DiffComment {
   const anchor: DiffCommentAnchor | undefined =
@@ -52,25 +52,25 @@ function toDomain(row: DiffCommentRow): DiffComment {
 const SELECT_COLUMNS = `id, session_id, file_path, body, status, created_at, resolved_at,
     consumed_at, consumed_by_agent_id, line_number, line_side`;
 
-export async function insertDiffComment(
+export const insertDiffComment = async (
   db: Database,
   id: string,
   sessionId: SessionId,
   filePath: string,
   body: string,
   anchor?: DiffCommentAnchor,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, line_number, line_side)
      VALUES (?, ?, ?, ?, 'open', ?, ?, ?)`,
     [id, sessionId, filePath, body, Date.now(), anchor?.lineNumber ?? null, anchor?.side ?? null],
   );
-}
+};
 
-export async function listDiffCommentsForSession(
+export const listDiffCommentsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<DiffComment>> {
+): Promise<ReadonlyArray<DiffComment>> => {
   const rows = await db.select<DiffCommentRow>(
     `SELECT ${SELECT_COLUMNS}
      FROM diff_comments
@@ -79,21 +79,23 @@ export async function listDiffCommentsForSession(
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function resolveDiffComment(db: Database, id: string): Promise<void> {
+export const resolveDiffComment = async (db: Database, id: string): Promise<void> => {
   await db.execute(`UPDATE diff_comments SET status = 'resolved', resolved_at = ? WHERE id = ?`, [
     Date.now(),
     id,
   ]);
-}
+};
 
-export async function consumeDiffComments(
+export const consumeDiffComments = async (
   db: Database,
   ids: ReadonlyArray<string>,
   agentId: AgentId,
-): Promise<void> {
-  if (ids.length === 0) return;
+): Promise<void> => {
+  if (ids.length === 0) {
+    return;
+  }
   const placeholders = ids.map(() => '?').join(', ');
   await db.execute(
     `UPDATE diff_comments
@@ -101,17 +103,17 @@ export async function consumeDiffComments(
      WHERE status = 'open' AND id IN (${placeholders})`,
     [Date.now(), agentId, ...ids],
   );
-}
+};
 
-export async function reopenDiffComment(db: Database, id: string): Promise<void> {
+export const reopenDiffComment = async (db: Database, id: string): Promise<void> => {
   await db.execute(
     `UPDATE diff_comments
      SET status = 'open', consumed_at = NULL, consumed_by_agent_id = NULL
      WHERE id = ?`,
     [id],
   );
-}
+};
 
-export async function deleteDiffComment(db: Database, id: string): Promise<void> {
+export const deleteDiffComment = async (db: Database, id: string): Promise<void> => {
   await db.execute(`DELETE FROM diff_comments WHERE id = ?`, [id]);
-}
+};

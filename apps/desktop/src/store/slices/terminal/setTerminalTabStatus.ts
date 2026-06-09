@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { TerminalTabId, TerminalTabStatus } from '../../../shared/types/terminal';
 import type { SetFn } from './types';
 
-export function setTerminalTabStatus(set: SetFn) {
+export const setTerminalTabStatus = (set: SetFn) => {
   return (sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void => {
     set((s) => {
       const tabs = s.terminalTabs[sessionId] ?? [];
@@ -14,4 +14,4 @@ export function setTerminalTabStatus(set: SetFn) {
       };
     });
   };
-}
+};

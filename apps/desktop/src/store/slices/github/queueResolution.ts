@@ -5,12 +5,7 @@ import type { GetFn, SetFn } from './types';
 
 type QueueArgs = { threadId: string; commitSha: string; prNumber: number };
 
-/**
- * Mark a review thread "solved locally, push later". The resolver agent has
- * already committed; this only records the intent so `pushAllResolutions` can
- * publish a batch with a single push. No git or GitHub call here.
- */
-export function queueResolution(set: SetFn, _get: GetFn) {
+export const queueResolution = (set: SetFn, _get: GetFn) => {
   return async (
     sessionId: SessionId,
     { threadId, commitSha, prNumber }: QueueArgs,
@@ -28,4 +23,4 @@ export function queueResolution(set: SetFn, _get: GetFn) {
       sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
     }));
   };
-}
+};

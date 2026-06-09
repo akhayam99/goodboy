@@ -4,7 +4,7 @@ import { clearTerminalCache } from '../../../shared/components/GenericTerminalPa
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import type { GetFn, SetFn } from './types';
 
-export function closeTerminalTab(set: SetFn, get: GetFn) {
+export const closeTerminalTab = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, tabId: TerminalTabId): void => {
     invokeTerminalClose(tabId).catch(() => undefined);
     clearTerminalCache(tabId);
@@ -24,4 +24,4 @@ export function closeTerminalTab(set: SetFn, get: GetFn) {
       };
     });
   };
-}
+};

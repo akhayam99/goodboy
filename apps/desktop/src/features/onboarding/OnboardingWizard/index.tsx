@@ -11,26 +11,30 @@ import { ReadyStep } from './steps/ReadyStep';
 const STEP_COUNT = 4;
 const EXIT_MS = 200;
 
-interface Cta {
+type Cta = {
   readonly label: string;
   readonly onClick: () => void;
   readonly variant: ButtonVariant;
-}
+};
 
-export function OnboardingWizard() {
+export const OnboardingWizard = () => {
   const { open, providersConnected, hasWorkspace } = useOnboardingWizard();
   const [step, setStep] = useState(0);
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setStep(0);
     setClosing(false);
     containerRef.current?.focus();
   }, [open]);
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
   const last = STEP_COUNT - 1;
   const goNext = () => setStep((s) => Math.min(s + 1, last));
@@ -81,7 +85,7 @@ export function OnboardingWizard() {
       />
 
       <header className="relative flex shrink-0 items-center justify-end px-6 pt-5">
-        {step < last ? (
+        {step < last && (
           <button
             type="button"
             onClick={dismiss}
@@ -89,13 +93,13 @@ export function OnboardingWizard() {
           >
             Skip setup
           </button>
-        ) : null}
+        )}
       </header>
 
       <main className="relative min-h-0 flex-1 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center px-6 py-10">
           <div className="flex w-full max-w-xl flex-col gap-8">
-            {step > 0 ? <Stepper current={step} total={last} /> : null}
+            {step > 0 && <Stepper current={step} total={last} />}
             <div key={step} className="motion-safe:animate-fade-in">
               {body}
             </div>
@@ -105,11 +109,11 @@ export function OnboardingWizard() {
                 step > 0 ? 'justify-between' : 'justify-center',
               )}
             >
-              {step > 0 ? (
+              {step > 0 && (
                 <Button variant="ghost" size="sm" onClick={goBack}>
                   Back
                 </Button>
-              ) : null}
+              )}
               <Button variant={cta.variant} onClick={cta.onClick}>
                 {cta.label}
               </Button>
@@ -119,4 +123,4 @@ export function OnboardingWizard() {
       </main>
     </div>
   );
-}
+};

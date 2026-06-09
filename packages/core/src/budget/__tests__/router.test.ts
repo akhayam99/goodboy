@@ -133,8 +133,6 @@ describe('resolveProvider', () => {
     });
     const decision = await resolveProvider(input);
 
-    // Handed back unchanged so the caller's auth-required flow can prompt a
-    // reconnect; not 'all-exceeded' (which would show a budget message).
     expect(decision.selectedProvider).toBe('anthropic');
     expect(decision.reason).toBe('preferred');
     expect(decision.fallbackUsed).toBe(false);

@@ -2,22 +2,32 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
-export interface EditPrOptions {
+export type EditPrOptions = {
   title?: string;
   body?: string;
-}
+};
 
-export function editPr(_set: SetFn, get: GetFn) {
+export const editPr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
 
     const args = ['pr', 'edit', String(prNumber)];
-    if (opts.title !== undefined) args.push('--title', opts.title);
-    if (opts.body !== undefined) args.push('--body', opts.body);
-    if (args.length === 3) return;
+    if (opts.title !== undefined) {
+      args.push('--title', opts.title);
+    }
+    if (opts.body !== undefined) {
+      args.push('--body', opts.body);
+    }
+    if (args.length === 3) {
+      return;
+    }
 
     const res = await tauriGhRunner.run(args, {
       cwd: workspace.rootPath,
@@ -33,4 +43,4 @@ export function editPr(_set: SetFn, get: GetFn) {
     }
     await get().refreshSessionPr(sessionId, { force: true });
   };
-}
+};

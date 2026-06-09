@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface OpenQuestionRow {
+type OpenQuestionRow = {
   id: string;
   session_id: string;
   workflow_id: string | null;
@@ -25,7 +25,7 @@ interface OpenQuestionRow {
   created_at: number;
   answered_at: number | null;
   dismissed_at: number | null;
-}
+};
 
 function toDomain(row: OpenQuestionRow): OpenQuestion {
   return {
@@ -50,7 +50,7 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
   };
 }
 
-export interface InsertOpenQuestionInput {
+export type InsertOpenQuestionInput = {
   readonly id: OpenQuestionId;
   readonly sessionId: SessionId;
   readonly workflowId?: WorkflowId;
@@ -60,17 +60,17 @@ export interface InsertOpenQuestionInput {
   readonly createdByAgentId?: AgentId;
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
-}
+};
 
-export interface InsertOpenQuestionResult {
+export type InsertOpenQuestionResult = {
   readonly question: OpenQuestion;
   readonly inserted: boolean;
-}
+};
 
-export async function insertOpenQuestion(
+export const insertOpenQuestion = async (
   db: Database,
   input: InsertOpenQuestionInput,
-): Promise<InsertOpenQuestionResult> {
+): Promise<InsertOpenQuestionResult> => {
   const now = Date.now();
   await db.execute(
     `INSERT OR IGNORE INTO open_questions
@@ -96,21 +96,22 @@ export async function insertOpenQuestion(
   if (ownRows[0]) {
     return { question: toDomain(ownRows[0]), inserted: true };
   }
-  // Conflict on partial unique index (session_id, text) WHERE status='open'.
   const existingRows = await db.select<OpenQuestionRow>(
     `SELECT * FROM open_questions WHERE session_id = ? AND text = ? AND status = 'open' LIMIT 1`,
     [input.sessionId, input.text],
   );
   const existing = existingRows[0];
-  if (!existing) throw new Error(`open_question insert failed: ${input.id}`);
+  if (!existing) {
+    throw new Error(`open_question insert failed: ${input.id}`);
+  }
   return { question: toDomain(existing), inserted: false };
-}
+};
 
-export async function listOpenQuestionsForSession(
+export const listOpenQuestionsForSession = async (
   db: Database,
   sessionId: SessionId,
   status?: OpenQuestionStatus,
-): Promise<ReadonlyArray<OpenQuestion>> {
+): Promise<ReadonlyArray<OpenQuestion>> => {
   const rows = status
     ? await db.select<OpenQuestionRow>(
         `SELECT * FROM open_questions WHERE session_id = ? AND status = ? ORDER BY created_at ASC`,
@@ -121,44 +122,47 @@ export async function listOpenQuestionsForSession(
         [sessionId],
       );
   return rows.map(toDomain);
-}
+};
 
-export async function listResolvedQuestionTextsForSession(
+export const listResolvedQuestionTextsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<string>> {
+): Promise<ReadonlyArray<string>> => {
   const rows = await db.select<{ text: string }>(
     `SELECT text FROM open_questions WHERE session_id = ? AND status != 'open'`,
     [sessionId],
   );
   return rows.map((r) => r.text);
-}
+};
 
-export async function markOpenQuestionAnswered(
+export const markOpenQuestionAnswered = async (
   db: Database,
   id: OpenQuestionId,
   userAnswer: string,
-): Promise<void> {
+): Promise<void> => {
   const now = Date.now();
   await db.execute(
     `UPDATE open_questions SET status = 'answered', user_answer = ?, answered_at = ? WHERE id = ?`,
     [userAnswer, now, id],
   );
-}
+};
 
-export async function markOpenQuestionDismissed(db: Database, id: OpenQuestionId): Promise<void> {
+export const markOpenQuestionDismissed = async (
+  db: Database,
+  id: OpenQuestionId,
+): Promise<void> => {
   const now = Date.now();
   await db.execute(
     `UPDATE open_questions SET status = 'dismissed', dismissed_at = ? WHERE id = ?`,
     [now, id],
   );
-}
+};
 
-export async function restoreOpenQuestion(db: Database, id: OpenQuestionId): Promise<void> {
+export const restoreOpenQuestion = async (db: Database, id: OpenQuestionId): Promise<void> => {
   await db.execute(`UPDATE open_questions SET status = 'open', dismissed_at = NULL WHERE id = ?`, [
     id,
   ]);
-}
+};
 
 function normalizeForMatch(s: string): string {
   return s
@@ -167,29 +171,41 @@ function normalizeForMatch(s: string): string {
     .toLowerCase();
 }
 
-export async function markOpenQuestionsResolvedByText(
+export const markOpenQuestionsResolvedByText = async (
   db: Database,
   sessionId: SessionId,
   texts: ReadonlyArray<string>,
-): Promise<number> {
-  if (texts.length === 0) return 0;
+): Promise<number> => {
+  if (texts.length === 0) {
+    return 0;
+  }
   const targets = texts.map(normalizeForMatch).filter((s) => s.length > 0);
-  if (targets.length === 0) return 0;
+  if (targets.length === 0) {
+    return 0;
+  }
 
   const rows = await db.select<OpenQuestionRow>(
     `SELECT * FROM open_questions WHERE session_id = ? AND status = 'open'`,
     [sessionId],
   );
-  if (rows.length === 0) return 0;
+  if (rows.length === 0) {
+    return 0;
+  }
 
   const toResolve: string[] = [];
   for (const row of rows) {
     const n = normalizeForMatch(row.text);
-    if (n.length === 0) continue;
+    if (n.length === 0) {
+      continue;
+    }
     const hit = targets.some((t) => n === t || n.includes(t) || t.includes(n));
-    if (hit) toResolve.push(row.id);
+    if (hit) {
+      toResolve.push(row.id);
+    }
   }
-  if (toResolve.length === 0) return 0;
+  if (toResolve.length === 0) {
+    return 0;
+  }
 
   const now = Date.now();
   for (const id of toResolve) {
@@ -201,18 +217,18 @@ export async function markOpenQuestionsResolvedByText(
     );
   }
   return toResolve.length;
-}
+};
 
-export async function transferOpenQuestionOwnership(
+export const transferOpenQuestionOwnership = async (
   db: Database,
   workflowRunId: WorkflowRunId,
   fromOrdinal: number,
   toOrdinal: number,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `UPDATE open_questions
      SET owned_by_step_ordinal = ?
      WHERE workflow_run_id = ? AND owned_by_step_ordinal = ? AND status = 'open'`,
     [toOrdinal, workflowRunId, fromOrdinal],
   );
-}
+};

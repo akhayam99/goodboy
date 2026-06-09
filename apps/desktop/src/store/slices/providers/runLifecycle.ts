@@ -23,29 +23,29 @@ const URL_RE = /https?:\/\/[^\s<>"'\x00-\x1F]+/g;
 const AUTH_HINT_RE =
   /oauth|authoriz|sign[-_]?in|\/login|cli-auth|claude\.|anthropic\.|cursor\.|openai\.|accounts\.google\./i;
 
-// First plausible OAuth URL in the chunk, or null. Stays conservative: only
-// surfaces URLs whose path or host looks auth-related so we don't offer to
-// "open in browser" on a random npm changelog link.
 function findAuthUrl(text: string): string | null {
   const matches = text.match(URL_RE);
-  if (!matches) return null;
+  if (!matches) {
+    return null;
+  }
   for (const url of matches) {
-    if (AUTH_HINT_RE.test(url)) return url;
+    if (AUTH_HINT_RE.test(url)) {
+      return url;
+    }
   }
   return null;
 }
 
-// Map an action to the in-flight phase that drives the UI while the PTY runs.
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
-  if (action === 'install') return 'installing';
-  if (action === 'login') return 'connecting';
+  if (action === 'install') {
+    return 'installing';
+  }
+  if (action === 'login') {
+    return 'connecting';
+  }
   return 'disconnecting';
 }
 
-// Map exit payload to the resting phase the UI lands on after exit. Coherence
-// guard: ground truth comes from the fresh detection in the payload, not from
-// our optimistic guess. If detection says "missing" after an install attempt,
-// we land on 'error' regardless of exit code (half-installed).
 function restingPhase(
   action: ProviderLifecycleAction,
   payload: LifecycleExitPayload,
@@ -53,12 +53,20 @@ function restingPhase(
   const installed = payload.status.available;
   const connected = payload.auth.state === 'connected';
   if (payload.exitCode !== 0) {
-    if (action === 'install') return installed ? 'installed' : 'error';
-    if (action === 'login') return connected ? 'connected' : 'error';
+    if (action === 'install') {
+      return installed ? 'installed' : 'error';
+    }
+    if (action === 'login') {
+      return connected ? 'connected' : 'error';
+    }
     return connected ? 'error' : 'installed';
   }
-  if (action === 'install') return installed ? 'installed' : 'error';
-  if (action === 'login') return connected ? 'connected' : 'error';
+  if (action === 'install') {
+    return installed ? 'installed' : 'error';
+  }
+  if (action === 'login') {
+    return connected ? 'connected' : 'error';
+  }
   return connected ? 'error' : 'installed';
 }
 
@@ -71,31 +79,36 @@ function statusSlotPatch(
   codexStatus?: ProviderStatus;
   geminiStatus?: ProviderStatus;
 } {
-  if (providerId === 'anthropic') return { providerStatus: status };
-  if (providerId === 'cursor') return { cursorStatus: status };
-  if (providerId === 'codex') return { codexStatus: status };
+  if (providerId === 'anthropic') {
+    return { providerStatus: status };
+  }
+  if (providerId === 'cursor') {
+    return { cursorStatus: status };
+  }
+  if (providerId === 'codex') {
+    return { codexStatus: status };
+  }
   return { geminiStatus: status };
 }
 
-export interface RunLifecycleArgs {
+export type RunLifecycleArgs = {
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
   readonly cols?: number;
   readonly rows?: number;
-}
+};
 
-export async function runLifecycle(
+export const runLifecycle = async (
   set: SetFn,
   get: GetFn,
   { providerId, action, cols = 100, rows = 24 }: RunLifecycleArgs,
-): Promise<void> {
+): Promise<void> => {
   const existing = get().providerLifecycle[providerId];
   if (
     existing.phase === 'installing' ||
     existing.phase === 'connecting' ||
     existing.phase === 'disconnecting'
   ) {
-    // Idempotent: another run is already in flight for this provider.
     return;
   }
 
@@ -125,7 +138,9 @@ export async function runLifecycle(
   let unlistenExit: () => void = () => undefined;
 
   unlistenOutput = await listenLifecycleOutput((payload) => {
-    if (payload.runId !== runId) return;
+    if (payload.runId !== runId) {
+      return;
+    }
     const chunk = atob(payload.data);
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
     if (!foundAuthUrl) {
@@ -134,7 +149,9 @@ export async function runLifecycle(
         foundAuthUrl = true;
         set((state) => {
           const curr = state.providerLifecycle[providerId];
-          if (curr.runId !== runId) return {};
+          if (curr.runId !== runId) {
+            return {};
+          }
           return {
             providerLifecycle: {
               ...state.providerLifecycle,
@@ -147,13 +164,13 @@ export async function runLifecycle(
   });
 
   unlistenExit = await listenLifecycleExit((payload) => {
-    if (payload.runId !== runId) return;
+    if (payload.runId !== runId) {
+      return;
+    }
     unlistenExit();
     unlistenOutput();
 
     const curr = get().providerLifecycle[providerId];
-    // If user cancelled, the slice already wrote phase='cancelled'. Preserve it
-    // but still refresh provider state from the payload.
     const finalPhase: ProviderLifecyclePhase =
       curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
     const errorTail = finalPhase === 'error' ? outputTail.replace(ANSI_RE, '').slice(-500) : null;
@@ -216,4 +233,4 @@ export async function runLifecycle(
       },
     }));
   }
-}
+};

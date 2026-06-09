@@ -7,7 +7,7 @@ import { runWorkspaceScript } from './runWorkspaceScript';
 import { saveScript } from './saveScript';
 import type { GetFn, SetFn } from './types';
 
-export function createScriptsSlice(set: SetFn, get: GetFn) {
+export const createScriptsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadScripts: loadScripts(set),
     saveScript: saveScript(get),
@@ -17,4 +17,4 @@ export function createScriptsSlice(set: SetFn, get: GetFn) {
     runWorkspaceScript: runWorkspaceScript(set, get),
     dismissScriptResult: dismissScriptResult(set),
   };
-}
+};

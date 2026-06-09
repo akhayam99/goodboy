@@ -15,7 +15,7 @@ export type AlertEmitterDeps = {
   checkSessionBudget: (sessionId: SessionId) => Promise<BudgetCheckResult>;
 };
 
-export function getCurrentPeriodKey(period: BudgetPeriod): string {
+export const getCurrentPeriodKey = (period: BudgetPeriod): string => {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = String(now.getUTCMonth() + 1).padStart(2, '0');
@@ -23,27 +23,35 @@ export function getCurrentPeriodKey(period: BudgetPeriod): string {
     return `${year}-${month}`;
   }
   return `${year}-${month}`;
-}
+};
 
 function providerAlertKind(
   result: BudgetCheckResult,
   thresholdPct: number,
 ): BudgetAlertKind | null {
-  if (result.pct >= 100) return 'provider-exceeded';
-  if (result.pct >= thresholdPct) return 'provider-threshold';
+  if (result.pct >= 100) {
+    return 'provider-exceeded';
+  }
+  if (result.pct >= thresholdPct) {
+    return 'provider-threshold';
+  }
   return null;
 }
 
 function sessionAlertKind(result: BudgetCheckResult, thresholdPct: number): BudgetAlertKind | null {
-  if (result.pct >= 100) return 'session-exceeded';
-  if (result.pct >= thresholdPct) return 'session-threshold';
+  if (result.pct >= 100) {
+    return 'session-exceeded';
+  }
+  if (result.pct >= thresholdPct) {
+    return 'session-threshold';
+  }
   return null;
 }
 
-export async function emitBudgetAlerts(
+export const emitBudgetAlerts = async (
   deps: AlertEmitterDeps,
   context: { provider: ProviderName; sessionId: SessionId },
-): Promise<BudgetAlert[]> {
+): Promise<BudgetAlert[]> => {
   const { db, checkProviderBudget, checkSessionBudget } = deps;
   const { provider, sessionId } = context;
 
@@ -101,4 +109,4 @@ export async function emitBudgetAlerts(
   }
 
   return created;
-}
+};

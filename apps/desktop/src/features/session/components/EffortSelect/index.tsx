@@ -11,14 +11,14 @@ import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
-interface Props {
+type Props = {
   model: string;
   value: EffortLevel;
   onChange: (level: EffortLevel) => void;
   disabled: boolean;
-}
+};
 
-export function EffortSelect({ model, value, onChange, disabled }: Props) {
+export const EffortSelect = ({ model, value, onChange, disabled }: Props) => {
   const levels = modelEffortLevels(model);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,4 +90,4 @@ export function EffortSelect({ model, value, onChange, disabled }: Props) {
       ) : null}
     </div>
   );
-}
+};

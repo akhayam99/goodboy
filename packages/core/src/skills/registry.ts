@@ -3,16 +3,16 @@ import type { Database as SqlDatabase } from '@goodboy/db';
 import { listSkillsForWorkspace, upsertSkill, deleteSkill } from '@goodboy/db';
 import { parseSkillMarkdown, SkillParseError } from './parser';
 
-export interface SkillFs {
+export type SkillFs = {
   readDir(path: string): Promise<string[]>;
   readFile(path: string): Promise<string>;
   stat(path: string): Promise<{ exists: boolean }>;
-}
+};
 
-export interface SkillRegistryDeps {
+export type SkillRegistryDeps = {
   readonly fs: SkillFs;
   readonly now: () => IsoDateTime;
-}
+};
 
 export class SkillRegistryError extends Error {
   constructor(
@@ -24,13 +24,9 @@ export class SkillRegistryError extends Error {
   }
 }
 
-/**
- * Represents a single skill file path to scan: the resolved path and its
- * canonical file path used as a stable DB key.
- */
-interface SkillCandidate {
+type SkillCandidate = {
   filePath: string;
-}
+};
 
 export class SkillRegistry {
   private readonly fs: SkillFs;
@@ -41,10 +37,6 @@ export class SkillRegistry {
     this.now = deps.now;
   }
 
-  /**
-   * Collects skill file paths from a flat `.kay/skills/*.md` directory.
-   * Returns an empty array when the directory is absent.
-   */
   private async collectKaySkills(rootPath: string): Promise<SkillCandidate[]> {
     const skillsDir = `${rootPath}/.kay/skills`;
     let filenames: string[];
@@ -52,7 +44,9 @@ export class SkillRegistry {
       filenames = await this.fs.readDir(skillsDir);
     } catch (err) {
       const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }));
-      if (!exists) return [];
+      if (!exists) {
+        return [];
+      }
       throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err);
     }
     return filenames
@@ -60,26 +54,19 @@ export class SkillRegistry {
       .map((f) => ({ filePath: `${skillsDir}/${f}` }));
   }
 
-  /**
-   * Collects skill file paths from the Claude Code convention:
-   * `.claude/skills/<skill-name>/SKILL.md` (one subdirectory per skill).
-   * Returns an empty array when the directory is absent.
-   */
   private async collectClaudeSkills(rootPath: string): Promise<SkillCandidate[]> {
     return this.collectNestedSkills(`${rootPath}/.claude/skills`);
   }
 
-  /**
-   * Shared helper for nested skill directory layouts where each skill lives in
-   * its own subdirectory containing a `SKILL.md` (Claude convention).
-   */
   private async collectNestedSkills(skillsDir: string): Promise<SkillCandidate[]> {
     let entries: string[];
     try {
       entries = await this.fs.readDir(skillsDir);
     } catch (err) {
       const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }));
-      if (!exists) return [];
+      if (!exists) {
+        return [];
+      }
       throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err);
     }
 

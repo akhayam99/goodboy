@@ -62,13 +62,14 @@ function makeFs(files: Record<string, string>): SkillFs {
           .map((f) => f.slice(`${SKILLS_DIR}/`.length));
       }
       if (path === CLAUDE_SKILLS_DIR) {
-        // Return the immediate subdirectory names under the nested layout.
         const subdirs = new Set<string>();
         for (const f of Object.keys(files)) {
           if (f.startsWith(`${path}/`)) {
             const rel = f.slice(`${path}/`.length);
             const firstSegment = rel.split('/')[0];
-            if (firstSegment !== undefined) subdirs.add(firstSegment);
+            if (firstSegment !== undefined) {
+              subdirs.add(firstSegment);
+            }
           }
         }
         return [...subdirs];
@@ -77,13 +78,15 @@ function makeFs(files: Record<string, string>): SkillFs {
     },
     async readFile(path: string): Promise<string> {
       const content = files[path];
-      if (content === undefined) throw new Error(`file not found: ${path}`);
+      if (content === undefined) {
+        throw new Error(`file not found: ${path}`);
+      }
       return content;
     },
     async stat(path: string): Promise<{ exists: boolean }> {
-      // Exact file match
-      if (files[path] !== undefined) return { exists: true };
-      // Directory / prefix match
+      if (files[path] !== undefined) {
+        return { exists: true };
+      }
       const hasFiles = Object.keys(files).some((f) => f.startsWith(`${path}/`));
       return { exists: hasFiles };
     },

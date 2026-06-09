@@ -106,9 +106,7 @@ describe('fanOut + awaitMerge, partial failure', () => {
     const completed = result.runStatuses.filter((r) => r.status === 'completed');
     expect(completed).toHaveLength(2);
 
-    // sibling cancel not triggered
     expect(deps.cancelRun).not.toHaveBeenCalled();
-    // all 3 spawned
     expect(spawnRun).toHaveBeenCalledTimes(3);
   });
 });
@@ -157,7 +155,6 @@ describe('cancelGroup', () => {
     const runs = [makeRun(0, 'run-0'), makeRun(1, 'run-1'), makeRun(2, 'run-2')];
     const group = makeGroup();
 
-    // spawnRun never resolves, we cancel before awaiting merge
     const spawnRun = vi.fn(() => new Promise<never>(() => undefined));
     const cancelRun = vi.fn(async () => undefined);
 
@@ -179,7 +176,6 @@ describe('onProgress', () => {
     const group = makeGroup();
 
     const spawnRun = vi.fn((run: ParallelAgent, onEvent: (e: TurnEvent) => void) => {
-      // defer via Promise so subscriber registered before events fire
       return Promise.resolve().then(() => {
         onEvent(makeDoneTurnEvent(run.runId));
         return { status: 'completed' as AgentStatus, outputSummary: null };
@@ -194,7 +190,6 @@ describe('onProgress', () => {
 
     await awaitMerge(handle);
 
-    // both runs emit 'done'
     expect(received).toHaveLength(2);
     const runIds = received.map((p) => p.runId);
     expect(runIds).toContain('run-0' as ProviderRunId);

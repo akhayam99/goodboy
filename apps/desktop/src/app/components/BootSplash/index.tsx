@@ -6,23 +6,18 @@ import { DogMascot } from '../../../shared/components/DogMascot';
 const GITHUB_NEW_ISSUE_URL =
   'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
 
-interface BootSplashProps {
+type BootSplashProps = {
   phase: BootPhase;
   error: string | null;
   onRetry?: () => void;
   onSkipProviderDetection?: () => void;
-  // Fires once the smooth progress bar has fully played through (pct === 100).
-  // Parent holds the splash visible until this signal so even fast boots get
-  // the complete intro animation.
   onFinished?: () => void;
-}
+};
 
-// User-facing steps. Internal phases (migrations, settings, cli detection) are
-// collapsed into the first one, users don't care about the difference.
-interface BootStep {
+type BootStep = {
   threshold: number;
   label: string;
-}
+};
 
 const STEPS: ReadonlyArray<BootStep> = [
   { threshold: 33, label: 'Loading your workspaces' },
@@ -35,8 +30,6 @@ const LAST_STEP: BootStep = STEPS[STEPS.length - 1] ?? {
   label: 'Almost there',
 };
 
-// Maps a real boot phase to the target % the animation should crawl toward.
-// The animation always lerps smoothly, fast boots still play the full bar.
 function targetForPhase(phase: BootPhase): number {
   switch (phase) {
     case 'pending':
@@ -65,26 +58,34 @@ function useSmoothProgress(phase: BootPhase, hasError: boolean): number {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (hasError) return;
+    if (hasError) {
+      return;
+    }
     targetRef.current = targetForPhase(phase);
   }, [phase, hasError]);
 
   useEffect(() => {
-    if (hasError) return undefined;
+    if (hasError) {
+      return undefined;
+    }
     let last = performance.now();
     const tick = (now: number) => {
       const dt = now - last;
       last = now;
       setPct((curr) => {
         const target = targetRef.current;
-        if (curr >= target) return curr;
+        if (curr >= target) {
+          return curr;
+        }
         return Math.min(target, curr + dt * RATE_PER_MS);
       });
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
   }, [hasError]);
 
@@ -95,20 +96,22 @@ function stepForProgress(pct: number): BootStep {
   return STEPS.find((s) => pct < s.threshold) ?? LAST_STEP;
 }
 
-export function BootSplash({
+export const BootSplash = ({
   phase,
   error,
   onRetry,
   onSkipProviderDetection,
   onFinished,
-}: BootSplashProps) {
+}: BootSplashProps) => {
   const hasError = error != null;
   const pct = useSmoothProgress(phase, hasError);
   const step = stepForProgress(pct);
   const finishedRef = useRef(false);
 
   useEffect(() => {
-    if (finishedRef.current || hasError) return;
+    if (finishedRef.current || hasError) {
+      return;
+    }
     if (pct >= 100 && phase === 'ready') {
       finishedRef.current = true;
       onFinished?.();
@@ -117,7 +120,6 @@ export function BootSplash({
 
   return (
     <div className="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground">
-      {/* dot grid background */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
@@ -127,7 +129,7 @@ export function BootSplash({
           backgroundSize: '18px 18px',
         }}
       />
-      {/* radial vignette to keep focus center */}
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
@@ -137,7 +139,6 @@ export function BootSplash({
         }}
       />
 
-      {/* mascot + wordmark */}
       <div className="flex flex-col items-center gap-5">
         <div className="relative flex h-24 w-24 items-center justify-center text-primary">
           <span
@@ -163,7 +164,6 @@ export function BootSplash({
         </div>
       </div>
 
-      {/* single message + progress bar */}
       {hasError ? null : (
         <div className="flex w-72 flex-col gap-3">
           <div className="flex h-5 items-center justify-center">
@@ -198,7 +198,7 @@ export function BootSplash({
       ) : null}
     </div>
   );
-}
+};
 
 function BlinkCursor() {
   return (

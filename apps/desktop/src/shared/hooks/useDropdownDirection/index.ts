@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
 
-/**
- * Walks up the DOM until it finds an ancestor that clips overflow
- * (auto/scroll/hidden on Y). That's the box our popover would actually
- * be cut off by, measuring against `window` is misleading when the
- * trigger sits inside a Dialog with `overflow: hidden`.
- */
 function findClippingAncestor(el: HTMLElement | null): HTMLElement | null {
   let current = el?.parentElement ?? null;
   while (current) {
@@ -19,22 +13,21 @@ function findClippingAncestor(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-/**
- * Picks the opening direction based on the trigger's position relative
- * to its nearest clipping ancestor. Avoids the bottom-of-scroll-container
- * trap where `top-full` would push the popover into a hidden region.
- */
-export function useDropdownDirection(
+export const useDropdownDirection = (
   triggerRef: React.RefObject<HTMLElement | null>,
   open: boolean,
   expectedHeight = 200,
-): 'up' | 'down' {
+): 'up' | 'down' => {
   const [direction, setDirection] = useState<'up' | 'down'>('down');
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const el = triggerRef.current;
     const rect = el?.getBoundingClientRect();
-    if (!el || !rect) return;
+    if (!el || !rect) {
+      return;
+    }
     const clipper = findClippingAncestor(el);
     const clipperRect = clipper?.getBoundingClientRect();
     const bottomBound = clipperRect ? clipperRect.bottom : window.innerHeight;
@@ -44,4 +37,4 @@ export function useDropdownDirection(
     setDirection(spaceBelow < expectedHeight && spaceAbove > spaceBelow ? 'up' : 'down');
   }, [open, triggerRef, expectedHeight]);
   return direction;
-}
+};

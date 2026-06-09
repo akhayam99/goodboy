@@ -1,11 +1,13 @@
 import { Plus } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly ghost: { label: string; x: number; y: number } | null;
-}
+};
 
-export function DragGhost({ ghost }: Props) {
-  if (!ghost) return null;
+export const DragGhost = ({ ghost }: Props) => {
+  if (!ghost) {
+    return null;
+  }
   return (
     <div
       className="pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border border-primary/40 bg-background/95 px-2 py-1 text-2xs font-medium text-foreground shadow-lg"
@@ -15,4 +17,4 @@ export function DragGhost({ ghost }: Props) {
       {ghost.label}
     </div>
   );
-}
+};

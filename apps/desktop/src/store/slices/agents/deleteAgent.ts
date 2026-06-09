@@ -6,7 +6,7 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
-export function deleteAgent(set: SetFn, get: GetFn) {
+export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const agentTurn = get().agentTurnState[agentId];
     const agentRunId = agentTurn?.kind === 'running' ? agentTurn.runId : null;
@@ -19,10 +19,6 @@ export function deleteAgent(set: SetFn, get: GetFn) {
     const refreshed = await invokeAgentList(sessionId);
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     set((s) => {
-      // Clear selection, never auto-pick a sibling. Picking a 'fallback'
-      // dumps the user into a chat they didn't ask for; the empty-state
-      // 'pick_agent' scenario already covers the no-selection case and is
-      // explicit about what they can do next.
       const wasSelected = s.selectedAgentId[sessionId] === agentId;
       const nextSelected = { ...s.selectedAgentId };
       if (wasSelected) {
@@ -79,4 +75,4 @@ export function deleteAgent(set: SetFn, get: GetFn) {
       ).catch(() => undefined);
     }
   };
-}
+};

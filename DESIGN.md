@@ -72,6 +72,9 @@ the two collapse into the same texture.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_; the
   notification inbox is the _log_. Anything worth signalling reaches the
   inbox; nothing lives only in a toast.
+- **Errors are toasts, never pinned banners.** An error surfaces as a
+  transient, dismissible toast owned by the notification system, not an inline
+  banner wired into the view that lingers after the cause is gone.
 - **Chips carry a word.** Status chips — PR state, CI, agent kind — pair an
   icon with a label. Icon-only is allowed only where space is truly gone, and
   then the label survives as a tooltip.
@@ -91,6 +94,12 @@ before sending, a running total after.
   editing opens a focused dialog. The transcript is for reading.
 - **Empty states teach.** Every empty state says what the thing is, why it
   matters, and offers one action to create it. Never a dead end.
+- **Loading is a skeleton, not a spinner.** A card or substantial element
+  loads as a greyed placeholder mirroring its real layout (image block, title,
+  chips), so the surface does not jump when content lands. A bare spinner is
+  only for the first load of an empty region with no shape to mirror yet. The
+  skeleton is part of the component: change the layout, update the skeleton in
+  the same change.
 - **Confirm what is destructive, nothing else.** Two-step confirms are for
   irreversible actions only — they must not tax routine clicks.
 
@@ -118,5 +127,7 @@ before sending, a running total after.
 
 ---
 
-See [VISION.md](./VISION.md) for what Goodboy is, and
-[CONVENTIONS.md](./CONVENTIONS.md) + [CLAUDE.md](./CLAUDE.md) for code rules.
+See [VISION.md](./VISION.md) for what Goodboy is,
+[docs/styling.md](./docs/styling.md) for the spacing / radius / scroll
+mechanics, and [AGENTS.md](./AGENTS.md) + [CLAUDE.md](./CLAUDE.md) for code
+rules.

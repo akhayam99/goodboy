@@ -4,21 +4,25 @@ import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 function unwrapError(err: unknown): string {
-  if (err instanceof Error) return err.message;
+  if (err instanceof Error) {
+    return err.message;
+  }
   if (typeof err === 'object' && err !== null && 'message' in err) {
     const { message } = err as Record<string, unknown>;
-    if (typeof message === 'string') return message;
+    if (typeof message === 'string') {
+      return message;
+    }
   }
   return String(err);
 }
 
-interface Props {
+type Props = {
   session: Session;
   open: boolean;
   onClose: () => void;
-}
+};
 
-export function ArchiveSessionDialog({ session, open, onClose }: Props) {
+export const ArchiveSessionDialog = ({ session, open, onClose }: Props) => {
   const archiveTask = useAppStore((s) => s.archiveTask);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,4 +64,4 @@ export function ArchiveSessionDialog({ session, open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

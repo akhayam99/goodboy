@@ -6,15 +6,19 @@ import {
 } from '../../../features/workspace/window';
 import type { GetFn } from './types';
 
-export function openWorkspace(get: GetFn) {
+export const openWorkspace = (get: GetFn) => {
   return async (id: WorkspaceId, title: string): Promise<void> => {
     const presence = get().windowPresence;
     const myLabel = currentWindowLabel();
     const shownLabel = Object.entries(presence).find(([, ws]) => ws === id)?.[0] ?? null;
 
-    if (shownLabel === myLabel) return;
+    if (shownLabel === myLabel) {
+      return;
+    }
     if (shownLabel) {
-      if (await focusWindow(shownLabel)) return;
+      if (await focusWindow(shownLabel)) {
+        return;
+      }
     }
     if (get().currentWorkspaceId === null) {
       await get().setCurrentWorkspace(id);
@@ -22,4 +26,4 @@ export function openWorkspace(get: GetFn) {
     }
     await spawnWorkspaceWindow(id, title);
   };
-}
+};

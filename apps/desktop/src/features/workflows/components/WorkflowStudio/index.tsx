@@ -3,13 +3,13 @@ import type { WorkspaceId } from '@goodboy/types';
 import { WorkflowsPanel } from '../WorkflowsPanel';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
   readonly workspaceName: string;
   readonly onClose: () => void;
-}
+};
 
-export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
+export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) => {
   return (
     <StudioShell
       icon={Layers}
@@ -25,4 +25,4 @@ export function WorkflowStudio({ workspaceId, workspaceName, onClose }: Props) {
       )}
     </StudioShell>
   );
-}
+};

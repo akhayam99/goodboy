@@ -6,19 +6,13 @@ import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn, SetFn } from './types';
 
-export interface PushAllResult {
+export type PushAllResult = {
   pushed: boolean;
   resolved: number;
   failed: number;
-}
+};
 
-/**
- * Publish every queued resolution with a SINGLE push: push the branch once,
- * then reply + resolve each pending thread. Failed threads stay queued so a
- * retry resolves only them without re-pushing. One push instead of N keeps the
- * PR from firing N CI/webhook runs.
- */
-export function pushAllResolutions(set: SetFn, get: GetFn) {
+export const pushAllResolutions = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<PushAllResult> => {
     const session = get().sessions.find((s) => s.id === sessionId);
     const workspace = session
@@ -27,7 +21,9 @@ export function pushAllResolutions(set: SetFn, get: GetFn) {
     const notifyTarget = { sessionId, ...(workspace && { workspaceId: workspace.id }) };
 
     const pending = await listPendingResolutionsForSession(tauriDatabase, sessionId);
-    if (pending.length === 0) return { pushed: false, resolved: 0, failed: 0 };
+    if (pending.length === 0) {
+      return { pushed: false, resolved: 0, failed: 0 };
+    }
 
     const push = await pushSessionBranch(get, sessionId);
     if (!push.ok) {
@@ -72,4 +68,4 @@ export function pushAllResolutions(set: SetFn, get: GetFn) {
     }
     return { pushed: true, resolved, failed };
   };
-}
+};

@@ -7,12 +7,12 @@ import type {
 import type { IsoDateTime } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface ContextSlotRow {
+type ContextSlotRow = {
   session_id: string;
   key: string;
   value: string;
   enabled: number;
-}
+};
 
 function toDomain(row: ContextSlotRow): ContextSlot {
   return {
@@ -22,12 +22,12 @@ function toDomain(row: ContextSlotRow): ContextSlot {
   };
 }
 
-export async function upsertContextSlot(
+export const upsertContextSlot = async (
   db: Database,
   sessionId: SessionId,
   slot: ContextSlot,
   author: ContextSlotAuthor = 'summarizer',
-): Promise<void> {
+): Promise<void> => {
   const existing = await db.select<ContextSlotRow>(
     'SELECT session_id, key, value, enabled FROM context_slots WHERE session_id = ? AND key = ?',
     [sessionId, slot.key],
@@ -44,17 +44,17 @@ export async function upsertContextSlot(
        enabled = excluded.enabled`,
     [sessionId, slot.key, slot.value, slot.enabled ? 1 : 0],
   );
-}
+};
 
 const HISTORY_CAP = 20;
 
-interface ContextSlotHistoryRow {
+type ContextSlotHistoryRow = {
   id: string;
   key: string;
   value: string;
   author: string;
   created_at: number;
-}
+};
 
 function toHistoryDomain(row: ContextSlotHistoryRow): ContextSlotHistoryEntry {
   return {
@@ -66,14 +66,14 @@ function toHistoryDomain(row: ContextSlotHistoryRow): ContextSlotHistoryEntry {
   };
 }
 
-export async function insertContextSlotHistory(
+export const insertContextSlotHistory = async (
   db: Database,
   sessionId: SessionId,
   id: string,
   key: string,
   value: string,
   author: ContextSlotAuthor,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     `INSERT INTO context_slot_history (id, session_id, key, value, author, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
@@ -89,13 +89,13 @@ export async function insertContextSlotHistory(
      )`,
     [sessionId, key, sessionId, key],
   );
-}
+};
 
-export async function listContextSlotHistory(
+export const listContextSlotHistory = async (
   db: Database,
   sessionId: SessionId,
   key: string,
-): Promise<ReadonlyArray<ContextSlotHistoryEntry>> {
+): Promise<ReadonlyArray<ContextSlotHistoryEntry>> => {
   const rows = await db.select<ContextSlotHistoryRow>(
     `SELECT id, key, value, author, created_at
      FROM context_slot_history
@@ -104,15 +104,15 @@ export async function listContextSlotHistory(
     [sessionId, key],
   );
   return rows.map(toHistoryDomain);
-}
+};
 
-export async function listContextSlotsForSession(
+export const listContextSlotsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<ContextSlot>> {
+): Promise<ReadonlyArray<ContextSlot>> => {
   const rows = await db.select<ContextSlotRow>(
     'SELECT * FROM context_slots WHERE session_id = ? ORDER BY key',
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};

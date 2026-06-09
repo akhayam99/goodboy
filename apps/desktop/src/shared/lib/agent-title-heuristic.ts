@@ -80,7 +80,7 @@ const STOP_WORDS = new Set([
   'help',
 ]);
 
-export function heuristicAgentTitle(prompt: string): string | null {
+export const heuristicAgentTitle = (prompt: string): string | null => {
   const clean = prompt
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`[^`]+`/g, ' ')
@@ -96,10 +96,11 @@ export function heuristicAgentTitle(prompt: string): string | null {
   if (verbIdx !== -1) {
     const slice = words.slice(verbIdx, verbIdx + 6);
     const significant = slice.filter((w, i) => i === 0 || !STOP_WORDS.has(w)).slice(0, 3);
-    if (significant.length >= 2) return significant.join(' ');
+    if (significant.length >= 2) {
+      return significant.join(' ');
+    }
   }
 
-  // Fallback: first 3 significant words from first line
   const significant = words.filter((w) => !STOP_WORDS.has(w)).slice(0, 3);
   return significant.length >= 2 ? significant.join(' ') : null;
-}
+};

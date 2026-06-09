@@ -29,14 +29,14 @@ const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   discarded: 'Discarded',
 };
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly open: boolean;
   readonly onClose: () => void;
   readonly initialPlanId?: PlanId;
-}
+};
 
-export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
+export const PlansModal = ({ sessionId, open, onClose, initialPlanId }: Props) => {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -66,64 +66,89 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
 
   useEffect(() => {
     return () => {
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
+      if (retriggerTimerRef.current !== null) {
+        window.clearTimeout(retriggerTimerRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
-    if (open && initialPlanId) setSelectedId(initialPlanId);
+    if (open && initialPlanId) {
+      setSelectedId(initialPlanId);
+    }
   }, [open, initialPlanId]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     if (selectedId === null && plans.length > 0) {
       const fallback = plans[plans.length - 1];
-      if (fallback) setSelectedId(fallback.id);
+      if (fallback) {
+        setSelectedId(fallback.id);
+      }
     }
   }, [open, selectedId, plans]);
 
   useEffect(() => {
-    if (open && selectedId) void loadConsumptionsForPlan(selectedId);
+    if (open && selectedId) {
+      void loadConsumptionsForPlan(selectedId);
+    }
   }, [open, selectedId, loadConsumptionsForPlan]);
 
   const selected: PlanWithCount | null = plans.find((p) => p.id === selectedId) ?? null;
 
   useEffect(() => {
-    if (selected && mode === 'preview') setDraft(planToSource(selected));
+    if (selected && mode === 'preview') {
+      setDraft(planToSource(selected));
+    }
   }, [selected, mode]);
 
-  // Discarded plans are frozen, force preview, segmented control is
-  // disabled below. If the user was editing when the plan got discarded
-  // (or selected a discarded one), drop back to preview.
   useEffect(() => {
-    if (selected?.status === 'discarded' && mode === 'edit') setMode('preview');
+    if (selected?.status === 'discarded' && mode === 'edit') {
+      setMode('preview');
+    }
   }, [selected?.status, mode]);
 
   const commitEdit = useCallback(() => {
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
     const next = parsePlanSource(draft);
-    if (next.title.length === 0) return;
-    if (next.title === selected.title && next.bodyMd === selected.bodyMd) return;
+    if (next.title.length === 0) {
+      return;
+    }
+    if (next.title === selected.title && next.bodyMd === selected.bodyMd) {
+      return;
+    }
     void updatePlanBody(sessionId, selected.id, next.title, next.bodyMd);
   }, [selected, draft, sessionId, updatePlanBody]);
 
   const handleClose = useCallback(() => {
-    if (mode === 'edit') commitEdit();
+    if (mode === 'edit') {
+      commitEdit();
+    }
     setMode('preview');
     onClose();
   }, [mode, commitEdit, onClose]);
 
   const handleSelectPlan = (id: PlanId) => {
-    if (mode === 'edit') commitEdit();
+    if (mode === 'edit') {
+      commitEdit();
+    }
     setMode('preview');
     setSelectedId(id);
   };
 
   const handleTrigger = async () => {
-    if (!selected || spawning) return;
+    if (!selected || spawning) {
+      return;
+    }
     if (selected.status === 'consumed' && !retriggerArmed) {
       setRetriggerArmed(true);
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
+      if (retriggerTimerRef.current !== null) {
+        window.clearTimeout(retriggerTimerRef.current);
+      }
       retriggerTimerRef.current = window.setTimeout(() => {
         setRetriggerArmed(false);
         retriggerTimerRef.current = null;
@@ -144,12 +169,10 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
     }
   };
 
-  // Soft delete, flips the plan to 'discarded' (status only, row stays).
-  // If the user happens to be mid-edit, commit the draft first so their
-  // typing isn't lost on restore. Selection stays on the plan: it's still
-  // visible in the list (dimmed) so the user can immediately undo.
   const handleDiscard = (plan: PlanWithCount) => {
-    if (mode === 'edit') commitEdit();
+    if (mode === 'edit') {
+      commitEdit();
+    }
     setMode('preview');
     void deletePlan(sessionId, plan.id);
   };
@@ -300,9 +323,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
                   );
                 })}
               </div>
-              {/* Actions, left-to-right: segmented control → trigger → delete/restore.
-                  Order intentionally inverted vs. older builds: the destructive
-                  action sits at the far right so it's predictable to find. */}
+
               <div className="flex shrink-0 items-center gap-1.5">
                 <div
                   role="tablist"
@@ -317,7 +338,9 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
                     role="tab"
                     aria-selected={mode === 'preview'}
                     onClick={() => {
-                      if (mode === 'edit') commitEdit();
+                      if (mode === 'edit') {
+                        commitEdit();
+                      }
                       setMode('preview');
                     }}
                     className={cn(
@@ -355,7 +378,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
                     Edit
                   </button>
                 </div>
-                {selected.status !== 'discarded' ? (
+                {selected.status !== 'discarded' && (
                   <button
                     type="button"
                     onClick={() => void handleTrigger()}
@@ -390,7 +413,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
                         ? 'Start'
                         : 'Replay'}
                   </button>
-                ) : null}
+                )}
                 {selected.status === 'consumed' ? (
                   <span
                     className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
@@ -422,14 +445,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
                 )}
               </div>
             </div>
-            {/* Scroll container: only the body scrolls, header/actions above
-                stay anchored. Top/bottom gradients fade content into the
-                dialog bg, same trick used by the chat transcript. Border
-                only in edit mode where the textarea needs a visible field. */}
-            {/* Hairline separator between sticky header (created by + actions)
-                and the scrollable body, with breathing room on both sides
-                so the divider doesn't kiss the content. The fade gradients
-                below kick in further down once the body starts scrolling. */}
+
             <div className="shrink-0 py-2">
               <Divider />
             </div>
@@ -463,7 +479,7 @@ export function PlansModal({ sessionId, open, onClose, initialPlanId }: Props) {
       </div>
     </Dialog>
   );
-}
+};
 
 function fmtTimestamp(ts: string | number): string {
   return new Date(ts).toLocaleString(undefined, {
@@ -488,7 +504,9 @@ function parsePlanSource(raw: string): { title: string; bodyMd: string } {
       break;
     }
   }
-  if (firstIdx === -1) return { title: '', bodyMd: '' };
+  if (firstIdx === -1) {
+    return { title: '', bodyMd: '' };
+  }
   const titleLine = (lines[firstIdx] ?? '').trim();
   const title = titleLine.replace(/^#+\s*/, '').trim();
   const restLines = lines.slice(firstIdx + 1);

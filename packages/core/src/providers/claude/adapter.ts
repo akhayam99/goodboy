@@ -27,12 +27,12 @@ const CAPABILITIES: ProviderCapabilities = {
   ],
 };
 
-export interface ClaudeAdapterDeps {
+export type ClaudeAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 export class ClaudeAdapter implements ProviderAdapter {
   readonly id = 'anthropic' as const;
@@ -192,14 +192,18 @@ async function* spawnClaude(
         continue;
       }
       if (ended) {
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         return;
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
         resolver = resolve;
         rejector = reject;
       });
-      if (value.done) return;
+      if (value.done) {
+        return;
+      }
       yield value.value;
     }
   } finally {

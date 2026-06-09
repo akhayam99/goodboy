@@ -9,9 +9,9 @@ import type {
 } from '@goodboy/types';
 import { formatToolPattern, parseToolPattern } from './matcher';
 
-export interface PermissionEngineDeps {
+export type PermissionEngineDeps = {
   readonly defaultDecision?: 'allow' | 'deny';
-}
+};
 
 const SCOPE_RANK: Record<PermissionRuleScope, number> = {
   session: 2,
@@ -23,9 +23,15 @@ function isApplicable(
   rule: PermissionRule,
   context: { sessionId: SessionId; workspaceId: WorkspaceId },
 ): boolean {
-  if (rule.scope === 'global') return true;
-  if (rule.scope === 'session') return rule.sessionId === context.sessionId;
-  if (rule.scope === 'workspace') return rule.workspaceId === context.workspaceId;
+  if (rule.scope === 'global') {
+    return true;
+  }
+  if (rule.scope === 'session') {
+    return rule.sessionId === context.sessionId;
+  }
+  if (rule.scope === 'workspace') {
+    return rule.workspaceId === context.workspaceId;
+  }
   return false;
 }
 
@@ -63,20 +69,23 @@ export class PermissionEngine {
       };
     }
 
-    // Sort: priority desc, scope desc, specificity desc, deny-wins on ties
     const sorted = [...matched].sort((a, b) => {
-      if (b.priority !== a.priority) return b.priority - a.priority;
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
       const scopeDiff = SCOPE_RANK[b.scope] - SCOPE_RANK[a.scope];
-      if (scopeDiff !== 0) return scopeDiff;
+      if (scopeDiff !== 0) {
+        return scopeDiff;
+      }
       const aSpec = isSpecific(a) ? 1 : 0;
       const bSpec = isSpecific(b) ? 1 : 0;
-      if (bSpec !== aSpec) return bSpec - aSpec;
-      // equal precedence: deny/ask wins over allow
+      if (bSpec !== aSpec) {
+        return bSpec - aSpec;
+      }
       const denyRank = (d: string) => (d === 'deny' || d === 'ask' ? 1 : 0);
       return denyRank(b.decision) - denyRank(a.decision);
     });
 
-    // sorted is guaranteed non-empty (matched.length > 0)
     const winner = sorted[0] as PermissionRule;
     const outcome: PermissionDecisionOutcome = winner.decision === 'allow' ? 'allow' : 'deny';
 

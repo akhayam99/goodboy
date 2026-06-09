@@ -3,18 +3,22 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 
-interface Props {
+type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
-}
+};
 
 const DECISION_TONE: Record<'allow' | 'deny', string> = {
   allow: 'text-success',
   deny: 'text-danger',
 };
 
-export function PermissionDecisionCard({ item, sessionId: _sessionId, agentId: _agentId }: Props) {
+export const PermissionDecisionCard = ({
+  item,
+  sessionId: _sessionId,
+  agentId: _agentId,
+}: Props) => {
   const timestamp = formatCardTime(item.at);
 
   return (
@@ -25,13 +29,13 @@ export function PermissionDecisionCard({ item, sessionId: _sessionId, agentId: _
         </span>
         <code className="font-mono text-foreground">{item.toolUseId}</code>
         <span className={cn('font-semibold', DECISION_TONE[item.decision])}>{item.decision}</span>
-        {item.ruleId !== null ? (
+        {item.ruleId !== null && (
           <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-2xs text-secondary-foreground">
             {item.ruleId}
           </span>
-        ) : null}
+        )}
         <span className="ml-auto text-2xs text-muted-foreground">{timestamp}</span>
       </div>
     </div>
   );
-}
+};

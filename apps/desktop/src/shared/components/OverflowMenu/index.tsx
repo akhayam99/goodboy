@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import { MoreVertical } from 'lucide-react';
 import { Popover, cn } from '@goodboy/ui';
 
-interface IconProps {
+type IconProps = {
   readonly size?: number;
   readonly className?: string;
   readonly 'aria-hidden'?: boolean;
-}
+};
 
 export type OverflowMenuItem =
   | {
@@ -23,35 +23,39 @@ export type OverflowMenuItem =
   | { readonly kind: 'header'; readonly key: string; readonly label: string }
   | { readonly kind: 'empty'; readonly key: string; readonly label: string };
 
-interface OverflowMenuProps {
+type OverflowMenuProps = {
   readonly items: ReadonlyArray<OverflowMenuItem>;
   readonly label?: string;
   readonly triggerClassName?: string;
   readonly trigger?: ReactNode;
   readonly disabled?: boolean;
   readonly align?: 'left' | 'right';
-}
+};
 
-export function OverflowMenu({
+export const OverflowMenu = ({
   items,
   label = 'more actions',
   triggerClassName,
   trigger,
   disabled,
   align = 'right',
-}: OverflowMenuProps) {
+}: OverflowMenuProps) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('keydown', onEsc);
@@ -120,7 +124,9 @@ export function OverflowMenu({
                 role="menuitem"
                 disabled={item.disabled}
                 onClick={() => {
-                  if (item.disabled) return;
+                  if (item.disabled) {
+                    return;
+                  }
                   item.onClick();
                   setOpen(false);
                 }}
@@ -147,4 +153,4 @@ export function OverflowMenu({
       ) : null}
     </div>
   );
-}
+};

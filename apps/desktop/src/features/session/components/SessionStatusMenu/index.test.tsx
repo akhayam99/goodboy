@@ -26,7 +26,9 @@ describe('SessionStatusMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: /change session status/i }));
     const items = screen.getAllByRole('menuitem');
     const other = items.find((el) => !el.className.includes('font-medium'));
-    if (other) fireEvent.click(other);
+    if (other) {
+      fireEvent.click(other);
+    }
     expect(onPick).toHaveBeenCalled();
   });
 });

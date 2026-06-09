@@ -7,14 +7,14 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface ParallelGroupRow {
+type ParallelGroupRow = {
   id: string;
   session_id: string;
   ordinal: number;
   merge_strategy: string;
   created_at: number;
   completed_at: number | null;
-}
+};
 
 function toDomain(row: ParallelGroupRow): ParallelGroup {
   return {
@@ -29,7 +29,7 @@ function toDomain(row: ParallelGroupRow): ParallelGroup {
   };
 }
 
-export async function insertGroup(db: Database, group: ParallelGroup): Promise<void> {
+export const insertGroup = async (db: Database, group: ParallelGroup): Promise<void> => {
   await db.execute(
     `INSERT INTO parallel_groups
       (id, session_id, ordinal, merge_strategy, created_at, completed_at)
@@ -43,41 +43,41 @@ export async function insertGroup(db: Database, group: ParallelGroup): Promise<v
       group.completedAt ? new Date(group.completedAt).getTime() : null,
     ],
   );
-}
+};
 
-export async function listGroupsForSession(
+export const listGroupsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<ParallelGroup>> {
+): Promise<ReadonlyArray<ParallelGroup>> => {
   const rows = await db.select<ParallelGroupRow>(
     'SELECT * FROM parallel_groups WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function getGroupById(
+export const getGroupById = async (
   db: Database,
   groupId: ParallelGroupId,
-): Promise<ParallelGroup | null> {
+): Promise<ParallelGroup | null> => {
   const rows = await db.select<ParallelGroupRow>(
     'SELECT * FROM parallel_groups WHERE id = ? LIMIT 1',
     [groupId],
   );
   return rows.length > 0 ? toDomain(rows[0]!) : null;
-}
+};
 
-export async function deleteGroup(db: Database, groupId: ParallelGroupId): Promise<void> {
+export const deleteGroup = async (db: Database, groupId: ParallelGroupId): Promise<void> => {
   await db.execute('DELETE FROM parallel_groups WHERE id = ?', [groupId]);
-}
+};
 
-export async function updateGroupCompletedAt(
+export const updateGroupCompletedAt = async (
   db: Database,
   groupId: ParallelGroupId,
   completedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE parallel_groups SET completed_at = ? WHERE id = ?', [
     new Date(completedAt).getTime(),
     groupId,
   ]);
-}
+};

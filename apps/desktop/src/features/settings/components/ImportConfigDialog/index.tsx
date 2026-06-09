@@ -2,14 +2,14 @@ import { Button, Dialog } from '@goodboy/ui';
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
-interface Props {
+type Props = {
   open: boolean;
   result: ConfigBundleImportResult | null;
   error: string | null;
   onClose: () => void;
-}
+};
 
-export function ImportConfigDialog({ open, result, error, onClose }: Props) {
+export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
   const title = error
     ? 'Import failed'
     : result?.ok
@@ -30,7 +30,7 @@ export function ImportConfigDialog({ open, result, error, onClose }: Props) {
       ) : result ? (
         <div className="flex flex-col gap-3">
           {result.ok ? (
-            <ul className="space-y-1 text-xs text-muted-foreground">
+            <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
               <li>workspaces: {result.stats.workspaces}</li>
               {WORKSPACE_FEATURES.skills ? <li>skills: {result.stats.skills}</li> : null}
               <li>workflows: {result.stats.workflows}</li>
@@ -38,7 +38,7 @@ export function ImportConfigDialog({ open, result, error, onClose }: Props) {
               {SESSION_FEATURES.budget ? <li>budget rules: {result.stats.budgetRules}</li> : null}
             </ul>
           ) : (
-            <ul className="space-y-1 text-xs text-danger">
+            <ul className="flex flex-col gap-1 text-xs text-danger">
               {result.errors.map((e, i) => (
                 <li key={i}>
                   <span className="font-mono">{e.field}</span>: {e.message}
@@ -50,4 +50,4 @@ export function ImportConfigDialog({ open, result, error, onClose }: Props) {
       ) : null}
     </Dialog>
   );
-}
+};

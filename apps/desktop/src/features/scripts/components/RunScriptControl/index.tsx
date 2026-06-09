@@ -6,18 +6,22 @@ import { Play, ScrollText, Square, Terminal } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunRecord, ScriptRunStatus } from '../../scripts';
 
-interface RunScriptControlProps {
+type RunScriptControlProps = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly worktreePath: string | null;
-}
+};
 
-interface PopoverAnchor {
+type PopoverAnchor = {
   readonly centerX: number;
   readonly top: number;
-}
+};
 
-export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunScriptControlProps) {
+export const RunScriptControl = ({
+  sessionId,
+  workspaceId,
+  worktreePath,
+}: RunScriptControlProps) => {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -37,22 +41,33 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
 
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return null;
+    if (!rect) {
+      return null;
+    }
     return { centerX: rect.left + rect.width / 2, top: rect.bottom + 4 };
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) {
+        return;
+      }
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
       setOpen(false);
     };
     const onReanchor = () => {
       const next = computeAnchor();
-      if (next) setAnchor(next);
-      else setOpen(false);
+      if (next) {
+        setAnchor(next);
+      } else {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('resize', onReanchor);
@@ -67,14 +82,18 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
   const onToggle = () => {
     if (!open) {
       const next = computeAnchor();
-      if (next) setAnchor(next);
+      if (next) {
+        setAnchor(next);
+      }
     }
     setOpen((v) => !v);
   };
 
   const onRun = useCallback(
     (script: WorkspaceScript) => {
-      if (!worktreePath) return;
+      if (!worktreePath) {
+        return;
+      }
       void runScript(sessionId, script.id, worktreePath);
     },
     [runScript, sessionId, worktreePath],
@@ -114,11 +133,11 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
               <ul className="flex flex-col px-1.5">
                 {list.map((script, i) => (
                   <Fragment key={script.id}>
-                    {i > 0 ? (
+                    {i > 0 && (
                       <li aria-hidden className="px-1.5">
                         <Divider />
                       </li>
-                    ) : null}
+                    )}
                     <li>
                       <ScriptRow
                         script={script}
@@ -149,8 +168,6 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
         aria-expanded={open}
         className={cn(
           'shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground/60',
-          // Animated primary ring while any script in this session runs, the
-          // signal survives the popover being closed.
           isRunning && 'spin-border spin-border-primary',
         )}
       >
@@ -159,14 +176,14 @@ export function RunScriptControl({ sessionId, workspaceId, worktreePath }: RunSc
       {menu}
     </>
   );
-}
+};
 
-interface ScriptRowProps {
+type ScriptRowProps = {
   readonly script: WorkspaceScript;
   readonly run: ScriptRunRecord | null;
   readonly onRun: () => void;
   readonly onCancel: () => void;
-}
+};
 
 function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
   const status: ScriptRunStatus = run?.status ?? 'idle';
@@ -174,8 +191,6 @@ function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
   const isPending = status === 'pending';
   const preview = script.body.trim().split('\n')[0] ?? '';
   const hasOutput = result !== null;
-  // Default the disclosure open on a failed run, the user almost always
-  // wants to see why it failed. Successful and cancelled runs stay collapsed.
   const [outputOpen, setOutputOpen] = useState(false);
   const prevResultRef = useRef(result);
   if (result !== prevResultRef.current) {
@@ -188,9 +203,6 @@ function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
       className={cn(
         'group flex flex-col rounded border border-transparent transition-colors',
         !isPending && 'hover:bg-muted/60',
-        // Same border-spinner language used on running agents / workflow
-        // steps: the row itself is the activity signal, no extra spinner
-        // icon needed and the play affordance is locked while it runs.
         isPending && 'spin-border spin-border-info',
       )}
     >
@@ -259,7 +271,7 @@ function ScriptRow({ script, run, onRun, onCancel }: ScriptRowProps) {
               {result!.stderr}
             </span>
           ) : null}
-          {!result!.stdout && !result!.stderr ? '(no output)' : null}
+          {!result!.stdout && !result!.stderr && '(no output)'}
         </pre>
       ) : null}
     </div>

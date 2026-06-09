@@ -1,15 +1,12 @@
 import type { PermissionRulePattern } from '@goodboy/types';
 
-export interface ToolMatcher {
+export type ToolMatcher = {
   matches(toolName: string, input: unknown): boolean;
-}
+};
 
-// Regex metachars excluding * (handled separately as glob wildcard)
 const REGEX_METACHARS = /[.+?()[\]{}\^$|\\]/g;
 
 function globToRegex(glob: string): RegExp {
-  // Split on ** and * BEFORE escaping other metachars so we can handle them independently
-  // Strategy: walk char by char building pattern
   let pattern = '';
   let i = 0;
   while (i < glob.length) {
@@ -28,17 +25,21 @@ function globToRegex(glob: string): RegExp {
   return new RegExp(`^${pattern}$`);
 }
 
-export function parseArgsMatcher(matcher: string): (input: unknown) => boolean {
-  if (!matcher) return () => true;
+export const parseArgsMatcher = (matcher: string): ((input: unknown) => boolean) => {
+  if (!matcher) {
+    return () => true;
+  }
   const re = globToRegex(matcher);
   return (input: unknown) => {
     const str = stringifyInput('', input);
     return re.test(str);
   };
-}
+};
 
 function stringifyInput(toolName: string, input: unknown): string {
-  if (input === null || input === undefined) return '';
+  if (input === null || input === undefined) {
+    return '';
+  }
   const obj = input as Record<string, unknown>;
   if (toolName === 'Bash') {
     return typeof obj['command'] === 'string' ? obj['command'] : JSON.stringify(input);
@@ -49,7 +50,7 @@ function stringifyInput(toolName: string, input: unknown): string {
   return JSON.stringify(input);
 }
 
-export function parseToolPattern(pattern: string): ToolMatcher {
+export const parseToolPattern = (pattern: string): ToolMatcher => {
   const parenIdx = pattern.indexOf('(');
 
   if (parenIdx === -1) {
@@ -71,14 +72,18 @@ export function parseToolPattern(pattern: string): ToolMatcher {
 
   return {
     matches(toolName: string, input: unknown): boolean {
-      if (toolName !== tool) return false;
+      if (toolName !== tool) {
+        return false;
+      }
       const str = stringifyInput(toolName, input);
       return argsRe.test(str);
     },
   };
-}
+};
 
-export function formatToolPattern(pattern: PermissionRulePattern): string {
-  if (!pattern.argsMatcher) return pattern.tool;
+export const formatToolPattern = (pattern: PermissionRulePattern): string => {
+  if (!pattern.argsMatcher) {
+    return pattern.tool;
+  }
   return `${pattern.tool}(${pattern.argsMatcher})`;
-}
+};

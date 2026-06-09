@@ -8,7 +8,10 @@ export type BranchConflict =
   | { readonly kind: 'worktree'; readonly path: string }
   | null;
 
-export function useBranchConflict(branch: string | null, repoPath: string | null): BranchConflict {
+export const useBranchConflict = (
+  branch: string | null,
+  repoPath: string | null,
+): BranchConflict => {
   const sessions = useSessions();
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const [worktreePath, setWorktreePath] = useState<string | null>(null);
@@ -19,7 +22,9 @@ export function useBranchConflict(branch: string | null, repoPath: string | null
 
   useEffect(() => {
     setWorktreePath(null);
-    if (!branch || !repoPath || sessionId) return;
+    if (!branch || !repoPath || sessionId) {
+      return;
+    }
     let cancelled = false;
     worktreeList(repoPath)
       .then((list) => {
@@ -28,14 +33,20 @@ export function useBranchConflict(branch: string | null, repoPath: string | null
         }
       })
       .catch(() => {
-        if (!cancelled) setWorktreePath(null);
+        if (!cancelled) {
+          setWorktreePath(null);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [branch, repoPath, sessionId]);
 
-  if (sessionId) return { kind: 'session', sessionId };
-  if (worktreePath) return { kind: 'worktree', path: worktreePath };
+  if (sessionId) {
+    return { kind: 'session', sessionId };
+  }
+  if (worktreePath) {
+    return { kind: 'worktree', path: worktreePath };
+  }
   return null;
-}
+};

@@ -13,33 +13,25 @@ const ADD_THREAD_REPLY_MUTATION = `mutation($threadId:ID!,$body:String!){
   }
 }`;
 
-interface RawResolveReviewThreadResponse {
+type RawResolveReviewThreadResponse = {
   data?: {
     resolveReviewThread?: {
       thread?: { id: string; isResolved: boolean } | null;
     } | null;
   };
   errors?: ReadonlyArray<{ message: string }>;
-}
+};
 
-export interface ResolvedThread {
+export type ResolvedThread = {
   readonly id: string;
   readonly isResolved: boolean;
-}
+};
 
-/**
- * Marks a review thread as resolved on GitHub via the `resolveReviewThread`
- * GraphQL mutation. The auth token in use must have repo scope.
- *
- * Returns the thread's post-mutation state. If GitHub responds with errors
- * (insufficient scope, thread already resolved, unknown id) we throw a
- * GhCliError carrying the first message so callers can surface it.
- */
-export async function resolveReviewThread(
+export const resolveReviewThread = async (
   runner: GhRunner,
   threadId: string,
   opts: { cwd?: string; workspaceId?: string } = {},
-): Promise<ResolvedThread> {
+): Promise<ResolvedThread> => {
   const raw = await runJson<RawResolveReviewThreadResponse>(
     runner,
     [
@@ -61,38 +53,28 @@ export async function resolveReviewThread(
     throw new GhCliError('resolveReviewThread returned no thread', JSON.stringify(raw), 1);
   }
   return { id: thread.id, isResolved: thread.isResolved };
-}
+};
 
-interface RawAddThreadReplyResponse {
+type RawAddThreadReplyResponse = {
   data?: {
     addPullRequestReviewThreadReply?: {
       comment?: { id: string; url: string } | null;
     } | null;
   };
   errors?: ReadonlyArray<{ message: string }>;
-}
+};
 
-export interface PostedThreadReply {
+export type PostedThreadReply = {
   readonly id: string;
   readonly url: string;
-}
+};
 
-/**
- * Posts a reply onto an existing review thread via the
- * `addPullRequestReviewThreadReply` GraphQL mutation. Use this right before
- * `resolveReviewThread` when you want the resolution to carry a human
- * message (e.g. linking the commit that fixed the issue) instead of
- * silently flipping the thread to resolved.
- *
- * Body is passed as a graphql variable so newlines and markdown survive
- * the shell hop intact, no need to escape on the caller side.
- */
-export async function addReviewThreadReply(
+export const addReviewThreadReply = async (
   runner: GhRunner,
   threadId: string,
   body: string,
   opts: { cwd?: string; workspaceId?: string } = {},
-): Promise<PostedThreadReply> {
+): Promise<PostedThreadReply> => {
   const raw = await runJson<RawAddThreadReplyResponse>(
     runner,
     [
@@ -116,4 +98,4 @@ export async function addReviewThreadReply(
     throw new GhCliError('addReviewThreadReply returned no comment', JSON.stringify(raw), 1);
   }
   return { id: comment.id, url: comment.url };
-}
+};

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { isWizardDone, OPEN_WIZARD_EVENT } from '../../onboarding-store';
 
-export interface OnboardingWizardState {
+export type OnboardingWizardState = {
   readonly open: boolean;
   readonly providersConnected: number;
   readonly hasWorkspace: boolean;
-}
+};
 
-export function useOnboardingWizard(): OnboardingWizardState {
+export const useOnboardingWizard = (): OnboardingWizardState => {
   const providersConnected = useAppStore(
     (s) => s.providers.filter((p) => p.connection === 'connected').length,
   );
@@ -19,7 +19,9 @@ export function useOnboardingWizard(): OnboardingWizardState {
   useEffect(() => {
     const onOpen = () => setOpen(true);
     const onProgress = () => {
-      if (isWizardDone()) setOpen(false);
+      if (isWizardDone()) {
+        setOpen(false);
+      }
     };
     window.addEventListener(OPEN_WIZARD_EVENT, onOpen);
     window.addEventListener('goodboy:onboarding-progress', onProgress);
@@ -30,4 +32,4 @@ export function useOnboardingWizard(): OnboardingWizardState {
   }, []);
 
   return { open, providersConnected, hasWorkspace };
-}
+};

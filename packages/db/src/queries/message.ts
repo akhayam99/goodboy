@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface MessageRow {
+type MessageRow = {
   id: string;
   session_id: string;
   agent_id: string;
@@ -18,7 +18,7 @@ interface MessageRow {
   created_at: number;
   provider_override_id: string | null;
   provider_override_model: string | null;
-}
+};
 
 function toDomain(row: MessageRow): Message {
   const providerOverride: TurnProviderOverride | undefined =
@@ -40,7 +40,7 @@ function toDomain(row: MessageRow): Message {
   };
 }
 
-export async function insertMessage(db: Database, message: Message): Promise<void> {
+export const insertMessage = async (db: Database, message: Message): Promise<void> => {
   await db.execute(
     `INSERT INTO messages
       (id, session_id, agent_id, role, content, created_at, provider_override_id, provider_override_model)
@@ -56,27 +56,24 @@ export async function insertMessage(db: Database, message: Message): Promise<voi
       message.providerOverride?.model ?? null,
     ],
   );
-}
+};
 
-export async function listMessagesForSession(
+export const listMessagesForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<Message>> {
+): Promise<ReadonlyArray<Message>> => {
   const rows = await db.select<MessageRow>(
     'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function listMessagesForAgent(
+export const listMessagesForAgent = async (
   db: Database,
   agentId: AgentId,
   opts?: { readonly limit?: number },
-): Promise<ReadonlyArray<Message>> {
-  // Limited variant returns the last N messages in ASC order. Mirrors the
-  // turn-event pagination so the chat view can paint the recent slice fast
-  // while the rest streams in behind it.
+): Promise<ReadonlyArray<Message>> => {
   if (opts?.limit !== undefined) {
     const rows = await db.select<MessageRow>(
       'SELECT * FROM messages WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',
@@ -91,4 +88,4 @@ export async function listMessagesForAgent(
     [agentId],
   );
   return rows.map(toDomain);
-}
+};

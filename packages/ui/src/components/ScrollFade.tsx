@@ -7,27 +7,29 @@ const FADE_FROM = {
   muted: 'from-muted',
 } as const;
 
-export interface ScrollFadeProps {
+export type ScrollFadeProps = {
   readonly children: ReactNode;
   readonly className?: string;
   readonly viewportClassName?: string;
   readonly fadeFrom?: keyof typeof FADE_FROM;
   readonly fadeSize?: string;
-}
+};
 
-export function ScrollFade({
+export const ScrollFade = ({
   children,
   className,
   viewportClassName,
   fadeFrom = 'background',
   fadeSize = 'h-8',
-}: ScrollFadeProps) {
+}: ScrollFadeProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ top: false, bottom: false });
 
   const sync = useCallback(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const top = el.scrollTop > 1;
     const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
     setEdges((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
@@ -35,7 +37,9 @@ export function ScrollFade({
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     sync();
     const resize = new ResizeObserver(sync);
     resize.observe(el);
@@ -81,4 +85,4 @@ export function ScrollFade({
       />
     </div>
   );
-}
+};

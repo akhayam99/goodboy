@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface WorkflowRow {
+type WorkflowRow = {
   id: string;
   workspace_id: string;
   name: string;
@@ -22,9 +22,9 @@ interface WorkflowRow {
   updated_at: string;
   is_preset: number | null;
   deleted_at: number | null;
-}
+};
 
-interface StepRow {
+type StepRow = {
   id: string;
   workflow_id: string;
   library_step_id: string | null;
@@ -37,7 +37,7 @@ interface StepRow {
   effort: string | null;
   verbosity: string | null;
   parallel_group: number | null;
-}
+};
 
 function toStep(row: StepRow): Step {
   return {
@@ -72,10 +72,10 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
   };
 }
 
-export async function listWorkflows(
+export const listWorkflows = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<Workflow>> {
+): Promise<ReadonlyArray<Workflow>> => {
   const rows = await db.select<WorkflowRow>(
     'SELECT * FROM workflows WHERE workspace_id = ? AND deleted_at IS NULL ORDER BY created_at ASC',
     [workspaceId],
@@ -91,12 +91,14 @@ export async function listWorkflows(
   }
 
   return workflows;
-}
+};
 
-export async function getWorkflow(db: Database, id: WorkflowId): Promise<Workflow | null> {
+export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflow | null> => {
   const rows = await db.select<WorkflowRow>('SELECT * FROM workflows WHERE id = ?', [id]);
   const row = rows[0];
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
 
   const stepRows = await db.select<StepRow>(
     'SELECT * FROM steps WHERE workflow_id = ? AND deleted_at IS NULL ORDER BY ordinal ASC',
@@ -104,9 +106,9 @@ export async function getWorkflow(db: Database, id: WorkflowId): Promise<Workflo
   );
 
   return toWorkflow(row, stepRows.map(toStep));
-}
+};
 
-export async function upsertWorkflow(db: Database, workflow: Workflow): Promise<void> {
+export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
   await db.execute(
     `INSERT INTO workflows
       (id, workspace_id, name, description, created_at, updated_at, is_preset)
@@ -162,8 +164,8 @@ export async function upsertWorkflow(db: Database, workflow: Workflow): Promise<
       ],
     );
   }
-}
+};
 
-export async function deleteWorkflow(db: Database, id: WorkflowId): Promise<void> {
+export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
   await db.execute("UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?", [id]);
-}
+};

@@ -1,11 +1,11 @@
 import { cn } from '@goodboy/ui';
 import type { AgentStatus, ProviderRunId } from '@goodboy/types';
 
-interface Props {
+type Props = {
   parallelRunIds: ReadonlyArray<ProviderRunId>;
   runStatuses: Readonly<Record<ProviderRunId, AgentStatus>>;
   onSelectRun: (runId: ProviderRunId) => void;
-}
+};
 
 const BADGE_CLASSES: Record<AgentStatus, string> = {
   running: 'bg-blue-500 motion-safe:animate-pulse',
@@ -15,8 +15,10 @@ const BADGE_CLASSES: Record<AgentStatus, string> = {
   pending: 'bg-muted-foreground/25',
 };
 
-export function ParallelProgressPill({ parallelRunIds, runStatuses, onSelectRun }: Props) {
-  if (parallelRunIds.length === 0) return null;
+export const ParallelProgressPill = ({ parallelRunIds, runStatuses, onSelectRun }: Props) => {
+  if (parallelRunIds.length === 0) {
+    return null;
+  }
 
   return (
     <div className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-subtle px-2 py-0.5">
@@ -38,4 +40,4 @@ export function ParallelProgressPill({ parallelRunIds, runStatuses, onSelectRun 
       })}
     </div>
   );
-}
+};

@@ -3,7 +3,7 @@ import type { DiffCommentAnchor, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function addDiffComment(set: SetFn) {
+export const addDiffComment = (set: SetFn) => {
   return async (
     sessionId: SessionId,
     filePath: string,
@@ -17,4 +17,4 @@ export function addDiffComment(set: SetFn) {
       diffComments: { ...state.diffComments, [sessionId]: comments },
     }));
   };
-}
+};

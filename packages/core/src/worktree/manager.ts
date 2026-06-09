@@ -10,27 +10,27 @@ export class WorktreeError extends Error {
   }
 }
 
-export interface CreateWorktreeOptions {
+export type CreateWorktreeOptions = {
   readonly repoPath: string;
   readonly branchPrefix: string;
   readonly slug: string;
   readonly parentDir?: string;
-}
+};
 
-export interface CreatedWorktree {
+export type CreatedWorktree = {
   readonly worktreePath: string;
   readonly branchName: string;
   readonly slug: string;
-}
+};
 
-export interface WorktreeInfo {
+export type WorktreeInfo = {
   readonly path: string;
   readonly branch: string | null;
   readonly head: string;
   readonly isMain: boolean;
-}
+};
 
-export async function createWorktree(opts: CreateWorktreeOptions): Promise<CreatedWorktree> {
+export const createWorktree = async (opts: CreateWorktreeOptions): Promise<CreatedWorktree> => {
   const slug = sanitizeSlug(opts.slug);
   const branchName = `${opts.branchPrefix}/${slug}`;
   const repoName = path.basename(opts.repoPath);
@@ -43,22 +43,24 @@ export async function createWorktree(opts: CreateWorktreeOptions): Promise<Creat
   await git(opts.repoPath, ['worktree', 'add', '-b', branchName, worktreePath]);
 
   return { worktreePath, branchName, slug };
-}
+};
 
-export async function removeWorktree(repoPath: string, worktreePath: string): Promise<void> {
+export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {
   await git(repoPath, ['worktree', 'remove', '--force', worktreePath]);
-}
+};
 
-export async function listWorktrees(repoPath: string): Promise<ReadonlyArray<WorktreeInfo>> {
+export const listWorktrees = async (repoPath: string): Promise<ReadonlyArray<WorktreeInfo>> => {
   const { stdout } = await git(repoPath, ['worktree', 'list', '--porcelain']);
   return parsePorcelain(stdout);
-}
+};
 
 async function ensureBranchAvailable(repoPath: string, branchName: string): Promise<void> {
   try {
     await git(repoPath, ['show-ref', '--verify', '--quiet', `refs/heads/${branchName}`]);
   } catch (err) {
-    if (err instanceof GitError) return;
+    if (err instanceof GitError) {
+      return;
+    }
     throw err;
   }
   throw new WorktreeError(`branch already exists: ${branchName}`);
@@ -76,9 +78,11 @@ function parsePorcelain(stdout: string): ReadonlyArray<WorktreeInfo> {
     let head = '';
 
     for (const line of lines) {
-      if (line.startsWith('worktree ')) worktreePath = line.slice('worktree '.length);
-      else if (line.startsWith('HEAD ')) head = line.slice('HEAD '.length);
-      else if (line.startsWith('branch ')) {
+      if (line.startsWith('worktree ')) {
+        worktreePath = line.slice('worktree '.length);
+      } else if (line.startsWith('HEAD ')) {
+        head = line.slice('HEAD '.length);
+      } else if (line.startsWith('branch ')) {
         const ref = line.slice('branch '.length);
         branch = ref.replace(/^refs\/heads\//, '');
       } else if (line === 'detached') {

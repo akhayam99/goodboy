@@ -8,7 +8,7 @@ import {
   requestPresence,
 } from '../../window';
 
-export function useWindowPresence(): void {
+export const useWindowPresence = (): void => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
 
   useEffect(() => {
@@ -48,4 +48,4 @@ export function useWindowPresence(): void {
   useEffect(() => {
     void announcePresence(currentWorkspaceId);
   }, [currentWorkspaceId]);
-}
+};

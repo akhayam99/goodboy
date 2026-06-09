@@ -8,16 +8,16 @@ CREATE TABLE IF NOT EXISTS schema_version (
 );
 `;
 
-export interface MigrateResult {
+export type MigrateResult = {
   readonly applied: ReadonlyArray<number>;
   readonly skipped: ReadonlyArray<number>;
   readonly currentVersion: number;
-}
+};
 
-export async function migrate(
+export const migrate = async (
   db: Database,
   migrations: ReadonlyArray<Migration> = defaultMigrations,
-): Promise<MigrateResult> {
+): Promise<MigrateResult> => {
   await db.exec(ENSURE_VERSION_TABLE);
 
   const rows = await db.select<{ version: number }>('SELECT version FROM schema_version');
@@ -33,10 +33,6 @@ export async function migrate(
       continue;
     }
     await applyMigrationSql(db, migration);
-    // OR IGNORE: under React StrictMode in dev, hydrate() runs twice and two
-    // migrate() invocations race for the same version row. The SQL itself is
-    // idempotent enough (table-rebuild recipe), but the version INSERT would
-    // hit a UNIQUE constraint without OR IGNORE.
     await db.execute('INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?, ?)', [
       migration.version,
       Date.now(),
@@ -46,14 +42,8 @@ export async function migrate(
 
   const currentVersion = ordered.at(-1)?.version ?? 0;
   return { applied: newlyApplied, skipped, currentVersion };
-}
+};
 
-// Self-healing apply: runs each statement individually so a benign "already
-// exists" error on an idempotent DDL (ALTER ADD COLUMN, CREATE INDEX, CREATE
-// TABLE) doesn't abort the rest of the migration. This unblocks users who
-// applied an older numbering of a migration before it was bumped to resolve
-// a version collision (the schema object is already there from the previous
-// run; re-applying it would otherwise throw and corrupt schema_version).
 async function applyMigrationSql(db: Database, migration: Migration): Promise<void> {
   const statements = migration.sql
     .split(';')
@@ -76,11 +66,10 @@ async function applyMigrationSql(db: Database, migration: Migration): Promise<vo
   }
 }
 
-// Tauri serializes Rust DB errors as plain `{ kind, message }` objects, not
-// Error instances. `String(obj)` would be "[object Object]", so we must read the
-// `message` field explicitly or the self-healing below never triggers.
 function errorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
+  if (err instanceof Error) {
+    return err.message;
+  }
   if (typeof err === 'object' && err !== null && 'message' in err) {
     return String((err as { message: unknown }).message);
   }

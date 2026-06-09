@@ -42,25 +42,26 @@ const PR_GROUP_LABELS: Record<string, string> = {
 };
 
 function groupLabel(key: string, groupMode: SessionGroupKey): string {
-  if (groupMode === 'userStatus') return USER_STATUS_GROUP_LABELS[key] ?? key;
-  if (groupMode === 'pr') return PR_GROUP_LABELS[key] ?? key;
+  if (groupMode === 'userStatus') {
+    return USER_STATUS_GROUP_LABELS[key] ?? key;
+  }
+  if (groupMode === 'pr') {
+    return PR_GROUP_LABELS[key] ?? key;
+  }
   return key;
 }
 
-interface SessionActivityBarProps {
+type SessionActivityBarProps = {
   workspaceId: WorkspaceId;
   sessions: ReadonlyArray<Session>;
   archivedSessions: ReadonlyArray<Session>;
   currentSessionId: SessionId | null;
   onSelectSession: (id: SessionId) => void;
   onNewSession: () => void;
-  // Fired when the user reveals the Archived tab. Triggers a lazy DB load
-  // of archived rows in the parent, archived sessions are never eager-
-  // loaded so the rest of the app stays free of them.
   onArchivedTabOpen?: () => void;
-}
+};
 
-export function SessionActivityBar({
+export const SessionActivityBar = ({
   workspaceId,
   sessions,
   archivedSessions,
@@ -68,7 +69,7 @@ export function SessionActivityBar({
   onSelectSession,
   onNewSession,
   onArchivedTabOpen,
-}: SessionActivityBarProps) {
+}: SessionActivityBarProps) => {
   const [tab, setTab] = useState<ActivityTab>('active');
 
   const prefs = useSessionViewPrefs(workspaceId);
@@ -85,8 +86,6 @@ export function SessionActivityBar({
     <div className="flex h-full w-28 shrink-0 flex-col">
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-1 px-1.5 py-1.5">
-          {/* header strip: eyebrow title + display-options trigger. one row,
-              no decoration, DESIGN.md "compact: minimum chrome". */}
           <div className="mb-0.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Sessions
@@ -151,7 +150,9 @@ export function SessionActivityBar({
           type="button"
           onClick={() => {
             const next: ActivityTab = isArchivedView ? 'active' : 'archived';
-            if (next === 'archived') onArchivedTabOpen?.();
+            if (next === 'archived') {
+              onArchivedTabOpen?.();
+            }
             setTab(next);
           }}
           aria-pressed={isArchivedView}
@@ -169,14 +170,14 @@ export function SessionActivityBar({
       </div>
     </div>
   );
-}
+};
 
-interface SessionActivityItemProps {
+type SessionActivityItemProps = {
   session: Session;
   isActive: boolean;
   dimmed?: boolean;
   onClick: () => void;
-}
+};
 
 const SessionActivityItem = memo(function SessionActivityItem({
   session,
@@ -202,7 +203,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
   const sessionCost = useMemo(() => {
     let sum = 0;
     for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') continue;
+      if (rec.kind === 'summarizer') {
+        continue;
+      }
       sum += rec.estimatedCostUsd;
     }
     return sum;
@@ -251,13 +254,13 @@ const SessionActivityItem = memo(function SessionActivityItem({
         )}
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
-      {sessionCost > 0 ? (
+      {sessionCost > 0 && (
         <CostBadge
           value={sessionCost}
           title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
           className="text-[9px] font-medium text-muted-foreground/55"
         />
-      ) : null}
+      )}
     </button>
   );
 });

@@ -6,7 +6,7 @@ import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 import { CreateTokenLink } from '../../../integrations/github/CreateTokenLink';
 
-export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) {
+export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) => {
   const status = useAppStore((s) => s.githubStatus);
   const refreshStatus = useAppStore((s) => s.refreshGithubStatus);
   const setPat = useAppStore((s) => s.setGithubPat);
@@ -18,7 +18,9 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (!status) void refreshStatus();
+    if (!status) {
+      void refreshStatus();
+    }
   }, [status, refreshStatus]);
 
   const onReload = async () => {
@@ -31,7 +33,9 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
   };
 
   const onConnect = async () => {
-    if (!token.trim()) return;
+    if (!token.trim()) {
+      return;
+    }
     setSave('saving');
     setError(null);
     try {
@@ -59,14 +63,14 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        {!hideSectionHeader ? (
+        {!hideSectionHeader && (
           <>
             <GithubIcon size={16} aria-hidden className="text-muted-foreground" />
             <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
               GitHub
             </h2>
           </>
-        ) : null}
+        )}
         <div className="flex-1" />
         <button
           type="button"
@@ -105,7 +109,7 @@ export function GithubPanel({ hideSectionHeader }: { hideSectionHeader?: boolean
       </p>
     </div>
   );
-}
+};
 
 function NotInstalled() {
   return (
@@ -167,9 +171,7 @@ function Absent({
           onClick={onConnect}
           disabled={save === 'saving' || token.trim().length === 0}
         >
-          {save === 'saving' ? (
-            <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
-          ) : null}
+          {save === 'saving' && <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />}
           Connect
         </Button>
       </div>
@@ -256,9 +258,7 @@ function Connected({
               onClick={onConnect}
               disabled={save === 'saving' || token.trim().length === 0}
             >
-              {save === 'saving' ? (
-                <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />
-              ) : null}
+              {save === 'saving' && <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />}
               Use a token
             </Button>
           </div>

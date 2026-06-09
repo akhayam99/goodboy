@@ -40,7 +40,7 @@ const slugifyDir = (raw: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'session';
 
-interface Input {
+type Input = {
   workspaceId: WorkspaceId;
   goal: string;
   branchPrefix?: string;
@@ -57,9 +57,9 @@ interface Input {
     url: string;
     title: string;
   };
-}
+};
 
-export function createSession(set: SetFn, get: GetFn) {
+export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
     goal,
@@ -74,7 +74,9 @@ export function createSession(set: SetFn, get: GetFn) {
     linearIssue,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
-    if (!workspace) throw new Error(`workspace not found: ${workspaceId}`);
+    if (!workspace) {
+      throw new Error(`workspace not found: ${workspaceId}`);
+    }
 
     const prefix = branchPrefix?.trim() || 'kay';
     const slugSeed =
@@ -114,9 +116,6 @@ export function createSession(set: SetFn, get: GetFn) {
       });
     }
 
-    // Make sure workspace overrides are cached before reading defaultProviderId,
-    // otherwise a fresh boot would silently fall back to anthropic for the
-    // first session created against a workspace.
     if (!get().workspaceOverrides[workspaceId]) {
       try {
         await get().loadWorkspaceOverrides(workspaceId);
@@ -168,7 +167,6 @@ export function createSession(set: SetFn, get: GetFn) {
       try {
         await setSessionExternalTask(tauriDatabase, externalTask);
       } catch {
-        // non-fatal: session is usable without the issue link
         externalTask = null;
       }
     }
@@ -194,10 +192,6 @@ export function createSession(set: SetFn, get: GetFn) {
       });
     }
 
-    // Seed the goal context slot so the session prompt carries the user's
-    // stated goal from turn 1. Otherwise the goal lives only on the session
-    // row and never reaches the model unless the user retypes it in the
-    // context panel.
     const goalText = session.goal.trim();
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
@@ -207,17 +201,11 @@ export function createSession(set: SetFn, get: GetFn) {
       });
     }
 
-    // Pre-create all workflow agents so the sidebar shows the full plan as a
-    // progress tracker. Only the first step fires sendTurn; the rest stay
-    // pending until the user (or autoRun) advances. Ad-hoc agents spawned
-    // later appear in a separate "Agents" block below the workflow block.
     let prespawnedRuns: ReadonlyArray<Agent>;
     let firstStepPromptPrefix = '';
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
 
-    // Seed L2 (per-agent) verbosity from the workspace default at insert time
-    // so each new chat starts with the user's workspace setting baked in.
     const workspaceVerbositySeed =
       get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
 
@@ -268,7 +256,9 @@ export function createSession(set: SetFn, get: GetFn) {
         kind: firstAgentKind,
         ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       });
-      if (model !== null) agentModelOverrides[singleAgent.id] = model;
+      if (model !== null) {
+        agentModelOverrides[singleAgent.id] = model;
+      }
       agentKindOverrides[singleAgent.id] = firstAgentKind;
       prespawnedRuns = [singleAgent];
     } else {
@@ -328,7 +318,9 @@ export function createSession(set: SetFn, get: GetFn) {
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 
-    if (workflowId) void get().reprocessGoalForWorkflow(session.id);
+    if (workflowId) {
+      void get().reprocessGoalForWorkflow(session.id);
+    }
 
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
@@ -346,4 +338,4 @@ export function createSession(set: SetFn, get: GetFn) {
 
     return { session, worktree };
   };
-}
+};

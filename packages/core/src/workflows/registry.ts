@@ -14,9 +14,9 @@ export class WorkflowRegistryError extends Error {
   }
 }
 
-export interface WorkflowRegistryDeps {
+export type WorkflowRegistryDeps = {
   readonly db: Database;
-}
+};
 
 export class WorkflowRegistry {
   constructor(private readonly deps: WorkflowRegistryDeps) {}
@@ -40,22 +40,26 @@ export class WorkflowRegistry {
   }
 
   private validate(template: Workflow): void {
-    if (template.name.trim().length === 0)
+    if (template.name.trim().length === 0) {
       throw new WorkflowRegistryError('template name required');
+    }
     const defs = template.steps;
     for (let i = 0; i < defs.length; i++) {
       const def = defs[i]!;
-      if (def.ordinal !== i)
+      if (def.ordinal !== i) {
         throw new WorkflowRegistryError(
           `ordinals must be contiguous starting at 0; got ${def.ordinal} at index ${i}`,
         );
-      if (def.name.trim().length === 0)
+      }
+      if (def.name.trim().length === 0) {
         throw new WorkflowRegistryError(`definition at ordinal ${i} has empty name`);
+      }
     }
     const names = new Set<string>();
     for (const d of defs) {
-      if (names.has(d.name))
+      if (names.has(d.name)) {
         throw new WorkflowRegistryError(`duplicate definition name within template: ${d.name}`);
+      }
       names.add(d.name);
     }
   }

@@ -4,23 +4,23 @@ import { cn } from '@goodboy/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 import { NudgeCard } from '../NudgeCard';
 
-export interface Props {
+export type Props = {
   readonly direction: 'lighter' | 'heavier';
   readonly currentModel: string;
   readonly suggestedModel: string;
   readonly onUseSuggested: () => void;
   readonly onKeepCurrent: () => void;
   readonly onChangeModel: () => void;
-}
+};
 
-export function RightSizeCard({
+export const RightSizeCard = ({
   direction,
   currentModel,
   suggestedModel,
   onUseSuggested,
   onKeepCurrent,
   onChangeModel,
-}: Props) {
+}: Props) => {
   return (
     <NudgeCard
       severity="info"
@@ -58,4 +58,4 @@ export function RightSizeCard({
       }}
     />
   );
-}
+};

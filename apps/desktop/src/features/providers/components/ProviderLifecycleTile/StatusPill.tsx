@@ -2,19 +2,17 @@ import { cn } from '@goodboy/ui';
 import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 import type { ProviderConnectionState } from '../../../../features/providers/providers';
 
-interface Props {
+type Props = {
   readonly phase: ProviderLifecyclePhase;
   readonly connection: ProviderConnectionState;
-}
+};
 
-interface PillSpec {
+type PillSpec = {
   readonly label: string;
   readonly dotClass: string;
   readonly labelClass: string;
-}
+};
 
-// Phase wins when an in-flight action is happening, otherwise we fall back to
-// the connection state (idle providers show their detection truth).
 function specFor(phase: ProviderLifecyclePhase, connection: ProviderConnectionState): PillSpec {
   switch (phase) {
     case 'installing':
@@ -70,7 +68,7 @@ function connectionSpec(connection: ProviderConnectionState): PillSpec {
   }
 }
 
-export function StatusPill({ phase, connection }: Props) {
+export const StatusPill = ({ phase, connection }: Props) => {
   const spec = specFor(phase, connection);
   return (
     <span className="inline-flex items-center gap-1.5 text-2xs font-medium">
@@ -78,4 +76,4 @@ export function StatusPill({ phase, connection }: Props) {
       <span className={spec.labelClass}>{spec.label}</span>
     </span>
   );
-}
+};

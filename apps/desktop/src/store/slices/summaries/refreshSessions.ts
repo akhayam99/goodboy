@@ -3,9 +3,9 @@ import { listSessionsForWorkspace } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function refreshSessions(set: SetFn) {
+export const refreshSessions = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
     const sessions = await listSessionsForWorkspace(tauriDatabase, workspaceId);
     set({ sessions });
   };
-}
+};

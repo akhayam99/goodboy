@@ -5,22 +5,24 @@ import { extractHandoff } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 
-interface Props {
+type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
-}
+};
 
-export function HandoffChip({ assistantText, sessionId }: Props) {
+export const HandoffChip = ({ assistantText, sessionId }: Props) => {
   const handoff = useMemo(() => extractHandoff(assistantText), [assistantText]);
   const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
   const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
 
-  if (!handoff || !session) return null;
-  // Handoff suggestions are noise inside a workflow, the next step is
-  // already defined by the workflow itself.
-  if (session.workflowRuns.length > 0) return null;
+  if (!handoff || !session) {
+    return null;
+  }
+  if (session.workflowRuns.length > 0) {
+    return null;
+  }
 
   const meta = AGENT_KIND_META[handoff.kind];
   const isActiveNudge =
@@ -50,4 +52,4 @@ export function HandoffChip({ assistantText, sessionId }: Props) {
       </button>
     </div>
   );
-}
+};

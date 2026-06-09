@@ -5,23 +5,23 @@ export type NudgeKind = 'model-rightsize' | 'scope-mismatch' | 'plan-ready' | 'h
 
 export type NudgeOutcome = 'accepted' | 'dismissed' | 'overridden' | 'ignored';
 
-export interface NudgeEvent {
+export type NudgeEvent = {
   readonly id: string;
   readonly ts: IsoDateTime;
   readonly kind: NudgeKind;
   readonly contextJson: string | null;
   readonly outcome: NudgeOutcome | null;
   readonly outcomeTs: IsoDateTime | null;
-}
+};
 
-interface NudgeEventRow {
+type NudgeEventRow = {
   id: string;
   ts: string;
   kind: string;
   context_json: string | null;
   outcome: string | null;
   outcome_ts: string | null;
-}
+};
 
 function toNudgeEvent(row: NudgeEventRow): NudgeEvent {
   return {
@@ -34,7 +34,7 @@ function toNudgeEvent(row: NudgeEventRow): NudgeEvent {
   };
 }
 
-export async function insertNudgeEvent(db: Database, event: NudgeEvent): Promise<void> {
+export const insertNudgeEvent = async (db: Database, event: NudgeEvent): Promise<void> => {
   await db.execute(
     `INSERT INTO nudge_events (id, ts, kind, context_json, outcome, outcome_ts)
      VALUES (?, ?, ?, ?, ?, ?)`,
@@ -47,31 +47,31 @@ export async function insertNudgeEvent(db: Database, event: NudgeEvent): Promise
       event.outcomeTs ?? null,
     ],
   );
-}
+};
 
-export async function updateNudgeEventOutcome(
+export const updateNudgeEventOutcome = async (
   db: Database,
   id: string,
   outcome: NudgeOutcome,
   outcomeTs: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(`UPDATE nudge_events SET outcome = ?, outcome_ts = ? WHERE id = ?`, [
     outcome,
     outcomeTs,
     id,
   ]);
-}
+};
 
-export interface ListNudgeEventsOptions {
+export type ListNudgeEventsOptions = {
   readonly sinceTs?: IsoDateTime;
   readonly kind?: NudgeKind;
   readonly limit?: number;
-}
+};
 
-export async function listNudgeEvents(
+export const listNudgeEvents = async (
   db: Database,
   opts: ListNudgeEventsOptions = {},
-): Promise<ReadonlyArray<NudgeEvent>> {
+): Promise<ReadonlyArray<NudgeEvent>> => {
   const where: string[] = [];
   const params: Array<string> = [];
   if (opts.sinceTs) {
@@ -89,4 +89,4 @@ export async function listNudgeEvents(
     params,
   );
   return rows.map(toNudgeEvent);
-}
+};

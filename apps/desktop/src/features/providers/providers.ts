@@ -7,26 +7,26 @@ import type {
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
-export interface AuthState {
+export type AuthState = {
   readonly state: AuthStateKind;
   readonly identity: string | null;
-}
+};
 
 export type { ProviderId, ProviderConnectionState };
 
-export interface ProviderStatus {
+export type ProviderStatus = {
   readonly id: string;
   readonly binary: string;
   readonly available: boolean;
   readonly version: string | null;
   readonly error: string | null;
-}
+};
 
-export interface ProviderInfo extends ProviderInfoBase {
+export type ProviderInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
-}
+};
 
 export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   anthropic: 'claude',
@@ -37,7 +37,6 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
   anthropic: 'https://docs.claude.com/en/docs/claude-code/overview',
-  // cursor-agent (CLI), NOT cursor IDE, point at the agent CLI install docs.
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
   gemini: 'https://github.com/google-gemini/gemini-cli#installation',
@@ -64,17 +63,17 @@ const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   supportsCheapModel: false,
 };
 
-export async function getProviderStatus(id: ProviderId): Promise<ProviderStatus> {
+export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus> => {
   return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
-}
+};
 
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
 export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
 
-export async function checkProviderAuth(providerId: ProviderId): Promise<AuthState> {
+export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthState> => {
   return invoke<AuthState>('check_provider_auth', { providerId });
-}
+};
 
 export type ProviderAuthResults = Readonly<Record<ProviderId, AuthState | null>>;
 
@@ -86,8 +85,12 @@ function connectionFromDetectionAndAuth(
   if (!available) {
     return detectionError ? 'error' : 'missing';
   }
-  if (!auth || auth.state === 'unknown') return 'installed_disconnected';
-  if (auth.state === 'disconnected') return 'installed_disconnected';
+  if (!auth || auth.state === 'unknown') {
+    return 'installed_disconnected';
+  }
+  if (auth.state === 'disconnected') {
+    return 'installed_disconnected';
+  }
   return 'connected';
 }
 
@@ -123,17 +126,17 @@ function providerInfoFromStatus(
   return { ...base, connection, version: status.version, error: null };
 }
 
-export interface ProviderStatuses {
+export type ProviderStatuses = {
   readonly anthropic: ProviderStatus | null;
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
   readonly gemini: ProviderStatus | null;
-}
+};
 
-export function buildProviderList(
+export const buildProviderList = (
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
-): ReadonlyArray<ProviderInfo> {
+): ReadonlyArray<ProviderInfo> => {
   const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
   return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
-}
+};

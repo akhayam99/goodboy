@@ -10,7 +10,7 @@ export class PlannerParseError extends Error {
   }
 }
 
-export function parsePlannerOutput(raw: string): PlannerOutput {
+export const parsePlannerOutput = (raw: string): PlannerOutput => {
   const stripped = stripCodeFences(raw);
   let parsed: unknown;
   try {
@@ -87,7 +87,7 @@ export function parsePlannerOutput(raw: string): PlannerOutput {
     reasoning,
     steps,
   };
-}
+};
 
 function stripCodeFences(raw: string): string {
   const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
@@ -97,6 +97,8 @@ function stripCodeFences(raw: string): string {
 function extractJsonObject(text: string): string | null {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
-  if (start === -1 || end === -1 || end <= start) return null;
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
   return text.slice(start, end + 1);
 }

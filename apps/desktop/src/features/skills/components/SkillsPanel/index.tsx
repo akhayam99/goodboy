@@ -4,17 +4,17 @@ import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
-interface EditorForm {
+type EditorForm = {
   name: string;
   description: string;
   args: string;
   scripts: string;
   body: string;
-}
+};
 
 const emptyForm = (): EditorForm => ({
   name: '',
@@ -41,10 +41,16 @@ function validateName(
   existing: ReadonlyArray<Skill>,
   editingId?: string,
 ): string | null {
-  if (!name.trim()) return 'name is required';
-  if (!KEBAB_RE.test(name)) return 'name must be kebab-case (lowercase letters, numbers, hyphens)';
+  if (!name.trim()) {
+    return 'name is required';
+  }
+  if (!KEBAB_RE.test(name)) {
+    return 'name must be kebab-case (lowercase letters, numbers, hyphens)';
+  }
   const collision = existing.find((s) => s.name === name && s.id !== editingId);
-  if (collision) return 'name already in use';
+  if (collision) {
+    return 'name already in use';
+  }
   return null;
 }
 
@@ -55,7 +61,7 @@ function parseChips(raw: string): ReadonlyArray<string> {
     .filter(Boolean);
 }
 
-export function SkillsPanel({ workspaceId }: Props) {
+export const SkillsPanel = ({ workspaceId }: Props) => {
   const skills = useAppStore((s) => s.skills[workspaceId] ?? EMPTY_ARRAY);
   const loadSkills = useAppStore((s) => s.loadSkills);
   const saveSkill = useAppStore((s) => s.saveSkill);
@@ -185,7 +191,7 @@ export function SkillsPanel({ workspaceId }: Props) {
       )}
     </div>
   );
-}
+};
 
 function SkillRow({
   skill,

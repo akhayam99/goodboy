@@ -3,22 +3,21 @@ import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 
 const UNDO_TTL_MS = 5_000;
 
-interface QuestionDraft {
+type QuestionDraft = {
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
   showCustomField: boolean;
-}
+};
 
-interface PendingUndo {
+type PendingUndo = {
   question: OpenQuestion;
   timer: ReturnType<typeof setTimeout>;
-}
+};
 
-interface OpenQuestionsUiState {
+type OpenQuestionsUiState = {
   drafts: Record<string, QuestionDraft>;
   justAnswered: ReadonlyArray<OpenQuestionId>;
   pendingUndo: PendingUndo | null;
-
   toggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
   setCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   toggleCustomField: (questionId: OpenQuestionId) => void;
@@ -26,7 +25,7 @@ interface OpenQuestionsUiState {
   clearJustAnswered: (id: OpenQuestionId) => void;
   beginUndo: (question: OpenQuestion) => void;
   clearUndo: () => void;
-}
+};
 
 function emptyDraft(): QuestionDraft {
   return { selectedSuggestions: [], customAnswer: '', showCustomField: false };
@@ -71,7 +70,9 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
 
   beginUndo: (question) => {
     const existing = get().pendingUndo;
-    if (existing) clearTimeout(existing.timer);
+    if (existing) {
+      clearTimeout(existing.timer);
+    }
     const timer = setTimeout(() => {
       set((s) => ({
         pendingUndo: s.pendingUndo?.question.id === question.id ? null : s.pendingUndo,
@@ -82,7 +83,9 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
 
   clearUndo: () => {
     const existing = get().pendingUndo;
-    if (existing) clearTimeout(existing.timer);
+    if (existing) {
+      clearTimeout(existing.timer);
+    }
     set({ pendingUndo: null });
   },
 }));

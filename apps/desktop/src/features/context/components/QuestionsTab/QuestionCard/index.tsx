@@ -6,7 +6,7 @@ import { SuggestionChip } from '../SuggestionChip';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { deriveSuggestions } from '../deriveSuggestions';
 
-interface Props {
+type Props = {
   question: OpenQuestion;
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
@@ -17,19 +17,25 @@ interface Props {
   onToggleCustomField: (questionId: OpenQuestionId) => void;
   onDismiss: (id: OpenQuestionId) => void;
   onClearJustAnswered: (id: OpenQuestionId) => void;
-}
+};
 
 function relativeAge(isoDate: string): string {
   const diffMs = Date.now() - new Date(isoDate).getTime();
   const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) {
+    return 'just now';
+  }
+  if (mins < 60) {
+    return `${mins}m ago`;
+  }
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) {
+    return `${hrs}h ago`;
+  }
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export function QuestionCard({
+export const QuestionCard = ({
   question,
   selectedSuggestions,
   customAnswer,
@@ -40,11 +46,13 @@ export function QuestionCard({
   onToggleCustomField,
   onDismiss,
   onClearJustAnswered,
-}: Props) {
+}: Props) => {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    if (!justAnswered) return;
+    if (!justAnswered) {
+      return;
+    }
     setAnimate(true);
     const t = setTimeout(() => {
       setAnimate(false);
@@ -131,4 +139,4 @@ export function QuestionCard({
       </div>
     </div>
   );
-}
+};

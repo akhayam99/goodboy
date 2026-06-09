@@ -2,14 +2,14 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
-export interface CreatePrOptions {
+export type CreatePrOptions = {
   title?: string;
   body?: string;
   base?: string;
   draft?: boolean;
-}
+};
 
-export function createPrForSession(_set: SetFn, get: GetFn) {
+export const createPrForSession = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: CreatePrOptions) => {
     const branch = get().sessionBranches[sessionId];
     const session = get().sessions.find((s) => s.id === sessionId);
@@ -19,7 +19,9 @@ export function createPrForSession(_set: SetFn, get: GetFn) {
       );
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) throw new Error('Workspace not found for this session.');
+    if (!workspace) {
+      throw new Error('Workspace not found for this session.');
+    }
 
     const args = ['pr', 'create'];
     const hasFields = opts?.title !== undefined || opts?.body !== undefined;
@@ -29,8 +31,12 @@ export function createPrForSession(_set: SetFn, get: GetFn) {
     } else {
       args.push('--fill');
     }
-    if (opts?.base?.trim()) args.push('--base', opts.base.trim());
-    if ((opts?.draft ?? true) === true) args.push('--draft');
+    if (opts?.base?.trim()) {
+      args.push('--base', opts.base.trim());
+    }
+    if ((opts?.draft ?? true) === true) {
+      args.push('--draft');
+    }
 
     const res = await tauriGhRunner.run(args, {
       cwd: workspace.rootPath,
@@ -53,4 +59,4 @@ export function createPrForSession(_set: SetFn, get: GetFn) {
       { sessionId, workspaceId: workspace.id },
     );
   };
-}
+};

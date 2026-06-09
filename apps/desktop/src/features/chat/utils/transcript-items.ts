@@ -65,14 +65,9 @@ export type TranscriptItem =
       at: IsoDateTime;
     };
 
-/**
- * Returns distinct runIds from events, excluding the sentinel 'history' value
- * used for messages loaded from the DB. Two or more runIds indicates a parallel
- * phase group is active, the caller decides whether to show split-view.
- */
-export function detectParallelRunIds(
+export const detectParallelRunIds = (
   events: ReadonlyArray<TurnEvent>,
-): ReadonlyArray<ProviderRunId> {
+): ReadonlyArray<ProviderRunId> => {
   const seen = new Set<ProviderRunId>();
   for (const event of events) {
     if (event.runId !== ('history' as ProviderRunId)) {
@@ -80,16 +75,18 @@ export function detectParallelRunIds(
     }
   }
   return seen.size > 1 ? [...seen] : [];
-}
+};
 
-export function filterEventsByRunId(
+export const filterEventsByRunId = (
   events: ReadonlyArray<TurnEvent>,
   runId: ProviderRunId,
-): ReadonlyArray<TurnEvent> {
+): ReadonlyArray<TurnEvent> => {
   return events.filter((e) => e.runId === runId);
-}
+};
 
-export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArray<TranscriptItem> {
+export const reduceTranscript = (
+  events: ReadonlyArray<TurnEvent>,
+): ReadonlyArray<TranscriptItem> => {
   const items: TranscriptItem[] = [];
   const callIndex = new Map<string, number>();
   const permToolNames = new Map<string, string>();
@@ -107,7 +104,9 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
   for (let i = 0; i < events.length; i += 1) {
     const event = events[i]!;
     if (event.kind === 'assistant_text') {
-      if (textKey === null) textKey = `text-${i}`;
+      if (textKey === null) {
+        textKey = `text-${i}`;
+      }
       textBuffer += event.delta;
       continue;
     }
@@ -233,4 +232,4 @@ export function reduceTranscript(events: ReadonlyArray<TurnEvent>): ReadonlyArra
 
   flushText();
   return items;
-}
+};

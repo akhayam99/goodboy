@@ -14,7 +14,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-interface RawPermissionRuleRow {
+type RawPermissionRuleRow = {
   readonly id: string;
   readonly scope: string;
   readonly workspaceId: string | null;
@@ -25,9 +25,9 @@ interface RawPermissionRuleRow {
   readonly priority: number;
   readonly createdAt: string;
   readonly updatedAt: string;
-}
+};
 
-interface RawPermissionAuditRow {
+type RawPermissionAuditRow = {
   readonly id: string;
   readonly runId: string;
   readonly sessionId: string;
@@ -39,7 +39,7 @@ interface RawPermissionAuditRow {
   readonly decidedBy: string;
   readonly requestedAt: string;
   readonly decidedAt: string;
-}
+};
 
 function rowToPermissionRule(row: RawPermissionRuleRow): PermissionRule {
   return {
@@ -78,7 +78,7 @@ function rowToAuditEntry(row: RawPermissionAuditRow): PermissionAuditEntry {
   };
 }
 
-export interface PermissionRuleUpsertPayload {
+export type PermissionRuleUpsertPayload = {
   readonly id?: PermissionRuleId;
   readonly scope: PermissionRuleScope;
   readonly workspaceId?: WorkspaceId;
@@ -87,9 +87,9 @@ export interface PermissionRuleUpsertPayload {
   readonly patternArgsMatcher?: string;
   readonly decision: PermissionDecisionKind;
   readonly priority: number;
-}
+};
 
-export interface PermissionAuditInsertPayload {
+export type PermissionAuditInsertPayload = {
   readonly id?: string;
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
@@ -101,25 +101,24 @@ export interface PermissionAuditInsertPayload {
   readonly decidedBy: PermissionDecisionSource;
   readonly requestedAt: IsoDateTime;
   readonly decidedAt: IsoDateTime;
-}
+};
 
-// Permission rule commands (#176).
-export async function invokePermissionRuleList(args: {
+export const invokePermissionRuleList = async (args: {
   scope: PermissionRuleScope;
   workspaceId?: WorkspaceId;
   sessionId?: SessionId;
-}): Promise<ReadonlyArray<PermissionRule>> {
+}): Promise<ReadonlyArray<PermissionRule>> => {
   const rows = await invoke<RawPermissionRuleRow[]>('permission_rule_list', {
     scope: args.scope,
     workspaceId: args.workspaceId ?? null,
     sessionId: args.sessionId ?? null,
   });
   return rows.map(rowToPermissionRule);
-}
+};
 
-export async function invokePermissionRuleUpsert(
+export const invokePermissionRuleUpsert = async (
   input: PermissionRuleUpsertPayload,
-): Promise<PermissionRule> {
+): Promise<PermissionRule> => {
   const row = await invoke<RawPermissionRuleRow>('permission_rule_upsert', {
     input: {
       id: input.id ?? null,
@@ -133,12 +132,11 @@ export async function invokePermissionRuleUpsert(
     },
   });
   return rowToPermissionRule(row);
-}
+};
 
-// Permission audit commands (#177).
-export async function invokePermissionAuditInsert(
+export const invokePermissionAuditInsert = async (
   input: PermissionAuditInsertPayload,
-): Promise<PermissionAuditEntry> {
+): Promise<PermissionAuditEntry> => {
   const row = await invoke<RawPermissionAuditRow>('permission_audit_insert', {
     input: {
       id: input.id ?? null,
@@ -155,27 +153,25 @@ export async function invokePermissionAuditInsert(
     },
   });
   return rowToAuditEntry(row);
-}
+};
 
-// Permission audit retry queue (#196).
-
-interface RawAuditRetryRow {
+type RawAuditRetryRow = {
   readonly id: string;
   readonly payloadJson: string;
   readonly attempts: number;
   readonly lastError: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
-}
+};
 
-export interface AuditRetryEntry {
+export type AuditRetryEntry = {
   readonly id: string;
   readonly payloadJson: string;
   readonly attempts: number;
   readonly lastError: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
-}
+};
 
 function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
   return {
@@ -188,25 +184,25 @@ function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
   };
 }
 
-export async function invokeAuditRetryEnqueue(id: string, payloadJson: string): Promise<void> {
+export const invokeAuditRetryEnqueue = async (id: string, payloadJson: string): Promise<void> => {
   return invoke<void>('permission_audit_retry_enqueue', { input: { id, payloadJson } });
-}
+};
 
-export async function invokeAuditRetryDrain(
+export const invokeAuditRetryDrain = async (
   limit: number,
-): Promise<ReadonlyArray<AuditRetryEntry>> {
+): Promise<ReadonlyArray<AuditRetryEntry>> => {
   const rows = await invoke<RawAuditRetryRow[]>('permission_audit_retry_drain', { limit });
   return rows.map(rowToAuditRetryEntry);
-}
+};
 
-export async function invokeAuditRetryUpdate(
+export const invokeAuditRetryUpdate = async (
   id: string,
   attempts: number,
   lastError: string,
-): Promise<void> {
+): Promise<void> => {
   return invoke<void>('permission_audit_retry_update', { id, attempts, lastError });
-}
+};
 
-export async function invokeAuditRetryDelete(id: string): Promise<void> {
+export const invokeAuditRetryDelete = async (id: string): Promise<void> => {
   return invoke<void>('permission_audit_retry_delete', { id });
-}
+};

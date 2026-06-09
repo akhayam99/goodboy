@@ -5,11 +5,11 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
-interface Props {
+type Props = {
   onClose: () => void;
-}
+};
 
-export function WorkspaceSwitcher({ onClose }: Props) {
+export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +44,9 @@ export function WorkspaceSwitcher({ onClose }: Props) {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const picked = filtered[activeIndex];
-      if (picked) select(picked);
+      if (picked) {
+        select(picked);
+      }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
@@ -55,7 +57,9 @@ export function WorkspaceSwitcher({ onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-[18vh]"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
       }}
     >
       <div className="w-full max-w-lg overflow-hidden rounded-lg border border-border bg-background shadow-2xl motion-safe:animate-fade-in">
@@ -97,4 +101,4 @@ export function WorkspaceSwitcher({ onClose }: Props) {
       </div>
     </div>
   );
-}
+};

@@ -1,21 +1,3 @@
-/**
- * One-time migration of residual localStorage state to DB. Runs at boot
- * right after migrations, before the rest of hydrate() reads from DB.
- *
- * For each key, copy LS → DB only if DB is empty (preserve DB-as-source-of-
- * truth), then remove LS. Marker key `goodboy:ls-migrated-v1` prevents re-runs.
- *
- * Covers (legacy LS keys):
- *   - goodboy:archived-tasks                       → sessions.archived_at
- *   - goodboy:workspace-verbosity:<workspaceId>    → workspaces.default_verbosity
- *   - goodboy:effort:<sessionId>                   → sessions.effort
- *   - goodboy:model:<sessionId>                    → sessions.model_override
- *   - goodboy:provider:<sessionId>                 → sessions.provider_override
- *   - goodboy:agent-effort:<agentId>               → agents.effort
- *   - goodboy:agent-model:<agentId>                → agents.model_override
- *   - goodboy:agent-provider:<agentId>             → agents.provider_override
- *   - goodboy:onboarding-progress / -collapsed / -finished → settings.onboarding.*
- */
 import {
   archiveSession,
   getWorkspaceOverrides,
@@ -58,8 +40,12 @@ type Effort = (typeof EFFORT_VALUES)[number];
 type ProviderLite = (typeof PROVIDER_VALUES)[number];
 
 function normalizeVerbosity(raw: string | null): Verbosity | null {
-  if (!raw) return null;
-  if ((VERBOSITY_VALUES as ReadonlyArray<string>).includes(raw)) return raw as Verbosity;
+  if (!raw) {
+    return null;
+  }
+  if ((VERBOSITY_VALUES as ReadonlyArray<string>).includes(raw)) {
+    return raw as Verbosity;
+  }
   return LEGACY_VERBOSITY_MAP[raw] ?? null;
 }
 
@@ -75,7 +61,9 @@ function asProviderId(raw: string | null): ProviderLite | null {
 
 async function migrateArchivedSessions(): Promise<void> {
   const raw = localStorage.getItem(LS_ARCHIVED);
-  if (!raw) return;
+  if (!raw) {
+    return;
+  }
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (parsed && typeof parsed === 'object') {
@@ -86,9 +74,7 @@ async function migrateArchivedSessions(): Promise<void> {
         }
       }
     }
-  } catch {
-    // malformed LS payload, ignore
-  }
+  } catch {}
   localStorage.removeItem(LS_ARCHIVED);
 }
 
@@ -96,7 +82,9 @@ async function migrateWorkspaceVerbosity(): Promise<void> {
   const keys: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith(PREFIX_WORKSPACE_VERBOSITY)) keys.push(k);
+    if (k && k.startsWith(PREFIX_WORKSPACE_VERBOSITY)) {
+      keys.push(k);
+    }
   }
   for (const key of keys) {
     const workspaceId = key.slice(PREFIX_WORKSPACE_VERBOSITY.length) as WorkspaceId;
@@ -120,32 +108,47 @@ async function migrateSessionConfig(): Promise<void> {
   const keysToDrop: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (!k) continue;
+    if (!k) {
+      continue;
+    }
     if (k.startsWith(PREFIX_EFFORT)) {
       const id = k.slice(PREFIX_EFFORT.length) as SessionId;
       const v = asEffort(localStorage.getItem(k));
-      if (v) collected.set(id, { ...(collected.get(id) ?? {}), effort: v });
+      if (v) {
+        collected.set(id, { ...(collected.get(id) ?? {}), effort: v });
+      }
       keysToDrop.push(k);
     } else if (k.startsWith(PREFIX_MODEL)) {
       const id = k.slice(PREFIX_MODEL.length) as SessionId;
       const v = localStorage.getItem(k);
-      if (v) collected.set(id, { ...(collected.get(id) ?? {}), modelOverride: v });
+      if (v) {
+        collected.set(id, { ...(collected.get(id) ?? {}), modelOverride: v });
+      }
       keysToDrop.push(k);
     } else if (k.startsWith(PREFIX_PROVIDER)) {
       const id = k.slice(PREFIX_PROVIDER.length) as SessionId;
       const v = asProviderId(localStorage.getItem(k));
-      if (v) collected.set(id, { ...(collected.get(id) ?? {}), providerOverride: v });
+      if (v) {
+        collected.set(id, { ...(collected.get(id) ?? {}), providerOverride: v });
+      }
       keysToDrop.push(k);
     }
   }
   for (const [id, fields] of collected) {
     const session = await getSessionById(tauriDatabase, id);
-    if (!session) continue;
+    if (!session) {
+      continue;
+    }
     const update: { effort?: Effort; modelOverride?: string; providerOverride?: string } = {};
-    if (fields.effort && !session.effort) update.effort = fields.effort;
-    if (fields.modelOverride && !session.modelOverride) update.modelOverride = fields.modelOverride;
-    if (fields.providerOverride && !session.providerOverride)
+    if (fields.effort && !session.effort) {
+      update.effort = fields.effort;
+    }
+    if (fields.modelOverride && !session.modelOverride) {
+      update.modelOverride = fields.modelOverride;
+    }
+    if (fields.providerOverride && !session.providerOverride) {
       update.providerOverride = fields.providerOverride;
+    }
     if (Object.keys(update).length > 0) {
       await updateSessionConfig(tauriDatabase, id, update);
     }
@@ -161,32 +164,47 @@ async function migrateAgentConfig(): Promise<void> {
   const keysToDrop: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (!k) continue;
+    if (!k) {
+      continue;
+    }
     if (k.startsWith(PREFIX_AGENT_EFFORT)) {
       const id = k.slice(PREFIX_AGENT_EFFORT.length) as AgentId;
       const v = asEffort(localStorage.getItem(k));
-      if (v) collected.set(id, { ...(collected.get(id) ?? {}), effort: v });
+      if (v) {
+        collected.set(id, { ...(collected.get(id) ?? {}), effort: v });
+      }
       keysToDrop.push(k);
     } else if (k.startsWith(PREFIX_AGENT_MODEL)) {
       const id = k.slice(PREFIX_AGENT_MODEL.length) as AgentId;
       const v = localStorage.getItem(k);
-      if (v) collected.set(id, { ...(collected.get(id) ?? {}), modelOverride: v });
+      if (v) {
+        collected.set(id, { ...(collected.get(id) ?? {}), modelOverride: v });
+      }
       keysToDrop.push(k);
     } else if (k.startsWith(PREFIX_AGENT_PROVIDER)) {
       const id = k.slice(PREFIX_AGENT_PROVIDER.length) as AgentId;
       const v = asProviderId(localStorage.getItem(k));
-      if (v) collected.set(id, { ...(collected.get(id) ?? {}), providerOverride: v });
+      if (v) {
+        collected.set(id, { ...(collected.get(id) ?? {}), providerOverride: v });
+      }
       keysToDrop.push(k);
     }
   }
   for (const [id, fields] of collected) {
     const agent = await getAgentById(tauriDatabase, id);
-    if (!agent) continue;
+    if (!agent) {
+      continue;
+    }
     const update: { effort?: Effort; modelOverride?: string; providerOverride?: string } = {};
-    if (fields.effort && !agent.effort) update.effort = fields.effort;
-    if (fields.modelOverride && !agent.modelOverride) update.modelOverride = fields.modelOverride;
-    if (fields.providerOverride && !agent.providerOverride)
+    if (fields.effort && !agent.effort) {
+      update.effort = fields.effort;
+    }
+    if (fields.modelOverride && !agent.modelOverride) {
+      update.modelOverride = fields.modelOverride;
+    }
+    if (fields.providerOverride && !agent.providerOverride) {
       update.providerOverride = fields.providerOverride;
+    }
     if (Object.keys(update).length > 0) {
       await updateAgentConfig(tauriDatabase, id, update);
     }
@@ -215,9 +233,13 @@ async function migrateOnboarding(): Promise<void> {
   localStorage.removeItem(LS_ONBOARDING_FINISHED);
 }
 
-export async function migrateLsToDb(): Promise<void> {
-  if (typeof localStorage === 'undefined') return;
-  if (localStorage.getItem(MIGRATED_MARKER) === '1') return;
+export const migrateLsToDb = async (): Promise<void> => {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  if (localStorage.getItem(MIGRATED_MARKER) === '1') {
+    return;
+  }
   try {
     await migrateArchivedSessions();
     await migrateWorkspaceVerbosity();
@@ -226,7 +248,6 @@ export async function migrateLsToDb(): Promise<void> {
     await migrateOnboarding();
     localStorage.setItem(MIGRATED_MARKER, '1');
   } catch (err) {
-    // best-effort, don't block boot; next launch will retry
     console.warn('[ls-to-db migration] failed', err);
   }
-}
+};

@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import type { Database as DatabaseInterface } from '../client';
 
-export function makeTestDatabase(filename = ':memory:'): DatabaseInterface {
+export const makeTestDatabase = (filename = ':memory:'): DatabaseInterface => {
   const db = new Database(filename);
   db.pragma('foreign_keys = ON');
 
@@ -19,4 +19,4 @@ export function makeTestDatabase(filename = ':memory:'): DatabaseInterface {
       return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
     },
   };
-}
+};

@@ -3,7 +3,7 @@ import { updateSessionUserStatus } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function setSessionUserStatus(set: SetFn) {
+export const setSessionUserStatus = (set: SetFn) => {
   return async (sessionId: SessionId, status: SessionUserStatus) => {
     const now = new Date().toISOString() as IsoDateTime;
     await updateSessionUserStatus(tauriDatabase, sessionId, status, now);
@@ -13,4 +13,4 @@ export function setSessionUserStatus(set: SetFn) {
       ),
     }));
   };
-}
+};

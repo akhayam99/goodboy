@@ -3,13 +3,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-interface MockState {
+type MockState = {
   workspaceScripts: Record<string, ReadonlyArray<{ id: string; name: string; body: string }>>;
   scriptRuns: Record<string, Record<string, { status: string; result: unknown }>>;
   loadScripts: ReturnType<typeof vi.fn>;
   runScript: ReturnType<typeof vi.fn>;
   cancelScript: ReturnType<typeof vi.fn>;
-}
+};
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
   state: {

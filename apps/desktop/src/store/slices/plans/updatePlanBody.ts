@@ -5,7 +5,7 @@ import {
 } from '../../../features/plans/plans';
 import type { SetFn } from './types';
 
-export function updatePlanBody(set: SetFn) {
+export const updatePlanBody = (set: SetFn) => {
   return async (sessionId: SessionId, planId: PlanId, title: string, bodyMd: string) => {
     await invokeSetPlanBody(planId, title, bodyMd);
     const refreshed = await invokeListPlansForSession(sessionId);
@@ -13,4 +13,4 @@ export function updatePlanBody(set: SetFn) {
       sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
     }));
   };
-}
+};

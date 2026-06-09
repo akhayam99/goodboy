@@ -4,19 +4,21 @@ import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
 import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react';
 import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
 
-interface Props {
+type Props = {
   readonly comments: ReadonlyArray<PrComment>;
   readonly pr: PullRequestState;
   readonly scrollToThreadId?: string | null;
   readonly onOpenUrl: (url: string) => void;
-}
+};
 
-export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) {
+export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) => {
   const threads = useMemo(() => {
     const all = groupThreads(comments);
     return [...all].sort((a, b) => {
       const p = threadPriority(a) - threadPriority(b);
-      if (p !== 0) return p;
+      if (p !== 0) {
+        return p;
+      }
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
   }, [comments]);
@@ -24,9 +26,13 @@ export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUr
   const threadRefs = useRef(new Map<string, HTMLLIElement>());
   const [flashThreadId, setFlashThreadId] = useState<string | null>(null);
   useEffect(() => {
-    if (!scrollToThreadId) return;
+    if (!scrollToThreadId) {
+      return;
+    }
     const el = threadRefs.current.get(scrollToThreadId);
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setFlashThreadId(scrollToThreadId);
     const t = setTimeout(() => setFlashThreadId(null), 1600);
@@ -59,12 +65,17 @@ export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUr
             <li
               key={t.head.id}
               ref={(el) => {
-                if (!tid) return;
-                if (el) threadRefs.current.set(tid, el);
-                else threadRefs.current.delete(tid);
+                if (!tid) {
+                  return;
+                }
+                if (el) {
+                  threadRefs.current.set(tid, el);
+                } else {
+                  threadRefs.current.delete(tid);
+                }
               }}
               className={cn(
-                'rounded-xl transition-shadow',
+                'rounded-lg transition-shadow',
                 tid && tid === flashThreadId ? 'ring-2 ring-accent/60' : '',
               )}
             >
@@ -83,7 +94,7 @@ export function PrConversation({ comments, pr, scrollToThreadId = null, onOpenUr
       </button>
     </div>
   );
-}
+};
 
 function ConversationThread({
   thread,
@@ -101,8 +112,8 @@ function ConversationThread({
     <div
       className={
         resolved
-          ? 'rounded-xl border border-border-soft bg-muted/5 p-3'
-          : 'rounded-xl border border-border-soft bg-muted/10 p-3'
+          ? 'rounded-lg border border-border-soft bg-muted/5 p-3'
+          : 'rounded-lg border border-border-soft bg-muted/10 p-3'
       }
     >
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -158,7 +169,7 @@ function ConversationThread({
         )}
       </div>
 
-      {replies.length > 0 ? (
+      {replies.length > 0 && (
         <div className="ml-3 mt-2 flex gap-2">
           <Divider orientation="vertical" />
           <ul className="flex flex-1 flex-col gap-2">
@@ -181,7 +192,7 @@ function ConversationThread({
             ))}
           </ul>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -201,13 +212,21 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
 }
 
 function formatRelative(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  if (!Number.isFinite(ms) || ms < 0) {
+    return 'just now';
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 45) return 'just now';
+  if (s < 45) {
+    return 'just now';
+  }
   const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) {
+    return `${m}m ago`;
+  }
   const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) {
+    return `${h}h ago`;
+  }
   const d = Math.round(h / 24);
   return `${d}d ago`;
 }

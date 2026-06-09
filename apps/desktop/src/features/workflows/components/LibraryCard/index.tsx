@@ -5,22 +5,24 @@ import type { StepDef } from '@goodboy/types';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
-interface Props {
+type Props = {
   readonly def: StepDef;
   readonly dragDisabled: boolean;
   readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
-}
+};
 
-export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) {
+export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const kind = ROLE_TO_KIND[def.role];
   const isGlobal = def.workspaceId === null;
   return (
     <li
       onPointerDown={(e) => {
-        if (dragDisabled) return;
+        if (dragDisabled) {
+          return;
+        }
         onStartDrag(def, e);
       }}
       className={cn(
@@ -92,7 +94,7 @@ export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }
             >
               <Pencil size={12} aria-hidden />
             </button>
-            {!isGlobal ? (
+            {!isGlobal && (
               <button
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
@@ -103,10 +105,10 @@ export function LibraryCard({ def, dragDisabled, onStartDrag, onEdit, onDelete }
               >
                 <Trash2 size={12} aria-hidden />
               </button>
-            ) : null}
+            )}
           </div>
         )}
       </div>
     </li>
   );
-}
+};

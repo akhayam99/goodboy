@@ -9,7 +9,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks, hoisted before store import.
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 
@@ -199,9 +198,7 @@ function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts
   };
 }
 
-async function* emptyStream(): AsyncIterable<TurnEvent> {
-  // intentionally empty
-}
+async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
 describe('audit retry queue, sendTurn enqueue on failure', () => {
   beforeEach(() => {
@@ -291,7 +288,6 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
     expect(typeof enqueuedId).toBe('string');
     const parsed = JSON.parse(enqueuedPayload) as Record<string, unknown>;
     expect(parsed.toolName).toBe('Edit');
-    // No rules → engine defaults to deny; decision value is whatever the engine decides.
     expect(typeof parsed.decision).toBe('string');
   });
 
@@ -371,12 +367,10 @@ describe('audit retry queue, drain worker (happy path)', () => {
 
     const mod = await import('./store');
     await mod.useAppStore.getState().hydrate();
-    // Drain is fired with void, yield microtask so it can settle.
     await Promise.resolve();
   }
 
   it('drain happy path: retries insert, deletes on success', async () => {
-    // updatedAt=0 so backoff (4000ms for attempts=2) is satisfied.
     const entry = { ...makeRetryEntry({ id: 'retry-happy', attempts: 2 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockResolvedValue({});
@@ -390,7 +384,6 @@ describe('audit retry queue, drain worker (happy path)', () => {
   });
 
   it('drain failure path: increments attempts when insert still fails', async () => {
-    // updatedAt=0 so backoff is satisfied.
     const entry = { ...makeRetryEntry({ id: 'retry-fail', attempts: 3 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockRejectedValue(new Error('still locked'));
@@ -402,14 +395,12 @@ describe('audit retry queue, drain worker (happy path)', () => {
   });
 
   it('max-attempts boundary: deletes entry at attempt 5', async () => {
-    // updatedAt in the past so backoff is satisfied.
     const entry = { ...makeRetryEntry({ id: 'retry-max', attempts: 4 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
 
     await runHydrate();
 
-    // At attempts=4, nextAttempts=5 >= MAX(5) → delete, not update
     expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-max');
     expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
   });
@@ -460,7 +451,6 @@ describe('audit retry queue, drain worker (happy path)', () => {
   });
 
   it('backoff: skips entry whose updatedAt is too recent for attempt count', async () => {
-    // attempts=0 → backoff=1000ms. updatedAt is NOW (recent) → should skip.
     const entry = {
       ...makeRetryEntry({ id: 'retry-backoff', attempts: 0 }),
       updatedAt: Date.now(),
@@ -470,13 +460,11 @@ describe('audit retry queue, drain worker (happy path)', () => {
 
     await runHydrate();
 
-    // Entry is within backoff window → should NOT have been processed
     expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
     expect(auditRetryDeleteSpy).not.toHaveBeenCalled();
   });
 
   it('backoff: processes entry whose updatedAt is old enough', async () => {
-    // attempts=0 → backoff=1000ms. updatedAt well in the past → should process.
     const entry = { ...makeRetryEntry({ id: 'retry-old', attempts: 0 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockResolvedValue({});

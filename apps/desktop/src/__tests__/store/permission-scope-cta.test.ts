@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 
-// Module mocks, hoisted before store import.
 vi.mock('../../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
@@ -263,7 +262,9 @@ describe('resolvePermissionRequest', () => {
       const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
       const decEv = events.find((e) => e.kind === 'permission_decision');
       expect(decEv, `scope ${scope} missing permission_decision event`).toBeDefined();
-      if (!decEv || decEv.kind !== 'permission_decision') continue;
+      if (!decEv || decEv.kind !== 'permission_decision') {
+        continue;
+      }
       expect(decEv.decidedBy).toBe('user');
       expect(decEv.decision).toBe(scope === 'deny' ? 'deny' : 'allow');
     }

@@ -7,7 +7,7 @@ import { setActiveTerminalTab } from './setActiveTerminalTab';
 import { setTerminalTabStatus } from './setTerminalTabStatus';
 import type { GetFn, SetFn } from './types';
 
-export function createTerminalSlice(set: SetFn, get: GetFn) {
+export const createTerminalSlice = (set: SetFn, get: GetFn) => {
   return {
     openTerminal: openTerminal(set),
     closeTerminal: closeTerminal(set),
@@ -17,4 +17,4 @@ export function createTerminalSlice(set: SetFn, get: GetFn) {
     setTerminalTabStatus: setTerminalTabStatus(set),
     closeSessionTerminals: closeSessionTerminals(set, get),
   };
-}
+};

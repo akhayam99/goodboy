@@ -12,7 +12,7 @@ export type NotificationKind =
   | 'boundary-drift'
   | 'error';
 
-export interface Notification {
+export type Notification = {
   readonly id: string;
   readonly ts: IsoDateTime;
   readonly kind: NotificationKind;
@@ -22,9 +22,9 @@ export interface Notification {
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId | null;
   readonly read: boolean;
-}
+};
 
-interface NotificationRow {
+type NotificationRow = {
   id: string;
   ts: string;
   kind: string;
@@ -34,7 +34,7 @@ interface NotificationRow {
   session_id: string | null;
   workspace_id: string | null;
   read: number;
-}
+};
 
 function toNotification(row: NotificationRow): Notification {
   return {
@@ -50,7 +50,7 @@ function toNotification(row: NotificationRow): Notification {
   };
 }
 
-export async function insertNotification(db: Database, n: Notification): Promise<void> {
+export const insertNotification = async (db: Database, n: Notification): Promise<void> => {
   await db.execute(
     `INSERT INTO notifications (id, ts, kind, title, body, severity, session_id, workspace_id, read)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -66,17 +66,17 @@ export async function insertNotification(db: Database, n: Notification): Promise
       n.read ? 1 : 0,
     ],
   );
-}
+};
 
-export async function listNotifications(db: Database): Promise<ReadonlyArray<Notification>> {
+export const listNotifications = async (db: Database): Promise<ReadonlyArray<Notification>> => {
   const rows = await db.select<NotificationRow>('SELECT * FROM notifications ORDER BY ts DESC');
   return rows.map(toNotification);
-}
+};
 
-export async function markAllNotificationsRead(db: Database): Promise<void> {
+export const markAllNotificationsRead = async (db: Database): Promise<void> => {
   await db.execute('UPDATE notifications SET read = 1 WHERE read = 0');
-}
+};
 
-export async function clearAllNotifications(db: Database): Promise<void> {
+export const clearAllNotifications = async (db: Database): Promise<void> => {
   await db.execute('DELETE FROM notifications');
-}
+};

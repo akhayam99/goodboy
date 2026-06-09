@@ -17,14 +17,9 @@ import {
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 import { useToast } from '../../../../app/components/Toast';
 
-/**
- * Categorized palette with a prefix-routed grammar, the Raycast / Linear
- * model. Empty input shows all sources; typing a prefix (@ # : / ~ $ ?)
- * scopes the result list to one source. Plan section A.2.
- */
 type PaletteGroup = QuickActionGroup | 'recents';
 
-interface PaletteItem {
+type PaletteItem = {
   readonly id: string;
   readonly label: string;
   readonly sublabel?: string;
@@ -32,7 +27,7 @@ interface PaletteItem {
   readonly accent?: string;
   readonly icon?: string;
   readonly onSelect: () => void;
-}
+};
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
   recents: 'Recents',
@@ -59,31 +54,38 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
 ];
 
 function fuzzyScore(query: string, text: string): number {
-  if (query.length === 0) return 1;
+  if (query.length === 0) {
+    return 1;
+  }
   const q = query.toLowerCase();
   const t = text.toLowerCase();
-  if (t.startsWith(q)) return 3;
-  if (t.includes(` ${q}`)) return 2;
-  if (t.includes(q)) return 1;
+  if (t.startsWith(q)) {
+    return 3;
+  }
+  if (t.includes(` ${q}`)) {
+    return 2;
+  }
+  if (t.includes(q)) {
+    return 1;
+  }
   return 0;
 }
 
-export interface Props {
+export type Props = {
   onClose: () => void;
   onOpenSettings?: () => void;
   onNewSession?: () => void;
   onOpenShortcutHelp?: () => void;
-  /** Pre-fills the input, e.g. a prefix like '/' opened from a quick-action. */
   initialQuery?: string;
-}
+};
 
-export function CommandPalette({
+export const CommandPalette = ({
   onClose,
   onOpenSettings,
   onNewSession,
   onOpenShortcutHelp,
   initialQuery = '',
-}: Props) {
+}: Props) => {
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -120,7 +122,6 @@ export function CommandPalette({
   const items = useMemo<ReadonlyArray<PaletteItem>>(() => {
     const out: PaletteItem[] = [];
 
-    // workspaces
     for (const w of workspaces) {
       out.push({
         id: `workspace:${w.id}`,
@@ -131,11 +132,10 @@ export function CommandPalette({
       });
     }
 
-    // sessions, archived live only as historical info, never in interactive
-    // surfaces (palette, switcher, polling). They show up under the Archived
-    // tab in the sidebar and that's it.
     for (const s of sessions) {
-      if (s.archivedAt) continue;
+      if (s.archivedAt) {
+        continue;
+      }
       const ws = workspaces.find((w) => w.id === s.workspaceId);
       out.push({
         id: `session:${s.id}`,
@@ -146,7 +146,6 @@ export function CommandPalette({
       });
     }
 
-    // agents (in current session only, they only make sense there)
     if (currentSession) {
       for (const a of agents) {
         const kind: AgentKind =
@@ -162,7 +161,6 @@ export function CommandPalette({
       }
     }
 
-    // skills
     for (const sk of skills) {
       out.push({
         id: `skill:${sk.id}`,
@@ -176,7 +174,6 @@ export function CommandPalette({
       });
     }
 
-    // workflows
     for (const wf of workflows) {
       out.push({
         id: `workflow:${wf.id}`,
@@ -193,7 +190,6 @@ export function CommandPalette({
       });
     }
 
-    // scripts
     for (const sc of scripts) {
       out.push({
         id: `script:${sc.id}`,
@@ -215,7 +211,6 @@ export function CommandPalette({
       });
     }
 
-    // actions
     if (onOpenSettings) {
       out.push({
         id: 'action:settings',
@@ -234,7 +229,6 @@ export function CommandPalette({
       });
     }
 
-    // help
     if (onOpenShortcutHelp) {
       out.push({
         id: 'help:shortcuts',
@@ -270,8 +264,6 @@ export function CommandPalette({
     const { prefix, query: q } = parsed;
     const scope = prefix ? items.filter((it) => it.group === prefix.group) : items;
     if (q.length === 0) {
-      // When no query: prefix view shows the full scope; no-prefix view
-      // caps to keep the list manageable.
       return prefix ? scope.slice(0, 50) : scope.slice(0, 30);
     }
     return scope
@@ -316,7 +308,6 @@ export function CommandPalette({
       e.preventDefault();
       onClose();
     } else if (e.key === 'Tab' && query.length === 0) {
-      // empty + Tab → seed the next prefix (cycle through PREFIXES)
       e.preventDefault();
       const first = PREFIXES[0]!;
       setQuery(first.symbol);
@@ -331,7 +322,9 @@ export function CommandPalette({
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-[20vh]"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
       }}
     >
       <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-2xl">
@@ -346,8 +339,7 @@ export function CommandPalette({
           className="w-full border-b border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
 
-        {/* prefix legend strip when the input is empty, teaches grammar */}
-        {parsed.prefix === null && query.length === 0 ? (
+        {parsed.prefix === null && query.length === 0 && (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border-soft bg-subtle/30 px-3 py-1.5 text-[10px] text-muted-foreground">
             {PREFIXES.map((p) => (
               <button
@@ -366,7 +358,7 @@ export function CommandPalette({
               </button>
             ))}
           </div>
-        ) : null}
+        )}
 
         <ul ref={listRef} className="max-h-80 overflow-y-auto">
           {filtered.length === 0 ? (
@@ -374,7 +366,9 @@ export function CommandPalette({
           ) : (
             GROUP_ORDER.flatMap((group) => {
               const itemsInGroup = filtered.filter((it) => it.group === group);
-              if (itemsInGroup.length === 0) return [];
+              if (itemsInGroup.length === 0) {
+                return [];
+              }
               return [
                 <li
                   key={`group:${group}`}
@@ -421,4 +415,4 @@ export function CommandPalette({
       </div>
     </div>
   );
-}
+};

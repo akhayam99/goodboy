@@ -2,12 +2,12 @@ import { formatUsdPrecise } from '@goodboy/ui';
 import { ProviderIcon } from './ProviderIcon';
 import { formatModel, formatTokens, type ModelBreakdownEntry } from './lib';
 
-interface Props {
+type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
   readonly showProvider: boolean;
-}
+};
 
-export function ModelTable({ entries, showProvider }: Props) {
+export const ModelTable = ({ entries, showProvider }: Props) => {
   if (entries.length === 0) {
     return (
       <p className="rounded-lg border border-border-soft bg-muted/10 px-3 py-4 text-center text-xs text-muted-foreground">
@@ -52,4 +52,4 @@ export function ModelTable({ entries, showProvider }: Props) {
       </tbody>
     </table>
   );
-}
+};

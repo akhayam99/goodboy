@@ -2,30 +2,30 @@ import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { CostBadge } from '../../../providers/components/CostBadge';
 import { formatTokens } from '../../agent-row-format';
 
-export interface AgentAggregate {
+export type AgentAggregate = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly estimatedCostUsd: number;
   readonly turns: number;
-}
+};
 
-interface Props {
+type Props = {
   readonly run: Agent;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly variant: 'workflow' | 'adhoc';
-}
+};
 
-export function AgentMetricsBlock({
+export const AgentMetricsBlock = ({
   run,
   telemetry,
   aggregate,
   turns,
   turnsLoading,
   variant,
-}: Props) {
+}: Props) => {
   void variant;
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/85">
@@ -81,19 +81,29 @@ export function AgentMetricsBlock({
       <AgentDuration run={run} />
     </div>
   );
-}
+};
 
 function formatRelativeDuration(fromIso: string, toIso?: string): string {
   const fromMs = Date.parse(fromIso);
-  if (Number.isNaN(fromMs)) return '';
+  if (Number.isNaN(fromMs)) {
+    return '';
+  }
   const toMs = toIso ? Date.parse(toIso) : Date.now();
-  if (Number.isNaN(toMs)) return '';
+  if (Number.isNaN(toMs)) {
+    return '';
+  }
   const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
-  if (diff < 60) return `${diff}s`;
+  if (diff < 60) {
+    return `${diff}s`;
+  }
   const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m`;
+  if (m < 60) {
+    return `${m}m`;
+  }
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
+  if (h < 24) {
+    return `${h}h`;
+  }
   const d = Math.floor(h / 24);
   return `${d}d`;
 }

@@ -2,16 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GhResult, GhRunner } from '../gh';
 import { fetchPrDetail } from '../details';
 
-interface FakeResponse {
+type FakeResponse = {
   match: (args: ReadonlyArray<string>) => boolean;
   result: GhResult;
-}
+};
 
 function makeMultiRunner(responses: ReadonlyArray<FakeResponse>): GhRunner {
   return {
     run: vi.fn(async (args: ReadonlyArray<string>) => {
       for (const r of responses) {
-        if (r.match(args)) return r.result;
+        if (r.match(args)) {
+          return r.result;
+        }
       }
       return { stdout: '[]', stderr: '', exitCode: 0 };
     }),

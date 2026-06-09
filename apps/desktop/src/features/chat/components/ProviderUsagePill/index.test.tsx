@@ -3,12 +3,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
-interface Breakdown {
+type Breakdown = {
   readonly provider: string;
   readonly spentUsd: number;
   readonly capUsd: number | null;
   readonly pct: number;
-}
+};
 
 const { state } = vi.hoisted(() => ({
   state: { providerSpendBreakdown: [] as ReadonlyArray<Breakdown> },

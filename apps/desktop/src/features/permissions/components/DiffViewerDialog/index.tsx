@@ -54,7 +54,7 @@ import {
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
 
-interface DiffViewerDialogProps {
+type DiffViewerDialogProps = {
   open: boolean;
   onClose: () => void;
   sessionId?: SessionId;
@@ -63,22 +63,12 @@ interface DiffViewerDialogProps {
   repoSlug?: string;
   prNumber?: number;
   cwd?: string;
-  /** Absolute path of the worktree root, used to open files in editor. */
   workingDir?: string;
-  /**
-   * When set, the dialog enters git-aware mode: it loads commits/status from
-   * the worktree and exposes the view selector (working tree / commits / branch).
-   * Without this, the dialog falls back to the supplied `loader` (PR-review mode).
-   */
   worktreePath?: string;
-  /** When true and the dialog opens, jump to the first file that has open comments. */
   jumpToFirstCommented?: boolean;
-  /** When set, jump to this file path after the diff loads. */
   jumpToFile?: string;
-}
+};
 
-// Default to the same scope the sidebar files-touched counter uses
-// (branch vs main) so opening the dialog matches what the count promises.
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
 
 function viewStorageKey(sessionId: SessionId | undefined): string | null {
@@ -87,12 +77,18 @@ function viewStorageKey(sessionId: SessionId | undefined): string | null {
 
 function readPersistedView(sessionId: SessionId | undefined): DiffView | null {
   const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') return null;
+  if (!key || typeof window === 'undefined') {
+    return null;
+  }
   try {
     const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
+    if (!raw) {
+      return null;
+    }
     const parsed = JSON.parse(raw) as DiffView;
-    if (parsed && typeof parsed === 'object' && 'kind' in parsed) return parsed;
+    if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
+      return parsed;
+    }
   } catch {
     // ignore
   }
@@ -101,7 +97,9 @@ function readPersistedView(sessionId: SessionId | undefined): DiffView | null {
 
 function writePersistedView(sessionId: SessionId | undefined, view: DiffView): void {
   const key = viewStorageKey(sessionId);
-  if (!key || typeof window === 'undefined') return;
+  if (!key || typeof window === 'undefined') {
+    return;
+  }
   try {
     window.localStorage.setItem(key, JSON.stringify(view));
   } catch {
@@ -110,30 +108,50 @@ function writePersistedView(sessionId: SessionId | undefined, view: DiffView): v
 }
 
 function loadDiffForView(worktreePath: string, view: DiffView): Promise<string> {
-  if (view.kind === 'working') return worktreeDiffWorking(worktreePath, view.scope);
-  if (view.kind === 'commit') return worktreeDiffCommit(worktreePath, view.sha);
+  if (view.kind === 'working') {
+    return worktreeDiffWorking(worktreePath, view.scope);
+  }
+  if (view.kind === 'commit') {
+    return worktreeDiffCommit(worktreePath, view.sha);
+  }
   return worktreeDiff(worktreePath);
 }
 
 function emptyStateLabel(view: DiffView, isGitAware: boolean): string {
-  if (!isGitAware) return 'No diff available';
+  if (!isGitAware) {
+    return 'No diff available';
+  }
   if (view.kind === 'working') {
-    if (view.scope === 'staged') return 'No staged changes';
-    if (view.scope === 'unstaged') return 'No unstaged changes';
+    if (view.scope === 'staged') {
+      return 'No staged changes';
+    }
+    if (view.scope === 'unstaged') {
+      return 'No unstaged changes';
+    }
     return 'Working tree clean';
   }
-  if (view.kind === 'commit') return 'This commit is empty';
+  if (view.kind === 'commit') {
+    return 'This commit is empty';
+  }
   return 'Branch matches main';
 }
 
 function emptyStateBlurb(view: DiffView, isGitAware: boolean): string | null {
-  if (!isGitAware) return null;
+  if (!isGitAware) {
+    return null;
+  }
   if (view.kind === 'working') {
-    if (view.scope === 'staged') return 'Nothing has been staged for the next commit yet.';
-    if (view.scope === 'unstaged') return 'No uncommitted edits in the working tree.';
+    if (view.scope === 'staged') {
+      return 'Nothing has been staged for the next commit yet.';
+    }
+    if (view.scope === 'unstaged') {
+      return 'No uncommitted edits in the working tree.';
+    }
     return 'No uncommitted edits and nothing staged.';
   }
-  if (view.kind === 'commit') return 'No file changes were recorded for this commit.';
+  if (view.kind === 'commit') {
+    return 'No file changes were recorded for this commit.';
+  }
   return 'Every commit on this branch is already reachable from main, nothing extra to review.';
 }
 
@@ -195,10 +213,14 @@ function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   });
 
   const collapse = (node: TreeNode) => {
-    if (node.kind !== 'dir') return;
+    if (node.kind !== 'dir') {
+      return;
+    }
     while (node.children.length === 1) {
       const only = node.children[0];
-      if (!only || only.kind !== 'dir') break;
+      if (!only || only.kind !== 'dir') {
+        break;
+      }
       node.name = node.name ? `${node.name}/${only.name}` : only.name;
       node.children = only.children;
     }
@@ -207,7 +229,9 @@ function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   for (const c of root.children) collapse(c);
 
   const aggregate = (node: TreeNode): { a: number; d: number } => {
-    if (node.kind === 'file') return { a: node.file.additions, d: node.file.deletions };
+    if (node.kind === 'file') {
+      return { a: node.file.additions, d: node.file.deletions };
+    }
     let a = 0;
     let d = 0;
     for (const c of node.children) {
@@ -222,9 +246,13 @@ function buildTree(files: ReadonlyArray<FileDiff>): TreeNode {
   aggregate(root);
 
   const sort = (node: TreeNode) => {
-    if (node.kind !== 'dir') return;
+    if (node.kind !== 'dir') {
+      return;
+    }
     node.children.sort((x, y) => {
-      if (x.kind !== y.kind) return x.kind === 'dir' ? -1 : 1;
+      if (x.kind !== y.kind) {
+        return x.kind === 'dir' ? -1 : 1;
+      }
       return x.name.localeCompare(y.name);
     });
     for (const c of node.children) sort(c);
@@ -261,16 +289,20 @@ function buildNotesPrompt(notes: ReadonlyArray<DiffComment>): string {
 }
 
 function readSidebarPref(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   return window.localStorage.getItem(SIDEBAR_PREF_KEY) === '1';
 }
 
 function writeSidebarPref(collapsed: boolean): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    return;
+  }
   window.localStorage.setItem(SIDEBAR_PREF_KEY, collapsed ? '1' : '0');
 }
 
-export function DiffViewerDialog({
+export const DiffViewerDialog = ({
   open,
   onClose,
   sessionId,
@@ -283,7 +315,7 @@ export function DiffViewerDialog({
   worktreePath,
   jumpToFirstCommented = false,
   jumpToFile,
-}: DiffViewerDialogProps) {
+}: DiffViewerDialogProps) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -337,29 +369,39 @@ export function DiffViewerDialog({
   );
   const agentNameById = useMemo(() => {
     const m = new Map<AgentId, string>();
-    if (phaseRuns) for (const r of phaseRuns) m.set(r.id, r.name);
+    if (phaseRuns) {
+      for (const r of phaseRuns) m.set(r.id, r.name);
+    }
     return m;
   }, [phaseRuns]);
 
   const openCommentsByFile = useMemo(() => {
     const m = new Map<string, number>();
     for (const c of comments) {
-      if (c.status !== 'open') continue;
+      if (c.status !== 'open') {
+        continue;
+      }
       m.set(c.filePath, (m.get(c.filePath) ?? 0) + 1);
     }
     return m;
   }, [comments]);
 
   useEffect(() => {
-    if (open) setViewState(DEFAULT_VIEW);
+    if (open) {
+      setViewState(DEFAULT_VIEW);
+    }
   }, [open]);
 
   useEffect(() => {
-    if (!open || !worktreePath) return;
+    if (!open || !worktreePath) {
+      return;
+    }
     let cancelled = false;
     Promise.all([listBranchCommits(worktreePath), worktreeStatus(worktreePath)])
       .then(([c, s]) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         setCommits(c);
         setStatus(s);
       })
@@ -372,7 +414,9 @@ export function DiffViewerDialog({
   }, [open, worktreePath, refreshTick]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const fetcher = isGitAware
       ? () => loadDiffForView(worktreePath as string, view)
       : (loader ??
@@ -390,7 +434,9 @@ export function DiffViewerDialog({
     setActiveAnchor(null);
     fetcher()
       .then((raw) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         const parsed = parseUnifiedDiff(raw);
         setFiles(parsed);
         setLoading(false);
@@ -405,7 +451,9 @@ export function DiffViewerDialog({
         }
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         setError(formatError(err));
         setLoading(false);
       });
@@ -428,7 +476,9 @@ export function DiffViewerDialog({
   ]);
 
   useEffect(() => {
-    if (open && sessionId) void loadDiffComments(sessionId);
+    if (open && sessionId) {
+      void loadDiffComments(sessionId);
+    }
   }, [open, sessionId, loadDiffComments]);
 
   const toggleSidebar = () => {
@@ -442,7 +492,9 @@ export function DiffViewerDialog({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        return;
+      }
       if (e.key === 'Escape') {
         onClose();
         return;
@@ -485,13 +537,12 @@ export function DiffViewerDialog({
   const openComments = useMemo(() => comments.filter((c) => c.status === 'open'), [comments]);
 
   const handleProposeFixes = async () => {
-    if (!sessionId || openComments.length === 0 || spawning) return;
+    if (!sessionId || openComments.length === 0 || spawning) {
+      return;
+    }
     setSpawning(true);
     try {
       const prompt = buildNotesPrompt(openComments);
-      // Resolver is the right kind for "fix these local diff notes": it
-      // commits locally, never pushes, and is scoped to the comment(s) in
-      // the kickoff. Reviewer would only describe the fix, not apply it.
       const defaults = AGENT_KIND_DEFAULTS.resolver;
       const fileCount = new Set(openComments.map((c) => c.filePath)).size;
       const name = `resolve notes (${fileCount}F/${openComments.length}N)`;
@@ -515,13 +566,17 @@ export function DiffViewerDialog({
   };
 
   const handleViewAgent = async (agentId: AgentId) => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      return;
+    }
     await selectAgent(sessionId, agentId);
     onClose();
   };
 
   const handleOpenInEditor = async () => {
-    if (!selected || !workingDir) return;
+    if (!selected || !workingDir) {
+      return;
+    }
     const root = workingDir.replace(/\/$/, '');
     const absPath = `${root}/${selected.path}`;
     try {
@@ -532,13 +587,17 @@ export function DiffViewerDialog({
   };
 
   const handleAddComment = async (anchor: DiffCommentAnchor, body: string) => {
-    if (!selected || !sessionId) return;
+    if (!selected || !sessionId) {
+      return;
+    }
     await addDiffComment(sessionId, selected.path, body, anchor);
     setActiveAnchor(null);
   };
 
   const handleAddFileLevelComment = async (body: string) => {
-    if (!selected || !sessionId) return;
+    if (!selected || !sessionId) {
+      return;
+    }
     await addDiffComment(sessionId, selected.path, body);
     setFileLevelComposerOpen(false);
   };
@@ -637,7 +696,7 @@ export function DiffViewerDialog({
             </div>
           ) : (
             <>
-              {!sidebarCollapsed ? (
+              {!sidebarCollapsed && (
                 <FileRail
                   files={files}
                   selectedIdx={selectedIdx}
@@ -645,7 +704,7 @@ export function DiffViewerDialog({
                   onStartFileComment={sessionId ? handleRailFileComment : undefined}
                   commentCounts={openCommentsByFile}
                 />
-              ) : null}
+              )}
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {selected ? (
                   <FileDiffPane
@@ -684,22 +743,28 @@ export function DiffViewerDialog({
       </div>
     </Dialog>
   );
-}
+};
 
-interface GitStatusHeaderProps {
+type GitStatusHeaderProps = {
   status: WorktreeStatus | null;
   onRefresh: () => void;
   refreshing: boolean;
-}
+};
 
 function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps) {
   const headLabel = status?.head ? status.head.slice(0, 7) : null;
   const subject = status?.headSubject ?? null;
   const counts: string[] = [];
   if (status) {
-    if (status.unstaged > 0) counts.push(`${status.unstaged} unstaged`);
-    if (status.staged > 0) counts.push(`${status.staged} staged`);
-    if (status.untracked > 0) counts.push(`${status.untracked} untracked`);
+    if (status.unstaged > 0) {
+      counts.push(`${status.unstaged} unstaged`);
+    }
+    if (status.staged > 0) {
+      counts.push(`${status.staged} staged`);
+    }
+    if (status.untracked > 0) {
+      counts.push(`${status.untracked} untracked`);
+    }
     if (status.hasUpstream) {
       counts.push(`ahead ${status.ahead} / behind ${status.behind}`);
     } else if (status.branch) {
@@ -743,11 +808,11 @@ function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps
   );
 }
 
-interface NotesFooterProps {
+type NotesFooterProps = {
   openCount: number;
   spawning: boolean;
   onPropose: () => void;
-}
+};
 
 function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   return (
@@ -773,7 +838,7 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   );
 }
 
-interface ToolbarProps {
+type ToolbarProps = {
   title?: string;
   prNumber?: number;
   selected: FileDiff | undefined;
@@ -787,7 +852,7 @@ interface ToolbarProps {
   onNext: () => void;
   onClose: () => void;
   viewSelector?: React.ReactNode;
-}
+};
 
 function Toolbar({
   title,
@@ -849,14 +914,14 @@ function Toolbar({
             {filesCount} {filesCount === 1 ? 'file' : 'files'}
           </span>
         )}
-        {openCommentsCount > 0 ? (
+        {openCommentsCount > 0 && (
           <span
             className="ml-1 shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
             title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
           >
             {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
           </span>
-        ) : null}
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
@@ -1010,17 +1075,15 @@ function TreeNodeView({
             {STATUS_GLYPH[file.status]}
           </span>
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
-          {noteCount > 0 ? (
+          {noteCount > 0 && (
             <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
               {noteCount}
             </span>
-          ) : null}
+          )}
           <span className="shrink-0 text-[10px] tabular-nums">
-            {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
-            {file.additions > 0 && file.deletions > 0 ? (
-              <span className="opacity-40"> </span>
-            ) : null}
-            {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
+            {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
+            {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
+            {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
           </span>
         </button>
         <button
@@ -1119,7 +1182,7 @@ function CommentItem({
           )}
         </p>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          {comment.status === 'open' ? (
+          {comment.status === 'open' && (
             <button
               type="button"
               onClick={() => onResolve(comment.id)}
@@ -1129,8 +1192,8 @@ function CommentItem({
             >
               <Check size={11} />
             </button>
-          ) : null}
-          {comment.status === 'consumed' ? (
+          )}
+          {comment.status === 'consumed' && (
             <button
               type="button"
               onClick={() => onReopen(comment.id)}
@@ -1140,7 +1203,7 @@ function CommentItem({
             >
               <RotateCcw size={11} />
             </button>
-          ) : null}
+          )}
           <button
             type="button"
             onClick={() => onDelete(comment.id)}
@@ -1152,7 +1215,7 @@ function CommentItem({
           </button>
         </div>
       </div>
-      {comment.status === 'consumed' ? (
+      {comment.status === 'consumed' && (
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {agentName && comment.consumedByAgentId ? (
             <>
@@ -1170,7 +1233,7 @@ function CommentItem({
             <span className="italic">consumed by removed agent</span>
           )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -1186,7 +1249,7 @@ function anchorKey(a: DiffCommentAnchor): string {
   return `${a.side}:${a.lineNumber}`;
 }
 
-interface FileDiffPaneProps {
+type FileDiffPaneProps = {
   file: FileDiff;
   comments: ReadonlyArray<DiffComment>;
   fileLevelComments: ReadonlyArray<DiffComment>;
@@ -1204,7 +1267,7 @@ interface FileDiffPaneProps {
   onDelete: (id: string) => void;
   onViewAgent: (agentId: AgentId) => void;
   getAgentName: (agentId: AgentId) => string | undefined;
-}
+};
 
 function FileDiffPane({
   file,
@@ -1228,11 +1291,16 @@ function FileDiffPane({
   const commentsByAnchor = useMemo(() => {
     const m = new Map<string, DiffComment[]>();
     for (const c of comments) {
-      if (!c.anchor) continue;
+      if (!c.anchor) {
+        continue;
+      }
       const k = anchorKey(c.anchor);
       const arr = m.get(k);
-      if (arr) arr.push(c);
-      else m.set(k, [c]);
+      if (arr) {
+        arr.push(c);
+      } else {
+        m.set(k, [c]);
+      }
     }
     return m;
   }, [comments]);
@@ -1249,20 +1317,21 @@ function FileDiffPane({
     return out;
   }, [file]);
 
-  const totalLines = useMemo(
-    () => file.hunks.reduce((n, h) => n + h.lines.length, 0),
-    [file],
-  );
+  const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 
   const visibleRows = useMemo(() => {
-    if (visibleLines >= totalLines) return rows;
+    if (visibleLines >= totalLines) {
+      return rows;
+    }
     let count = 0;
     for (let i = 0; i < rows.length; i++) {
       if (rows[i]?.type === 'line') {
         count += 1;
-        if (count >= visibleLines) return rows.slice(0, i + 1);
+        if (count >= visibleLines) {
+          return rows.slice(0, i + 1);
+        }
       }
     }
     return rows;
@@ -1396,7 +1465,7 @@ function FileDiffPane({
                           {line.text}
                         </td>
                       </tr>
-                      {lineComments.length > 0 ? (
+                      {lineComments.length > 0 && (
                         <tr>
                           <td colSpan={4} className="bg-background px-3 py-2">
                             <div className="flex flex-col gap-1.5">
@@ -1414,7 +1483,7 @@ function FileDiffPane({
                             </div>
                           </td>
                         </tr>
-                      ) : null}
+                      )}
                       {isActive && anchor ? (
                         <tr>
                           <td colSpan={4} className="bg-background px-3 py-2">
@@ -1430,14 +1499,14 @@ function FileDiffPane({
                 })}
               </tbody>
             </table>
-            {remaining > 0 ? (
+            {remaining > 0 && (
               <ShowMoreBar
                 step={Math.min(VISIBLE_LINES_STEP, remaining)}
                 rendered={Math.min(visibleLines, totalLines)}
                 total={totalLines}
                 onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
               />
-            ) : null}
+            )}
           </>
         )}
       </div>
@@ -1501,7 +1570,9 @@ function InlineComposer({
             }
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              if (trimmed.length > 0) onSubmit(trimmed);
+              if (trimmed.length > 0) {
+                onSubmit(trimmed);
+              }
             }
           }}
         />

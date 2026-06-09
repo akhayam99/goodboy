@@ -29,7 +29,9 @@ function makeStore(initial: GithubPrCacheEntry | null = null): PrCacheStore & {
   rows: Map<string, GithubPrCacheEntry>;
 } {
   const rows = new Map<string, GithubPrCacheEntry>();
-  if (initial) rows.set(`${initial.repoSlug}/${initial.branch}`, initial);
+  if (initial) {
+    rows.set(`${initial.repoSlug}/${initial.branch}`, initial);
+  }
 
   return {
     rows,

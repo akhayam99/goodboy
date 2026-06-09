@@ -4,13 +4,11 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-// Module mocks, hoisted before imports that transitively pull the mocked modules.
-// vi.hoisted keeps shared refs alive across the hoisting reorder.
 const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(async () => {
   const { create } = await import('zustand');
   const send = vi.fn(async () => undefined);
   const cancel = vi.fn();
-  interface S {
+  type S = {
     sendTurn: typeof send;
     cancelCurrentTurn: typeof cancel;
     setAgentVerbosity: (sessionId: string, agentId: string, level: string) => Promise<void>;
@@ -45,7 +43,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     attachWorkflowToSession: () => Promise<void>;
     loadPhaseTemplates: () => Promise<void>;
     loadPhaseRunsForSession: () => Promise<void>;
-  }
+  };
   const store = create<S>((set) => ({
     sendTurn: send,
     cancelCurrentTurn: cancel,
@@ -75,7 +73,9 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
       set((s) => ({ agentDraft: { ...s.agentDraft, [agentId]: value } })),
     clearAgentDraft: (agentId) =>
       set((s) => {
-        if (!(agentId in s.agentDraft)) return s;
+        if (!(agentId in s.agentDraft)) {
+          return s;
+        }
         const next = { ...s.agentDraft };
         delete next[agentId];
         return { agentDraft: next };
@@ -132,7 +132,6 @@ vi.mock('@goodboy/core', () => ({
   assessTurnWeight: () => 'small',
 }));
 
-// Import component AFTER mocks are in place.
 import { ChatInput } from './index';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
@@ -238,7 +237,6 @@ describe('ChatInput, input wiring', () => {
   });
 
   it('provider override persists across sends (regression for bug D)', async () => {
-    // Session arrives with provider already overridden (persisted on DB).
     const setSessionConfig = vi.fn(async () => undefined);
     mockStore.setState({ setSessionConfig });
 

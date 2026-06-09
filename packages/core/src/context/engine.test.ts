@@ -65,9 +65,6 @@ describe('serializeSlots', () => {
   });
 
   it('serializes slots regardless of the legacy enabled flag', () => {
-    // The enabled flag is no longer respected at serialization time, slots
-    // with content always reach the model. The flag is kept on the type for
-    // schema compat but has no effect on output.
     const out = serializeSlots([{ key: 'goal', value: 'visible-anyway', enabled: false }]);
     expect(out).toContain('visible-anyway');
   });

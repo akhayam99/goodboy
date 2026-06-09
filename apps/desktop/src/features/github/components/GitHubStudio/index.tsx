@@ -8,28 +8,32 @@ import { useGithubInbox } from './useGithubInbox';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
-interface Props {
+type Props = {
   readonly workspaceName: string;
   readonly initialSessionId: SessionId | null;
   readonly initialPrNumber?: number | null;
   readonly initialThreadId?: string | null;
   readonly onClose: () => void;
-}
+};
 
-export function GitHubStudio({
+export const GitHubStudio = ({
   workspaceName,
   initialSessionId,
   initialPrNumber = null,
   initialThreadId = null,
   onClose,
-}: Props) {
+}: Props) => {
   const groups = useGithubInbox();
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
 
   useEffect(() => {
-    if (focused !== null) return;
+    if (focused !== null) {
+      return;
+    }
     const first = groups[0]?.rows[0]?.session.id ?? null;
-    if (first) setFocused(first);
+    if (first) {
+      setFocused(first);
+    }
   }, [focused, groups]);
 
   const onInitialSession = focused === initialSessionId;
@@ -60,4 +64,4 @@ export function GitHubStudio({
       )}
     </StudioShell>
   );
-}
+};

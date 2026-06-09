@@ -4,13 +4,13 @@ import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { Summarizer, SummarizerParseError, SummarizerSpawnError } from './cli';
 
-interface MockChild extends EventEmitter {
+type MockChild = EventEmitter & {
   stdout: Readable;
   stderr: Readable;
   killed: boolean;
   exitCode: number | null;
   kill(signal?: NodeJS.Signals | string): boolean;
-}
+};
 
 function makeMockSpawn(
   stdoutData: string,
@@ -28,13 +28,15 @@ function makeMockSpawn(
   };
 
   const spawnFn = vi.fn().mockImplementation(() => {
-    // Push data first, then null to end the stream, then emit close after stream drains
     setImmediate(() => {
-      if (stdoutData) child.stdout.push(stdoutData);
+      if (stdoutData) {
+        child.stdout.push(stdoutData);
+      }
       child.stdout.push(null);
-      if (stderrData) child.stderr.push(stderrData);
+      if (stderrData) {
+        child.stderr.push(stderrData);
+      }
       child.stderr.push(null);
-      // close after stream ends so data is fully buffered before the promise resolves
       setImmediate(() => child.emit('close', exitCode));
     });
     return child as unknown as ChildProcess;

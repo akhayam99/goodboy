@@ -1,17 +1,11 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-// Cursor proxies agent requests through its own gateway under a flat Pro
-// subscription tier. Per-token prices are not published. The mapping below uses
-// the underlying provider's public list price as the best available cost proxy.
-// This approximates the premium-request consumption Cursor users are billed for.
-// Source: Anthropic + OpenAI public pricing (verified 2026-05).
-interface ModelPrice {
+type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok: number;
-}
+};
 
-// `composer-2-fast` is Cursor's CLI default cheap tier (per `cursor-agent models`).
 export const CURSOR_CHEAP_MODEL = 'composer-2-fast';
 
 const COMPOSER_PRICE: ModelPrice = {
@@ -36,12 +30,10 @@ const GPT5_PRICE: ModelPrice = {
 };
 
 const PRICES: Record<string, ModelPrice> = {
-  // Cursor's first-party Composer family, cheap tier proxy pricing.
   [CURSOR_CHEAP_MODEL]: COMPOSER_PRICE,
   'composer-2': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
 
-  // Claude-family models surfaced via Cursor's CLI.
   'claude-opus-4-7-thinking-high': OPUS_PRICE,
   'claude-4.6-opus-high-thinking': OPUS_PRICE,
   'claude-4.6-opus-high-thinking-fast': OPUS_PRICE,
@@ -50,7 +42,6 @@ const PRICES: Record<string, ModelPrice> = {
   'claude-sonnet-4-5': SONNET_PRICE,
   'claude-sonnet-4-6': SONNET_PRICE,
 
-  // GPT-5 family surfaced via Cursor's CLI.
   'gpt-5.5-high': GPT5_PRICE,
   'gpt-5.5-medium': GPT5_PRICE,
   'gpt-5.3-codex': GPT5_PRICE,
@@ -59,11 +50,11 @@ const PRICES: Record<string, ModelPrice> = {
 
 const FALLBACK: ModelPrice = COMPOSER_PRICE;
 
-export function cursorPriceFor(model: string): ModelPrice {
+export const cursorPriceFor = (model: string): ModelPrice => {
   return PRICES[model] ?? FALLBACK;
-}
+};
 
-export function computeCursorCostUsd(usage: ProviderUsage, model: string): number {
+export const computeCursorCostUsd = (usage: ProviderUsage, model: string): number => {
   const price = cursorPriceFor(model);
   const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
@@ -71,4 +62,4 @@ export function computeCursorCostUsd(usage: ProviderUsage, model: string): numbe
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );
-}
+};

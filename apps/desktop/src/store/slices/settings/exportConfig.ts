@@ -1,5 +1,5 @@
 import { exportConfigToFile } from '../../../features/settings/config-export';
 
-export function exportConfig() {
+export const exportConfig = () => {
   return async (): Promise<string | null> => exportConfigToFile();
-}
+};

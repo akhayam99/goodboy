@@ -4,13 +4,13 @@ import { GitBranch, Inbox } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
 
-interface Props {
+type Props = {
   readonly groups: ReadonlyArray<InboxGroup>;
   readonly focusedSessionId: SessionId | null;
   readonly onSelect: (sessionId: SessionId) => void;
-}
+};
 
-export function InboxList({ groups, focusedSessionId, onSelect }: Props) {
+export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
   if (groups.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-3">
@@ -83,4 +83,4 @@ export function InboxList({ groups, focusedSessionId, onSelect }: Props) {
       ))}
     </div>
   );
-}
+};

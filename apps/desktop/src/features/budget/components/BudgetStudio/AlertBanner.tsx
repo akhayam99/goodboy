@@ -3,10 +3,10 @@ import { TriangleAlert, X } from 'lucide-react';
 import type { BudgetAlert } from '@goodboy/types';
 import { providerLabel } from './lib';
 
-interface Props {
+type Props = {
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly onDismiss: (id: string) => void;
-}
+};
 
 function alertMessage(alert: BudgetAlert): string {
   const who = alert.provider ? providerLabel(alert.provider) : 'this session';
@@ -21,9 +21,11 @@ function alertMessage(alert: BudgetAlert): string {
   }
 }
 
-export function AlertBanner({ alerts, onDismiss }: Props) {
+export const AlertBanner = ({ alerts, onDismiss }: Props) => {
   const active = alerts.filter((a) => !a.dismissedAt);
-  if (active.length === 0) return null;
+  if (active.length === 0) {
+    return null;
+  }
 
   return (
     <ul className="flex flex-col gap-1.5">
@@ -57,4 +59,4 @@ export function AlertBanner({ alerts, onDismiss }: Props) {
       })}
     </ul>
   );
-}
+};

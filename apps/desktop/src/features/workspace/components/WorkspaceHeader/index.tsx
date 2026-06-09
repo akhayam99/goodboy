@@ -4,7 +4,7 @@ import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 
-export function WorkspaceHeader() {
+export const WorkspaceHeader = () => {
   const currentWorkspace = useCurrentWorkspace();
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -12,7 +12,9 @@ export function WorkspaceHeader() {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      if (!currentWorkspace) return;
+      if (!currentWorkspace) {
+        return;
+      }
       const detail = (e as CustomEvent<{ section?: string }>).detail;
       setSettingsSection(detail?.section);
       setSettingsOpen(true);
@@ -21,7 +23,9 @@ export function WorkspaceHeader() {
     return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
   }, [currentWorkspace]);
 
-  if (!currentWorkspace) return null;
+  if (!currentWorkspace) {
+    return null;
+  }
   const accent = workspaceAccent(currentWorkspace.id);
 
   return (
@@ -79,4 +83,4 @@ export function WorkspaceHeader() {
       />
     </div>
   );
-}
+};

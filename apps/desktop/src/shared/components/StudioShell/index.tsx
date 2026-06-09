@@ -3,23 +3,23 @@ import { cn, Divider } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 
-interface Props {
+type Props = {
   readonly icon: LucideIcon;
   readonly title: string;
   readonly workspaceName: string;
   readonly closeLabel: string;
   readonly onClose: () => void;
   readonly children: (requestClose: () => void) => ReactNode;
-}
+};
 
-export function StudioShell({
+export const StudioShell = ({
   icon: Icon,
   title,
   workspaceName,
   closeLabel,
   onClose,
   children,
-}: Props) {
+}: Props) => {
   const { closing, requestClose } = useStudioOverlay(onClose);
 
   return (
@@ -61,4 +61,4 @@ export function StudioShell({
       <div className="flex min-h-0 flex-1">{children(requestClose)}</div>
     </div>
   );
-}
+};

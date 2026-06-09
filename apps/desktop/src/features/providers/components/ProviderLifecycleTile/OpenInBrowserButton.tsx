@@ -1,13 +1,11 @@
 import { ExternalLink } from 'lucide-react';
 import { openUrl } from '../../../../shared/lib/editor';
 
-interface Props {
+type Props = {
   readonly url: string;
-}
+};
 
-// Surfaces a detected OAuth URL with click-through to the system browser.
-// Never auto-opens, the user owns the navigation decision.
-export function OpenInBrowserButton({ url }: Props) {
+export const OpenInBrowserButton = ({ url }: Props) => {
   return (
     <button
       type="button"
@@ -19,4 +17,4 @@ export function OpenInBrowserButton({ url }: Props) {
       <span>Open in browser</span>
     </button>
   );
-}
+};

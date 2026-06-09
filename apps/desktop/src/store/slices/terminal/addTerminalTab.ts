@@ -7,12 +7,14 @@ function nextOrdinal(tabs: readonly TerminalTab[]): number {
   for (const tab of tabs) {
     const trailing = Number.parseInt(tab.id.slice(tab.id.lastIndexOf('t') + 1), 10);
     const ordinal = Number.isNaN(trailing) ? 1 : trailing;
-    if (ordinal > max) max = ordinal;
+    if (ordinal > max) {
+      max = ordinal;
+    }
   }
   return max + 1;
 }
 
-export function addTerminalTab(set: SetFn, get: GetFn) {
+export const addTerminalTab = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, cwd: string | null): TerminalTabId => {
     const tabs = get().terminalTabs[sessionId] ?? [];
     const n = nextOrdinal(tabs);
@@ -31,4 +33,4 @@ export function addTerminalTab(set: SetFn, get: GetFn) {
     }));
     return id;
   };
-}
+};

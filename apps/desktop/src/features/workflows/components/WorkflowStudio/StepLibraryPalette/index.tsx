@@ -6,23 +6,23 @@ import type { StepDefUpsertArgs } from '../../../workflows';
 import { LibraryCard } from '../../LibraryCard';
 import { LibraryStepForm } from '../../LibraryStepForm';
 
-interface Props {
+type Props = {
   readonly library: ReadonlyArray<StepDef>;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
-}
+};
 
-export function StepLibraryPalette({
+export const StepLibraryPalette = ({
   library,
   workspaceId,
   connectedProviders,
   onStartDrag,
   onSaveDef,
   onDeleteDef,
-}: Props) {
+}: Props) => {
   const [editing, setEditing] = useState<StepDefId | 'new' | null>(null);
 
   return (
@@ -41,7 +41,7 @@ export function StepLibraryPalette({
         }
       />
 
-      {editing === 'new' ? (
+      {editing === 'new' && (
         <LibraryStepForm
           def={null}
           workspaceId={workspaceId}
@@ -52,16 +52,16 @@ export function StepLibraryPalette({
           }}
           onCancel={() => setEditing(null)}
         />
-      ) : null}
+      )}
 
-      {library.length === 0 && editing !== 'new' ? (
+      {library.length === 0 && editing !== 'new' && (
         <EmptyState
           icon={Layers}
           title="No library steps yet"
           description="Create one to reuse it across workflows."
           bordered
         />
-      ) : null}
+      )}
 
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {library.map((def) =>
@@ -92,4 +92,4 @@ export function StepLibraryPalette({
       </ul>
     </div>
   );
-}
+};

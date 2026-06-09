@@ -14,23 +14,21 @@ import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
   initialSection?: string;
-}
+};
 
 type NavSection = 'app' | 'shortcuts' | 'budget' | 'integrations' | 'initialization' | 'advanced';
 
-interface NavItem {
+type NavItem = {
   id: NavSection;
   label: string;
   icon: React.ReactNode;
   beta?: boolean;
-}
+};
 
-// global settings only, per-workspace skills + workflows live in
-// WorkspaceSettingsDialog (the gear icon next to a workspace row).
 const NAV_ITEMS: NavItem[] = [
   { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
   { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={14} aria-hidden /> },
@@ -85,7 +83,7 @@ function BetaChip() {
   );
 }
 
-export function SettingsDialog({ open, onClose, initialSection }: Props) {
+export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
@@ -106,7 +104,9 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
   const [wipeError, setWipeError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     if (isNavSection(initialSection)) {
       setActiveSection(initialSection);
     }
@@ -135,7 +135,9 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
     setImportError(null);
     try {
       const result = await importConfig();
-      if (!result) return;
+      if (!result) {
+        return;
+      }
       setImportResult(result);
       setImportDialogOpen(true);
     } catch (err) {
@@ -260,11 +262,11 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
                 {wipeError}
               </p>
             ) : null}
-            {wipeState === 'done' ? (
+            {wipeState === 'done' && (
               <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
                 Database wiped. Restart the app (or reopen settings) to start fresh.
               </p>
-            ) : null}
+            )}
             {wipeState === 'confirm' ? (
               <div className="flex flex-col gap-2 rounded-md border border-danger/40 bg-danger/5 p-3">
                 <p className="text-sm font-semibold text-danger">
@@ -335,9 +337,7 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
       fullScreenOnSmall
       footer={
         <>
-          {saveState === 'saved' ? (
-            <span className="mr-auto text-xs text-success">Saved.</span>
-          ) : null}
+          {saveState === 'saved' && <span className="mr-auto text-xs text-success">Saved.</span>}
           {error ? <span className="mr-auto text-xs text-danger">{error}</span> : null}
           <Button variant="ghost" onClick={onClose}>
             Close
@@ -398,7 +398,7 @@ export function SettingsDialog({ open, onClose, initialSection }: Props) {
       />
     </Dialog>
   );
-}
+};
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (

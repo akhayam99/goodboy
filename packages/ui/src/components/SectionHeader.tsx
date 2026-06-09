@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface SectionHeaderProps {
+export type SectionHeaderProps = {
   readonly label: string;
   readonly icon?: ReactNode;
   readonly hint?: string;
   readonly action?: ReactNode;
   readonly className?: string;
-}
+};
 
-export function SectionHeader({ label, icon, hint, action, className }: SectionHeaderProps) {
+export const SectionHeader = ({ label, icon, hint, action, className }: SectionHeaderProps) => {
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div className="flex items-center justify-between gap-2">
@@ -22,4 +22,4 @@ export function SectionHeader({ label, icon, hint, action, className }: SectionH
       {hint ? <p className="text-2xs text-muted-foreground/70">{hint}</p> : null}
     </div>
   );
-}
+};

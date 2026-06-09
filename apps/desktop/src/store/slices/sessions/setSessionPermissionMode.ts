@@ -3,7 +3,7 @@ import { updateSessionPermissionMode } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function setSessionPermissionMode(set: SetFn) {
+export const setSessionPermissionMode = (set: SetFn) => {
   return async (sessionId: SessionId, mode: ClaudePermissionMode) => {
     const now = new Date().toISOString() as IsoDateTime;
     await updateSessionPermissionMode(tauriDatabase, sessionId, mode, now);
@@ -13,4 +13,4 @@ export function setSessionPermissionMode(set: SetFn) {
       ),
     }));
   };
-}
+};

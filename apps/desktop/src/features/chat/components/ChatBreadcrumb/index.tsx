@@ -10,31 +10,19 @@ import {
 } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
-interface Props {
+type Props = {
   readonly session: Session;
-}
+};
 
-interface WorkflowProgress {
+type WorkflowProgress = {
   readonly workflow: Workflow;
   readonly currentOrdinal: number;
   readonly total: number;
-}
+};
 
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-/**
- * Sticky 32px breadcrumb header at the top of ChatView. Shows
- * workspace › session › agent · [kind] so the user always knows
- * which agent is talking, before this header the active agent's
- * name was nowhere in the chat surface (only in the sidebar).
- *
- * Segments are interactive: workspace opens its settings, session
- * opens its settings, agent shows the kind chip. Open Linear-style
- *, segments are anchors, not just labels.
- *
- * Per plan §A.4.
- */
-export function ChatBreadcrumb({ session }: Props) {
+export const ChatBreadcrumb = ({ session }: Props) => {
   const workspace = useAppStore((s) =>
     s.workspaces.find((w) => w.id === (session.workspaceId as WorkspaceId)),
   );
@@ -48,7 +36,9 @@ export function ChatBreadcrumb({ session }: Props) {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
 
   const workflowProgress: WorkflowProgress | null = useMemo(() => {
-    if (session.workflowRuns.length === 0) return null;
+    if (session.workflowRuns.length === 0) {
+      return null;
+    }
     const selected = selectedAgentId ? phaseRuns.find((a) => a.id === selectedAgentId) : undefined;
     const activeRun =
       (selected?.workflowRunId
@@ -56,32 +46,48 @@ export function ChatBreadcrumb({ session }: Props) {
         : undefined) ??
       session.workflowRuns.find((r) => !r.discardedAt) ??
       null;
-    if (!activeRun) return null;
+    if (!activeRun) {
+      return null;
+    }
     const workflow = sessionWorkflows.find((w) => w.id === activeRun.workflowId);
-    if (!workflow) return null;
+    if (!workflow) {
+      return null;
+    }
     const total = workflow.steps.length;
-    if (total === 0) return null;
+    if (total === 0) {
+      return null;
+    }
     const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
     const runAgents = phaseRuns.filter((r) => r.workflowRunId === activeRun.id);
     let currentOrdinal = 0;
     for (let i = 0; i < sorted.length; i += 1) {
       const step = sorted[i]!;
       const agent = runAgents.find((r) => r.stepId === step.id);
-      if (agent && agent.status !== 'pending') currentOrdinal = i + 1;
+      if (agent && agent.status !== 'pending') {
+        currentOrdinal = i + 1;
+      }
     }
-    if (currentOrdinal === 0) currentOrdinal = 1;
+    if (currentOrdinal === 0) {
+      currentOrdinal = 1;
+    }
     return { workflow, currentOrdinal, total };
   }, [session.workflowRuns, sessionWorkflows, phaseRuns, selectedAgentId]);
 
   const selectedAgent: Agent | null = useMemo(() => {
-    if (!selectedAgentId) return null;
+    if (!selectedAgentId) {
+      return null;
+    }
     return phaseRuns.find((a) => a.id === selectedAgentId) ?? null;
   }, [selectedAgentId, phaseRuns]);
 
   const agentKind: AgentKind | null = useMemo(() => {
-    if (!selectedAgent) return null;
+    if (!selectedAgent) {
+      return null;
+    }
     const override = agentKindOverride[selectedAgent.id];
-    if (override) return override;
+    if (override) {
+      return override;
+    }
     return inferAgentKindFromName(selectedAgent.name);
   }, [selectedAgent, agentKindOverride]);
 
@@ -98,7 +104,6 @@ export function ChatBreadcrumb({ session }: Props) {
         role="navigation"
         aria-label="chat breadcrumb"
       >
-        {/* workspace */}
         {workspace ? (
           <button
             type="button"
@@ -114,13 +119,10 @@ export function ChatBreadcrumb({ session }: Props) {
 
         <Separator />
 
-        {/* session */}
         <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
           {sessionLabel}
         </span>
 
-        {/* workflow, only when one is attached. Surfaces "step N/M" so the user
-            knows the workflow is driving and how far along it is. */}
         {workflowProgress ? (
           <>
             <Separator />
@@ -140,9 +142,6 @@ export function ChatBreadcrumb({ session }: Props) {
           </>
         ) : null}
 
-        {/* Spacer pushes the dog to the far right. Just the silhouette: the
-            path on the left already says where you are, the dog is the quiet
-            "who am I talking to" cue. */}
         <div className="flex-1" />
 
         {selectedAgent && agentKind ? (
@@ -156,7 +155,7 @@ export function ChatBreadcrumb({ session }: Props) {
       <Divider className="shrink-0" />
     </>
   );
-}
+};
 
 function Separator() {
   return <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />;

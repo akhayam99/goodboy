@@ -5,16 +5,16 @@ import type { VerbosityLevel } from '@goodboy/types';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { shortModel } from '../../../session/agent-row-format';
 
-interface Props {
+type Props = {
   readonly index: number;
   readonly kind: AgentKind;
   readonly name: string;
   readonly model: string;
   readonly verbosity: VerbosityLevel;
   readonly className?: string;
-}
+};
 
-export function StepRowCompact({ index, kind, name, model, verbosity, className }: Props) {
+export const StepRowCompact = ({ index, kind, name, model, verbosity, className }: Props) => {
   const pal = AGENT_KIND_PALETTE[kind];
   return (
     <div className={cn('flex items-center gap-2.5', className)}>
@@ -28,4 +28,4 @@ export function StepRowCompact({ index, kind, name, model, verbosity, className 
       </span>
     </div>
   );
-}
+};

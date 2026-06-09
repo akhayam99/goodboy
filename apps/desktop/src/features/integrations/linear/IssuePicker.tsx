@@ -4,23 +4,15 @@ import { ChevronDown, ExternalLink, Loader2 } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { linearFetchAssignedIssues, type LinearIssue } from './client';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
-  /** Currently-selected issue, used only to render the input text. */
   value: LinearIssue | null;
   onPick: (issue: LinearIssue) => void;
   onClear: () => void;
   disabled?: boolean;
-}
+};
 
-/**
- * Autocomplete combobox over issues assigned to the current Linear viewer.
- * Lazy-fetches on first focus to keep dialog open fast. Filtering is
- * client-side over identifier + title, Linear's search API is heavier and
- * a single fetch of the user's active queue is small enough to scan in
- * memory.
- */
-export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: Props) {
+export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: Props) => {
   const [issues, setIssues] = useState<ReadonlyArray<LinearIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +25,11 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
   const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    if (!value) setQuery('');
-    else setQuery(`${value.identifier} ${value.title}`);
+    if (!value) {
+      setQuery('');
+    } else {
+      setQuery(`${value.identifier} ${value.title}`);
+    }
   }, [value]);
 
   const fetchIssues = useCallback(async () => {
@@ -53,11 +48,15 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
 
   const openPanel = () => {
     setOpen(true);
-    if (!loaded && !loading) void fetchIssues();
+    if (!loaded && !loading) {
+      void fetchIssues();
+    }
   };
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return issues;
+    if (!query.trim()) {
+      return issues;
+    }
     const q = query.toLowerCase();
     return issues.filter(
       (i) => i.identifier.toLowerCase().includes(q) || i.title.toLowerCase().includes(q),
@@ -78,7 +77,9 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
   }, [query]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -89,7 +90,9 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
   }, [open]);
 
   useEffect(() => {
-    if (!open || !listRef.current) return;
+    if (!open || !listRef.current) {
+      return;
+    }
     const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
     el?.scrollIntoView({ block: 'nearest' });
   }, [highlightIdx, open]);
@@ -100,7 +103,9 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
       e.preventDefault();
       return;
     }
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -112,7 +117,9 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
         break;
       case 'Enter':
         e.preventDefault();
-        if (filtered[highlightIdx]) select(filtered[highlightIdx]);
+        if (filtered[highlightIdx]) {
+          select(filtered[highlightIdx]);
+        }
         break;
       case 'Escape':
         e.preventDefault();
@@ -144,7 +151,9 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
-            if (!e.target.value) onClear();
+            if (!e.target.value) {
+              onClear();
+            }
           }}
           onFocus={openPanel}
           onKeyDown={onKeyDown}
@@ -166,9 +175,14 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
           type="button"
           tabIndex={-1}
           onClick={() => {
-            if (disabled) return;
-            if (open) setOpen(false);
-            else openPanel();
+            if (disabled) {
+              return;
+            }
+            if (open) {
+              setOpen(false);
+            } else {
+              openPanel();
+            }
             inputRef.current?.focus();
           }}
           aria-label={open ? 'Close issue list' : 'Open issue list'}
@@ -232,4 +246,4 @@ export function IssuePicker({ workspaceId, value, onPick, onClear, disabled }: P
       ) : null}
     </div>
   );
-}
+};

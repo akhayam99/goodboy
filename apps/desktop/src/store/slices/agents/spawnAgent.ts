@@ -23,7 +23,7 @@ import {
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import type { GetFn, SetFn } from './types';
 
-interface SpawnArgs {
+type SpawnArgs = {
   stepId?: StepId;
   workflowRunId?: WorkflowRunId;
   name?: string;
@@ -36,13 +36,15 @@ interface SpawnArgs {
   sourceThreadId?: string;
   sourceCommentUrl?: string;
   deferKickoff?: boolean;
-}
+};
 
-export function spawnAgent(set: SetFn, get: GetFn) {
+export const spawnAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, args: SpawnArgs): Promise<AgentId> => {
     const state = get();
     const session = state.sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session) {
+      throw new Error(`session not found: ${sessionId}`);
+    }
     let resolvedName = args.name;
     let stepPromptPrefix = '';
     if (args.stepId) {
@@ -57,7 +59,9 @@ export function spawnAgent(set: SetFn, get: GetFn) {
       } else {
         const attachedIds = new Set(session.workflowRuns.map((r) => r.workflowId));
         for (const t of templates) {
-          if (!attachedIds.has(t.id)) continue;
+          if (!attachedIds.has(t.id)) {
+            continue;
+          }
           const found = t.steps.find((s) => s.id === args.stepId);
           if (found) {
             step = found;
@@ -66,7 +70,9 @@ export function spawnAgent(set: SetFn, get: GetFn) {
         }
       }
       if (step) {
-        if (!resolvedName) resolvedName = step.name;
+        if (!resolvedName) {
+          resolvedName = step.name;
+        }
         stepPromptPrefix = step.promptPrefix;
       }
     }
@@ -161,4 +167,4 @@ export function spawnAgent(set: SetFn, get: GetFn) {
 
     return inserted.id;
   };
-}
+};

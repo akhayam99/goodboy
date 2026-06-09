@@ -2,10 +2,10 @@ import type { LucideIcon } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { ClaudeIcon, CursorIcon, GeminiIcon, OpenAIIcon } from './brand-icons';
 
-export interface ProviderBrand {
+export type ProviderBrand = {
   readonly icon: LucideIcon;
   readonly cssVar: string;
-}
+};
 
 export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   anthropic: { icon: ClaudeIcon, cssVar: '--color-provider-anthropic' },
@@ -14,6 +14,6 @@ export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   gemini: { icon: GeminiIcon, cssVar: '--color-provider-gemini' },
 };
 
-export function brandColor(providerId: ProviderId): string {
+export const brandColor = (providerId: ProviderId): string => {
   return `var(${PROVIDER_BRAND[providerId].cssVar})`;
-}
+};

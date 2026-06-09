@@ -2,7 +2,7 @@ import type { AgentStatus, IsoDateTime, ProviderRunId, SessionId } from '@goodbo
 import { resolveConflicts } from '@goodboy/core';
 import type { GetFn, SetFn } from './types';
 
-export function resolveMergeConflicts(set: SetFn, get: GetFn) {
+export const resolveMergeConflicts = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
     picks: Record<string, string>,
@@ -25,4 +25,4 @@ export function resolveMergeConflicts(set: SetFn, get: GetFn) {
       return { sessionMergeConflicts: next };
     });
   };
-}
+};

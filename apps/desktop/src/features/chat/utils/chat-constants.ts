@@ -23,20 +23,30 @@ const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
 const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
 const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
 
-export function modelEffortLevels(model: string): ReadonlyArray<EffortLevel> | null {
+export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null => {
   const descriptor = getModelDescriptor(model);
-  if (descriptor) return descriptor.effort;
-  if (/claude-opus/i.test(model)) return OPUS_EFFORT;
-  if (/claude-sonnet/i.test(model)) return SONNET_EFFORT;
-  if (/gpt|codex/i.test(model)) return CODEX_EFFORT;
+  if (descriptor) {
+    return descriptor.effort;
+  }
+  if (/claude-opus/i.test(model)) {
+    return OPUS_EFFORT;
+  }
+  if (/claude-sonnet/i.test(model)) {
+    return SONNET_EFFORT;
+  }
+  if (/gpt|codex/i.test(model)) {
+    return CODEX_EFFORT;
+  }
   return null;
-}
+};
 
-export function clampEffort(model: string, effort: EffortLevel): EffortLevel {
+export const clampEffort = (model: string, effort: EffortLevel): EffortLevel => {
   const levels = modelEffortLevels(model);
-  if (!levels) return effort;
+  if (!levels) {
+    return effort;
+  }
   return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort);
-}
+};
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   minimal: 'Minimal',
@@ -98,33 +108,33 @@ export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
   verbose: 'text-danger',
 };
 
-export function modelLabel(id: string): string {
+export const modelLabel = (id: string): string => {
   const descriptor = getModelDescriptor(id);
-  if (descriptor) return descriptor.label;
+  if (descriptor) {
+    return descriptor.label;
+  }
   const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
   if (m) {
     const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
     return `${family} ${m[2]}.${m[3]}`;
   }
   return id;
-}
+};
 
 export type { ModelFamily };
 
-export interface ParsedModel {
+export type ParsedModel = {
   readonly family: ModelFamily;
   readonly subfamily: string | null;
   readonly variantLabel: string;
-}
+};
 
-// Strip a `provider/model` prefix so cursor's `gpt-5.5-high` and any future
-// prefixed id (e.g. `openai/gpt-5.5-high`) parse the same way.
 function stripProviderPrefix(id: string): string {
   const slash = id.indexOf('/');
   return slash >= 0 ? id.slice(slash + 1) : id;
 }
 
-export function parseModelId(id: string): ParsedModel {
+export const parseModelId = (id: string): ParsedModel => {
   const descriptor = getModelDescriptor(id);
   if (descriptor) {
     return {
@@ -136,7 +146,6 @@ export function parseModelId(id: string): ParsedModel {
 
   const local = stripProviderPrefix(id);
 
-  // Canonical anthropic: claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-7
   let m = local.match(/^claude-(haiku|sonnet|opus)-(\d+)-(\d+)(?:-(.+))?$/i);
   if (m) {
     return {
@@ -146,7 +155,6 @@ export function parseModelId(id: string): ParsedModel {
     };
   }
 
-  // Cursor's anthropic naming: claude-4.6-sonnet-medium, claude-4.6-opus-high-thinking
   m = local.match(/^claude-(\d+\.\d+)-(haiku|sonnet|opus)(?:-(.+))?$/i);
   if (m) {
     const suffix = m[3] ? ` ${m[3].replace(/-/g, ' ')}` : '';
@@ -157,37 +165,30 @@ export function parseModelId(id: string): ParsedModel {
     };
   }
 
-  // Composer (cursor first-party): composer-2, composer-2-fast
   m = local.match(/^composer-(.+)$/i);
   if (m) {
     return { family: 'composer', subfamily: null, variantLabel: m[1]! };
   }
 
-  // Cursor's `auto` model, standalone family so it renders without a row label.
   if (local === 'auto') {
     return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
   }
 
-  // gpt-X.Y-codex → its own subfamily so it visually groups separately from
-  // the generic gpt-X.Y row (mockup: `5.3-codex [codex]`).
   m = local.match(/^gpt-(\d+\.\d+)-codex$/i);
   if (m) {
     return { family: 'gpt', subfamily: `${m[1]}-codex`, variantLabel: 'codex' };
   }
 
-  // gpt-X.Y-<variant> (variant = high/medium/mini/...)
   m = local.match(/^gpt-(\d+\.\d+)-(.+)$/i);
   if (m) {
     return { family: 'gpt', subfamily: m[1]!, variantLabel: m[2]! };
   }
 
-  // bare gpt-X.Y
   m = local.match(/^gpt-(\d+\.\d+)$/i);
   if (m) {
     return { family: 'gpt', subfamily: m[1]!, variantLabel: m[1]! };
   }
 
-  // unparseable gpt fallback
   m = local.match(/^gpt-(.+)$/i);
   if (m) {
     return { family: 'gpt', subfamily: null, variantLabel: m[1]! };
@@ -202,60 +203,80 @@ export function parseModelId(id: string): ParsedModel {
   }
 
   return { family: 'other', subfamily: null, variantLabel: local };
-}
+};
 
-export function modelTier(model: string): CostTier {
+export const modelTier = (model: string): CostTier => {
   const descriptor = getModelDescriptor(model);
-  if (descriptor) return descriptor.costTier;
+  if (descriptor) {
+    return descriptor.costTier;
+  }
   const known = MODEL_COST[model];
-  if (known) return known.tier;
-  if (/haiku|small|mini|flash|nano|fast/i.test(model)) return 'cheap';
-  if (/opus|max/i.test(model)) return 'expensive';
+  if (known) {
+    return known.tier;
+  }
+  if (/haiku|small|mini|flash|nano|fast/i.test(model)) {
+    return 'cheap';
+  }
+  if (/opus|max/i.test(model)) {
+    return 'expensive';
+  }
   return 'mid';
-}
+};
 
-export function modelWeight(model: string): number {
+export const modelWeight = (model: string): number => {
   const descriptor = getModelDescriptor(model);
-  if (descriptor) return descriptor.weight;
+  if (descriptor) {
+    return descriptor.weight;
+  }
   return MODEL_COST[model]?.weight ?? 10;
-}
+};
 
 const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
 
-export function suggestLighterModel(
+export const suggestLighterModel = (
   current: string,
   candidates: ReadonlyArray<string>,
-): string | null {
+): string | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   let best: { id: string; weight: number } | null = null;
   for (const id of candidates) {
-    if (id === current) continue;
+    if (id === current) {
+      continue;
+    }
     const rank = TIER_RANK[modelTier(id)];
-    if (rank >= currentRank || rank === TIER_RANK.cheap) continue;
+    if (rank >= currentRank || rank === TIER_RANK.cheap) {
+      continue;
+    }
     const weight = modelWeight(id);
-    if (!best || weight > best.weight) best = { id, weight };
+    if (!best || weight > best.weight) {
+      best = { id, weight };
+    }
   }
   return best?.id ?? null;
-}
+};
 
-export function suggestHeavierModel(
+export const suggestHeavierModel = (
   current: string,
   candidates: ReadonlyArray<string>,
-): string | null {
+): string | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   const currentWeight = modelWeight(current);
   let best: { id: string; rank: number; weight: number } | null = null;
   for (const id of candidates) {
-    if (id === current) continue;
+    if (id === current) {
+      continue;
+    }
     const rank = TIER_RANK[modelTier(id)];
     const weight = modelWeight(id);
-    if (rank < currentRank || weight <= currentWeight) continue;
+    if (rank < currentRank || weight <= currentWeight) {
+      continue;
+    }
     if (!best || rank > best.rank || (rank === best.rank && weight > best.weight)) {
       best = { id, rank, weight };
     }
   }
   return best?.id ?? null;
-}
+};
 
 export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   claude: 'Claude',
@@ -291,14 +312,16 @@ const SUBFAMILY_TIER: Record<string, CostTier> = {
   flash: 'cheap',
 };
 
-export function subfamilyLabel(family: ModelFamily, subfamily: string): string {
-  if (SUBFAMILY_LABEL[subfamily]) return SUBFAMILY_LABEL[subfamily];
+export const subfamilyLabel = (family: ModelFamily, subfamily: string): string => {
+  if (SUBFAMILY_LABEL[subfamily]) {
+    return SUBFAMILY_LABEL[subfamily];
+  }
   if (family === 'gpt' && subfamily.endsWith('-codex')) {
     return subfamily.replace('-codex', '-Codex');
   }
   return subfamily;
-}
+};
 
-export function subfamilyTier(_family: ModelFamily, subfamily: string): CostTier {
+export const subfamilyTier = (_family: ModelFamily, subfamily: string): CostTier => {
   return SUBFAMILY_TIER[subfamily] ?? 'mid';
-}
+};

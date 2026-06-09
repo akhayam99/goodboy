@@ -5,7 +5,7 @@ import { toggleSessionSlot } from './toggleSessionSlot';
 import { upsertSessionSlot } from './upsertSessionSlot';
 import type { GetFn, SetFn } from './types';
 
-export function createSlotsSlice(set: SetFn, get: GetFn) {
+export const createSlotsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadSessionTelemetry: loadSessionTelemetry(set),
     loadSessionSlots: loadSessionSlots(set),
@@ -13,4 +13,4 @@ export function createSlotsSlice(set: SetFn, get: GetFn) {
     loadSlotHistory: loadSlotHistory(set),
     toggleSessionSlot: toggleSessionSlot(set, get),
   };
-}
+};

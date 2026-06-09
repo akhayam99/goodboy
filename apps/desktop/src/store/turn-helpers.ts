@@ -49,10 +49,7 @@ import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './store';
 import type { SetFn, GetFn } from './slice-types';
 
-// The provider CLIs have no API content-block channel, files reach the model
-// only as paths named in the prompt text. Paths stay worktree-relative so they
-// resolve against the CLI's cwd and never trip the worktree-scope guard.
-export function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment>): string {
+export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string => {
   const list = refs.map((r) => `- ${r.relPath}`).join('\n');
   return [
     '[attached-files]',
@@ -61,25 +58,25 @@ export function buildAttachmentPromptBlock(refs: ReadonlyArray<MessageAttachment
     list,
     '[/attached-files]',
   ].join('\n');
-}
+};
 
-export function toRelPath(absPath: string, workingDir: string): string {
-  if (!workingDir) return absPath;
+export const toRelPath = (absPath: string, workingDir: string): string => {
+  if (!workingDir) {
+    return absPath;
+  }
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
-}
+};
 
-// Summarizer queue, one per task, max one in-flight + one queued (coalesced).
-// Prevents stacking when the user iterates faster than the summarizer completes.
-interface SummarizerQueueEntry {
+type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
-}
+};
 
-interface SummarizerTaskQueue {
+type SummarizerTaskQueue = {
   inFlight: boolean;
   queued: SummarizerQueueEntry | null;
-}
+};
 
 export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
 
@@ -91,13 +88,13 @@ function scheduleIdle(fn: () => void): void {
   }
 }
 
-export function enqueueSummarizer(
+export const enqueueSummarizer = (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   turnInput: string,
   turnOutput: string,
-): void {
+): void => {
   let queue = summarizerQueues.get(sessionId);
   if (!queue) {
     queue = { inFlight: false, queued: null };
@@ -105,7 +102,6 @@ export function enqueueSummarizer(
   }
 
   if (queue.inFlight) {
-    // Coalesce: overwrite any previously queued entry with the latest.
     queue.queued = { turnInput, turnOutput };
     return;
   }
@@ -116,7 +112,9 @@ export function enqueueSummarizer(
   const run = (): void => {
     void runSummarizer(set, get, sessionId, turnInput, turnOutput).finally(() => {
       const q = summarizerQueues.get(sessionId);
-      if (!q) return;
+      if (!q) {
+        return;
+      }
       const next = q.queued;
       if (next) {
         q.queued = null;
@@ -135,7 +133,7 @@ export function enqueueSummarizer(
   };
 
   scheduleIdle(run);
-}
+};
 
 async function runSummarizer(
   set: SetFn,
@@ -146,8 +144,6 @@ async function runSummarizer(
 ): Promise<void> {
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-  // Mark running without a separate set, merged into the final batch below on success,
-  // or emitted immediately only on the error path. This avoids a spurious re-render at start.
   set((state) => {
     const prev = state.summarizerStatus[sessionId];
     return {
@@ -166,7 +162,9 @@ async function runSummarizer(
 
   try {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     const providerId = session.providerPreference.defaultProvider;
     const summarizer = new Summarizer({ providerId, invokeFn: invoke });
@@ -196,11 +194,6 @@ async function runSummarizer(
       )
     ).filter((k): k is SlotKey => k !== null);
 
-    // If the summarizer carried a GitHub PR URL into any slot value and we
-    // still have no PR cached for this session, pull the PR state now so the
-    // polling sweep picks it up on its next tick. Complements the same regex
-    // run on raw assistant text post-turn, covers cases where the URL only
-    // surfaces in the summarized context, not in the verbatim turn output.
     if (
       !get().sessionGithub[sessionId]?.pr &&
       result.delta.upserts.some((u) => /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(u.value))
@@ -213,7 +206,6 @@ async function runSummarizer(
     const summarizerRunId = crypto.randomUUID() as ProviderRunId;
     const startedAt = now();
 
-    // Parallel: telemetry write + slot refresh + analytics queries.
     const [
       refreshed,
       ,
@@ -267,7 +259,6 @@ async function runSummarizer(
       ),
     ]);
 
-    // Single batched set, one re-render for the entire summarizer completion.
     set((state) => ({
       sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
       slotHistory: {
@@ -301,7 +292,6 @@ async function runSummarizer(
       sessionId,
     });
   } catch (err) {
-    // never log api key, only the error message
     const message = formatError(err);
     if (import.meta.env.DEV) {
       console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
@@ -327,16 +317,18 @@ async function runSummarizer(
   }
 }
 
-export async function capturePlanFromTurn(
+export const capturePlanFromTurn = async (
   set: SetFn,
   sessionId: SessionId,
   agentId: AgentId,
   assistantText: string,
   workflowRunId?: WorkflowRunId,
-): Promise<PlanWithCount | null> {
+): Promise<PlanWithCount | null> => {
   try {
     const extracted = extractPlanFromMarker(assistantText);
-    if (!extracted) return null;
+    if (!extracted) {
+      return null;
+    }
     const clusters = extractClustersFromMarker(assistantText);
     await invokeUpsertPlan({
       sessionId,
@@ -361,7 +353,7 @@ export async function capturePlanFromTurn(
     }
     return null;
   }
-}
+};
 
 async function recordNudgeShown(
   kind: NudgeKind,
@@ -386,16 +378,18 @@ async function recordNudgeShown(
   return id;
 }
 
-export async function emitTurnNudges(
+export const emitTurnNudges = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   agentId: AgentId,
   assistantText: string,
   capturedPlan: PlanWithCount | null,
-): Promise<void> {
+): Promise<void> => {
   const session = get().sessions.find((s) => s.id === sessionId);
-  if (!session) return;
+  if (!session) {
+    return;
+  }
   const inWorkflow = session.workflowRuns.length > 0;
 
   let nextNudge: SessionNudge | null = null;
@@ -443,21 +437,25 @@ export async function emitTurnNudges(
       sessionNudges: { ...state.sessionNudges, [sessionId]: nextNudge },
     }));
   }
-}
+};
 
-export async function applyHeuristicTitle(
+export const applyHeuristicTitle = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   agentId: AgentId,
   prompt: string,
-): Promise<void> {
+): Promise<void> => {
   try {
     const title = heuristicAgentTitle(prompt);
-    if (!title) return;
+    if (!title) {
+      return;
+    }
 
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId);
     const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false;
@@ -476,4 +474,4 @@ export async function applyHeuristicTitle(
   } catch {
     // best-effort
   }
-}
+};

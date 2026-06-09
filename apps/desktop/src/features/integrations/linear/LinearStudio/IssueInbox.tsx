@@ -5,13 +5,13 @@ import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { issuePullRequests, type LinearIssue } from '../client';
 import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues';
 
-interface Props {
+type Props = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
   readonly focusedIssueId: string | null;
   readonly onSelect: (issue: LinearIssue) => void;
   readonly loading: boolean;
   readonly error: string | null;
-}
+};
 
 const STATE_DOT: Record<LinearGroupKey, string> = {
   started: 'bg-primary',
@@ -21,12 +21,14 @@ const STATE_DOT: Record<LinearGroupKey, string> = {
   other: 'bg-muted-foreground/40',
 };
 
-export function IssueInbox({ groups, focusedIssueId, onSelect, loading, error }: Props) {
+export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }: Props) => {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return groups;
+    if (!q) {
+      return groups;
+    }
     return groups
       .map((g) => ({
         ...g,
@@ -114,13 +116,13 @@ export function IssueInbox({ groups, focusedIssueId, onSelect, loading, error }:
                             {row.issue.identifier}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
-                          {issuePullRequests(row.issue).length > 0 ? (
+                          {issuePullRequests(row.issue).length > 0 && (
                             <GitPullRequest
                               size={11}
                               aria-label="has linked pull request"
                               className="shrink-0 text-muted-foreground/70"
                             />
-                          ) : null}
+                          )}
                           {row.sessionId ? (
                             <MessagesSquare
                               size={11}
@@ -140,4 +142,4 @@ export function IssueInbox({ groups, focusedIssueId, onSelect, loading, error }:
       )}
     </div>
   );
-}
+};

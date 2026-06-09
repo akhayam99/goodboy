@@ -110,7 +110,6 @@ describe('nextStep', () => {
   });
 
   it('treats unrecognized status as non-terminal (safe default)', () => {
-    // Simulate malformed DB row with unknown status
     const badRun = {
       ...makeRun('d1', 'unknown' as Agent['status'], 1),
     };
@@ -181,8 +180,6 @@ describe('currentStep', () => {
   });
 
   it('stays on a completed step until user spawns a new agent', () => {
-    // The auto-advance behavior of nextStep would have skipped to D2 here.
-    // currentStep keeps the user on the most recent run regardless of status.
     const runs = [makeRun('d1', 'completed', 1, '2026-01-01T00:00:00Z')];
     expect(currentStep(TEMPLATE, runs)).toBe(D1);
   });

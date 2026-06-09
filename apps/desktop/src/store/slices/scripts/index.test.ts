@@ -1,20 +1,4 @@
 // @vitest-environment happy-dom
-//
-// Monolithic contract test for the Zustand store at ./store.ts.
-//
-// Goal: lock the public surface (state shape + actions + selectors) before
-// phase 4 splits this monolith into slice packages. If a test reveals a real
-// bug, fix the store, not the test.
-//
-// Scope per domain: each describe block exercises one logical area. Every
-// action gets at least one happy-path test, selectors get a set-state +
-// read test. Action sequences span multiple turns when behavior is
-// stateful (sidebar filters, agent drafts, system alerts).
-//
-// Mocks: this file mirrors the mock layout used in store.permissions.test.ts
-// and store.workspace-switch.test.ts. The Tauri `invoke` and the @goodboy/db
-// surface are mocked broadly so the store boots in a synchronous, in-memory
-// environment.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -47,8 +31,6 @@ import type {
   WorkspaceScript,
   WorkspaceScriptId,
 } from '@goodboy/types';
-
-// ─── module mocks (must precede store import) ─────────────────────────────
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
@@ -328,9 +310,6 @@ vi.mock('../../../features/github/github', () => ({
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
-  // Some helpers (parseSlashCommand, buildClaudeFlags, turnReducer, etc.) are
-  // pure functions we want to exercise normally. The github helpers reach into
-  // the runner so they're stubbed.
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
@@ -366,8 +345,6 @@ vi.mock('../../../features/settings/config-export', () => ({
   exportConfigToFile: vi.fn(async () => '/tmp/export.json'),
   importConfigFromFile: vi.fn(async () => null),
 }));
-
-// ─── fixtures ────────────────────────────────────────────────────────────
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
@@ -448,8 +425,6 @@ function buildScript(overrides: Partial<WorkspaceScript> = {}): WorkspaceScript 
   };
 }
 
-// ─── store reset helper ──────────────────────────────────────────────────
-
 async function getStore() {
   const mod = await import('../../store');
   return mod.useAppStore;
@@ -460,7 +435,6 @@ let resetState: Record<string, unknown> | null = null;
 describe('store contract', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    // Restore the canonical default mock returns each test owns.
     invokeBudgetRuleListSpy.mockResolvedValue([]);
     invokeBudgetAlertsListSpy.mockResolvedValue([]);
     invokeSessionBudgetGetSpy.mockResolvedValue(null);
@@ -479,8 +453,6 @@ describe('store contract', () => {
 
     const store = await getStore();
     if (!resetState) {
-      // Snapshot the pristine state on first run so all subsequent tests can
-      // restore deterministically. Actions are kept (they reference set/get).
       const snap = store.getState();
       resetState = {
         workspaces: [],

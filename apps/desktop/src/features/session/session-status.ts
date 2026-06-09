@@ -8,12 +8,12 @@ export const SESSION_STATUS_ORDER: ReadonlyArray<SessionUserStatus> = [
   'done',
 ];
 
-interface SessionStatusEntry {
+type SessionStatusEntry = {
   readonly label: string;
   readonly description: string;
   readonly icon: LucideIcon;
   readonly className: string;
-}
+};
 
 export const SESSION_STATUS_PALETTE: Record<SessionUserStatus, SessionStatusEntry> = {
   wip: {

@@ -8,7 +8,7 @@ import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
-export function WorkspaceLauncher() {
+export const WorkspaceLauncher = () => {
   const workspaces = useWorkspaces();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
@@ -46,7 +46,9 @@ export function WorkspaceLauncher() {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const picked = filtered[activeIndex];
-      if (picked) select(picked);
+      if (picked) {
+        select(picked);
+      }
     }
   };
 
@@ -77,7 +79,7 @@ export function WorkspaceLauncher() {
         <p className="mb-2 px-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
           Recent
         </p>
-        <ul className="mb-6 space-y-0.5">
+        <ul className="mb-6 flex flex-col gap-0.5">
           {filtered.length === 0 ? (
             <li className="px-3 py-8 text-center text-sm text-muted-foreground">
               No workspaces found
@@ -117,4 +119,4 @@ export function WorkspaceLauncher() {
       </div>
     </div>
   );
-}
+};

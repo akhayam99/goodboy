@@ -5,11 +5,11 @@ import { AGENT_KIND_DEFAULTS } from '../../../../session/agent-kind';
 
 export { clampEffort };
 
-export interface CardConfig {
+export type CardConfig = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
-}
+};
 
 export const DEFAULT_CONFIG: CardConfig = {
   provider: 'anthropic',
@@ -17,17 +17,19 @@ export const DEFAULT_CONFIG: CardConfig = {
   effort: AGENT_KIND_DEFAULTS.resolver.effort,
 };
 
-export function configFor(provider: ProviderId): CardConfig {
+export const configFor = (provider: ProviderId): CardConfig => {
   const model = provider === 'anthropic' ? DEFAULT_CONFIG.model : getDefaultTurnModel(provider);
   return { provider, model, effort: clampEffort(model, DEFAULT_CONFIG.effort) };
-}
+};
 
-export function sameConfig(a: CardConfig, b: CardConfig): boolean {
+export const sameConfig = (a: CardConfig, b: CardConfig): boolean => {
   return a.provider === b.provider && a.model === b.model && a.effort === b.effort;
-}
+};
 
-export function aggregateConfig(configs: ReadonlyArray<CardConfig>): CardConfig | 'mixed' {
+export const aggregateConfig = (configs: ReadonlyArray<CardConfig>): CardConfig | 'mixed' => {
   const first = configs[0];
-  if (!first) return DEFAULT_CONFIG;
+  if (!first) {
+    return DEFAULT_CONFIG;
+  }
   return configs.every((c) => sameConfig(c, first)) ? first : 'mixed';
-}
+};

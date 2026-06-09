@@ -8,10 +8,10 @@ const STORAGE_KEY = STORAGE_KEYS.theme;
 function readStoredTheme(): Theme {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === 'light') return 'light';
-  } catch {
-    // ignore
-  }
+    if (raw === 'light') {
+      return 'light';
+    }
+  } catch {}
   return 'dark';
 }
 
@@ -23,20 +23,18 @@ function applyTheme(theme: Theme): void {
   }
 }
 
-interface ThemeState {
+type ThemeState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-}
+};
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: 'dark',
   setTheme: (theme) => {
     try {
       localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      // ignore
-    }
+    } catch {}
     applyTheme(theme);
     set({ theme });
   },
@@ -46,8 +44,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 }));
 
-export function bootstrapTheme(): void {
+export const bootstrapTheme = (): void => {
   const stored = readStoredTheme();
   applyTheme(stored);
   useThemeStore.setState({ theme: stored });
-}
+};

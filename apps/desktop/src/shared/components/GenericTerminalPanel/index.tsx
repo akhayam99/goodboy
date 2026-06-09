@@ -5,30 +5,20 @@ import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
 import { useThemeStore } from '../../lib/theme';
 
-// Driver abstraction so the same xterm renderer can be wired to either a
-// long-lived session shell (TerminalPanel) or a transient lifecycle PTY
-// (LifecycleTerminalPanel) without duplicating ~150 lines of setup.
-export interface TerminalDriver {
+export type TerminalDriver = {
   write(data: string): void;
   resize(cols: number, rows: number): void;
-  /**
-   * Subscribe to output chunks. The driver is responsible for any filtering
-   * (e.g. by sessionId or runId) before invoking the handler.
-   */
   onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>;
   onExit(handler: (exitCode: number) => void): Promise<() => void>;
-}
+};
 
 const MAX_CACHE_CHUNKS = 500;
 
-// Output cache keyed by terminalId so tab switches and remounts don't lose
-// history. Module-level because each terminalId has its own buffer regardless
-// of which component instance mounted last.
 const outputCache = new Map<string, Uint8Array[]>();
 
-export function clearTerminalCache(terminalId: string): void {
+export const clearTerminalCache = (terminalId: string): void => {
   outputCache.delete(terminalId);
-}
+};
 
 const LIGHT_THEME: ITheme = {
   background: '#f8f8f8',
@@ -76,22 +66,19 @@ const DARK_THEME: ITheme = {
   brightWhite: '#ffffff',
 };
 
-interface Props {
-  /** Stable id used to scope the output cache across remounts. */
+type Props = {
   readonly terminalId: string;
   readonly driver: TerminalDriver;
   readonly isActive: boolean;
-  /** When true, keyboard input is dropped (still subscribes to output). */
   readonly readOnly?: boolean;
-  /** Optional message appended on exit. Empty string suppresses it. */
   readonly exitMessage?: string;
   readonly onRestart?: () => void;
   readonly onExit?: (exitCode: number) => void;
-}
+};
 
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
 
-export function GenericTerminalPanel({
+export const GenericTerminalPanel = ({
   terminalId,
   driver,
   isActive,
@@ -99,7 +86,7 @@ export function GenericTerminalPanel({
   exitMessage = DEFAULT_EXIT_MESSAGE,
   onRestart,
   onExit,
-}: Props) {
+}: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAndSyncRef = useRef<(() => void) | null>(null);
@@ -108,7 +95,9 @@ export function GenericTerminalPanel({
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const term = new Terminal({
       convertEol: true,
@@ -126,17 +115,20 @@ export function GenericTerminalPanel({
     term.open(container);
 
     const fitAndSync = () => {
-      if (!container.clientWidth || !container.clientHeight) return;
+      if (!container.clientWidth || !container.clientHeight) {
+        return;
+      }
       fitAddon.fit();
       driver.resize(term.cols, term.rows);
     };
 
-    if (isActive) fitAndSync();
+    if (isActive) {
+      fitAndSync();
+    }
 
     termRef.current = term;
     fitAndSyncRef.current = fitAndSync;
 
-    // Replay cached output so switching tabs/remounts don't lose history.
     const cached = outputCache.get(terminalId) ?? [];
     for (const chunk of cached) {
       term.write(chunk);
@@ -169,19 +161,29 @@ export function GenericTerminalPanel({
         }
       })
       .then((fn) => {
-        if (mounted) unlistenOutput = fn;
-        else fn();
+        if (mounted) {
+          unlistenOutput = fn;
+        } else {
+          fn();
+        }
       });
 
     driver
       .onExit((exitCode) => {
-        if (!mounted) return;
-        if (exitMessage) term.writeln(exitMessage);
+        if (!mounted) {
+          return;
+        }
+        if (exitMessage) {
+          term.writeln(exitMessage);
+        }
         onExit?.(exitCode);
       })
       .then((fn) => {
-        if (mounted) unlistenExit = fn;
-        else fn();
+        if (mounted) {
+          unlistenExit = fn;
+        } else {
+          fn();
+        }
       });
 
     const ro = new ResizeObserver(() => {
@@ -204,7 +206,9 @@ export function GenericTerminalPanel({
 
   useEffect(() => {
     const term = termRef.current;
-    if (!term) return;
+    if (!term) {
+      return;
+    }
     term.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
   }, [theme]);
 
@@ -212,7 +216,9 @@ export function GenericTerminalPanel({
     if (isActive) {
       const id = requestAnimationFrame(() => {
         fitAndSyncRef.current?.();
-        if (!readOnly) termRef.current?.focus();
+        if (!readOnly) {
+          termRef.current?.focus();
+        }
       });
       return () => cancelAnimationFrame(id);
     }
@@ -239,4 +245,4 @@ export function GenericTerminalPanel({
       ) : null}
     </div>
   );
-}
+};

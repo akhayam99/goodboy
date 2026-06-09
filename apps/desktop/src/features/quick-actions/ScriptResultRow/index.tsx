@@ -3,21 +3,15 @@ import { ScrollText, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { ScriptResultState, ScriptRunResult } from '../../scripts';
 
-interface Props {
+type Props = {
   readonly state: ScriptResultState;
   readonly onDismiss: () => void;
-}
+};
 
-/**
- * Sticky result of a `$` quick-action script run, shown above the composer.
- * Never sent to the LLM, stays until dismissed or replaced by the next run.
- */
-export function ScriptResultRow({ state, onDismiss }: Props) {
+export const ScriptResultRow = ({ state, onDismiss }: Props) => {
   const { script, status, result } = state;
   const [outputOpen, setOutputOpen] = useState(false);
 
-  // Default the disclosure open on a failed run, the user almost always
-  // wants to see why. Successful runs stay collapsed.
   const prevResultRef = useRef<ScriptRunResult | null>(null);
   if (result !== prevResultRef.current) {
     prevResultRef.current = result;
@@ -40,9 +34,9 @@ export function ScriptResultRow({ state, onDismiss }: Props) {
             {status === 'pending' ? 'running ' : 'ran '}
           </span>
           <span className="font-medium text-foreground">{script.name}</span>
-          {result !== null ? (
+          {result !== null && (
             <span className="text-muted-foreground"> · exit {result.exitCode}</span>
-          ) : null}
+          )}
         </span>
         {hasOutput ? (
           <button
@@ -83,7 +77,7 @@ export function ScriptResultRow({ state, onDismiss }: Props) {
       ) : null}
     </div>
   );
-}
+};
 
 function Dot({ status }: { readonly status: ScriptResultState['status'] }) {
   const color = status === 'ok' ? 'bg-success' : status === 'error' ? 'bg-danger' : 'bg-border';

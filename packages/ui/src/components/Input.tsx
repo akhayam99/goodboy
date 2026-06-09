@@ -3,7 +3,7 @@ import { cn } from '../cn';
 
 export type InputProps = ComponentProps<'input'>;
 
-export function Input({ className, type = 'text', ...rest }: InputProps) {
+export const Input = ({ className, type = 'text', ...rest }: InputProps) => {
   return (
     <input
       type={type}
@@ -14,4 +14,4 @@ export function Input({ className, type = 'text', ...rest }: InputProps) {
       {...rest}
     />
   );
-}
+};

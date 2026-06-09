@@ -13,10 +13,10 @@ export class GitError extends Error {
   }
 }
 
-export async function git(
+export const git = async (
   cwd: string,
   args: ReadonlyArray<string>,
-): Promise<{ stdout: string; stderr: string }> {
+): Promise<{ stdout: string; stderr: string }> => {
   try {
     const result = await exec('git', [...args], { cwd });
     return { stdout: result.stdout, stderr: result.stderr };
@@ -24,4 +24,4 @@ export async function git(
     const error = err as NodeJS.ErrnoException & { stderr?: string };
     throw new GitError(`git ${args.join(' ')} failed: ${error.message}`.trim(), error.stderr);
   }
-}
+};

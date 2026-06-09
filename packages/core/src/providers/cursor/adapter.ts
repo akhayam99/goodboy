@@ -22,12 +22,12 @@ const CAPABILITIES: ProviderCapabilities = {
   availableModels: CURSOR_MODELS.map((m) => m.id),
 };
 
-export interface CursorAdapterDeps {
+export type CursorAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 export class CursorAdapter implements ProviderAdapter {
   readonly id = 'cursor' as const;
@@ -105,8 +105,6 @@ async function* spawnCursor(
     request.workingDir,
     '--model',
     request.model,
-    // --force is the cursor-agent equivalent of --dangerously-skip-permissions:
-    // allows all tool/command execution without interactive confirmation prompts.
     '--force',
   ];
 
@@ -175,14 +173,18 @@ async function* spawnCursor(
         continue;
       }
       if (ended) {
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         return;
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
         resolver = resolve;
         rejector = reject;
       });
-      if (value.done) return;
+      if (value.done) {
+        return;
+      }
       yield value.value;
     }
   } finally {

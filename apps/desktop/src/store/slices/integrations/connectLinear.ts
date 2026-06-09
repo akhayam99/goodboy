@@ -10,12 +10,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { configFromViewer } from './configFromViewer';
 import type { GetFn, SetFn } from './types';
 
-/**
- * Connect Linear: verifies the PAT via Rust, persists token to the OS
- * keychain, and writes/updates the workspace_integrations row with the
- * viewer snapshot.
- */
-export function connectLinear(set: SetFn, get: GetFn) {
+export const connectLinear = (set: SetFn, get: GetFn) => {
   return async (workspaceId: WorkspaceId, token: string): Promise<LinearViewer> => {
     const viewer = await linearConnect(workspaceId, token);
     const now = new Date().toISOString() as IsoDateTime;
@@ -42,4 +37,4 @@ export function connectLinear(set: SetFn, get: GetFn) {
     });
     return viewer;
   };
-}
+};

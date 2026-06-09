@@ -55,10 +55,10 @@ import { m054WorkflowRunInstances } from './m054-workflow-run-instances';
 import { m055ResolverCommentLink } from './m055-resolver-comment-link';
 import { m056CompositeWorkspaces } from './m056-composite-workspaces';
 
-export interface Migration {
+export type Migration = {
   readonly version: number;
   readonly sql: string;
-}
+};
 
 export const migrations: ReadonlyArray<Migration> = [
   { version: 1, sql: m001Initial },

@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderRunId, SessionId, TurnRequest } from '@goodboy/types';
 import { CursorAdapter } from './adapter';
 
-// Gated behind CURSOR_INTEGRATION=1. Not run on CI by default.
-// To run: CURSOR_INTEGRATION=1 pnpm -w test --filter @goodboy/core
 const enabled = process.env['CURSOR_INTEGRATION'] === '1';
 
 describe.skipIf(!enabled)('CursorAdapter, integration (requires cursor-agent + auth)', () => {
@@ -28,7 +26,9 @@ describe.skipIf(!enabled)('CursorAdapter, integration (requires cursor-agent + a
     const events = [];
     for await (const event of adapter.spawn(request)) {
       events.push(event);
-      if (event.kind === 'done' || event.kind === 'error') break;
+      if (event.kind === 'done' || event.kind === 'error') {
+        break;
+      }
     }
 
     const textEvents = events.filter((e) => e.kind === 'assistant_text');

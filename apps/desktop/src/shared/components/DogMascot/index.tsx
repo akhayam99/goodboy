@@ -2,12 +2,12 @@ import type { CSSProperties } from 'react';
 import { cn } from '@goodboy/ui';
 import mascot from '../../../assets/mascot.png';
 
-interface Props {
+type Props = {
   size?: number;
   className?: string;
-}
+};
 
-export function DogMascot({ size = 16, className }: Props) {
+export const DogMascot = ({ size = 16, className }: Props) => {
   const style: CSSProperties = {
     width: size,
     height: size,
@@ -23,4 +23,4 @@ export function DogMascot({ size = 16, className }: Props) {
   };
 
   return <span aria-hidden style={style} className={cn('inline-block shrink-0', className)} />;
-}
+};

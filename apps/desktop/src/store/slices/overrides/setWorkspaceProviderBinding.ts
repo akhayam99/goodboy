@@ -12,7 +12,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   scoutFanout: null,
 };
 
-export function setWorkspaceProviderBinding(set: SetFn, get: GetFn) {
+export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {
   return async (
     workspaceId: WorkspaceId,
     providerId: ProviderId,
@@ -34,4 +34,4 @@ export function setWorkspaceProviderBinding(set: SetFn, get: GetFn) {
       workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: next },
     }));
   };
-}
+};

@@ -5,7 +5,7 @@ import type { GetFn, SetFn } from './types';
 
 const runSeqs = new Map<string, number>();
 
-export function runWorkspaceScript(set: SetFn, get: GetFn) {
+export const runWorkspaceScript = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, script: WorkspaceScript, cwd: string) => {
     const seq = (runSeqs.get(sessionId) ?? 0) + 1;
     runSeqs.set(sessionId, seq);
@@ -19,10 +19,14 @@ export function runWorkspaceScript(set: SetFn, get: GetFn) {
 
     try {
       const result = await get().runScript(sessionId, script.id, cwd);
-      if (runSeqs.get(sessionId) !== seq) return;
+      if (runSeqs.get(sessionId) !== seq) {
+        return;
+      }
       write({ script, status: result.exitCode === 0 ? 'ok' : 'error', result });
     } catch (err) {
-      if (runSeqs.get(sessionId) !== seq) return;
+      if (runSeqs.get(sessionId) !== seq) {
+        return;
+      }
       write({
         script,
         status: 'error',
@@ -30,4 +34,4 @@ export function runWorkspaceScript(set: SetFn, get: GetFn) {
       });
     }
   };
-}
+};

@@ -13,12 +13,12 @@ import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type { ProviderRegistryCapabilities };
 
-export interface ProviderDeps {
+export type ProviderDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
 export class UnknownProviderError extends Error {
   constructor(id: string) {
@@ -27,7 +27,7 @@ export class UnknownProviderError extends Error {
   }
 }
 
-export function createProvider(id: ProviderId, deps: ProviderDeps = {}): ProviderAdapter {
+export const createProvider = (id: ProviderId, deps: ProviderDeps = {}): ProviderAdapter => {
   switch (id) {
     case 'anthropic':
       return new ClaudeAdapter(deps);
@@ -42,12 +42,12 @@ export function createProvider(id: ProviderId, deps: ProviderDeps = {}): Provide
       throw new UnknownProviderError(_exhaustive);
     }
   }
-}
+};
 
-export function listSupportedProviders(): ReadonlyArray<ProviderId> {
+export const listSupportedProviders = (): ReadonlyArray<ProviderId> => {
   return ['anthropic', 'cursor', 'codex', 'gemini'];
-}
+};
 
-export function getCapabilities(id: ProviderId): ProviderRegistryCapabilities {
+export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities => {
   return PROVIDER_CAPABILITIES[id];
-}
+};

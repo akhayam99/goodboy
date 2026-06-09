@@ -22,29 +22,31 @@ const SCOPE_TOAST: Record<PermissionScope, string> = {
   deny: 'rule added: deny for this session',
 };
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly toolUseId: string;
   readonly toolName: string;
   readonly runId: ProviderRunId;
   readonly onResolved: () => void;
-}
+};
 
-export function PermissionScopePicker({
+export const PermissionScopePicker = ({
   sessionId,
   agentId,
   toolUseId,
   toolName,
   runId,
   onResolved,
-}: Props) {
+}: Props) => {
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
 
   const handle = async (scope: PermissionScope) => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     try {
       await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
@@ -68,9 +70,12 @@ export function PermissionScopePicker({
   };
 
   const scopeTone = (scope: PermissionScope): string => {
-    if (scope === 'session')
+    if (scope === 'session') {
       return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90';
-    if (scope === 'deny') return 'border-danger/40 text-danger hover:bg-danger/10';
+    }
+    if (scope === 'deny') {
+      return 'border-danger/40 text-danger hover:bg-danger/10';
+    }
     return 'border-success/40 text-success hover:bg-success/10';
   };
 
@@ -94,4 +99,4 @@ export function PermissionScopePicker({
       ))}
     </div>
   );
-}
+};

@@ -18,11 +18,11 @@ import { useOpenQuestions } from './useOpenQuestions';
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
-interface Props {
+type Props = {
   sessionId: SessionId;
-}
+};
 
-export function QuestionsTab({ sessionId }: Props) {
+export const QuestionsTab = ({ sessionId }: Props) => {
   const {
     drafts,
     justAnswered,
@@ -85,7 +85,9 @@ export function QuestionsTab({ sessionId }: Props) {
           return { id: q.id, text: q.text, answer };
         })
         .filter((p) => p.answer.length > 0);
-      if (pairs.length === 0) return;
+      if (pairs.length === 0) {
+        return;
+      }
       flashAnswered(pairs.map((p) => p.id));
       await answerOpenQuestions(sessionId, pairs, cluster.ownerAgentId);
     },
@@ -95,7 +97,9 @@ export function QuestionsTab({ sessionId }: Props) {
   const handleDismiss = useCallback(
     (id: OpenQuestionId) => {
       const target = questions.find((q) => q.id === id);
-      if (!target) return;
+      if (!target) {
+        return;
+      }
       void dismissOpenQuestion(sessionId, target);
       beginUndo(target);
     },
@@ -105,7 +109,9 @@ export function QuestionsTab({ sessionId }: Props) {
   const handleUndo = useCallback(() => {
     const target = pendingUndo?.question;
     clearUndo();
-    if (target) void restoreDismissedOpenQuestion(sessionId, target);
+    if (target) {
+      void restoreDismissedOpenQuestion(sessionId, target);
+    }
   }, [pendingUndo, clearUndo, restoreDismissedOpenQuestion, sessionId]);
 
   const totalOpen = questions.length;
@@ -264,4 +270,4 @@ export function QuestionsTab({ sessionId }: Props) {
       )}
     </div>
   );
-}
+};

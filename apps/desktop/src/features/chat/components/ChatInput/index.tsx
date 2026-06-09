@@ -78,13 +78,8 @@ import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-misma
 
 const RUNNING_KINDS = new Set(['starting', 'running']);
 
-// Prefix-mode trigger for the in-chat quick-actions popover: a leading
-// $ / ~ @ followed by a single space-free token. A space closes the popover
-// so the message sends normally.
 const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 
-// Idle-state composer placeholder, shows the whole prefix grammar at once
-// so the user is taught every quick-action up front, not over time.
 const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 
 const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
@@ -92,13 +87,12 @@ const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'code
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const ATTACHMENT_LIMIT = 10;
 
-interface PendingAttachment {
+type PendingAttachment = {
   readonly id: string;
   readonly fileName: string;
   readonly mimeType: string;
-  /** `data:<mime>;base64,<…>`, drives both the composer preview and the send payload. */
   readonly dataUrl: string;
-}
+};
 
 function extFromMime(mimeType: string): string {
   const slash = mimeType.indexOf('/');
@@ -115,8 +109,11 @@ function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === 'string') resolve(reader.result);
-      else reject(new Error('unexpected file reader result'));
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('unexpected file reader result'));
+      }
     };
     reader.onerror = () => reject(reader.error ?? new Error('file read failed'));
     reader.readAsDataURL(file);
@@ -140,10 +137,10 @@ function asProvider(v: string | undefined | null): ProviderId | null {
   return v && VALID_PROVIDERS.includes(v as ProviderId) ? (v as ProviderId) : null;
 }
 
-interface Props {
+type Props = {
   readonly session: Session;
   readonly providerDisconnected?: boolean;
-}
+};
 
 function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
   return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
@@ -163,7 +160,7 @@ function toastMessageForAlert(alert: BudgetAlert): string {
   return 'session budget exceeded';
 }
 
-export function ChatInput({ session, providerDisconnected = false }: Props) {
+export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
@@ -183,7 +180,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   );
   const sessionAgentKindOverrides = useAppStore((s) => s.agentKindOverride);
   const selectedAgentName = useAppStore((s) => {
-    if (!selectedAgentId) return null;
+    if (!selectedAgentId) {
+      return null;
+    }
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
   });
@@ -220,19 +219,24 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
   const setValue = useCallback(
     (next: string) => {
-      if (!selectedAgentId) return;
-      if (next.length === 0) clearAgentDraft(selectedAgentId);
-      else setAgentDraft(selectedAgentId, next);
+      if (!selectedAgentId) {
+        return;
+      }
+      if (next.length === 0) {
+        clearAgentDraft(selectedAgentId);
+      } else {
+        setAgentDraft(selectedAgentId, next);
+      }
     },
     [selectedAgentId, setAgentDraft, clearAgentDraft],
   );
 
   const [error, setError] = useState<string | null>(null);
-  interface FailedTurn {
+  type FailedTurn = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly override: TurnProviderOverride | undefined;
-  }
+  };
   const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
   const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -283,24 +287,24 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   currentEffortRef.current = effort;
   const currentVerbosityRef = useRef(verbosity);
   currentVerbosityRef.current = verbosity;
-  interface QueuedTurn {
+  type QueuedTurn = {
     readonly id: string;
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly override: TurnProviderOverride | undefined;
-  }
+  };
   const [queue, setQueue] = useState<ReadonlyArray<QueuedTurn>>([]);
-  interface RightSizePending {
+  type RightSizePending = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
-  }
+  };
   const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null);
   const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
-  interface ScopePending {
+  type ScopePending = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
     readonly mismatch: ScopeMismatch;
-  }
+  };
   const [scopePending, setScopePending] = useState<ScopePending | null>(null);
   const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
   const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
@@ -427,9 +431,13 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   ]);
 
   const filteredQuickItems = useMemo<ReadonlyArray<QuickActionItem>>(() => {
-    if (!quickItems) return EMPTY_ARRAY;
+    if (!quickItems) {
+      return EMPTY_ARRAY;
+    }
     const q = parsed.query.toLowerCase();
-    if (q.length === 0) return quickItems;
+    if (q.length === 0) {
+      return quickItems;
+    }
     return quickItems.filter(
       (it) =>
         it.label.toLowerCase().includes(q) || (it.sublabel?.toLowerCase().includes(q) ?? false),
@@ -459,7 +467,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
           `${skipped} file${skipped === 1 ? '' : 's'} skipped, unsupported type`,
         );
       }
-      if (allowed.length === 0) return;
+      if (allowed.length === 0) {
+        return;
+      }
       const accepted: PendingAttachment[] = [];
       for (const file of allowed) {
         if (file.size > MAX_ATTACHMENT_BYTES) {
@@ -479,7 +489,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
           showToast('error', `could not read ${file.name || 'file'}`);
         }
       }
-      if (accepted.length === 0) return;
+      if (accepted.length === 0) {
+        return;
+      }
       setAttachments((prev) => {
         const room = ATTACHMENT_LIMIT - prev.length;
         if (room <= 0) {
@@ -512,7 +524,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const onFileInputChange = (event: ReactChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
-    if (files.length > 0) void addFiles(files);
+    if (files.length > 0) {
+      void addFiles(files);
+    }
     event.target.value = '';
   };
 
@@ -527,21 +541,25 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const setVerbosity = (level: VerbosityLevel) => {
     setVerbosityState(level);
-    if (selectedAgentId) void storeSetAgentVerbosity(session.id, selectedAgentId, level);
+    if (selectedAgentId) {
+      void storeSetAgentVerbosity(session.id, selectedAgentId, level);
+    }
   };
 
   const setSelectedProvider = (id: ProviderId | null) => {
     setSelectedProviderState(id);
     void storeSetSessionConfig(session.id, { providerOverride: id });
-    if (selectedAgentId)
+    if (selectedAgentId) {
       void storeSetAgentConfig(session.id, selectedAgentId, { providerOverride: id });
+    }
   };
 
   const setSelectedModel = (id: string | null) => {
     setSelectedModelState(id);
     void storeSetSessionConfig(session.id, { modelOverride: id });
-    if (selectedAgentId)
+    if (selectedAgentId) {
       void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
+    }
   };
 
   const onSelectProvider = (id: ProviderId) => {
@@ -551,18 +569,24 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
       );
       return;
     }
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride || isRunning) {
+      return;
+    }
     setSelectedProvider(id);
     setSelectedModel(null);
   };
 
   const onSelectModel = (id: string) => {
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride || isRunning) {
+      return;
+    }
     setSelectedModel(id);
   };
 
   const onResetTurnOverride = () => {
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride || isRunning) {
+      return;
+    }
     setSelectedProvider(null);
     setSelectedModel(null);
   };
@@ -580,7 +604,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
           ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
           onNewAlerts: (alerts) => {
-            if (!SESSION_FEATURES.budget) return;
+            if (!SESSION_FEATURES.budget) {
+              return;
+            }
             for (const alert of alerts) {
               showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
             }
@@ -627,7 +653,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const editQueued = useCallback(
     (id: string) => {
       const item = queue.find((q) => q.id === id);
-      if (!item) return;
+      if (!item) {
+        return;
+      }
       setQueue((prev) => prev.filter((q) => q.id !== id));
       setValue(item.content);
       setAttachments(item.attachments);
@@ -639,7 +667,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   const onSend = async () => {
     const content = value.trim();
     const atts = attachments;
-    if ((!content && atts.length === 0) || providerDisconnected) return;
+    if ((!content && atts.length === 0) || providerDisconnected) {
+      return;
+    }
     setError(null);
     setLastFailedTurn(null);
 
@@ -686,7 +716,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   };
 
   const recordScopeOutcome = async (outcome: NudgeOutcome) => {
-    if (!scopeNudgeEventId) return;
+    if (!scopeNudgeEventId) {
+      return;
+    }
     try {
       await updateNudgeEventOutcome(
         tauriDatabase,
@@ -701,7 +733,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   };
 
   const onScopeSpawn = async () => {
-    if (!scopePending) return;
+    if (!scopePending) {
+      return;
+    }
     const target = scopePending.mismatch.suggestedAgentKind;
     const content = scopePending.content;
     setScopePending(null);
@@ -715,7 +749,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   };
 
   const onScopeSendAnyway = async () => {
-    if (!scopePending) return;
+    if (!scopePending) {
+      return;
+    }
     const content = scopePending.content;
     const atts = scopePending.attachments;
     setScopePending(null);
@@ -732,19 +768,25 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const onUseSuggested = async () => {
     const pending = rightSizePending;
-    if (pending === null) return;
+    if (pending === null) {
+      return;
+    }
     const suggested = rightSizeSuggestion?.model ?? null;
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
     setAttachments([]);
-    if (suggested !== null) setSelectedModel(suggested);
+    if (suggested !== null) {
+      setSelectedModel(suggested);
+    }
     await sendWith(pending.content, pending.attachments, suggested);
   };
 
   const onKeepCurrent = async () => {
     const pending = rightSizePending;
-    if (pending === null) return;
+    if (pending === null) {
+      return;
+    }
     setRightSizePending(null);
     setRightSizeDismissed(true);
     setValue('');
@@ -763,17 +805,12 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     if (wasRun && !isRunning && queue.length > 0) {
       const [next, ...rest] = queue;
       setQueue(rest);
-      if (next) void dispatchTurn(next.content, next.attachments, next.override);
+      if (next) {
+        void dispatchTurn(next.content, next.attachments, next.override);
+      }
     }
   }, [isRunning, queue, dispatchTurn]);
 
-  // Native drag-drop. Tauri swallows DOM drop events for OS-file drags by
-  // default (dragDropEnabled=true) and emits a window-global event instead.
-  // We register the listener ONCE per component lifetime. Refs carry the
-  // latest providerDisconnected/showToast so dep churn never tears the
-  // listener down mid-drag. Coordinate semantics vary across Tauri builds
-  // (some emit physical px, some logical), so the hit-test tries both
-  // interpretations against the composer's bounding rect.
   const providerDisconnectedRef = useRef(providerDisconnected);
   providerDisconnectedRef.current = providerDisconnected;
   const showToastRef = useRef(showToast);
@@ -783,13 +820,11 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     let cancelled = false;
     let unlisten: (() => void) | null = null;
 
-    // Rect-based hit-test, tolerant to whichever coordinate space Tauri
-    // emits on this build (physical vs logical px). `elementFromPoint`
-    // proved unreliable during an active OS drag: the native drag overlay
-    // sits above the DOM and the hit-test returns null.
     const isInsideComposer = (px: number, py: number): boolean => {
       const el = composerRef.current;
-      if (!el) return false;
+      if (!el) {
+        return false;
+      }
       const rect = el.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       const candidates: ReadonlyArray<readonly [number, number]> = [
@@ -817,7 +852,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
           // folder drop would spam a toast per child.
         }
       }
-      if (dropped.length === 0) return;
+      if (dropped.length === 0) {
+        return;
+      }
       setAttachments((prev) => {
         const room = ATTACHMENT_LIMIT - prev.length;
         if (room <= 0) {
@@ -842,11 +879,6 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
           switch (p.type) {
             case 'enter':
             case 'over':
-              // Tauri only fires these while the cursor is over our webview,
-              // so an unconditional `true` means "drag is happening here".
-              // Good enough to highlight the composer as the drop target.
-              // We don't gate on hit-test: native drag overlays defeat the
-              // DOM, and the user knows there's only one drop zone.
               setIsDragging(true);
               break;
             case 'leave':
@@ -854,17 +886,20 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
               break;
             case 'drop': {
               setIsDragging(false);
-              if (!isInsideComposer(p.position.x, p.position.y)) return;
+              if (!isInsideComposer(p.position.x, p.position.y)) {
+                return;
+              }
               void ingestDroppedPaths(p.paths);
               break;
             }
           }
         });
-        if (cancelled) off();
-        else unlisten = off;
+        if (cancelled) {
+          off();
+        } else {
+          unlisten = off;
+        }
       } catch (err) {
-        // Webview API unavailable in non-Tauri test env. Log so a real
-        // failure in dev surfaces in the console instead of being silent.
         console.warn('drag-drop listener registration failed:', err);
       }
     })();
@@ -877,7 +912,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const lastAgentIdRef = useRef(selectedAgentId);
   useEffect(() => {
-    if (lastAgentIdRef.current === selectedAgentId) return;
+    if (lastAgentIdRef.current === selectedAgentId) {
+      return;
+    }
     const outgoingAgentId = lastAgentIdRef.current;
     lastAgentIdRef.current = selectedAgentId;
 
@@ -903,8 +940,12 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
     setSelectedProviderState(restoredProvider);
     setSelectedModelState(restoredModel);
-    if (restoredEffort !== null) setEffortState(restoredEffort);
-    if (restoredVerbosity !== null) setVerbosityState(restoredVerbosity);
+    if (restoredEffort !== null) {
+      setEffortState(restoredEffort);
+    }
+    if (restoredVerbosity !== null) {
+      setVerbosityState(restoredVerbosity);
+    }
 
     setAttachments([]);
     setQueue([]);
@@ -914,14 +955,11 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     setScopeNudgeEventId(null);
   }, [selectedAgentId]);
 
-  // Load workspace scripts + workflows so the `$` and `~` quick-actions can
-  // list them.
   useEffect(() => {
     void loadScripts(session.workspaceId);
     void loadPhaseTemplates(session.workspaceId);
   }, [session.workspaceId, loadScripts, loadPhaseTemplates]);
 
-  // Load this session's agents so the `@` quick-action can list them.
   useEffect(() => {
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
@@ -949,7 +987,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
 
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
-    if (effectiveModel) ids.add(effectiveModel);
+    if (effectiveModel) {
+      ids.add(effectiveModel);
+    }
     return Array.from(ids);
   }, [providerModels, effectiveModel]);
 
@@ -957,7 +997,9 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     readonly direction: 'lighter' | 'heavier';
     readonly model: string;
   } | null>(() => {
-    if (!isFirstTurnForAgent || rightSizeDismissed) return null;
+    if (!isFirstTurnForAgent || rightSizeDismissed) {
+      return null;
+    }
     const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
     if (weight === 'light') {
       const model = suggestLighterModel(effectiveModel, modelCandidates);
@@ -983,10 +1025,6 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
     }
   }, [rightSizePending, rightSizeSuggestion]);
 
-  // Priority-ranked suggestions, folded into one stack so a pile of nudges
-  // can't shove the composer below the fold (plan §D.1). Order: plan-ready >
-  // scope-mismatch > right-size. RoutingIndicator stays outside, it's a
-  // status line, not an action card.
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
   if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
     suggestions.push({
@@ -1115,14 +1153,14 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
   return (
     <div className="px-10 pb-4 pt-2">
       <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
-        {!isRunning && !providerDisconnected ? (
+        {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
             turnOverride={routingOverride}
             connectedProviders={connectedProviderIds}
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
-        ) : null}
+        )}
         <SuggestionStack items={suggestions} />
         {scriptResult ? (
           <ScriptResultRow state={scriptResult} onDismiss={() => dismissScriptResult(session.id)} />
@@ -1154,13 +1192,13 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
               drop to attach
             </div>
           </div>
-          {attachments.length > 0 ? (
+          {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
               {attachments.map((a) => (
                 <AttachmentChip key={a.id} attachment={a} onRemove={() => removeAttachment(a.id)} />
               ))}
             </div>
-          ) : null}
+          )}
           <div className="relative" ref={wrapperRef}>
             {popoverOpen ? (
               <QuickActionsPopover
@@ -1261,7 +1299,7 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
         {error ? (
           <div role="alert" className="flex items-center gap-2">
             <p className="flex-1 text-xs text-danger">{error}</p>
-            {lastFailedTurn !== null ? (
+            {lastFailedTurn !== null && (
               <button
                 type="button"
                 onClick={() => {
@@ -1276,19 +1314,19 @@ export function ChatInput({ session, providerDisconnected = false }: Props) {
               >
                 retry
               </button>
-            ) : null}
+            )}
           </div>
         ) : null}
       </div>
     </div>
   );
-}
+};
 
-interface QueuedItem {
+type QueuedItem = {
   readonly id: string;
   readonly content: string;
   readonly attachments: ReadonlyArray<PendingAttachment>;
-}
+};
 
 function QueuedMessages({
   items,
@@ -1301,7 +1339,9 @@ function QueuedMessages({
   readonly onEdit: (id: string) => void;
   readonly onRemove: (id: string) => void;
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
   return (
     <div className="flex flex-col gap-1 rounded-[6px] bg-subtle/80 p-1 ring-1 ring-border-soft">
       <div className="flex items-center gap-1.5 px-1.5 pt-0.5 text-2xs text-muted-foreground">
@@ -1336,12 +1376,12 @@ function QueuedMessages({
             >
               {preview}
             </button>
-            {attachmentCount > 0 && trimmed.length > 0 ? (
+            {attachmentCount > 0 && trimmed.length > 0 && (
               <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground">
                 <Paperclip size={10} aria-hidden />
                 {attachmentCount}
               </span>
-            ) : null}
+            )}
             <button
               type="button"
               onClick={() => onRemove(item.id)}
@@ -1434,8 +1474,6 @@ function AttachmentChip({
   );
 }
 
-// Renders the top-priority suggestion; any others fold behind a counter so
-// the stack never grows tall enough to push the composer below the fold.
 function SuggestionStack({
   items,
 }: {
@@ -1443,15 +1481,19 @@ function SuggestionStack({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
   const [top, ...rest] = items;
-  if (!top) return null;
+  if (!top) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-2">
       {top.node}
       {expanded ? rest.map((it) => <div key={it.key}>{it.node}</div>) : null}
-      {rest.length > 0 ? (
+      {rest.length > 0 && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -1461,7 +1503,7 @@ function SuggestionStack({
             ? 'show fewer suggestions'
             : `+${rest.length} more suggestion${rest.length === 1 ? '' : 's'}`}
         </button>
-      ) : null}
+      )}
     </div>
   );
 }

@@ -6,10 +6,10 @@ const TIPS: ReadonlyArray<{ readonly combo: ReadonlyArray<string>; readonly labe
   { combo: ['⌘', 'N'], label: 'new session' },
 ];
 
-export function ReadyStep() {
+export const ReadyStep = () => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success">
+      <span className="flex size-14 items-center justify-center rounded-lg border border-success/30 bg-success/10 text-success">
         <CheckCircle2 size={26} aria-hidden />
       </span>
 
@@ -38,4 +38,4 @@ export function ReadyStep() {
       </ul>
     </div>
   );
-}
+};

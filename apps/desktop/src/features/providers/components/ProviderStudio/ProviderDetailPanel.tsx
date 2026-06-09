@@ -18,11 +18,11 @@ import { openProviderModal } from '../ProviderModalHost';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 
-interface Props {
+type Props = {
   readonly info: ProviderInfo | null;
-}
+};
 
-export function ProviderDetailPanel({ info }: Props) {
+export const ProviderDetailPanel = ({ info }: Props) => {
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
@@ -31,7 +31,7 @@ export function ProviderDetailPanel({ info }: Props) {
     );
   }
   return <Detail info={info} />;
-}
+};
 
 function Detail({ info }: { readonly info: ProviderInfo }) {
   const id = info.id as ProviderId;
@@ -62,7 +62,7 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
         <span
-          className="flex size-11 items-center justify-center rounded-xl"
+          className="flex size-11 items-center justify-center rounded-lg"
           style={{ backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`, color }}
         >
           <Icon size={22} aria-hidden />
@@ -134,12 +134,12 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
             )}
           </section>
 
-          {info.connection !== 'missing' ? (
+          {info.connection !== 'missing' && (
             <>
               <ProviderCredentialsSection providerId={id} />
               <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />
             </>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

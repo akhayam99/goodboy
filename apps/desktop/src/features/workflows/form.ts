@@ -9,7 +9,7 @@ import type {
 import { inferAgentKindFromName, KIND_TO_ROLE } from '../session/agent-kind';
 import { type EffortLevel } from '../chat/utils/chat-constants';
 
-export interface DefinitionForm {
+export type DefinitionForm = {
   id?: StepId;
   libraryStepId?: StepDefId;
   role: AgentRole;
@@ -19,13 +19,13 @@ export interface DefinitionForm {
   modelOverride: string;
   effort: EffortLevel;
   verbosity: VerbosityLevel;
-}
+};
 
-export interface TemplateForm {
+export type TemplateForm = {
   name: string;
   description: string;
   steps: DefinitionForm[];
-}
+};
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
@@ -46,7 +46,7 @@ export const emptyForm = (): TemplateForm => ({
   steps: [emptyDefinition()],
 });
 
-export function templateToForm(t: Workflow): TemplateForm {
+export const templateToForm = (t: Workflow): TemplateForm => {
   return {
     name: t.name,
     description: t.description,
@@ -65,9 +65,9 @@ export function templateToForm(t: Workflow): TemplateForm {
         verbosity: d.verbosity ?? DEFAULT_VERBOSITY,
       })),
   };
-}
+};
 
-export function defFromLibraryStep(s: StepDef): DefinitionForm {
+export const defFromLibraryStep = (s: StepDef): DefinitionForm => {
   return {
     libraryStepId: s.id,
     role: s.role,
@@ -78,4 +78,4 @@ export function defFromLibraryStep(s: StepDef): DefinitionForm {
     effort: (s.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,
     verbosity: s.verbosityDefault ?? DEFAULT_VERBOSITY,
   };
-}
+};

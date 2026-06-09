@@ -79,14 +79,14 @@ function activateChild(
   void get().sendTurn({ sessionId, agentId: childId, content });
 }
 
-export async function fanOutClusters(
+export const fanOutClusters = async (
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   container: Agent,
   clusters: ReadonlyArray<ImplementationCluster>,
   goalTitle: string,
-): Promise<void> {
+): Promise<void> => {
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
   const baseOrdinal =
@@ -127,7 +127,7 @@ export async function fanOutClusters(
   if (first) {
     activateChild(set, get, sessionId, first, composeClusterKickoff(first, goalTitle, clusters, 0));
   }
-}
+};
 
 function findClustersPlan(
   get: GetFn,
@@ -137,18 +137,24 @@ function findClustersPlan(
   const plans = get().sessionPlans[sessionId] ?? [];
   for (let i = plans.length - 1; i >= 0; i--) {
     const p = plans[i];
-    if (!p?.clusters || p.clusters.length < 2) continue;
-    if (p.workflowRunId !== workflowRunId) continue;
+    if (!p?.clusters || p.clusters.length < 2) {
+      continue;
+    }
+    if (p.workflowRunId !== workflowRunId) {
+      continue;
+    }
     return p;
   }
   return null;
 }
 
-export function advanceClusterImplementation(set: SetFn, get: GetFn) {
+export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, childAgentId: AgentId, assistantText: string) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const child = runs.find((r) => r.id === childAgentId);
-    if (!child || !child.parentAgentId) return;
+    if (!child || !child.parentAgentId) {
+      return;
+    }
     const containerId = child.parentAgentId;
     const plan = findClustersPlan(get, sessionId, child.workflowRunId);
     const clusters = plan?.clusters ?? [];
@@ -222,4 +228,4 @@ export function advanceClusterImplementation(set: SetFn, get: GetFn) {
       );
     }
   };
-}
+};

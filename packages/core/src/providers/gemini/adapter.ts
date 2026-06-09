@@ -22,13 +22,13 @@ const CAPABILITIES: ProviderCapabilities = {
   availableModels: GEMINI_MODELS.map((m) => m.id),
 };
 
-export interface GeminiAdapterDeps {
+export type GeminiAdapterDeps = {
   readonly binary?: string;
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
   readonly priceOverride?: GeminiModelPriceOverride | null;
-}
+};
 
 export class GeminiAdapter implements ProviderAdapter {
   readonly id = 'gemini' as const;
@@ -74,8 +74,6 @@ export class GeminiAdapter implements ProviderAdapter {
     });
   }
 
-  // Free-tier Google AI users are unmetered; paid users can wire a per-model
-  // price via GeminiAdapterDeps.priceOverride to surface estimated USD.
   cost(usage: ProviderUsage, model: string): number {
     return computeGeminiCostUsd(usage, model, this.priceOverride);
   }
@@ -92,12 +90,6 @@ async function* spawnGemini(
   onUnknown: (type: string, payload: unknown) => void,
   request: TurnRequest,
 ): AsyncIterable<TurnEvent> {
-  // gemini-cli headless flags (v0.x, May 2026):
-  //   gemini -m <model> -p <prompt>
-  // -p forces non-interactive mode and writes the model response to stdout.
-  // Working directory is taken from process cwd; we set it via spawn options.
-  // systemPrompt is prepended to userMessage since the CLI has no
-  // `--system-prompt` flag yet.
   const prompt = request.systemPrompt
     ? `${request.systemPrompt}\n\n${request.userMessage}`
     : request.userMessage;
@@ -170,14 +162,18 @@ async function* spawnGemini(
         continue;
       }
       if (ended) {
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         return;
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
         resolver = resolve;
         rejector = reject;
       });
-      if (value.done) return;
+      if (value.done) {
+        return;
+      }
       yield value.value;
     }
   } finally {

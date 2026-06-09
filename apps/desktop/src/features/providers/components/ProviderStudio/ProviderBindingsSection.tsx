@@ -4,12 +4,12 @@ import { FolderGit2 } from 'lucide-react';
 import { CLI_CREDENTIAL, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly providerId: ProviderId;
   readonly cliIdentity: string | null;
-}
+};
 
-export function ProviderBindingsSection({ providerId, cliIdentity }: Props) {
+export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
   const credentials = useAppStore((s) => s.providerCredentials);
   const workspaces = useAppStore((s) => s.workspaces);
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides);
@@ -21,7 +21,9 @@ export function ProviderBindingsSection({ providerId, cliIdentity }: Props) {
   );
   const connected = useMemo(() => workspaces.filter((w) => !w.disconnectedAt), [workspaces]);
 
-  if (mine.length === 0 || connected.length === 0) return null;
+  if (mine.length === 0 || connected.length === 0) {
+    return null;
+  }
 
   const cliLabel = cliIdentity ? `CLI login (${cliIdentity})` : 'CLI login';
 
@@ -78,4 +80,4 @@ export function ProviderBindingsSection({ providerId, cliIdentity }: Props) {
       </ul>
     </section>
   );
-}
+};

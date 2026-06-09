@@ -6,23 +6,29 @@ import {
   SESSION_STATUS_PALETTE,
 } from '../../../../features/session/session-status';
 
-interface Props {
+type Props = {
   readonly status: SessionUserStatus;
   readonly sessionLabel: string;
   readonly onPick: (next: SessionUserStatus) => void;
-}
+};
 
-export function SessionStatusMenu({ status, sessionLabel, onPick }: Props) {
+export const SessionStatusMenu = ({ status, sessionLabel, onPick }: Props) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('keydown', onKey);
@@ -74,7 +80,9 @@ export function SessionStatusMenu({ status, sessionLabel, onPick }: Props) {
                 onClick={(e) => {
                   e.stopPropagation();
                   setOpen(false);
-                  if (!selected) onPick(option);
+                  if (!selected) {
+                    onPick(option);
+                  }
                 }}
                 className={cn(
                   'flex items-center gap-2 rounded px-2 py-1 text-left text-xs transition-colors',
@@ -97,4 +105,4 @@ export function SessionStatusMenu({ status, sessionLabel, onPick }: Props) {
       ) : null}
     </div>
   );
-}
+};

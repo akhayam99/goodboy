@@ -13,7 +13,7 @@ import { setSessionUserStatus } from './setSessionUserStatus';
 import { unarchiveTask } from './unarchiveTask';
 import type { GetFn, SetFn } from './types';
 
-export function createSessionsSlice(set: SetFn, get: GetFn) {
+export const createSessionsSlice = (set: SetFn, get: GetFn) => {
   return {
     renameTask: renameTask(set, get),
     autoTitleSession: autoTitleSession(set, get),
@@ -29,4 +29,4 @@ export function createSessionsSlice(set: SetFn, get: GetFn) {
     createSession: createSession(set, get),
     setCurrentSession: setCurrentSession(set, get),
   };
-}
+};

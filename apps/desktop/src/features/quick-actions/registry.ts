@@ -7,11 +7,10 @@ function firstLine(body: string): string | undefined {
   return line ? line : undefined;
 }
 
-/** Maps workspace scripts to quick-action rows. `onPick` owns the run. */
-export function buildScriptActions(
+export const buildScriptActions = (
   scripts: ReadonlyArray<WorkspaceScript>,
   onPick: (script: WorkspaceScript) => void,
-): ReadonlyArray<QuickActionItem> {
+): ReadonlyArray<QuickActionItem> => {
   return scripts.map((script) => ({
     id: `script:${script.id}`,
     label: script.name,
@@ -19,13 +18,12 @@ export function buildScriptActions(
     group: 'script',
     perform: () => onPick(script),
   }));
-}
+};
 
-/** Maps workspace skills to quick-action rows. `onPick` pre-fills the input. */
-export function buildSkillActions(
+export const buildSkillActions = (
   skills: ReadonlyArray<Skill>,
   onPick: (skill: Skill) => void,
-): ReadonlyArray<QuickActionItem> {
+): ReadonlyArray<QuickActionItem> => {
   return skills.map((skill) => ({
     id: `skill:${skill.id}`,
     label: skill.name,
@@ -33,13 +31,12 @@ export function buildSkillActions(
     group: 'skill',
     perform: () => onPick(skill),
   }));
-}
+};
 
-/** Maps workspace workflows to quick-action rows. `onPick` starts the workflow. */
-export function buildWorkflowActions(
+export const buildWorkflowActions = (
   workflows: ReadonlyArray<Workflow>,
   onPick: (workflow: Workflow) => void,
-): ReadonlyArray<QuickActionItem> {
+): ReadonlyArray<QuickActionItem> => {
   return workflows.map((workflow) => ({
     id: `workflow:${workflow.id}`,
     label: workflow.name,
@@ -49,24 +46,17 @@ export function buildWorkflowActions(
     group: 'workflow',
     perform: () => onPick(workflow),
   }));
-}
+};
 
-/**
- * Maps session agents to switch rows, plus a trailing "spawn new agent" row.
- * `onSwitch` navigates to an existing agent; `onSpawn` creates a fresh one.
- */
-export function buildAgentActions(
+export const buildAgentActions = (
   agents: ReadonlyArray<Agent>,
   kindOverride: Readonly<Record<AgentId, AgentKind>>,
   onSwitch: (agent: Agent) => void,
   onSpawn: () => void,
-): ReadonlyArray<QuickActionItem> {
+): ReadonlyArray<QuickActionItem> => {
   const switches = agents
     .filter((agent) => agent.deletedAt === undefined)
     .map<QuickActionItem>((agent) => {
-      // Authoritative source: agentKindOverride is populated by the workflow
-      // step that spawned the agent. Fall back to name-based inference for
-      // ad-hoc agents created without a workflow context.
       const kind = kindOverride[agent.id] ?? inferAgentKindFromName(agent.name);
       return {
         id: `agent:${agent.id}`,
@@ -81,4 +71,4 @@ export function buildAgentActions(
     ...switches,
     { id: 'agent:spawn', label: '+ new agent', group: 'agent', perform: onSpawn },
   ];
-}
+};

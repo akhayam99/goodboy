@@ -20,22 +20,22 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 
-export async function listPlansForSession(
+export const listPlansForSession = async (
   sessionId: SessionId,
-): Promise<ReadonlyArray<PlanWithCount>> {
+): Promise<ReadonlyArray<PlanWithCount>> => {
   return dbListPlansForSession(tauriDatabase, sessionId);
-}
+};
 
-export interface UpsertPlanArgs {
+export type UpsertPlanArgs = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly workflowRunId?: WorkflowRunId;
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
-}
+};
 
-export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
+export const upsertPlan = async (args: UpsertPlanArgs): Promise<Plan> => {
   const id = crypto.randomUUID() as PlanId;
   return dbUpsertPlan(tauriDatabase, {
     id,
@@ -46,26 +46,26 @@ export async function upsertPlan(args: UpsertPlanArgs): Promise<Plan> {
     bodyMd: args.bodyMd,
     ...(args.clusters && { clusters: args.clusters }),
   });
-}
+};
 
-export async function setPlanStatus(id: PlanId, status: PlanStatus): Promise<void> {
+export const setPlanStatus = async (id: PlanId, status: PlanStatus): Promise<void> => {
   await dbUpdatePlanStatus(tauriDatabase, id, status);
-}
+};
 
-export async function setPlanBody(id: PlanId, title: string, bodyMd: string): Promise<void> {
+export const setPlanBody = async (id: PlanId, title: string, bodyMd: string): Promise<void> => {
   await dbUpdatePlanBody(tauriDatabase, id, title, bodyMd);
-}
+};
 
-export async function addPlanConsumption(
+export const addPlanConsumption = async (
   planId: PlanId,
   agentId: AgentId,
-): Promise<PlanConsumption> {
+): Promise<PlanConsumption> => {
   const id = crypto.randomUUID() as PlanConsumptionId;
   return dbAddPlanConsumption(tauriDatabase, { id, planId, agentId });
-}
+};
 
-export async function listConsumptionsForPlan(
+export const listConsumptionsForPlan = async (
   planId: PlanId,
-): Promise<ReadonlyArray<PlanConsumption>> {
+): Promise<ReadonlyArray<PlanConsumption>> => {
   return dbListConsumptionsForPlan(tauriDatabase, planId);
-}
+};

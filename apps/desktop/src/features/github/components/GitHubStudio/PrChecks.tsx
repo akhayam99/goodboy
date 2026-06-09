@@ -12,13 +12,13 @@ import {
   XCircle,
 } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly pr: PullRequestState;
   readonly onOpenUrl: (url: string) => void;
-}
+};
 
-export function PrChecks({ checks, pr, onOpenUrl }: Props) {
+export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
   if (checks.length === 0) {
     return (
       <EmptyState
@@ -56,28 +56,42 @@ export function PrChecks({ checks, pr, onOpenUrl }: Props) {
       ))}
     </ul>
   );
-}
+};
 
 function ConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
   const props = { size: 15, 'aria-hidden': true } as const;
-  if (conclusion === 'success') return <Check {...props} className="shrink-0 text-success" />;
-  if (conclusion === 'failure') return <XCircle {...props} className="shrink-0 text-danger" />;
-  if (conclusion === 'pending')
+  if (conclusion === 'success') {
+    return <Check {...props} className="shrink-0 text-success" />;
+  }
+  if (conclusion === 'failure') {
+    return <XCircle {...props} className="shrink-0 text-danger" />;
+  }
+  if (conclusion === 'pending') {
     return <Clock {...props} className="shrink-0 text-warning motion-safe:animate-pulse" />;
-  if (conclusion === 'cancelled' || conclusion === 'timed_out')
+  }
+  if (conclusion === 'cancelled' || conclusion === 'timed_out') {
     return <CircleSlash {...props} className="shrink-0 text-muted-foreground" />;
-  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale')
+  }
+  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale') {
     return <MinusCircle {...props} className="shrink-0 text-muted-foreground" />;
-  if (conclusion === 'action_required')
+  }
+  if (conclusion === 'action_required') {
     return <AlertCircle {...props} className="shrink-0 text-warning" />;
+  }
   return <HelpCircle {...props} className="shrink-0 text-muted-foreground" />;
 }
 
 function formatDuration(ms: number | null): string {
-  if (ms === null) return '';
-  if (ms < 1_000) return `${ms}ms`;
+  if (ms === null) {
+    return '';
+  }
+  if (ms < 1_000) {
+    return `${ms}ms`;
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 60) return `${s}s`;
+  if (s < 60) {
+    return `${s}s`;
+  }
   const m = Math.floor(s / 60);
   const rs = s % 60;
   return rs > 0 ? `${m}m ${rs}s` : `${m}m`;

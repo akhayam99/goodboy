@@ -10,15 +10,15 @@ import { TurnsTable } from './TurnsTable';
 import { Widget } from './Widget';
 import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly goal: string;
   readonly isCurrent: boolean;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly onOpened: () => void;
-}
+};
 
-export function SessionPanel({ sessionId, goal, isCurrent, turns, onOpened }: Props) {
+export const SessionPanel = ({ sessionId, goal, isCurrent, turns, onOpened }: Props) => {
   const records = useMemo(() => turns.map((t) => t.record), [turns]);
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
@@ -57,4 +57,4 @@ export function SessionPanel({ sessionId, goal, isCurrent, turns, onOpened }: Pr
       <TurnsTable turns={turns} showProvider={providerCount >= 2} showSession={false} />
     </PanelShell>
   );
-}
+};

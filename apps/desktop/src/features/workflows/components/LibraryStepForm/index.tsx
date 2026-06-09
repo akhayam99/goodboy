@@ -18,18 +18,24 @@ import { EffortSelect } from '../../../session/components/EffortSelect';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { ProviderSelect } from '../../../session/components/ProviderSelect';
 
-interface Props {
+type Props = {
   readonly def: StepDef | null;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onSave: (args: StepDefUpsertArgs) => void;
   readonly onCancel: () => void;
-}
+};
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
-export function LibraryStepForm({ def, workspaceId, connectedProviders, onSave, onCancel }: Props) {
+export const LibraryStepForm = ({
+  def,
+  workspaceId,
+  connectedProviders,
+  onSave,
+  onCancel,
+}: Props) => {
   const isGlobal = def?.workspaceId === null;
   const [name, setName] = useState(def?.name ?? '');
   const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom');
@@ -51,7 +57,9 @@ export function LibraryStepForm({ def, workspaceId, connectedProviders, onSave, 
   const canSave = name.trim().length > 0;
 
   const submit = () => {
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     const base: StepDefUpsertArgs = {
       workspaceId,
       role,
@@ -118,7 +126,9 @@ export function LibraryStepForm({ def, workspaceId, connectedProviders, onSave, 
             onChange={(m) => {
               const levels = modelEffortLevels(m);
               setModelOverride(m);
-              if (levels && !levels.includes(effort)) setEffort(levels[0]!);
+              if (levels && !levels.includes(effort)) {
+                setEffort(levels[0]!);
+              }
             }}
             disabled={false}
           />
@@ -141,4 +151,4 @@ export function LibraryStepForm({ def, workspaceId, connectedProviders, onSave, 
       </div>
     </div>
   );
-}
+};

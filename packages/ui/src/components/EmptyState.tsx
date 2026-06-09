@@ -2,23 +2,23 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface EmptyStateProps {
+export type EmptyStateProps = {
   readonly icon: LucideIcon;
   readonly title: string;
   readonly description?: string;
   readonly action?: ReactNode;
   readonly bordered?: boolean;
   readonly className?: string;
-}
+};
 
-export function EmptyState({
+export const EmptyState = ({
   icon: Icon,
   title,
   description,
   action,
   bordered = false,
   className,
-}: EmptyStateProps) {
+}: EmptyStateProps) => {
   return (
     <div
       className={cn(
@@ -39,4 +39,4 @@ export function EmptyState({
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
-}
+};

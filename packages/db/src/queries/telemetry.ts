@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface TelemetryRow {
+type TelemetryRow = {
   id: string;
   run_id: string;
   session_id: string;
@@ -21,7 +21,7 @@ interface TelemetryRow {
   output_tokens: number;
   estimated_cost_usd: number;
   recorded_at: number;
-}
+};
 
 function toDomain(row: TelemetryRow): TelemetryRecord {
   return {
@@ -38,7 +38,7 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
   };
 }
 
-export async function insertTelemetry(db: Database, record: TelemetryRecord): Promise<void> {
+export const insertTelemetry = async (db: Database, record: TelemetryRecord): Promise<void> => {
   await db.execute(
     `INSERT INTO telemetry_records
       (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, estimated_cost_usd, recorded_at)
@@ -56,32 +56,32 @@ export async function insertTelemetry(db: Database, record: TelemetryRecord): Pr
       Date.parse(record.recordedAt),
     ],
   );
-}
+};
 
-export async function listTelemetryForSession(
+export const listTelemetryForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<TelemetryRecord>> {
+): Promise<ReadonlyArray<TelemetryRecord>> => {
   const rows = await db.select<TelemetryRow>(
     'SELECT * FROM telemetry_records WHERE session_id = ? ORDER BY recorded_at ASC',
     [sessionId],
   );
   return rows.map(toDomain);
-}
+};
 
-export interface TelemetrySummary {
+export type TelemetrySummary = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly estimatedCostUsd: number;
   readonly recordCount: number;
-}
+};
 
-interface SummaryRow {
+type SummaryRow = {
   input: number | null;
   output: number | null;
   cost: number | null;
   count: number;
-}
+};
 
 const SUMMARY_SELECT = `
   COALESCE(SUM(input_tokens), 0) AS input,
@@ -99,21 +99,21 @@ function toSummary(row: SummaryRow | undefined): TelemetrySummary {
   };
 }
 
-export async function summarizeSessionTelemetry(
+export const summarizeSessionTelemetry = async (
   db: Database,
   sessionId: SessionId,
-): Promise<TelemetrySummary> {
+): Promise<TelemetrySummary> => {
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE session_id = ?`,
     [sessionId],
   );
   return toSummary(rows[0]);
-}
+};
 
-export async function summarizeWorkspaceTelemetry(
+export const summarizeWorkspaceTelemetry = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<TelemetrySummary> {
+): Promise<TelemetrySummary> => {
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT}
        FROM telemetry_records t
@@ -122,33 +122,33 @@ export async function summarizeWorkspaceTelemetry(
     [workspaceId],
   );
   return toSummary(rows[0]);
-}
+};
 
-export async function summarizeProviderTelemetry(
+export const summarizeProviderTelemetry = async (
   db: Database,
   provider: ProviderName,
-): Promise<TelemetrySummary> {
+): Promise<TelemetrySummary> => {
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE provider = ?`,
     [provider],
   );
   return toSummary(rows[0]);
-}
+};
 
-export interface ProviderTelemetrySummary {
+export type ProviderTelemetrySummary = {
   readonly provider: ProviderName;
   readonly estimatedCostUsd: number;
-}
+};
 
-interface ProviderSummaryRow {
+type ProviderSummaryRow = {
   provider: ProviderName;
   cost: number | null;
-}
+};
 
-export async function summarizeWorkspaceProviderTelemetry(
+export const summarizeWorkspaceProviderTelemetry = async (
   db: Database,
   workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<ProviderTelemetrySummary>> {
+): Promise<ReadonlyArray<ProviderTelemetrySummary>> => {
   const rows = await db.select<ProviderSummaryRow>(
     `SELECT t.provider, COALESCE(SUM(t.estimated_cost_usd), 0) AS cost
        FROM telemetry_records t
@@ -159,4 +159,4 @@ export async function summarizeWorkspaceProviderTelemetry(
     [workspaceId],
   );
   return rows.map((r) => ({ provider: r.provider, estimatedCostUsd: r.cost ?? 0 }));
-}
+};

@@ -11,32 +11,32 @@ type ContextSlotDelta = Readonly<{
   upserts: ReadonlyArray<ContextSlotDeltaUpsert>;
 }>;
 
-export interface SummarizerUsage {
+export type SummarizerUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly estimatedCostUsd: number;
-}
+};
 
-export interface SummarizeInput {
+export type SummarizeInput = {
   readonly prevSlots: ReadonlyArray<ContextSlot>;
   readonly turnInput: string;
   readonly turnOutput: string;
   readonly prState?: NextActionsPrState | null;
-}
+};
 
-export interface SummarizerResult {
+export type SummarizerResult = {
   readonly delta: ContextSlotDelta;
   readonly usage: SummarizerUsage;
   readonly model: string;
   readonly nextActions: ReadonlyArray<NextAction>;
-}
+};
 
-export interface SummarizerDeps {
+export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly spawnFn?: typeof spawn;
-}
+};
 
 export class SummarizerSpawnError extends Error {
   constructor(
@@ -118,7 +118,7 @@ function getDefaultBinary(providerId: ProviderId): string {
   }
 }
 
-interface ClaudeJsonResult {
+type ClaudeJsonResult = {
   readonly result?: string;
   readonly usage?: {
     readonly input_tokens?: number;
@@ -128,7 +128,7 @@ interface ClaudeJsonResult {
   readonly model?: string;
   readonly subtype?: string;
   readonly is_error?: boolean;
-}
+};
 
 export class Summarizer {
   private readonly providerId: ProviderId;
@@ -315,12 +315,18 @@ function parseDelta(raw: string): ContextSlotDelta {
 
   const upserts: ContextSlotDeltaUpsert[] = [];
   for (const entry of candidate) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const key = e.key;
     const value = e.value;
-    if (typeof key !== 'string' || !isSlotKey(key)) continue;
-    if (typeof value !== 'string') continue;
+    if (typeof key !== 'string' || !isSlotKey(key)) {
+      continue;
+    }
+    if (typeof value !== 'string') {
+      continue;
+    }
     upserts.push({ key, value });
   }
   return { upserts };
@@ -335,7 +341,9 @@ function applyDelta(
   prev: ReadonlyArray<ContextSlot>,
   delta: ContextSlotDelta,
 ): ReadonlyArray<ContextSlot> {
-  if (delta.upserts.length === 0) return prev;
+  if (delta.upserts.length === 0) {
+    return prev;
+  }
   const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
   for (const upsert of delta.upserts) {
     const existing = byKey.get(upsert.key);

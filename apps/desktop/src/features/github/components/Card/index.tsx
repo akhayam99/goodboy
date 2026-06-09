@@ -40,7 +40,7 @@ const TAB_LABEL: Record<GithubTabKey, string> = {
 const TAB_ICON_BTN =
   'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-interface Props {
+type Props = {
   readonly pr: PullRequestState;
   readonly detail: PrDetail | null;
   readonly detailLoading: boolean;
@@ -51,9 +51,9 @@ interface Props {
   readonly onRefresh: () => void;
   readonly onSpawnFromComment?: (comment: PrComment) => void;
   readonly onSpawnFromReviewChanges?: () => void;
-}
+};
 
-export function GithubCard({
+export const GithubCard = ({
   pr,
   detail,
   detailLoading,
@@ -64,7 +64,7 @@ export function GithubCard({
   onRefresh,
   onSpawnFromComment,
   onSpawnFromReviewChanges,
-}: Props) {
+}: Props) => {
   const smartDefault = useMemo(
     () => pickSmartTab(pr, detail, branchLastActivity),
     [pr, detail, branchLastActivity],
@@ -74,7 +74,9 @@ export function GithubCard({
   const isUserPick = userSelectedPr === pr.number;
 
   useEffect(() => {
-    if (!isUserPick) setActive(smartDefault);
+    if (!isUserPick) {
+      setActive(smartDefault);
+    }
   }, [smartDefault, isUserPick]);
 
   const selectTab = (k: GithubTabKey) => {
@@ -157,7 +159,7 @@ export function GithubCard({
       </AnimatedTabBody>
     </div>
   );
-}
+};
 
 function AnimatedTabBody({ activeKey, children }: { activeKey: string; children: ReactNode }) {
   const innerRef = useRef<HTMLDivElement>(null);
@@ -165,13 +167,19 @@ function AnimatedTabBody({ activeKey, children }: { activeKey: string; children:
 
   useLayoutEffect(() => {
     const el = innerRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     setHeight(el.offsetHeight);
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
-      if (!entry) return;
+      if (!entry) {
+        return;
+      }
       const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
-      if (h != null) setHeight(h);
+      if (h != null) {
+        setHeight(h);
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -189,12 +197,12 @@ function AnimatedTabBody({ activeKey, children }: { activeKey: string; children:
   );
 }
 
-export interface TabStatus {
+export type TabStatus = {
   readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
   readonly icon: ReactNode;
   readonly count?: number;
   readonly label: string;
-}
+};
 
 const TONE_PILL: Record<TabStatus['tone'], string> = {
   success: 'bg-success/10 text-success',
@@ -204,7 +212,7 @@ const TONE_PILL: Record<TabStatus['tone'], string> = {
   muted: 'bg-muted text-muted-foreground',
 };
 
-export function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
+export const TabBadge = ({ status, dim }: { status: TabStatus; dim: boolean }) => {
   const hasCount = status.count != null && status.count > 0;
   return (
     <span
@@ -221,34 +229,37 @@ export function TabBadge({ status, dim }: { status: TabStatus; dim: boolean }) {
       ) : null}
     </span>
   );
-}
+};
 
-export function computeTabStatus(
+export const computeTabStatus = (
   pr: PullRequestState,
   detail: PrDetail | null,
-): Record<GithubTabKey, TabStatus | null> {
+): Record<GithubTabKey, TabStatus | null> => {
   return {
     ci: computeCiStatus(pr, detail?.checks ?? []),
     comments: computeCommentsStatus(detail?.comments ?? []),
     review: computeReviewStatus(pr, detail?.reviews ?? [], detail?.reviewRequests ?? []),
   };
-}
+};
 
 function computeCiStatus(
   pr: PullRequestState,
   checks: ReadonlyArray<PrCheckRun>,
 ): TabStatus | null {
   if (checks.length === 0) {
-    if (pr.checks === 'failure')
+    if (pr.checks === 'failure') {
       return { tone: 'danger', icon: <XCircle size={9} aria-hidden />, label: 'ci failing' };
-    if (pr.checks === 'pending')
+    }
+    if (pr.checks === 'pending') {
       return {
         tone: 'warning',
         icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
         label: 'ci running',
       };
-    if (pr.checks === 'success')
+    }
+    if (pr.checks === 'success') {
       return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'ci passing' };
+    }
     return null;
   }
   const fail = checks.filter(
@@ -259,20 +270,22 @@ function computeCiStatus(
       c.conclusion === 'action_required',
   ).length;
   const pending = checks.filter((c) => c.conclusion === 'pending').length;
-  if (fail > 0)
+  if (fail > 0) {
     return {
       tone: 'danger',
       icon: <XCircle size={9} aria-hidden />,
       count: fail,
       label: `${fail} failing check${fail === 1 ? '' : 's'}`,
     };
-  if (pending > 0)
+  }
+  if (pending > 0) {
     return {
       tone: 'warning',
       icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
       count: pending,
       label: `${pending} check${pending === 1 ? '' : 's'} running`,
     };
+  }
   return { tone: 'success', icon: <Check size={9} aria-hidden />, label: 'all checks passing' };
 }
 
@@ -280,15 +293,18 @@ function computeCommentsStatus(comments: ReadonlyArray<PrComment>): TabStatus | 
   const heads = groupThreads(comments)
     .map((t) => t.head)
     .filter((c) => c.source === 'review');
-  if (heads.length === 0) return null;
+  if (heads.length === 0) {
+    return null;
+  }
   const open = heads.filter((c) => c.resolved === false).length;
-  if (open > 0)
+  if (open > 0) {
     return {
       tone: 'warning',
       icon: <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />,
       count: open,
       label: `${open} unresolved comment${open === 1 ? '' : 's'}`,
     };
+  }
   return {
     tone: 'success',
     icon: <CheckCheck size={9} aria-hidden />,
@@ -303,15 +319,16 @@ function computeReviewStatus(
 ): TabStatus | null {
   const latest = latestTerminalReviewsByAuthor(reviews);
   const changes = latest.filter((r) => r.state === 'changes_requested');
-  if (changes.length > 0)
+  if (changes.length > 0) {
     return {
       tone: 'danger',
       icon: <AlertCircle size={9} aria-hidden />,
       count: changes.length,
       label: `changes requested by ${changes.map((r) => r.author).join(', ')}`,
     };
+  }
   const approvals = latest.filter((r) => r.state === 'approved');
-  if (pr.reviewDecision === 'approved' || approvals.length > 0)
+  if (pr.reviewDecision === 'approved' || approvals.length > 0) {
     return {
       tone: 'success',
       icon: <CheckCheck size={9} aria-hidden />,
@@ -320,28 +337,34 @@ function computeReviewStatus(
           ? `approved by ${approvals.map((r) => r.author).join(', ')}`
           : 'approved',
     };
-  if (requests.length > 0)
+  }
+  if (requests.length > 0) {
     return {
       tone: 'info',
       icon: <CircleDashed size={9} aria-hidden />,
       count: requests.length,
       label: `awaiting ${requests.length} reviewer${requests.length === 1 ? '' : 's'}`,
     };
-  if (reviews.some((r) => r.state === 'commented'))
+  }
+  if (reviews.some((r) => r.state === 'commented')) {
     return {
       tone: 'muted',
       icon: <MessageSquare size={9} aria-hidden />,
       label: 'reviewer commented',
     };
+  }
   return null;
 }
 
 function StaleCaption({ fetchedAt }: { fetchedAt: string | null }) {
-  // Shared 30s ticker, one timer total even with many PR cards on screen.
   const now = useNow(30_000, !!fetchedAt);
-  if (!fetchedAt) return null;
+  if (!fetchedAt) {
+    return null;
+  }
   const ageMs = now - new Date(fetchedAt).getTime();
-  if (!Number.isFinite(ageMs) || ageMs < 60_000) return null;
+  if (!Number.isFinite(ageMs) || ageMs < 60_000) {
+    return null;
+  }
   return (
     <span
       className="text-[9px] text-muted-foreground/60"
@@ -382,7 +405,7 @@ function DetailSkeleton() {
   );
 }
 
-export function CiPane({
+export const CiPane = ({
   checks,
   pr,
   onOpenUrl,
@@ -390,7 +413,7 @@ export function CiPane({
   checks: ReadonlyArray<PrCheckRun>;
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
-}) {
+}) => {
   if (checks.length === 0) {
     return (
       <EmptyRow
@@ -421,11 +444,11 @@ export function CiPane({
       ))}
     </ul>
   );
-}
+};
 
 const COMMENT_DISPLAY_LIMIT = 5;
 
-export function CommentsPane({
+export const CommentsPane = ({
   comments,
   pr,
   onOpenUrl,
@@ -435,15 +458,13 @@ export function CommentsPane({
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
   onSpawnFromComment?: (c: PrComment) => void;
-}) {
+}) => {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
 
   const allThreads = useMemo(() => groupThreads(comments), [comments]);
 
-  // Only review threads are resolvable / actionable. General issue-comments
-  // (no path, no resolved state) are filtered out, they live "view on github".
   const reviewThreads = useMemo(
     () => allThreads.filter((t) => t.head.source === 'review'),
     [allThreads],
@@ -460,7 +481,9 @@ export function CommentsPane({
       : reviewThreads.filter((t) => t.head.resolved !== true);
     return [...filtered].sort((a, b) => {
       const p = threadPriority(a) - threadPriority(b);
-      if (p !== 0) return p;
+      if (p !== 0) {
+        return p;
+      }
       return b.head.createdAt.localeCompare(a.head.createdAt);
     });
   }, [reviewThreads, showResolved]);
@@ -492,7 +515,7 @@ export function CommentsPane({
       <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <span>All review comments resolved 🎉</span>
-          {resolvedCount > 0 ? (
+          {resolvedCount > 0 && (
             <button
               type="button"
               onClick={() => setShowResolved(true)}
@@ -500,7 +523,7 @@ export function CommentsPane({
             >
               show {resolvedCount}
             </button>
-          ) : null}
+          )}
         </div>
         {generalFooter}
       </div>
@@ -513,8 +536,11 @@ export function CommentsPane({
   const toggle = (id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -532,7 +558,7 @@ export function CommentsPane({
           />
         </li>
       ))}
-      {hidden > 0 ? (
+      {hidden > 0 && (
         <li>
           <button
             type="button"
@@ -542,8 +568,8 @@ export function CommentsPane({
             +{hidden} more
           </button>
         </li>
-      ) : null}
-      {resolvedCount > 0 ? (
+      )}
+      {resolvedCount > 0 && (
         <li>
           <button
             type="button"
@@ -553,11 +579,11 @@ export function CommentsPane({
             {showResolved ? `hide ${resolvedCount} resolved` : `show ${resolvedCount} resolved`}
           </button>
         </li>
-      ) : null}
+      )}
       {generalFooter ? <li>{generalFooter}</li> : null}
     </ul>
   );
-}
+};
 
 function CommentThreadRow({
   thread,
@@ -608,11 +634,11 @@ function CommentThreadRow({
           ) : null}
           <span className="opacity-50">·</span>
           <span>{formatRelative(Date.now() - new Date(head.createdAt).getTime())}</span>
-          {replies.length > 0 ? (
+          {replies.length > 0 && (
             <span className="opacity-50">
               · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
             </span>
-          ) : null}
+          )}
           <div className="ml-auto flex items-center gap-1">
             {onSpawn && status !== 'resolved' ? (
               <button
@@ -659,7 +685,7 @@ function CommentThreadRow({
         >
           {head.body.trim() || '(empty)'}
         </button>
-        {replies.length > 0 ? (
+        {replies.length > 0 && (
           <ul className="ml-2 mt-1 flex flex-col gap-1 border-l border-border-soft pl-2">
             {replies.map((r) => (
               <li key={r.id} className="flex flex-col gap-0.5">
@@ -679,13 +705,13 @@ function CommentThreadRow({
               </li>
             ))}
           </ul>
-        ) : null}
+        )}
       </div>
     </div>
   );
 }
 
-export function ReviewPane({
+export const ReviewPane = ({
   reviews,
   requests,
   pr,
@@ -697,7 +723,7 @@ export function ReviewPane({
   pr: PullRequestState;
   onOpenUrl: (url: string) => void;
   onSpawnFromReviewChanges?: () => void;
-}) {
+}) => {
   const summary = summarizeReview(pr, reviews, requests);
   const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews]);
   return (
@@ -722,7 +748,7 @@ export function ReviewPane({
           resolve all requested changes
         </button>
       ) : null}
-      {perReviewer.length > 0 ? (
+      {perReviewer.length > 0 && (
         <ul className="flex flex-col gap-0.5">
           {perReviewer.map((r) => (
             <li
@@ -745,8 +771,8 @@ export function ReviewPane({
             </li>
           ))}
         </ul>
-      ) : null}
-      {requests.length > 0 ? (
+      )}
+      {requests.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
           <span className="text-[10px] text-muted-foreground">awaiting:</span>
           {requests.map((r) => (
@@ -760,8 +786,8 @@ export function ReviewPane({
             </span>
           ))}
         </div>
-      ) : null}
-      {reviews.length === 0 && requests.length === 0 ? (
+      )}
+      {reviews.length === 0 && requests.length === 0 && (
         <button
           type="button"
           onClick={() => onOpenUrl(pr.url)}
@@ -770,17 +796,25 @@ export function ReviewPane({
           view on GitHub
           <ExternalLink size={9} aria-hidden />
         </button>
-      ) : null}
+      )}
     </div>
   );
-}
+};
 
 function ReviewStateIcon({ state }: { state: PrReviewState }) {
   const props = { size: 10, 'aria-hidden': true } as const;
-  if (state === 'approved') return <CheckCheck {...props} className="text-success" />;
-  if (state === 'changes_requested') return <AlertCircle {...props} className="text-danger" />;
-  if (state === 'commented') return <MessageSquare {...props} className="text-muted-foreground" />;
-  if (state === 'dismissed') return <MinusCircle {...props} className="text-muted-foreground" />;
+  if (state === 'approved') {
+    return <CheckCheck {...props} className="text-success" />;
+  }
+  if (state === 'changes_requested') {
+    return <AlertCircle {...props} className="text-danger" />;
+  }
+  if (state === 'commented') {
+    return <MessageSquare {...props} className="text-muted-foreground" />;
+  }
+  if (state === 'dismissed') {
+    return <MinusCircle {...props} className="text-muted-foreground" />;
+  }
   return <CircleDashed {...props} className="text-muted-foreground" />;
 }
 
@@ -789,7 +823,9 @@ function latestTerminalReviewsByAuthor(reviews: ReadonlyArray<PrReview>): Readon
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     map.set(r.author, r);
   }
   return [...map.values()];
@@ -837,23 +873,32 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
 
 function CheckConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
   const props = { size: 11, 'aria-hidden': true } as const;
-  if (conclusion === 'success') return <Check {...props} className="text-success" />;
-  if (conclusion === 'failure') return <XCircle {...props} className="text-danger" />;
-  if (conclusion === 'pending')
+  if (conclusion === 'success') {
+    return <Check {...props} className="text-success" />;
+  }
+  if (conclusion === 'failure') {
+    return <XCircle {...props} className="text-danger" />;
+  }
+  if (conclusion === 'pending') {
     return <Clock {...props} className="text-warning motion-safe:animate-pulse" />;
-  if (conclusion === 'cancelled' || conclusion === 'timed_out')
+  }
+  if (conclusion === 'cancelled' || conclusion === 'timed_out') {
     return <CircleSlash {...props} className="text-muted-foreground" />;
-  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale')
+  }
+  if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale') {
     return <MinusCircle {...props} className="text-muted-foreground" />;
-  if (conclusion === 'action_required') return <AlertCircle {...props} className="text-warning" />;
+  }
+  if (conclusion === 'action_required') {
+    return <AlertCircle {...props} className="text-warning" />;
+  }
   return <HelpCircle {...props} className="text-muted-foreground" />;
 }
 
-interface ReviewSummary {
+type ReviewSummary = {
   readonly label: string;
   readonly tone: string;
   readonly icon: ReactNode;
-}
+};
 
 function summarizeReview(
   pr: PullRequestState,
@@ -864,7 +909,9 @@ function summarizeReview(
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     latestByAuthor.set(r.author, r);
   }
   const approvals = [...latestByAuthor.values()].filter((r) => r.state === 'approved');
@@ -905,11 +952,11 @@ function summarizeReview(
   };
 }
 
-export function pickSmartTab(
+export const pickSmartTab = (
   pr: PullRequestState,
   detail: PrDetail | null,
   branchLastActivity: string | null,
-): GithubTabKey {
+): GithubTabKey => {
   const checks = detail?.checks ?? [];
   const hasFailing = checks.some(
     (c) =>
@@ -919,19 +966,29 @@ export function pickSmartTab(
       c.conclusion === 'action_required',
   );
   const hasPending = checks.some((c) => c.conclusion === 'pending');
-  if (hasFailing || hasPending) return 'ci';
-  if (pr.checks === 'failure' || pr.checks === 'pending') return 'ci';
+  if (hasFailing || hasPending) {
+    return 'ci';
+  }
+  if (pr.checks === 'failure' || pr.checks === 'pending') {
+    return 'ci';
+  }
 
   const reviews = detail?.reviews ?? [];
   const latestByAuthor = new Map<string, PrReviewState>();
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') continue;
+    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
+      continue;
+    }
     latestByAuthor.set(r.author, r.state);
   }
-  if ([...latestByAuthor.values()].some((s) => s === 'changes_requested')) return 'review';
-  if (pr.reviewDecision === 'changes_requested') return 'review';
+  if ([...latestByAuthor.values()].some((s) => s === 'changes_requested')) {
+    return 'review';
+  }
+  if (pr.reviewDecision === 'changes_requested') {
+    return 'review';
+  }
 
   const comments = detail?.comments ?? [];
   if (comments.length > 0) {
@@ -940,29 +997,45 @@ export function pickSmartTab(
       comments[0]!.createdAt,
     );
     const activity = branchLastActivity ?? pr.updatedAt;
-    if (last > activity) return 'comments';
+    if (last > activity) {
+      return 'comments';
+    }
   }
   return 'ci';
-}
+};
 
 function formatDuration(ms: number | null): string {
-  if (ms === null) return '';
-  if (ms < 1_000) return `${ms}ms`;
+  if (ms === null) {
+    return '';
+  }
+  if (ms < 1_000) {
+    return `${ms}ms`;
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 60) return `${s}s`;
+  if (s < 60) {
+    return `${s}s`;
+  }
   const m = Math.floor(s / 60);
   const rs = s % 60;
   return rs > 0 ? `${m}m ${rs}s` : `${m}m`;
 }
 
 function formatRelative(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  if (!Number.isFinite(ms) || ms < 0) {
+    return 'just now';
+  }
   const s = Math.round(ms / 1_000);
-  if (s < 45) return 'just now';
+  if (s < 45) {
+    return 'just now';
+  }
   const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) {
+    return `${m}m ago`;
+  }
   const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) {
+    return `${h}h ago`;
+  }
   const d = Math.round(h / 24);
   return `${d}d ago`;
 }

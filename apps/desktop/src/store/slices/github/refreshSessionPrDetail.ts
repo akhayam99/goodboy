@@ -12,24 +12,30 @@ type Params = {
 
 const DETAIL_TTL_MS = 30_000;
 
-export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
+export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
     const existing = get().sessionGithub[sessionId];
     const pr = existing?.pr ?? null;
-    if (!pr) return;
-    // In-flight dedup: the ~3-5s GitHub detail call was firing twice on cold
-    // session switches because two effect runs both saw existing.detail still
-    // null. Block the second call by checking the loading flag the first one
-    // sets synchronously below.
-    if (!opts?.force && existing?.detailLoading) return;
+    if (!pr) {
+      return;
+    }
+    if (!opts?.force && existing?.detailLoading) {
+      return;
+    }
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) return;
+    if (!workspace) {
+      return;
+    }
     const fresh = existing?.detailFetchedAt
       ? Date.now() - new Date(existing.detailFetchedAt).getTime()
       : Number.POSITIVE_INFINITY;
-    if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) return;
+    if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) {
+      return;
+    }
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,
@@ -46,8 +52,6 @@ export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
         },
       },
     }));
-    // Retry loop, same shape as `refreshSessionPr`. Polling sweeps pass
-    // `retries: 1` so a transient gh failure gets a second chance.
     const maxAttempts = (opts?.retries ?? 0) + 1;
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -114,4 +118,4 @@ export function refreshSessionPrDetail(set: SetFn, get: GetFn) {
       },
     }));
   };
-}
+};

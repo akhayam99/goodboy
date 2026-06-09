@@ -6,24 +6,24 @@ import { ghBaseBranches } from '../../github';
 import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly defaultTitle: string;
   readonly closedPr?: { number: number; url: string };
   readonly onClose: () => void;
   readonly onStudioClose: () => void;
-}
+};
 
 const FIELD =
   'w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-primary' as const;
 
-export function CreatePrDialog({
+export const CreatePrDialog = ({
   sessionId,
   defaultTitle,
   closedPr,
   onClose,
   onStudioClose,
-}: Props) {
+}: Props) => {
   const createPrForSession = useAppStore((s) => s.createPrForSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
@@ -44,12 +44,18 @@ export function CreatePrDialog({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!workspaceRoot) return;
+    if (!workspaceRoot) {
+      return;
+    }
     let cancelled = false;
     void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       setBranches(list);
-      if (defaultBranch) setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+      if (defaultBranch) {
+        setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+      }
     });
     return () => {
       cancelled = true;
@@ -57,7 +63,9 @@ export function CreatePrDialog({
   }, [workspaceRoot, workspaceId]);
 
   const onCreate = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy('create');
     setError(null);
     try {
@@ -71,7 +79,9 @@ export function CreatePrDialog({
   };
 
   const onCreateWithAi = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy('ai');
     setError(null);
     try {
@@ -146,7 +156,7 @@ export function CreatePrDialog({
             disabled={busy !== null || title.trim().length === 0}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            {busy === 'create' ? <Loader2 size={13} aria-hidden className="animate-spin" /> : null}
+            {busy === 'create' && <Loader2 size={13} aria-hidden className="animate-spin" />}
             Create PR
           </button>
         </div>
@@ -221,4 +231,4 @@ export function CreatePrDialog({
       </div>
     </Dialog>
   );
-}
+};

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 const MAX_SLUG_LENGTH = 40;
 
-export function sanitizeSlug(input: string): string {
+export const sanitizeSlug = (input: string): string => {
   const cleaned = input
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '-')
@@ -15,4 +15,4 @@ export function sanitizeSlug(input: string): string {
     return createHash('sha256').update(input).digest('hex').slice(0, 8);
   }
   return cleaned;
-}
+};

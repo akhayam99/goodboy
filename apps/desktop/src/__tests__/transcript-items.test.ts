@@ -40,7 +40,9 @@ describe('reduceTranscript, permission_request', () => {
     expect(items).toHaveLength(1);
     const item = items[0]!;
     expect(item.kind).toBe('permission_request');
-    if (item.kind !== 'permission_request') return;
+    if (item.kind !== 'permission_request') {
+      return;
+    }
     expect(item.toolName).toBe('bash');
     expect(item.toolUseId).toBe('tu-1');
     expect(item.runId).toBe(RUN);
@@ -68,7 +70,9 @@ describe('reduceTranscript, permission_decision', () => {
     expect(items).toHaveLength(1);
     const item = items[0]!;
     expect(item.kind).toBe('permission_decision');
-    if (item.kind !== 'permission_decision') return;
+    if (item.kind !== 'permission_decision') {
+      return;
+    }
     expect(item.decision).toBe('allow');
     expect(item.ruleId).toBe(RULE_ID);
     expect(item.decidedBy).toBe('engine');
@@ -79,7 +83,9 @@ describe('reduceTranscript, permission_decision', () => {
     const items = reduceTranscript([permDecEvent('tu-2', 'deny', null, 'default')]);
     const item = items[0]!;
     expect(item.kind).toBe('permission_decision');
-    if (item.kind !== 'permission_decision') return;
+    if (item.kind !== 'permission_decision') {
+      return;
+    }
     expect(item.decision).toBe('deny');
     expect(item.ruleId).toBeNull();
     expect(item.decidedBy).toBe('default');
@@ -95,7 +101,9 @@ describe('reduceTranscript, permission_decision', () => {
     const items = reduceTranscript([permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null)]);
     const dec = items[1]!;
     expect(dec.kind).toBe('permission_decision');
-    if (dec.kind !== 'permission_decision') return;
+    if (dec.kind !== 'permission_decision') {
+      return;
+    }
     expect(dec.toolName).toBe('bash');
   });
 
@@ -103,7 +111,9 @@ describe('reduceTranscript, permission_decision', () => {
     const items = reduceTranscript([permDecEvent('tu-orphan', 'deny', null)]);
     const dec = items[0]!;
     expect(dec.kind).toBe('permission_decision');
-    if (dec.kind !== 'permission_decision') return;
+    if (dec.kind !== 'permission_decision') {
+      return;
+    }
     expect(dec.toolName).toBe('tu-orphan');
   });
 });

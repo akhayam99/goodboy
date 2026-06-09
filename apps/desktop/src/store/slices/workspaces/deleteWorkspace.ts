@@ -5,21 +5,14 @@ import { cancelTurn } from '../../../features/chat/turn';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
 import type { GetFn, SetFn } from './types';
 
-/**
- * Soft "disconnect". Sessions, worktrees, transcripts are left untouched in
- * the DB. The workspace just stops appearing in the sidebar. Re-adding it
- * via `addWorkspace` with the same `rootPath` reactivates the row and brings
- * everything back. UI uses this everywhere; the destructive hard-delete on
- * `packages/db` is kept only for data-purge flows.
- */
-export function deleteWorkspace(set: SetFn, get: GetFn) {
+export const deleteWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId) => {
     const state = get();
     const workspace = state.workspaces.find((w) => w.id === id);
-    if (!workspace) throw new Error(`workspace not found: ${id}`);
+    if (!workspace) {
+      throw new Error(`workspace not found: ${id}`);
+    }
 
-    // Cancel any running turns for this workspace so we don't leak processes
-    // emitting events into a workspace the user can no longer see.
     const wasCurrentWorkspace = state.currentWorkspaceId === id;
     if (wasCurrentWorkspace) {
       const runningSessions = state.sessions.filter((s) => s.state.kind === 'running');
@@ -30,7 +23,6 @@ export function deleteWorkspace(set: SetFn, get: GetFn) {
           }),
         ),
       );
-      // Best-effort: kill terminal shells for all sessions in this workspace.
       const termSessions = state.sessions.filter(
         (s) => state.terminalSessions[s.id as SessionId] === 'open',
       );
@@ -42,8 +34,6 @@ export function deleteWorkspace(set: SetFn, get: GetFn) {
     const now = new Date().toISOString() as IsoDateTime;
     const prevWorkspaces = state.workspaces;
 
-    // Optimistic: drop from sidebar list (and clear per-ws caches if it was
-    // the active one).
     set((s) => {
       const nextArchived = { ...s.archivedSessions };
       delete nextArchived[id];
@@ -94,4 +84,4 @@ export function deleteWorkspace(set: SetFn, get: GetFn) {
       'Re-add the same path to bring it back with all its sessions.',
     );
   };
-}
+};

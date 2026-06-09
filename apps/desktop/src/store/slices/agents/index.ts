@@ -10,7 +10,7 @@ import { setAgentKind } from './setAgentKind';
 import { spawnAgent } from './spawnAgent';
 import type { GetFn, SetFn } from './types';
 
-export function createAgentsSlice(set: SetFn, get: GetFn) {
+export const createAgentsSlice = (set: SetFn, get: GetFn) => {
   return {
     setAgentKind: setAgentKind(set),
     setAgentEffortOverride: setAgentEffortOverride(set),
@@ -23,4 +23,4 @@ export function createAgentsSlice(set: SetFn, get: GetFn) {
     deleteAgent: deleteAgent(set, get),
     activateNextResolver: activateNextResolver(set, get),
   };
-}
+};

@@ -5,33 +5,35 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptCard } from '../TranscriptCards';
 
-interface OperationsClusterProps {
+type OperationsClusterProps = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
-}
+};
 
 function runningTool(
   items: ReadonlyArray<TranscriptItem>,
 ): Extract<TranscriptItem, { kind: 'tool_call' }> | null {
   for (let i = items.length - 1; i >= 0; i -= 1) {
     const item = items[i]!;
-    if (item.kind === 'tool_call' && !item.ended) return item;
+    if (item.kind === 'tool_call' && !item.ended) {
+      return item;
+    }
   }
   return null;
 }
 
-export function OperationsCluster({
+export const OperationsCluster = ({
   items,
   sessionId = null,
   agentId = null,
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
-}: OperationsClusterProps) {
+}: OperationsClusterProps) => {
   const [open, setOpen] = useState(false);
   const running = runningTool(items);
   const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
@@ -113,4 +115,4 @@ export function OperationsCluster({
       ) : null}
     </div>
   );
-}
+};

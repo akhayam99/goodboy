@@ -5,17 +5,17 @@ type DriftSignal =
   | 'file-edit-from-readonly-kind'
   | 'impl-output-from-readonly-kind';
 
-export interface DriftViolation {
+export type DriftViolation = {
   readonly kind: AgentKind;
   readonly signal: DriftSignal;
   readonly detail: string;
-}
+};
 
-export interface DriftDetectionInput {
+export type DriftDetectionInput = {
   readonly agentKind: AgentKind;
   readonly assistantText: string;
   readonly filesEdited: ReadonlyArray<string>;
-}
+};
 
 const PLAN_MARKER_RE = /<<plan>>/;
 
@@ -40,7 +40,7 @@ const IMPL_OUTPUT_EXEMPT: ReadonlySet<AgentKind> = new Set([
 
 const DOC_EXTENSIONS = /\.(?:md|mdx|txt|rst)$/;
 
-export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViolation> {
+export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViolation> => {
   const { agentKind, assistantText, filesEdited } = input;
   const violations: DriftViolation[] = [];
 
@@ -76,4 +76,4 @@ export function detectDrift(input: DriftDetectionInput): ReadonlyArray<DriftViol
   }
 
   return violations;
-}
+};

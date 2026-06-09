@@ -2,12 +2,12 @@ import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types';
 
 export type { AgentEffort, AgentRole } from '@goodboy/types';
 
-export interface RoleDefaults {
+export type RoleDefaults = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: AgentEffort;
   readonly description: string;
-}
+};
 
 export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
   scout: {
@@ -74,15 +74,10 @@ export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
 
 const KNOWN_ROLES = new Set<string>(Object.keys(ROLE_DEFAULTS));
 
-export function isAgentRole(role: string): role is AgentRole {
+export const isAgentRole = (role: string): role is AgentRole => {
   return KNOWN_ROLES.has(role);
-}
+};
 
-/**
- * Resolve a role string from the workflow library to its defaults. Unknown
- * roles fall back to `custom` instead of throwing, library entries are
- * data, not code, and a typo there should still produce a usable agent.
- */
-export function defaultsForRole(role: string): RoleDefaults {
+export const defaultsForRole = (role: string): RoleDefaults => {
   return isAgentRole(role) ? ROLE_DEFAULTS[role] : ROLE_DEFAULTS.custom;
-}
+};

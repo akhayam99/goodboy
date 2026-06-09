@@ -6,13 +6,13 @@ import type {
   TerminalTabStatus,
 } from '../../../../shared/types/terminal';
 
-interface Props {
+type Props = {
   readonly tabs: readonly TerminalTab[];
   readonly activeId: TerminalTabId | null;
   readonly onSelect: (id: TerminalTabId) => void;
   readonly onClose: (id: TerminalTabId) => void;
   readonly onSpawn: () => void;
-}
+};
 
 const STATUS_DOT: Record<TerminalTabStatus, string> = {
   running: 'bg-success',
@@ -20,7 +20,7 @@ const STATUS_DOT: Record<TerminalTabStatus, string> = {
   attention: 'bg-warning',
 };
 
-export function TerminalTabStrip({ tabs, activeId, onSelect, onClose, onSpawn }: Props) {
+export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }: Props) => {
   return (
     <div className="flex items-center gap-0.5 overflow-x-auto px-2 py-1">
       {tabs.map((t) => {
@@ -74,4 +74,4 @@ export function TerminalTabStrip({ tabs, activeId, onSelect, onClose, onSpawn }:
       </button>
     </div>
   );
-}
+};

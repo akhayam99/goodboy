@@ -3,16 +3,11 @@ import { cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly session: Session;
-}
+};
 
-/**
- * Compact icon toggle for the per-session autorun flag. Only meaningful when
- * the session has a workflow attached, without one the autorun loop has
- * nothing to step through, so the control disables and dims.
- */
-export function AutoRunToggle({ session }: Props) {
+export const AutoRunToggle = ({ session }: Props) => {
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const hasWorkflow = session.workflowRuns.length > 0;
   const anyRunAuto = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
@@ -38,15 +33,15 @@ export function AutoRunToggle({ session }: Props) {
       type="button"
       disabled={!hasWorkflow}
       onClick={() => {
-        if (!hasWorkflow) return;
+        if (!hasWorkflow) {
+          return;
+        }
         void setSessionAutoRun(session.id as SessionId, !on);
       }}
       title={tooltip}
       aria-label={ariaLabel}
       aria-pressed={on}
       className={cn(
-        // Fixed height so the row never reflows vertically when the label
-        // appears. Width grows leftward into the row as 'auto' fades in.
         'inline-flex h-6 shrink-0 items-center justify-end rounded-md px-1 transition-colors',
         cls,
       )}
@@ -64,4 +59,4 @@ export function AutoRunToggle({ session }: Props) {
       {on ? <Zap size={13} aria-hidden /> : <ZapOff size={13} aria-hidden />}
     </button>
   );
-}
+};

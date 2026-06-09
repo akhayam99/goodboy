@@ -3,6 +3,6 @@ import { parseAnthropicEnvelopeLine, type ParseContext } from '../shared/anthrop
 
 export type { ParseContext };
 
-export function parseStreamJsonLine(line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> {
+export const parseStreamJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
   return parseAnthropicEnvelopeLine(line, ctx, { adapter: 'anthropic', logTag: 'claude-adapter' });
-}
+};

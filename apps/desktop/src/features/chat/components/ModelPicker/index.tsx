@@ -31,7 +31,7 @@ import {
 const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
 const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-export interface Props {
+export type Props = {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly models: ReadonlyArray<string>;
   readonly provider: ProviderId;
@@ -41,8 +41,6 @@ export interface Props {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly disabledTitle?: string;
-  /** Session-persistent defaults. When the effective provider/model differs, the
-   *  chip switches to "override" styling and exposes a reset affordance. */
   readonly defaultProvider: ProviderId;
   readonly defaultModel: string;
   readonly onSelectProvider: (id: ProviderId) => void;
@@ -50,9 +48,9 @@ export interface Props {
   readonly onSelectEffort: (level: EffortLevel) => void;
   readonly onSelectVerbosity: (level: VerbosityLevel) => void;
   readonly onResetToDefault: () => void;
-}
+};
 
-export function ModelPicker({
+export const ModelPicker = ({
   providers,
   models,
   provider,
@@ -69,18 +67,24 @@ export function ModelPicker({
   onSelectEffort,
   onSelectVerbosity,
   onResetToDefault,
-}: Props) {
+}: Props) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isOverride = provider !== defaultProvider || model !== defaultModel;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onClick);
     window.addEventListener('keydown', onEsc);
@@ -92,7 +96,9 @@ export function ModelPicker({
 
   useEffect(() => {
     const handler = () => {
-      if (!disabled) setOpen(true);
+      if (!disabled) {
+        setOpen(true);
+      }
     };
     window.addEventListener('goodboy:open-model-picker', handler);
     return () => window.removeEventListener('goodboy:open-model-picker', handler);
@@ -102,10 +108,6 @@ export function ModelPicker({
   const showEffort = effortLevels !== null;
   const tier = modelTier(model);
 
-  // Two-level grouping: family → (subfamily ?? null) → ids. Subfamily=null
-  // means "render as a flat chip row under the family label" (composer,
-  // cursor-auto). Subfamily set means "render as a FamilyVersionRow" with
-  // a subfamily label and version chips.
   const groupedModels = useMemo(() => {
     const sorted = [...models].sort((a, b) => modelWeight(a) - modelWeight(b));
     const byFamily = new Map<ModelFamily, Map<string | null, string[]>>();
@@ -193,9 +195,6 @@ export function ModelPicker({
           aria-label="model picker"
           className="absolute bottom-full right-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-2 text-xs shadow-lg ring-1 ring-border-soft"
         >
-          {/* Session default banner: shows what each new turn falls back to when
-              no override is active. Surfaces "override active" status without
-              hunting through chip styles. */}
           <div
             className={cn(
               'mx-2 mb-1 flex items-start gap-1.5 rounded px-2 py-1 text-[10px] leading-relaxed',
@@ -221,15 +220,18 @@ export function ModelPicker({
             ) : null}
           </div>
 
-          {/* Provider */}
           <PickerSection label="Provider" hint="Which CLI agent runs your turns">
             <div className={CHIP_ROW}>
               {providers.map((id) => {
                 const isConnected = connectedProviders.includes(id);
                 const active = provider === id;
                 const chipTone = (() => {
-                  if (active) return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
-                  if (isConnected) return CHIP_INACTIVE;
+                  if (active) {
+                    return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
+                  }
+                  if (isConnected) {
+                    return CHIP_INACTIVE;
+                  }
                   return 'text-muted-foreground/35 hover:bg-muted/50';
                 })();
                 return (
@@ -241,9 +243,7 @@ export function ModelPicker({
                     className={cn('rounded-full px-2.5 py-0.5 transition-colors', chipTone)}
                   >
                     {PROVIDER_LABEL[id]}
-                    {!isConnected ? (
-                      <span className="ml-0.5 text-[9px] text-warning">↗</span>
-                    ) : null}
+                    {!isConnected && <span className="ml-0.5 text-[9px] text-warning">↗</span>}
                   </button>
                 );
               })}
@@ -251,7 +251,6 @@ export function ModelPicker({
           </PickerSection>
           <PickerDivider />
 
-          {/* Model, family/subfamily/variant chip layout. */}
           {[...groupedModels.entries()].map(([fam, subMap]) => {
             const subKeys = [...subMap.keys()];
             const onlyFlat = subKeys.length === 1 && subKeys[0] === null;
@@ -301,7 +300,6 @@ export function ModelPicker({
           })}
           <PickerDivider />
 
-          {/* Effort, always visible */}
           <PickerSection label="Effort" hint="How hard the model thinks before answering">
             {showEffort && effortLevels ? (
               <div className={CHIP_ROW}>
@@ -329,7 +327,6 @@ export function ModelPicker({
           </PickerSection>
           <PickerDivider />
 
-          {/* Verbosity */}
           <PickerSection label="Verbosity" hint="How detailed the replies should be">
             <div className={CHIP_ROW}>
               {VERBOSITY_LEVELS.map((level) => (
@@ -353,7 +350,7 @@ export function ModelPicker({
       ) : null}
     </div>
   );
-}
+};
 
 function PickerSection({
   label,

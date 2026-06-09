@@ -11,11 +11,11 @@ import { AGENT_KIND_DEFAULTS, inferAgentKindFromName, ROLE_TO_KIND } from '../..
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
   session: Session;
-}
+};
 
 type Selection =
   | { readonly kind: 'preset'; readonly id: WorkflowId }
@@ -30,7 +30,7 @@ function stepKind(step: Workflow['steps'][number]): AgentKind {
   return step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
 }
 
-export function StartWorkflowDialog({ open, onClose, session }: Props) {
+export const StartWorkflowDialog = ({ open, onClose, session }: Props) => {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
@@ -45,7 +45,9 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const hasPresets = phaseTemplates.some((t) => t.isPreset !== false && !t.deletedAt);
     setSelection(hasPresets ? null : { kind: 'custom' });
     setCustomId('');
@@ -66,7 +68,9 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
   const canSpawn = effectiveId !== '' && !busy;
 
   const onSpawn = async () => {
-    if (effectiveId === '') return;
+    if (effectiveId === '') {
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
@@ -151,7 +155,7 @@ export function StartWorkflowDialog({ open, onClose, session }: Props) {
       />
     </Dialog>
   );
-}
+};
 
 function WorkflowRail({
   presets,
@@ -291,11 +295,11 @@ function PresetRailRow({
         {shown.map((k, i) => (
           <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
         ))}
-        {kinds.length > shown.length ? (
+        {kinds.length > shown.length && (
           <span className="text-[10px] text-muted-foreground/40">
             +{kinds.length - shown.length}
           </span>
-        ) : null}
+        )}
       </span>
     </button>
   );

@@ -3,11 +3,10 @@ import { cn } from '../cn';
 
 export type SelectSize = 'sm' | 'md';
 
-export interface SelectProps extends Omit<ComponentProps<'select'>, 'size'> {
+export type SelectProps = Omit<ComponentProps<'select'>, 'size'> & {
   size?: SelectSize;
-  /** Stretch the wrapper to its container's width and make `<select>` w-full. */
   block?: boolean;
-}
+};
 
 const SIZE: Record<SelectSize, string> = {
   sm: 'h-7 pl-2 pr-7 text-xs',
@@ -19,7 +18,13 @@ const CHEVRON_OFFSET: Record<SelectSize, string> = {
   md: 'right-2',
 };
 
-export function Select({ className, size = 'md', block = false, children, ...rest }: SelectProps) {
+export const Select = ({
+  className,
+  size = 'md',
+  block = false,
+  children,
+  ...rest
+}: SelectProps) => {
   return (
     <span className={cn('relative items-center', block ? 'flex w-full' : 'inline-flex')}>
       <select
@@ -54,4 +59,4 @@ export function Select({ className, size = 'md', block = false, children, ...res
       </svg>
     </span>
   );
-}
+};

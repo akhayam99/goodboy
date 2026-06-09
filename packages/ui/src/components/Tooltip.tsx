@@ -3,7 +3,7 @@ import { cn } from '../cn';
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 
-export interface TooltipProps {
+export type TooltipProps = {
   content: string;
   side?: TooltipSide;
   children: React.ReactElement<{
@@ -12,7 +12,7 @@ export interface TooltipProps {
     onFocus?: React.FocusEventHandler;
     onBlur?: React.FocusEventHandler;
   }>;
-}
+};
 
 const SIDE_CLASSES: Record<TooltipSide, string> = {
   top: 'bottom-full left-1/2 -translate-x-1/2 mb-1.5',
@@ -21,7 +21,7 @@ const SIDE_CLASSES: Record<TooltipSide, string> = {
   right: 'left-full top-1/2 -translate-y-1/2 ml-1.5',
 };
 
-export function Tooltip({ content, side = 'top', children }: TooltipProps) {
+export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
   const [visible, setVisible] = useState(false);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -72,4 +72,4 @@ export function Tooltip({ content, side = 'top', children }: TooltipProps) {
       {enhanced}
     </span>
   );
-}
+};

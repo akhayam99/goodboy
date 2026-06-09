@@ -17,12 +17,12 @@ import { IssuePicker } from '../../../../features/integrations/linear/IssuePicke
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
   workspaceId: WorkspaceId;
   onOpenSettings: () => void;
-}
+};
 
 const PROVIDER_LABELS: Record<ProviderId, string> = {
   anthropic: 'Claude Code',
@@ -32,11 +32,17 @@ const PROVIDER_LABELS: Record<ProviderId, string> = {
 };
 
 function formatError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (typeof err === 'string') {
+    return err;
+  }
   if (err && typeof err === 'object') {
     const maybe = err as { message?: unknown };
-    if (typeof maybe.message === 'string') return maybe.message;
+    if (typeof maybe.message === 'string') {
+      return maybe.message;
+    }
     try {
       return JSON.stringify(err);
     } catch {
@@ -50,16 +56,18 @@ const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {
-    if (connectedIds.has(id)) return id;
+    if (connectedIds.has(id)) {
+      return id;
+    }
   }
   return 'anthropic';
 }
 
-interface SummarizeTaskResult {
+type SummarizeTaskResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
 function getCheapModel(providerId: ProviderId): string {
   switch (providerId) {
@@ -110,10 +118,6 @@ function slugifyLive(input: string): string {
     .replace(/-+$/, '');
 }
 
-// Live sanitizer for the hand-typed branch slug. Unlike slugifyLive (which
-// derives a slug from the prose goal) this preserves the user's casing, an
-// uppercase branch stays uppercase. Any run of spaces or disallowed chars
-// collapses to a single dash so e.g. ten spaces yield one dash.
 function sanitizeBranchSlug(input: string): string {
   return input
     .replace(/[^a-zA-Z0-9-]+/g, '-')
@@ -134,7 +138,9 @@ const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
 function isValidBranchSlug(slug: string): boolean {
   const s = slug.trim();
-  if (!s) return false;
+  if (!s) {
+    return false;
+  }
   return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
 }
 
@@ -158,7 +164,9 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
   let text = raw;
   try {
     const parsed = JSON.parse(raw) as { result?: string };
-    if (typeof parsed.result === 'string') text = parsed.result;
+    if (typeof parsed.result === 'string') {
+      text = parsed.result;
+    }
   } catch {
     // not json, use raw
   }
@@ -172,7 +180,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .join('-');
 }
 
-export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }: Props) {
+export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
@@ -202,9 +210,6 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
     }
   });
 
-  // Hide the issue picker entirely on workspaces without a Linear integration.
-  // Defensive read: tests mock the store with a shallow shape that may not
-  // include the integrations slot.
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
   );
@@ -214,7 +219,9 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
   const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)));
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setGoal('');
     setBranchSlug('');
     setSlugTouched(false);
@@ -235,15 +242,15 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
     setSlugTouched(false);
   };
 
-  // Drop the cached branch list when the workspace changes (different repo →
-  // different branches). Reuse the cache across reopens of the same workspace.
   useEffect(() => {
     setExistingBranches(EMPTY_LOCAL_BRANCHES);
     setBranchesLoaded(false);
   }, [workspaceId]);
 
   useEffect(() => {
-    if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) return;
+    if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
+      return;
+    }
     setBranchesLoading(true);
     listLocalBranches(workspace.rootPath)
       .then(setExistingBranches)
@@ -255,13 +262,17 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
   }, [open, branchMode, branchesLoaded, workspace?.rootPath]);
 
   useEffect(() => {
-    if (slugTouched) return;
+    if (slugTouched) {
+      return;
+    }
     setBranchSlug(slugifyLive(goal));
   }, [goal, slugTouched]);
 
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
-    if (!trimmed || slugGenerating) return;
+    if (!trimmed || slugGenerating) {
+      return;
+    }
     setSlugGenerating(true);
     generateBranchSlug(trimmed, defaultProvider)
       .then((slug) => {
@@ -327,8 +338,6 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
       showToast('success', `session created: ${session.goal}`);
       onClose();
       if (setupWorkflow) {
-        // Defer one tick so the closing dialog finishes its leave transition
-        // and the new session becomes current before we open the next step.
         setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent('goodboy:open-workflow-picker', {
@@ -554,7 +563,7 @@ export function NewSessionDialog({ open, onClose, workspaceId, onOpenSettings }:
       </div>
     </Dialog>
   );
-}
+};
 
 type Tone = 'primary' | 'success';
 

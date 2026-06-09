@@ -6,7 +6,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SessionExternalTaskRow {
+type SessionExternalTaskRow = {
   session_id: string;
   provider: string;
   external_id: string;
@@ -14,7 +14,7 @@ interface SessionExternalTaskRow {
   url: string;
   title: string;
   created_at: number;
-}
+};
 
 function toDomain(row: SessionExternalTaskRow): SessionExternalTask {
   return {
@@ -28,10 +28,10 @@ function toDomain(row: SessionExternalTaskRow): SessionExternalTask {
   };
 }
 
-export async function setSessionExternalTask(
+export const setSessionExternalTask = async (
   db: Database,
   task: SessionExternalTask,
-): Promise<void> {
+): Promise<void> => {
   const created = Date.parse(task.createdAt);
   await db.execute(
     `INSERT INTO session_external_tasks (session_id, provider, external_id, identifier, url, title, created_at)
@@ -52,29 +52,24 @@ export async function setSessionExternalTask(
       created,
     ],
   );
-}
+};
 
-export async function getSessionExternalTask(
+export const getSessionExternalTask = async (
   db: Database,
   sessionId: SessionId,
-): Promise<SessionExternalTask | null> {
+): Promise<SessionExternalTask | null> => {
   const rows = await db.select<SessionExternalTaskRow>(
     'SELECT * FROM session_external_tasks WHERE session_id = ? LIMIT 1',
     [sessionId],
   );
   const row = rows[0];
   return row ? toDomain(row) : null;
-}
+};
 
-/**
- * Return every external task linked to a session in this workspace. Joins
- * session_external_tasks with sessions so the caller can hydrate the whole
- * cache in one round-trip on workspace switch.
- */
-export async function listExternalTasksForWorkspace(
+export const listExternalTasksForWorkspace = async (
   db: Database,
   workspaceId: string,
-): Promise<ReadonlyArray<SessionExternalTask>> {
+): Promise<ReadonlyArray<SessionExternalTask>> => {
   const rows = await db.select<SessionExternalTaskRow>(
     `SELECT t.session_id, t.provider, t.external_id, t.identifier, t.url, t.title, t.created_at
        FROM session_external_tasks t
@@ -83,8 +78,11 @@ export async function listExternalTasksForWorkspace(
     [workspaceId],
   );
   return rows.map(toDomain);
-}
+};
 
-export async function removeSessionExternalTask(db: Database, sessionId: SessionId): Promise<void> {
+export const removeSessionExternalTask = async (
+  db: Database,
+  sessionId: SessionId,
+): Promise<void> => {
   await db.execute('DELETE FROM session_external_tasks WHERE session_id = ?', [sessionId]);
-}
+};

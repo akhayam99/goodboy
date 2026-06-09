@@ -8,18 +8,13 @@ import {
 import { cn } from '@goodboy/ui';
 import type { PullRequestStateKind } from '@goodboy/types';
 
-interface PrStateMeta {
+type PrStateMeta = {
   readonly icon: React.ElementType;
   readonly label: string;
   readonly textClass: string;
   readonly bgClass: string;
-}
+};
 
-// Single source of truth for PR-state visual language. The activity rail
-// renders icon-only; the GithubCard renders icon + #number; the right-panel
-// GitHub tab and status-bar signal render the full badge with label word.
-// Colors lift from existing tokens (success/merged/danger/muted) so there's
-// no new palette work, see plan §H.5.
 const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   draft: {
     icon: GitPullRequestDraft,
@@ -53,27 +48,27 @@ const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   },
 };
 
-export function pullRequestMeta(state: PullRequestStateKind): PrStateMeta {
+export const pullRequestMeta = (state: PullRequestStateKind): PrStateMeta => {
   return PR_META[state];
-}
+};
 
 type Variant = 'icon' | 'compact' | 'badge';
 
-interface Props {
+type Props = {
   readonly state: PullRequestStateKind;
-  /**
-   * - `icon`, single 10–12px icon, no text. Use when space is tight (sidebar rail).
-   * - `compact`, icon + #number, no label word. Use in dense rows.
-   * - `badge`, colored chip with icon + label word (+ optional #number). The
-   *   richest variant, use in headers, status bar, inbox entries.
-   */
   readonly variant?: Variant;
   readonly number?: number;
   readonly iconSize?: number;
   readonly className?: string;
-}
+};
 
-export function PullRequestChip({ state, variant = 'icon', number, iconSize, className }: Props) {
+export const PullRequestChip = ({
+  state,
+  variant = 'icon',
+  number,
+  iconSize,
+  className,
+}: Props) => {
   const meta = PR_META[state];
   const Icon = meta.icon;
 
@@ -100,12 +95,11 @@ export function PullRequestChip({ state, variant = 'icon', number, iconSize, cla
         )}
       >
         <Icon size={iconSize ?? 12} aria-hidden />
-        {number !== undefined ? <span>#{number}</span> : null}
+        {number !== undefined && <span>#{number}</span>}
       </span>
     );
   }
 
-  // badge: full colored chip with label word
   return (
     <span
       className={cn(
@@ -117,14 +111,14 @@ export function PullRequestChip({ state, variant = 'icon', number, iconSize, cla
     >
       <Icon size={iconSize ?? 10} aria-hidden />
       <span>{meta.label}</span>
-      {number !== undefined ? (
+      {number !== undefined && (
         <>
           <span aria-hidden className="opacity-40">
             ·
           </span>
           <span className="normal-case tracking-normal">#{number}</span>
         </>
-      ) : null}
+      )}
     </span>
   );
-}
+};

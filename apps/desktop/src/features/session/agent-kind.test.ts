@@ -216,7 +216,9 @@ describe('boundary systemPrompts', () => {
 
   it('non-generic prompts contain FORBIDDEN', () => {
     for (const kind of ALL_KINDS) {
-      if (kind === 'generic') continue;
+      if (kind === 'generic') {
+        continue;
+      }
       expect(AGENT_KIND_DEFAULTS[kind].systemPrompt).toContain('FORBIDDEN');
     }
   });

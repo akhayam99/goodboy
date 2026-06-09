@@ -22,7 +22,7 @@ import {
   type WorkspaceTurn,
 } from './lib';
 
-interface Props {
+type Props = {
   readonly workspaceSummary: TelemetrySummary | null;
   readonly providers: ReadonlyArray<ProviderSpendEntry>;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -30,9 +30,9 @@ interface Props {
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly onDismissAlert: (id: string) => void;
   readonly onSelect: (scope: BudgetScope) => void;
-}
+};
 
-export function OverviewPanel({
+export const OverviewPanel = ({
   workspaceSummary,
   providers,
   turns,
@@ -40,7 +40,7 @@ export function OverviewPanel({
   alerts,
   onDismissAlert,
   onSelect,
-}: Props) {
+}: Props) => {
   const records = useMemo(() => turns.map((t) => t.record), [turns]);
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
   const totalTokens = (workspaceSummary?.inputTokens ?? 0) + (workspaceSummary?.outputTokens ?? 0);
@@ -72,7 +72,7 @@ export function OverviewPanel({
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {providers.length > 0 ? (
+        {providers.length > 0 && (
           <Widget label="spend by provider" hint="share of workspace total">
             <div className="flex flex-col gap-3">
               {providers.map((entry) => {
@@ -91,7 +91,7 @@ export function OverviewPanel({
               })}
             </div>
           </Widget>
-        ) : null}
+        )}
 
         <Widget label="cost per turn">
           <Sparkline values={turnCosts} />
@@ -105,4 +105,4 @@ export function OverviewPanel({
       <TurnsTable turns={turns} showProvider={showProvider} showSession />
     </PanelShell>
   );
-}
+};

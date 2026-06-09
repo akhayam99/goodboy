@@ -9,8 +9,6 @@ import {
 import type { SessionViewPrefs } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../shared/lib/storage-keys';
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
 function sid(n: number): SessionId {
   return `session-${n}` as SessionId;
 }
@@ -94,8 +92,6 @@ function flatIds(groups: ReadonlyArray<GroupedSessions>): SessionId[] {
   return groups.flatMap((g) => g.sessions.map((s) => s.id));
 }
 
-// ─── sort tests ─────────────────────────────────────────────────────────────
-
 describe('sortAndGroupSessions, updatedAt sort', () => {
   const s1 = makeSession(sid(1), {
     updatedAt: '2024-01-03T00:00:00.000Z',
@@ -175,13 +171,10 @@ describe('sortAndGroupSessions, createdAt sort', () => {
     const a = makeSession(sid(10), { createdAt: '2024-01-01T00:00:00.000Z' });
     const b = makeSession(sid(9), { createdAt: '2024-01-01T00:00:00.000Z' });
     const result = sortAndGroupSessions([a, b], prefs, {});
-    // lexicographic id sort: 'session-10' < 'session-9'
     expect(flatIds(result)[0]).toBe(sid(10));
     expect(flatIds(result)[1]).toBe(sid(9));
   });
 });
-
-// ─── userStatus grouping ─────────────────────────────────────────────────────
 
 describe('sortAndGroupSessions, userStatus grouping', () => {
   const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'userStatus' };
@@ -218,8 +211,6 @@ describe('sortAndGroupSessions, userStatus grouping', () => {
     expect(result[0]!.sessions).toHaveLength(3);
   });
 });
-
-// ─── PR grouping ─────────────────────────────────────────────────────────────
 
 describe('sortAndGroupSessions, pr grouping', () => {
   const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'pr' };
@@ -334,8 +325,6 @@ describe('sortAndGroupSessions, pr grouping', () => {
     expect(result[0]!.sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
   });
 });
-
-// ─── localStorage slice ──────────────────────────────────────────────────────
 
 function buildLocalStorageMock() {
   const store: Record<string, string> = {};
@@ -575,8 +564,6 @@ describe('createSessionViewSlice, per-workspace isolation', () => {
     expect(getState().sessionViewPrefs[WS2]?.sort).toBe('createdAt');
   });
 });
-
-// ─── performance ─────────────────────────────────────────────────────────────
 
 describe('sortAndGroupSessions, performance', () => {
   it('handles 2000 sessions in under 500ms', () => {

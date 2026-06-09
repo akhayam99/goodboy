@@ -29,7 +29,7 @@ const TONE = {
   warning: 'border-warning/40 text-warning hover:bg-warning/10',
 } as const;
 
-interface Props {
+type Props = {
   readonly pr: PullRequestState;
   readonly sessionId: SessionId;
   readonly onOpenSession: () => void;
@@ -47,9 +47,9 @@ interface Props {
   readonly onSetMergeConfirm: (v: boolean) => void;
   readonly onOpenGithub: () => void;
   readonly onRefresh: () => void;
-}
+};
 
-export function PrActionBar({
+export const PrActionBar = ({
   pr,
   sessionId,
   onOpenSession,
@@ -67,7 +67,7 @@ export function PrActionBar({
   onSetMergeConfirm,
   onOpenGithub,
   onRefresh,
-}: Props) {
+}: Props) => {
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
   const isDraft = pr.isDraft;
@@ -105,7 +105,7 @@ export function PrActionBar({
         </button>
       ) : null}
 
-      {!isTerminal ? (
+      {!isTerminal && (
         <button
           type="button"
           onClick={onClose}
@@ -119,7 +119,7 @@ export function PrActionBar({
           )}
           Close
         </button>
-      ) : null}
+      )}
 
       {isClosed ? (
         <>
@@ -165,7 +165,7 @@ export function PrActionBar({
           <RefreshCw size={14} aria-hidden className={cn(detailLoading && 'animate-spin')} />
         </button>
 
-        {!isTerminal ? (
+        {!isTerminal && (
           <>
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             {mergeConfirm ? (
@@ -205,8 +205,8 @@ export function PrActionBar({
               </button>
             )}
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );
-}
+};

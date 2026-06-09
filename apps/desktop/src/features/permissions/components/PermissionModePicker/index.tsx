@@ -6,13 +6,13 @@ import { useAppStore } from '../../../../store';
 
 const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
 
-interface ModeMeta {
+type ModeMeta = {
   readonly value: ClaudePermissionMode;
   readonly label: string;
   readonly description: string;
   readonly dot: string;
   readonly text: string;
-}
+};
 
 const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
@@ -45,16 +45,16 @@ const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   },
 ];
 
-export function permissionModeMeta(mode: ClaudePermissionMode): ModeMeta {
+export const permissionModeMeta = (mode: ClaudePermissionMode): ModeMeta => {
   return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!;
-}
+};
 
-interface Props {
+type Props = {
   readonly session: Session;
   readonly activeProvider: ProviderId;
-}
+};
 
-export function PermissionModePicker({ session, activeProvider }: Props) {
+export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
@@ -62,12 +62,18 @@ export function PermissionModePicker({ session, activeProvider }: Props) {
   const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onClick);
     window.addEventListener('keydown', onEsc);
@@ -153,4 +159,4 @@ export function PermissionModePicker({ session, activeProvider }: Props) {
       ) : null}
     </div>
   );
-}
+};

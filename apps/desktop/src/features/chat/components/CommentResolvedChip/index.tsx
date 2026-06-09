@@ -4,10 +4,10 @@ import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
-}
+};
 
 type ChipState =
   | { kind: 'idle' }
@@ -18,7 +18,9 @@ type ChipState =
 const DISMISS_PREFIX = 'goodboy:comment-dismissed:';
 
 function readDismissed(threadId: string | undefined): boolean {
-  if (!threadId) return false;
+  if (!threadId) {
+    return false;
+  }
   try {
     return localStorage.getItem(DISMISS_PREFIX + threadId) === '1';
   } catch {
@@ -34,15 +36,7 @@ function persistDismissed(threadId: string) {
   }
 }
 
-/**
- * Renders alongside an assistant turn when the agent emitted a
- * `<<comment-resolved threadId="..." commit="...">>` marker after committing
- * a fix locally. The fix is already committed, so the choice is when to
- * publish: the primary action queues it for a batched single push (resolved
- * later via the ContextPanel "Push & resolve" button), the secondary pushes
- * and resolves this one thread immediately.
- */
-export function CommentResolvedChip({ assistantText, sessionId }: Props) {
+export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
   const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText]);
   const threadId = marker?.threadId;
 
@@ -73,7 +67,9 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
     void loadPendingResolutions(sessionId);
   }, [sessionId, loadPendingResolutions]);
 
-  if (!marker || !isReviewThreadId(marker.threadId)) return null;
+  if (!marker || !isReviewThreadId(marker.threadId)) {
+    return null;
+  }
 
   const shaShort = marker.commitSha.slice(0, 7);
 
@@ -89,20 +85,28 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
     );
   }
 
-  if (state.kind === 'dismissed' && !queued) return null;
+  if (state.kind === 'dismissed' && !queued) {
+    return null;
+  }
 
   const pushNow = async () => {
-    if (state.kind === 'resolving') return;
+    if (state.kind === 'resolving') {
+      return;
+    }
     setState({ kind: 'resolving' });
     const ok = await resolveGithubThread(sessionId, marker.threadId, {
       commitSha: marker.commitSha,
     });
-    if (ok && queued) await dequeueResolution(sessionId, marker.threadId);
+    if (ok && queued) {
+      await dequeueResolution(sessionId, marker.threadId);
+    }
     setState(ok ? { kind: 'resolved' } : { kind: 'idle' });
   };
 
   const queue = () => {
-    if (prNumber === null) return;
+    if (prNumber === null) {
+      return;
+    }
     void queueResolution(sessionId, {
       threadId: marker.threadId,
       commitSha: marker.commitSha,
@@ -203,4 +207,4 @@ export function CommentResolvedChip({ assistantText, sessionId }: Props) {
       </div>
     </div>
   );
-}
+};

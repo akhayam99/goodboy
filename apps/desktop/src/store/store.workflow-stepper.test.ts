@@ -11,7 +11,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-// Module mocks, hoisted before subject import.
 const runTurnSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({
@@ -21,9 +20,7 @@ vi.mock('../features/chat/turn', () => ({
   isAuthErrorMessage: () => false,
 }));
 
-async function* emptyStream(): AsyncIterable<TurnEvent> {
-  // intentionally empty
-}
+async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -310,8 +307,6 @@ describe('createSession, workflow stepper seeding (#424)', () => {
       branchPrefix: 'kay',
     });
 
-    // The session is created empty, the user explicitly spawns an agent or
-    // starts a workflow from the panel after creation. No placeholder.
     expect(phaseRunInsertSpy).not.toHaveBeenCalled();
     const state = useAppStore.getState();
     const sid = state.currentSessionId as SessionId;
@@ -488,7 +483,6 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
       workflowId: WORKFLOW_ID,
     });
 
-    // Wait for createSession's void sendTurn (scout prefix) to settle before clearing
     await new Promise<void>((r) => setTimeout(r, 50));
     runTurnSpy.mockClear();
 

@@ -10,15 +10,15 @@ import type {
 import type { GhRunner } from './gh';
 import { GhCliError, runJson } from './gh';
 
-interface RawIssueComment {
+type RawIssueComment = {
   id: number;
   user: { login: string; avatar_url: string | null } | null;
   body: string | null;
   created_at: string;
   html_url: string;
-}
+};
 
-interface RawReviewThreadComment {
+type RawReviewThreadComment = {
   id: string;
   databaseId: number;
   author: { login: string; avatarUrl: string | null } | null;
@@ -26,18 +26,18 @@ interface RawReviewThreadComment {
   createdAt: string;
   url: string;
   replyTo: { id: string } | null;
-}
+};
 
-interface RawReviewThreadNode {
+type RawReviewThreadNode = {
   id: string;
   isResolved: boolean;
   isOutdated: boolean;
   path: string | null;
   line: number | null;
   comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null;
-}
+};
 
-interface RawReviewThreadsResponse {
+type RawReviewThreadsResponse = {
   data?: {
     repository?: {
       pullRequest?: {
@@ -45,28 +45,28 @@ interface RawReviewThreadsResponse {
       } | null;
     } | null;
   };
-}
+};
 
-interface RawReview {
+type RawReview = {
   id: number;
   author: { login: string } | null;
   authorAssociation: string;
   body: string | null;
   state: string;
   submittedAt: string | null;
-}
+};
 
-interface RawReviewRequestUser {
+type RawReviewRequestUser = {
   login: string;
   avatarUrl?: string | null;
-}
+};
 
-interface RawReviewRequestTeam {
+type RawReviewRequestTeam = {
   name: string;
   avatarUrl?: string | null;
-}
+};
 
-interface RawCheckRollupEntry {
+type RawCheckRollupEntry = {
   name?: string | null;
   status?: string | null;
   conclusion?: string | null;
@@ -75,20 +75,28 @@ interface RawCheckRollupEntry {
   completedAt?: string | null;
   detailsUrl?: string | null;
   workflowName?: string | null;
-}
+};
 
-interface RawPrViewForDetail {
+type RawPrViewForDetail = {
   reviews?: ReadonlyArray<RawReview> | null;
   reviewRequests?: ReadonlyArray<RawReviewRequestUser | RawReviewRequestTeam> | null;
   statusCheckRollup?: ReadonlyArray<RawCheckRollupEntry> | null;
-}
+};
 
 function mapReviewState(raw: string): PrReviewState {
   const normalized = raw.toLowerCase();
-  if (normalized === 'approved') return 'approved';
-  if (normalized === 'changes_requested') return 'changes_requested';
-  if (normalized === 'dismissed') return 'dismissed';
-  if (normalized === 'pending') return 'pending';
+  if (normalized === 'approved') {
+    return 'approved';
+  }
+  if (normalized === 'changes_requested') {
+    return 'changes_requested';
+  }
+  if (normalized === 'dismissed') {
+    return 'dismissed';
+  }
+  if (normalized === 'pending') {
+    return 'pending';
+  }
   return 'commented';
 }
 
@@ -96,24 +104,48 @@ function mapCheckConclusion(raw: RawCheckRollupEntry): PrCheckConclusion {
   const status = (raw.status ?? '').toLowerCase();
   const conclusion = (raw.conclusion ?? '').toLowerCase();
   const state = (raw.state ?? '').toLowerCase();
-  if (status === 'in_progress' || status === 'queued' || status === 'pending') return 'pending';
-  if (state === 'pending') return 'pending';
-  if (conclusion === 'success' || state === 'success') return 'success';
-  if (conclusion === 'failure' || state === 'failure' || state === 'error') return 'failure';
-  if (conclusion === 'neutral') return 'neutral';
-  if (conclusion === 'cancelled') return 'cancelled';
-  if (conclusion === 'timed_out') return 'timed_out';
-  if (conclusion === 'action_required') return 'action_required';
-  if (conclusion === 'stale') return 'stale';
-  if (conclusion === 'skipped') return 'skipped';
+  if (status === 'in_progress' || status === 'queued' || status === 'pending') {
+    return 'pending';
+  }
+  if (state === 'pending') {
+    return 'pending';
+  }
+  if (conclusion === 'success' || state === 'success') {
+    return 'success';
+  }
+  if (conclusion === 'failure' || state === 'failure' || state === 'error') {
+    return 'failure';
+  }
+  if (conclusion === 'neutral') {
+    return 'neutral';
+  }
+  if (conclusion === 'cancelled') {
+    return 'cancelled';
+  }
+  if (conclusion === 'timed_out') {
+    return 'timed_out';
+  }
+  if (conclusion === 'action_required') {
+    return 'action_required';
+  }
+  if (conclusion === 'stale') {
+    return 'stale';
+  }
+  if (conclusion === 'skipped') {
+    return 'skipped';
+  }
   return 'unknown';
 }
 
 function deriveCheckDuration(raw: RawCheckRollupEntry): number | null {
-  if (!raw.startedAt || !raw.completedAt) return null;
+  if (!raw.startedAt || !raw.completedAt) {
+    return null;
+  }
   const start = Date.parse(raw.startedAt);
   const end = Date.parse(raw.completedAt);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    return null;
+  }
   return Math.max(0, end - start);
 }
 
@@ -121,7 +153,9 @@ function dedupeComments(list: ReadonlyArray<PrComment>): ReadonlyArray<PrComment
   const seen = new Set<string>();
   const out: Array<PrComment> = [];
   for (const c of list) {
-    if (seen.has(c.id)) continue;
+    if (seen.has(c.id)) {
+      continue;
+    }
     seen.add(c.id);
     out.push(c);
   }
@@ -150,7 +184,9 @@ async function fetchIssueComments(
       source: 'issue' as const,
     }));
   } catch (err) {
-    if (err instanceof GhCliError) return [];
+    if (err instanceof GhCliError) {
+      return [];
+    }
     throw err;
   }
 }
@@ -189,7 +225,9 @@ async function fetchReviewThreads(
   opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<PrComment>> {
   const [owner, name] = repo.split('/');
-  if (!owner || !name) return [];
+  if (!owner || !name) {
+    return [];
+  }
   try {
     const raw = await runJson<RawReviewThreadsResponse>(
       runner,
@@ -209,8 +247,6 @@ async function fetchReviewThreads(
     );
     const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
     const out: Array<PrComment> = [];
-    // First pass: map graphql node ids → PrComment id form so inReplyToId can be
-    // resolved against the same id space the UI uses.
     const nodeIdToCommentId = new Map<string, string>();
     for (const t of threads) {
       for (const c of t.comments?.nodes ?? []) {
@@ -240,7 +276,9 @@ async function fetchReviewThreads(
     }
     return out;
   } catch (err) {
-    if (err instanceof GhCliError) return [];
+    if (err instanceof GhCliError) {
+      return [];
+    }
     throw err;
   }
 }
@@ -266,17 +304,19 @@ async function fetchPrViewDetail(
       opts,
     );
   } catch (err) {
-    if (err instanceof GhCliError) return {};
+    if (err instanceof GhCliError) {
+      return {};
+    }
     throw err;
   }
 }
 
-export async function fetchPrDetail(
+export const fetchPrDetail = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: { cwd?: string; workspaceId?: string } = {},
-): Promise<PrDetail> {
+): Promise<PrDetail> => {
   const [issueComments, reviewComments, prView] = await Promise.all([
     fetchIssueComments(runner, repo, prNumber, opts),
     fetchReviewThreads(runner, repo, prNumber, opts),
@@ -324,4 +364,4 @@ export async function fetchPrDetail(
     reviewRequests,
     checks,
   };
-}
+};

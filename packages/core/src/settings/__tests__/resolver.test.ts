@@ -159,12 +159,6 @@ describe('resolveSettings', () => {
     expect(result.defaultWorkflowId).toBe('global-tpl');
   });
 
-  // ─── verbosity-specific resolution ─────────────────────────────────────────
-  //
-  // After m038, session.defaultVerbosity is always null in production
-  // (per-chat verbosity moved to agents.verbosity). Workspace remains L1,
-  // global is the final fallback.
-
   it('verbosity: global normal when no overrides', () => {
     const result = resolveSettings({ global: GLOBAL });
     expect(result.defaultVerbosity).toBe('normal');

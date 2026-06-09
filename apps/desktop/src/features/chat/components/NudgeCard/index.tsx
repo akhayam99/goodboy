@@ -4,13 +4,13 @@ import { cn } from '@goodboy/ui';
 
 type NudgeSeverity = 'info' | 'warning' | 'success';
 
-interface NudgeAction {
+type NudgeAction = {
   readonly label: string;
   readonly onClick: () => void;
   readonly testId?: string;
-}
+};
 
-export interface Props {
+export type Props = {
   readonly severity: NudgeSeverity;
   readonly icon?: ReactNode;
   readonly title: ReactNode;
@@ -22,7 +22,7 @@ export interface Props {
   readonly ariaLabel: string;
   readonly testId?: string;
   readonly autoFocusPrimary?: boolean;
-}
+};
 
 const SEVERITY_FRAME: Record<NudgeSeverity, string> = {
   info: 'border-info/30 bg-info/5',
@@ -42,7 +42,7 @@ const SEVERITY_ICON: Record<NudgeSeverity, string> = {
   success: 'text-success',
 };
 
-export function NudgeCard({
+export const NudgeCard = ({
   severity,
   icon,
   title,
@@ -54,15 +54,19 @@ export function NudgeCard({
   ariaLabel,
   testId,
   autoFocusPrimary = false,
-}: Props) {
+}: Props) => {
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (!autoFocusPrimary) return;
+    if (!autoFocusPrimary) {
+      return;
+    }
     const activeIsInput =
       typeof document !== 'undefined' &&
       document.activeElement instanceof HTMLElement &&
       /^(input|textarea)$/i.test(document.activeElement.tagName);
-    if (activeIsInput) return;
+    if (activeIsInput) {
+      return;
+    }
     const handle = window.setTimeout(() => {
       primaryBtnRef.current?.focus();
     }, 300);
@@ -137,4 +141,4 @@ export function NudgeCard({
       </div>
     </section>
   );
-}
+};

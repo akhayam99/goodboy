@@ -60,16 +60,13 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 
-interface ContextPanelProps {
+type ContextPanelProps = {
   session: Session;
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
-  // Keep-alive aware: false when this panel is mounted but hidden behind
-  // another session. Effects that touch DB or network gate on this so
-  // background panels don't churn.
   isActive?: boolean;
-}
+};
 
 type SummarizerStatusKind = 'idle' | 'running' | 'error';
 
@@ -78,13 +75,13 @@ const ICON_BTN =
 
 type PanelTab = 'context' | 'plans' | 'questions' | 'terminal';
 
-export function ContextPanel({
+export const ContextPanel = ({
   session,
   collapsed = false,
   onCollapse,
   onExpand,
   isActive = true,
-}: ContextPanelProps) {
+}: ContextPanelProps) => {
   const slots = useSessionSlots(session.id);
   const summarizer = useSummarizerStatus(session.id);
   const loading = useSessionLoading(session.id);
@@ -98,21 +95,21 @@ export function ContextPanel({
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      return;
+    }
     void loadSessionOpenQuestions(session.id);
   }, [isActive, session.id, loadSessionOpenQuestions]);
 
-  // Files + GitHub data lifted to the panel so the tab badges stay live
-  // regardless of the active tab, and the PR / diff-comment fetches fire
-  // even before the user visits those tabs, matching the behaviour of the
-  // old SessionMetaFooter, which always rendered for the current session.
   const filesTouched = useFilesTouched(session.id, isActive);
   const github = useAppStore((s) => s.sessionGithub[session.id as SessionId]);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      return;
+    }
     void loadDiffComments(session.id);
   }, [isActive, session.id, loadDiffComments]);
 
@@ -122,7 +119,9 @@ export function ContextPanel({
     let estimatedCostUsd = 0;
     let count = 0;
     for (const rec of sessionTelemetry) {
-      if (rec.kind !== 'summarizer') continue;
+      if (rec.kind !== 'summarizer') {
+        continue;
+      }
       inputTokens += rec.inputTokens;
       outputTokens += rec.outputTokens;
       estimatedCostUsd += rec.estimatedCostUsd;
@@ -133,14 +132,11 @@ export function ContextPanel({
 
   const workingDir = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
 
-  // Self-heal the branch cache: an agent can `git switch` directly in the
-  // worktree, moving HEAD without going through changeSessionBranch, which
-  // leaves the sidebar footer chip on a stale branch. Read the real branch off
-  // worktree_status and write it back. Re-runs after each turn (summarizer
-  // tick) and on file-count changes, the moments a branch switch is likely.
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   useEffect(() => {
-    if (!isActive || !workingDir) return;
+    if (!isActive || !workingDir) {
+      return;
+    }
     let cancelled = false;
     worktreeStatus(workingDir)
       .then((status) => {
@@ -172,8 +168,6 @@ export function ContextPanel({
     [slots, workingDir],
   );
 
-  // open_questions is pinned in a sticky footer (visible across both tabs);
-  // goal/decisions/last_output_summary live in the Context tab.
   const visibleSlotKeys = useMemo(
     () =>
       SLOT_KEYS.filter((k) => k !== 'files_touched' && k !== 'open_questions').sort((a, b) => {
@@ -187,7 +181,6 @@ export function ContextPanel({
     [],
   );
 
-  // Count badges on the tab strip, at-a-glance counts beat hunting through.
   const plansBadge = plans.length > 0 ? plans.length : null;
   const hasActivePlan = plans.some((p) => p.status === 'active');
   const questionsBadge = questions.length > 0 ? questions.length : null;
@@ -258,10 +251,6 @@ export function ContextPanel({
           </header>
         </div>
 
-        {/* Tab content, Context / Plans / Questions / Files / GitHub / Terminal. Open
-            Questions is pinned across every tab via the sticky footer below.
-            Terminal is always mounted (visibility toggled) so output is not
-            lost when the user switches away mid-run. */}
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
             className={cn(
@@ -271,7 +260,7 @@ export function ContextPanel({
           >
             <TerminalDock sessionId={session.id} isActive={tab === 'terminal'} cwd={workingDir} />
           </div>
-          {tab !== 'terminal' ? (
+          {tab !== 'terminal' && (
             <div
               key={tab}
               className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2 motion-safe:animate-fade-in"
@@ -308,14 +297,12 @@ export function ContextPanel({
                 <QuestionsTab sessionId={session.id} />
               )}
             </div>
-          ) : null}
+          )}
         </div>
 
         <Divider />
 
-        {/* Sticky footer. Open questions are owned by the Questions tab now,
-            the footer is just a one-click entry point when any are unresolved. */}
-        {questions.length > 0 ? (
+        {questions.length > 0 && (
           <button
             type="button"
             onClick={() => setTab('questions')}
@@ -329,13 +316,13 @@ export function ContextPanel({
             </span>
             <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
           </button>
-        ) : null}
+        )}
       </div>
     </>
   );
-}
+};
 
-interface TabStripProps {
+type TabStripProps = {
   readonly tab: PanelTab;
   readonly onPick: (next: PanelTab) => void;
   readonly plansBadge: number | null;
@@ -343,7 +330,7 @@ interface TabStripProps {
   readonly summarizerRunning: boolean;
   readonly questionsBadge: number | null;
   readonly isTerminalOpen: boolean;
-}
+};
 
 function TabStrip({
   tab,
@@ -390,14 +377,14 @@ function TabStrip({
   );
 }
 
-interface TabButtonProps {
+type TabButtonProps = {
   readonly active: boolean;
   readonly onClick: () => void;
   readonly icon: React.ReactNode;
   readonly label: string;
   readonly badge?: number | null;
   readonly accentDot?: string | null;
-}
+};
 
 function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButtonProps) {
   return (
@@ -417,11 +404,11 @@ function TabButton({ active, onClick, icon, label, badge, accentDot }: TabButton
     >
       {icon}
       {active ? <span>{label}</span> : null}
-      {badge !== null && badge !== undefined ? (
+      {badge !== null && badge !== undefined && (
         <span className="ml-0.5 inline-flex min-w-[1rem] items-center justify-center rounded-full bg-muted px-1 text-[9px] font-medium tracking-normal text-muted-foreground">
           {badge}
         </span>
-      ) : null}
+      )}
       {accentDot ? (
         <span aria-hidden className={cn('ml-0.5 size-1.5 rounded-full', accentDot)} />
       ) : null}
@@ -514,12 +501,12 @@ function PlansTabContent({ sessionId }: { sessionId: SessionId }) {
   );
 }
 
-interface FilesTouchedShape {
+type FilesTouchedShape = {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
   readonly additions: number;
   readonly deletions: number;
-}
+};
 
 function ChangesStrip({
   sessionId,
@@ -552,16 +539,16 @@ function ChangesStrip({
             </span>
           </span>
           <span className="inline-flex shrink-0 items-center gap-2">
-            {filesTouched.additions > 0 || filesTouched.deletions > 0 ? (
+            {(filesTouched.additions > 0 || filesTouched.deletions > 0) && (
               <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums">
-                {filesTouched.additions > 0 ? (
+                {filesTouched.additions > 0 && (
                   <span className="text-success">+{filesTouched.additions}</span>
-                ) : null}
-                {filesTouched.deletions > 0 ? (
+                )}
+                {filesTouched.deletions > 0 && (
                   <span className="text-danger">−{filesTouched.deletions}</span>
-                ) : null}
+                )}
               </span>
-            ) : null}
+            )}
             <ArrowUpRight size={12} aria-hidden className="opacity-70" />
           </span>
         </button>
@@ -571,7 +558,7 @@ function ChangesStrip({
           <span className="font-medium">working tree clean</span>
         </div>
       )}
-      {count > 0 ? (
+      {count > 0 && (
         <DiffViewerDialog
           open={diffOpen}
           onClose={() => setDiffOpen(false)}
@@ -580,7 +567,7 @@ function ChangesStrip({
           workingDir={workingDir ?? undefined}
           worktreePath={workingDir ?? undefined}
         />
-      ) : null}
+      )}
     </div>
   );
 }
@@ -596,13 +583,14 @@ function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId }) {
   }, [sessionId, loadPendingResolutions]);
 
   const count = pending.length;
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
 
-  // Success is self-evident (this strip disappears as the queue drains and each
-  // chat chip flips to "conversation resolved"); push/partial failures surface
-  // through emitNotification inside pushAllResolutions.
   const onPush = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     try {
       await pushAllResolutions(sessionId);
@@ -666,13 +654,13 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
           {pr ? (
             <span className="inline-flex min-w-0 items-center gap-2">
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={11} />
-              {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
-              {unresolvedComments > 0 ? (
+              {ciState !== 'none' && <CiBadge state={ciState} />}
+              {unresolvedComments > 0 && (
                 <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
                   <MessageSquare size={11} aria-hidden />
                   <span className="tabular-nums">{unresolvedComments}</span>
                 </span>
-              ) : null}
+              )}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5">
@@ -705,7 +693,9 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
 type CiState = 'success' | 'failure' | 'pending' | 'none';
 
 function computeCiState(checks: ReadonlyArray<PrCheckRun>): CiState {
-  if (checks.length === 0) return 'none';
+  if (checks.length === 0) {
+    return 'none';
+  }
   if (
     checks.some(
       (c) =>
@@ -714,8 +704,12 @@ function computeCiState(checks: ReadonlyArray<PrCheckRun>): CiState {
   ) {
     return 'failure';
   }
-  if (checks.some((c) => c.conclusion === 'pending')) return 'pending';
-  if (checks.some((c) => c.conclusion === 'success')) return 'success';
+  if (checks.some((c) => c.conclusion === 'pending')) {
+    return 'pending';
+  }
+  if (checks.some((c) => c.conclusion === 'success')) {
+    return 'success';
+  }
   return 'none';
 }
 
@@ -756,24 +750,20 @@ function PlansSkeleton() {
   );
 }
 
-interface SlotMeta {
+type SlotMeta = {
   readonly icon: LucideIcon;
   readonly iconClass: string;
   readonly iconChipBg: string;
   readonly description: string;
   readonly emphasis?: boolean;
-  /** Tailwind ring-* class to swap the default border-soft ring when hasValue. */
   readonly accentRingWhenNonEmpty?: string;
   readonly emptyLabel: string;
   readonly emptyCta: string;
   readonly collapsible?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly singleLine?: boolean;
-  // Read-only slots can't be hand-edited by the user. When empty the row
-  // collapses to an inactive label (no CTA, no click) and switches to the
-  // canvas bg so it visually recedes vs. the live slots.
   readonly readOnly?: boolean;
-}
+};
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
   'open_questions',
@@ -837,13 +827,17 @@ function firstMeaningfulLine(value: string): string {
       .replace(/^#+\s+/, '')
       .replace(/\*\*/g, '')
       .replace(/`/g, '');
-    if (t) return t;
+    if (t) {
+      return t;
+    }
   }
   return '';
 }
 
 function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
-  if (!workingDir || slot.value.length === 0) return slot;
+  if (!workingDir || slot.value.length === 0) {
+    return slot;
+  }
   const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
   const normalized = slot.value
     .split('\n')
@@ -852,14 +846,14 @@ function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): Conte
   return normalized === slot.value ? slot : { ...slot, value: normalized };
 }
 
-interface SlotRowProps {
+type SlotRowProps = {
   sessionId: SessionId;
   slotKey: SlotKey;
   slot: ContextSlot | undefined;
   loading?: boolean;
   isSummarizing?: boolean;
   onCommit: (value: string) => void;
-}
+};
 
 function SlotRow({
   sessionId,
@@ -881,7 +875,9 @@ function SlotRow({
   const history = useSlotHistory(sessionId, slotKey);
 
   useEffect(() => {
-    if (!editing) setDraft(value);
+    if (!editing) {
+      setDraft(value);
+    }
   }, [value, editing]);
 
   const openHistory = useCallback(() => {
@@ -897,12 +893,9 @@ function SlotRow({
     [onCommit],
   );
 
-  // Per-slot skeleton: while the slots fetch is still in flight and this
-  // particular slot hasn't materialized yet, show a placeholder. Sibling
-  // slots that already arrived render their content independently. Must
-  // come after all hook calls, React requires a stable hook order across
-  // renders, and slot can flip between undefined/defined on workspace switch.
-  if (slot === undefined && loading) return <SlotRowSkeleton slotKey={slotKey} />;
+  if (slot === undefined && loading) {
+    return <SlotRowSkeleton slotKey={slotKey} />;
+  }
 
   const Icon = meta?.icon;
   const hasValue = value.length > 0;
@@ -915,7 +908,9 @@ function SlotRow({
 
   const commit = () => {
     setEditing(false);
-    if (draft !== value) onCommit(draft);
+    if (draft !== value) {
+      onCommit(draft);
+    }
   };
 
   const itemCountLabel =
@@ -933,9 +928,6 @@ function SlotRow({
     </button>
   ) : null;
 
-  // Empty slot → blends into the panel bg (no surface). Slot with content →
-  // a step brighter so it reads as "active / has signal." Same rule for every
-  // slot regardless of read-only, emptiness is the only switch.
   const inactive = !hasValue;
   const ringClass = inactive
     ? 'ring-border-soft/30'
@@ -976,10 +968,8 @@ function SlotRow({
             </span>
           ) : null}
         </div>
-        {/* History first, then chevron at the far right. The history button
-            stays hidden until we already have entries in cache, listing it
-            without loading would force a per-slot fetch on every render. */}
-        {history.length > 0 ? (
+
+        {history.length > 0 && (
           <button
             type="button"
             onClick={openHistory}
@@ -989,7 +979,7 @@ function SlotRow({
           >
             <History size={11} aria-hidden />
           </button>
-        ) : null}
+        )}
         {headerToggle}
       </div>
 
@@ -1021,7 +1011,9 @@ function SlotRow({
           <button
             type="button"
             onClick={() => {
-              if (isSummarizing) return;
+              if (isSummarizing) {
+                return;
+              }
               setEditing(true);
             }}
             disabled={isSummarizing}
@@ -1040,7 +1032,9 @@ function SlotRow({
         <button
           type="button"
           onClick={() => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             setEditing(true);
           }}
           disabled={isSummarizing}
@@ -1066,11 +1060,15 @@ function SlotRow({
           role={isSummarizing ? undefined : 'button'}
           tabIndex={isSummarizing ? -1 : 0}
           onClick={() => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             setEditing(true);
           }}
           onKeyDown={(e) => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setEditing(true);
@@ -1087,7 +1085,9 @@ function SlotRow({
         <button
           type="button"
           onClick={() => {
-            if (isSummarizing) return;
+            if (isSummarizing) {
+              return;
+            }
             setEditing(true);
           }}
           disabled={isSummarizing}
@@ -1113,14 +1113,14 @@ function SlotRow({
   );
 }
 
-interface SlotHistoryDialogProps {
+type SlotHistoryDialogProps = {
   label: string;
   renderAsMarkdown: boolean;
   open: boolean;
   entries: ReadonlyArray<ContextSlotHistoryEntry>;
   onRestore: (entry: ContextSlotHistoryEntry) => void;
   onClose: () => void;
-}
+};
 
 function SlotHistoryDialog({
   label,
@@ -1184,10 +1184,16 @@ function SlotHistoryDialog({
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) {
+    return 'just now';
+  }
+  if (mins < 60) {
+    return `${mins}m ago`;
+  }
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) {
+    return `${hrs}h ago`;
+  }
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
@@ -1214,11 +1220,10 @@ function SummarizerBadge({
   const retrySummarizer = useAppStore((s) => s.retrySummarizer);
   const [retrying, setRetrying] = useState(false);
 
-  // Reset the retry-spin once the run actually kicks off, the store flips
-  // status to 'running' synchronously, but the icon-only spin is what tells
-  // the user their click was registered.
   useEffect(() => {
-    if (status !== 'error') setRetrying(false);
+    if (status !== 'error') {
+      setRetrying(false);
+    }
   }, [status]);
 
   const costTooltip =
@@ -1235,13 +1240,6 @@ function SummarizerBadge({
     </span>
   );
 
-  // Running state: small spinner glyph next to the cost pill. Replaces the
-  // earlier full-panel spin-border, which forced a 400×800px composite layer
-  // with a conic-gradient + mask-composite animation, the heaviest CSS shape
-  // possible on WKWebView. With 5 keep-alive ContextPanels each potentially
-  // wearing one, the GPU compositor stalled for 200-300ms during cursor
-  // movement (verified via Web Inspector perf trace). A 10px Loader2 is one
-  // tiny layer, negligible cost.
   if (status === 'running') {
     return (
       <span className="flex items-center gap-1">
@@ -1259,7 +1257,9 @@ function SummarizerBadge({
         <button
           type="button"
           onClick={() => {
-            if (!canRetry || retrying) return;
+            if (!canRetry || retrying) {
+              return;
+            }
             setRetrying(true);
             retrySummarizer(sessionId);
           }}

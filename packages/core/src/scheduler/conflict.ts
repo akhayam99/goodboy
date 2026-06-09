@@ -5,23 +5,23 @@ import type {
   ProviderRunId,
 } from '@goodboy/types';
 
-export interface RunFileTouches {
+export type RunFileTouches = {
   runId: ProviderRunId;
   files: ReadonlyArray<string>;
-}
+};
 
-export interface FileConflict {
+export type FileConflict = {
   file: string;
   runIds: ReadonlyArray<ProviderRunId>;
-}
+};
 
-export interface ResolvedConflict {
+export type ResolvedConflict = {
   file: string;
   winnerRunId: ProviderRunId;
   reason: 'last_write_wins' | 'manual_pick' | 'synthesizer';
-}
+};
 
-export interface ConflictResolutionInput {
+export type ConflictResolutionInput = {
   conflicts: ReadonlyArray<FileConflict>;
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
@@ -31,7 +31,7 @@ export interface ConflictResolutionInput {
   strategy: ParallelMergeStrategy;
   manualPicks?: Record<string, ProviderRunId>;
   synthesize?: (conflict: FileConflict) => Promise<ProviderRunId>;
-}
+};
 
 export class ManualResolutionRequiredError extends Error {
   readonly unresolvedFiles: ReadonlyArray<string>;
@@ -43,9 +43,9 @@ export class ManualResolutionRequiredError extends Error {
   }
 }
 
-export function detectConflicts(
+export const detectConflicts = (
   touches: ReadonlyArray<RunFileTouches>,
-): ReadonlyArray<FileConflict> {
+): ReadonlyArray<FileConflict> => {
   const fileToRuns = new Map<string, ProviderRunId[]>();
 
   for (const { runId, files } of touches) {
@@ -67,11 +67,11 @@ export function detectConflicts(
   }
 
   return conflicts;
-}
+};
 
-export async function resolveConflicts(
+export const resolveConflicts = async (
   input: ConflictResolutionInput,
-): Promise<ReadonlyArray<ResolvedConflict>> {
+): Promise<ReadonlyArray<ResolvedConflict>> => {
   const { conflicts, runStatuses, strategy, manualPicks, synthesize } = input;
 
   if (conflicts.length === 0) {
@@ -87,7 +87,7 @@ export async function resolveConflicts(
   }
 
   return resolveSynthesizer(conflicts, synthesize);
-}
+};
 
 function resolveLastWriteWins(
   conflicts: ReadonlyArray<FileConflict>,
@@ -108,15 +108,15 @@ function resolveLastWriteWins(
       );
 
     if (candidates.length === 0) {
-      // No completed run, fall back to deterministic sort on runId
       const sorted = [...conflict.runIds].sort();
       return { file: conflict.file, winnerRunId: sorted[0]!, reason: 'last_write_wins' };
     }
 
-    // Sort descending by completedAt, tie-break ascending by runId (deterministic)
     candidates.sort((a, b) => {
       const timeDiff = b.completedAt.localeCompare(a.completedAt);
-      if (timeDiff !== 0) return timeDiff;
+      if (timeDiff !== 0) {
+        return timeDiff;
+      }
       return a.runId.localeCompare(b.runId);
     });
 

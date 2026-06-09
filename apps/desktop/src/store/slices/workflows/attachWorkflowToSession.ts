@@ -16,18 +16,22 @@ import {
 } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
-interface Options {
+type Options = {
   autoRun?: boolean;
-}
+};
 
-export function attachWorkflowToSession(set: SetFn, get: GetFn) {
+export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowId: WorkflowId, options?: Options) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session) {
+      throw new Error(`session not found: ${sessionId}`);
+    }
 
     const templates = get().phaseTemplates[session.workspaceId] ?? [];
     const template = templates.find((t) => t.id === workflowId);
-    if (!template) throw new Error(`workflow not found: ${workflowId}`);
+    if (!template) {
+      throw new Error(`workflow not found: ${workflowId}`);
+    }
 
     const workflowRunId = crypto.randomUUID() as WorkflowRunId;
     const autoRun = options?.autoRun ?? session.autoRun;
@@ -104,4 +108,4 @@ export function attachWorkflowToSession(set: SetFn, get: GetFn) {
       void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);
     }
   };
-}
+};

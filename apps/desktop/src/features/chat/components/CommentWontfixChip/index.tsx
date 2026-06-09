@@ -4,10 +4,10 @@ import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
-}
+};
 
 type ChipState =
   | { kind: 'idle' }
@@ -15,7 +15,7 @@ type ChipState =
   | { kind: 'resolved' }
   | { kind: 'dismissed' };
 
-export function CommentWontfixChip({ assistantText, sessionId }: Props) {
+export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
   const marker = useMemo(() => extractCommentWontfix(assistantText), [assistantText]);
   const threadId = marker?.threadId;
 
@@ -30,7 +30,9 @@ export function CommentWontfixChip({ assistantText, sessionId }: Props) {
 
   const [state, setState] = useState<ChipState>({ kind: 'idle' });
 
-  if (!marker || !isReviewThreadId(marker.threadId)) return null;
+  if (!marker || !isReviewThreadId(marker.threadId)) {
+    return null;
+  }
 
   if (state.kind === 'resolved' || resolvedOnGithub) {
     return (
@@ -41,12 +43,16 @@ export function CommentWontfixChip({ assistantText, sessionId }: Props) {
     );
   }
 
-  if (state.kind === 'dismissed') return null;
+  if (state.kind === 'dismissed') {
+    return null;
+  }
 
   const busy = state.kind === 'resolving';
 
   const markSolved = async () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setState({ kind: 'resolving' });
     const ok = await resolveGithubThread(sessionId, marker.threadId, { reason: marker.reason });
     setState(ok ? { kind: 'resolved' } : { kind: 'idle' });
@@ -89,4 +95,4 @@ export function CommentWontfixChip({ assistantText, sessionId }: Props) {
       </div>
     </div>
   );
-}
+};

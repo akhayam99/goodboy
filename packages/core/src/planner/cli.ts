@@ -6,24 +6,24 @@ import { parsePlannerOutput } from './parser';
 import { PLANNER_SYSTEM_PROMPT, buildPlannerUserPrompt } from './prompt';
 import type { PlannerInput, PlannerOutput } from './types';
 
-export interface PlannerUsage {
+export type PlannerUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly estimatedCostUsd: number;
-}
+};
 
-export interface PlannerResult {
+export type PlannerResult = {
   readonly output: PlannerOutput;
   readonly usage: PlannerUsage;
   readonly model: string;
-}
+};
 
-export interface PlannerAgentDeps {
+export type PlannerAgentDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly spawnFn?: typeof spawn;
-}
+};
 
 export class PlannerSpawnError extends Error {
   constructor(
@@ -35,14 +35,14 @@ export class PlannerSpawnError extends Error {
   }
 }
 
-interface ClaudeJsonResult {
+type ClaudeJsonResult = {
   readonly result?: string;
   readonly usage?: {
     readonly input_tokens?: number;
     readonly output_tokens?: number;
     readonly cache_read_input_tokens?: number;
   };
-}
+};
 
 export class PlannerAgent {
   private readonly providerId: ProviderId;

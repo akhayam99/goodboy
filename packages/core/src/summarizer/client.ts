@@ -4,12 +4,12 @@ import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
-export function getCheapModel(providerId: ProviderId): string {
+export const getCheapModel = (providerId: ProviderId): string => {
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
-}
+};
 
-export function getDefaultBinary(providerId: ProviderId): string {
+export const getDefaultBinary = (providerId: ProviderId): string => {
   switch (providerId) {
     case 'anthropic':
       return 'claude';
@@ -24,7 +24,7 @@ export function getDefaultBinary(providerId: ProviderId): string {
       throw new Error(`unknown provider: ${_exhaustive}`);
     }
   }
-}
+};
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 
@@ -32,34 +32,34 @@ export type ContextSlotDelta = Readonly<{
   upserts: ReadonlyArray<ContextSlotDeltaUpsert>;
 }>;
 
-export interface SummarizerUsage {
+export type SummarizerUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly estimatedCostUsd: number;
-}
+};
 
-export interface SummarizeInput {
+export type SummarizeInput = {
   readonly prevSlots: ReadonlyArray<ContextSlot>;
   readonly turnInput: string;
   readonly turnOutput: string;
   readonly prState?: NextActionsPrState | null;
-}
+};
 
-export interface SummarizerResult {
+export type SummarizerResult = {
   readonly delta: ContextSlotDelta;
   readonly usage: SummarizerUsage;
   readonly model: string;
   readonly nextActions: ReadonlyArray<NextAction>;
-}
+};
 
 type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 
-export interface SummarizerDeps {
+export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly invokeFn: InvokeFn;
-}
+};
 
 export class SummarizerSpawnError extends Error {
   constructor(
@@ -81,11 +81,11 @@ export class SummarizerParseError extends Error {
   }
 }
 
-interface SummarizeCommandResult {
+type SummarizeCommandResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
 const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session. The summary is the handoff payload, a fresh agent must be able to read these slots alone and continue the work without seeing any prior turns.
 
@@ -172,7 +172,9 @@ function applyDelta(
   prev: ReadonlyArray<ContextSlot>,
   delta: ContextSlotDelta,
 ): ReadonlyArray<ContextSlot> {
-  if (delta.upserts.length === 0) return prev;
+  if (delta.upserts.length === 0) {
+    return prev;
+  }
   const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
   for (const upsert of delta.upserts) {
     const existing = byKey.get(upsert.key);
@@ -185,7 +187,7 @@ function applyDelta(
   return Array.from(byKey.values());
 }
 
-interface ClaudeJsonResult {
+type ClaudeJsonResult = {
   readonly result?: string;
   readonly usage?: {
     readonly input_tokens?: number;
@@ -194,7 +196,7 @@ interface ClaudeJsonResult {
   };
   readonly subtype?: string;
   readonly is_error?: boolean;
-}
+};
 
 function extractTextAndUsage(
   providerId: ProviderId,
@@ -278,56 +280,49 @@ function parseDelta(raw: string): ContextSlotDelta {
 
   const upserts: ContextSlotDeltaUpsert[] = [];
   for (const entry of candidate) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const key = e.key;
     const value = e.value;
-    if (typeof key !== 'string' || !isSlotKey(key)) continue;
-    if (typeof value !== 'string') continue;
+    if (typeof key !== 'string' || !isSlotKey(key)) {
+      continue;
+    }
+    if (typeof value !== 'string') {
+      continue;
+    }
     upserts.push({ key, value });
   }
   return { upserts };
 }
 
-/**
- * Pull the JSON object out of a model response that might be wrapped in any
- * of these shapes:
- *   1. Pure JSON: `{...}`
- *   2. Whole response is a fenced block: ```json\n{...}\n```
- *   3. JSON inside a fenced block with surrounding prose
- *   4. Prose preamble followed by a bare `{...}` object
- *
- * Falls back to the trimmed input so a non-JSON response still hits the
- * `JSON.parse` path and surfaces a structured `SummarizerParseError`.
- *
- * Real failure observed: model preambles like "Sometimes I get stuck..."
- * followed by the JSON would slip past the strict edge-anchored fence
- * regex and crash with "Unexpected identifier 'stuck'".
- */
 function extractJson(raw: string): string {
   const trimmed = raw.trim();
 
   const edgeFence = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i.exec(trimmed);
-  if (edgeFence?.[1]) return edgeFence[1].trim();
+  if (edgeFence?.[1]) {
+    return edgeFence[1].trim();
+  }
 
   const innerFence = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
-  if (innerFence?.[1]) return innerFence[1].trim();
+  if (innerFence?.[1]) {
+    return innerFence[1].trim();
+  }
 
   const balanced = extractBalancedJsonObject(trimmed);
-  if (balanced !== null) return balanced;
+  if (balanced !== null) {
+    return balanced;
+  }
 
   return trimmed;
 }
 
-/**
- * Walk the string from the first `{` while tracking string-literal state so
- * braces nested inside JSON string values don't desync the depth counter.
- * Returns the substring from that `{` through its matching `}` if balanced,
- * otherwise null.
- */
 function extractBalancedJsonObject(text: string): string | null {
   const start = text.indexOf('{');
-  if (start === -1) return null;
+  if (start === -1) {
+    return null;
+  }
   let depth = 0;
   let inString = false;
   let escaped = false;
@@ -342,17 +337,22 @@ function extractBalancedJsonObject(text: string): string | null {
         escaped = true;
         continue;
       }
-      if (ch === '"') inString = false;
+      if (ch === '"') {
+        inString = false;
+      }
       continue;
     }
     if (ch === '"') {
       inString = true;
       continue;
     }
-    if (ch === '{') depth++;
-    else if (ch === '}') {
+    if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
       depth--;
-      if (depth === 0) return text.slice(start, i + 1);
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
     }
   }
   return null;

@@ -3,26 +3,24 @@ import type { ContextSlotDelta, SummarizeInput } from './client';
 
 export type NextActionKind = 'scout' | 'plan' | 'implement';
 
-export interface NextAction {
+export type NextAction = {
   readonly id: string;
   readonly kind: NextActionKind;
   readonly label: string;
   readonly prompt: string;
-}
+};
 
-export interface InferNextActionsInput {
+export type InferNextActionsInput = {
   readonly input: SummarizeInput;
   readonly delta: ContextSlotDelta;
   readonly slotsAfter: ReadonlyArray<ContextSlot>;
   readonly prState?: NextActionsPrState | null;
-}
+};
 
-// Kept on the public surface so existing client wiring (cli.ts, client.ts)
-// keeps compiling without a sweep. PR-state no longer changes the trio output.
-export interface NextActionsPrState {
+export type NextActionsPrState = {
   readonly hasOpenPr: boolean;
   readonly checksGreen: boolean;
-}
+};
 
 const MAX_TOPICS = 3;
 const STOPWORDS = new Set([
@@ -55,17 +53,16 @@ const STOPWORDS = new Set([
   'with',
 ]);
 
-// Trigger: a turn has produced output, or the assistant left open questions, or
-// last_output_summary captured a decision branch worth acting on. Otherwise the
-// user is still framing, surface nothing.
-export function inferNextActions(input: InferNextActionsInput): ReadonlyArray<NextAction> {
+export const inferNextActions = (input: InferNextActionsInput): ReadonlyArray<NextAction> => {
   const slots = mapSlots(input.slotsAfter);
   const openQuestions = (slots.open_questions ?? '').trim();
   const lastOutput = (slots.last_output_summary ?? '').trim();
   const turnOutput = input.input.turnOutput.trim();
 
   const triggered = turnOutput.length > 0 || openQuestions.length > 0 || lastOutput.length > 0;
-  if (!triggered) return [];
+  if (!triggered) {
+    return [];
+  }
 
   const topics = pickTopics(openQuestions, lastOutput, turnOutput);
   const subject = topics.length > 0 ? topics.join(', ') : 'lo scope corrente';
@@ -91,12 +88,14 @@ export function inferNextActions(input: InferNextActionsInput): ReadonlyArray<Ne
       prompt: `vai diretto e implementa ${focus}`,
     },
   ];
-}
+};
 
 function mapSlots(slots: ReadonlyArray<ContextSlot>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const slot of slots) {
-    if (!slot.enabled) continue;
+    if (!slot.enabled) {
+      continue;
+    }
     out[slot.key] = slot.value ?? '';
   }
   return out;
@@ -109,7 +108,9 @@ function pickTopics(
 ): ReadonlyArray<string> {
   if (openQuestions.length > 0) {
     const items = splitList(openQuestions).slice(0, MAX_TOPICS);
-    if (items.length > 0) return items;
+    if (items.length > 0) {
+      return items;
+    }
   }
   const fromOutput = extractNouns(lastOutput.length > 0 ? lastOutput : turnOutput);
   return fromOutput.slice(0, MAX_TOPICS);
@@ -132,10 +133,16 @@ function extractNouns(text: string): ReadonlyArray<string> {
   const out: string[] = [];
   for (const raw of text.split(/[^\p{L}\p{N}_/.-]+/u)) {
     const token = raw.trim();
-    if (token.length < 3) continue;
+    if (token.length < 3) {
+      continue;
+    }
     const lower = token.toLowerCase();
-    if (STOPWORDS.has(lower)) continue;
-    if (seen.has(lower)) continue;
+    if (STOPWORDS.has(lower)) {
+      continue;
+    }
+    if (seen.has(lower)) {
+      continue;
+    }
     seen.add(lower);
     out.push(token);
   }

@@ -13,11 +13,13 @@ import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import { fanOutClusters } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
-export function activateWorkflowAgent(set: SetFn, get: GetFn) {
+export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, explicitPlanId?: PlanId) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
-    if (!agent || !agent.stepId) throw new Error('agent not found or not a workflow agent');
+    if (!agent || !agent.stepId) {
+      throw new Error('agent not found or not a workflow agent');
+    }
 
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || session.workflowRuns.length === 0) {
@@ -85,4 +87,4 @@ export function activateWorkflowAgent(set: SetFn, get: GetFn) {
       void get().sendTurn({ sessionId, agentId, content: kickoff });
     }
   };
-}
+};

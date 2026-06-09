@@ -23,25 +23,12 @@ import { EMPTY_LOADING } from '../../session-mutators';
 import type { SessionLoadingFlags } from '../../store';
 import type { GetFn, SetFn } from './types';
 
-export function setCurrentSession(set: SetFn, get: GetFn) {
+export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
-    // No-op when the click lands on the already-current session. Pulled into
-    // the action so callers can pass the action ref directly (stable ref
-    // helps memoized rows skip re-renders on session-switch clicks).
-    if (get().currentSessionId === id) return;
-    // Immediately swap the visible session so the UI doesn't freeze while
-    // heavy per-session data loads. Each block (agents/transcript/telemetry/
-    // slots/plans/summary) loads independently and flips its own loading flag
-    // off when done, see SessionLoadingFlags. We intentionally do NOT await
-    // these loaders here; the chat view and context panel render skeletons in
-    // the meantime.
+    if (get().currentSessionId === id) {
+      return;
+    }
     const tSwitch = performance.now();
-    // Cache check up-front: any slice already loaded for this task skips its
-    // refetch. With the LRU keep-alive five sessions stay hot in the store,
-    // so revisiting them is a near-zero-cost flag flip instead of 5 round
-    // trips through Tauri IPC. Mutations refresh slices directly, so the
-    // in-memory cache stays consistent until a process outside the app
-    // touches the SQLite file.
     const stateNow = get();
     const cached = id
       ? {
@@ -51,16 +38,12 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
           agents: stateNow.sessionPhaseRuns[id] !== undefined,
         }
       : null;
-    // Transcript flag is tricky on revisit: if agents are cached but the
-    // session has no agents we never get a selectAgent call to clear it; if
-    // the selected agent's transcript is already cached we shouldn't show a
-    // skeleton at all.
     const cachedSelectedAgentId =
       id && cached?.agents ? (stateNow.selectedAgentId[id] ?? null) : null;
     const transcriptReady =
       id && cached?.agents
         ? cachedSelectedAgentId === null
-          ? true // empty session
+          ? true
           : stateNow.transcripts[cachedSelectedAgentId] !== undefined
         : false;
     const initialLoading: SessionLoadingFlags = id
@@ -78,10 +61,10 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
       sessionSummary: null,
       sessionLoading: id ? { ...state.sessionLoading, [id]: initialLoading } : state.sessionLoading,
     }));
-    // Fire-and-forget the persisted setting. Awaiting it here delayed every
-    // downstream parallel fetch by the IPC round-trip (~5-50ms of dead time).
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     void get().loadSessionOverrides(id);
     const perf = (op: string) => {
       const t0 = performance.now();
@@ -95,7 +78,9 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
 
     const markDone = (key: keyof SessionLoadingFlags): void => {
       set((state) => {
-        if (state.currentSessionId !== id) return {};
+        if (state.currentSessionId !== id) {
+          return {};
+        }
         const current = state.sessionLoading[id] ?? EMPTY_LOADING;
         return {
           sessionLoading: { ...state.sessionLoading, [id]: { ...current, [key]: false } },
@@ -103,7 +88,6 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
       });
     };
 
-    // Summary
     const endSummary = perf('summary');
     void summarizeSessionTelemetry(tauriDatabase, id)
       .then((summary) => {
@@ -115,16 +99,12 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         markDone('summary');
       });
 
-    // GitHub PR: refresh head + detail for the opened session so its context
-    // panel shows fresh CI / review state on every visit. No `force`, the
-    // 60s/30s caches dedupe rapid back-and-forth between sessions.
     if (get().sessionBranches[id]) {
       void get()
         .refreshSessionPr(id)
         .then(() => get().refreshSessionPrDetail(id));
     }
 
-    // Telemetry
     if (!cached?.telemetry) {
       const endTelemetry = perf('telemetry');
       void listTelemetryForSession(tauriDatabase, id)
@@ -140,7 +120,6 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         });
     }
 
-    // Context slots
     if (!cached?.slots) {
       const endSlots = perf('slots');
       void listContextSlotsForSession(tauriDatabase, id)
@@ -156,9 +135,6 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         });
     }
 
-    // Open questions: hydrate alongside slots so the sidebar gates
-    // (PlanReadySuggestion + per-workflow NextStep CTA) can resolve their
-    // block state for the just-loaded session without an extra round-trip.
     void listOpenQuestionsForSession(tauriDatabase, id, 'open')
       .then((qs) => {
         set((state) => ({
@@ -167,7 +143,6 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
       })
       .catch(() => {});
 
-    // Plans
     if (!cached?.plans) {
       const endPlans = perf('plans');
       void (async (): Promise<ReadonlyArray<PlanWithCount>> => {
@@ -189,9 +164,6 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         });
     }
 
-    // Agents only: transcript is loaded lazily by ChatView when an agent is
-    // selected (via selectAgent). Keeps session switch fast, no per-agent
-    // history fetch blocks the UI.
     if (cached?.agents) {
       // Cached: phase runs + selected agent are already in store. transcript
       // flag still gets cleared by ChatView's selectAgent effect (cached or
@@ -207,19 +179,11 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         .then(([agents, agentRunIds]) => {
           const previouslySelected = get().selectedAgentId[id] ?? null;
           const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-          // Fresh entry defaults to the most recently created agent (highest
-          // ordinal). Chronologically the latest is the one the user is most
-          // likely returning to. Previous selection still wins on revisit.
           const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
           const selectedAgent =
             (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
             fallbackAgent;
 
-          // Seed agentRunHistory with EVERY provider run an agent ever spawned,
-          // not just its latest. Recovered from turn_events (single source of
-          // truth post restart) so aggregate token/cost counters in the sidebar
-          // reflect the full agent lifetime, birth to death, instead of the
-          // last turn.
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = get().sessions.find((s) => s.id === id);
@@ -229,7 +193,9 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
           for (const agent of agents) {
             const historical = agentRunIds.get(agent.id) ?? [];
             const merged: ProviderRunId[] = [...historical];
-            if (agent.runId && !merged.includes(agent.runId)) merged.push(agent.runId);
+            if (agent.runId && !merged.includes(agent.runId)) {
+              merged.push(agent.runId);
+            }
             if (merged.length > 0) {
               seededHistory[agent.id] = merged;
             }
@@ -255,7 +221,9 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
 
           const kindOverridesFromDb: Record<string, AgentKind> = {};
           for (const agent of agents) {
-            if (agent.kind) kindOverridesFromDb[agent.id] = agent.kind as AgentKind;
+            if (agent.kind) {
+              kindOverridesFromDb[agent.id] = agent.kind as AgentKind;
+            }
           }
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
@@ -269,9 +237,6 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
           }));
           markDone('agents');
 
-          // No selected agent → no chat to render → drop transcript flag now.
-          // With a selected agent, ChatView's effect calls selectAgent which
-          // owns the flag lifecycle from there.
           if (!selectedAgent) {
             set((state) => ({
               messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
@@ -286,4 +251,4 @@ export function setCurrentSession(set: SetFn, get: GetFn) {
         .finally(() => endAgents());
     }
   };
-}
+};

@@ -17,18 +17,18 @@ import {
 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
-}
+};
 
 type Section = 'overview' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
-interface NavItem {
+type NavItem = {
   readonly id: Section;
   readonly label: string;
   readonly icon: ReactNode;
-}
+};
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'overview', label: 'Overview', icon: <BookOpen size={13} aria-hidden /> },
@@ -41,7 +41,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
 ];
 
-export function GuideDialog({ open, onClose }: Props) {
+export const GuideDialog = ({ open, onClose }: Props) => {
   const [active, setActive] = useState<Section>('overview');
 
   return (
@@ -86,7 +86,7 @@ export function GuideDialog({ open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};
 
 function Content({ section, onJump }: { section: Section; onJump: (s: Section) => void }) {
   switch (section) {
@@ -108,10 +108,6 @@ function Content({ section, onJump }: { section: Section; onJump: (s: Section) =
       return <LegendSection />;
   }
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Sections                                                              */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
   return (
@@ -617,10 +613,6 @@ function LegendSection() {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Building blocks                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
-
 type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
 
 const TONE_BG: Record<Tone, string> = {
@@ -751,12 +743,12 @@ function ConceptCard({
   );
 }
 
-interface DefinitionRow {
+type DefinitionRow = {
   readonly term: string;
   readonly desc: string;
   readonly icon?: ReactNode;
   readonly tone?: Tone;
-}
+};
 
 function DefinitionList({ rows }: { rows: ReadonlyArray<DefinitionRow> }) {
   return (
@@ -845,11 +837,11 @@ function InlineCode({ children }: { children: ReactNode }) {
   );
 }
 
-interface LegendaRow {
+type LegendaRow = {
   readonly dot: string;
   readonly label: string;
   readonly desc: string;
-}
+};
 
 function LegendaGrid({ rows }: { rows: ReadonlyArray<LegendaRow> }) {
   return (

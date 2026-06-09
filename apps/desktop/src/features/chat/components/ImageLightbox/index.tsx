@@ -2,34 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-interface Props {
+type Props = {
   readonly src: string;
   readonly alt: string;
   readonly onClose: () => void;
   readonly media?: 'image' | 'pdf';
-}
+};
 
 const EXIT_MS = 180;
 
-/**
- * Full-viewport image preview: backdrop blur, centered image, X / Esc /
- * click-outside to dismiss. Rendered via portal so it escapes any
- * `overflow: hidden` ancestor and stacks above everything.
- *
- * Three-phase lifecycle keeps mount and unmount animated:
- *   `enter`  initial paint with hidden classes
- *   `open`   visible classes applied next frame, CSS transitions in
- *   `leave`  hidden classes reapplied, parent's `onClose` fires after
- *            the exit transition so the unmount happens at the end of
- *            the animation, not the start.
- */
-export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
+export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => {
   const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
   const exitTimerRef = useRef<number | null>(null);
 
-  // Two rAFs so the browser commits the initial `enter` classes to a paint
-  // before we flip to `open`. A single rAF batches with the initial render
-  // on some browsers and skips the transition entirely.
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setPhase('open'));
@@ -42,7 +27,9 @@ export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
   }, []);
 
   useEffect(() => {
-    if (phase !== 'leave') return;
+    if (phase !== 'leave') {
+      return;
+    }
     exitTimerRef.current = window.setTimeout(onClose, EXIT_MS);
     return () => {
       if (exitTimerRef.current !== null) {
@@ -54,7 +41,9 @@ export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') requestClose();
+      if (event.key === 'Escape') {
+        requestClose();
+      }
     };
     window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -101,8 +90,6 @@ export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
         <img
           src={src}
           alt={alt}
-          // Stop propagation so clicking the image itself doesn't dismiss.
-          // Only the surrounding backdrop closes the preview.
           onClick={(event) => event.stopPropagation()}
           className={`max-h-full max-w-full rounded-lg object-contain shadow-2xl transition-all duration-[180ms] ease-out ${
             visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
@@ -112,4 +99,4 @@ export function ImageLightbox({ src, alt, onClose, media = 'image' }: Props) {
     </div>,
     document.body,
   );
-}
+};

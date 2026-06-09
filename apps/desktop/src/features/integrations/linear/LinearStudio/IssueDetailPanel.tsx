@@ -35,12 +35,12 @@ import { issuePullRequests, type LinearIssue } from '../client';
 
 type BranchMode = 'pr' | 'fresh';
 
-interface Props {
+type Props = {
   readonly issue: LinearIssue | null;
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId;
   readonly onClose: () => void;
-}
+};
 
 const SLUG_MAX_LEN = 48;
 
@@ -73,7 +73,9 @@ function sanitizePrefix(input: string): string {
 
 function isValidBranchSlug(slug: string): boolean {
   const s = slug.trim();
-  if (!s) return false;
+  if (!s) {
+    return false;
+  }
   return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
 }
 
@@ -83,7 +85,9 @@ function branchSlugFor(issue: LinearIssue): string {
     const idx = branchName.indexOf('/');
     const tail = idx >= 0 ? branchName.slice(idx + 1) : branchName;
     const cleaned = sanitizeSlug(tail);
-    if (cleaned.length > 0) return cleaned;
+    if (cleaned.length > 0) {
+      return cleaned;
+    }
   }
   return slugify(issue.title);
 }
@@ -103,7 +107,7 @@ function prStatusTone(status: string | null): string {
   }
 }
 
-export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Props) {
+export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const rootPath = useAppStore(
@@ -135,7 +139,9 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
   const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
 
   useEffect(() => {
-    if (!issue) return;
+    if (!issue) {
+      return;
+    }
     setGoal(goalFromIssue(issue));
     setBranchSlug(branchSlugFor(issue));
     setError(null);
@@ -152,20 +158,28 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
   }, [workspaceId, loadSetting]);
 
   useEffect(() => {
-    if (mode !== 'pr' || !adoptablePr?.repo || !rootPath) return;
+    if (mode !== 'pr' || !adoptablePr?.repo || !rootPath) {
+      return;
+    }
     const prNumber = adoptablePr.number;
     let cancelled = false;
     setPrResolving(true);
     setPrError(null);
     ghPrHeadBranch(rootPath, prNumber, workspaceId)
       .then((branch) => {
-        if (!cancelled) setPrBranch(branch);
+        if (!cancelled) {
+          setPrBranch(branch);
+        }
       })
       .catch((err) => {
-        if (!cancelled) setPrError(formatError(err));
+        if (!cancelled) {
+          setPrError(formatError(err));
+        }
       })
       .finally(() => {
-        if (!cancelled) setPrResolving(false);
+        if (!cancelled) {
+          setPrResolving(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -195,7 +209,9 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
     setError(null);
     setBusy(true);
     try {
-      if (eraseWorktreePath && rootPath) await removeWorktree(rootPath, eraseWorktreePath);
+      if (eraseWorktreePath && rootPath) {
+        await removeWorktree(rootPath, eraseWorktreePath);
+      }
       const adoptBranch = mode === 'pr' ? (prBranch ?? undefined) : undefined;
       const { session } = await createSession({
         workspaceId,
@@ -260,7 +276,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
           </a>
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">{issue.title}</h2>
-        {linkedPrs.length > 0 ? (
+        {linkedPrs.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
             {linkedPrs.map((pr) => (
               <a
@@ -279,7 +295,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
               </a>
             ))}
           </div>
-        ) : null}
+        )}
       </div>
       <Divider />
 
@@ -298,7 +314,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
             <section className="flex flex-col gap-3">
               <SectionHeader label="launch session" />
               {openableSessionId ? (
-                <div className="flex items-center gap-3 rounded-xl border border-border-soft bg-muted/10 px-4 py-3.5">
+                <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3.5">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/15">
                     <MessagesSquare size={15} className="text-success" aria-hidden />
                   </span>
@@ -315,7 +331,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
                   <OpenSessionButton sessionId={openableSessionId} onOpened={onClose} />
                 </div>
               ) : (
-                <div className="flex flex-col gap-4 rounded-xl border border-border-soft bg-muted/10 p-4">
+                <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
                   <LaunchField
                     icon={<Target size={13} aria-hidden className="text-primary" />}
                     label="Goal"
@@ -471,7 +487,7 @@ export function IssueDetailPanel({ issue, sessionId, workspaceId, onClose }: Pro
       </div>
     </div>
   );
-}
+};
 
 function BranchModeButton({
   active,

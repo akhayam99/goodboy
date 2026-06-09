@@ -4,10 +4,12 @@ import type { SessionConfigUpdate } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function setSessionConfig(set: SetFn, get: GetFn) {
+export const setSessionConfig = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, fields: SessionConfigUpdate) => {
     const prev = get().sessions.find((s) => s.id === sessionId);
-    if (!prev) return;
+    if (!prev) {
+      return;
+    }
     const applyFields = (s: Session): Session => {
       const { verbosity, effort, modelOverride, providerOverride, ...rest } = s;
       const next: Session = { ...rest } as Session;
@@ -15,8 +17,6 @@ export function setSessionConfig(set: SetFn, get: GetFn) {
       const nextEffort = fields.effort !== undefined ? fields.effort : (effort ?? null);
       const nextModel =
         fields.modelOverride !== undefined ? fields.modelOverride : (modelOverride ?? null);
-      // Changing the session-level default in db clears provider_override; mirror
-      // that here so the ChatInput pill drops back to "session default" too.
       const nextProvider =
         fields.defaultProvider !== undefined && fields.defaultProvider !== null
           ? null
@@ -48,4 +48,4 @@ export function setSessionConfig(set: SetFn, get: GetFn) {
       throw err;
     }
   };
-}
+};

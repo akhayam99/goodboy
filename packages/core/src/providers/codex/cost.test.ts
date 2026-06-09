@@ -32,7 +32,6 @@ describe('computeCodexCostUsd', () => {
   });
 
   it('computes cost when override present', () => {
-    // 1M input @ $5 + 1M output @ $20
     expect(computeCodexCostUsd(usage, 'codex-latest', override)).toBeCloseTo(5 + 20);
   });
 
@@ -43,7 +42,6 @@ describe('computeCodexCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    // 1M billable @ $5 + 1M cached @ $0.5
     expect(computeCodexCostUsd(partial, 'codex-latest', override)).toBeCloseTo(5 + 0.5);
   });
 
@@ -55,7 +53,6 @@ describe('computeCodexCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    // 1M billable @ $4 + 1M cached @ $4 (same rate, no discount configured)
     expect(computeCodexCostUsd(partial, 'codex-latest', noCache)).toBeCloseTo(4 + 4);
   });
 
@@ -68,10 +65,9 @@ describe('computeCodexCostUsd', () => {
     const weirdUsage: ProviderUsage = {
       inputTokens: 500_000,
       outputTokens: 0,
-      cachedInputTokens: 1_000_000, // cached > input → billableInput = 0
+      cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    // only cached tokens billed
     expect(computeCodexCostUsd(weirdUsage, 'codex-latest', override)).toBeCloseTo(
       (1_000_000 * override.cachedInputPerMtok!) / 1_000_000,
     );

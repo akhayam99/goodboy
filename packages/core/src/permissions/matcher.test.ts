@@ -18,8 +18,6 @@ describe('parseToolPattern', () => {
   });
 
   it('Bash(git:*) matches command with git: prefix (claude colon notation)', () => {
-    // In claude --allowedTools syntax, Bash(git:*) means the Bash command arg
-    // starts with "git:", the colon is literal in the pattern.
     const m = parseToolPattern('Bash(git:*)');
     expect(m.matches('Bash', { command: 'git:status' })).toBe(true);
     expect(m.matches('Bash', { command: 'git:commit' })).toBe(true);
@@ -44,7 +42,6 @@ describe('parseToolPattern', () => {
   it('single segment * does not cross : or /', () => {
     const m = parseToolPattern('Bash(git *)');
     expect(m.matches('Bash', { command: 'git status' })).toBe(true);
-    // the * should not match across : (per claude convention)
     const m2 = parseToolPattern('Bash(git:*)');
     expect(m2.matches('Bash', { command: 'git:foo:bar' })).toBe(false);
   });
@@ -52,7 +49,6 @@ describe('parseToolPattern', () => {
   it('regex metachar escape: literal dot in path', () => {
     const m = parseToolPattern('Edit(/foo.bar/*)');
     expect(m.matches('Edit', { file_path: '/foo.bar/baz' })).toBe(true);
-    // dot is literal, not wildcard
     expect(m.matches('Edit', { file_path: '/fooXbar/baz' })).toBe(false);
   });
 

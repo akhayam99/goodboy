@@ -7,15 +7,14 @@ import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 
-// '' = inherit the session/workspace default provider at run time.
 type Value = ProviderId | '';
 
-interface Props {
+type Props = {
   value: Value;
   providers: ReadonlyArray<ProviderId>;
   onChange: (value: Value) => void;
   disabled: boolean;
-}
+};
 
 const PROVIDER_DOT: Record<ProviderId, string> = {
   anthropic: 'bg-orange-400',
@@ -28,7 +27,7 @@ function label(value: Value): string {
   return value === '' ? 'Default' : PROVIDER_LABEL[value];
 }
 
-export function ProviderSelect({ value, providers, onChange, disabled }: Props) {
+export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
@@ -104,4 +103,4 @@ export function ProviderSelect({ value, providers, onChange, disabled }: Props) 
       ) : null}
     </div>
   );
-}
+};

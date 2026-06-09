@@ -3,7 +3,7 @@ import { invokeTerminalClose } from '../../../features/terminal/terminal';
 import { clearTerminalCache } from '../../../shared/components/GenericTerminalPanel';
 import type { SetFn, GetFn } from './types';
 
-export function closeSessionTerminals(set: SetFn, get: GetFn) {
+export const closeSessionTerminals = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId): void => {
     for (const tab of get().terminalTabs[sessionId] ?? []) {
       invokeTerminalClose(tab.id).catch(() => undefined);
@@ -20,4 +20,4 @@ export function closeSessionTerminals(set: SetFn, get: GetFn) {
       return { terminalTabs: nextTabs, activeTerminalTab: nextActive };
     });
   };
-}
+};

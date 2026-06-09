@@ -50,19 +50,29 @@ function userStatusBucket(status: SessionUserStatus): SessionUserStatusGroup {
 
 function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
   const pr = github?.pr;
-  if (!pr) return 'not-open';
-  if (pr.state === 'closed') return 'closed';
-  if (pr.state === 'merged') return 'merged';
-  if (pr.isDraft) return 'draft';
-  if (pr.reviewDecision === 'approved') return 'reviewed';
+  if (!pr) {
+    return 'not-open';
+  }
+  if (pr.state === 'closed') {
+    return 'closed';
+  }
+  if (pr.state === 'merged') {
+    return 'merged';
+  }
+  if (pr.isDraft) {
+    return 'draft';
+  }
+  if (pr.reviewDecision === 'approved') {
+    return 'reviewed';
+  }
   return 'reviewable';
 }
 
-export function sortAndGroupSessions(
+export const sortAndGroupSessions = (
   sessions: ReadonlyArray<Session>,
   prefs: SessionViewPrefs,
   githubState: Readonly<Record<SessionId, SessionGithubState>>,
-): ReadonlyArray<GroupedSessions> {
+): ReadonlyArray<GroupedSessions> => {
   const sorted = sortSessions(sessions, prefs.sort);
 
   if (prefs.group === 'none') {
@@ -98,4 +108,4 @@ export function sortAndGroupSessions(
   return (Object.keys(PR_GROUP_ORDER) as SessionPrGroup[])
     .filter((k) => buckets.has(k))
     .map((k) => ({ key: k, sessions: buckets.get(k)! }));
-}
+};

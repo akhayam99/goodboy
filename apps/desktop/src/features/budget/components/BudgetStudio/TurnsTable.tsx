@@ -5,16 +5,16 @@ import { ProviderIcon } from './ProviderIcon';
 import { Widget } from './Widget';
 import { formatModel, formatTokens, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 
-interface Props {
+type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly showProvider: boolean;
   readonly showSession: boolean;
-}
+};
 
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 const PAGE_SIZE = 10;
 
-export function TurnsTable({ turns, showProvider, showSession }: Props) {
+export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);
     return stored === 'expensive' ? 'expensive' : 'recent';
@@ -108,7 +108,7 @@ export function TurnsTable({ turns, showProvider, showSession }: Props) {
               ))}
             </tbody>
           </table>
-          {remaining > 0 ? (
+          {remaining > 0 && (
             <button
               type="button"
               onClick={() => setVisible((v) => v + PAGE_SIZE)}
@@ -116,12 +116,12 @@ export function TurnsTable({ turns, showProvider, showSession }: Props) {
             >
               Show more ({remaining})
             </button>
-          ) : null}
+          )}
         </>
       )}
     </Widget>
   );
-}
+};
 
 function SortChip({
   active,

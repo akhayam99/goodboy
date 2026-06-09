@@ -2,20 +2,20 @@ import type { IsoDateTime, SessionId } from './ids';
 
 export type GhTokenMode = 'absent' | 'gh-cli' | 'pat';
 
-export interface GhTokenStatus {
+export type GhTokenStatus = {
   mode: GhTokenMode;
   available: boolean;
   version?: string;
   user?: string;
   scopes?: ReadonlyArray<string>;
   scoped?: boolean;
-}
+};
 
 export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'merged' | 'closed';
 
 export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;
 
-export interface PullRequestState {
+export type PullRequestState = {
   number: number;
   title: string;
   url: string;
@@ -28,34 +28,34 @@ export interface PullRequestState {
   reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
   body: string;
   updatedAt: string;
-}
+};
 
-export interface LinkedIssue {
+export type LinkedIssue = {
   number: number;
   title?: string;
   url: string;
   closes: boolean;
-}
+};
 
 export type FileDiffStatus = 'added' | 'modified' | 'deleted' | 'renamed';
 
-export interface DiffHunkLine {
+export type DiffHunkLine = {
   kind: 'context' | 'add' | 'del';
   oldLine: number | null;
   newLine: number | null;
   text: string;
-}
+};
 
-export interface DiffHunk {
+export type DiffHunk = {
   header: string;
   oldStart: number;
   oldLines: number;
   newStart: number;
   newLines: number;
   lines: ReadonlyArray<DiffHunkLine>;
-}
+};
 
-export interface FileDiff {
+export type FileDiff = {
   path: string;
   oldPath?: string;
   status: FileDiffStatus;
@@ -63,19 +63,19 @@ export interface FileDiff {
   deletions: number;
   binary: boolean;
   hunks: ReadonlyArray<DiffHunk>;
-}
+};
 
-export interface PullRequestDiff {
+export type PullRequestDiff = {
   prNumber: number;
   files: ReadonlyArray<FileDiff>;
-}
+};
 
-export interface GithubPrCacheEntry {
+export type GithubPrCacheEntry = {
   branch: string;
   repoSlug: string;
   pr: PullRequestState | null;
   fetchedAt: string;
-}
+};
 
 export type PrCheckConclusion =
   | 'success'
@@ -89,14 +89,14 @@ export type PrCheckConclusion =
   | 'pending'
   | 'unknown';
 
-export interface PrCheckRun {
+export type PrCheckRun = {
   name: string;
   conclusion: PrCheckConclusion;
   detailsUrl: string | null;
   durationMs: number | null;
-}
+};
 
-export interface PrComment {
+export type PrComment = {
   id: string;
   author: string;
   authorAvatarUrl: string | null;
@@ -104,19 +104,12 @@ export interface PrComment {
   createdAt: string;
   url: string;
   source: 'issue' | 'review';
-  // Review-comment metadata (only present when source === 'review').
   path?: string;
   line?: number;
-  // Whether the review thread containing this comment is resolved.
-  // Always undefined for issue comments.
   resolved?: boolean;
-  // GraphQL node id of the parent comment, if this is a reply.
   inReplyToId?: string;
-  // GraphQL node id of the review thread this comment belongs to.
-  // Required by the resolveReviewThread mutation. Always undefined
-  // for issue comments.
   threadId?: string;
-}
+};
 
 export type PrReviewState =
   | 'approved'
@@ -125,34 +118,34 @@ export type PrReviewState =
   | 'dismissed'
   | 'pending';
 
-export interface PrReview {
+export type PrReview = {
   id: string;
   author: string;
   authorAvatarUrl: string | null;
   state: PrReviewState;
   submittedAt: string | null;
   body: string;
-}
+};
 
-export interface PrReviewRequest {
+export type PrReviewRequest = {
   login: string;
   avatarUrl: string | null;
   kind: 'user' | 'team';
-}
+};
 
-export interface PrDetail {
+export type PrDetail = {
   prNumber: number;
   comments: ReadonlyArray<PrComment>;
   reviews: ReadonlyArray<PrReview>;
   reviewRequests: ReadonlyArray<PrReviewRequest>;
   checks: ReadonlyArray<PrCheckRun>;
-}
+};
 
-export interface PendingResolution {
+export type PendingResolution = {
   id: string;
   sessionId: SessionId;
   prNumber: number;
   threadId: string;
   commitSha: string;
   createdAt: IsoDateTime;
-}
+};

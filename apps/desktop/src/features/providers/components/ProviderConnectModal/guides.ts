@@ -1,21 +1,17 @@
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 
-// Per-provider × action playbook surfaced in the modal sidebar. Three sections
-// (subscription, what happens, troubleshooting) keep every guide structured
-// identically so the user learns the pattern once. Logout is rare and brief,
-// so it shares a minimal template.
-interface GuideStep {
+type GuideStep = {
   readonly title: string;
   readonly body: string;
-}
+};
 
-export interface ProviderGuide {
+export type ProviderGuide = {
   readonly headline: string;
   readonly subscription: string;
   readonly steps: ReadonlyArray<GuideStep>;
   readonly docsUrl: string;
   readonly docsLabel: string;
-}
+};
 
 const ANTHROPIC_DOCS = 'https://docs.claude.com/en/docs/claude-code/overview';
 const CURSOR_DOCS = 'https://docs.cursor.com/en/cli/installation';
@@ -223,8 +219,15 @@ const LOGOUT_GUIDES: Record<ProviderId, ProviderGuide> = {
   },
 };
 
-export function guideFor(providerId: ProviderId, action: ProviderLifecycleAction): ProviderGuide {
-  if (action === 'install') return INSTALL_GUIDES[providerId];
-  if (action === 'login') return LOGIN_GUIDES[providerId];
+export const guideFor = (
+  providerId: ProviderId,
+  action: ProviderLifecycleAction,
+): ProviderGuide => {
+  if (action === 'install') {
+    return INSTALL_GUIDES[providerId];
+  }
+  if (action === 'login') {
+    return LOGIN_GUIDES[providerId];
+  }
   return LOGOUT_GUIDES[providerId];
-}
+};

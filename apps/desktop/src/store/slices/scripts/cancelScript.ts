@@ -2,10 +2,12 @@ import type { SessionId, WorkspaceScriptId } from '@goodboy/types';
 import { invokeScriptCancel, type ScriptRunRecord } from '../../../features/scripts/scripts';
 import type { GetFn, SetFn } from './types';
 
-export function cancelScript(set: SetFn, get: GetFn) {
+export const cancelScript = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, scriptId: WorkspaceScriptId) => {
     const curr = get().scriptRuns[sessionId]?.[scriptId];
-    if (!curr || curr.status !== 'pending') return;
+    if (!curr || curr.status !== 'pending') {
+      return;
+    }
     const cancelled: ScriptRunRecord = { ...curr, status: 'cancelled' };
     set((state) => ({
       scriptRuns: {
@@ -15,4 +17,4 @@ export function cancelScript(set: SetFn, get: GetFn) {
     }));
     await invokeScriptCancel(curr.runId);
   };
-}
+};

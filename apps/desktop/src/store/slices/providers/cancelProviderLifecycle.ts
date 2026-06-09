@@ -2,10 +2,12 @@ import type { ProviderId } from '@goodboy/types';
 import { invokeProviderLifecycleCancel } from '../../../features/providers/provider-lifecycle';
 import type { GetFn, SetFn } from './types';
 
-export function cancelProviderLifecycle(set: SetFn, get: GetFn) {
+export const cancelProviderLifecycle = (set: SetFn, get: GetFn) => {
   return async (providerId: ProviderId): Promise<void> => {
     const curr = get().providerLifecycle[providerId];
-    if (!curr.runId) return;
+    if (!curr.runId) {
+      return;
+    }
     if (
       curr.phase !== 'installing' &&
       curr.phase !== 'connecting' &&
@@ -13,8 +15,6 @@ export function cancelProviderLifecycle(set: SetFn, get: GetFn) {
     ) {
       return;
     }
-    // Optimistic mark; the exit handler will land on the resting phase based on
-    // refreshed detection but preserves 'cancelled' if it sees it.
     set((state) => ({
       providerLifecycle: {
         ...state.providerLifecycle,
@@ -23,4 +23,4 @@ export function cancelProviderLifecycle(set: SetFn, get: GetFn) {
     }));
     await invokeProviderLifecycleCancel(curr.runId);
   };
-}
+};

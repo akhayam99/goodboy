@@ -11,14 +11,14 @@ function shortPath(path: string): string {
   return last;
 }
 
-export function buildCommentAgentTitle(c: PrComment): string {
+export const buildCommentAgentTitle = (c: PrComment): string => {
   const who = c.author.replace(/\[bot\]$/, '');
   if (c.source === 'review' && c.path) {
     const loc = c.line ? `${shortPath(c.path)}:${c.line}` : shortPath(c.path);
     return truncate(`resolve: ${who} on ${loc}`, TITLE_MAX);
   }
   return truncate(`resolve: ${who} comment`, TITLE_MAX);
-}
+};
 
 function buildCommentAgentPrompt(
   c: PrComment,
@@ -56,7 +56,7 @@ function buildCommentAgentPrompt(
   return lines.join('\n');
 }
 
-export interface CommentAgentArgs {
+export type CommentAgentArgs = {
   readonly name: string;
   readonly kind: AgentKind;
   readonly model: string;
@@ -65,20 +65,20 @@ export interface CommentAgentArgs {
   readonly initialPrompt: string;
   readonly sourceThreadId?: string;
   readonly sourceCommentUrl: string;
-}
+};
 
-export interface ResolveModelChoice {
+export type ResolveModelChoice = {
   readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: EffortLevel;
-}
+};
 
-export function buildCommentAgentArgs(
+export const buildCommentAgentArgs = (
   c: PrComment,
   pr: PullRequestState,
   choice: ResolveModelChoice = {},
   replies: ReadonlyArray<PrComment> = [],
-): CommentAgentArgs {
+): CommentAgentArgs => {
   const defaults = AGENT_KIND_DEFAULTS.resolver;
   return {
     name: buildCommentAgentTitle(c),
@@ -90,9 +90,11 @@ export function buildCommentAgentArgs(
     ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
     sourceCommentUrl: c.url,
   };
-}
+};
 
 function truncate(s: string, max: number): string {
-  if (s.length <= max) return s;
+  if (s.length <= max) {
+    return s;
+  }
   return `${s.slice(0, max - 1)}…`;
 }

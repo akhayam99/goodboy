@@ -14,24 +14,24 @@ If the goal already states only the objective with no process, return it essenti
 
 Output ONLY the rewritten goal text. No preamble, no quotes, no JSON, no explanation.`;
 
-export interface GoalRewriteInput {
+export type GoalRewriteInput = {
   readonly goal: string;
   readonly stepNames: ReadonlyArray<string>;
-}
+};
 
-export interface GoalRewriteDeps {
+export type GoalRewriteDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-}
+};
 
-interface OneShotResult {
+type OneShotResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
-}
+};
 
-export function buildGoalRewriteUserPrompt(input: GoalRewriteInput): string {
+export const buildGoalRewriteUserPrompt = (input: GoalRewriteInput): string => {
   const steps = input.stepNames.map((name) => `- ${name}`).join('\n');
   return [
     'CURRENT GOAL:',
@@ -42,14 +42,16 @@ export function buildGoalRewriteUserPrompt(input: GoalRewriteInput): string {
     '',
     'Rewrite the goal following your instructions. Output only the cleaned goal text.',
   ].join('\n');
-}
+};
 
-export async function rewriteWorkflowGoal(
+export const rewriteWorkflowGoal = async (
   deps: GoalRewriteDeps,
   input: GoalRewriteInput,
-): Promise<string | null> {
+): Promise<string | null> => {
   const goal = input.goal.trim();
-  if (goal.length === 0 || input.stepNames.length === 0) return null;
+  if (goal.length === 0 || input.stepNames.length === 0) {
+    return null;
+  }
 
   const result = await deps.invokeFn<OneShotResult>('summarize_session', {
     args: {
@@ -60,11 +62,13 @@ export async function rewriteWorkflowGoal(
       systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,
     },
   });
-  if ((result.exitCode ?? 0) !== 0) return null;
+  if ((result.exitCode ?? 0) !== 0) {
+    return null;
+  }
 
   const cleaned = extractText(deps.providerId, result.stdout).trim();
   return cleaned.length > 0 ? cleaned : null;
-}
+};
 
 function extractText(providerId: ProviderId, stdout: string): string {
   const trimmed = stdout.trim();

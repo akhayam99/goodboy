@@ -4,34 +4,34 @@ import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
-export interface ToastItem {
+export type ToastItem = {
   readonly id: string;
   readonly kind: ToastKind;
   readonly message: string;
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
-}
+};
 
-export interface ShowToastOptions {
+export type ShowToastOptions = {
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
-}
+};
 
-interface ToastContextValue {
+type ToastContextValue = {
   showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void;
-}
+};
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const AUTO_DISMISS_MS = 5000;
 
-interface ToastProviderProps {
+type ToastProviderProps = {
   children: React.ReactNode;
-}
+};
 
-export function ToastProvider({ children }: ToastProviderProps) {
+export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
 
   const showToast = useCallback((kind: ToastKind, message: string, opts?: ShowToastOptions) => {
@@ -61,21 +61,25 @@ export function ToastProvider({ children }: ToastProviderProps) {
       <ToastStack toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>
   );
-}
+};
 
-export function useToast(): ToastContextValue {
+export const useToast = (): ToastContextValue => {
   const ctx = useContext(ToastContext);
-  if (ctx === null) throw new Error('useToast must be used inside ToastProvider');
+  if (ctx === null) {
+    throw new Error('useToast must be used inside ToastProvider');
+  }
   return ctx;
-}
+};
 
-interface ToastStackProps {
+type ToastStackProps = {
   toasts: ReadonlyArray<ToastItem>;
   onDismiss: (id: string) => void;
-}
+};
 
 function ToastStack({ toasts, onDismiss }: ToastStackProps) {
-  if (toasts.length === 0) return null;
+  if (toasts.length === 0) {
+    return null;
+  }
 
   return (
     <div
@@ -91,10 +95,10 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   );
 }
 
-interface ToastCardProps {
+type ToastCardProps = {
   toast: ToastItem;
   onDismiss: (id: string) => void;
-}
+};
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
   const [visible, setVisible] = useState(false);
@@ -111,7 +115,9 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
 
     return () => {
       cancelAnimationFrame(raf);
-      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
     };
   }, [toast.id, toast.persist, onDismiss]);
 

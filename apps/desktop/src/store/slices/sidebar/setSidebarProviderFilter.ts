@@ -1,6 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import type { SetFn } from './types';
 
-export function setSidebarProviderFilter(set: SetFn) {
+export const setSidebarProviderFilter = (set: SetFn) => {
   return (providers: ReadonlyArray<ProviderId>) => set({ sidebarProviderFilter: providers });
-}
+};

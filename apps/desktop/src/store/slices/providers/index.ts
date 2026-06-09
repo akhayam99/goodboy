@@ -9,7 +9,7 @@ import type { GetFn, SetFn } from './types';
 export type { ProviderLifecycleMap, ProviderLifecyclePhase, ProviderLifecycleState } from './types';
 export { INITIAL_LIFECYCLE_MAP } from './types';
 
-export function createProvidersSlice(set: SetFn, get: GetFn) {
+export const createProvidersSlice = (set: SetFn, get: GetFn) => {
   return {
     refreshProviderStatus: refreshProviderStatus(set),
     refreshProviders: refreshProviders(set),
@@ -18,4 +18,4 @@ export function createProvidersSlice(set: SetFn, get: GetFn) {
     logoutProvider: logoutProvider(set, get),
     cancelProviderLifecycle: cancelProviderLifecycle(set, get),
   };
-}
+};

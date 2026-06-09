@@ -4,14 +4,14 @@ import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from './ProviderIcon';
 import { providerLabel, spendBarColor, type BudgetScope, type SessionSpend } from './lib';
 
-interface Props {
+type Props = {
   readonly scope: BudgetScope;
   readonly onSelect: (scope: BudgetScope) => void;
   readonly providers: ReadonlyArray<ProviderSpendEntry>;
   readonly sessions: ReadonlyArray<SessionSpend>;
-}
+};
 
-export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
+export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
   return (
     <div className="flex flex-col gap-3 p-3">
       <ul className="flex flex-col gap-0.5">
@@ -33,7 +33,7 @@ export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
         </li>
       </ul>
 
-      {providers.length > 0 ? (
+      {providers.length > 0 && (
         <div className="flex flex-col gap-1">
           <GroupLabel label="providers" count={providers.length} />
           <ul className="flex flex-col gap-0.5">
@@ -75,9 +75,9 @@ export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
             })}
           </ul>
         </div>
-      ) : null}
+      )}
 
-      {sessions.length > 0 ? (
+      {sessions.length > 0 && (
         <div className="flex flex-col gap-1">
           <GroupLabel label="sessions" count={sessions.length} />
           <ul className="flex flex-col gap-0.5">
@@ -115,10 +115,10 @@ export function ScopeRail({ scope, onSelect, providers, sessions }: Props) {
             })}
           </ul>
         </div>
-      ) : null}
+      )}
     </div>
   );
-}
+};
 
 function GroupLabel({ label, count }: { label: string; count?: number }) {
   return (
@@ -126,9 +126,9 @@ function GroupLabel({ label, count }: { label: string; count?: number }) {
       <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
-      {count !== undefined ? (
+      {count !== undefined && (
         <span className="text-2xs tabular-nums text-muted-foreground/50">{count}</span>
-      ) : null}
+      )}
       <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
     </div>
   );

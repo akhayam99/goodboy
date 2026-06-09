@@ -28,14 +28,13 @@ import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   workspaceName: string;
   open: boolean;
   onClose: () => void;
-  /** Tab to open on, e.g. deep-linked from the command palette. */
   initialSection?: string;
-}
+};
 
 type Section = 'general' | 'integrations' | 'skills' | 'scripts' | 'phases' | 'scout' | 'danger';
 
@@ -51,30 +50,27 @@ function isSection(value: string | undefined): value is Section {
   );
 }
 
-interface NavItem {
+type NavItem = {
   readonly id: Section;
   readonly label: string;
   readonly icon: ReactNode;
   readonly beta?: boolean;
   readonly tone?: 'danger';
-}
+};
 
-export function WorkspaceSettingsDialog({
+export const WorkspaceSettingsDialog = ({
   workspaceId,
   workspaceName,
   open,
   onClose,
   initialSection,
-}: Props) {
+}: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
 
-  // useShallow because the selector derives a fresh array each call; without
-  // shallow comparison useSyncExternalStore detects a snapshot mismatch on
-  // every render and React 19 bails into an infinite render loop.
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -94,7 +90,9 @@ export function WorkspaceSettingsDialog({
   const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setActive(isSection(initialSection) ? initialSection : 'general');
     setSaveState('idle');
     setError(null);
@@ -231,7 +229,7 @@ export function WorkspaceSettingsDialog({
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          {active === 'general' || active === 'scout' ? (
+          {(active === 'general' || active === 'scout') && (
             <Button
               onClick={() => void onSave()}
               disabled={saveState === 'saving' || !settingsDirty}
@@ -245,12 +243,12 @@ export function WorkspaceSettingsDialog({
                 'Save'
               )}
             </Button>
-          ) : null}
+          )}
         </div>
       }
     >
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
-        {active === 'general' ? (
+        {active === 'general' && (
           <GeneralSection
             branchPrefix={branchPrefix}
             setBranchPrefix={setBranchPrefix}
@@ -261,9 +259,9 @@ export function WorkspaceSettingsDialog({
             connectedProviderIds={connectedProviderIds}
             busy={saveState === 'saving'}
           />
-        ) : null}
+        )}
 
-        {active === 'integrations' ? (
+        {active === 'integrations' && (
           <SectionShell
             icon={<Link2 size={14} aria-hidden className="text-primary" />}
             title="Integrations"
@@ -271,9 +269,9 @@ export function WorkspaceSettingsDialog({
           >
             <IntegrationsPanel workspaceId={workspaceId} />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'skills' ? (
+        {active === 'skills' && (
           <SectionShell
             icon={<Zap size={14} aria-hidden className="text-primary" />}
             title="Skills"
@@ -281,9 +279,9 @@ export function WorkspaceSettingsDialog({
           >
             <SkillsPanel workspaceId={workspaceId} />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'scripts' ? (
+        {active === 'scripts' && (
           <SectionShell
             icon={<Terminal size={14} aria-hidden className="text-primary" />}
             title="Scripts"
@@ -291,9 +289,9 @@ export function WorkspaceSettingsDialog({
           >
             <ScriptsPanel workspaceId={workspaceId} />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'scout' ? (
+        {active === 'scout' && (
           <SectionShell
             icon={<Telescope size={14} aria-hidden className="text-primary" />}
             title="Scout exploration"
@@ -305,24 +303,20 @@ export function WorkspaceSettingsDialog({
               busy={saveState === 'saving'}
             />
           </SectionShell>
-        ) : null}
+        )}
 
-        {active === 'danger' ? (
+        {active === 'danger' && (
           <DangerSection
             confirmDisconnect={confirmDisconnect}
             setConfirmDisconnect={setConfirmDisconnect}
             disconnecting={disconnecting}
             onDisconnect={() => void onDisconnect()}
           />
-        ) : null}
+        )}
       </div>
     </Dialog>
   );
-}
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Nav button                                                            */
-/* ──────────────────────────────────────────────────────────────────── */
+};
 
 function NavButton({
   item,
@@ -359,10 +353,6 @@ function NavButton({
     </button>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: General                                                      */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function GeneralSection({
   branchPrefix,
@@ -522,9 +512,9 @@ function DefaultProviderPicker({
             title={isConnected ? undefined : 'CLI not connected'}
           >
             {PROVIDER_LABEL[id]}
-            {!isConnected ? (
+            {!isConnected && (
               <span className="text-[9px] uppercase tracking-wide text-warning">offline</span>
-            ) : null}
+            )}
           </button>
         );
       })}
@@ -532,14 +522,7 @@ function DefaultProviderPicker({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Integrations                                                 */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function IntegrationsPanel({ workspaceId }: { workspaceId: WorkspaceId }) {
-  // Same snapshot-stability fix as connectedProviderIds: `?? []` returns a
-  // fresh array on every missing-key lookup, which causes useSyncExternalStore
-  // to loop.
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const [linearOpen, setLinearOpen] = useState(false);
@@ -626,10 +609,6 @@ function GithubCard({ workspaceId }: { workspaceId: WorkspaceId }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section shell (skills / init / phases reuse this header)              */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function SectionShell({
   icon,
   title,
@@ -650,10 +629,6 @@ function SectionShell({
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Scout exploration                                            */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function ScoutSection({
   enabled,
@@ -708,10 +683,6 @@ function ScoutSection({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Danger zone                                                  */
-/* ──────────────────────────────────────────────────────────────────── */
-
 function DangerSection({
   confirmDisconnect,
   setConfirmDisconnect,
@@ -749,7 +720,7 @@ function DangerSection({
               showing up in the sidebar until you re-add the path.
             </p>
           </div>
-          {!confirmDisconnect ? (
+          {!confirmDisconnect && (
             <Button
               variant="danger"
               onClick={() => setConfirmDisconnect(true)}
@@ -758,7 +729,7 @@ function DangerSection({
               <Unplug size={13} aria-hidden className="mr-1.5" />
               Disconnect
             </Button>
-          ) : null}
+          )}
         </div>
 
         {confirmDisconnect ? (
@@ -790,10 +761,6 @@ function DangerSection({
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Building blocks                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function SectionHeader({
   icon,

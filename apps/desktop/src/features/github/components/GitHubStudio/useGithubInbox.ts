@@ -2,29 +2,41 @@ import { useMemo } from 'react';
 import type { PullRequestState, Session, SessionPrGroup } from '@goodboy/types';
 import { useAppStore, useSessions } from '../../../../store';
 
-export interface InboxRow {
+export type InboxRow = {
   readonly session: Session;
   readonly pr: PullRequestState | null;
   readonly attention: boolean;
-}
+};
 
-export interface InboxGroup {
+export type InboxGroup = {
   readonly key: SessionPrGroup;
   readonly label: string;
   readonly rows: ReadonlyArray<InboxRow>;
-}
+};
 
 function bucketOf(pr: PullRequestState | null): SessionPrGroup {
-  if (!pr) return 'not-open';
-  if (pr.state === 'closed') return 'closed';
-  if (pr.state === 'merged') return 'merged';
-  if (pr.isDraft) return 'draft';
-  if (pr.reviewDecision === 'approved') return 'reviewed';
+  if (!pr) {
+    return 'not-open';
+  }
+  if (pr.state === 'closed') {
+    return 'closed';
+  }
+  if (pr.state === 'merged') {
+    return 'merged';
+  }
+  if (pr.isDraft) {
+    return 'draft';
+  }
+  if (pr.reviewDecision === 'approved') {
+    return 'reviewed';
+  }
   return 'reviewable';
 }
 
 function needsAttention(pr: PullRequestState | null): boolean {
-  if (!pr || pr.state === 'merged' || pr.state === 'closed') return false;
+  if (!pr || pr.state === 'merged' || pr.state === 'closed') {
+    return false;
+  }
   return pr.checks === 'failure' || pr.reviewDecision === 'changes_requested';
 }
 
@@ -46,7 +58,7 @@ const GROUP_LABEL: Record<SessionPrGroup, string> = {
   merged: 'Merged',
 };
 
-export function useGithubInbox(): ReadonlyArray<InboxGroup> {
+export const useGithubInbox = (): ReadonlyArray<InboxGroup> => {
   const sessions = useSessions();
   const githubMap = useAppStore((s) => s.sessionGithub);
 
@@ -57,12 +69,17 @@ export function useGithubInbox(): ReadonlyArray<InboxGroup> {
       const row: InboxRow = { session, pr, attention: needsAttention(pr) };
       const key = bucketOf(pr);
       const arr = buckets.get(key);
-      if (arr) arr.push(row);
-      else buckets.set(key, [row]);
+      if (arr) {
+        arr.push(row);
+      } else {
+        buckets.set(key, [row]);
+      }
     }
     const sortRows = (rows: InboxRow[]): InboxRow[] =>
       rows.sort((a, b) => {
-        if (a.attention !== b.attention) return a.attention ? -1 : 1;
+        if (a.attention !== b.attention) {
+          return a.attention ? -1 : 1;
+        }
         return b.session.updatedAt.localeCompare(a.session.updatedAt);
       });
     return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({
@@ -71,4 +88,4 @@ export function useGithubInbox(): ReadonlyArray<InboxGroup> {
       rows: sortRows(buckets.get(key)!),
     }));
   }, [sessions, githubMap]);
-}
+};

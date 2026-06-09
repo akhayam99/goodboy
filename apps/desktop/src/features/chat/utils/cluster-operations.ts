@@ -12,14 +12,16 @@ export type TranscriptRow =
   | { kind: 'item'; key: string; item: TranscriptItem }
   | { kind: 'operations'; key: string; items: ReadonlyArray<TranscriptItem> };
 
-export function clusterOperations(
+export const clusterOperations = (
   items: ReadonlyArray<TranscriptItem>,
-): ReadonlyArray<TranscriptRow> {
+): ReadonlyArray<TranscriptRow> => {
   const rows: TranscriptRow[] = [];
   let buffer: TranscriptItem[] = [];
 
   const flush = () => {
-    if (buffer.length === 0) return;
+    if (buffer.length === 0) {
+      return;
+    }
     if (buffer.some((i) => OPERATION_KINDS.has(i.kind))) {
       rows.push({ kind: 'operations', key: `ops-${buffer[0]!.key}`, items: buffer });
     } else {
@@ -38,4 +40,4 @@ export function clusterOperations(
   }
   flush();
   return rows;
-}
+};

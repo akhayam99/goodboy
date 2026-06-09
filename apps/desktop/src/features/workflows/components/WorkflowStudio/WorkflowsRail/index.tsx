@@ -4,7 +4,7 @@ import type { Workflow, WorkflowId } from '@goodboy/types';
 import { ScrollFade } from '../../../../../shared/components/ScrollFade';
 import { PresetCard } from '../../PresetCard';
 
-interface Props {
+type Props = {
   readonly presets: ReadonlyArray<Workflow>;
   readonly activeId: WorkflowId | null;
   readonly editing: Workflow | null | 'new';
@@ -15,9 +15,9 @@ interface Props {
   readonly onNew: () => void;
   readonly onDelete: (t: Workflow) => void;
   readonly onReset: () => void;
-}
+};
 
-export function WorkflowsRail({
+export const WorkflowsRail = ({
   presets,
   activeId,
   editing,
@@ -28,7 +28,7 @@ export function WorkflowsRail({
   onNew,
   onDelete,
   onReset,
-}: Props) {
+}: Props) => {
   return (
     <aside className="flex w-72 shrink-0 flex-col">
       <div className="shrink-0 px-3 pb-2 pt-3">
@@ -118,4 +118,4 @@ export function WorkflowsRail({
       </div>
     </aside>
   );
-}
+};

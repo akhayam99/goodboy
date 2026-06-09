@@ -1,8 +1,8 @@
 import type { Skill } from '@goodboy/types';
 
-export interface SkillScriptRunner {
+export type SkillScriptRunner = {
   runScript(scriptPath: string, args: ReadonlyArray<string>, cwd: string): Promise<string>;
-}
+};
 
 export class SkillScriptError extends Error {
   constructor(
@@ -61,13 +61,14 @@ function substituteArgs(body: string, args: ReadonlyArray<string>): string {
   });
 }
 
-/** Normalize away `.` and `..` segments, preserving leading slash. */
 function normalizePath(p: string): string {
   const isAbsolute = p.startsWith('/');
   const parts = p.split('/').filter((s) => s.length > 0);
   const stack: string[] = [];
   for (const part of parts) {
-    if (part === '.') continue;
+    if (part === '.') {
+      continue;
+    }
     if (part === '..') {
       stack.pop();
     } else {
@@ -79,13 +80,19 @@ function normalizePath(p: string): string {
 
 function posixDirname(p: string): string {
   const slash = p.lastIndexOf('/');
-  if (slash === -1) return '.';
-  if (slash === 0) return '/';
+  if (slash === -1) {
+    return '.';
+  }
+  if (slash === 0) {
+    return '/';
+  }
   return p.slice(0, slash);
 }
 
 function joinPaths(base: string, rel: string): string {
-  if (rel.startsWith('/')) return normalizePath(rel);
+  if (rel.startsWith('/')) {
+    return normalizePath(rel);
+  }
   return normalizePath(base + '/' + rel);
 }
 

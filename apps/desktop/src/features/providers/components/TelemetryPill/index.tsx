@@ -10,7 +10,7 @@ const PROVIDER_DOT: Record<string, string> = {
   gemini: 'bg-[var(--color-provider-gemini)]',
 };
 
-export function TelemetryPill() {
+export const TelemetryPill = () => {
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
   const providerSpend = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
@@ -48,7 +48,7 @@ export function TelemetryPill() {
           ·
         </span>
         <span className="font-medium">{formatUsd(workspaceCost)}</span>
-        {providerSpend.length > 0 ? (
+        {providerSpend.length > 0 && (
           <span aria-hidden className="ml-1 flex items-center -space-x-0.5">
             {providerSpend
               .filter((p) => p.spentUsd > 0)
@@ -60,8 +60,8 @@ export function TelemetryPill() {
                 />
               ))}
           </span>
-        ) : null}
+        )}
       </button>
     </>
   );
-}
+};

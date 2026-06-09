@@ -12,19 +12,21 @@ function storageKey(workspaceId: WorkspaceId): string {
   return `${STORAGE_PREFIXES.sessionView}${workspaceId}`;
 }
 
-export function writeToStorage(workspaceId: WorkspaceId, prefs: SessionViewPrefs): void {
+export const writeToStorage = (workspaceId: WorkspaceId, prefs: SessionViewPrefs): void => {
   try {
     const persisted: PersistedSessionViewPrefs = { v: 1, ...prefs };
     localStorage.setItem(storageKey(workspaceId), JSON.stringify(persisted));
   } catch {
     // Swallow quota errors, prefs are non-critical.
   }
-}
+};
 
-export function readFromStorage(workspaceId: WorkspaceId): SessionViewPrefs {
+export const readFromStorage = (workspaceId: WorkspaceId): SessionViewPrefs => {
   try {
     const raw = localStorage.getItem(storageKey(workspaceId));
-    if (!raw) return DEFAULT_PREFS;
+    if (!raw) {
+      return DEFAULT_PREFS;
+    }
     const parsed: unknown = JSON.parse(raw);
     if (
       typeof parsed !== 'object' ||
@@ -49,4 +51,4 @@ export function readFromStorage(workspaceId: WorkspaceId): SessionViewPrefs {
   } catch {
     return DEFAULT_PREFS;
   }
-}
+};

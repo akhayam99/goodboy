@@ -4,7 +4,7 @@ import { Divider } from './Divider';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface DialogProps {
+export type DialogProps = {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
@@ -15,40 +15,15 @@ export interface DialogProps {
   className?: string;
   showClose?: boolean;
   closeOnBackdrop?: boolean;
-  /** Override which element receives focus when the dialog opens. */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
-  /**
-   * When true, the dialog collapses to fill the entire viewport on small
-   * screens (≤ 768px in either dimension), removing rounded corners and
-   * shadow so it reads as a full page rather than a floating modal.
-   */
   fullScreenOnSmall?: boolean;
-  /**
-   * Lock the dialog body to a fixed height (e.g. `h-[640px]`). Without this,
-   * the dialog grows and shrinks with its content up to `max-h-[85vh]`.
-   * The fixed height yields when the viewport is too small to hold it.
-   */
   fixedHeightClass?: string;
-  /**
-   * Override the body wrapper classes. Default: `gap-4 px-6 py-5`.
-   * Pass `''` for full-bleed body (no padding/gap), useful for full-width
-   * layouts like diff viewers with their own internal toolbars.
-   */
   bodyClassName?: string;
-  /** When false, removes the divider under the header. Default: true. */
   headerBordered?: boolean;
-  /**
-   * Optional left panel (nav, side actions, etc.) rendered alongside the
-   * main body. When present, a vertical gradient divider separates it from
-   * the content. Use this for any modal that wants a sidebar layout, it
-   * keeps Header / Panel / Body / Footer consistent across the app.
-   */
   panel?: ReactNode;
-  /** Tailwind width class for the panel, defaults to `w-48`. */
   panelWidthClass?: string;
-  /** Override the panel wrapper classes. Default: `flex flex-col gap-0.5 bg-subtle/40 px-3 py-5`. */
   panelClassName?: string;
-}
+};
 
 const SIZE: Record<DialogSize, string> = {
   sm: 'w-[24rem]',
@@ -58,10 +33,6 @@ const SIZE: Record<DialogSize, string> = {
   '2xl': 'w-[64rem]',
 };
 
-// Per-size baseline min-height. Without this the dialog collapses to the
-// height of its content, which looks thin for small forms (add workspace,
-// new session). Caps at the per-size sweet spot, large dialogs already
-// need more room. Skipped when fixedHeightClass is set (caller knows best).
 const MIN_HEIGHT: Record<DialogSize, string> = {
   sm: 'min-h-[16rem]',
   md: 'min-h-[24rem]',
@@ -72,7 +43,7 @@ const MIN_HEIGHT: Record<DialogSize, string> = {
 
 const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
 
-export function Dialog({
+export const Dialog = ({
   open,
   onClose,
   title,
@@ -91,30 +62,24 @@ export function Dialog({
   panel,
   panelWidthClass = 'w-48',
   panelClassName,
-}: DialogProps) {
+}: DialogProps) => {
   const ref = useRef<HTMLDialogElement>(null);
   const uid = useId();
   const titleId = title ? `${uid}-title` : undefined;
   const descId = description ? `${uid}-desc` : undefined;
 
-  // Latest-onClose ref so the showModal effect can stay keyed on `open` alone
-  // instead of refiring whenever the parent re-renders with a fresh handler.
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
   });
 
-  // Suppress close-event-driven onClose when we ourselves called dialog.close()
-  // (cleanup or open→false transition). React 19 strict mode double-invokes
-  // effects, so a "mount when open" parent would otherwise: setup → showModal,
-  // cleanup → dialog.close() queues a close event, resetup → showModal again,
-  // then the deferred close event fires onClose against the new listener and
-  // the parent unmounts the dialog for real. The user sees nothing happen.
   const programmaticCloseRef = useRef(false);
 
   useEffect(() => {
     const dialog = ref.current;
-    if (!dialog) return;
+    if (!dialog) {
+      return;
+    }
 
     const handleClose = () => {
       if (programmaticCloseRef.current) {
@@ -153,8 +118,12 @@ export function Dialog({
   }, [open, initialFocusRef]);
 
   const onBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
-    if (!closeOnBackdrop) return;
-    if (event.target === ref.current) onClose();
+    if (!closeOnBackdrop) {
+      return;
+    }
+    if (event.target === ref.current) {
+      onClose();
+    }
   };
 
   return (
@@ -162,7 +131,9 @@ export function Dialog({
       ref={ref}
       onClick={onBackdropClick}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') e.stopPropagation();
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+        }
       }}
       aria-labelledby={titleId}
       aria-describedby={descId}
@@ -255,4 +226,4 @@ export function Dialog({
       </div>
     </dialog>
   );
-}
+};

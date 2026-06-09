@@ -35,10 +35,16 @@ function severityClass(severity: NotificationSeverity): string {
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) {
+    return 'just now';
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
@@ -46,7 +52,7 @@ function relativeTime(iso: string): string {
 const DROPDOWN_WIDTH = 320;
 const VIEWPORT_MARGIN = 8;
 
-export function NotificationCenter() {
+export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
@@ -62,12 +68,15 @@ export function NotificationCenter() {
   }, [loadNotifications]);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const updatePosition = () => {
       const el = triggerRef.current;
-      if (!el) return;
+      if (!el) {
+        return;
+      }
       const rect = el.getBoundingClientRect();
-      // Center on the trigger; clamp so the popover stays inside the viewport.
       const centerX = rect.left + rect.width / 2;
       const desiredLeft = centerX - DROPDOWN_WIDTH / 2;
       const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
@@ -138,7 +147,7 @@ export function NotificationCenter() {
                     {notifications.length}{' '}
                     {notifications.length === 1 ? 'notification' : 'notifications'}
                   </span>
-                  {notifications.length > 0 ? (
+                  {notifications.length > 0 && (
                     <button
                       type="button"
                       onClick={() => void clearNotifications()}
@@ -149,7 +158,7 @@ export function NotificationCenter() {
                       <Trash2 size={11} aria-hidden />
                       Clear all
                     </button>
-                  ) : null}
+                  )}
                 </header>
                 <Divider />
                 {notifications.length === 0 ? (
@@ -157,20 +166,17 @@ export function NotificationCenter() {
                     No notifications
                   </p>
                 ) : (
-                  // Same scroll-shadow pattern used in chat/plans: top/bottom
-                  // gradients fade content into the popover bg as items
-                  // scroll past the edge.
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-muted to-transparent" />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-4 bg-gradient-to-t from-muted to-transparent" />
                     <ul className="max-h-80 overflow-y-auto">
                       {notifications.map((n, i) => (
                         <Fragment key={n.id}>
-                          {i > 0 ? (
+                          {i > 0 && (
                             <li aria-hidden className="px-3">
                               <Divider />
                             </li>
-                          ) : null}
+                          )}
                           <NotificationItem notification={n} />
                         </Fragment>
                       ))}
@@ -184,11 +190,11 @@ export function NotificationCenter() {
         : null}
     </div>
   );
-}
+};
 
-interface NotificationItemProps {
+type NotificationItemProps = {
   notification: Notification;
-}
+};
 
 function NotificationItem({ notification: n }: NotificationItemProps) {
   return (

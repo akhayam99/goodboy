@@ -1,22 +1,22 @@
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 
-export interface ParseContext {
+export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
-export interface AnthropicEnvelopeParserOptions {
+export type AnthropicEnvelopeParserOptions = {
   readonly adapter: string;
   readonly logTag: string;
-}
+};
 
 const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['system', 'assistant', 'user', 'result']);
 
-interface AssistantMessage {
+type AssistantMessage = {
   readonly content?: ReadonlyArray<AssistantContentBlock>;
-}
+};
 
 type AssistantContentBlock =
   | { type: 'text'; text: string }
@@ -27,28 +27,24 @@ type AssistantContentBlock =
       input: unknown;
     };
 
-interface ToolResultBlock {
+type ToolResultBlock = {
   readonly tool_use_id: string;
   readonly content?: unknown;
   readonly is_error?: boolean;
-}
+};
 
-interface UserMessage {
+type UserMessage = {
   readonly content?: ReadonlyArray<ToolResultBlock | { type: string }>;
-}
+};
 
-// Anthropic's own stream-json uses snake_case (`input_tokens`, `cache_read_input_tokens`).
-// Cursor's stream-json, which is otherwise envelope-compatible, uses camelCase
-// (`inputTokens`, `cacheReadTokens`, plus `cacheWriteTokens` which we ignore).
-// Accept both forms so the shared parser can serve both adapters.
-interface UsagePayload {
+type UsagePayload = {
   readonly input_tokens?: number;
   readonly output_tokens?: number;
   readonly cache_read_input_tokens?: number;
   readonly inputTokens?: number;
   readonly outputTokens?: number;
   readonly cacheReadTokens?: number;
-}
+};
 
 const FILE_EDIT_TOOLS: ReadonlySet<string> = new Set([
   'Edit',
@@ -61,11 +57,17 @@ function fileEditFromInput(
   toolName: string,
   input: unknown,
 ): { path: string; editType: 'create' | 'modify' | 'delete' } | null {
-  if (!FILE_EDIT_TOOLS.has(toolName)) return null;
-  if (typeof input !== 'object' || input === null) return null;
+  if (!FILE_EDIT_TOOLS.has(toolName)) {
+    return null;
+  }
+  if (typeof input !== 'object' || input === null) {
+    return null;
+  }
   const record = input as Record<string, unknown>;
   const path = typeof record.file_path === 'string' ? record.file_path : null;
-  if (!path) return null;
+  if (!path) {
+    return null;
+  }
   const editType: 'create' | 'modify' | 'delete' = toolName === 'Write' ? 'create' : 'modify';
   return { path, editType };
 }
@@ -79,13 +81,15 @@ function isToolResultBlock(block: unknown): block is ToolResultBlock {
   );
 }
 
-export function parseAnthropicEnvelopeLine(
+export const parseAnthropicEnvelopeLine = (
   line: string,
   ctx: ParseContext,
   opts: AnthropicEnvelopeParserOptions,
-): ReadonlyArray<TurnEvent> {
+): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
-  if (trimmed.length === 0) return [];
+  if (trimmed.length === 0) {
+    return [];
+  }
 
   let payload: { type?: string } & Record<string, unknown>;
   try {
@@ -134,9 +138,6 @@ export function parseAnthropicEnvelopeLine(
     }
 
     case 'system': {
-      // Claude stream-json emits `{"type":"system","subtype":"init","session_id":"..."}`.
-      // Capture the session id so it can be threaded back via --resume; ignore
-      // other system subtypes for now.
       const subtype = payload.subtype as string | undefined;
       const sessionId = payload.session_id;
       if (subtype === 'init' && typeof sessionId === 'string' && sessionId.length > 0) {
@@ -169,7 +170,7 @@ export function parseAnthropicEnvelopeLine(
       }
       return [];
   }
-}
+};
 
 function parseAssistant(
   message: AssistantMessage | undefined,

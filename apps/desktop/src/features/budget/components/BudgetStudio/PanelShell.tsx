@@ -2,23 +2,23 @@ import type { ReactNode } from 'react';
 import { Divider, cn } from '@goodboy/ui';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
-interface Props {
+type Props = {
   readonly icon?: ReactNode;
   readonly title: string;
   readonly subtitle?: string;
   readonly action?: ReactNode;
   readonly maxWidthClass?: string;
   readonly children: ReactNode;
-}
+};
 
-export function PanelShell({
+export const PanelShell = ({
   icon,
   title,
   subtitle,
   action,
   maxWidthClass = 'max-w-3xl',
   children,
-}: Props) {
+}: Props) => {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
@@ -39,4 +39,4 @@ export function PanelShell({
       </div>
     </div>
   );
-}
+};

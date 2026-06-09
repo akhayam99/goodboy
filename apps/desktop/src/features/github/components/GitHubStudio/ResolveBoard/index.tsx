@@ -18,7 +18,7 @@ import type { CommentThread } from '../../../comment-threads';
 import { useAppStore } from '../../../../../store';
 import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
 
-interface Props {
+type Props = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly onSpawnOne: (thread: CommentThread, choice: ResolveModelChoice) => void;
   readonly onSpawnBatch: (
@@ -26,9 +26,9 @@ interface Props {
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => void;
   readonly onOpenThread: (threadId: string) => void;
-}
+};
 
-export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) {
+export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) => {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -63,8 +63,11 @@ export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
   const toggle = (id: string) =>
     setDeselected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   const toggleAll = () =>
@@ -82,7 +85,9 @@ export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
             type="checkbox"
             checked={allSelected}
             ref={(el) => {
-              if (el) el.indeterminate = !allSelected && selected.length > 0;
+              if (el) {
+                el.indeterminate = !allSelected && selected.length > 0;
+              }
             }}
             onChange={toggleAll}
             className="size-3.5 accent-primary"
@@ -155,7 +160,7 @@ export function ResolveBoard({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
       </ul>
     </div>
   );
-}
+};
 
 function ResolveCard({
   thread,
@@ -182,7 +187,7 @@ function ResolveCard({
   return (
     <div
       className={cn(
-        'rounded-xl border p-3 transition-colors',
+        'rounded-lg border p-3 transition-colors',
         checked ? 'border-border bg-muted/10' : 'border-border-soft/60 bg-muted/5 opacity-70',
       )}
     >
@@ -215,7 +220,7 @@ function ResolveCard({
             {head.body.trim() || '(empty)'}
           </p>
 
-          {replies.length > 0 ? (
+          {replies.length > 0 && (
             <div className="mt-2 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
               {replies.map((r) => (
                 <div key={r.id} className="flex flex-col gap-0.5">
@@ -226,7 +231,7 @@ function ResolveCard({
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <div className="relative">
@@ -295,7 +300,9 @@ function ConfigPanel({
   footer?: ReactNode;
 }) {
   const onProvider = (next: ProviderId | '') => {
-    if (next === '') return;
+    if (next === '') {
+      return;
+    }
     onChange(configFor(next));
   };
   const onModel = (model: string) =>

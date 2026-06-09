@@ -235,7 +235,6 @@ describe('CodexAdapter.cost', () => {
     const adapter = new CodexAdapter({
       priceOverride: { inputPerMtok: 3, outputPerMtok: 15 },
     });
-    // 1M input @ $3 + 1M output @ $15 = $18
     expect(
       adapter.cost(
         {

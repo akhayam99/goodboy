@@ -2,11 +2,11 @@ import type { PlanId } from '@goodboy/types';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import type { SetFn } from './types';
 
-export function loadConsumptionsForPlan(set: SetFn) {
+export const loadConsumptionsForPlan = (set: SetFn) => {
   return async (planId: PlanId) => {
     const items = await invokeListConsumptionsForPlan(planId);
     set((state) => ({
       planConsumptions: { ...state.planConsumptions, [planId]: items },
     }));
   };
-}
+};

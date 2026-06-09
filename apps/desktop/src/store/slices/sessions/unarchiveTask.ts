@@ -4,16 +4,17 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
 
-export function unarchiveTask(set: SetFn, get: GetFn) {
+export const unarchiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const archivedList = Object.values(get().archivedSessions).flat();
     const prev = archivedList.find((s) => s.id === sessionId);
-    if (!prev) return;
+    if (!prev) {
+      return;
+    }
     const workspaceId = prev.workspaceId;
     const { archivedAt: _drop, ...restored } = prev;
     const restoredSession = restored as Session;
 
-    // Optimistic move: out of archived cache, into `sessions`.
     set((state) => {
       const cached = state.archivedSessions[workspaceId];
       const nextArchived = cached
@@ -29,7 +30,6 @@ export function unarchiveTask(set: SetFn, get: GetFn) {
     try {
       await unarchiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
-      // Rollback move.
       set((state) => {
         const cached = state.archivedSessions[workspaceId];
         const nextArchived = cached
@@ -43,10 +43,9 @@ export function unarchiveTask(set: SetFn, get: GetFn) {
       throw err;
     }
 
-    // Repopulate per-session caches we cleared on archive (only meaningful if
-    // we're on the same workspace, otherwise the next setCurrentWorkspace
-    // will hydrate fresh).
-    if (get().currentWorkspaceId !== workspaceId) return;
+    if (get().currentWorkspaceId !== workspaceId) {
+      return;
+    }
     try {
       const [worktreeRows, runs] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
@@ -58,7 +57,9 @@ export function unarchiveTask(set: SetFn, get: GetFn) {
         if (worktreeRows.length > 0) {
           nextWorktrees[sessionId] = worktreeRows.map((r) => r.worktreePath);
           const primary = worktreeRows[0];
-          if (primary) nextBranches[sessionId] = primary.branch;
+          if (primary) {
+            nextBranches[sessionId] = primary.branch;
+          }
         }
         return {
           sessionWorktrees: nextWorktrees,
@@ -66,8 +67,6 @@ export function unarchiveTask(set: SetFn, get: GetFn) {
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
         };
       });
-    } catch {
-      // Best-effort: setCurrentSession reloads on demand if the user opens it
-    }
+    } catch {}
   };
-}
+};

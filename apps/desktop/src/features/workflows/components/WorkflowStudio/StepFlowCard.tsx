@@ -7,7 +7,7 @@ import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/a
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { shortModel } from '../../../session/agent-row-format';
 
-interface Props {
+type Props = {
   readonly def: DefinitionForm;
   readonly ordinal: number;
   readonly total: number;
@@ -19,9 +19,9 @@ interface Props {
   readonly onRemove: () => void;
   readonly onMoveLeft: () => void;
   readonly onMoveRight: () => void;
-}
+};
 
-export function StepFlowCard({
+export const StepFlowCard = ({
   def,
   ordinal,
   total,
@@ -33,7 +33,7 @@ export function StepFlowCard({
   onRemove,
   onMoveLeft,
   onMoveRight,
-}: Props) {
+}: Props) => {
   const kind = ROLE_TO_KIND[def.role];
   const effProvider: ProviderId =
     (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
@@ -42,7 +42,7 @@ export function StepFlowCard({
   return (
     <div
       className={cn(
-        'group relative flex w-52 shrink-0 flex-col gap-2 overflow-hidden rounded-xl border p-3 transition-colors',
+        'group relative flex w-52 shrink-0 flex-col gap-2 overflow-hidden rounded-lg border p-3 transition-colors',
         selected
           ? 'border-primary/40 bg-primary/5 ring-1 ring-primary/30'
           : 'border-border-soft bg-muted/10 hover:border-border hover:bg-muted/30',
@@ -114,4 +114,4 @@ export function StepFlowCard({
       </button>
     </div>
   );
-}
+};

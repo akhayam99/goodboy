@@ -2,19 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { AgentAvatar } from '../../../shared/components/AgentAvatar';
 import type { QuickActionItem } from '../types';
 
-interface Props {
+type Props = {
   readonly items: ReadonlyArray<QuickActionItem>;
   readonly emptyHint: string;
   readonly onSelect: (item: QuickActionItem) => void;
   readonly onDismiss: () => void;
-}
+};
 
-/**
- * Generic prefix-action picker rendered inline above the composer. Renders
- * whatever `QuickActionItem[]` it is handed and reports the chosen one. The
- * behavior lives in `item.perform`, not here.
- */
-export function QuickActionsPopover({ items, emptyHint, onSelect, onDismiss }: Props) {
+export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: Props) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -33,7 +28,9 @@ export function QuickActionsPopover({ items, emptyHint, onSelect, onDismiss }: P
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         const item = items[activeIndex];
-        if (item) onSelect(item);
+        if (item) {
+          onSelect(item);
+        }
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onDismiss();
@@ -84,4 +81,4 @@ export function QuickActionsPopover({ items, emptyHint, onSelect, onDismiss }: P
       )}
     </div>
   );
-}
+};

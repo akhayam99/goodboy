@@ -5,13 +5,13 @@ import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
 type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
 
-export function ScriptsPanel({ workspaceId }: Props) {
+export const ScriptsPanel = ({ workspaceId }: Props) => {
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const saveScript = useAppStore((s) => s.saveScript);
@@ -36,7 +36,9 @@ export function ScriptsPanel({ workspaceId }: Props) {
   }, []);
 
   const onSaveDraft = useCallback(async () => {
-    if (!draft) return;
+    if (!draft) {
+      return;
+    }
     const name = draft.name.trim();
     const body = draft.body.trim();
     if (!name || !body) {
@@ -84,11 +86,11 @@ export function ScriptsPanel({ workspaceId }: Props) {
 
       {error ? <p className="text-xs text-danger">{error}</p> : null}
 
-      {list.length === 0 && draft === null ? (
+      {list.length === 0 && draft === null && (
         <p className="rounded-md border border-dashed border-border-soft px-3 py-6 text-center text-xs text-muted-foreground">
           No scripts yet. Create one, e.g. <code className="font-mono">copy environments</code>.
         </p>
-      ) : null}
+      )}
 
       <ul className="flex flex-col gap-2">
         {list.map((script) => {
@@ -165,7 +167,7 @@ export function ScriptsPanel({ workspaceId }: Props) {
       </ul>
     </div>
   );
-}
+};
 
 function RowAction({
   icon,

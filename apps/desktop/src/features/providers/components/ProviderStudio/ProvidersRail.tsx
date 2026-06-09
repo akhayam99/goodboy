@@ -3,11 +3,11 @@ import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 
-interface Props {
+type Props = {
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly focusedId: ProviderId | null;
   readonly onSelect: (id: ProviderId) => void;
-}
+};
 
 const STATUS_DOT: Record<ProviderConnectionState, string> = {
   connected: 'bg-success',
@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<ProviderConnectionState, string> = {
   error: 'error',
 };
 
-export function ProvidersRail({ providers, focusedId, onSelect }: Props) {
+export const ProvidersRail = ({ providers, focusedId, onSelect }: Props) => {
   return (
     <div className="flex flex-col gap-0.5 p-2">
       {providers.map((p) => {
@@ -71,4 +71,4 @@ export function ProvidersRail({ providers, focusedId, onSelect }: Props) {
       })}
     </div>
   );
-}
+};

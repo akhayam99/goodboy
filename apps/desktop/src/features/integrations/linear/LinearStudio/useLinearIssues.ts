@@ -41,21 +41,21 @@ function groupKeyForStateType(type: string): LinearGroupKey {
   }
 }
 
-export interface LinearIssueRow {
+export type LinearIssueRow = {
   readonly issue: LinearIssue;
   readonly sessionId: SessionId | null;
-}
+};
 
-export interface LinearIssueGroup {
+export type LinearIssueGroup = {
   readonly key: LinearGroupKey;
   readonly label: string;
   readonly rows: ReadonlyArray<LinearIssueRow>;
-}
+};
 
-export function buildIssueGroups(
+export const buildIssueGroups = (
   issues: ReadonlyArray<LinearIssue>,
   sessionIdByExternalId: ReadonlyMap<string, SessionId>,
-): ReadonlyArray<LinearIssueGroup> {
+): ReadonlyArray<LinearIssueGroup> => {
   const buckets = new Map<LinearGroupKey, LinearIssueRow[]>();
   for (const issue of issues) {
     const key = groupKeyForStateType(issue.state.type);
@@ -64,8 +64,11 @@ export function buildIssueGroups(
       sessionId: sessionIdByExternalId.get(issue.id) ?? null,
     };
     const arr = buckets.get(key);
-    if (arr) arr.push(row);
-    else buckets.set(key, [row]);
+    if (arr) {
+      arr.push(row);
+    } else {
+      buckets.set(key, [row]);
+    }
   }
   const sortRows = (rows: LinearIssueRow[]): LinearIssueRow[] =>
     rows.sort((a, b) => b.issue.updatedAt.localeCompare(a.issue.updatedAt));
@@ -74,16 +77,16 @@ export function buildIssueGroups(
     label: GROUP_LABEL[key],
     rows: sortRows(buckets.get(key)!),
   }));
-}
+};
 
-export interface SessionPrRef {
+export type SessionPrRef = {
   readonly number: number;
   readonly repo: string | null;
-}
+};
 
-export function sessionPrRefFromUrl(number: number, url: string): SessionPrRef {
+export const sessionPrRefFromUrl = (number: number, url: string): SessionPrRef => {
   return { number, repo: prRepoFromUrl(url) };
-}
+};
 
 function sameRepo(a: string | null, b: string | null): boolean {
   return !a || !b ? true : a.toLowerCase() === b.toLowerCase();
@@ -108,13 +111,13 @@ function sessionMatchesIssue(
   );
 }
 
-export function resolveIssueSessions(
+export const resolveIssueSessions = (
   issues: ReadonlyArray<LinearIssue>,
   sessions: ReadonlyArray<Session>,
   sessionBranches: Readonly<Record<string, string>>,
   sessionExternalTasks: Readonly<Record<string, SessionExternalTask>>,
   sessionPr: ReadonlyMap<string, SessionPrRef>,
-): Map<string, SessionId> {
+): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
   for (const session of sessions) {
     const task = sessionExternalTasks[session.id];
@@ -123,21 +126,25 @@ export function resolveIssueSessions(
     }
   }
   for (const issue of issues) {
-    if (byIssue.has(issue.id)) continue;
+    if (byIssue.has(issue.id)) {
+      continue;
+    }
     const match = sessions.find((s) => sessionMatchesIssue(s, issue, sessionBranches, sessionPr));
-    if (match) byIssue.set(issue.id, match.id);
+    if (match) {
+      byIssue.set(issue.id, match.id);
+    }
   }
   return byIssue;
-}
+};
 
-export interface UseLinearIssues {
+export type UseLinearIssues = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
   readonly loading: boolean;
   readonly error: string | null;
   readonly refetch: () => void;
-}
+};
 
-export function useLinearIssues(workspaceId: WorkspaceId): UseLinearIssues {
+export const useLinearIssues = (workspaceId: WorkspaceId): UseLinearIssues => {
   const sessions = useSessions();
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -167,7 +174,9 @@ export function useLinearIssues(workspaceId: WorkspaceId): UseLinearIssues {
     const map = new Map<string, SessionPrRef>();
     for (const [sessionId, gh] of Object.entries(sessionGithub)) {
       const pr = gh?.pr;
-      if (pr) map.set(sessionId, sessionPrRefFromUrl(pr.number, pr.url));
+      if (pr) {
+        map.set(sessionId, sessionPrRefFromUrl(pr.number, pr.url));
+      }
     }
     return map;
   }, [sessionGithub]);
@@ -188,4 +197,4 @@ export function useLinearIssues(workspaceId: WorkspaceId): UseLinearIssues {
     error,
     refetch: () => void fetchIssues(),
   };
-}
+};

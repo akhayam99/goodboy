@@ -2,34 +2,34 @@ import { useState } from 'react';
 import type { ProviderRunId } from '@goodboy/types';
 import { Button, Dialog } from '@goodboy/ui';
 
-// Sentinel used when the user chooses to skip resolution for a file.
-// The consumer (onResolve) receives picks[file] === SKIP_SENTINEL for skipped files.
-// Skipped files are included in the picks map so callers always have a full record
-// keyed by every conflict file, no ambiguity between "skipped" and "not yet picked".
 export const SKIP_SENTINEL = '__skip__' as const;
 export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
 
-export interface MergeConflict {
+export type MergeConflict = {
   file: string;
   runIds: ReadonlyArray<ProviderRunId>;
-}
+};
 
-export interface RunMeta {
+export type RunMeta = {
   readonly agentName?: string;
   readonly stepName?: string;
-}
+};
 
-export interface MergeDialogProps {
+export type MergeDialogProps = {
   open: boolean;
   conflicts: ReadonlyArray<MergeConflict>;
-  /** Per-run display metadata. When supplied, each option shows the agent and
-   *  step that produced the version, not just its opaque run id. */
   runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
   onResolve: (picks: Record<string, MergeResolution>) => void;
   onCancel: () => void;
-}
+};
 
-export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: MergeDialogProps) {
+export const MergeDialog = ({
+  open,
+  conflicts,
+  runMeta,
+  onResolve,
+  onCancel,
+}: MergeDialogProps) => {
   const [picks, setPicks] = useState<Record<string, MergeResolution>>({});
 
   const setPick = (file: string, resolution: MergeResolution) => {
@@ -39,7 +39,9 @@ export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: M
   const allResolved = conflicts.length > 0 && conflicts.every((c) => picks[c.file] !== undefined);
 
   const onConfirm = () => {
-    if (!allResolved) return;
+    if (!allResolved) {
+      return;
+    }
     onResolve(picks);
     setPicks({});
   };
@@ -91,14 +93,14 @@ export function MergeDialog({ open, conflicts, runMeta, onResolve, onCancel }: M
       )}
     </Dialog>
   );
-}
+};
 
-interface ConflictRowProps {
+type ConflictRowProps = {
   conflict: MergeConflict;
   runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
   pick: MergeResolution | undefined;
   onPick: (resolution: MergeResolution) => void;
-}
+};
 
 function shortRunId(runId: ProviderRunId): string {
   return runId.slice(-8);

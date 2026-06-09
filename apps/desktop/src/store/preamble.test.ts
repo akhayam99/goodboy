@@ -70,7 +70,7 @@ describe('buildPriorTurnsBlock', () => {
   });
 
   it('drops oldest first when over budget', () => {
-    const longText = 'x'.repeat(4000); // ≈1000 tokens each
+    const longText = 'x'.repeat(4000);
     const events: TurnEvent[] = [
       { kind: 'user_text', runId: RUN, text: `old-${longText}`, at: NOW },
       { kind: 'user_text', runId: RUN, text: `mid-${longText}`, at: NOW },

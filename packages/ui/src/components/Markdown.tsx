@@ -2,14 +2,14 @@ import { type ReactNode } from 'react';
 import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 
-interface CtxTagStyle {
+type CtxTagStyle = {
   readonly icon: LucideIcon;
   readonly label: string;
   readonly iconClass: string;
   readonly chipClass: string;
   readonly calloutClass: string;
   readonly calloutLabelClass: string;
-}
+};
 
 const CTX_DEFAULT: CtxTagStyle = {
   icon: Activity,
@@ -81,25 +81,17 @@ const CTX_TAG_STYLES: ReadonlyArray<readonly [RegExp, CtxTagStyle]> = [
 function ctxStyleForTag(tag: string): CtxTagStyle {
   const stripped = tag.replace(/^ctx-?/i, '');
   for (const [re, style] of CTX_TAG_STYLES) {
-    if (re.test(tag) || re.test(stripped)) return style;
+    if (re.test(tag) || re.test(stripped)) {
+      return style;
+    }
   }
   return { ...CTX_DEFAULT, label: stripped || tag };
 }
 
-// Minimal markdown renderer for assistant output. Handwritten in lieu of a
-// dependency: react-markdown pulls a 30-package remark/rehype subtree, marked
-// has XSS surface, and LLMs only ever produce a small subset of CommonMark:
-// fenced code, headings, lists (ordered + unordered, flat), blockquotes,
-// horizontal rules, gfm-style pipe tables, paragraphs, plus inline emphasis /
-// code / links. We also recognise the agent's <<ctx-*>>...</ctx-*>> markers
-// and render them as labelled blocks. Inline rendering operates on plain
-// strings only; we never dangerouslySetHTML so any unmatched delimiter just
-// shows literal characters.
-
-interface MarkdownProps {
+type MarkdownProps = {
   readonly text: string;
   readonly className?: string;
-}
+};
 
 type CellAlign = 'left' | 'center' | 'right';
 
@@ -118,10 +110,10 @@ type Block =
   | { kind: 'callout'; tag: string; content: string }
   | { kind: 'paragraph'; content: string };
 
-interface ListItem {
+type ListItem = {
   readonly content: string;
   readonly children: ReadonlyArray<Block>;
-}
+};
 
 const FENCE_RE = /^```([^\s`]*)\s*$/;
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
@@ -142,8 +134,12 @@ function parseAlign(divider: string): ReadonlyArray<CellAlign> {
   return splitTableCells(divider).map((c) => {
     const left = c.startsWith(':');
     const right = c.endsWith(':');
-    if (left && right) return 'center';
-    if (right) return 'right';
+    if (left && right) {
+      return 'center';
+    }
+    if (right) {
+      return 'right';
+    }
     return 'left';
   });
 }
@@ -156,7 +152,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
   while (i < lines.length) {
     const line = lines[i] ?? '';
 
-    // Fenced code block.
     const fence = line.match(FENCE_RE);
     if (fence) {
       const lang = fence[1] && fence[1].length > 0 ? fence[1] : null;
@@ -166,7 +161,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         buf.push(lines[i] ?? '');
         i++;
       }
-      i++; // skip closing fence (or eof)
+      i++;
       blocks.push({ kind: 'code', lang, content: buf.join('\n') });
       continue;
     }
@@ -176,7 +171,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    // ATX heading.
     const heading = line.match(HEADING_RE);
     if (heading) {
       const level = Math.min(heading[1]!.length, 6) as 1 | 2 | 3 | 4 | 5 | 6;
@@ -185,15 +179,12 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    // Horizontal rule.
     if (HR_RE.test(line)) {
       blocks.push({ kind: 'hr' });
       i++;
       continue;
     }
 
-    // GFM-style table: header row + divider row + body rows. We require the
-    // divider line so a stray pipe inside prose doesn't trigger table mode.
     if (
       TABLE_ROW_RE.test(line) &&
       i + 1 < lines.length &&
@@ -211,9 +202,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    // Custom <<tag>>...</tag>> callouts (e.g. <<ctx-decision>>...</ctx-decision>>)
-    //, agent emits these as inline structure markers. Render as a labelled
-    // block instead of leaking the raw tag delimiters into the prose.
     const calloutOpen = line.match(CALLOUT_OPEN_RE);
     if (calloutOpen) {
       const tag = calloutOpen[1]!;
@@ -227,7 +215,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
         continue;
       }
-      if (firstLineRest.length > 0) buf.push(firstLineRest);
+      if (firstLineRest.length > 0) {
+        buf.push(firstLineRest);
+      }
       i++;
       let closed = false;
       while (i < lines.length) {
@@ -248,12 +238,13 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       }
     }
 
-    // Blockquote: consume contiguous `>` lines.
     if (QUOTE_RE.test(line)) {
       const buf: string[] = [];
       while (i < lines.length) {
         const m = (lines[i] ?? '').match(QUOTE_RE);
-        if (!m) break;
+        if (!m) {
+          break;
+        }
         buf.push(m[1] ?? '');
         i++;
       }
@@ -261,7 +252,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    // List (ordered or unordered): consume contiguous matching lines.
     const ulist = line.match(ULIST_RE);
     const olist = line.match(OLIST_RE);
     if (ulist || olist) {
@@ -270,8 +260,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       const items: ListItem[] = [];
       while (i < lines.length) {
         const m = (lines[i] ?? '').match(re);
-        if (!m) break;
-        // Indent depth (number of leading spaces) is currently unused, flat lists only.
+        if (!m) {
+          break;
+        }
         items.push({ content: m[2]!.trim(), children: [] });
         i++;
       }
@@ -279,8 +270,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    // Paragraph: consume until blank line / fence / heading / hr / list /
-    // quote / table / callout.
     const paraBuf: string[] = [line];
     i++;
     while (i < lines.length) {
@@ -309,11 +298,6 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
   return blocks;
 }
 
-// Inline rendering, bold, italic, inline code, links. We tokenize manually
-// instead of using regex with backreferences, which keeps nested emphasis
-// predictable and means an unmatched delimiter renders as a literal char
-// rather than swallowing the rest of the line.
-
 function renderInline(input: string, keyPrefix: string): ReactNode {
   const out: ReactNode[] = [];
   let buf = '';
@@ -330,7 +314,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
   while (i < input.length) {
     const ch = input[i];
 
-    // Inline ctx marker: <<tag>> (standalone, no body, full callouts handled at block level).
     if (ch === '<' && input[i + 1] === '<') {
       const close = input.indexOf('>>', i + 2);
       if (close > i) {
@@ -358,7 +341,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
-    // Inline code: `...` (skip if it just wraps a <<tag>> marker, render as chip instead).
     if (ch === '`') {
       const end = input.indexOf('`', i + 1);
       if (end > i) {
@@ -399,7 +381,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
-    // Bold: **...** or __...__
     if ((ch === '*' || ch === '_') && input[i + 1] === ch) {
       const delim = ch + ch;
       const end = input.indexOf(delim, i + 2);
@@ -415,9 +396,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
-    // Italic: *...* or _..._  (single delimiter, not adjacent to another)
     if ((ch === '*' || ch === '_') && input[i + 1] !== ch) {
-      // Don't pick up a stray underscore in identifiers like foo_bar_baz.
       const prev = input[i - 1];
       const isWordBoundary = !prev || /\s|[(\[{,.!?]/.test(prev);
       if (isWordBoundary) {
@@ -435,7 +414,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
-    // Image: ![alt](url)
     if (ch === '!' && input[i + 1] === '[') {
       const closeBracket = input.indexOf(']', i + 2);
       if (closeBracket > i && input[closeBracket + 1] === '(') {
@@ -464,7 +442,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
       }
     }
 
-    // Link: [text](url)
     if (ch === '[') {
       const closeBracket = input.indexOf(']', i + 1);
       if (closeBracket > i && input[closeBracket + 1] === '(') {
@@ -472,7 +449,6 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         if (closeParen > closeBracket) {
           const label = input.slice(i + 1, closeBracket);
           const url = input.slice(closeBracket + 2, closeParen);
-          // Allow only http/https/mailto to avoid javascript: schemes.
           const safe = /^(https?:|mailto:)/i.test(url);
           flush();
           if (safe) {
@@ -543,7 +519,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
     case 'list':
       if (block.ordered) {
         return (
-          <ol key={key} className="list-decimal space-y-1.5 pl-5">
+          <ol key={key} className="flex list-decimal flex-col gap-1.5 pl-5">
             {block.items.map((item, j) => (
               <li key={`${key}-${j}`} className="leading-relaxed">
                 {renderInline(item.content, `${key}-${j}`)}
@@ -553,7 +529,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
         );
       }
       return (
-        <ul key={key} className="list-disc space-y-1.5 pl-5">
+        <ul key={key} className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item, j) => (
             <li key={`${key}-${j}`} className="leading-relaxed">
               {renderInline(item.content, `${key}-${j}`)}
@@ -571,8 +547,12 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     case 'table': {
       const alignClass = (a: CellAlign | undefined): string => {
-        if (a === 'right') return 'text-right';
-        if (a === 'center') return 'text-center';
+        if (a === 'right') {
+          return 'text-right';
+        }
+        if (a === 'center') {
+          return 'text-center';
+        }
         return 'text-left';
       };
       return (
@@ -652,11 +632,11 @@ function renderBlock(block: Block, idx: number): ReactNode {
   }
 }
 
-export function Markdown({ text, className }: MarkdownProps) {
+export const Markdown = ({ text, className }: MarkdownProps) => {
   const blocks = parseBlocks(text);
   return (
-    <div className={cn('space-y-2 text-base text-foreground/85', className)}>
+    <div className={cn('flex flex-col gap-2 text-base text-foreground/85', className)}>
       {blocks.map(renderBlock)}
     </div>
   );
-}
+};

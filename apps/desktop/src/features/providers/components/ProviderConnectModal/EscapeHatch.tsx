@@ -4,19 +4,13 @@ import { Tooltip } from '@goodboy/ui';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { formatError } from '../../../../shared/lib/errors';
 
-interface Props {
+type Props = {
   readonly command: string;
-}
+};
 
 const RESET_AFTER_MS = 1500;
 
-// Power-user escape hatch: copy the command verbatim, or hand it off to the
-// OS native terminal. Both options stay out of the way visually (small
-// secondary buttons under the terminal) so they do not compete with the
-// primary embedded-PTY flow above. The OS-terminal handoff is best-effort:
-// Linux probes a few common emulators, Windows opens cmd.exe, macOS uses
-// Terminal.app; an exotic setup falls back to a copy-only toast.
-export function EscapeHatch({ command }: Props) {
+export const EscapeHatch = ({ command }: Props) => {
   const [copied, setCopied] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
@@ -85,4 +79,4 @@ export function EscapeHatch({ command }: Props) {
       ) : null}
     </div>
   );
-}
+};

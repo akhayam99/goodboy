@@ -16,37 +16,29 @@ import { ContextEngine } from './engine';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
 import type { SlotKey } from './slots';
 
-// Glue layer between turn output (files touched + assistant text markers)
-// and the persistent ContextPanel slots. Called by the desktop store at the
-// end of every turn. Thin on purpose: heavy logic lives in extractors.ts and
-// ContextEngine; this fn orchestrates load → merge → upsert per slot.
-
-// Provenance of the agent that produced the turn whose markers we're about
-// to persist. Used to stamp open_questions with their creator so the UI can
-// cluster them per-agent and route answers back to the right chat. The
-// store resolves this from `activeAgentId` + workflow templates before
-// invoking auto-populate.
-export interface AgentContext {
+export type AgentContext = {
   readonly agentId: AgentId;
   readonly workflowId?: WorkflowId;
   readonly workflowRunId?: WorkflowRunId;
   readonly stepOrdinal?: number;
-}
+};
 
-export interface AutoPopulateInput {
+export type AutoPopulateInput = {
   readonly db: Database;
   readonly sessionId: SessionId;
   readonly filesEdited: ReadonlyArray<string>;
   readonly assistantText: string;
   readonly agentContext?: AgentContext;
-}
+};
 
-export interface AutoPopulateResult {
+export type AutoPopulateResult = {
   readonly updatedSlots: ReadonlyArray<SlotKey>;
   readonly openQuestionsChanged: boolean;
-}
+};
 
-export async function autoPopulateContext(input: AutoPopulateInput): Promise<AutoPopulateResult> {
+export const autoPopulateContext = async (
+  input: AutoPopulateInput,
+): Promise<AutoPopulateResult> => {
   const engine = new ContextEngine({ db: input.db });
   const slots = await engine.load(input.sessionId);
 
@@ -60,9 +52,6 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
   pushUpdate(updates, slots, 'files_touched', input.filesEdited);
   pushUpdate(updates, slots, 'decisions', decisions);
 
-  // open_questions: add new ones, then remove resolved. Compose against the
-  // pending update if `pushUpdate` already staged one for this slot, so
-  // resolutions and additions in the same turn don't fight each other.
   const existingQuestions = slots.find((s) => s.key === 'open_questions')?.value ?? '';
   let nextQuestions = mergeIntoSlot(
     existingQuestions,
@@ -77,10 +66,6 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
     await engine.upsert(input.sessionId, upd.key, upd.value);
   }
 
-  // Persist questions to the dedicated `open_questions` table so the Questions
-  // tab can render gamified per-question cards with suggestion chips. Dedup is
-  // enforced by a partial unique index `(session_id, text) WHERE status='open'`;
-  // re-emitting the same question across turns is a no-op.
   let insertedCount = 0;
   for (const q of freshQuestions) {
     const res = await insertOpenQuestion(input.db, {
@@ -94,7 +79,9 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
       text: q.text,
       suggestedAnswers: q.suggestedAnswers,
     });
-    if (res.inserted) insertedCount += 1;
+    if (res.inserted) {
+      insertedCount += 1;
+    }
   }
 
   const resolvedCount = await markOpenQuestionsResolvedByText(input.db, input.sessionId, resolved);
@@ -103,7 +90,7 @@ export async function autoPopulateContext(input: AutoPopulateInput): Promise<Aut
     updatedSlots: updates.map((u) => u.key),
     openQuestionsChanged: insertedCount > 0 || resolvedCount > 0,
   };
-}
+};
 
 function normalizeQuestion(s: string): string {
   return s
@@ -114,7 +101,9 @@ function normalizeQuestion(s: string): string {
 
 function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
   const n = normalizeQuestion(text);
-  if (n.length === 0) return false;
+  if (n.length === 0) {
+    return false;
+  }
   return candidates.some((c) => {
     const t = normalizeQuestion(c);
     return t.length > 0 && (n === t || n.includes(t) || t.includes(n));
@@ -123,9 +112,9 @@ function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
 
 function cryptoRandomUUID(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  if (g.crypto?.randomUUID) return g.crypto.randomUUID();
-  // Fallback: RFC4122 v4 with Math.random, used only when the runtime lacks
-  // crypto.randomUUID (older test environments).
+  if (g.crypto?.randomUUID) {
+    return g.crypto.randomUUID();
+  }
   const rnd = () =>
     Math.floor(Math.random() * 0x10000)
       .toString(16)
@@ -139,7 +128,9 @@ function pushUpdate(
   key: SlotKey,
   additions: ReadonlyArray<string>,
 ): void {
-  if (additions.length === 0) return;
+  if (additions.length === 0) {
+    return;
+  }
   const existing = slots.find((s) => s.key === key)?.value ?? '';
   const merged = mergeIntoSlot(existing, additions);
   if (merged !== existing) {

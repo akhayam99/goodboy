@@ -8,15 +8,21 @@ function nextMonthlyResetLabel(now = new Date()): string {
   return next.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).toLowerCase();
 }
 
-export function ProviderUsagePill({ provider }: { provider: ProviderId }) {
+export const ProviderUsagePill = ({ provider }: { provider: ProviderId }) => {
   const breakdown = useAppStore((s) => s.providerSpendBreakdown);
   const entry = breakdown.find((e) => e.provider === provider);
-  if (!entry || entry.capUsd === null || entry.capUsd <= 0) return null;
+  if (!entry || entry.capUsd === null || entry.capUsd <= 0) {
+    return null;
+  }
   const pctUsed = Math.max(0, Math.min(1, entry.pct));
   const pctRemaining = Math.round((1 - pctUsed) * 100);
   const tone = (() => {
-    if (pctRemaining > 50) return 'text-success';
-    if (pctRemaining > 20) return 'text-warning';
+    if (pctRemaining > 50) {
+      return 'text-success';
+    }
+    if (pctRemaining > 20) {
+      return 'text-warning';
+    }
     return 'text-danger';
   })();
   const reset = nextMonthlyResetLabel();
@@ -33,4 +39,4 @@ export function ProviderUsagePill({ provider }: { provider: ProviderId }) {
       {pctRemaining}% left · {reset}
     </span>
   );
-}
+};

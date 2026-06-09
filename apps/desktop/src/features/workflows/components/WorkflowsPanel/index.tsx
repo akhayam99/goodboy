@@ -18,11 +18,11 @@ import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 import { WorkflowComposer } from '../WorkflowStudio/WorkflowComposer';
 
-interface Props {
+type Props = {
   readonly workspaceId: WorkspaceId;
-}
+};
 
-export function WorkflowsPanel({ workspaceId }: Props) {
+export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const templates = useAppStore((s) => s.phaseTemplates[workspaceId] ?? EMPTY_ARRAY);
   const stepLibrary = useAppStore(
     (s) => s.stepLibrary[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<StepDef>),
@@ -148,7 +148,9 @@ export function WorkflowsPanel({ workspaceId }: Props) {
 
   const insertFromLibrary = (stepDefId: string, atIndex: number) => {
     const def = stepLibrary.find((s) => s.id === stepDefId);
-    if (!def) return;
+    if (!def) {
+      return;
+    }
     insertStep(defFromLibraryStep(def), atIndex);
   };
 
@@ -171,7 +173,9 @@ export function WorkflowsPanel({ workspaceId }: Props) {
   const moveStep = (idx: number, dir: -1 | 1) => {
     const j = idx + dir;
     setForm((prev) => {
-      if (j < 0 || j >= prev.steps.length) return prev;
+      if (j < 0 || j >= prev.steps.length) {
+        return prev;
+      }
       const steps = prev.steps.slice();
       [steps[idx], steps[j]] = [steps[j], steps[idx]] as [DefinitionForm, DefinitionForm];
       return { ...prev, steps };
@@ -180,7 +184,9 @@ export function WorkflowsPanel({ workspaceId }: Props) {
   };
 
   const moveStepTo = (from: number, to: number) => {
-    if (to === from || to === from + 1) return;
+    if (to === from || to === from + 1) {
+      return;
+    }
     const insertAt = to > from ? to - 1 : to;
     setForm((prev) => {
       const steps = prev.steps.slice();
@@ -189,10 +195,16 @@ export function WorkflowsPanel({ workspaceId }: Props) {
       return { ...prev, steps };
     });
     setExpandedIdx((cur) => {
-      if (cur === null) return null;
-      if (cur === from) return insertAt;
+      if (cur === null) {
+        return null;
+      }
+      if (cur === from) {
+        return insertAt;
+      }
       let c = cur > from ? cur - 1 : cur;
-      if (c >= insertAt) c += 1;
+      if (c >= insertAt) {
+        c += 1;
+      }
       return c;
     });
   };
@@ -255,4 +267,4 @@ export function WorkflowsPanel({ workspaceId }: Props) {
       <DragGhost ghost={ghost} />
     </div>
   );
-}
+};

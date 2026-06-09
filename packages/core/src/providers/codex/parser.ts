@@ -1,20 +1,12 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 
-export interface ParseContext {
+export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-}
+};
 
-// Codex CLI v0.130.0 emits NDJSON when run with `--json`. Schema captured from
-// `codex exec --json -m gpt-5.2 -s read-only -C /tmp "..."`:
-//   thread.started   { thread_id }
-//   turn.started
-//   item.started     { item: { id, type, ... } }
-//   item.completed   { item: { id, type, ... } }   // type = agent_message | command_execution | apply_patch | ...
-//   turn.completed   { usage: { input_tokens, cached_input_tokens, output_tokens, reasoning_output_tokens } }
-//   error            { message }                   // terminal error
 const KNOWN_TYPES = new Set([
   'thread.started',
   'turn.started',
@@ -24,36 +16,36 @@ const KNOWN_TYPES = new Set([
   'error',
 ]);
 
-interface UsagePayload {
+type UsagePayload = {
   readonly input_tokens?: number;
   readonly cached_input_tokens?: number;
   readonly output_tokens?: number;
   readonly reasoning_output_tokens?: number;
-}
+};
 
-interface CommandItem {
+type CommandItem = {
   readonly id: string;
   readonly type: 'command_execution';
   readonly command?: string;
   readonly aggregated_output?: string;
   readonly exit_code?: number | null;
   readonly status?: string;
-}
+};
 
-interface AgentMessageItem {
+type AgentMessageItem = {
   readonly id: string;
   readonly type: 'agent_message';
   readonly text?: string;
-}
+};
 
-interface ApplyPatchItem {
+type ApplyPatchItem = {
   readonly id: string;
   readonly type: 'apply_patch' | 'file_change';
   readonly changes?: ReadonlyArray<{
     readonly path?: string;
     readonly kind?: 'create' | 'modify' | 'delete' | string;
   }>;
-}
+};
 
 type CodexItem =
   | CommandItem
@@ -77,7 +69,9 @@ function commandToTurnEvents(
   ctx: ParseContext,
   at: IsoDateTime,
 ): ReadonlyArray<TurnEvent> {
-  if (!item.id) return [];
+  if (!item.id) {
+    return [];
+  }
   if (phase === 'start') {
     return [
       {
@@ -110,7 +104,9 @@ function applyPatchToTurnEvents(
   ctx: ParseContext,
   at: IsoDateTime,
 ): ReadonlyArray<TurnEvent> {
-  if (!item.id) return [];
+  if (!item.id) {
+    return [];
+  }
   const events: TurnEvent[] = [
     {
       kind: 'tool_call_end',
@@ -122,7 +118,9 @@ function applyPatchToTurnEvents(
     },
   ];
   for (const change of item.changes ?? []) {
-    if (typeof change.path !== 'string') continue;
+    if (typeof change.path !== 'string') {
+      continue;
+    }
     const editType: 'create' | 'modify' | 'delete' =
       change.kind === 'create' || change.kind === 'delete' ? change.kind : 'modify';
     events.push({
@@ -148,9 +146,11 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
   };
 }
 
-export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> {
+export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
-  if (trimmed.length === 0) return [];
+  if (trimmed.length === 0) {
+    return [];
+  }
 
   let payload: { type?: string } & Record<string, unknown>;
   try {
@@ -165,7 +165,9 @@ export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<Tu
   switch (type) {
     case 'thread.started': {
       const threadId = payload['thread_id'];
-      if (typeof threadId !== 'string' || threadId.length === 0) return [];
+      if (typeof threadId !== 'string' || threadId.length === 0) {
+        return [];
+      }
       return [
         {
           kind: 'provider_session_init',
@@ -181,19 +183,29 @@ export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<Tu
 
     case 'item.started': {
       const item = payload['item'] as CodexItem | undefined;
-      if (!item || typeof item.id !== 'string') return [];
-      if (isCommandItem(item)) return commandToTurnEvents(item, 'start', ctx, at);
+      if (!item || typeof item.id !== 'string') {
+        return [];
+      }
+      if (isCommandItem(item)) {
+        return commandToTurnEvents(item, 'start', ctx, at);
+      }
       return [];
     }
 
     case 'item.completed': {
       const item = payload['item'] as CodexItem | undefined;
-      if (!item || typeof item.id !== 'string') return [];
-      if (isCommandItem(item)) return commandToTurnEvents(item, 'end', ctx, at);
+      if (!item || typeof item.id !== 'string') {
+        return [];
+      }
+      if (isCommandItem(item)) {
+        return commandToTurnEvents(item, 'end', ctx, at);
+      }
       if (isAgentMessageItem(item) && typeof item.text === 'string' && item.text.length > 0) {
         return [{ kind: 'assistant_text', runId: ctx.runId, delta: item.text, at }];
       }
-      if (isApplyPatchItem(item)) return applyPatchToTurnEvents(item, ctx, at);
+      if (isApplyPatchItem(item)) {
+        return applyPatchToTurnEvents(item, ctx, at);
+      }
       return [];
     }
 
@@ -227,4 +239,4 @@ export function parseJsonLine(line: string, ctx: ParseContext): ReadonlyArray<Tu
       }
       return [];
   }
-}
+};

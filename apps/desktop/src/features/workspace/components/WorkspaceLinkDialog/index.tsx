@@ -7,29 +7,34 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
 
-interface Props {
+type Props = {
   open: boolean;
   onClose: () => void;
-}
+};
 
 type Mode = 'single' | 'multi';
 
 const lastSegment = (p: string): string => p.split('/').filter(Boolean).at(-1) ?? p;
 
 const commonParentDir = (paths: ReadonlyArray<string>): string => {
-  if (paths.length === 0) return '';
+  if (paths.length === 0) {
+    return '';
+  }
   const split = paths.map((p) => p.split('/'));
   const first = split[0]!;
   const shared: string[] = [];
   for (let i = 0; i < first.length; i += 1) {
     const seg = first[i];
-    if (split.every((s) => s[i] === seg)) shared.push(seg!);
-    else break;
+    if (split.every((s) => s[i] === seg)) {
+      shared.push(seg!);
+    } else {
+      break;
+    }
   }
   return shared.join('/');
 };
 
-export function WorkspaceLinkDialog({ open, onClose }: Props) {
+export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const addWorkspace = useAppStore((s) => s.addWorkspace);
   const addCompositeWorkspace = useAppStore((s) => s.addCompositeWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
@@ -54,7 +59,9 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
   const pathInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setMode('single');
     setPath('');
     setValidating(false);
@@ -109,15 +116,21 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
   );
 
   const suggestedContainer = useMemo(() => {
-    if (selectedWorkspaces.length < 2) return '';
+    if (selectedWorkspaces.length < 2) {
+      return '';
+    }
     const parent = commonParentDir(selectedWorkspaces.map((w) => w.rootPath));
-    if (parent.length === 0) return '';
+    if (parent.length === 0) {
+      return '';
+    }
     const mounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath));
     return `${parent}/${mounts.join('+')}`;
   }, [selectedWorkspaces, mountNames]);
 
   useEffect(() => {
-    if (!containerEdited) setContainerPath(suggestedContainer);
+    if (!containerEdited) {
+      setContainerPath(suggestedContainer);
+    }
   }, [suggestedContainer, containerEdited]);
 
   const toggleMember = useCallback((ws: Workspace) => {
@@ -253,11 +266,11 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
                 <Boxes size={13} aria-hidden />
               )}
               {m === 'single' ? 'Single project' : 'Multi project'}
-              {m === 'multi' ? (
+              {m === 'multi' && (
                 <span className="rounded bg-primary/15 px-1 text-2xs font-bold uppercase tracking-wide text-primary">
                   beta
                 </span>
-              ) : null}
+              )}
             </button>
           ))}
         </div>
@@ -354,7 +367,7 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
                   </ul>
                 </div>
 
-                {selectedWorkspaces.length > 0 ? (
+                {selectedWorkspaces.length > 0 && (
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-semibold text-foreground">mount names</span>
                     {selectedWorkspaces.map((ws) => (
@@ -371,13 +384,13 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
                         />
                       </div>
                     ))}
-                    {!mountsValid ? (
+                    {!mountsValid && (
                       <span className="text-xs text-danger">
                         mount names must be non-empty and unique.
                       </span>
-                    ) : null}
+                    )}
                   </div>
-                ) : null}
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-foreground">save into folder</span>
@@ -401,7 +414,7 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
                   </div>
                 </div>
 
-                {selectedWorkspaces.length >= 2 && containerPath.trim().length > 0 ? (
+                {selectedWorkspaces.length >= 2 && containerPath.trim().length > 0 && (
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-semibold text-foreground">preview</span>
                     <pre className="overflow-x-auto rounded-md border border-border bg-muted/30 px-3 py-2 text-2xs leading-relaxed text-muted-foreground">
@@ -412,7 +425,7 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
                         .join('\n')}`}
                     </pre>
                   </div>
-                ) : null}
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-foreground">name</span>
@@ -429,4 +442,4 @@ export function WorkspaceLinkDialog({ open, onClose }: Props) {
       </div>
     </Dialog>
   );
-}
+};

@@ -28,21 +28,13 @@ function stringToBase64(s: string): string {
   return btoa(binary);
 }
 
-interface Props {
+type Props = {
   readonly runId: string;
   readonly isActive: boolean;
-  /** Tailwind height class for the terminal wrapper. Default `h-44`. */
   readonly heightClass?: string;
-}
+};
 
-// Wraps GenericTerminalPanel with a lifecycle-scoped driver. The driver
-// filters output/exit events by runId so concurrent lifecycle runs (e.g. user
-// installs claude then immediately starts codex install) never bleed into
-// each other's xterm view.
-//
-// The same component is reused in the connect modal at a larger size by
-// overriding heightClass, see ProviderConnectModal.
-export function InlineTerminal({ runId, isActive, heightClass = 'h-44' }: Props) {
+export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props) => {
   const driver = useMemo<TerminalDriver>(
     () => ({
       write: (data) => {
@@ -53,12 +45,16 @@ export function InlineTerminal({ runId, isActive, heightClass = 'h-44' }: Props)
       },
       onOutput: (handler) =>
         listenLifecycleOutput((payload) => {
-          if (payload.runId !== runId) return;
+          if (payload.runId !== runId) {
+            return;
+          }
           handler(base64ToBytes(payload.data));
         }),
       onExit: (handler) =>
         listenLifecycleExit((payload) => {
-          if (payload.runId !== runId) return;
+          if (payload.runId !== runId) {
+            return;
+          }
           handler(payload.exitCode);
         }),
     }),
@@ -72,4 +68,4 @@ export function InlineTerminal({ runId, isActive, heightClass = 'h-44' }: Props)
       <GenericTerminalPanel terminalId={runId} driver={driver} isActive={isActive} exitMessage="" />
     </div>
   );
-}
+};

@@ -1,15 +1,15 @@
 import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   label: string;
   selected: boolean;
   onToggle: () => void;
-}
+};
 
 const isCodeLike = (label: string) => /^\S+$/.test(label) && /[_().:[\]/]/.test(label);
 
-export function SuggestionChip({ label, selected, onToggle }: Props) {
+export const SuggestionChip = ({ label, selected, onToggle }: Props) => {
   return (
     <button
       type="button"
@@ -37,4 +37,4 @@ export function SuggestionChip({ label, selected, onToggle }: Props) {
       <span className="truncate">{label}</span>
     </button>
   );
-}
+};

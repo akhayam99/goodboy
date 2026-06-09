@@ -116,7 +116,7 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { openUrl } from '../../../../shared/lib/editor';
 
-interface WorkspacesSidebarProps {
+type WorkspacesSidebarProps = {
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
@@ -126,12 +126,12 @@ interface WorkspacesSidebarProps {
   onOpenBudget: () => void;
   collapsed?: boolean;
   onToggleCollapse: () => void;
-}
+};
 
 const FOOTER_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
-export function WorkspacesSidebar({
+export const WorkspacesSidebar = ({
   onOpenSettings,
   onOpenPalette,
   onOpenWorkflows,
@@ -141,11 +141,9 @@ export function WorkspacesSidebar({
   onOpenBudget,
   collapsed = false,
   onToggleCollapse,
-}: WorkspacesSidebarProps) {
+}: WorkspacesSidebarProps) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
-  // Linear Studio is gated on the workspace having a connected Linear
-  // integration; defensive `?.` because tests mock a shallow store.
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
@@ -166,9 +164,6 @@ export function WorkspacesSidebar({
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
-  // `sessions` from the store is now archive-free by construction. Archived
-  // sessions live in `archivedSessions[workspaceId]`, loaded lazily when the
-  // Archived tab opens (see SessionActivityBar's onArchivedOpen).
   const activeSessions = sessions;
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -189,18 +184,20 @@ export function WorkspacesSidebar({
     [unarchiveTaskAction],
   );
   const onArchivedTabOpen = useCallback(() => {
-    if (!currentWorkspace) return;
+    if (!currentWorkspace) {
+      return;
+    }
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
-  // currentSession may live in either pool, useCurrentSession looks up both
-  //, so the dialog's `archived` flag needs to read from the session itself.
   const isCurrentArchived = !!currentSession?.archivedAt;
 
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
 
   useEffect(() => {
     const handler = () => {
-      if (!collapsed && currentWorkspace) setNewSessionOpen(true);
+      if (!collapsed && currentWorkspace) {
+        setNewSessionOpen(true);
+      }
     };
     window.addEventListener('goodboy:new-session', handler);
     return () => window.removeEventListener('goodboy:new-session', handler);
@@ -225,11 +222,6 @@ export function WorkspacesSidebar({
             const hasAnySession = totalSessions > 0;
             return (
               <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
-                {/* Sessions rail, always visible while a workspace is current.
-                    Earlier builds collapsed it when totalSessions <= 1, which
-                    moved the "new session" affordance into the detail header.
-                    That morphing made it hard to teach; now the rail is the
-                    single home for session navigation and creation. */}
                 <div className="w-28 shrink-0 overflow-hidden">
                   <SessionActivityBar
                     workspaceId={currentWorkspace.id}
@@ -256,9 +248,6 @@ export function WorkspacesSidebar({
                       <SessionMetaFooter session={currentSession} />
                     </>
                   ) : (
-                    /* No detail panel content when no session is selected: the
-                       sessions rail on the left already offers selection and
-                       creation, and the chat area renders the primary hero. */
                     <SidebarDetailHint hasAnySession={hasAnySession} />
                   )}
                 </div>
@@ -272,8 +261,6 @@ export function WorkspacesSidebar({
 
       <Divider />
 
-      {/* quick actions, jump straight into the palette pre-scoped to a
-          source. Discovery aid for the prefix grammar (plan §A.2/§A.3). */}
       {currentWorkspace ? (
         <QuickActionsRow
           onOpenPalette={onOpenPalette}
@@ -340,9 +327,6 @@ export function WorkspacesSidebar({
         </div>
       </div>
 
-      {/* Mount these heavy dialogs only when open. Otherwise their inner
-          selectors (GuideDialog walks a few maps) re-evaluate on every store
-          update for a panel the user almost never has open. */}
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
       ) : null}
@@ -367,12 +351,9 @@ export function WorkspacesSidebar({
       ) : null}
     </div>
   );
-}
+};
 
 function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
-  // Logo pinned top, expand control pinned bottom, the expand button holds
-  // the same bottom slot it occupies in the expanded sidebar's footer, so it
-  // doesn't jump when the rail toggles.
   return (
     <div className="flex h-full w-full flex-col items-center justify-between py-3">
       <DogMascot size={18} className="shrink-0 text-foreground" />
@@ -418,8 +399,7 @@ function QuickActionsRow({
           onClick={() => onOpenPalette('/')}
         />
       ) : null}
-      {/* Single entry point to the global Workflow Studio. Scripts is reachable
-          from the composer ($ prefix) and the palette, so it's dropped here. */}
+
       <QuickAction
         icon={<Layers size={12} className="text-primary" aria-hidden />}
         label="Workflows"
@@ -487,7 +467,9 @@ function QuickAction({
 
 function workflowKindName(workflow: Workflow): string {
   const needle = workflow.name.trim().toLowerCase();
-  if (!needle) return 'custom';
+  if (!needle) {
+    return 'custom';
+  }
   const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
   return match?.name.toLowerCase() ?? 'custom';
 }
@@ -535,24 +517,6 @@ function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
   );
 }
 
-/**
- * Inline follow-up CTA rendered directly above the generic 'Create agent'
- * trigger when the session has an active plan ready to execute. The pitch is:
- * before the user picks any role from the spawn menu, the plan already
- * implies the answer, so offer it one click away.
- *
- * Visibility guards:
- *   - latest plan status is 'active' (a 'consumed' plan already has an
- *     implementer attached; no need to suggest again)
- *   - no open questions on the session (the user owes the agent an answer
- *     first; a spawn CTA on top would be noise)
- *   - if any pending workflow step will consume the plan itself (a
- *     plan-consuming kind: implementer/debugger/generic), defer to the
- *     workflow, suggesting a free-spawn on top would be noise
- *
- * Click goes through the store's runPlan, which (since the runPlan fix in
- * this branch) seeds an implementer agent with the plan body as kickoff.
- */
 function PlanReadySuggestion({ task }: { task: Session }) {
   const plans = useSessionPlans(task.id);
   const openQuestions = useSessionOpenQuestions(task.id);
@@ -566,25 +530,27 @@ function PlanReadySuggestion({ task }: { task: Session }) {
   const [spawning, setSpawning] = useState(false);
 
   const latest = plans[plans.length - 1];
-  if (!latest || latest.status !== 'active') return null;
+  if (!latest || latest.status !== 'active') {
+    return null;
+  }
 
-  // Per-workflow gate: find the workflow that owns the plan creator's step
-  // and block only if THAT workflow has open questions. Plans without a
-  // workflow context (ad-hoc creator) fall back to the orphan-or-any check.
   const creator = phaseRuns.find((r) => r.id === latest.agentId);
   const creatorWorkflow = creator?.stepId
     ? (phaseTemplates.find((t) => t.steps.some((s) => s.id === creator.stepId)) ?? null)
     : null;
   if (creatorWorkflow) {
-    if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) return null;
+    if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) {
+      return null;
+    }
   } else if (openQuestions.some((q) => q.status === 'open')) {
-    // No workflow context, keep legacy session-wide block (safe default).
     return null;
   }
 
   const liveStepIds = new Set<StepId>();
   for (const run of task.workflowRuns) {
-    if (run.discardedAt) continue;
+    if (run.discardedAt) {
+      continue;
+    }
     phaseTemplates
       .find((t) => t.id === run.workflowId)
       ?.steps.forEach((s) => liveStepIds.add(s.id));
@@ -596,10 +562,14 @@ function PlanReadySuggestion({ task }: { task: Session }) {
       liveStepIds.has(a.stepId) &&
       kindConsumesPlan((a.kind as AgentKind | undefined) ?? inferAgentKindFromName(a.name)),
   );
-  if (hasPendingConsumer) return null;
+  if (hasPendingConsumer) {
+    return null;
+  }
 
   const onSpawn = async () => {
-    if (spawning) return;
+    if (spawning) {
+      return;
+    }
     setSpawning(true);
     try {
       await runPlan(task.id, latest.id);
@@ -701,9 +671,9 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
   );
 }
 
-interface AgentsSectionProps {
+type AgentsSectionProps = {
   task: Session;
-}
+};
 
 function AgentsSection({ task }: AgentsSectionProps) {
   const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
@@ -714,18 +684,18 @@ function AgentsSection({ task }: AgentsSectionProps) {
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
   const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
-  // Scope cross-agent maps to this session's runs. Subscribing to the raw
-  // store map (`s.agentRunHistory` etc.) re-renders this section every time
-  // any agent anywhere in the app updates, useShallow narrows the
-  // subscription to "did any of *my* runs' entries change".
   const agentRunHistory = useAppStore(
     useShallow((s) => {
       const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const history = s.agentRunHistory[run.id];
-        if (history) out[run.id] = history;
+        if (history) {
+          out[run.id] = history;
+        }
       }
       return out;
     }),
@@ -734,10 +704,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, AgentKind> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const kind = s.agentKindOverride[run.id];
-        if (kind) out[run.id] = kind;
+        if (kind) {
+          out[run.id] = kind;
+        }
       }
       return out;
     }),
@@ -746,10 +720,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, string> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const model = s.agentModelOverride[run.id];
-        if (model) out[run.id] = model;
+        if (model) {
+          out[run.id] = model;
+        }
       }
       return out;
     }),
@@ -773,10 +751,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
     useShallow((s) => {
       const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
       const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) return out;
+      if (!runs) {
+        return out;
+      }
       for (const run of runs) {
         const st = s.resolverState[run.id];
-        if (st) out[run.id] = st;
+        if (st) {
+          out[run.id] = st;
+        }
       }
       return out;
     }),
@@ -847,7 +829,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const agentsByRunId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
-      if (r.stepId == null || r.workflowRunId == null) continue;
+      if (r.stepId == null || r.workflowRunId == null) {
+        continue;
+      }
       const bucket = map.get(r.workflowRunId) ?? [];
       bucket.push(r);
       map.set(r.workflowRunId, bucket);
@@ -857,7 +841,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const childrenByParentId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
-      if (r.parentAgentId == null) continue;
+      if (r.parentAgentId == null) {
+        continue;
+      }
       const bucket = map.get(r.parentAgentId) ?? [];
       bucket.push(r);
       map.set(r.parentAgentId, bucket);
@@ -911,9 +897,13 @@ function AgentsSection({ task }: AgentsSectionProps) {
     async (runId: WorkflowRunId, direction: 'up' | 'down') => {
       const ids = [...task.workflowRuns].sort((a, b) => a.ordinal - b.ordinal).map((r) => r.id);
       const idx = ids.indexOf(runId);
-      if (idx === -1) return;
+      if (idx === -1) {
+        return;
+      }
       const swap = direction === 'up' ? idx - 1 : idx + 1;
-      if (swap < 0 || swap >= ids.length) return;
+      if (swap < 0 || swap >= ids.length) {
+        return;
+      }
       [ids[idx], ids[swap]] = [ids[swap]!, ids[idx]!];
       try {
         await reorderSessionWorkflows(task.id, ids);
@@ -938,19 +928,23 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const turnsByAgentId = useMemo(() => {
     const map = new Map<string, number>();
     for (const m of messages) {
-      if (m.role !== 'user') continue;
+      if (m.role !== 'user') {
+        continue;
+      }
       map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
     }
     return map;
   }, [messages]);
 
-  // First user message per agent, kept stable so the chip's auto-label only
-  // ever derives from turn #1 even if later turns arrive.
   const firstUserTextByAgentId = useMemo(() => {
     const map = new Map<string, string>();
     for (const m of messages) {
-      if (m.role !== 'user') continue;
-      if (map.has(m.agentId)) continue;
+      if (m.role !== 'user') {
+        continue;
+      }
+      if (map.has(m.agentId)) {
+        continue;
+      }
       map.set(m.agentId, m.content);
     }
     return map;
@@ -972,11 +966,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
   const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
 
-  /**
-   * Cumulative telemetry per agent across every providerRun we recorded for
-   * that agent, needed so the cost/tokens row in the sidebar doesn't drop
-   * earlier providers' usage when the user swaps provider mid-session.
-   */
   const aggregatesByAgentId = useMemo(() => {
     const map = new Map<
       string,
@@ -984,7 +973,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
     >();
     const telemetryByRun = new Map<string, TelemetryRecord>();
     for (const rec of telemetry) {
-      if (rec.kind !== 'turn') continue;
+      if (rec.kind !== 'turn') {
+        continue;
+      }
       const existing = telemetryByRun.get(rec.runId);
       if (!existing || existing.recordedAt < rec.recordedAt) {
         telemetryByRun.set(rec.runId, rec);
@@ -998,7 +989,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
       let turns = 0;
       for (const rid of runIds) {
         const rec = telemetryByRun.get(rid);
-        if (!rec) continue;
+        if (!rec) {
+          continue;
+        }
         inputTokens += rec.inputTokens;
         outputTokens += rec.outputTokens;
         estimatedCostUsd += rec.estimatedCostUsd;
@@ -1008,21 +1001,29 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }
     const childIds = new Map<string, string[]>();
     for (const run of phaseRuns) {
-      if (run.parentAgentId == null) continue;
+      if (run.parentAgentId == null) {
+        continue;
+      }
       const bucket = childIds.get(run.parentAgentId) ?? [];
       bucket.push(run.id);
       childIds.set(run.parentAgentId, bucket);
     }
     const rolled = new Set<string>();
     const rollup = (id: string) => {
-      if (rolled.has(id)) return;
+      if (rolled.has(id)) {
+        return;
+      }
       rolled.add(id);
       const self = map.get(id);
-      if (!self) return;
+      if (!self) {
+        return;
+      }
       for (const cid of childIds.get(id) ?? []) {
         rollup(cid);
         const child = map.get(cid);
-        if (!child) continue;
+        if (!child) {
+          continue;
+        }
         self.inputTokens += child.inputTokens;
         self.outputTokens += child.outputTokens;
         self.estimatedCostUsd += child.estimatedCostUsd;
@@ -1033,18 +1034,15 @@ function AgentsSection({ task }: AgentsSectionProps) {
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);
 
-  /**
-   * Most recent turn telemetry per agent, walks agentRunHistory newest-first so
-   * the context bar always shows the latest prompt size, even if Session.runId
-   * lags behind (e.g. the DB row wasn't flushed before telemetry arrived).
-   */
   const latestTelemetryByAgentId = useMemo(
     () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
     [telemetryByRunId, phaseRuns, agentRunHistory],
   );
 
   const onPickAgent = (sid: AgentId) => {
-    if (sid === selectedAgentId) return;
+    if (sid === selectedAgentId) {
+      return;
+    }
     void selectAgent(task.id, sid);
   };
 
@@ -1108,7 +1106,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           onRenameCancel={() => setEditingId(null)}
           onDelete={() => void onDeleteAgent(run.id)}
         />
-        {scoutChildren.length > 0 ? (
+        {scoutChildren.length > 0 && (
           <li>
             <ScoutSubtree
               containerId={run.id}
@@ -1121,7 +1119,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               onSelect={onPickAgent}
             />
           </li>
-        ) : null}
+        )}
       </Fragment>
     );
   };
@@ -1175,7 +1173,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               </span>
             ) : null}
           </button>
-          {!isDiscarded && !isCompleted ? (
+          {!isDiscarded && !isCompleted && (
             <div className="flex shrink-0 items-center">
               <button
                 type="button"
@@ -1192,7 +1190,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               >
                 {run.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
               </button>
-              {attachedRuns.length > 1 ? (
+              {attachedRuns.length > 1 && (
                 <>
                   <button
                     type="button"
@@ -1215,10 +1213,10 @@ function AgentsSection({ task }: AgentsSectionProps) {
                     <ChevronDown size={11} aria-hidden />
                   </button>
                 </>
-              ) : null}
+              )}
               <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
             </div>
-          ) : null}
+          )}
         </div>
         {expanded ? (
           wfAgents.length > 0 ? (
@@ -1371,7 +1369,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
         </ul>
       )}
-      {resolverAgents.length > 0 ? (
+      {resolverAgents.length > 0 && (
         <ResolveCluster
           agents={resolverAgents}
           sessionId={task.id}
@@ -1385,7 +1383,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
           onSelect={onPickAgent}
           onForceNext={() => void activateNextResolver(task.id)}
         />
-      ) : null}
+      )}
       <div className="flex flex-col gap-1 pl-2">
         <PlanReadySuggestion task={task} />
         <SpawnAgentControl sessionId={task.id} />
@@ -1400,16 +1398,16 @@ function AgentsSection({ task }: AgentsSectionProps) {
   );
 }
 
-interface SpawnAgentControlProps {
+type SpawnAgentControlProps = {
   sessionId: SessionId;
-}
+};
 
-interface PopoverAnchor {
+type PopoverAnchor = {
   readonly left: number;
   readonly top: number | null;
   readonly bottom: number | null;
   readonly direction: 'up' | 'down';
-}
+};
 
 function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
@@ -1420,7 +1418,9 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
 
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return null;
+    if (!rect) {
+      return null;
+    }
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const direction: 'up' | 'down' = spaceBelow > spaceAbove ? 'down' : 'up';
@@ -1432,17 +1432,26 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) {
+        return;
+      }
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
       setOpen(false);
     };
     const onReanchor = () => {
       const next = computeAnchor();
-      if (next) setAnchor(next);
-      else setOpen(false);
+      if (next) {
+        setAnchor(next);
+      } else {
+        setOpen(false);
+      }
     };
     window.addEventListener('mousedown', onDocClick);
     window.addEventListener('resize', onReanchor);
@@ -1457,7 +1466,9 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   const onToggle = () => {
     if (!open) {
       const next = computeAnchor();
-      if (next) setAnchor(next);
+      if (next) {
+        setAnchor(next);
+      }
     }
     setOpen((v) => !v);
   };
@@ -1525,14 +1536,14 @@ function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
   );
 }
 
-interface ClusterChildRowProps {
+type ClusterChildRowProps = {
   readonly child: Agent;
   readonly index: number;
   readonly total: number;
   readonly costUsd: number;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
-}
+};
 
 function ClusterChildRow({
   child,
@@ -1570,19 +1581,19 @@ function ClusterChildRow({
       </span>
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
-      {costUsd > 0 ? (
+      {costUsd > 0 && (
         <span
           className="shrink-0 tabular-nums text-muted-foreground/60"
           title={`$${costUsd.toFixed(4)}`}
         >
           ${costUsd.toFixed(2)}
         </span>
-      ) : null}
+      )}
     </button>
   );
 }
 
-interface ScoutSubtreeProps {
+type ScoutSubtreeProps = {
   readonly containerId: AgentId;
   readonly depth: number;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
@@ -1591,7 +1602,7 @@ interface ScoutSubtreeProps {
   readonly expandState: ReadonlyMap<string, boolean>;
   readonly onToggle: (id: string) => void;
   readonly onSelect: (id: AgentId) => void;
-}
+};
 
 function ScoutSubtree({
   containerId,
@@ -1604,7 +1615,9 @@ function ScoutSubtree({
   onSelect,
 }: ScoutSubtreeProps) {
   const children = childrenByParentId.get(containerId) ?? EMPTY_ARRAY;
-  if (children.length === 0 || depth > 4) return null;
+  if (children.length === 0 || depth > 4) {
+    return null;
+  }
   const expanded = expandState.get(containerId) ?? false;
   const doneCount = children.filter(
     (c) => c.status === 'completed' || c.status === 'skipped',
@@ -1670,18 +1683,32 @@ function resolverStatus(
   pendingThreadIds: ReadonlySet<string>,
   state: ResolverState | undefined,
 ): ResolverStatus {
-  if (agent.status === 'running') return 'running';
-  if (agent.status === 'failed') return 'failed';
-  if (agent.status === 'pending') return 'pending';
+  if (agent.status === 'running') {
+    return 'running';
+  }
+  if (agent.status === 'failed') {
+    return 'failed';
+  }
+  if (agent.status === 'pending') {
+    return 'pending';
+  }
   const tid = agent.sourceThreadId;
-  if (tid != null && resolvedThreadIds.has(tid)) return 'resolved';
-  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) return 'committed';
-  if (state === 'wontfix') return 'wontfix';
-  if (state === 'awaiting') return 'awaiting';
+  if (tid != null && resolvedThreadIds.has(tid)) {
+    return 'resolved';
+  }
+  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) {
+    return 'committed';
+  }
+  if (state === 'wontfix') {
+    return 'wontfix';
+  }
+  if (state === 'awaiting') {
+    return 'awaiting';
+  }
   return 'done';
 }
 
-interface ResolveClusterProps {
+type ResolveClusterProps = {
   readonly agents: ReadonlyArray<Agent>;
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
@@ -1693,7 +1720,7 @@ interface ResolveClusterProps {
   readonly onToggle: () => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onForceNext: () => void;
-}
+};
 
 function ResolveCluster({
   agents,
@@ -1773,7 +1800,7 @@ function ResolveCluster({
   );
 }
 
-interface ResolveClusterRowProps {
+type ResolveClusterRowProps = {
   readonly agent: Agent;
   readonly index: number;
   readonly total: number;
@@ -1782,7 +1809,7 @@ interface ResolveClusterRowProps {
   readonly canJump: boolean;
   readonly onSelect: () => void;
   readonly onJump: () => void;
-}
+};
 
 function ResolveClusterRow({
   agent,
@@ -1863,7 +1890,7 @@ function ResolveClusterRow({
 
 type WorkflowBlockReason = 'questions' | 'summarizer';
 
-interface WorkflowStepRowProps {
+type WorkflowStepRowProps = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -1881,7 +1908,7 @@ interface WorkflowStepRowProps {
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
-}
+};
 
 function WorkflowStepRow({
   run,
@@ -1910,14 +1937,20 @@ function WorkflowStepRow({
   const [draft, setDraft] = useState(run.name);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   useEffect(() => {
-    if (isEditing) setDraft(run.name);
+    if (isEditing) {
+      setDraft(run.name);
+    }
   }, [isEditing, run.name]);
   useEffect(() => {
-    if (!isBlocked) setPendingConfirm(false);
+    if (!isBlocked) {
+      setPendingConfirm(false);
+    }
   }, [isBlocked]);
 
   const handleRowClick = () => {
-    if (isPendingFuture) return;
+    if (isPendingFuture) {
+      return;
+    }
     if (isStartable) {
       onStart();
     } else if (isActionable && isBlocked) {
@@ -1929,10 +1962,6 @@ function WorkflowStepRow({
 
   const ROW_BASE =
     'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
-  // Border telegraphs the live state. running wins over everything else
-  // (the conic-info sweep is the most attention-grabbing); the blocked
-  // step pulses warning to say "I'm waiting on you"; otherwise the
-  // base tone wins.
   const isRunning = run.status === 'running';
   const containerClass = isRunning
     ? cn(
@@ -1970,11 +1999,6 @@ function WorkflowStepRow({
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (run.status === 'running') {
-      // Used to rely on the row's conic spin-border to signal running.
-      // That ring forced a 250×36px composite layer per running agent and
-      // showed up in WKWebView profiles as 200ms+ composite stalls on hover.
-      // Static border-info now carries the state; a tiny Loader2 spin keeps
-      // the motion cue without the gradient cost.
       return <Loader2 size={11} className="animate-spin text-info" aria-hidden />;
     }
     if (run.status === 'completed') {
@@ -1991,7 +2015,9 @@ function WorkflowStepRow({
   };
 
   const renderActionIndicator = () => {
-    if (run.status === 'running') return null;
+    if (run.status === 'running') {
+      return null;
+    }
     if (isActionable && isBlocked) {
       return <ArrowRight size={13} aria-hidden className="text-warning" />;
     }
@@ -2017,7 +2043,9 @@ function WorkflowStepRow({
         onClick={isEditing || isPendingFuture ? undefined : handleRowClick}
         onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
         onKeyDown={(e) => {
-          if (isEditing) return;
+          if (isEditing) {
+            return;
+          }
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             handleRowClick();
@@ -2131,7 +2159,7 @@ function WorkflowStepRow({
   );
 }
 
-interface AgentRowProps {
+type AgentRowProps = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -2147,7 +2175,7 @@ interface AgentRowProps {
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
   readonly onDelete: () => void;
-}
+};
 
 function AgentRow({
   run,
@@ -2181,10 +2209,14 @@ function AgentRow({
   const [draft, setDraft] = useState(run.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   useEffect(() => {
-    if (isEditing) setDraft(run.name);
+    if (isEditing) {
+      setDraft(run.name);
+    }
   }, [isEditing, run.name]);
   useEffect(() => {
-    if (isEditing) setConfirmingDelete(false);
+    if (isEditing) {
+      setConfirmingDelete(false);
+    }
   }, [isEditing]);
 
   return (
@@ -2195,7 +2227,9 @@ function AgentRow({
       onClick={isEditing ? undefined : onClick}
       onDoubleClick={isEditing ? undefined : onRenameStart}
       onKeyDown={(e) => {
-        if (isEditing) return;
+        if (isEditing) {
+          return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onClick();
@@ -2205,11 +2239,6 @@ function AgentRow({
         'group rounded border transition-colors',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
-        // State signal lives on the border, never on the dot, never on
-        // the content. running > unread > selected > idle. Static colors
-        // only; the prior `spin-border` and `animate-border-pulse` here
-        // were the same GPU-heavy conic-gradient / oklch border-color
-        // animations dropped from the workflow row variant.
         run.status === 'running'
           ? 'border-info/60'
           : agentHasUnread(run, isSelected && isTaskActive)
@@ -2261,8 +2290,8 @@ function AgentRow({
             {run.name}
           </span>
         )}
-        {!isEditing ? (
-          confirmingDelete ? (
+        {!isEditing &&
+          (confirmingDelete ? (
             <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
@@ -2302,8 +2331,7 @@ function AgentRow({
                 <Trash2 size={11} aria-hidden />
               </button>
             </div>
-          )
-        ) : null}
+          ))}
       </div>
       <div
         className={cn(
@@ -2332,16 +2360,15 @@ function AgentRow({
 function findContextWindow(model: string): number | null {
   for (const cap of Object.values(PROVIDER_CAPABILITIES)) {
     const m = cap.models.find((mm) => mm.id === model);
-    if (m) return m.contextWindow;
+    if (m) {
+      return m.contextWindow;
+    }
   }
   return null;
 }
 
 function AgentLifetime({ run }: { run: Agent }) {
   const isLive = !!run.startedAt && !run.completedAt;
-  // Subscribe to a shared 5s ticker so the relative label refreshes without
-  // spawning one setInterval per live agent. The hook no-ops when isLive is
-  // false, completed agents render once and never re-tick.
   const now = useNow(5_000, isLive);
   void now;
 
@@ -2375,29 +2402,39 @@ function ContextWindowBar({
   telemetry: TelemetryRecord | null;
   aggregate: AgentAggregate | null;
 }) {
-  if (!telemetry) return null;
+  if (!telemetry) {
+    return null;
+  }
   const window = findContextWindow(telemetry.model);
-  if (!window) return null;
-  // Conversation size proxy: sum of per-turn uncached input deltas + assistant
-  // output across the session. Each turn's `inputTokens` is the *new* tokens
-  // added (the cached prefix isn't double-counted), and each `outputTokens`
-  // becomes part of history for the next turn. Avoids the `cache_read` trap:
-  // claude-code's per-turn `cache_read_input_tokens` sums every sub-call in a
-  // tool loop, so adding it would multiply by the number of iterations.
+  if (!window) {
+    return null;
+  }
   const cumulativeInput = aggregate?.inputTokens ?? telemetry.inputTokens;
   const cumulativeOutput = aggregate?.outputTokens ?? telemetry.outputTokens;
   const used = cumulativeInput + cumulativeOutput;
   const pct = Math.min(1, used / window);
   const barTone = (() => {
-    if (pct >= 0.9) return 'bg-danger';
-    if (pct >= 0.75) return 'bg-warning';
-    if (pct >= 0.5) return 'bg-info';
+    if (pct >= 0.9) {
+      return 'bg-danger';
+    }
+    if (pct >= 0.75) {
+      return 'bg-warning';
+    }
+    if (pct >= 0.5) {
+      return 'bg-info';
+    }
     return 'bg-success';
   })();
   const iconTone = (() => {
-    if (pct >= 0.9) return 'text-danger';
-    if (pct >= 0.75) return 'text-warning';
-    if (pct >= 0.5) return 'text-info';
+    if (pct >= 0.9) {
+      return 'text-danger';
+    }
+    if (pct >= 0.75) {
+      return 'text-warning';
+    }
+    if (pct >= 0.5) {
+      return 'text-info';
+    }
     return 'text-success';
   })();
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;

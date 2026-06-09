@@ -13,7 +13,7 @@ type Params = {
   workspaceId?: WorkspaceId;
 };
 
-export function emitNotification(set: SetFn) {
+export const emitNotification = (set: SetFn) => {
   return async (
     kind: NotificationKind,
     severity: NotificationSeverity,
@@ -35,4 +35,4 @@ export function emitNotification(set: SetFn) {
     await insertNotification(tauriDatabase, n);
     set((state) => ({ notifications: [n, ...state.notifications] }));
   };
-}
+};

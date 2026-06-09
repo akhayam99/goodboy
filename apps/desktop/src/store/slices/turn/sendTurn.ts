@@ -113,14 +113,14 @@ import {
 } from '../../turn-helpers';
 import type { GetFn, SetFn } from './types';
 
-interface Input {
+type Input = {
   sessionId: SessionId;
   agentId?: AgentId;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
-}
+};
 
 const EFFORT_FLAG: Readonly<Record<string, string>> = {
   minimal: 'minimal',
@@ -133,7 +133,7 @@ const EFFORT_FLAG: Readonly<Record<string, string>> = {
 
 const EFFORT_PROVIDERS: ReadonlySet<string> = new Set(['anthropic', 'codex']);
 
-export function sendTurn(set: SetFn, get: GetFn) {
+export const sendTurn = (set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
     agentId,
@@ -144,7 +144,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
   }: Input): Promise<void> => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session) {
+      throw new Error(`session not found: ${sessionId}`);
+    }
     const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
@@ -258,8 +260,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
       currentDef: Step;
       groupDefs: ReadonlyArray<Step>;
     } | null = null;
-    // Capture user prompt PRE phase build, needed if parallel branch fires, so per-def
-    // prompts can be rebuilt inside runParallelBranch.
     const userPromptForPhase = resolvedPrompt;
 
     if (session.workflowRuns.length > 0) {
@@ -267,12 +267,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
       set((state) => ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: freshRuns },
       }));
-      // Route the turn to the step of the currently selected agent. With
-      // pre-creation, selectedAgentId is the source of truth: it's set by
-      // activateWorkflowAgent (auto-advance / CTA) or spawnAgent (retry),
-      // or the user via the sidebar. Falling back to currentStep here
-      // would mis-route follow-up turns to the next pre-created pending
-      // step instead of staying on the active agent.
       const initialRuns = before.sessionPhaseRuns[sessionId] ?? [];
       const activeAgentRow =
         freshRuns.find((r) => r.id === activeAgentId) ??
@@ -285,9 +279,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
       const template = activeRun
         ? (templates.find((t) => t.id === activeRun.workflowId) ?? null)
         : null;
-      // Scope the run pool to the active agent's instance so prev-step,
-      // carry-forward and first-turn detection never read a sibling instance
-      // of the same template.
       const runAgents = activeRun ? runsForWorkflowRun(freshRuns, activeRun.id) : freshRuns;
       if (template) {
         const nextDef = template.steps.find((s) => s.id === activeAgentRow!.stepId) ?? null;
@@ -302,11 +293,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
           const prevRun = prevDef
             ? (runAgents.find((r) => r.stepId === prevDef.id && r.status === 'completed') ?? null)
             : null;
-          // Carry-forward + transition event only fire on the *first* turn of a
-          // step. Subsequent iterations on the same step skip both, so the
-          // prompt isn't bloated by duplicating the previous step's summary on
-          // every message and the transcript doesn't show a phantom step
-          // transition mid-conversation.
           const isFirstTurnOfStep = !runAgents.some(
             (r) => r.stepId === nextDef.id && r.status !== 'pending',
           );
@@ -334,10 +320,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
           phaseDefinition = nextDef;
           phaseWorkflowRunId = activeRun?.id ?? null;
 
-          // Detect parallel group, only when feature flag is on AND nextDef
-          // belongs to a group with >= 2 siblings. Defer prompt rebuild for parallel
-          // path: per-def prompts are built inside runParallelBranch using
-          // userPromptForPhase + phasePromptCarryForward.
           if (AGENT_FEATURES.parallelAgents) {
             const detection = detectParallelGroup(template, nextDef);
             if (detection !== null) {
@@ -434,19 +416,15 @@ export function sendTurn(set: SetFn, get: GetFn) {
     const resolvedOverride =
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
 
-    // The single-run setup (user message persist, provider run row, phase run row,
-    // session.state=running) is gated when the parallel branch will fire below.
-    // The parallel branch inserts its own phase_run rows (one per sibling) and
-    // handles user-message + session-state itself. Without this gate we'd duplicate
-    // every row. The runId allocated here is still used as a placeholder for the
-    // gated paths so types stay consistent (it is unused if parallelDispatch fires).
     const runId = crypto.randomUUID() as ProviderRunId;
     const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
 
     if (parallelDispatch === null) {
       set((state) => {
         const prev = state.agentRunHistory[activeAgentId] ?? [];
-        if (prev.includes(runId)) return state;
+        if (prev.includes(runId)) {
+          return state;
+        }
         return {
           agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
         };
@@ -485,10 +463,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
 
     let resolvedAgentId: AgentId | null = null;
     if (phaseDefinition && parallelDispatch === null) {
-      // Reuse the existing Agent row for this step if one already exists.
-      // Agent-multi-turn: every turn flips the same row to running and points
-      // it at the new providerRunId, instead of inserting a fresh row per
-      // user message. New rows only appear when the user spawns a new agent.
       const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
       const scopedRuns = phaseWorkflowRunId
         ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
@@ -586,8 +560,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
       }
     }
 
-    // Parallel-agents branch, triggered iff: enableParallelAgents on + phaseTemplate active + current
-    // phase has parallelGroup with >= 2 siblings (already resolved above).
     if (parallelDispatch !== null) {
       const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
       if (!workspace) {
@@ -738,14 +710,8 @@ export function sendTurn(set: SetFn, get: GetFn) {
     }
     void refreshPricingTable();
 
-    // ContextPanel acts as the Session's shared memory: prepend the serialized
-    // slots + a marker hint so the agent (a) sees what previous agents in
-    // this Session already learned, and (b) knows how to write back via
-    // <<ctx-decision>> / <<ctx-question>> markers parsed in the auto-populate
-    // step after the turn ends.
     const sharedSlots = get().sessionSlots[sessionId] ?? [];
 
-    // M1: read the agent row once here; used by M5 (provider-id check) and M3 below.
     const agentRowEarly =
       (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
     const earlyAgentKind =
@@ -756,8 +722,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
 
-    // M5: codex/cursor have no native --resume. inject recent turn text so
-    // they keep working memory. claude skips, duplicating context wastes tokens.
     const needsTextHistory = provider === 'cursor' || provider === 'codex' || provider === 'gemini';
     if (needsTextHistory) {
       const priorTranscripts = get().transcripts[activeAgentId] ?? [];
@@ -777,7 +741,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
     const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
 
-    // M4: soft-cap warning. heuristic only, exact tokenization requires wasm.
     const estimated = estimateTokens(resolvedPrompt);
     const ctxWindow = getModelContextWindow(model);
     if (ctxWindow !== null) {
@@ -785,7 +748,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
         const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%). consider /compact`;
-        if (import.meta.env.DEV) console.warn(msg);
+        if (import.meta.env.DEV) {
+          console.warn(msg);
+        }
         set((state) => ({
           systemAlerts: [
             ...state.systemAlerts,
@@ -805,17 +770,10 @@ export function sendTurn(set: SetFn, get: GetFn) {
     let turnWasCancelled = false;
     const filesTouchedThisTurn = new Set<string>();
 
-    // M1: thread the per-agent provider session id so claude `--resume`s and
-    // keeps prior-turn context across one-shot CLI invocations.
     const resumeSessionId = agentRowEarly?.providerSessionId;
 
-    // M3: per-kind system prompt, biases planner/implementer/debugger toward
-    // their role. Only claude consumes it today; other providers ignore the
-    // arg downstream.
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    // Worktree scope guard, claude/cursor/codex all accept absolute paths
-    // in their Write/Edit tools and won't refuse to write outside cwd.
     const scopeWorkspace = get().workspaces.find((w) => w.id === session.workspaceId);
     const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
     const scopeGuard = (
@@ -870,8 +828,12 @@ export function sendTurn(set: SetFn, get: GetFn) {
         ...claudeFlags,
       })) {
         get().appendTurnEvent(activeAgentId, sessionId, event);
-        if (event.kind === 'assistant_text') assistantText += event.delta;
-        if (event.kind === 'file_edit') filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
+        if (event.kind === 'assistant_text') {
+          assistantText += event.delta;
+        }
+        if (event.kind === 'file_edit') {
+          filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
+        }
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
           const engine = new PermissionEngine();
@@ -934,7 +896,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
             if (provider === 'codex') {
               return computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model));
             }
-            if (provider === 'cursor') return computeCursorCostUsd(event.usage, model);
+            if (provider === 'cursor') {
+              return computeCursorCostUsd(event.usage, model);
+            }
             if (provider === 'gemini') {
               return computeGeminiCostUsd(event.usage, model, getGeminiPriceOverride(null, model));
             }
@@ -977,7 +941,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
               providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
               budgetAlerts: freshAlerts,
             });
-            if (newAlerts.length > 0 && onNewAlerts) onNewAlerts(newAlerts);
+            if (newAlerts.length > 0 && onNewAlerts) {
+              onNewAlerts(newAlerts);
+            }
           }
         }
 
@@ -990,9 +956,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
           }
         }
       }
-      // Stream ended without a 'done'/'error' event, provider CLI exited
-      // cleanly but didn't emit a `result` line, so the reducer never left
-      // 'running'. Force-idle so input re-enables.
       const afterAgentState = get().agentTurnState[activeAgentId];
       if (afterAgentState?.kind === 'running') {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
@@ -1045,10 +1008,6 @@ export function sendTurn(set: SetFn, get: GetFn) {
               };
             }
             const target = state.sessions.find((s) => s.id === sessionId);
-            // Advance the cursor of the run instance that owns the completed
-            // agent, keyed by workflowRunId. Keying by the template workflowId
-            // would advance the shared pointer for every instance of that
-            // template and skip the right one's update.
             const runId2 =
               phaseWorkflowRunId && target?.workflowRuns.some((r) => r.id === phaseWorkflowRunId)
                 ? phaseWorkflowRunId
@@ -1065,7 +1024,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
             return {
               sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
               sessions: state.sessions.map((s) => {
-                if (s.id !== sessionId || !runId2) return s;
+                if (s.id !== sessionId || !runId2) {
+                  return s;
+                }
                 return {
                   ...s,
                   workflowRuns: s.workflowRuns.map((r) =>
@@ -1085,23 +1046,18 @@ export function sendTurn(set: SetFn, get: GetFn) {
             set((state) => ({
               resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
             }));
-            if (resolvedMarker || wontfixMarker) void get().activateNextResolver(sessionId);
+            if (resolvedMarker || wontfixMarker) {
+              void get().activateNextResolver(sessionId);
+            }
           }
         }
       } else if (resolvedAgentId && wasCancelled) {
-        // Cancelled turn, agent stays `running`. It was activated and has
-        // context; reverting to `pending` would re-surface the "force spawn"
-        // dialog. We only block workflow advancement (no auto-advance call).
         const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
       }
 
-      // Auto-populate ContextPanel from this turn's output: file paths come
-      // from file_edit events; <<ctx-decision>> / <<ctx-question>> markers come
-      // from the assistant text. Best-effort, slot writes failing must not
-      // mask the turn itself.
       try {
         const stateForAgentCtx = get();
         const activeAgentRow =
@@ -1109,7 +1065,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
             (r) => r.id === activeAgentId,
           ) ?? null;
         const stepLookup = (() => {
-          if (!activeAgentRow?.stepId) return undefined;
+          if (!activeAgentRow?.stepId) {
+            return undefined;
+          }
           const templates = stateForAgentCtx.phaseTemplates[session.workspaceId] ?? [];
           const sess = stateForAgentCtx.sessions.find((s) => s.id === sessionId);
           const run = activeAgentRow.workflowRunId
@@ -1117,7 +1075,9 @@ export function sendTurn(set: SetFn, get: GetFn) {
             : undefined;
           const template = run ? templates.find((t) => t.id === run.workflowId) : undefined;
           const step = template?.steps.find((s) => s.id === activeAgentRow.stepId);
-          if (template && step) return { workflowId: template.id, ordinal: step.ordinal };
+          if (template && step) {
+            return { workflowId: template.id, ordinal: step.ordinal };
+          }
           return undefined;
         })();
         const result = await autoPopulateContext({
@@ -1232,6 +1192,8 @@ export function sendTurn(set: SetFn, get: GetFn) {
       }
     }
 
-    if (lastError) throw lastError;
+    if (lastError) {
+      throw lastError;
+    }
   };
-}
+};

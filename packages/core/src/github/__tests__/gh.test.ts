@@ -39,7 +39,9 @@ describe('runJson', () => {
   it('throws GhCliError with preserved stderr and exitCode on non-zero exit', async () => {
     const runner = makeRunner({ stdout: '', stderr: 'permission denied', exitCode: 1 });
     await expect(runJson(runner, ['pr', 'list'])).rejects.toSatisfy((err: unknown) => {
-      if (!(err instanceof GhCliError)) return false;
+      if (!(err instanceof GhCliError)) {
+        return false;
+      }
       return err.exitCode === 1 && err.stderr === 'permission denied';
     });
   });
@@ -52,7 +54,9 @@ describe('runJson', () => {
   it('throws GhJsonParseError carrying raw stdout when output is invalid JSON', async () => {
     const runner = makeRunner({ stdout: 'not-json', stderr: '', exitCode: 0 });
     await expect(runJson(runner, ['pr', 'list'])).rejects.toSatisfy((err: unknown) => {
-      if (!(err instanceof GhJsonParseError)) return false;
+      if (!(err instanceof GhJsonParseError)) {
+        return false;
+      }
       return err.raw === 'not-json';
     });
   });

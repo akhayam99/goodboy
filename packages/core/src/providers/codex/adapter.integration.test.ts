@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderRunId, SessionId, TurnRequest } from '@goodboy/types';
 import { CodexAdapter } from './adapter';
 
-// Integration test, requires a real `codex` binary in PATH.
-// Run with: CODEX_INTEGRATION=1 pnpm -w test
 const RUN = process.env['CODEX_INTEGRATION'] === '1';
 
 describe.skipIf(!RUN)('CodexAdapter, integration', () => {

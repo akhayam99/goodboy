@@ -12,12 +12,12 @@ import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { invokeSkillRescan } from '../../../features/skills/skills';
 import type { GetFn, SetFn } from './types';
 
-interface Input {
+type Input = {
   rootPath: string;
   name?: string;
-}
+};
 
-export function addWorkspace(set: SetFn, get: GetFn) {
+export const addWorkspace = (set: SetFn, get: GetFn) => {
   return async ({ rootPath, name }: Input): Promise<Workspace> => {
     const check = await validateGitRepo(rootPath);
     if (!check.isRepo || !check.rootPath) {
@@ -25,9 +25,6 @@ export function addWorkspace(set: SetFn, get: GetFn) {
     }
     const resolvedRoot = check.rootPath;
 
-    // Path-match reactivation: if the user previously disconnected a workspace
-    // pointing at this path, "adding" it again clears the disconnect flag and
-    // brings back all its sessions/worktrees/transcripts.
     const onDisk = await findWorkspaceByRootPath(tauriDatabase, resolvedRoot);
     if (onDisk) {
       if (!onDisk.disconnectedAt) {
@@ -38,14 +35,9 @@ export function addWorkspace(set: SetFn, get: GetFn) {
       const reactivated: Workspace = { ...onDisk, updatedAt: now, lastAccessedAt: now };
       delete (reactivated as { disconnectedAt?: IsoDateTime }).disconnectedAt;
       set((state) => ({ workspaces: [reactivated, ...state.workspaces] }));
-      // Bring back any persisted integration settings (Linear team, etc.).
-      // Token in the OS keychain also survives disconnect, so the user is
-      // back online with Linear in one click.
       await get()
         .loadIntegrations(reactivated.id)
         .catch(() => {});
-      // Refresh side caches owned by this workspace; sessions hydrate lazily
-      // via setCurrentWorkspace when the user actually picks it.
       try {
         const templates = await invokeWorkflowList(reactivated.id);
         set((state) => ({
@@ -79,7 +71,6 @@ export function addWorkspace(set: SetFn, get: GetFn) {
     }
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
 
-    // Seed default workflow library so the new-task wizard always has presets.
     try {
       await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id);
       const templates = await invokeWorkflowList(workspace.id);
@@ -90,8 +81,6 @@ export function addWorkspace(set: SetFn, get: GetFn) {
       // Workflow seeding must not block workspace creation; user can edit later.
     }
 
-    // Auto-discover skills on disk so freshly linked repos work
-    // without forcing the user to click "rescan" in Settings.
     try {
       const skills = await invokeSkillRescan(workspace.id);
       set((state) => ({ skills: { ...state.skills, [workspace.id]: skills } }));
@@ -101,4 +90,4 @@ export function addWorkspace(set: SetFn, get: GetFn) {
 
     return workspace;
   };
-}
+};

@@ -25,16 +25,13 @@ import { formatError } from '../../../shared/lib/errors';
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
 
-// Module-scoped guard: React StrictMode mounts the root twice in dev so
-// `useEffect(() => void hydrate(), …)` fires twice in rapid succession.
-// Without this guard both invocations race on `runDbMigrations()` → UNIQUE
-// constraint failed on schema_version.version. Returning the same in-flight
-// promise makes the second call wait for the first.
 let hydratePromise: Promise<void> | null = null;
 
-export function hydrate(set: SetFn, get: GetFn) {
+export const hydrate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
-    if (hydratePromise) return hydratePromise;
+    if (hydratePromise) {
+      return hydratePromise;
+    }
     hydratePromise = (async () => {
       try {
         set({ bootPhase: 'migrating', error: null });
@@ -51,10 +48,18 @@ export function hydrate(set: SetFn, get: GetFn) {
         ]);
         set((state) => {
           const next = { ...state.settings };
-          if (editorBinary !== null) next[SETTING_EDITOR_BINARY] = editorBinary;
-          if (lastWorkspaceRaw !== null) next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
-          if (lastSessionRaw !== null) next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
-          if (reopenLastRaw !== null) next[SETTING_REOPEN_LAST] = reopenLastRaw;
+          if (editorBinary !== null) {
+            next[SETTING_EDITOR_BINARY] = editorBinary;
+          }
+          if (lastWorkspaceRaw !== null) {
+            next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
+          }
+          if (lastSessionRaw !== null) {
+            next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
+          }
+          if (reopenLastRaw !== null) {
+            next[SETTING_REOPEN_LAST] = reopenLastRaw;
+          }
           return { settings: next };
         });
 
@@ -102,9 +107,6 @@ export function hydrate(set: SetFn, get: GetFn) {
           .catch(() => {});
         const workspaces = await listWorkspaces(tauriDatabase);
         set({ workspaces });
-        // Hydrate integrations cache for every active workspace so the
-        // "Linear connected" badge + new-session issue picker work without
-        // a roundtrip on first interaction.
         await Promise.all(
           workspaces.map((w) =>
             get()
@@ -145,7 +147,6 @@ export function hydrate(set: SetFn, get: GetFn) {
 
         set({ bootPhase: 'ready', hydrated: true });
 
-        // Drain audit retry queue after boot, non-blocking, best-effort.
         void drainAuditRetryQueue(set);
 
         void get().refreshGithubStatus();
@@ -160,8 +161,7 @@ export function hydrate(set: SetFn, get: GetFn) {
     try {
       await hydratePromise;
     } finally {
-      // Clear so manual retry from BootSplash can re-run hydrate.
       hydratePromise = null;
     }
   };
-}
+};

@@ -3,27 +3,17 @@ import { cn } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 
-interface Props {
+type Props = {
   readonly branches: ReadonlyArray<LocalBranchInfo>;
   readonly value: string;
   readonly onChange: (v: string) => void;
   readonly disabled: boolean;
   readonly loading: boolean;
-  /**
-   * Branches to hide from the list (e.g. the current session branch when
-   * we don't want the user picking it again). Filtering happens before
-   * the substring search.
-   */
   readonly excludeNames?: ReadonlyArray<string>;
-  /**
-   * Vertical anchor for the popup. `'auto'` (default) opens below; `'up'`
-   * opens above. Used by callers where the input sits near the bottom of
-   * a scroll container.
-   */
   readonly openDirection?: 'down' | 'up';
-}
+};
 
-export function BranchCombobox({
+export const BranchCombobox = ({
   branches,
   value,
   onChange,
@@ -31,7 +21,7 @@ export function BranchCombobox({
   loading,
   excludeNames,
   openDirection = 'down',
-}: Props) {
+}: Props) => {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
@@ -59,7 +49,9 @@ export function BranchCombobox({
   );
 
   useEffect(() => {
-    if (value && !query) setQuery(value);
+    if (value && !query) {
+      setQuery(value);
+    }
   }, [value, query]);
 
   useEffect(() => {
@@ -67,7 +59,9 @@ export function BranchCombobox({
   }, [query]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -78,7 +72,9 @@ export function BranchCombobox({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !listRef.current) return;
+    if (!open || !listRef.current) {
+      return;
+    }
     const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
     el?.scrollIntoView({ block: 'nearest' });
   }, [highlightIdx, open]);
@@ -89,7 +85,9 @@ export function BranchCombobox({
       e.preventDefault();
       return;
     }
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -101,7 +99,9 @@ export function BranchCombobox({
         break;
       case 'Enter':
         e.preventDefault();
-        if (filtered[highlightIdx]) select(filtered[highlightIdx].name);
+        if (filtered[highlightIdx]) {
+          select(filtered[highlightIdx].name);
+        }
         break;
       case 'Escape':
         e.preventDefault();
@@ -144,7 +144,9 @@ export function BranchCombobox({
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
-            if (!e.target.value) onChange('');
+            if (!e.target.value) {
+              onChange('');
+            }
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
@@ -153,7 +155,9 @@ export function BranchCombobox({
           type="button"
           tabIndex={-1}
           onClick={() => {
-            if (disabled || branches.length === 0) return;
+            if (disabled || branches.length === 0) {
+              return;
+            }
             setOpen((v) => !v);
             inputRef.current?.focus();
           }}
@@ -200,4 +204,4 @@ export function BranchCombobox({
       ) : null}
     </div>
   );
-}
+};

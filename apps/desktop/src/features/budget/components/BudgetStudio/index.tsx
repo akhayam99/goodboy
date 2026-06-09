@@ -12,16 +12,16 @@ import { ScopeRail } from './ScopeRail';
 import { SessionPanel } from './SessionPanel';
 import type { BudgetScope, SessionSpend, WorkspaceTurn } from './lib';
 
-interface Props {
+type Props = {
   readonly workspaceName: string;
   readonly initialScope?: BudgetScope;
   readonly onClose: () => void;
-}
+};
 
 const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
 const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
 
-export function BudgetStudio({ workspaceName, initialScope, onClose }: Props) {
+export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) => {
   const sessions = useSessions();
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const telemetryMap = useAppStore((s) => s.sessionTelemetry);
@@ -78,7 +78,9 @@ export function BudgetStudio({ workspaceName, initialScope, onClose }: Props) {
     scope.kind === 'session' ? sessions.find((s) => s.id === scope.sessionId) : undefined;
 
   useEffect(() => {
-    if (scope.kind === 'session' && !selectedSession) setScope({ kind: 'overview' });
+    if (scope.kind === 'session' && !selectedSession) {
+      setScope({ kind: 'overview' });
+    }
   }, [scope, selectedSession]);
 
   return (
@@ -131,4 +133,4 @@ export function BudgetStudio({ workspaceName, initialScope, onClose }: Props) {
       )}
     </StudioShell>
   );
-}
+};

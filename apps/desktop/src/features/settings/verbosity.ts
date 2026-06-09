@@ -16,6 +16,6 @@ const VERBOSITY_DIRECTIVE: Record<VerbosityLevel, string> = {
     'Output verbosity: VERBOSE. Include reasoning, alternatives considered, and trade-offs. Long-form is acceptable.',
 };
 
-export function verbosityDirective(level: VerbosityLevel): string {
+export const verbosityDirective = (level: VerbosityLevel): string => {
   return VERBOSITY_DIRECTIVE[level];
-}
+};

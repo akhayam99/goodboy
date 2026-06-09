@@ -20,20 +20,20 @@ export {
 
 export type UnsubscribeFn = () => void;
 
-export interface SchedulerDeps {
+export type SchedulerDeps = {
   spawnRun: (
     run: ParallelAgent,
     onEvent: (e: TurnEvent) => void,
   ) => Promise<{ status: AgentStatus; outputSummary: string | null; error?: string }>;
   cancelRun: (runId: ProviderRunId) => Promise<void>;
-}
+};
 
-export interface SchedulerProgress {
+export type SchedulerProgress = {
   runId: ProviderRunId;
   event: TurnEvent;
-}
+};
 
-export interface MergeResult {
+export type MergeResult = {
   groupId: ParallelGroupId;
   runStatuses: ReadonlyArray<{
     runId: ProviderRunId;
@@ -42,29 +42,27 @@ export interface MergeResult {
     error?: string;
   }>;
   mergeStrategy: ParallelMergeStrategy;
-}
+};
 
-interface RunEntry {
+type RunEntry = {
   run: ParallelAgent;
   runId: ProviderRunId;
-}
+};
 
-// SchedulerHandle is opaque, callers only pass it back into scheduler fns.
-// Internals: settled promise per run, shared listener set for progress.
-export interface SchedulerHandle {
+export type SchedulerHandle = {
   readonly groupId: ParallelGroupId;
   readonly runEntries: ReadonlyArray<RunEntry>;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly deps: SchedulerDeps;
   readonly settled: Promise<MergeResult>;
   readonly progressListeners: Set<(p: SchedulerProgress) => void>;
-}
+};
 
-export function fanOut(
+export const fanOut = (
   deps: SchedulerDeps,
   group: ParallelGroup,
   runs: ReadonlyArray<ParallelAgent>,
-): SchedulerHandle {
+): SchedulerHandle => {
   const progressListeners: Set<(p: SchedulerProgress) => void> = new Set();
 
   const runEntries: RunEntry[] = runs.map((run) => ({ run, runId: run.runId }));
@@ -78,7 +76,6 @@ export function fanOut(
       })
       .then(
         (result) => ({ runId: run.runId, ...result }),
-        // spawnRun should not reject, but if it does, treat as failed run
         (err: unknown) => ({
           runId: run.runId,
           status: 'failed' as AgentStatus,
@@ -102,22 +99,22 @@ export function fanOut(
     settled,
     progressListeners,
   };
-}
+};
 
-export async function awaitMerge(handle: SchedulerHandle): Promise<MergeResult> {
+export const awaitMerge = async (handle: SchedulerHandle): Promise<MergeResult> => {
   return handle.settled;
-}
+};
 
-export function onProgress(
+export const onProgress = (
   handle: SchedulerHandle,
   cb: (p: SchedulerProgress) => void,
-): UnsubscribeFn {
+): UnsubscribeFn => {
   handle.progressListeners.add(cb);
   return () => {
     handle.progressListeners.delete(cb);
   };
-}
+};
 
-export async function cancelGroup(handle: SchedulerHandle): Promise<void> {
+export const cancelGroup = async (handle: SchedulerHandle): Promise<void> => {
   await Promise.allSettled(handle.runEntries.map(({ runId }) => handle.deps.cancelRun(runId)));
-}
+};

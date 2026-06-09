@@ -70,8 +70,6 @@ export { resolveProvider, type ResolveProviderInput } from './budget/router';
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
-// registry.ts (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from @goodboy/core/src/providers/registry when needed in Node context.
 export {
   PROVIDER_CAPABILITIES,
   getCapabilities,
@@ -82,8 +80,6 @@ export { getModelDescriptor } from './providers/model-display';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
-// CursorAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from @goodboy/core/src/providers/cursor/adapter when needed in Node context.
 export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
 export { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
 export {
@@ -105,8 +101,6 @@ export {
   type SkillScriptRunner,
 } from './skills';
 
-// CodexAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from packages/core/src/providers/codex/adapter in Node contexts.
 export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
 export {
@@ -114,8 +108,6 @@ export {
   type ParseContext as CodexParseContext,
 } from './providers/codex/parser';
 
-// GeminiAdapter (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from packages/core/src/providers/gemini/adapter in Node contexts.
 export {
   GEMINI_CHEAP_MODEL,
   GEMINI_DEFAULT_MODEL,
@@ -127,8 +119,6 @@ export {
   type ParseContext as GeminiParseContext,
 } from './providers/gemini/parser';
 
-// SummarizerCli (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from packages/core/src/summarizer/cli in Node/test contexts.
 export {
   Summarizer,
   SummarizerParseError,
@@ -166,9 +156,6 @@ export {
   type SeedResult,
   type SeedWorkflowLibraryDeps,
 } from './workflows';
-// WorkflowRegistry + seeder (@goodboy/db → node) are intentionally excluded from this
-// browser-safe barrel. Import directly from packages/core/src/workflows/registry
-// or packages/core/src/workflows/seeder in Node/Tauri command contexts.
 
 export {
   PermissionEngine,
@@ -256,5 +243,3 @@ export {
   type PlannerClientResult,
   type PlannerUsage,
 } from './planner';
-// PlannerAgent (node:child_process) is intentionally excluded from this browser-safe barrel.
-// Import directly from packages/core/src/planner/cli in Node/Tauri command contexts.

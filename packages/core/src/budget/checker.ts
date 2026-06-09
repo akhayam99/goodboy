@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '@goodboy/db';
 
-interface BudgetRuleRow {
+type BudgetRuleRow = {
   id: string;
   provider: ProviderName;
   period: BudgetPeriod;
@@ -17,33 +17,33 @@ interface BudgetRuleRow {
   alert_threshold_pct: number;
   extra_tokens_budget: number | null;
   created_at: string;
-}
+};
 
-interface SessionBudgetRow {
+type SessionBudgetRow = {
   session_id: string;
   soft_cap_usd: number;
-}
+};
 
-interface CostSumRow {
+type CostSumRow = {
   total: number | null;
-}
+};
 
-export function getPeriodWindow(period: BudgetPeriod): { start: string; end: string } {
+export const getPeriodWindow = (period: BudgetPeriod): { start: string; end: string } => {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
   const start = new Date(Date.UTC(year, month, 1)).toISOString();
   const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString();
   return { start, end };
-}
+};
 
 const UNSET_RESULT: BudgetCheckResult = { remainingUsd: Infinity, pct: 0, exceeded: false };
 
-export async function checkProviderBudget(
+export const checkProviderBudget = async (
   db: Database,
   provider: ProviderName,
   period: BudgetPeriod,
-): Promise<BudgetCheckResult> {
+): Promise<BudgetCheckResult> => {
   const ruleRows = await db.select<BudgetRuleRow>(
     `SELECT id, provider, period, cap_usd, alert_threshold_pct, extra_tokens_budget, created_at
        FROM budget_rules
@@ -52,7 +52,9 @@ export async function checkProviderBudget(
     [provider, period],
   );
 
-  if (ruleRows.length === 0) return UNSET_RESULT;
+  if (ruleRows.length === 0) {
+    return UNSET_RESULT;
+  }
 
   const row = ruleRows[0] as BudgetRuleRow;
   const rule: BudgetRule = {
@@ -87,12 +89,12 @@ export async function checkProviderBudget(
     pct,
     exceeded: spent > rule.capUsd,
   };
-}
+};
 
-export async function checkSessionBudget(
+export const checkSessionBudget = async (
   db: Database,
   sessionId: SessionId,
-): Promise<BudgetCheckResult> {
+): Promise<BudgetCheckResult> => {
   const budgetRows = await db.select<SessionBudgetRow>(
     `SELECT session_id, soft_cap_usd
        FROM session_budgets
@@ -101,7 +103,9 @@ export async function checkSessionBudget(
     [sessionId],
   );
 
-  if (budgetRows.length === 0) return UNSET_RESULT;
+  if (budgetRows.length === 0) {
+    return UNSET_RESULT;
+  }
 
   const budgetRow = budgetRows[0] as SessionBudgetRow;
   const budget: SessionBudget = {
@@ -125,4 +129,4 @@ export async function checkSessionBudget(
     pct,
     exceeded: spent > budget.softCapUsd,
   };
-}
+};

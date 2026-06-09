@@ -15,7 +15,7 @@ export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
 
 export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'extra-high' | 'max';
 
-export interface ModelTier {
+export type ModelTier = {
   readonly id: string;
   readonly tier: 'turn' | 'cheap';
   readonly contextWindow: number;
@@ -26,23 +26,23 @@ export interface ModelTier {
   readonly costTier: ModelCostTier;
   readonly weight: number;
   readonly effort: ReadonlyArray<ModelEffort> | null;
-}
+};
 
-export interface ProviderRegistryCapabilities {
+export type ProviderRegistryCapabilities = {
   readonly models: ReadonlyArray<ModelTier>;
   readonly supportsTools: boolean;
   readonly supportsStream: boolean;
   readonly supportsCheapModel: boolean;
-}
+};
 
-export interface ProviderInfo {
+export type ProviderInfo = {
   readonly id: ProviderId;
   readonly binary: string;
   readonly capabilities: ProviderRegistryCapabilities;
   readonly connection: ProviderConnectionState;
   readonly version: string | null;
   readonly identity: string | null;
-}
+};
 
 export const PROVIDER_API_KEY_ENV: Record<ProviderId, string> = {
   anthropic: 'ANTHROPIC_API_KEY',

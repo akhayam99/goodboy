@@ -22,19 +22,19 @@ import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrSidebar, type PrSection } from './PrSidebar';
 
-interface Props {
+type Props = {
   readonly sessionId: SessionId | null;
   readonly initialPrNumber?: number | null;
   readonly initialThreadId?: string | null;
   readonly onClose: () => void;
-}
+};
 
-export function PrDetailPanel({
+export const PrDetailPanel = ({
   sessionId,
   initialPrNumber = null,
   initialThreadId = null,
   onClose,
-}: Props) {
+}: Props) => {
   const sessions = useSessions();
   const session = sessionId ? sessions.find((s) => s.id === sessionId) : undefined;
   const github = useAppStore((s) => (sessionId ? s.sessionGithub[sessionId] : null));
@@ -84,7 +84,9 @@ export function PrDetailPanel({
 
   const fetchLocalDetail = useCallback(
     async (num: number) => {
-      if (!workspaceRoot) return;
+      if (!workspaceRoot) {
+        return;
+      }
       setLocalDetailLoading(true);
       setLocalDetailError(null);
       try {
@@ -109,8 +111,12 @@ export function PrDetailPanel({
   }, [sessionId]);
 
   useEffect(() => {
-    if (initialThreadId == null) return;
-    if (initialPrNumber != null) setSelectedNumber(initialPrNumber);
+    if (initialThreadId == null) {
+      return;
+    }
+    if (initialPrNumber != null) {
+      setSelectedNumber(initialPrNumber);
+    }
     setSection('comments');
   }, [sessionId, initialThreadId, initialPrNumber]);
 
@@ -122,10 +128,14 @@ export function PrDetailPanel({
     let cancelled = false;
     void ghPrsForBranch(workspaceRoot, branch, workspaceId)
       .then((list) => {
-        if (!cancelled) setPrs(list);
+        if (!cancelled) {
+          setPrs(list);
+        }
       })
       .catch(() => {
-        if (!cancelled) setPrs([]);
+        if (!cancelled) {
+          setPrs([]);
+        }
       });
     return () => {
       cancelled = true;
@@ -133,7 +143,9 @@ export function PrDetailPanel({
   }, [branch, workspaceRoot, workspaceId, prsTick]);
 
   useEffect(() => {
-    if (!sessionId || !isPrimary || !activePr) return;
+    if (!sessionId || !isPrimary || !activePr) {
+      return;
+    }
     if (!github?.detail && !github?.detailLoading && !github?.detailError) {
       void refreshSessionPrDetail(sessionId);
     }
@@ -148,13 +160,19 @@ export function PrDetailPanel({
   ]);
 
   useEffect(() => {
-    if (!sessionId || prs.length === 0) return;
-    if ((prs[0]?.number ?? null) === primaryNumber) return;
+    if (!sessionId || prs.length === 0) {
+      return;
+    }
+    if ((prs[0]?.number ?? null) === primaryNumber) {
+      return;
+    }
     void refreshSessionPr(sessionId, { force: true, silent: true });
   }, [sessionId, prs, primaryNumber, refreshSessionPr]);
 
   useEffect(() => {
-    if (!activePr || isPrimary) return;
+    if (!activePr || isPrimary) {
+      return;
+    }
     void fetchLocalDetail(activePr.number);
   }, [activePr, isPrimary, fetchLocalDetail]);
 
@@ -171,9 +189,14 @@ export function PrDetailPanel({
   }
 
   const refreshActive = () => {
-    if (!activePr) return;
-    if (isPrimary) void refreshSessionPrDetail(sessionId, { force: true });
-    else void fetchLocalDetail(activePr.number);
+    if (!activePr) {
+      return;
+    }
+    if (isPrimary) {
+      void refreshSessionPrDetail(sessionId, { force: true });
+    } else {
+      void fetchLocalDetail(activePr.number);
+    }
   };
 
   const onMutated = () => {
@@ -206,7 +229,9 @@ export function PrDetailPanel({
   };
 
   const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
-    if (!activePr) return;
+    if (!activePr) {
+      return;
+    }
     void (async () => {
       const agentId = await spawnResolver(
         buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
@@ -223,7 +248,9 @@ export function PrDetailPanel({
     batch: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => {
-    if (!activePr || batch.length === 0) return;
+    if (!activePr || batch.length === 0) {
+      return;
+    }
     void (async () => {
       for (const t of batch) {
         const choice = choiceById[t.head.id] ?? {};
@@ -240,7 +267,9 @@ export function PrDetailPanel({
   };
 
   const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(kind);
     try {
       await fn();
@@ -254,7 +283,9 @@ export function PrDetailPanel({
   };
 
   const onAddReviewers = (logins: ReadonlyArray<string>) => {
-    if (!activePr) return;
+    if (!activePr) {
+      return;
+    }
     void (async () => {
       try {
         await requestReview(sessionId, activePr.number, logins);
@@ -396,7 +427,7 @@ export function PrDetailPanel({
       ) : null}
     </div>
   );
-}
+};
 
 function SectionBody({
   detail,

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button } from './Button';
 
-export interface CopyButtonProps {
+export type CopyButtonProps = {
   value: string;
   label?: string;
-}
+};
 
 function fallbackCopy(text: string): void {
   const ta = document.createElement('textarea');
@@ -18,7 +18,7 @@ function fallbackCopy(text: string): void {
   document.body.removeChild(ta);
 }
 
-export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
+export const CopyButton = ({ value, label = 'text' }: CopyButtonProps) => {
   const [state, setState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const onCopy = async () => {
@@ -37,8 +37,12 @@ export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
   };
 
   const buttonText = (() => {
-    if (state === 'copied') return `copied: ${label}`;
-    if (state === 'error') return 'copy failed';
+    if (state === 'copied') {
+      return `copied: ${label}`;
+    }
+    if (state === 'error') {
+      return 'copy failed';
+    }
     return 'copy';
   })();
 
@@ -47,4 +51,4 @@ export function CopyButton({ value, label = 'text' }: CopyButtonProps) {
       {buttonText}
     </Button>
   );
-}
+};

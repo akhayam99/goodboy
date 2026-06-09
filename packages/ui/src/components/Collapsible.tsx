@@ -1,21 +1,21 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface CollapsibleProps {
+export type CollapsibleProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trigger: ReactNode;
   children: ReactNode;
   className?: string;
-}
+};
 
-export function Collapsible({
+export const Collapsible = ({
   open,
   onOpenChange,
   trigger,
   children,
   className,
-}: CollapsibleProps) {
+}: CollapsibleProps) => {
   return (
     <div className={className}>
       <button
@@ -38,4 +38,4 @@ export function Collapsible({
       {open ? <div className="px-2 py-1">{children}</div> : null}
     </div>
   );
-}
+};

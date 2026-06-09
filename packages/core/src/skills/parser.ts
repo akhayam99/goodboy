@@ -40,7 +40,9 @@ function parseScalar(value: string): string {
   return unquote(value.trim());
 }
 
-export function parseSkillMarkdown(raw: string): { frontmatter: SkillFrontmatter; body: string } {
+export const parseSkillMarkdown = (
+  raw: string,
+): { frontmatter: SkillFrontmatter; body: string } => {
   const match = FRONTMATTER_RE.exec(raw);
   if (match === null) {
     throw new SkillParseError('missing or malformed frontmatter delimiters (expected --- ... ---)');
@@ -79,7 +81,9 @@ export function parseSkillMarkdown(raw: string): { frontmatter: SkillFrontmatter
       i++;
       while (i < lines.length) {
         const nextLine = lines[i] ?? '';
-        if (nextLine.trim() === '') break;
+        if (nextLine.trim() === '') {
+          break;
+        }
         if (nextLine.trimStart().startsWith('- ')) {
           blockLines.push(nextLine);
           i++;
@@ -118,9 +122,9 @@ export function parseSkillMarkdown(raw: string): { frontmatter: SkillFrontmatter
 
   const frontmatter: SkillFrontmatter = { name, description, args, scripts };
   return { frontmatter, body };
-}
+};
 
-export function serializeSkillMarkdown(frontmatter: SkillFrontmatter, body: string): string {
+export const serializeSkillMarkdown = (frontmatter: SkillFrontmatter, body: string): string => {
   const lines: string[] = ['---'];
   lines.push(`name: ${frontmatter.name}`);
   lines.push(`description: ${frontmatter.description}`);
@@ -140,4 +144,4 @@ export function serializeSkillMarkdown(frontmatter: SkillFrontmatter, body: stri
   lines.push(body);
 
   return lines.join('\n');
-}
+};

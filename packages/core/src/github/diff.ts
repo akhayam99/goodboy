@@ -8,7 +8,7 @@ import type {
 import type { GhRunner } from './gh';
 import { GhCliError } from './gh';
 
-interface MutableFile {
+type MutableFile = {
   path: string;
   oldPath?: string;
   status: FileDiffStatus;
@@ -16,12 +16,12 @@ interface MutableFile {
   deletions: number;
   binary: boolean;
   hunks: DiffHunk[];
-}
+};
 
 const FILE_HEADER = /^diff --git a\/(.+) b\/(.+)$/;
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
 
-export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
+export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
   const lines = diff.split('\n');
   const files: MutableFile[] = [];
   let current: MutableFile | null = null;
@@ -54,10 +54,14 @@ export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
     const fileMatch = line.match(FILE_HEADER);
     if (fileMatch) {
       flushHunk();
-      if (current) files.push(current);
+      if (current) {
+        files.push(current);
+      }
       const oldPath = fileMatch[1];
       const newPath = fileMatch[2];
-      if (!oldPath || !newPath) continue;
+      if (!oldPath || !newPath) {
+        continue;
+      }
       current = {
         path: newPath,
         oldPath: oldPath === newPath ? undefined : oldPath,
@@ -69,11 +73,15 @@ export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
       };
       continue;
     }
-    if (!current) continue;
+    if (!current) {
+      continue;
+    }
 
-    if (line.startsWith('new file mode')) current.status = 'added';
-    else if (line.startsWith('deleted file mode')) current.status = 'deleted';
-    else if (line.startsWith('rename from')) {
+    if (line.startsWith('new file mode')) {
+      current.status = 'added';
+    } else if (line.startsWith('deleted file mode')) {
+      current.status = 'deleted';
+    } else if (line.startsWith('rename from')) {
       current.status = 'renamed';
       current.oldPath = line.slice('rename from '.length);
     } else if (line.startsWith('rename to')) {
@@ -102,7 +110,9 @@ export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
       continue;
     }
 
-    if (!hunk) continue;
+    if (!hunk) {
+      continue;
+    }
 
     if (line.startsWith('+') && !line.startsWith('+++')) {
       hunk.lines.push({ kind: 'add', oldLine: null, newLine: newCursor, text: line.slice(1) });
@@ -122,21 +132,22 @@ export function parseUnifiedDiff(diff: string): ReadonlyArray<FileDiff> {
       oldCursor += 1;
       newCursor += 1;
     } else if (line.startsWith('\\ No newline')) {
-      // ignore marker
     }
   }
 
   flushHunk();
-  if (current) files.push(current);
+  if (current) {
+    files.push(current);
+  }
   return files;
-}
+};
 
-export async function fetchPrDiff(
+export const fetchPrDiff = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: { cwd?: string; token?: string; workspaceId?: string } = {},
-): Promise<PullRequestDiff> {
+): Promise<PullRequestDiff> => {
   const res = await runner.run(['pr', 'diff', String(prNumber), '--repo', repo], opts);
   if (res.exitCode !== 0) {
     throw new GhCliError(`gh pr diff exited with ${res.exitCode}`, res.stderr, res.exitCode);
@@ -145,4 +156,4 @@ export async function fetchPrDiff(
     prNumber,
     files: parseUnifiedDiff(res.stdout),
   };
-}
+};

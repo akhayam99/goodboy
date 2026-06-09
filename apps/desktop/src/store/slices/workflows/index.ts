@@ -18,7 +18,7 @@ import { advanceScoutTree } from './scoutTree';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import type { GetFn, SetFn } from './types';
 
-export function createWorkflowsSlice(set: SetFn, get: GetFn) {
+export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadPhaseTemplates: loadPhaseTemplates(set),
     savePhaseTemplate: savePhaseTemplate(set),
@@ -39,4 +39,4 @@ export function createWorkflowsSlice(set: SetFn, get: GetFn) {
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
   };
-}
+};

@@ -1,36 +1,30 @@
 import type { CodexModelPriceOverride, GeminiModelPriceOverride } from '@goodboy/core';
 import shippedPricing from './pricing.json';
 
-interface ModelPrice {
+type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
-}
+};
 
-export interface PricingTable {
+export type PricingTable = {
   readonly version: string;
   readonly anthropic: Record<string, ModelPrice>;
   readonly cursor: Record<string, ModelPrice>;
   readonly codex: Record<string, ModelPrice>;
   readonly gemini: Record<string, ModelPrice>;
-}
+};
 
 const activeTable: PricingTable = shippedPricing as PricingTable;
 
-export function getActivePricingTable(): PricingTable {
+export const getActivePricingTable = (): PricingTable => {
   return activeTable;
-}
+};
 
-// Remote CDN refresh is intentionally disabled, the previous placeholder URL
-// (`goodboy.dev/pricing.json`) was never provisioned, so the fetch failed DNS at
-// every boot and spammed DevTools with `Failed to load resource` 3×. The shipped
-// `data/pricing.json` is authoritative until a real CDN endpoint exists.
-export async function refreshPricingTable(): Promise<void> {
+export const refreshPricingTable = async (): Promise<void> => {
   return;
-}
+};
 
-// Dev-only override: merged on top of the active pricing table when IS_DEV is true.
-// Set window.__DEV_PRICING_OVERRIDE__ in devtools to test alternate prices.
 declare global {
   interface Window {
     __DEV_PRICING_OVERRIDE__?: Partial<PricingTable>;
@@ -51,13 +45,14 @@ function priceForModel(
   return table[provider][model] ?? null;
 }
 
-// Legacy compat: getCodexPriceOverride still works but now reads from the shipped table.
-export function getCodexPriceOverride(
+export const getCodexPriceOverride = (
   _config: unknown,
   model: string,
-): CodexModelPriceOverride | null {
+): CodexModelPriceOverride | null => {
   const price = priceForModel('codex', model);
-  if (price === null) return null;
+  if (price === null) {
+    return null;
+  }
   return {
     inputPerMtok: price.inputPerMtok,
     outputPerMtok: price.outputPerMtok,
@@ -65,14 +60,16 @@ export function getCodexPriceOverride(
       ? { cachedInputPerMtok: price.cachedInputPerMtok }
       : {}),
   };
-}
+};
 
-export function getGeminiPriceOverride(
+export const getGeminiPriceOverride = (
   _config: unknown,
   model: string,
-): GeminiModelPriceOverride | null {
+): GeminiModelPriceOverride | null => {
   const price = priceForModel('gemini', model);
-  if (price === null) return null;
+  if (price === null) {
+    return null;
+  }
   return {
     inputPerMtok: price.inputPerMtok,
     outputPerMtok: price.outputPerMtok,
@@ -80,4 +77,4 @@ export function getGeminiPriceOverride(
       ? { cachedInputPerMtok: price.cachedInputPerMtok }
       : {}),
   };
-}
+};

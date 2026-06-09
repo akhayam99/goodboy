@@ -37,28 +37,32 @@ export type LinearIssue = {
   attachments?: { nodes: ReadonlyArray<LinearAttachment> };
 };
 
-export interface LinearLinkedPr {
+export type LinearLinkedPr = {
   readonly url: string;
   readonly number: number;
   readonly repo: string | null;
   readonly status: string | null;
-}
+};
 
 const PR_URL_RE = /\/(?:pull|merge_requests)\/(\d+)/;
 const GH_REPO_RE = /github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/pull\/\d+/;
 
-export function prRepoFromUrl(url: string): string | null {
+export const prRepoFromUrl = (url: string): string | null => {
   return url.match(GH_REPO_RE)?.[1] ?? null;
-}
+};
 
-export function issuePullRequests(issue: LinearIssue): ReadonlyArray<LinearLinkedPr> {
+export const issuePullRequests = (issue: LinearIssue): ReadonlyArray<LinearLinkedPr> => {
   const out: LinearLinkedPr[] = [];
   const seen = new Set<number>();
   for (const attachment of issue.attachments?.nodes ?? []) {
     const match = attachment.url.match(PR_URL_RE);
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
     const number = Number(match[1]);
-    if (seen.has(number)) continue;
+    if (seen.has(number)) {
+      continue;
+    }
     seen.add(number);
     const rawStatus = attachment.metadata?.status;
     out.push({
@@ -69,25 +73,25 @@ export function issuePullRequests(issue: LinearIssue): ReadonlyArray<LinearLinke
     });
   }
   return out;
-}
+};
 
-export async function linearConnect(
+export const linearConnect = async (
   workspaceId: WorkspaceId,
   token: string,
-): Promise<LinearViewer> {
+): Promise<LinearViewer> => {
   return invoke<LinearViewer>('linear_connect', { workspaceId, token });
-}
+};
 
-export async function linearDisconnect(workspaceId: WorkspaceId): Promise<void> {
+export const linearDisconnect = async (workspaceId: WorkspaceId): Promise<void> => {
   await invoke('linear_disconnect', { workspaceId });
-}
+};
 
-export async function linearFetchAssignedIssues(
+export const linearFetchAssignedIssues = async (
   workspaceId: WorkspaceId,
   teamId?: string,
-): Promise<LinearIssue[]> {
+): Promise<LinearIssue[]> => {
   return invoke<LinearIssue[]>('linear_fetch_assigned_issues', {
     workspaceId,
     teamId: teamId ?? null,
   });
-}
+};

@@ -11,7 +11,7 @@ import { StepEditor } from '../StepEditor';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { EmptyGuide } from '../EmptyGuide';
 
-interface Props {
+type Props = {
   readonly open: boolean;
   readonly isNew: boolean;
   readonly hasPresets: boolean;
@@ -38,9 +38,9 @@ interface Props {
   readonly onDeleteDef: (id: StepDefId) => void;
   readonly onSave: () => void;
   readonly onCancel: () => void;
-}
+};
 
-export function WorkflowComposer({
+export const WorkflowComposer = ({
   open,
   isNew,
   hasPresets,
@@ -67,7 +67,7 @@ export function WorkflowComposer({
   onDeleteDef,
   onSave,
   onCancel,
-}: Props) {
+}: Props) => {
   if (!open) {
     return (
       <section className="flex min-w-0 flex-1 flex-col">
@@ -216,4 +216,4 @@ export function WorkflowComposer({
       </div>
     </section>
   );
-}
+};

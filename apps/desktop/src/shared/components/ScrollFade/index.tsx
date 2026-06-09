@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   readonly className?: string;
   readonly fade?: number;
   readonly orientation?: 'vertical' | 'horizontal';
   readonly children: ReactNode;
-}
+};
 
-export function ScrollFade({ className, fade = 24, orientation = 'vertical', children }: Props) {
+export const ScrollFade = ({ className, fade = 24, orientation = 'vertical', children }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(true);
@@ -16,7 +16,9 @@ export function ScrollFade({ className, fade = 24, orientation = 'vertical', chi
 
   const update = useCallback(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     if (horizontal) {
       setAtStart(el.scrollLeft <= 1);
       setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
@@ -28,7 +30,9 @@ export function ScrollFade({ className, fade = 24, orientation = 'vertical', chi
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
@@ -54,4 +58,4 @@ export function ScrollFade({ className, fade = 24, orientation = 'vertical', chi
       {children}
     </div>
   );
-}
+};

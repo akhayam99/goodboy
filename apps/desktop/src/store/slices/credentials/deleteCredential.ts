@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { credentialSecretKey } from './credentialKey';
 import type { GetFn, SetFn } from './types';
 
-export function deleteCredential(set: SetFn, get: GetFn) {
+export const deleteCredential = (set: SetFn, get: GetFn) => {
   return async (id: CredentialId): Promise<void> => {
     await invoke('secret_delete', { key: credentialSecretKey(id) });
     await deleteProviderCredential(tauriDatabase, id);
@@ -14,7 +14,9 @@ export function deleteCredential(set: SetFn, get: GetFn) {
     const scrubbed: Array<[WorkspaceId, OverrideSettings]> = [];
     for (const [wsId, override] of Object.entries(get().workspaceOverrides)) {
       const bindings = override.providerBindings;
-      if (!bindings || !Object.values(bindings).includes(id)) continue;
+      if (!bindings || !Object.values(bindings).includes(id)) {
+        continue;
+      }
       const cleaned = Object.fromEntries(
         Object.entries(bindings).filter(([, credId]) => credId !== id),
       );
@@ -35,4 +37,4 @@ export function deleteCredential(set: SetFn, get: GetFn) {
       workspaceOverrides: nextOverrides,
     }));
   };
-}
+};

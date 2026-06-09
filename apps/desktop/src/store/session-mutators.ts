@@ -11,18 +11,12 @@ export const EMPTY_LOADING: SessionLoadingFlags = {
   summary: false,
 };
 
-/**
- * Shared per-turn session state mutator. Called by every action that flips
- * the in-memory session.state + agentTurnState (sendTurn, cancelCurrentTurn,
- * deleteAgent). Lives here so slices can import it without
- * depending on store.ts directly.
- */
-export function applySessionUpdate(
+export const applySessionUpdate = (
   set: SetFn,
   sessionId: SessionId,
   state: TurnState,
   agentId?: AgentId,
-): void {
+): void => {
   set((store) => ({
     sessions: store.sessions.map((s) =>
       s.id === sessionId ? { ...s, state, updatedAt: new Date().toISOString() as IsoDateTime } : s,
@@ -31,12 +25,12 @@ export function applySessionUpdate(
       agentTurnState: { ...store.agentTurnState, [agentId]: state },
     }),
   }));
-}
+};
 
-export function deriveSessionState(
+export const deriveSessionState = (
   agentStates: ReadonlyArray<TurnState>,
   now: IsoDateTime,
-): TurnState {
+): TurnState => {
   const running = agentStates.filter(
     (s): s is Extract<TurnState, { kind: 'running' }> => s.kind === 'running',
   );
@@ -45,19 +39,23 @@ export function deriveSessionState(
     return { kind: 'running', runId: rep.runId, startedAt: rep.startedAt };
   }
   const starting = agentStates.find((s) => s.kind === 'starting');
-  if (starting) return starting;
+  if (starting) {
+    return starting;
+  }
   const errored = agentStates.find((s) => s.kind === 'error');
-  if (errored) return errored;
+  if (errored) {
+    return errored;
+  }
   return { kind: 'idle', lastActivityAt: now };
-}
+};
 
-export function applyAgentTurnState(
+export const applyAgentTurnState = (
   set: SetFn,
   sessionId: SessionId,
   agentId: AgentId,
   agentState: TurnState,
   now: IsoDateTime,
-): TurnState {
+): TurnState => {
   let derived: TurnState = agentState;
   set((store) => {
     const nextAgentTurn: Record<AgentId, TurnState> = {
@@ -78,13 +76,6 @@ export function applyAgentTurnState(
     };
   });
   return derived;
-}
+};
 
-/**
- * Module-scoped registry of run IDs cancelled by the user via
- * cancelCurrentTurn. The stream-end finalization in sendTurn checks this set
- * and skips marking the agent as `completed`. A cancelled turn must NOT
- * count as a workflow step completion, otherwise the next-step CTA appears
- * prematurely.
- */
 export const cancelledRunIds = new Set<ProviderRunId>();

@@ -3,7 +3,7 @@ import { updateSessionWorkflowAutoRun } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function setWorkflowRunAutoRun(set: SetFn, get: GetFn) {
+export const setWorkflowRunAutoRun = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId, autoRun: boolean) => {
     const now = new Date().toISOString() as IsoDateTime;
     await updateSessionWorkflowAutoRun(tauriDatabase, sessionId, workflowRunId, autoRun, now);
@@ -20,6 +20,8 @@ export function setWorkflowRunAutoRun(set: SetFn, get: GetFn) {
           : s,
       ),
     }));
-    if (autoRun) void get().maybeAutoAdvanceWorkflow(sessionId);
+    if (autoRun) {
+      void get().maybeAutoAdvanceWorkflow(sessionId);
+    }
   };
-}
+};

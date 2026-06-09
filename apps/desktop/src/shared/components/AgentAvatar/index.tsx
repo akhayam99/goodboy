@@ -43,19 +43,14 @@ const SIZE_CLASS: Record<AvatarSize, string> = {
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
 
-interface Props {
+type Props = {
   readonly kind: AgentKind;
   readonly size?: AvatarSize;
   readonly className?: string;
   readonly title?: string;
-}
+};
 
-/**
- * Tiny dog silhouette in the role tint colour. Drop-in replacement for the
- * coloured-dot pattern (size-1.5 rounded-full bg-{kind}-400) used to mark an
- * agent kind. Falls back to a plain dot for the resolver kind (no portrait).
- */
-export function AgentAvatar({ kind, size = 'sm', className, title }: Props) {
+export const AgentAvatar = ({ kind, size = 'sm', className, title }: Props) => {
   const image = KIND_IMAGE[kind];
   const tint = KIND_TINT[kind];
 
@@ -88,4 +83,4 @@ export function AgentAvatar({ kind, size = 'sm', className, title }: Props) {
       style={style}
     />
   );
-}
+};

@@ -4,11 +4,11 @@ import { KeyRound, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-interface Props {
+type Props = {
   readonly providerId: ProviderId;
-}
+};
 
-export function ProviderCredentialsSection({ providerId }: Props) {
+export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const credentials = useAppStore((s) => s.providerCredentials);
   const createCredential = useAppStore((s) => s.createCredential);
   const deleteCredential = useAppStore((s) => s.deleteCredential);
@@ -32,7 +32,9 @@ export function ProviderCredentialsSection({ providerId }: Props) {
   }, []);
 
   const onSave = useCallback(async () => {
-    if (!apiKey.trim()) return;
+    if (!apiKey.trim()) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -63,14 +65,14 @@ export function ProviderCredentialsSection({ providerId }: Props) {
         }
       />
 
-      {mine.length === 0 && !adding ? (
+      {mine.length === 0 && !adding && (
         <div className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-8 text-center">
           <KeyRound size={18} className="text-muted-foreground/70" aria-hidden />
           <span className="text-2xs text-muted-foreground">No API keys yet</span>
         </div>
-      ) : null}
+      )}
 
-      {mine.length > 0 ? (
+      {mine.length > 0 && (
         <ul className="flex flex-col gap-2">
           {mine.map((c) => (
             <li
@@ -99,7 +101,7 @@ export function ProviderCredentialsSection({ providerId }: Props) {
             </li>
           ))}
         </ul>
-      ) : null}
+      )}
 
       {adding ? (
         <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-muted/20 p-3">
@@ -129,4 +131,4 @@ export function ProviderCredentialsSection({ providerId }: Props) {
       ) : null}
     </section>
   );
-}
+};

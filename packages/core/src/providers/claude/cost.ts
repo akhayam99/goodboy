@@ -1,10 +1,10 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-interface ModelPrice {
+type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok: number;
-}
+};
 
 const FABLE_PRICE: ModelPrice = {
   inputPerMtok: 10,
@@ -22,9 +22,6 @@ const SONNET_PRICE: ModelPrice = {
   cachedInputPerMtok: 0.3,
 };
 
-// Keep every model advertised in PROVIDER_CAPABILITIES (../capabilities.ts)
-// priced here. A model missing from this table silently bills at the sonnet
-// FALLBACK, which under-counts Opus spend ~5x.
 const PRICES: Record<string, ModelPrice> = {
   'claude-fable-5': FABLE_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
@@ -41,11 +38,11 @@ const PRICES: Record<string, ModelPrice> = {
 
 const FALLBACK: ModelPrice = PRICES['claude-sonnet-4-6']!;
 
-export function priceFor(model: string): ModelPrice {
+export const priceFor = (model: string): ModelPrice => {
   return PRICES[model] ?? FALLBACK;
-}
+};
 
-export function computeCostUsd(usage: ProviderUsage, model: string): number {
+export const computeCostUsd = (usage: ProviderUsage, model: string): number => {
   const price = priceFor(model);
   const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
@@ -53,4 +50,4 @@ export function computeCostUsd(usage: ProviderUsage, model: string): number {
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );
-}
+};

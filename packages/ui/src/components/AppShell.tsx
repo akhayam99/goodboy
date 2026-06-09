@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 
-export interface AppShellProps {
+export type AppShellProps = {
   leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
   className?: string;
-}
+};
 
 const LEFT_SIDEBAR_MIN = 300;
 const LEFT_SIDEBAR_MAX = 520;
@@ -23,11 +23,17 @@ const RIGHT_SIDEBAR_STORAGE_KEY = 'goodboy:right-sidebar-width';
 const RIGHT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
-  if (typeof localStorage === 'undefined') return def;
+  if (typeof localStorage === 'undefined') {
+    return def;
+  }
   const raw = localStorage.getItem(key);
-  if (!raw) return def;
+  if (!raw) {
+    return def;
+  }
   const parsed = parseInt(raw, 10);
-  if (Number.isNaN(parsed)) return def;
+  if (Number.isNaN(parsed)) {
+    return def;
+  }
   return Math.max(min, Math.min(max, parsed));
 }
 
@@ -80,14 +86,14 @@ function buildLayout(opts: {
   };
 }
 
-export function AppShell({
+export const AppShell = ({
   leftSidebar,
   leftSidebarCollapsed = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
   className,
-}: AppShellProps) {
+}: AppShellProps) => {
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
@@ -109,25 +115,30 @@ export function AppShell({
   const draggingRef = useRef<'left' | 'right' | null>(null);
 
   useEffect(() => {
-    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
     localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
   }, [leftWidth]);
 
   useEffect(() => {
-    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
     localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, String(rightWidth));
   }, [rightWidth]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const which = draggingRef.current;
-      if (!which) return;
+      if (!which) {
+        return;
+      }
       e.preventDefault();
       if (which === 'left') {
         const next = Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, e.clientX));
         setLeftWidth(next);
       } else {
-        // right handle: width grows as cursor moves toward the left edge
         const next = Math.max(
           RIGHT_SIDEBAR_MIN,
           Math.min(RIGHT_SIDEBAR_MAX, window.innerWidth - e.clientX),
@@ -136,7 +147,9 @@ export function AppShell({
       }
     };
     const onUp = () => {
-      if (!draggingRef.current) return;
+      if (!draggingRef.current) {
+        return;
+      }
       draggingRef.current = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
@@ -157,7 +170,9 @@ export function AppShell({
   };
 
   const onLeftKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+      return;
+    }
     e.preventDefault();
     const step = e.shiftKey ? 32 : 8;
     setLeftWidth((w) =>
@@ -169,10 +184,11 @@ export function AppShell({
   };
 
   const onRightKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+      return;
+    }
     e.preventDefault();
     const step = e.shiftKey ? 32 : 8;
-    // ArrowLeft → grow right sidebar; ArrowRight → shrink it
     setRightWidth((w) =>
       Math.max(
         RIGHT_SIDEBAR_MIN,
@@ -260,4 +276,4 @@ export function AppShell({
       </div>
     </div>
   );
-}
+};

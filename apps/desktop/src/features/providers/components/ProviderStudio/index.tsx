@@ -10,13 +10,13 @@ import { ProviderDetailPanel } from './ProviderDetailPanel';
 
 const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
 
-interface Props {
+type Props = {
   readonly workspaceName: string;
   readonly initialFocus?: ProviderId | null;
   readonly onClose: () => void;
-}
+};
 
-export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) {
+export const ProviderStudio = ({ workspaceName, initialFocus, onClose }: Props) => {
   const providers = useAppStore((s) => s.providers);
   const [focused, setFocused] = useState<ProviderId | null>(initialFocus ?? null);
 
@@ -25,9 +25,13 @@ export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) 
   );
 
   useEffect(() => {
-    if (focused !== null) return;
+    if (focused !== null) {
+      return;
+    }
     const first = ordered.find((p) => p.connection === 'connected')?.id ?? ordered[0]?.id ?? null;
-    if (first) setFocused(first);
+    if (first) {
+      setFocused(first);
+    }
   }, [focused, ordered]);
 
   const selected = ordered.find((p) => p.id === focused) ?? null;
@@ -53,4 +57,4 @@ export function ProviderStudio({ workspaceName, initialFocus, onClose }: Props) 
       )}
     </StudioShell>
   );
-}
+};

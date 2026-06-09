@@ -1,11 +1,3 @@
-/**
- * Onboarding progress is auto-detected from store state and persisted to
- * the DB `settings` table so completion is monotonic across reloads AND
- * survives a localStorage wipe / reinstall. An in-memory cache keeps the
- * sync API the existing callers depend on; the cache is hydrated at boot
- * by `hydrateOnboardingFromDb` (called from app boot) and mutations are
- * flushed to DB best-effort.
- */
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 
@@ -58,12 +50,12 @@ const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
   'palette',
 ];
 
-interface OnboardingCache {
+type OnboardingCache = {
   completed: ReadonlyArray<OnboardingStepId>;
   collapsed: boolean;
   finished: boolean;
   wizardDone: boolean;
-}
+};
 
 const cache: OnboardingCache = {
   completed: [],
@@ -73,12 +65,18 @@ const cache: OnboardingCache = {
 };
 
 function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
-  if (!raw) return [];
+  if (!raw) {
+    return [];
+  }
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return [];
+    if (!parsed || typeof parsed !== 'object') {
+      return [];
+    }
     const c = (parsed as { completed?: unknown }).completed;
-    if (!Array.isArray(c)) return [];
+    if (!Array.isArray(c)) {
+      return [];
+    }
     return c.filter(
       (x): x is OnboardingStepId =>
         typeof x === 'string' && STEP_IDS.includes(x as OnboardingStepId),
@@ -88,7 +86,7 @@ function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
   }
 }
 
-export async function hydrateOnboardingFromDb(): Promise<void> {
+export const hydrateOnboardingFromDb = async (): Promise<void> => {
   const [rawProgress, rawCollapsed, rawFinished, rawWizard] = await Promise.all([
     getSetting(tauriDatabase, SETTING_PROGRESS),
     getSetting(tauriDatabase, SETTING_COLLAPSED),
@@ -100,7 +98,7 @@ export async function hydrateOnboardingFromDb(): Promise<void> {
   cache.finished = rawFinished === '1';
   cache.wizardDone = rawWizard === 'done';
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
 function flushProgress(): void {
   void setSetting(tauriDatabase, SETTING_PROGRESS, JSON.stringify({ completed: cache.completed }));
@@ -110,57 +108,67 @@ function flushFlag(key: string, on: boolean): void {
   void setSetting(tauriDatabase, key, on ? '1' : '0');
 }
 
-export function getCompleted(): ReadonlyArray<OnboardingStepId> {
+export const getCompleted = (): ReadonlyArray<OnboardingStepId> => {
   return cache.completed;
-}
+};
 
-export function markStepComplete(id: OnboardingStepId): void {
-  if (cache.completed.includes(id)) return;
+export const markStepComplete = (id: OnboardingStepId): void => {
+  if (cache.completed.includes(id)) {
+    return;
+  }
   cache.completed = [...cache.completed, id];
   flushProgress();
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function isCollapsed(): boolean {
+export const isCollapsed = (): boolean => {
   return cache.collapsed;
-}
+};
 
-export function collapse(): void {
-  if (cache.collapsed) return;
+export const collapse = (): void => {
+  if (cache.collapsed) {
+    return;
+  }
   cache.collapsed = true;
   flushFlag(SETTING_COLLAPSED, true);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function reopen(): void {
-  if (!cache.collapsed) return;
+export const reopen = (): void => {
+  if (!cache.collapsed) {
+    return;
+  }
   cache.collapsed = false;
   flushFlag(SETTING_COLLAPSED, false);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function isFinished(): boolean {
+export const isFinished = (): boolean => {
   return cache.finished;
-}
+};
 
-export function finish(): void {
-  if (cache.finished) return;
+export const finish = (): void => {
+  if (cache.finished) {
+    return;
+  }
   cache.finished = true;
   flushFlag(SETTING_FINISHED, true);
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function isWizardDone(): boolean {
+export const isWizardDone = (): boolean => {
   return cache.wizardDone;
-}
+};
 
-export function finishWizard(): void {
-  if (cache.wizardDone) return;
+export const finishWizard = (): void => {
+  if (cache.wizardDone) {
+    return;
+  }
   cache.wizardDone = true;
   void setSetting(tauriDatabase, SETTING_WIZARD, 'done');
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-}
+};
 
-export function reopenWizard(): void {
+export const reopenWizard = (): void => {
   window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT));
-}
+};

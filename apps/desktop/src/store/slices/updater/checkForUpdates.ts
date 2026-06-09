@@ -3,10 +3,7 @@ import { formatError } from '../../../shared/lib/errors';
 import { setPendingUpdate } from './pendingUpdate';
 import type { GetFn, SetFn } from './types';
 
-// Asks the configured endpoint whether a newer release exists. Stores the live
-// Update handle in module scope and reflects the outcome in the store so the
-// status bar and sidebar can surface it.
-export function checkForUpdates(set: SetFn, _get: GetFn) {
+export const checkForUpdates = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     set({ updaterStatus: 'checking', updateError: null });
     try {
@@ -23,4 +20,4 @@ export function checkForUpdates(set: SetFn, _get: GetFn) {
       set({ updaterStatus: 'error', updateError: formatError(err) });
     }
   };
-}
+};

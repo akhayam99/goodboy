@@ -33,49 +33,45 @@ import { ModelSelect } from '../../../../features/session/components/ModelSelect
 import { EffortSelect } from '../../../../features/session/components/EffortSelect';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 
-interface StepOverrides {
+type StepOverrides = {
   readonly model: string;
   readonly effort: EffortLevel;
   readonly verbosity: VerbosityLevel;
-}
+};
 
-interface Props {
+type Props = {
   workspaceId: WorkspaceId;
   providerId: ProviderId;
   initialProcess: string;
-  // When false (default) the generated workflow is persisted but not added to
-  // the reusable preset library: the session that runs it keeps it, but it
-  // won't show up in the preset picker. Tick "save as preset" to make it
-  // reusable.
   saveAsPreset?: boolean;
   onWorkflowReady: (workflowId: WorkflowId) => void;
   onPlanChange?: (hasPlan: boolean) => void;
-}
+};
 
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
-export function WorkflowPlanner({
+export const WorkflowPlanner = ({
   workspaceId,
   providerId,
   initialProcess,
   saveAsPreset = false,
   onWorkflowReady,
   onPlanChange,
-}: Props) {
+}: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const [processText, setProcessText] = useState(initialProcess);
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlannerOutput | null>(null);
   const [overrides, setOverrides] = useState<Record<number, StepOverrides>>({});
   const [error, setError] = useState<string | null>(null);
-  // The generated plan reads as a compact summary by default; "Edit" reveals
-  // the per-step model/effort/verbosity pickers.
   const [editing, setEditing] = useState(false);
 
   const updateOverride = (index: number, patch: Partial<StepOverrides>) => {
     setOverrides((prev) => {
       const current = prev[index];
-      if (!current) return prev;
+      if (!current) {
+        return prev;
+      }
       const next = { ...current, ...patch };
       if (patch.model) {
         const levels = modelEffortLevels(patch.model);
@@ -88,7 +84,9 @@ export function WorkflowPlanner({
   };
 
   const onPlan = async () => {
-    if (processText.trim().length === 0) return;
+    if (processText.trim().length === 0) {
+      return;
+    }
     setError(null);
     setPlan(null);
     setOverrides({});
@@ -117,7 +115,9 @@ export function WorkflowPlanner({
   };
 
   const onSave = async () => {
-    if (!plan) return;
+    if (!plan) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -162,15 +162,12 @@ export function WorkflowPlanner({
     }
   };
 
-  // While planning (initial or re-plan), `onPlan` clears `plan` first, so
-  // `busy && !plan` is the spinner state. A spinner reads as "working" at a
-  // glance, where a static "Planning…" label looked stuck.
   const planning = busy && !plan;
   const planButtonLabel = plan ? 'Re-plan' : 'Generate plan';
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-xl bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+      <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
         <div className="relative">
           <Textarea
             value={processText}
@@ -182,9 +179,6 @@ export function WorkflowPlanner({
             className="min-h-24 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
           />
           <div className="absolute bottom-2.5 right-2.5">
-            {/* Fixed min-width so swapping the label for the spinner doesn't
-                resize this right-anchored button (which read as the spinner
-                drifting). The spinner is centered by the button's flex. */}
             <Button
               size="sm"
               onClick={onPlan}
@@ -241,8 +235,7 @@ export function WorkflowPlanner({
               )}
             </button>
           </div>
-          {/* One cohesive card, steps separated by hairlines. Compact by
-              default; "Edit" swaps each row for the per-step pickers. */}
+
           <ol className="flex flex-col">
             {plan.steps.map((s, i) => {
               const ov = overrides[i];
@@ -284,7 +277,7 @@ export function WorkflowPlanner({
       ) : null}
     </div>
   );
-}
+};
 
 function StepCard({
   index,

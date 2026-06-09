@@ -11,13 +11,13 @@ import { TurnsTable } from './TurnsTable';
 import { Widget } from './Widget';
 import { buildModelBreakdown, providerLabel, type WorkspaceTurn } from './lib';
 
-interface Props {
+type Props = {
   readonly provider: ProviderName;
   readonly entry: ProviderSpendEntry | null;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
-}
+};
 
-export function ProviderPanel({ provider, entry, turns }: Props) {
+export const ProviderPanel = ({ provider, entry, turns }: Props) => {
   const spent = entry?.spentUsd ?? 0;
   const capUsd = entry?.capUsd ?? null;
   const pct = entry?.pct ?? 0;
@@ -63,4 +63,4 @@ export function ProviderPanel({ provider, entry, turns }: Props) {
       <TurnsTable turns={filtered} showProvider={false} showSession />
     </PanelShell>
   );
-}
+};

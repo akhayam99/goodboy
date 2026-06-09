@@ -59,15 +59,14 @@ const ZOOM_ACTIONS: Record<string, () => Promise<void>> = {
   '0': zoomReset,
 };
 
-// Cap on retained ChatView instances. Five covers nearly all real navigation
-// patterns (recent N tabs) without unbounded memory growth from long sessions
-// kept alive in the background.
 const KEEP_ALIVE_CAP = 5;
 
 function readPersistedContextOpen(id: SessionId, fallback: boolean): boolean {
   try {
     const raw = localStorage.getItem(CONTEXT_PANEL_KEY(id));
-    if (raw === null) return fallback;
+    if (raw === null) {
+      return fallback;
+    }
     return raw === '1';
   } catch {
     return fallback;
@@ -82,7 +81,7 @@ function writePersistedContextOpen(id: SessionId, open: boolean): void {
   }
 }
 
-export function App() {
+export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
@@ -128,8 +127,9 @@ export function App() {
   useEffect(() => {
     void hydrate();
     void refreshPricingTable();
-    // Only meaningful in a packaged build; in dev there is no matching release.
-    if (import.meta.env.PROD) void checkForUpdates();
+    if (import.meta.env.PROD) {
+      void checkForUpdates();
+    }
   }, [hydrate, checkForUpdates]);
 
   useGithubPolling();
@@ -140,14 +140,18 @@ export function App() {
   useEffect(() => {
     void applyStoredZoom();
     const onShortcut = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
+      if (!(e.metaKey || e.ctrlKey)) {
+        return;
+      }
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         window.location.reload();
         return;
       }
       const action = ZOOM_ACTIONS[e.key];
-      if (!action) return;
+      if (!action) {
+        return;
+      }
       e.preventDefault();
       void action();
     };
@@ -224,10 +228,14 @@ export function App() {
   useEffect(() => {
     const COMMIT_RE = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/commit\/([0-9a-f]{7,40})/i;
     const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) {
+        return;
+      }
       const anchor = (e.target as HTMLElement | null)?.closest?.('a');
       const href = anchor?.getAttribute('href');
-      if (!href) return;
+      if (!href) {
+        return;
+      }
       const commit = href.match(COMMIT_RE);
       if (commit) {
         e.preventDefault();
@@ -243,14 +251,11 @@ export function App() {
     return () => document.removeEventListener('click', onClick);
   }, []);
 
-  // ESC on macOS exits native fullscreen, never wanted. preventDefault at the
-  // capture phase blocks it (the event is marked handled in WKWebView before
-  // it reaches the native responder chain). That same call also cancels a
-  // modal <dialog>'s built-in close-on-ESC, so we close the topmost open
-  // dialog ourselves, ESC dismisses modals without ever leaving fullscreen.
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape') {
+        return;
+      }
       e.preventDefault();
       const dialogs = document.querySelectorAll<HTMLDialogElement>('dialog[open]');
       dialogs[dialogs.length - 1]?.close();
@@ -265,7 +270,9 @@ export function App() {
       setContextHydratedFor(null);
       return;
     }
-    if (contextHydratedFor === currentSession.id) return;
+    if (contextHydratedFor === currentSession.id) {
+      return;
+    }
     const enabledSlots = slots.filter((s) => s.enabled && s.value.length > 0).length;
     const fallback = enabledSlots > 0;
     setContextOpen(readPersistedContextOpen(currentSession.id, fallback));
@@ -273,7 +280,9 @@ export function App() {
   }, [currentSession, slots, contextHydratedFor]);
 
   const onToggleContext = () => {
-    if (!currentSession) return;
+    if (!currentSession) {
+      return;
+    }
     setContextOpen((open) => {
       const next = !open;
       writePersistedContextOpen(currentSession.id, next);
@@ -281,23 +290,19 @@ export function App() {
     });
   };
 
-  // Discard keep-alive IDs from the previous workspace. Without this, switching
-  // workspaces left up to 5 orphan IDs in App state: their KeepAliveChatPanel/
-  // ContextPanel components stayed mounted, ran `useSessionById` (which itself
-  // scans every archivedSessions list) on every store update, and only ever
-  // resolved to null. Pure dead weight on the render path of every set call.
   useEffect(() => {
     setKeepAliveIds([]);
   }, [currentWorkspace?.id]);
 
-  // Persist visited-session order across renders. Triggered by the same
-  // currentSession change that drives the synchronous derivation above; this
-  // just commits the new order to state so future switches reuse it.
   useEffect(() => {
     const id = currentSession?.id ?? null;
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     setKeepAliveIds((prev) => {
-      if (prev[prev.length - 1] === id) return prev;
+      if (prev[prev.length - 1] === id) {
+        return prev;
+      }
       const filtered = prev.filter((x) => x !== id);
       const next = [...filtered, id];
       return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
@@ -306,15 +311,21 @@ export function App() {
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const openDeleteSession = useCallback(() => {
-    if (currentSession) setDeleteOpen(true);
+    if (currentSession) {
+      setDeleteOpen(true);
+    }
   }, [currentSession]);
   const openArchiveSession = useCallback(() => {
-    if (currentSession) setArchiveOpen(true);
+    if (currentSession) {
+      setArchiveOpen(true);
+    }
   }, [currentSession]);
 
   useEffect(() => {
     const handler = () => {
-      if (currentSession) setDeleteOpen(true);
+      if (currentSession) {
+        setDeleteOpen(true);
+      }
     };
     window.addEventListener('goodboy:delete-session', handler);
     return () => window.removeEventListener('goodboy:delete-session', handler);
@@ -322,7 +333,9 @@ export function App() {
 
   useEffect(() => {
     const handler = () => {
-      if (currentSession) setArchiveOpen(true);
+      if (currentSession) {
+        setArchiveOpen(true);
+      }
     };
     window.addEventListener('goodboy:archive-session', handler);
     return () => window.removeEventListener('goodboy:archive-session', handler);
@@ -353,7 +366,9 @@ export function App() {
   const selectWorkspaceByIndex = useCallback(
     (idx: number) => {
       const w = workspaces[idx];
-      if (w) void openWorkspace(w.id, w.name);
+      if (w) {
+        void openWorkspace(w.id, w.name);
+      }
     },
     [workspaces, openWorkspace],
   );
@@ -361,22 +376,32 @@ export function App() {
   const navigateSession = useCallback(
     (delta: number) => {
       const list = currentWorkspaceSessions;
-      if (list.length === 0) return;
+      if (list.length === 0) {
+        return;
+      }
       if (!currentSession) {
         const target = delta >= 0 ? list[0] : list[list.length - 1];
-        if (target) void setCurrentSession(target.id);
+        if (target) {
+          void setCurrentSession(target.id);
+        }
         return;
       }
       const idx = list.findIndex((s) => s.id === currentSession.id);
-      if (idx === -1) return;
+      if (idx === -1) {
+        return;
+      }
       const next = list[idx + delta];
-      if (next) void setCurrentSession(next.id);
+      if (next) {
+        void setCurrentSession(next.id);
+      }
     },
     [currentWorkspaceSessions, currentSession, setCurrentSession],
   );
 
   const openNewSession = useCallback(() => {
-    if (!currentWorkspace) return;
+    if (!currentWorkspace) {
+      return;
+    }
     window.dispatchEvent(new CustomEvent('goodboy:new-session'));
   }, [currentWorkspace]);
 
@@ -392,7 +417,9 @@ export function App() {
   const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
 
   const commitDiffLoader = useCallback(async () => {
-    if (!commitDiff) return '';
+    if (!commitDiff) {
+      return '';
+    }
     const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null;
     if (worktree) {
       try {
@@ -426,21 +453,18 @@ export function App() {
   useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false });
 
-  // Synchronous LRU: include the current session even before the persisting
-  // effect runs, so the active view paints on the first frame after a switch.
-  // Must stay above the early-return for hydrated to keep hook order stable.
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
-    if (!cid) return keepAliveIds;
-    if (keepAliveIds.includes(cid)) return keepAliveIds;
+    if (!cid) {
+      return keepAliveIds;
+    }
+    if (keepAliveIds.includes(cid)) {
+      return keepAliveIds;
+    }
     const merged = [...keepAliveIds, cid];
     return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
   }, [keepAliveIds, currentSession?.id]);
 
-  // Defer the heavy panel mount so sidebar selection + AppShell swap paint
-  // urgently while React schedules the fresh ChatView/ContextPanel at low
-  // priority. Active id is deferred too so the previous panel stays visible
-  // (and `isActive`) during the lag, otherwise we'd flash a blank frame.
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
@@ -519,18 +543,12 @@ export function App() {
                 onAddWorkspace={() => setAddWorkspaceOpen(true)}
               />
             )}
-            {/* Onboarding checklist floats top-right of the chat area: app-level so
-                the sidebar chip can summon it from anywhere. */}
+
             <OnboardingCard />
           </div>
         }
         rightSidebar={
           currentSession ? (
-            // Same keep-alive pattern as the chat panel: the LRU window of
-            // recently-visited sessions stays mounted, only visibility flips
-            // on switch. ContextPanel gates its own session-change effects
-            // (loadDiffComments, refreshSessionPr*) on isActive so hidden
-            // panels don't fire background work.
             <div className="relative h-full w-full">
               {deferredRenderedIds.map((id) => (
                 <KeepAliveContextPanel
@@ -547,9 +565,7 @@ export function App() {
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
       />
-      {/* Only mount dialog bodies (and their selectors) when actually open.
-          Otherwise SettingsDialog/WorkspaceLinkDialog stay alive across the
-          whole session and pay re-render cost on every store update. */}
+
       {settingsOpen ? (
         <SettingsDialog
           open
@@ -631,23 +647,23 @@ export function App() {
         <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
       ) : null}
       {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
-      {/* App-level modal host so the provider connect modal can be summoned
-          from any surface (providers panel, chat callout, future onboarding
-          cards) via a CustomEvent, without prop-drilling. */}
+
       <ProviderModalHost />
       <OnboardingWizard />
     </ToastProvider>
   );
-}
+};
 
-interface KeepAliveChatPanelProps {
+type KeepAliveChatPanelProps = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
-}
+};
 
 function KeepAliveChatPanel({ sessionId, isActive }: KeepAliveChatPanelProps) {
   const session = useSessionById(sessionId);
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
   return (
     <div hidden={!isActive} className="absolute inset-0">
       <ChatView session={session} isActive={isActive} />
@@ -655,13 +671,13 @@ function KeepAliveChatPanel({ sessionId, isActive }: KeepAliveChatPanelProps) {
   );
 }
 
-interface KeepAliveContextPanelProps {
+type KeepAliveContextPanelProps = {
   readonly sessionId: SessionId;
   readonly isActive: boolean;
   readonly collapsed: boolean;
   readonly onCollapse: () => void;
   readonly onExpand: () => void;
-}
+};
 
 function KeepAliveContextPanel({
   sessionId,
@@ -671,7 +687,9 @@ function KeepAliveContextPanel({
   onExpand,
 }: KeepAliveContextPanelProps) {
   const session = useSessionById(sessionId);
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
   return (
     <div hidden={!isActive} className="absolute inset-0">
       <ContextPanel
@@ -765,7 +783,7 @@ function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
 function AppLayoutPreview() {
   return (
     <div className="flex w-full max-w-2xl gap-3">
-      <div className="flex w-[30%] flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-subtle/15 px-5 py-6">
+      <div className="flex w-[30%] flex-col items-center gap-3 rounded-lg border border-border-soft/30 bg-subtle/15 px-5 py-6">
         <div className="flex size-10 items-center justify-center rounded-lg bg-muted/40">
           <MessagesSquare size={20} className="text-muted-foreground/60" aria-hidden />
         </div>
@@ -775,7 +793,7 @@ function AppLayoutPreview() {
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-background/30 px-6 py-6">
+      <div className="flex flex-1 flex-col items-center gap-3 rounded-lg border border-border-soft/30 bg-background/30 px-6 py-6">
         <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
           <MessageSquare size={20} className="text-primary/60" aria-hidden />
         </div>
@@ -785,7 +803,7 @@ function AppLayoutPreview() {
         </p>
       </div>
 
-      <div className="flex w-[26%] flex-col items-center gap-3 rounded-xl border border-border-soft/30 bg-subtle/15 px-5 py-6">
+      <div className="flex w-[26%] flex-col items-center gap-3 rounded-lg border border-border-soft/30 bg-subtle/15 px-5 py-6">
         <div className="flex size-10 items-center justify-center rounded-lg bg-muted/40">
           <BookOpen size={20} className="text-muted-foreground/60" aria-hidden />
         </div>
@@ -802,7 +820,7 @@ function EmptyStateLogo() {
   return (
     <div className="relative">
       <div className="absolute -inset-6 rounded-full bg-primary/10 blur-2xl" />
-      <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
+      <div className="relative flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg backdrop-blur-sm">
         <DogMascot size={56} className="text-foreground" />
       </div>
     </div>
@@ -810,7 +828,9 @@ function EmptyStateLogo() {
 }
 
 function KeyboardHints({ hasWorkspace }: { hasWorkspace: boolean }) {
-  if (!hasWorkspace) return null;
+  if (!hasWorkspace) {
+    return null;
+  }
   return (
     <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-2xs text-muted-foreground">
       <span className="inline-flex items-center gap-1">

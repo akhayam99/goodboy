@@ -7,11 +7,11 @@ import type {
 } from '@goodboy/types';
 import { invokeCheckProviderBudget } from '../budget/budget';
 
-export async function resolveProviderForTurn(
+export const resolveProviderForTurn = async (
   sessionPreference: SessionProviderPreference,
   turnOverride: TurnProviderOverride | undefined,
   connectedProviders: ProviderId[],
-): Promise<RoutingDecision> {
+): Promise<RoutingDecision> => {
   return resolveProvider({
     sessionPreference,
     turnOverride,
@@ -21,4 +21,4 @@ export async function resolveProviderForTurn(
     },
     getDefaultModel: (providerId) => getDefaultTurnModel(providerId),
   });
-}
+};

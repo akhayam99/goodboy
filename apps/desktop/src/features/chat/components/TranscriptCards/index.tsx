@@ -25,14 +25,14 @@ const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   delete: 'deleted',
 };
 
-interface TranscriptCardProps {
+type TranscriptCardProps = {
   readonly item: TranscriptItem;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
-}
+};
 
 function TranscriptCardImpl({
   item,
@@ -104,13 +104,13 @@ function TranscriptCardImpl({
   }
 }
 
-// Content-aware comparator: reduceTranscript allocates fresh items every call,
-// so reference equality on `item` is always false. Skipping re-render when the
-// rendered output would be identical avoids costly Markdown/CopyButton work for
-// 100+ static cards on session switch and during streaming updates.
 function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
-  if (a === b) return true;
-  if (a.kind !== b.kind || a.key !== b.key) return false;
+  if (a === b) {
+    return true;
+  }
+  if (a.kind !== b.kind || a.key !== b.key) {
+    return false;
+  }
   if (a.kind === 'tool_call' && b.kind === 'tool_call') {
     return a.ended === b.ended && a.isError === b.isError && a.output === b.output;
   }
@@ -131,12 +131,12 @@ export const TranscriptCard = memo(
     prev.onOpenDiff === next.onOpenDiff,
 );
 
-interface FileEditBlockProps {
+type FileEditBlockProps = {
   path: string;
   editType: 'create' | 'modify' | 'delete';
   workingDir?: string | null;
   onOpenDiff?: (filePath: string) => void;
-}
+};
 
 function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlockProps) {
   const rel = displayPath(path, workingDir);
@@ -179,8 +179,12 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
 }
 
 function formatTokens(n: number): string {
-  if (n < 1000) return String(n);
-  if (n < 10_000) return `${(n / 1000).toFixed(1)}k`;
+  if (n < 1000) {
+    return String(n);
+  }
+  if (n < 10_000) {
+    return `${(n / 1000).toFixed(1)}k`;
+  }
   return `${Math.round(n / 1000)}k`;
 }
 
@@ -195,11 +199,6 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
     .replace(COMMENT_WONTFIX_MARKER_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-  // The comment-resolved chip lives in the top-right of its own row and
-  // hovers a primary action. The hover-only copy button positioned at the
-  // same corner of the assistant bubble crashes into that primary action
-  // on short messages, and copying the marker prose isn't useful anyway.
-  // Hide copy when the marker is present.
   const resolvedMarker = extractCommentResolved(text);
   const hasCommentResolvedMarker =
     resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
@@ -224,7 +223,9 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
 
 function formatHHMM(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
@@ -263,9 +264,6 @@ function InlineCopyButton({ value }: { value: string }) {
   );
 }
 
-// Loads a persisted attachment lazily: the bytes live on disk in the worktree,
-// not in the turn-event payload, so each thumbnail reads its own file. Works
-// the same for a just-sent message and one restored from the DB after restart.
 function AttachmentThumb({
   attachment,
   workingDir,
@@ -300,10 +298,14 @@ function AttachmentImage({
     setSrc(null);
     readAttachment(workingDir, attachment.relPath)
       .then((dataUrl) => {
-        if (alive) setSrc(dataUrl);
+        if (alive) {
+          setSrc(dataUrl);
+        }
       })
       .catch(() => {
-        if (alive) setFailed(true);
+        if (alive) {
+          setFailed(true);
+        }
       });
     return () => {
       alive = false;
@@ -362,7 +364,9 @@ function AttachmentFileCard({
   const isPdf = attachment.mimeType === 'application/pdf';
 
   const openPreview = () => {
-    if (!isPdf || !workingDir) return;
+    if (!isPdf || !workingDir) {
+      return;
+    }
     if (src !== null) {
       setPreviewOpen(true);
       return;
@@ -423,22 +427,22 @@ function UserText({
   const atts = attachments ?? [];
   return (
     <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
-      {atts.length > 0 ? (
+      {atts.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">
           {atts.map((a) => (
             <AttachmentThumb key={a.id} attachment={a} workingDir={workingDir} />
           ))}
         </div>
-      ) : null}
-      {text.length > 0 ? (
+      )}
+      {text.length > 0 && (
         <div className="text-sm text-foreground">
           <Markdown text={text} />
         </div>
-      ) : null}
+      )}
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
         {provider ? <ProviderFootnote provider={provider} model={model} /> : null}
         <span className="font-mono">{formatHHMM(at)}</span>
-        {text.length > 0 ? <InlineCopyButton value={text} /> : null}
+        {text.length > 0 && <InlineCopyButton value={text} />}
       </div>
     </div>
   );
@@ -463,8 +467,12 @@ function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' 
   const [open, setOpen] = useState(false);
   const running = !item.ended;
   const accent = (() => {
-    if (item.isError) return 'text-danger';
-    if (running) return 'text-muted-foreground/70';
+    if (item.isError) {
+      return 'text-danger';
+    }
+    if (running) {
+      return 'text-muted-foreground/70';
+    }
     return 'text-muted-foreground';
   })();
 

@@ -6,7 +6,7 @@ import { loadSetting } from './loadSetting';
 import { saveSetting } from './saveSetting';
 import type { GetFn, SetFn } from './types';
 
-export function createSettingsSlice(set: SetFn, _get: GetFn) {
+export const createSettingsSlice = (set: SetFn, _get: GetFn) => {
   return {
     loadSetting: loadSetting(set),
     saveSetting: saveSetting(set),
@@ -15,4 +15,4 @@ export function createSettingsSlice(set: SetFn, _get: GetFn) {
     dismissSystemAlert: dismissSystemAlert(set),
     clearSessionNextActions: clearSessionNextActions(set),
   };
-}
+};

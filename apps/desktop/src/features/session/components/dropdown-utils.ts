@@ -13,13 +13,19 @@ export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
   verbose: 'bg-rose-400',
 };
 
-export function modelCostTier(modelId: string): 'cheap' | 'mid' | 'premium' {
+export const modelCostTier = (modelId: string): 'cheap' | 'mid' | 'premium' => {
   const descriptor = getModelDescriptor(modelId);
-  if (descriptor) return descriptor.costTier === 'expensive' ? 'premium' : descriptor.costTier;
-  if (/haiku|mini|fast/i.test(modelId)) return 'cheap';
-  if (/opus/i.test(modelId)) return 'premium';
+  if (descriptor) {
+    return descriptor.costTier === 'expensive' ? 'premium' : descriptor.costTier;
+  }
+  if (/haiku|mini|fast/i.test(modelId)) {
+    return 'cheap';
+  }
+  if (/opus/i.test(modelId)) {
+    return 'premium';
+  }
   return 'mid';
-}
+};
 
 export const POPUP_BASE =
   'absolute left-0 z-50 w-full rounded-md border border-border bg-subtle py-0.5 shadow-lg';

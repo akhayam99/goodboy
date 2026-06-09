@@ -3,12 +3,16 @@ import { detachWorkflowFromSession as detachWorkflowFromSessionInDb } from '@goo
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
-export function detachWorkflowFromSession(set: SetFn, get: GetFn) {
+export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error(`session not found: ${sessionId}`);
+    if (!session) {
+      throw new Error(`session not found: ${sessionId}`);
+    }
     const run = session.workflowRuns.find((r) => r.id === workflowRunId);
-    if (!run) return;
+    if (!run) {
+      return;
+    }
 
     const now = new Date().toISOString() as IsoDateTime;
     await detachWorkflowFromSessionInDb(tauriDatabase, sessionId, workflowRunId, now);
@@ -28,4 +32,4 @@ export function detachWorkflowFromSession(set: SetFn, get: GetFn) {
       },
     }));
   };
-}
+};

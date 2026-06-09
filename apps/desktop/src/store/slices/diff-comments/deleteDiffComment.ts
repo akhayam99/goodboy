@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-export function deleteDiffComment(set: SetFn) {
+export const deleteDiffComment = (set: SetFn) => {
   return async (sessionId: SessionId, commentId: string) => {
     await dbDeleteDiffComment(tauriDatabase, commentId);
     const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
@@ -11,4 +11,4 @@ export function deleteDiffComment(set: SetFn) {
       diffComments: { ...state.diffComments, [sessionId]: comments },
     }));
   };
-}
+};

@@ -4,16 +4,18 @@ import { cn } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 
-interface Props {
+type Props = {
   readonly prs: ReadonlyArray<PullRequestState>;
   readonly selected: number | null;
   readonly onSelect: (prNumber: number) => void;
-}
+};
 
-export function PrSwitcher({ prs, selected, onSelect }: Props) {
+export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
   const [open, setOpen] = useState(false);
   const current = prs.find((p) => p.number === selected) ?? prs[0];
-  if (!current) return null;
+  if (!current) {
+    return null;
+  }
 
   return (
     <div className="relative shrink-0">
@@ -55,9 +57,9 @@ export function PrSwitcher({ prs, selected, onSelect }: Props) {
                   <PullRequestChip state={p.state} variant="icon" iconSize={12} />
                   <span className="shrink-0 tabular-nums text-muted-foreground">#{p.number}</span>
                   <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
-                  {p.number === selected ? (
+                  {p.number === selected && (
                     <Check size={12} aria-hidden className="shrink-0 text-primary" />
-                  ) : null}
+                  )}
                 </button>
               </li>
             ))}
@@ -66,4 +68,4 @@ export function PrSwitcher({ prs, selected, onSelect }: Props) {
       ) : null}
     </div>
   );
-}
+};

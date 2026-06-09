@@ -9,8 +9,6 @@ import {
 } from '@goodboy/core';
 import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
 
-// Each provider emits its own stream-json schema; the wrong parser silently
-// returns zero events and the store reports "provider exited without a response".
 function parseForProvider(
   provider: ProviderId,
   line: string,
@@ -35,23 +33,25 @@ function parseForProvider(
 
 const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
-export interface AuthRequiredPayload {
+export type AuthRequiredPayload = {
   readonly providerId: ProviderId;
   readonly identity: string | null;
-}
+};
 
-export function encodeAuthRequiredMessage(payload: AuthRequiredPayload): string {
+export const encodeAuthRequiredMessage = (payload: AuthRequiredPayload): string => {
   return `${AUTH_REQUIRED_PREFIX}${JSON.stringify(payload)}`;
-}
+};
 
-export function decodeAuthRequiredMessage(message: string): AuthRequiredPayload | null {
-  if (!message.startsWith(AUTH_REQUIRED_PREFIX)) return null;
+export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload | null => {
+  if (!message.startsWith(AUTH_REQUIRED_PREFIX)) {
+    return null;
+  }
   try {
     return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload;
   } catch {
     return null;
   }
-}
+};
 
 const AUTH_ERROR_PATTERNS = [
   /not authenticated/i,
@@ -67,15 +67,15 @@ const AUTH_ERROR_PATTERNS = [
   /not signed in/i,
 ];
 
-export function isAuthErrorMessage(text: string): boolean {
+export const isAuthErrorMessage = (text: string): boolean => {
   return AUTH_ERROR_PATTERNS.some((p) => p.test(text));
-}
+};
 
 const EVENT_NAME = 'turn_event';
 
 type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
-interface SpawnArgs {
+type SpawnArgs = {
   readonly runId: ProviderRunId;
   readonly provider: ProviderId;
   readonly model: string;
@@ -90,7 +90,7 @@ interface SpawnArgs {
   readonly effort?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
-}
+};
 
 type RawTurnEnvelope =
   | { runId: string; type: 'line'; line: string }
@@ -109,7 +109,9 @@ export async function* runTurn(
   let error: unknown = null;
 
   const flush = () => {
-    if (!resolver) return;
+    if (!resolver) {
+      return;
+    }
     if (queue.length > 0) {
       const value = queue.shift()!;
       const r = resolver;
@@ -133,7 +135,9 @@ export async function* runTurn(
   let receivedAnyLine = false;
 
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
-    if (event.payload.runId !== args.runId) return;
+    if (event.payload.runId !== args.runId) {
+      return;
+    }
 
     switch (event.payload.type) {
       case 'line':
@@ -146,9 +150,6 @@ export async function* runTurn(
       case 'end': {
         const exitCode = event.payload.exit_code;
         const stderr = event.payload.stderr;
-        // Only synthesize an error when the process produced no JSON. If lines
-        // were emitted the parsed events already convey the outcome; a second
-        // "exit N" card would just be noise.
         if (!receivedAnyLine) {
           const tail = stderr.trim().split('\n').slice(-5).join('\n');
           const detail = tail.length > 0 ? `: ${tail}` : '';
@@ -179,14 +180,18 @@ export async function* runTurn(
         continue;
       }
       if (ended) {
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
         return;
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
         resolver = resolve;
         rejector = reject;
       });
-      if (value.done) return;
+      if (value.done) {
+        return;
+      }
       yield value.value;
     }
   } finally {
@@ -201,60 +206,49 @@ export async function* runTurn(
   }
 }
 
-export async function cancelTurn(runId: ProviderRunId): Promise<void> {
+export const cancelTurn = async (runId: ProviderRunId): Promise<void> => {
   await invoke('turn_cancel', { runId });
-}
+};
 
-export async function listLiveRunIds(): Promise<ReadonlySet<string>> {
+export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
   try {
     const ids = await invoke<string[]>('turn_list_live');
     return new Set(ids ?? []);
   } catch {
     return new Set();
   }
-}
+};
 
-/**
- * Persists a composer image into `<worktree>/.goodboy/attachments/` and returns
- * the worktree-relative path the spawned provider CLI reads it from.
- */
-export async function writeAttachment(args: {
+export const writeAttachment = async (args: {
   readonly worktreeDir: string;
   readonly attachmentId: string;
   readonly fileName: string;
   readonly dataBase64: string;
-}): Promise<string> {
+}): Promise<string> => {
   return invoke<string>('attachment_write', args);
-}
+};
 
-/** Reads a stored attachment back as a `data:` URL for display in the webview. */
-export async function readAttachment(worktreeDir: string, relPath: string): Promise<string> {
+export const readAttachment = async (worktreeDir: string, relPath: string): Promise<string> => {
   return invoke<string>('attachment_read', { worktreeDir, relPath });
-}
+};
 
-export interface DroppedAttachment {
+export type DroppedAttachment = {
   readonly fileName: string;
   readonly mimeType: string;
   readonly dataBase64: string;
-}
+};
 
-/**
- * Reads a file path the user dropped onto the composer from the OS and returns
- * its bytes as base64. Image-only on the Rust side; non-image drops surface as
- * an `UnsupportedMime` error which the caller filters silently.
- */
-export async function readDroppedAttachment(absPath: string): Promise<DroppedAttachment> {
+export const readDroppedAttachment = async (absPath: string): Promise<DroppedAttachment> => {
   return invoke<DroppedAttachment>('attachment_read_dropped', { absPath });
-}
+};
 
-interface ParallelRunSpec {
+type ParallelRunSpec = {
   readonly runId: ProviderRunId;
-  /** Worktree path from C3 worktree helper. */
   readonly workingDir: string;
   readonly parallelIndex: number;
-}
+};
 
-export interface ParallelSpawnArgs {
+export type ParallelSpawnArgs = {
   readonly groupId: string;
   readonly runs: ReadonlyArray<ParallelRunSpec>;
   readonly binary?: string;
@@ -265,18 +259,10 @@ export interface ParallelSpawnArgs {
   readonly disallowedTools?: ReadonlyArray<string>;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
-}
+};
 
-/**
- * Spawn N child processes concurrently via a single Tauri invoke.
- *
- * Returns the launched `runId`s in the same order as `args.runs`.
- * Each run emits `turn_event` envelopes tagged with its own `runId`, the
- * existing `RawTurnEnvelope` listener already filters by `runId`, so no
- * frontend changes are needed for multiplexing.
- */
-export async function invokeParallelPhaseRunSpawn(
+export const invokeParallelPhaseRunSpawn = async (
   args: ParallelSpawnArgs,
-): Promise<ReadonlyArray<ProviderRunId>> {
+): Promise<ReadonlyArray<ProviderRunId>> => {
   return invoke<string[]>('parallel_agent_spawn', { args }).then((ids) => ids as ProviderRunId[]);
-}
+};

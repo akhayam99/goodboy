@@ -1,21 +1,21 @@
 import { Pencil } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 
-interface Props {
+type Props = {
   value: string;
   open: boolean;
   onToggle: () => void;
   onChange: (value: string) => void;
   placeholder?: string;
-}
+};
 
-export function CustomAnswerField({
+export const CustomAnswerField = ({
   value,
   open,
   onToggle,
   onChange,
   placeholder = 'write your own answer…',
-}: Props) {
+}: Props) => {
   if (!open) {
     return (
       <button
@@ -50,4 +50,4 @@ export function CustomAnswerField({
       />
     </div>
   );
-}
+};

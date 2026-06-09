@@ -7,14 +7,14 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-interface SessionWorkflowRow {
+type SessionWorkflowRow = {
   workflow_run_id: string;
   workflow_id: string;
   ordinal: number;
   current_step_ordinal: number;
   auto_run: number;
   discarded_at: string | null;
-}
+};
 
 function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   return {
@@ -27,16 +27,16 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   };
 }
 
-export async function listWorkflowsForSession(
+export const listWorkflowsForSession = async (
   db: Database,
   sessionId: SessionId,
-): Promise<ReadonlyArray<WorkflowRun>> {
+): Promise<ReadonlyArray<WorkflowRun>> => {
   const rows = await db.select<SessionWorkflowRow>(
     'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toWorkflowRun);
-}
+};
 
 async function bumpSessionUpdatedAt(
   db: Database,
@@ -49,14 +49,14 @@ async function bumpSessionUpdatedAt(
   ]);
 }
 
-export async function attachWorkflowToSession(
+export const attachWorkflowToSession = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   workflowId: WorkflowId,
   autoRun: boolean,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   const maxOrdinal = await db.select<{ max_ordinal: number | null }>(
     'SELECT MAX(ordinal) as max_ordinal FROM session_workflows WHERE session_id = ?',
     [sessionId],
@@ -68,24 +68,24 @@ export async function attachWorkflowToSession(
     [workflowRunId, sessionId, workflowId, nextOrdinal, 0, autoRun ? 1 : 0],
   );
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-}
+};
 
-export async function detachWorkflowFromSession(
+export const detachWorkflowFromSession = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('DELETE FROM session_workflows WHERE workflow_run_id = ?', [workflowRunId]);
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-}
+};
 
-export async function updateWorkflowOrder(
+export const updateWorkflowOrder = async (
   db: Database,
   sessionId: SessionId,
   workflowRunIds: ReadonlyArray<WorkflowRunId>,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   const existing = await db.select<SessionWorkflowRow>(
     'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at FROM session_workflows WHERE session_id = ?',
     [sessionId],
@@ -97,7 +97,9 @@ export async function updateWorkflowOrder(
     await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
     for (const [ordinal, runId] of workflowRunIds.entries()) {
       const prev = byRun.get(runId);
-      if (!prev) continue;
+      if (!prev) {
+        continue;
+      }
       await db.execute(
         'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
@@ -120,45 +122,45 @@ export async function updateWorkflowOrder(
     await db.exec('ROLLBACK');
     throw err;
   }
-}
+};
 
-export async function discardWorkflowInSession(
+export const discardWorkflowInSession = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   discardedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?', [
     discardedAt,
     workflowRunId,
   ]);
   await bumpSessionUpdatedAt(db, sessionId, discardedAt);
-}
+};
 
-export async function updateSessionWorkflowStep(
+export const updateSessionWorkflowStep = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   stepOrdinal: number,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute(
     'UPDATE session_workflows SET current_step_ordinal = ? WHERE workflow_run_id = ?',
     [stepOrdinal, workflowRunId],
   );
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-}
+};
 
-export async function updateSessionWorkflowAutoRun(
+export const updateSessionWorkflowAutoRun = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   autoRun: boolean,
   updatedAt: IsoDateTime,
-): Promise<void> {
+): Promise<void> => {
   await db.execute('UPDATE session_workflows SET auto_run = ? WHERE workflow_run_id = ?', [
     autoRun ? 1 : 0,
     workflowRunId,
   ]);
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-}
+};

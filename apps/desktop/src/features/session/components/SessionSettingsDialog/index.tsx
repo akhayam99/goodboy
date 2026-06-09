@@ -24,25 +24,25 @@ import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 
-interface SessionSettingsDialogProps {
+type SessionSettingsDialogProps = {
   sessionId: SessionId;
   open: boolean;
   onClose: () => void;
   archived: boolean;
   onArchive: () => void;
   onUnarchive: () => void;
-}
+};
 
 const DELETE_ARM_TIMEOUT_MS = 4000;
 
-export function SessionSettingsDialog({
+export const SessionSettingsDialog = ({
   sessionId,
   open,
   onClose,
   archived,
   onArchive,
   onUnarchive,
-}: SessionSettingsDialogProps) {
+}: SessionSettingsDialogProps) => {
   const session = useSessionById(sessionId);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -52,9 +52,6 @@ export function SessionSettingsDialog({
   const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const setSessionConfig = useAppStore((s) => s.setSessionConfig);
   const renameTask = useAppStore((s) => s.renameTask);
-  // useShallow because the selector derives a fresh array each call; without
-  // shallow comparison useSyncExternalStore detects a snapshot mismatch on
-  // every render and React 19 bails into an infinite render loop.
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -80,7 +77,9 @@ export function SessionSettingsDialog({
   const [confirmReuse, setConfirmReuse] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setError(null);
     setBusy(false);
     setDeleteArmed(false);
@@ -99,7 +98,9 @@ export function SessionSettingsDialog({
 
   const armDelete = () => {
     setDeleteArmed(true);
-    if (deleteArmTimer.current !== null) window.clearTimeout(deleteArmTimer.current);
+    if (deleteArmTimer.current !== null) {
+      window.clearTimeout(deleteArmTimer.current);
+    }
     deleteArmTimer.current = window.setTimeout(() => {
       setDeleteArmed(false);
       deleteArmTimer.current = null;
@@ -107,7 +108,9 @@ export function SessionSettingsDialog({
   };
 
   useEffect(() => {
-    if (!branchEditOpen || !workspace?.rootPath) return;
+    if (!branchEditOpen || !workspace?.rootPath) {
+      return;
+    }
     setBranchesLoading(true);
     setConfirmReuse(false);
     setBranchTarget('');
@@ -125,7 +128,9 @@ export function SessionSettingsDialog({
     setCapDraft(budget?.softCapUsd != null ? String(budget.softCapUsd) : '');
   }, [budget?.softCapUsd]);
 
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const isActiveSession = sessionSummary !== null;
   const spent = isActiveSession ? (sessionSummary?.estimatedCostUsd ?? 0) : 0;
@@ -223,13 +228,18 @@ export function SessionSettingsDialog({
       deleteArmTimer.current = null;
     }
     setDeleteArmed(false);
-    if (archived) onUnarchive();
-    else onArchive();
+    if (archived) {
+      onUnarchive();
+    } else {
+      onArchive();
+    }
     onClose();
   };
 
   const onChangeProvider = async (next: ProviderId) => {
-    if (next === session?.providerPreference.defaultProvider) return;
+    if (next === session?.providerPreference.defaultProvider) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -378,13 +388,9 @@ export function SessionSettingsDialog({
       </div>
     </Dialog>
   );
-}
+};
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: General                                                      */
-/* ──────────────────────────────────────────────────────────────────── */
-
-interface GeneralSectionProps {
+type GeneralSectionProps = {
   readonly session: { goal: string; providerPreference: { defaultProvider: ProviderId } };
   readonly goalDraft: string;
   readonly setGoalDraft: (v: string) => void;
@@ -408,7 +414,7 @@ interface GeneralSectionProps {
   readonly targetDirty: boolean;
   readonly confirmReuse: boolean;
   readonly onChangeBranch: () => void;
-}
+};
 
 function GeneralSection(props: GeneralSectionProps) {
   const {
@@ -447,7 +453,6 @@ function GeneralSection(props: GeneralSectionProps) {
         subtitle="Identity and infrastructure for this session. The goal text the agent actually reads lives in the right-hand context panel."
       />
 
-      {/* Name */}
       <Field
         label="Name"
         hint="Display name in the sidebar. Renaming doesn't change what the agent sees."
@@ -470,7 +475,6 @@ function GeneralSection(props: GeneralSectionProps) {
         </div>
       </Field>
 
-      {/* Branch, inline change */}
       <Field
         label="Branch"
         hint="Switch this session to a different branch. Existing checkouts with uncommitted work require confirmation."
@@ -648,9 +652,9 @@ function SessionProviderPicker({
           >
             <Zap size={11} aria-hidden />
             {PROVIDER_LABEL[id]}
-            {!isConnected ? (
+            {!isConnected && (
               <span className="text-[9px] uppercase tracking-wide text-warning">offline</span>
-            ) : null}
+            )}
           </button>
         );
       })}
@@ -658,18 +662,14 @@ function SessionProviderPicker({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────── */
-/* Section: Budget                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
-
-interface BudgetSectionProps {
+type BudgetSectionProps = {
   readonly capDraft: string;
   readonly setCapDraft: (v: string) => void;
   readonly onSaveCap: () => void;
   readonly busy: boolean;
   readonly softCapUsd: number | null;
   readonly spent: number;
-}
+};
 
 function BudgetSection({
   capDraft,
@@ -706,7 +706,7 @@ function BudgetSection({
           </Button>
         </div>
       </Field>
-      {softCapUsd != null && softCapUsd > 0 ? (
+      {softCapUsd != null && softCapUsd > 0 && (
         <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/50 p-4">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Spent this session</span>
@@ -722,21 +722,17 @@ function BudgetSection({
           </div>
           <div className="flex items-center justify-between text-2xs text-muted-foreground/70">
             <span>{Math.round(pct * 100)}% used</span>
-            {pct >= 0.8 ? (
+            {pct >= 0.8 && (
               <span className={pct >= 1 ? 'text-danger' : 'text-warning'}>
                 {pct >= 1 ? 'cap exceeded' : 'approaching cap'}
               </span>
-            ) : null}
+            )}
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
-
-/* ──────────────────────────────────────────────────────────────────── */
-/* Building blocks                                                       */
-/* ──────────────────────────────────────────────────────────────────── */
 
 function SectionHeader({
   icon,

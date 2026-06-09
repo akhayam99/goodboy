@@ -18,7 +18,7 @@ export class IllegalTurnTransitionError extends Error {
   }
 }
 
-export function turnReducer(state: TurnState, event: TurnLifecycleEvent): TurnState {
+export const turnReducer = (state: TurnState, event: TurnLifecycleEvent): TurnState => {
   switch (event.kind) {
     case 'start':
       if (state.kind !== 'draft') {
@@ -62,7 +62,7 @@ export function turnReducer(state: TurnState, event: TurnLifecycleEvent): TurnSt
       throw new Error(`unhandled session event: ${JSON.stringify(_exhaustive)}`);
     }
   }
-}
+};
 
 function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
   switch (turn.kind) {

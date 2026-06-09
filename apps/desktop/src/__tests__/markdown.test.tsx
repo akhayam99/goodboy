@@ -43,8 +43,6 @@ describe('Markdown', () => {
   it('renders blockquote and hr', () => {
     const { container } = render(<Markdown text={'> quoted\n\n---\n\nafter'} />);
     expect(container.querySelector('blockquote')?.textContent).toBe('quoted');
-    // hr is rendered as a div with role="separator", gradient hairline,
-    // not the default browser <hr> tag.
     expect(container.querySelector('[role="separator"]')).not.toBeNull();
   });
 

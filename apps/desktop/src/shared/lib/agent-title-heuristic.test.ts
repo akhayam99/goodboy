@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { heuristicAgentTitle } from './agent-title-heuristic';
 
 describe('heuristicAgentTitle', () => {
-  // ── happy path: verb-led ────────────────────────────────────────────
   it('simple verb + nouns', () => {
     expect(heuristicAgentTitle('fix auth bug')).toBe('fix auth bug');
   });
@@ -37,7 +36,6 @@ describe('heuristicAgentTitle', () => {
     expect(heuristicAgentTitle('migrate postgres schema')).toBe('migrate postgres schema');
   });
 
-  // ── content cleaning ────────────────────────────────────────────────
   it('strips code fences', () => {
     expect(heuristicAgentTitle('fix the bug in ```js\nconst x = 1\n``` module')).toBe(
       'fix bug module',
@@ -60,7 +58,6 @@ describe('heuristicAgentTitle', () => {
     expect(heuristicAgentTitle('# fix the auth service')).toBe('fix auth service');
   });
 
-  // ── fallback path (no action verb found) ───────────────────────────
   it('fallback: 3 significant words when no verb', () => {
     expect(heuristicAgentTitle('authentication service performance')).toBe(
       'authentication service performance',
@@ -76,11 +73,9 @@ describe('heuristicAgentTitle', () => {
   });
 
   it('fallback: "need" is stop-word → stripped, setup verb found but lone → falls to fallback', () => {
-    // 'setup' IS an action verb but alone → significant.length < 2 → fallback path
     expect(heuristicAgentTitle('need auth setup')).toBe('auth setup');
   });
 
-  // ── null returns ────────────────────────────────────────────────────
   it('empty string → null', () => {
     expect(heuristicAgentTitle('')).toBeNull();
   });
@@ -101,7 +96,6 @@ describe('heuristicAgentTitle', () => {
     expect(heuristicAgentTitle('authentication')).toBeNull();
   });
 
-  // ── numeric / special inputs ────────────────────────────────────────
   it('numbers-only multi-word → returned as-is via fallback', () => {
     expect(heuristicAgentTitle('123 456 789')).toBe('123 456 789');
   });
@@ -114,20 +108,14 @@ describe('heuristicAgentTitle', () => {
     expect(heuristicAgentTitle('fix issue 42')).toBe('fix issue 42');
   });
 
-  // ── multi-line ──────────────────────────────────────────────────────
-  // NOTE: \s+ collapsing turns \n into spaces before split('\n'), so ALL
-  // lines are treated as one continuous string, verbs from any line match.
   it('newlines collapsed: verb from later line is still found', () => {
-    // 'fix' is the first action verb across the collapsed string
     expect(heuristicAgentTitle('auth service\nfix the bug on line 42')).toBe('fix bug line');
   });
 
   it('newlines collapsed: all words contribute to verb slice', () => {
-    // 'fix auth' is found; 'also' is not a stop word → 'fix auth also'
     expect(heuristicAgentTitle('fix auth\nand also update the UI')).toBe('fix auth also');
   });
 
-  // ── long prompts ────────────────────────────────────────────────────
   it('truncates to 300 chars, content beyond 300 ignored', () => {
     const padding = 'x'.repeat(290);
     const prompt = `optimize ${padding} important_stuff_after_limit`;
@@ -137,14 +125,12 @@ describe('heuristicAgentTitle', () => {
     expect(result).not.toContain('important_stuff_after_limit');
   });
 
-  // ── title length ────────────────────────────────────────────────────
   it('result is at most 3 words', () => {
     const result = heuristicAgentTitle('implement authentication provider integration layer');
     expect(result).not.toBeNull();
     expect(result!.split(' ').length).toBeLessThanOrEqual(3);
   });
 
-  // ── sampled action verbs ────────────────────────────────────────────
   it.each([
     ['build docker image', 'build docker image'],
     ['update dependencies lock', 'update dependencies lock'],
@@ -160,7 +146,6 @@ describe('heuristicAgentTitle', () => {
     expect(heuristicAgentTitle(prompt)).toBe(expected);
   });
 
-  // ── title is lowercase ──────────────────────────────────────────────
   it('output is lowercase (input is lowercased internally)', () => {
     const result = heuristicAgentTitle('Fix The Auth Bug');
     expect(result).toBe('fix auth bug');

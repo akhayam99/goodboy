@@ -3,7 +3,7 @@ import { cn } from '../cn';
 
 export type KbdPillProps = ComponentProps<'kbd'>;
 
-export function KbdPill({ className, ...rest }: KbdPillProps) {
+export const KbdPill = ({ className, ...rest }: KbdPillProps) => {
   return (
     <kbd
       className={cn(
@@ -13,4 +13,4 @@ export function KbdPill({ className, ...rest }: KbdPillProps) {
       {...rest}
     />
   );
-}
+};

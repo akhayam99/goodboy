@@ -46,7 +46,7 @@ import {
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
 import { inferAgentKindFromName } from '../features/session/agent-kind';
 
-export interface ParallelBranchInputs {
+export type ParallelBranchInputs = {
   readonly session: Session;
   readonly orchestratingAgentId: AgentId;
   readonly workspace: Workspace;
@@ -57,75 +57,65 @@ export interface ParallelBranchInputs {
   readonly carryForwardContext: string;
   readonly mergeStrategy: ParallelMergeStrategy;
   readonly maxParallelism: number;
-}
+};
 
-export interface ParallelBranchEffects {
+export type ParallelBranchEffects = {
   appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
   refreshPhaseRuns: (sessionId: SessionId) => Promise<void>;
   setMergeConflicts: (sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>) => void;
-}
+};
 
-export interface ParallelBranchResult {
+export type ParallelBranchResult = {
   readonly groupId: ParallelGroupId;
   readonly merge: MergeResult;
   readonly runIds: ReadonlyArray<ProviderRunId>;
   readonly anyFailed: boolean;
   readonly allFailed: boolean;
-}
+};
 
-export interface ParallelDetection {
+export type ParallelDetection = {
   readonly currentDef: Step;
   readonly groupDefs: ReadonlyArray<Step>;
-}
+};
 
-/**
- * Returns the sibling group iff:
- *  - currentDef has parallelGroup set
- *  - >= 2 sibling steps share the same parallelGroup
- *  - steps are sorted by ordinal (deterministic spawn order)
- */
-export function detectParallelGroup(
+export const detectParallelGroup = (
   template: Workflow,
   currentDef: Step,
-): ParallelDetection | null {
-  if (currentDef.parallelGroup === undefined) return null;
+): ParallelDetection | null => {
+  if (currentDef.parallelGroup === undefined) {
+    return null;
+  }
   const siblings = template.steps
     .filter((d) => d.parallelGroup === currentDef.parallelGroup)
     .slice()
     .sort((a, b) => a.ordinal - b.ordinal);
-  if (siblings.length < 2) return null;
+  if (siblings.length < 2) {
+    return null;
+  }
   return { currentDef, groupDefs: siblings };
-}
+};
 
-// Multiplexes turn_event envelopes to per-runId callbacks. Single global
-// listener routed by runId, N independent listeners on the same Tauri
-// channel would be wasteful.
-interface RawTurnEnvelope {
+type RawTurnEnvelope = {
   readonly runId: string;
   readonly type: 'line' | 'end' | 'error';
   readonly line?: string;
   readonly exit_code?: number | null;
   readonly stderr?: string;
   readonly message?: string;
-}
+};
 
-interface RunListenerState {
+type RunListenerState = {
   readonly onEvent: (e: TurnEvent) => void;
   readonly onSettle: (status: AgentStatus, error?: string) => void;
   collectedFiles: Set<string>;
-}
+};
 
-interface MultiplexedListener {
+type MultiplexedListener = {
   unlisten: () => Promise<void>;
   registerRun: (runId: ProviderRunId, state: RunListenerState) => void;
   filesTouchedByRun: (runId: ProviderRunId) => ReadonlyArray<string>;
-}
+};
 
-// Pick the stream parser matching the spawned provider. The single-run path
-// (sendTurn → runTurn) already selects per-provider; the parallel path must
-// too. Hardcoding claude's parseStreamJsonLine made a codex/cursor/gemini
-// parallel run yield no assistant_text, no file_edit (so detectConflicts saw
-// nothing and merged blind), and no usage.
 function parseProviderLine(
   provider: ProviderId,
   line: string,
@@ -152,13 +142,17 @@ async function startMultiplexedTurnListener(
   const unlistenFn: UnlistenFn = await listen<RawTurnEnvelope>('turn_event', (event) => {
     const payload = event.payload;
     const state = states.get(payload.runId);
-    if (!state) return;
+    if (!state) {
+      return;
+    }
 
     if (payload.type === 'line' && typeof payload.line === 'string') {
       const ctx = { runId: payload.runId as ProviderRunId, now };
       for (const ev of parseProviderLine(provider, payload.line, ctx)) {
         state.onEvent(ev);
-        if (ev.kind === 'file_edit') state.collectedFiles.add(ev.path);
+        if (ev.kind === 'file_edit') {
+          state.collectedFiles.add(ev.path);
+        }
       }
     } else if (payload.type === 'end') {
       const exit = payload.exit_code ?? 0;
@@ -178,10 +172,7 @@ async function startMultiplexedTurnListener(
   };
 }
 
-// Scheduler deps factory, design (b): pre-batch via invokeParallelPhaseRunSpawn,
-// scheduler.spawnRun resolves on per-runId 'end' envelope. Aligns with T2 (#208)
-// batched spawn design and keeps the scheduler purely an await-only orchestrator.
-interface BuildSchedulerDepsArgs {
+type BuildSchedulerDepsArgs = {
   readonly listener: MultiplexedListener;
   readonly settleHandlers: Map<
     ProviderRunId,
@@ -190,7 +181,7 @@ interface BuildSchedulerDepsArgs {
       onEvent: (cb: (e: TurnEvent) => void) => void;
     }
   >;
-}
+};
 
 function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
   const { settleHandlers } = args;
@@ -199,7 +190,6 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
     spawnRun: async (run, onEvent) => {
       const handler = settleHandlers.get(run.runId);
       if (!handler) {
-        // Should be impossible, every run has a pre-registered handler.
         return { status: 'failed', outputSummary: null, error: 'no settle handler registered' };
       }
       handler.onEvent(onEvent);
@@ -216,7 +206,7 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
   };
 }
 
-export interface RunParallelBranchDeps {
+export type RunParallelBranchDeps = {
   readonly now: () => IsoDateTime;
   readonly provider: ProviderId;
   readonly providerBinary: string | undefined;
@@ -227,12 +217,12 @@ export interface RunParallelBranchDeps {
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
   readonly effects: ParallelBranchEffects;
-}
+};
 
-export async function runParallelBranch(
+export const runParallelBranch = async (
   inputs: ParallelBranchInputs,
   deps: RunParallelBranchDeps,
-): Promise<ParallelBranchResult> {
+): Promise<ParallelBranchResult> => {
   const {
     session,
     orchestratingAgentId,
@@ -244,10 +234,8 @@ export async function runParallelBranch(
   } = inputs;
   const { now, effects, provider } = deps;
 
-  // Cap by maxParallelism, defensive guard; UI clamps but accept any spec list.
   const cappedDefs = groupDefs.slice(0, Math.max(1, maxParallelism));
 
-  // Persist parallel group up front so the audit trail captures it even if spawn fails.
   const groupRow = await invokeParallelGroupCreate({
     sessionId: session.id,
     ordinal: currentDef.ordinal,
@@ -256,7 +244,6 @@ export async function runParallelBranch(
   });
   const groupId = groupRow.id;
 
-  // Generate runIds + per-def prompts up front. Same ID flows through every layer.
   const runIds: ProviderRunId[] = cappedDefs.map(() => crypto.randomUUID() as ProviderRunId);
   const promptsByIndex: string[] = cappedDefs.map((def) =>
     buildStepPrompt({
@@ -266,7 +253,6 @@ export async function runParallelBranch(
     }),
   );
 
-  // Boot listener BEFORE spawn, race-free: events arrive only after spawn.
   const listener = await startMultiplexedTurnListener(now, provider);
 
   const settleResolvers = new Map<
@@ -274,17 +260,8 @@ export async function runParallelBranch(
     (v: { status: AgentStatus; error?: string }) => void
   >();
 
-  // Per-run scheduler progress callbacks, set by scheduler.spawnRun, invoked by
-  // listener. Listener registration must happen up front (before spawn) so no
-  // events leak before scheduler subscribes. Until spawnRun fires, scheduler
-  // progress callbacks are absent, benign because scheduler progress fan-out is
-  // best-effort UI plumbing; the canonical transcript stream still flows via
-  // appendTurnEvent below.
   const progressCallbacks = new Map<ProviderRunId, ((e: TurnEvent) => void) | null>();
 
-  // Per-run settle handlers, promise resolves when listener observes 'end'/'error'
-  // for the matching runId. scheduler.spawnRun awaits the promise; onEvent stores
-  // the scheduler's progress callback for the listener to dispatch into.
   const settleHandlers = new Map<
     ProviderRunId,
     {
@@ -307,20 +284,21 @@ export async function runParallelBranch(
     listener.registerRun(runId, {
       onEvent: (e) => {
         const cb = progressCallbacks.get(runId);
-        if (cb) cb(e);
+        if (cb) {
+          cb(e);
+        }
         effects.appendTurnEvent(orchestratingAgentId, session.id, e);
       },
       onSettle: (status, error) => {
         const r = settleResolvers.get(runId);
-        if (r) r({ status, ...(error !== undefined && { error }) });
+        if (r) {
+          r({ status, ...(error !== undefined && { error }) });
+        }
       },
       collectedFiles: new Set<string>(),
     });
   }
 
-  // Persist N phase_runs rows (status=running). Using the existing single-run
-  // invoker, group_id remains NULL for now (Rust insert doesn't accept it yet),
-  // but session_id+ordinal+stepId still uniquely identifies each run.
   for (let i = 0; i < cappedDefs.length; i++) {
     const def = cappedDefs[i]!;
     const runId = runIds[i]!;
@@ -337,13 +315,6 @@ export async function runParallelBranch(
   }
   await effects.refreshPhaseRuns(session.id);
 
-  // Build ParallelAgent records the scheduler operates on. parallelIndex
-  // matches the spec's order. We DO NOT wire createParallelWorktrees here, the
-  // issue scope keeps worktree-per-run out of v1: every run executes in the
-  // session's primary worktree (existing single-run invariant). Workdir
-  // collisions are still surfaced by detectConflicts via emitted file_edit events.
-  // TODO (@ak, #414): wire createParallelWorktrees + per-run workingDir
-  // once Rust phase_run_insert accepts (group_id, parallel_index).
   const parallelRuns: ParallelAgent[] = cappedDefs.map((def, i) => ({
     id: crypto.randomUUID() as ParallelAgentId,
     groupId,
@@ -357,10 +328,6 @@ export async function runParallelBranch(
     completedAt: null,
   }));
 
-  // Pre-batch spawn, keeps registration atomic on the rust side. Per-run prompts
-  // differ, so we issue one invokeParallelPhaseRunSpawn PER definition with a single
-  // run each. (T2's batch invoker is designed for same-prompt fan-out; here each
-  // run has a distinct prompt because each is a different phase definition.)
   const spawnPromises = cappedDefs.map(async (_def, i) => {
     const runId = runIds[i]!;
     return invokeParallelPhaseRunSpawn({
@@ -412,13 +379,6 @@ export async function runParallelBranch(
     }
     await effects.refreshPhaseRuns(session.id);
 
-    // Auto-resolution path only, manual MergeDialog wiring is deferred. Reason:
-    // surfacing conflicts to the user requires emitting MergeResult into ChatView
-    // state (currently a TODO placeholder in MergeDialog). Default to the group's
-    // mergeStrategy; if 'manual' and unresolved, swallow the rejection and emit
-    // a warning event so the parallel branch never blocks the turn pipeline.
-    // TODO (@ak, #415): plumb MergeResult to ChatView and gate completion
-    // on user picks for mergeStrategy === 'manual'.
     const touches: ReadonlyArray<RunFileTouches> = runIds.map((rid) => ({
       runId: rid,
       files: listener.filesTouchedByRun(rid),
@@ -427,7 +387,6 @@ export async function runParallelBranch(
 
     if (conflicts.length > 0) {
       if (mergeStrategy === 'manual') {
-        // Surface conflicts to UI via store, ChatView will open MergeDialog.
         effects.setMergeConflicts(session.id, conflicts);
       } else {
         try {
@@ -457,8 +416,6 @@ export async function runParallelBranch(
     const allFailed = completedCount === 0 && merge.runStatuses.length > 0;
     const anyFailed = merge.runStatuses.some((rs) => rs.status !== 'completed');
 
-    // Emit synthetic phase_transition marking sync-point completion.
-    // We use the first runId for routing; UI treats parallel groups as one phase boundary.
     if (!allFailed) {
       effects.appendTurnEvent(orchestratingAgentId, session.id, {
         kind: 'step_transition',
@@ -470,8 +427,6 @@ export async function runParallelBranch(
       });
     }
 
-    // Mark group complete only when at least one run completed. allFailed runs
-    // leave completedAt NULL so the user can inspect/retry without rolling up.
     if (!allFailed) {
       await invokeParallelGroupUpdateCompletedAt(groupId, now());
     }
@@ -491,4 +446,4 @@ export async function runParallelBranch(
   } finally {
     await listener.unlisten();
   }
-}
+};
