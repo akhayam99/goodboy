@@ -147,7 +147,6 @@ function buildIdleSession(id: SessionId, wsId: WorkspaceId): Session {
     autoRun: false,
     titleUserEdited: false,
     workflowRuns: [],
-    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
   };
@@ -165,7 +164,6 @@ function buildRunningSession(id: SessionId, wsId: WorkspaceId, runId: ProviderRu
     autoRun: false,
     titleUserEdited: false,
     workflowRuns: [],
-    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
   };

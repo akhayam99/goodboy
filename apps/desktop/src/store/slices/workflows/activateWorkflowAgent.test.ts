@@ -112,7 +112,6 @@ function buildHarness(opts: {
     workflowRuns: [{ id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: false }],
     autoRun: false,
     titleUserEdited: false,
-    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
   };

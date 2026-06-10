@@ -24,9 +24,9 @@ const SORT_OPTIONS: ReadonlyArray<SortOption> = [
 ];
 
 const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
-  { key: 'none', label: 'None', hint: 'Flat list' },
-  { key: 'userStatus', label: 'Status', hint: 'WIP, waiting, blocked, done' },
+  { key: 'stage', label: 'Stage', hint: 'Needs you, running, review…' },
   { key: 'pr', label: 'Pull request', hint: 'Draft, review, merged…' },
+  { key: 'none', label: 'None', hint: 'Flat list' },
 ];
 
 const MENU_WIDTH = 200;

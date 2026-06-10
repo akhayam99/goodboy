@@ -31,7 +31,6 @@ import type {
   StepId,
   Session,
   SessionId,
-  SessionUserStatus,
   SessionBudget,
   SessionProviderPreference,
   StepDef,
@@ -365,7 +364,6 @@ export type AppActions = {
     sessionId: SessionId,
     workflowRunIds: ReadonlyArray<WorkflowRunId>,
   ): Promise<void>;
-  setSessionUserStatus(sessionId: SessionId, status: SessionUserStatus): Promise<void>;
   activateWorkflowAgent(
     sessionId: SessionId,
     agentId: AgentId,

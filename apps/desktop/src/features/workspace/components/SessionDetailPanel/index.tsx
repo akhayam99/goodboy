@@ -12,7 +12,7 @@ import {
 import { cn } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord, WorkspaceScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { SessionStatusMenu } from '../../../session/components/SessionStatusMenu';
+import { SessionStageBadge } from '../../../session/components/SessionStageBadge';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
@@ -25,7 +25,6 @@ type SessionDetailPanelProps = {
 
 export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDetailPanelProps) => {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
-  const setSessionUserStatus = useAppStore((s) => s.setSessionUserStatus);
   const renameTask = useAppStore((s) => s.renameTask);
   const externalTask = useAppStore(
     (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
@@ -185,11 +184,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   return (
     <div className="flex shrink-0 flex-col gap-2 px-3 pt-3 pb-2">
       <div className="flex items-center gap-2">
-        <SessionStatusMenu
-          status={session.userStatus}
-          sessionLabel={session.goal}
-          onPick={(next) => void setSessionUserStatus(session.id as SessionId, next)}
-        />
+        <SessionStageBadge session={session} />
         <div className="min-w-0 flex-1">
           {renaming ? (
             <div className="flex flex-col gap-0.5">

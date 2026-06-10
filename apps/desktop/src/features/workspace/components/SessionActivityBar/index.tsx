@@ -1,21 +1,22 @@
 import { Fragment, memo, useMemo, useState } from 'react';
-import { Archive, Loader2, Plus } from 'lucide-react';
+import { Archive, ChevronRight, Plus } from 'lucide-react';
 import { Button, cn, ScrollArea } from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
   SessionId,
+  SessionStage,
   TelemetryRecord,
   WorkspaceId,
 } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
-  useSessionHasUnread,
+  useSessionStageInfo,
   useSessionViewPrefs,
   useSortedGroupedSessions,
 } from '../../../../store';
-import { SESSION_STATUS_PALETTE } from '../../../../features/session/session-status';
+import { SESSION_STAGE_META } from '../../../../features/session/session-stage';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
   PullRequestChip,
@@ -24,13 +25,6 @@ import {
 import { SessionViewMenu } from './SessionViewMenu';
 
 type ActivityTab = 'active' | 'archived';
-
-const USER_STATUS_GROUP_LABELS: Record<string, string> = {
-  wip: 'in progress',
-  waiting: 'waiting',
-  blocked: 'blocked',
-  done: 'done',
-};
 
 const PR_GROUP_LABELS: Record<string, string> = {
   'not-open': 'no PR',
@@ -41,9 +35,11 @@ const PR_GROUP_LABELS: Record<string, string> = {
   merged: 'merged',
 };
 
+const COLLAPSED_BY_DEFAULT: ReadonlyArray<string> = ['done', 'merged', 'closed'];
+
 function groupLabel(key: string, groupMode: SessionGroupKey): string {
-  if (groupMode === 'userStatus') {
-    return USER_STATUS_GROUP_LABELS[key] ?? key;
+  if (groupMode === 'stage') {
+    return SESSION_STAGE_META[key as SessionStage]?.label ?? key;
   }
   if (groupMode === 'pr') {
     return PR_GROUP_LABELS[key] ?? key;
@@ -71,6 +67,9 @@ export const SessionActivityBar = ({
   onArchivedTabOpen,
 }: SessionActivityBarProps) => {
   const [tab, setTab] = useState<ActivityTab>('active');
+  const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
+    new Map(),
+  );
 
   const prefs = useSessionViewPrefs(workspaceId);
 
@@ -81,6 +80,17 @@ export const SessionActivityBar = ({
   const isGrouped = prefs.group !== 'none';
   const isArchivedView = tab === 'archived';
   const totalVisible = displayGroups.reduce((n, g) => n + g.sessions.length, 0);
+
+  const isCollapsed = (key: string): boolean =>
+    expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key);
+
+  const toggleGroup = (key: string): void => {
+    setExpandedOverrides((prev) => {
+      const next = new Map(prev);
+      next.set(key, !isCollapsed(key));
+      return next;
+    });
+  };
 
   return (
     <div className="flex h-full w-28 shrink-0 flex-col">
@@ -107,30 +117,55 @@ export const SessionActivityBar = ({
             </Button>
           )}
 
-          {displayGroups.map((group) => (
-            <Fragment key={group.key}>
-              {isGrouped && group.sessions.length > 0 && (
-                <div className="mt-2 flex items-center gap-1 px-0.5 first:mt-0">
-                  <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">
-                    {groupLabel(group.key, prefs.group)}
-                  </span>
-                  <span aria-hidden className="text-2xs text-muted-foreground/40 tabular-nums">
-                    {group.sessions.length}
-                  </span>
-                  <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
-                </div>
-              )}
-              {group.sessions.map((session) => (
-                <SessionActivityItem
-                  key={session.id}
-                  session={session}
-                  isActive={session.id === currentSessionId}
-                  dimmed={isArchivedView}
-                  onClick={() => onSelectSession(session.id as SessionId)}
-                />
-              ))}
-            </Fragment>
-          ))}
+          {displayGroups.map((group) => {
+            const collapsed = isGrouped && isCollapsed(group.key);
+            const stageMeta =
+              prefs.group === 'stage' ? SESSION_STAGE_META[group.key as SessionStage] : undefined;
+            return (
+              <Fragment key={group.key}>
+                {isGrouped && group.sessions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.key)}
+                    aria-expanded={!collapsed}
+                    title={collapsed ? 'expand group' : 'collapse group'}
+                    className="group mt-2 flex w-full items-center gap-1 rounded px-0.5 text-left first:mt-0"
+                  >
+                    <ChevronRight
+                      size={9}
+                      aria-hidden
+                      className={cn(
+                        'shrink-0 text-muted-foreground/40 transition-transform group-hover:text-muted-foreground',
+                        !collapsed && 'rotate-90',
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        'text-2xs font-semibold uppercase tracking-[0.08em]',
+                        stageMeta?.textClassName ?? 'text-muted-foreground/60',
+                      )}
+                    >
+                      {groupLabel(group.key, prefs.group)}
+                    </span>
+                    <span aria-hidden className="text-2xs text-muted-foreground/40 tabular-nums">
+                      {group.sessions.length}
+                    </span>
+                    <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
+                  </button>
+                )}
+                {!collapsed &&
+                  group.sessions.map((session) => (
+                    <SessionActivityItem
+                      key={session.id}
+                      session={session}
+                      isActive={session.id === currentSessionId}
+                      dimmed={isArchivedView}
+                      onClick={() => onSelectSession(session.id as SessionId)}
+                    />
+                  ))}
+              </Fragment>
+            );
+          })}
 
           {!isArchivedView && totalVisible === 0 && (
             <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
@@ -185,13 +220,10 @@ const SessionActivityItem = memo(function SessionActivityItem({
   dimmed,
   onClick,
 }: SessionActivityItemProps) {
-  const hasUnread = useSessionHasUnread(session.id as SessionId);
-  const isPending = hasUnread && !isActive;
-  const isRunning = session.state.kind === 'running';
-  const isErrored = session.state.kind === 'error';
-  const isAutoMode = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
-  const statusEntry = SESSION_STATUS_PALETTE[session.userStatus];
-  const StatusIcon = statusEntry.icon;
+  const { stage, reason } = useSessionStageInfo(session);
+  const stageMeta = SESSION_STAGE_META[stage];
+  const isAutoMode =
+    stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
   const prMeta = prState ? pullRequestMeta(prState) : null;
 
@@ -215,7 +247,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
     <button
       type="button"
       onClick={onClick}
-      title={`${session.goal} · ${statusEntry.label}${prMeta ? ` · PR ${prMeta.label}` : ''}`}
+      title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}`}
       className={cn(
         'flex w-full flex-col items-center gap-1 rounded border px-1 py-2 text-center transition-colors',
         isActive
@@ -223,37 +255,31 @@ const SessionActivityItem = memo(function SessionActivityItem({
           : 'bg-muted/40 text-foreground/70 hover:bg-muted/60 hover:text-foreground',
         isActive
           ? 'border-border'
-          : isRunning
-            ? isAutoMode
-              ? 'border-danger/60'
-              : 'border-info/60'
-            : isPending
-              ? 'border-warning/70'
-              : isErrored
-                ? 'border-danger/40'
-                : 'border-transparent',
+          : stage === 'attention'
+            ? 'border-warning/50'
+            : stage === 'running'
+              ? isAutoMode
+                ? 'border-danger/60'
+                : 'border-info/60'
+              : 'border-transparent',
         dimmed && 'opacity-50',
       )}
     >
       <span className="flex items-center gap-1">
-        {isRunning ? (
-          <Loader2
-            size={10}
-            aria-hidden
-            className={cn('animate-spin shrink-0', isAutoMode ? 'text-danger' : 'text-info')}
-          />
-        ) : (
-          <span className={cn('shrink-0', statusEntry.className)}>
-            <StatusIcon size={10} aria-hidden />
-          </span>
-        )}
-        {prState ? (
-          <PullRequestChip state={prState} variant="icon" iconSize={10} />
-        ) : (
-          <span className="inline-flex size-2.5 shrink-0" aria-hidden />
-        )}
+        <span
+          aria-hidden
+          className={cn(
+            'size-1.5 shrink-0 rounded-full',
+            isAutoMode ? 'bg-danger' : stageMeta.dotClassName,
+            stage === 'running' && 'animate-pulse',
+          )}
+        />
+        {prState && <PullRequestChip state={prState} variant="icon" iconSize={10} />}
       </span>
       <span className="line-clamp-2 w-full text-[10px] leading-tight">{session.goal}</span>
+      <span className="line-clamp-1 w-full text-[9px] leading-tight text-muted-foreground/60">
+        {reason}
+      </span>
       {sessionCost > 0 && (
         <CostBadge
           value={sessionCost}

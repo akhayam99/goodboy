@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import type { SessionGithubState } from './store';
 import {
   createSessionViewSlice,
+  deriveSessionStage,
   sortAndGroupSessions,
   type GroupedSessions,
 } from './slices/session-view';
@@ -21,7 +22,6 @@ function makeSession(
     goal: string;
     createdAt: string;
     updatedAt: string;
-    userStatus: Session['userStatus'];
   }> = {},
 ): Session {
   return {
@@ -35,7 +35,6 @@ function makeSession(
     workflowRuns: [],
     autoRun: false,
     titleUserEdited: false,
-    userStatus: overrides.userStatus ?? 'wip',
     createdAt: (overrides.createdAt ?? '2024-01-01T00:00:00.000Z') as Session['createdAt'],
     updatedAt: (overrides.updatedAt ?? '2024-01-01T00:00:00.000Z') as Session['updatedAt'],
   };
@@ -176,39 +175,151 @@ describe('sortAndGroupSessions, createdAt sort', () => {
   });
 });
 
-describe('sortAndGroupSessions, userStatus grouping', () => {
-  const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'userStatus' };
+describe('sortAndGroupSessions, stage grouping', () => {
+  const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 
-  it('produces groups in wip→waiting→blocked→done order', () => {
-    const wip = makeSession(sid(1), { userStatus: 'wip' });
-    const done = makeSession(sid(2), { userStatus: 'done' });
-    const blocked = makeSession(sid(3), { userStatus: 'blocked' });
-    const waiting = makeSession(sid(4), { userStatus: 'waiting' });
-    const result = sortAndGroupSessions([done, waiting, blocked, wip], prefs, {});
-    expect(keys(result)).toEqual(['wip', 'waiting', 'blocked', 'done']);
+  it('produces groups in attention→running→review→building→done order', () => {
+    const sessions = [sid(1), sid(2), sid(3), sid(4), sid(5)].map((id) => makeSession(id));
+    const result = sortAndGroupSessions(
+      sessions,
+      prefs,
+      {},
+      {
+        [sid(1)]: 'done',
+        [sid(2)]: 'building',
+        [sid(3)]: 'review',
+        [sid(4)]: 'running',
+        [sid(5)]: 'attention',
+      },
+    );
+    expect(keys(result)).toEqual(['attention', 'running', 'review', 'building', 'done']);
   });
 
   it('omits empty buckets', () => {
-    const wip = makeSession(sid(1), { userStatus: 'wip' });
-    const done = makeSession(sid(2), { userStatus: 'done' });
-    const result = sortAndGroupSessions([wip, done], prefs, {});
-    expect(keys(result)).toEqual(['wip', 'done']);
+    const result = sortAndGroupSessions(
+      [makeSession(sid(1)), makeSession(sid(2))],
+      prefs,
+      {},
+      {
+        [sid(1)]: 'attention',
+        [sid(2)]: 'done',
+      },
+    );
+    expect(keys(result)).toEqual(['attention', 'done']);
   });
 
   it('sessions within group are sorted', () => {
-    const a = makeSession(sid(1), { userStatus: 'wip', updatedAt: '2024-01-01T00:00:00.000Z' });
-    const b = makeSession(sid(2), { userStatus: 'wip', updatedAt: '2024-01-05T00:00:00.000Z' });
-    const result = sortAndGroupSessions([a, b], prefs, {});
+    const a = makeSession(sid(1), { updatedAt: '2024-01-01T00:00:00.000Z' });
+    const b = makeSession(sid(2), { updatedAt: '2024-01-05T00:00:00.000Z' });
+    const result = sortAndGroupSessions(
+      [a, b],
+      prefs,
+      {},
+      {
+        [sid(1)]: 'running',
+        [sid(2)]: 'running',
+      },
+    );
     expect(result[0]!.sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
   });
 
-  it('single-status input → one group', () => {
-    const sessions = [sid(1), sid(2), sid(3)].map((id) =>
-      makeSession(id, { userStatus: 'waiting' }),
-    );
-    const result = sortAndGroupSessions(sessions, prefs, {});
-    expect(keys(result)).toEqual(['waiting']);
-    expect(result[0]!.sessions).toHaveLength(3);
+  it('missing stage falls back to building', () => {
+    const result = sortAndGroupSessions([makeSession(sid(1))], prefs, {}, {});
+    expect(keys(result)).toEqual(['building']);
+  });
+});
+
+describe('deriveSessionStage', () => {
+  const base = (id: number) => makeSession(sid(id));
+  const signals = { hasUnread: false, openQuestionCount: 0 };
+
+  it('error state wins over everything', () => {
+    const session: Session = {
+      ...base(1),
+      state: { kind: 'error', message: 'boom', failedAt: '2024-01-01T00:00:00.000Z' as never },
+    };
+    const info = deriveSessionStage({ session, pr: makePr(), ...signals, hasUnread: true });
+    expect(info.stage).toBe('attention');
+    expect(info.reason).toBe('agent errored');
+  });
+
+  it('running state beats attention signals', () => {
+    const session: Session = {
+      ...base(1),
+      state: {
+        kind: 'running',
+        runId: 'run-1' as never,
+        startedAt: '2024-01-01T00:00:00.000Z' as never,
+      },
+    };
+    const info = deriveSessionStage({ session, pr: null, ...signals, openQuestionCount: 2 });
+    expect(info.stage).toBe('running');
+  });
+
+  it('CI failure on live PR → attention', () => {
+    const pr = { ...makePr(), checks: 'failure' as const };
+    const info = deriveSessionStage({ session: base(1), pr, ...signals });
+    expect(info).toEqual({ stage: 'attention', reason: 'PR #1: CI failed' });
+  });
+
+  it('changes requested → attention', () => {
+    const pr = makePr({ reviewDecision: 'changes_requested' });
+    const info = deriveSessionStage({ session: base(1), pr, ...signals });
+    expect(info).toEqual({ stage: 'attention', reason: 'PR #1: changes requested' });
+  });
+
+  it('open questions → attention with count', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      hasUnread: false,
+      openQuestionCount: 3,
+    });
+    expect(info).toEqual({ stage: 'attention', reason: '3 open questions' });
+  });
+
+  it('approved live PR → attention, ready to merge', () => {
+    const pr = makePr({ state: 'approved', reviewDecision: 'approved' });
+    const info = deriveSessionStage({ session: base(1), pr, ...signals });
+    expect(info).toEqual({ stage: 'attention', reason: 'PR #1 approved, ready to merge' });
+  });
+
+  it('unread reply → attention', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      hasUnread: true,
+      openQuestionCount: 0,
+    });
+    expect(info).toEqual({ stage: 'attention', reason: 'unread agent reply' });
+  });
+
+  it('no PR and quiet → building', () => {
+    const info = deriveSessionStage({ session: base(1), pr: null, ...signals });
+    expect(info).toEqual({ stage: 'building', reason: 'no PR yet' });
+  });
+
+  it('open PR and quiet → review', () => {
+    const info = deriveSessionStage({ session: base(1), pr: makePr(), ...signals });
+    expect(info).toEqual({ stage: 'review', reason: 'PR #1 awaiting review' });
+  });
+
+  it('draft PR → review with draft reason', () => {
+    const pr = makePr({ isDraft: true });
+    const info = deriveSessionStage({ session: base(1), pr, ...signals });
+    expect(info).toEqual({ stage: 'review', reason: 'draft PR #1' });
+  });
+
+  it('unread beats merged', () => {
+    const pr = makePr({ state: 'merged' });
+    const info = deriveSessionStage({ session: base(1), pr, ...signals, hasUnread: true });
+    expect(info.stage).toBe('attention');
+  });
+
+  it('merged PR and quiet → done', () => {
+    const pr = makePr({ state: 'merged' });
+    const info = deriveSessionStage({ session: base(1), pr, ...signals });
+    expect(info).toEqual({ stage: 'done', reason: 'PR #1 merged' });
   });
 });
 
@@ -380,13 +491,13 @@ describe('createSessionViewSlice, getSessionViewPrefs', () => {
 
   it('returns defaults when localStorage is empty', () => {
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'none' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
   });
 
   it('reads persisted prefs from localStorage', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'userStatus' });
+    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'stage' });
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'userStatus' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'stage' });
   });
 
   it('caches result, second call does not re-read localStorage', () => {
@@ -453,16 +564,16 @@ describe('createSessionViewSlice, setSessionGroup', () => {
 
   it('persists group to localStorage', () => {
     const { actions } = buildSlice();
-    actions.setSessionGroup(WS, 'userStatus');
-    expect(JSON.parse(ls.store[storageKey(WS)]!).group).toBe('userStatus');
+    actions.setSessionGroup(WS, 'stage');
+    expect(JSON.parse(ls.store[storageKey(WS)]!).group).toBe('stage');
   });
 
   it('preserves existing sort when changing group', () => {
     ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'createdAt', group: 'none' });
     const { actions, getState } = buildSlice();
     actions.getSessionViewPrefs(WS);
-    actions.setSessionGroup(WS, 'userStatus');
-    expect(getState().sessionViewPrefs[WS]).toEqual({ sort: 'createdAt', group: 'userStatus' });
+    actions.setSessionGroup(WS, 'stage');
+    expect(getState().sessionViewPrefs[WS]).toEqual({ sort: 'createdAt', group: 'stage' });
   });
 });
 
@@ -477,17 +588,17 @@ describe('createSessionViewSlice, localStorage fault tolerance', () => {
   it('corrupted JSON → returns defaults', () => {
     ls.store[storageKey(WS)] = 'not json!!!';
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'none' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
   });
 
   it('wrong version number → returns defaults and self-heals', () => {
     ls.store[storageKey(WS)] = JSON.stringify({ v: 99, sort: 'goal', group: 'pr' });
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'none' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
     expect(JSON.parse(ls.store[storageKey(WS)]!)).toMatchObject({
       v: 1,
       sort: 'updatedAt',
-      group: 'none',
+      group: 'stage',
     });
   });
 
@@ -505,12 +616,12 @@ describe('createSessionViewSlice, localStorage fault tolerance', () => {
     const { actions } = buildSlice();
     const prefs = actions.getSessionViewPrefs(WS);
     expect(prefs.sort).toBe('goal');
-    expect(prefs.group).toBe('none');
+    expect(prefs.group).toBe('stage');
   });
 
   it('missing localStorage key → returns defaults', () => {
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'none' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
   });
 
   it('localStorage.getItem throws → returns defaults', () => {
@@ -518,7 +629,7 @@ describe('createSessionViewSlice, localStorage fault tolerance', () => {
       throw new Error('storage unavailable');
     });
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'none' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
   });
 
   it('localStorage.setItem quota error → swallowed, state still updated', () => {
@@ -531,7 +642,7 @@ describe('createSessionViewSlice, localStorage fault tolerance', () => {
   });
 
   it('valid prefs with all-default values → no self-heal write', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'updatedAt', group: 'none' });
+    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'updatedAt', group: 'stage' });
     const { actions } = buildSlice();
     const countBefore = ls.setItem.mock.calls.length;
     actions.getSessionViewPrefs(WS);
@@ -546,13 +657,13 @@ describe('createSessionViewSlice, per-workspace isolation', () => {
   beforeEach(() => {
     ls = buildLocalStorageMock();
     vi.stubGlobal('localStorage', ls);
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'userStatus' });
+    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'stage' });
     ls.store[storageKey(WS2)] = JSON.stringify({ v: 1, sort: 'createdAt', group: 'pr' });
   });
 
   it('each workspace has independent prefs', () => {
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'userStatus' });
+    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'stage' });
     expect(actions.getSessionViewPrefs(WS2)).toEqual({ sort: 'createdAt', group: 'pr' });
   });
 
@@ -568,13 +679,16 @@ describe('createSessionViewSlice, per-workspace isolation', () => {
 describe('sortAndGroupSessions, performance', () => {
   it('handles 2000 sessions in under 500ms', () => {
     const sessions = Array.from({ length: 2000 }, (_, i) => {
-      const day = String((i % 365) + 1).padStart(3, '0');
       return makeSession(sid(i), {
         goal: `Goal ${Math.random().toString(36).slice(2)}`,
         createdAt: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T00:00:00.000Z`,
         updatedAt: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T0${i % 10}:00:00.000Z`,
-        userStatus: (['wip', 'waiting', 'blocked', 'done'] as const)[i % 4],
       });
+    });
+
+    const stages: Record<SessionId, SessionStage> = {};
+    sessions.forEach((s, i) => {
+      stages[s.id] = (['attention', 'running', 'review', 'building', 'done'] as const)[i % 5]!;
     });
 
     const githubStates = githubWith(
@@ -589,8 +703,8 @@ describe('sortAndGroupSessions, performance', () => {
 
     const start = performance.now();
     for (const sort of ['updatedAt', 'goal', 'createdAt'] as const) {
-      for (const group of ['none', 'userStatus', 'pr'] as const) {
-        sortAndGroupSessions(sessions, { sort, group }, githubStates);
+      for (const group of ['none', 'stage', 'pr'] as const) {
+        sortAndGroupSessions(sessions, { sort, group }, githubStates, stages);
       }
     }
     const elapsed = performance.now() - start;

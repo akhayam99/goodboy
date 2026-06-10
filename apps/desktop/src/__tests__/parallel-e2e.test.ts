@@ -105,7 +105,6 @@ function makeSession() {
     ],
     autoRun: false,
     titleUserEdited: false,
-    userStatus: 'wip' as const,
     createdAt: NOW,
     updatedAt: NOW,
   };

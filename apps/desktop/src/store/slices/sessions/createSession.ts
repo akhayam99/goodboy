@@ -148,7 +148,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
           : [],
       autoRun: runAutoRun,
       titleUserEdited: false,
-      userStatus: 'wip',
       createdAt: now,
       updatedAt: now,
     };

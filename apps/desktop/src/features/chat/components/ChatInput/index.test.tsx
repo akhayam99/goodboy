@@ -149,7 +149,6 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     autoRun: false,
     titleUserEdited: false,
     workflowRuns: [],
-    userStatus: 'wip',
     createdAt: '2026-01-01T00:00:00.000Z' as Session['createdAt'],
     updatedAt: '2026-01-01T00:00:00.000Z' as Session['updatedAt'],
     ...overrides,

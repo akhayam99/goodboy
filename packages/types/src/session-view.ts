@@ -1,6 +1,6 @@
 export type SessionSortKey = 'updatedAt' | 'goal' | 'createdAt';
 
-export type SessionGroupKey = 'none' | 'userStatus' | 'pr';
+export type SessionGroupKey = 'none' | 'stage' | 'pr';
 
 export type SessionViewPrefs = Readonly<{
   sort: SessionSortKey;
@@ -13,6 +13,11 @@ export type PersistedSessionViewPrefs = Readonly<{
   group: SessionGroupKey;
 }>;
 
-export type SessionUserStatusGroup = 'wip' | 'waiting' | 'blocked' | 'done';
+export type SessionStage = 'attention' | 'running' | 'review' | 'building' | 'done';
+
+export type SessionStageInfo = Readonly<{
+  stage: SessionStage;
+  reason: string;
+}>;
 
 export type SessionPrGroup = 'not-open' | 'draft' | 'reviewable' | 'reviewed' | 'closed' | 'merged';
