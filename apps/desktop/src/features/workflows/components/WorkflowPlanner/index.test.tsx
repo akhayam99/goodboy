@@ -5,15 +5,16 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { Workflow } from '@goodboy/types';
 
 const { mockSavePhaseTemplate, mockPlan } = vi.hoisted(() => ({
-  mockSavePhaseTemplate: vi.fn(async () => undefined),
+  mockSavePhaseTemplate: vi.fn(async (_workflow: Workflow) => undefined),
   mockPlan: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => undefined) }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: { savePhaseTemplate: () => Promise<void> }) => T) =>
-    selector({ savePhaseTemplate: mockSavePhaseTemplate }),
+  useAppStore: <T,>(
+    selector: (s: { savePhaseTemplate: (workflow: Workflow) => Promise<void> }) => T,
+  ) => selector({ savePhaseTemplate: mockSavePhaseTemplate }),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
