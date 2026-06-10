@@ -1240,6 +1240,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
                       isActionable={isActionable}
                       blockReason={isActionable ? wfBlockReason : null}
                       isSelected={run.id === selectedAgentId}
+                      isTaskActive={isTaskActive}
                       isEditing={editingId === run.id}
                       telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
                       aggregate={aggregatesByAgentId.get(run.id) ?? null}
@@ -1373,6 +1374,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         <ResolveCluster
           agents={resolverAgents}
           sessionId={task.id}
+          isTaskActive={isTaskActive}
           prNumber={prNumber}
           resolvedThreadIds={resolvedThreadIds}
           pendingThreadIds={pendingThreadIds}
@@ -1711,6 +1713,7 @@ function resolverStatus(
 type ResolveClusterProps = {
   readonly agents: ReadonlyArray<Agent>;
   readonly sessionId: SessionId;
+  readonly isTaskActive: boolean;
   readonly prNumber: number | null;
   readonly resolvedThreadIds: ReadonlySet<string>;
   readonly pendingThreadIds: ReadonlySet<string>;
@@ -1725,6 +1728,7 @@ type ResolveClusterProps = {
 function ResolveCluster({
   agents,
   sessionId,
+  isTaskActive,
   prNumber,
   resolvedThreadIds,
   pendingThreadIds,
@@ -1790,6 +1794,7 @@ function ResolveCluster({
               total={agents.length}
               status={statusOf(agent)}
               isSelected={agent.id === selectedAgentId}
+              isTaskActive={isTaskActive}
               canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}
               onSelect={() => onSelect(agent.id)}
               onJump={() => jump(agent)}
@@ -1806,6 +1811,7 @@ type ResolveClusterRowProps = {
   readonly total: number;
   readonly status: ResolverStatus;
   readonly isSelected: boolean;
+  readonly isTaskActive: boolean;
   readonly canJump: boolean;
   readonly onSelect: () => void;
   readonly onJump: () => void;
@@ -1817,10 +1823,12 @@ function ResolveClusterRow({
   total,
   status,
   isSelected,
+  isTaskActive,
   canJump,
   onSelect,
   onJump,
 }: ResolveClusterRowProps) {
+  const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const icon =
     status === 'running' ? (
       <Loader2 size={10} className="animate-spin text-info" aria-hidden />
@@ -1858,8 +1866,15 @@ function ResolveClusterRow({
   return (
     <div
       className={cn(
-        'flex w-full items-center gap-2 rounded px-2 py-1 text-2xs font-medium transition-colors',
-        isSelected ? 'bg-elevated text-foreground' : 'text-foreground/70 hover:bg-muted/60',
+        'flex w-full items-center gap-2 rounded border px-2 py-1 text-2xs font-medium transition-colors',
+        isSelected
+          ? 'bg-elevated text-foreground border-border'
+          : 'text-foreground/70 hover:bg-muted/60',
+        status === 'running'
+          ? 'border-info/60'
+          : status === 'awaiting' || hasUnread
+            ? 'border-warning/70'
+            : 'border-transparent',
       )}
     >
       <span className="tabular-nums text-muted-foreground/50">
@@ -1898,6 +1913,7 @@ type WorkflowStepRowProps = {
   readonly isActionable: boolean;
   readonly blockReason: WorkflowBlockReason | null;
   readonly isSelected: boolean;
+  readonly isTaskActive: boolean;
   readonly isEditing: boolean;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
@@ -1918,6 +1934,7 @@ function WorkflowStepRow({
   isActionable,
   blockReason,
   isSelected,
+  isTaskActive,
   isEditing,
   telemetry,
   aggregate,
@@ -1963,6 +1980,7 @@ function WorkflowStepRow({
   const ROW_BASE =
     'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
   const isRunning = run.status === 'running';
+  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const containerClass = isRunning
     ? cn(
         `${ROW_BASE} border-info/60 transition-colors cursor-pointer`,
@@ -1972,14 +1990,16 @@ function WorkflowStepRow({
       ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
       : isActionable && isBlocked
         ? `${ROW_BASE} border-warning/70 bg-warning/10 text-foreground transition-colors hover:bg-warning/15 cursor-pointer`
-        : isPendingFuture
-          ? `${ROW_BASE} border-transparent text-muted-foreground/40`
-          : cn(
-              `${ROW_BASE} transition-colors cursor-pointer`,
-              isSelected
-                ? 'border-border bg-elevated text-foreground'
-                : 'border-border-soft/50 bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/60',
-            );
+        : hasUnread
+          ? `${ROW_BASE} border-warning/70 bg-muted/40 text-foreground/80 transition-colors hover:border-warning hover:bg-muted/60 cursor-pointer`
+          : isPendingFuture
+            ? `${ROW_BASE} border-transparent text-muted-foreground/40`
+            : cn(
+                `${ROW_BASE} transition-colors cursor-pointer`,
+                isSelected
+                  ? 'border-border bg-elevated text-foreground'
+                  : 'border-border-soft/50 bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/60',
+              );
 
   const renderStatusIcon = () => {
     if (isStartable) {
