@@ -533,6 +533,94 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBe('kick B');
   });
 
+  it('an explicit per-turn model override beats the agent kind model pin', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+        },
+      ],
+      agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-3-5-sonnet-latest',
+      reason: 'override',
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: { providerId: 'anthropic', model: 'claude-3-5-sonnet-latest' },
+    });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-sonnet-latest');
+  });
+
+  it('keeps the agent kind model pin when no per-turn override is supplied', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest');
+  });
+
+  it('an explicit per-turn model override beats both the agent provider and model pin', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+        },
+      ],
+      agentProviderOverride: { [AGENT_A]: 'anthropic' },
+      agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-3-5-sonnet-latest',
+      reason: 'override',
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: { providerId: 'anthropic', model: 'claude-3-5-sonnet-latest' },
+    });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-sonnet-latest');
+  });
+
+  it('keeps both the agent provider and model pin when no per-turn override is supplied', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      agentProviderOverride: { [AGENT_A]: 'anthropic' },
+      agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest');
+  });
+
   it('activateNextResolver runs only the head of the queue and dequeues it', async () => {
     const useAppStore = await importStore();
     useAppStore.setState({
