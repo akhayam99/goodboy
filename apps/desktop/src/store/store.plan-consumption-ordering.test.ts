@@ -198,6 +198,7 @@ const addPlanConsumptionSpy = vi.fn(
       id: `pc-${planBacking.seq}-${agentId}` as PlanConsumptionId,
       planId,
       agentId,
+      agentName: null,
       consumedAt: NOW,
     };
     planBacking.consumptions[planId] = [...(planBacking.consumptions[planId] ?? []), consumption];
