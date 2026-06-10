@@ -198,7 +198,7 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       {command ? <CommandPreview command={command} /> : null}
 
       {lifecycle.runId ? (
-        <InlineTerminal runId={lifecycle.runId} isActive={open} heightClass="h-72" />
+        <InlineTerminal runId={lifecycle.runId} isActive={open} heightClass="min-h-0 flex-1" />
       ) : (
         <EmptyTerminalPlaceholder connected={connected} />
       )}
@@ -264,7 +264,7 @@ function HelperNote({ inFlight }: { inFlight: boolean }) {
 
 function EmptyTerminalPlaceholder({ connected }: { connected: boolean }) {
   return (
-    <div className="flex h-72 items-center justify-center rounded-md border border-dashed border-border-soft bg-subtle/30 text-2xs text-muted-foreground">
+    <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border border-dashed border-border-soft bg-subtle/30 text-2xs text-muted-foreground">
       {connected
         ? 'You are already connected. The next sign-in or reinstall will run here.'
         : 'Terminal will appear when the command starts running.'}
