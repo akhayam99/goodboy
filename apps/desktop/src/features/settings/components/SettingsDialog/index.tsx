@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, FileDown, FolderCode, Keyboard, Link2, Sparkles, Trash2 } from 'lucide-react';
-import { Button, Dialog, Input, KbdPill } from '@goodboy/ui';
+import { Button, Dialog, DialogSectionHeader, Input, KbdPill } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -30,21 +30,21 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'app', label: 'App', icon: <FolderCode size={14} aria-hidden /> },
-  { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={14} aria-hidden /> },
+  { id: 'app', label: 'App', icon: <FolderCode size={13} aria-hidden /> },
+  { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={13} aria-hidden /> },
   ...(SESSION_FEATURES.budget
     ? [
         {
           id: 'budget' as const,
           label: 'Budget',
-          icon: <DollarSign size={14} aria-hidden />,
+          icon: <DollarSign size={13} aria-hidden />,
           beta: true,
         },
       ]
     : []),
-  { id: 'integrations', label: 'Integrations', icon: <Link2 size={14} aria-hidden /> },
-  { id: 'initialization', label: 'Initialization', icon: <Trash2 size={14} aria-hidden /> },
-  { id: 'advanced', label: 'Advanced', icon: <FileDown size={14} aria-hidden /> },
+  { id: 'integrations', label: 'Integrations', icon: <Link2 size={13} aria-hidden /> },
+  { id: 'initialization', label: 'Initialization', icon: <Trash2 size={13} aria-hidden /> },
+  { id: 'advanced', label: 'Advanced', icon: <FileDown size={13} aria-hidden /> },
 ];
 
 function isNavSection(value: string | undefined): value is NavSection {
@@ -176,8 +176,12 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
     switch (activeSection) {
       case 'app':
         return (
-          <div className="flex flex-col gap-4">
-            <SectionHeading>App settings</SectionHeading>
+          <div className="flex flex-col gap-6">
+            <DialogSectionHeader
+              icon={<FolderCode size={14} aria-hidden className="text-primary" />}
+              title="App settings"
+              description="Editor binary and first-run walkthrough. Workspace-specific defaults live in each workspace's gear."
+            />
             <Field label="Default editor binary" help={`Launched as: \`${editorBinary} <path>\``}>
               <Input
                 value={editorBinary}
@@ -185,10 +189,6 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
                 placeholder={DEFAULT_EDITOR_BINARY}
               />
             </Field>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Workspace-specific defaults (branch prefix, skills, workflows) live in the gear icon
-              next to each workspace row.
-            </p>
             <Field
               label="Setup guide"
               help="Replay the first-run walkthrough for providers and workspaces."
@@ -208,11 +208,12 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
         );
       case 'shortcuts':
         return (
-          <div className="flex flex-col gap-4">
-            <SectionHeading>Keyboard shortcuts</SectionHeading>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Global shortcuts active anywhere in Goodboy.
-            </p>
+          <div className="flex flex-col gap-6">
+            <DialogSectionHeader
+              icon={<Keyboard size={14} aria-hidden className="text-primary" />}
+              title="Keyboard shortcuts"
+              description="Global shortcuts active anywhere in Goodboy."
+            />
             <ul className="flex flex-col divide-y divide-border-soft">
               {SHORTCUTS.map((s) => (
                 <li key={s.label} className="flex items-center justify-between py-2 text-xs">
@@ -229,13 +230,13 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
         );
       case 'budget':
         return (
-          <div className="flex flex-col gap-4">
-            <SectionHeading>Budget</SectionHeading>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Spend breakdowns, per-provider and per-session usage, and budget alerts now live in
-              Budget Studio, a full-screen view with charts and live breakdowns across every
-              session.
-            </p>
+          <div className="flex flex-col gap-6">
+            <DialogSectionHeader
+              icon={<DollarSign size={14} aria-hidden className="text-primary" />}
+              title="Budget"
+              description="Spend breakdowns, per-provider and per-session usage, and budget alerts now live in Budget Studio, a full-screen view with charts and live breakdowns across every session."
+              beta
+            />
             <Button
               onClick={() => {
                 onClose();
@@ -250,13 +251,13 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
         return <GithubPanel />;
       case 'initialization':
         return (
-          <div className="flex flex-col gap-4">
-            <SectionHeading>Initialization</SectionHeading>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Wipe the local sqlite database. Drops every workspace, session, agent, message,
-              transcript, telemetry record, budget rule, permission rule, and skill registration.
-              API keys in the OS keychain are not touched. Fresh schema is recreated on next boot.
-            </p>
+          <div className="flex flex-col gap-6">
+            <DialogSectionHeader
+              icon={<Trash2 size={14} aria-hidden className="text-danger" />}
+              title="Initialization"
+              description="Wipe the local sqlite database. Drops every workspace, session, agent, message, transcript, telemetry record, budget rule, permission rule, and skill registration. API keys in the OS keychain are not touched. Fresh schema is recreated on next boot."
+              tone="danger"
+            />
             {wipeError ? (
               <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
                 {wipeError}
@@ -297,8 +298,12 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
         );
       case 'advanced':
         return (
-          <div className="flex flex-col gap-4">
-            <SectionHeading>Config backup</SectionHeading>
+          <div className="flex flex-col gap-6">
+            <DialogSectionHeader
+              icon={<FileDown size={14} aria-hidden className="text-primary" />}
+              title="Config backup"
+              description="Export and import your Goodboy configuration. API keys are never included."
+            />
             <div className="flex gap-2">
               <Button
                 variant="secondary"
@@ -331,7 +336,7 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
       onClose={onClose}
       title="Settings"
       description="Editor, shortcuts, integrations, and workspace defaults."
-      size="xl"
+      size="2xl"
       fixedHeightClass="h-[640px]"
       bodyClassName="px-0 py-0 gap-0"
       fullScreenOnSmall
@@ -356,10 +361,10 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
               key={item.id}
               type="button"
               onClick={() => setActiveSection(item.id)}
-              className={`relative flex items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+              className={`relative flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors ${
                 activeSection === item.id
-                  ? 'bg-muted font-medium text-foreground before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  ? 'bg-background font-medium text-foreground shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary'
+                  : 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
               }`}
             >
               {item.icon}
@@ -373,9 +378,9 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveSection(item.id)}
-                className={`relative flex w-full items-center gap-2 rounded-md py-1.5 pl-3 pr-2 text-left text-sm transition-colors ${
+                className={`relative flex w-full items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors ${
                   activeSection === item.id
-                    ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-danger'
+                    ? 'bg-danger/15 font-medium text-danger before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-danger'
                     : 'text-danger/80 hover:bg-danger/10 hover:text-danger'
                 }`}
               >
@@ -386,9 +391,8 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
           </div>
         </>
       }
-      panelWidthClass="w-44"
     >
-      <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">{renderContent()}</div>
+      <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">{renderContent()}</div>
 
       <ImportConfigDialog
         open={importDialogOpen}
@@ -399,12 +403,6 @@ export const SettingsDialog = ({ open, onClose, initialSection }: Props) => {
     </Dialog>
   );
 };
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-xs font-semibold tracking-wide text-muted-foreground">{children}</div>
-  );
-}
 
 function Field({
   label,

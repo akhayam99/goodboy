@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, Dialog, Divider, Input, cn } from '@goodboy/ui';
+import { Button, Dialog, DialogSectionHeader, Divider, Input, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Archive,
@@ -273,7 +273,6 @@ export const SessionSettingsDialog = ({
       size="xl"
       className="w-[56rem] max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
-      fixedHeightClass="h-[640px]"
       fullScreenOnSmall
       footer={
         <div className="flex w-full items-center gap-2">
@@ -447,10 +446,10 @@ function GeneralSection(props: GeneralSectionProps) {
 
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<Settings2 size={14} aria-hidden className="text-primary" />}
         title="General"
-        subtitle="Identity and infrastructure for this session. The goal text the agent actually reads lives in the right-hand context panel."
+        description="Identity and infrastructure for this session. The goal text the agent actually reads lives in the right-hand context panel."
       />
 
       <Field
@@ -684,10 +683,10 @@ function BudgetSection({
     pct >= 1 ? 'bg-danger' : pct >= 0.8 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<DollarSign size={14} aria-hidden className="text-primary" />}
         title="Budget"
-        subtitle="Optional spend ceiling. Warning at 80%, error at 100%. The session keeps running unless you stop it."
+        description="Optional spend ceiling. Warning at 80%, error at 100%. The session keeps running unless you stop it."
       />
       <Field label="Soft cap (USD)" hint="Leave blank to skip. Increments allowed in cents.">
         <div className="flex gap-2">
@@ -730,42 +729,6 @@ function BudgetSection({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function SectionHeader({
-  icon,
-  title,
-  subtitle,
-  tone,
-}: {
-  icon: ReactNode;
-  title: string;
-  subtitle: string;
-  tone?: 'danger';
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-md',
-            tone === 'danger' ? 'bg-danger/10' : 'bg-primary/10',
-          )}
-        >
-          {icon}
-        </span>
-        <h3
-          className={cn(
-            'text-base font-semibold',
-            tone === 'danger' ? 'text-danger' : 'text-foreground',
-          )}
-        >
-          {title}
-        </h3>
-      </div>
-      <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
     </div>
   );
 }

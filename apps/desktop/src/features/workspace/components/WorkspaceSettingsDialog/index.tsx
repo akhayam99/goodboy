@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { GhTokenStatus, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
-import { Button, Dialog, cn } from '@goodboy/ui';
+import { Button, Dialog, DialogSectionHeader, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Check,
@@ -182,8 +182,8 @@ export const WorkspaceSettingsDialog = ({
       onClose={onClose}
       title="Workspace settings"
       description={workspaceName}
-      size="xl"
-      className="w-[64rem] max-w-[95vw]"
+      size="2xl"
+      className="max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
       fixedHeightClass="h-[640px]"
       fullScreenOnSmall
@@ -382,10 +382,10 @@ function GeneralSection({
 
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<FolderCode size={14} aria-hidden className="text-primary" />}
         title="General"
-        subtitle="Defaults applied when you create new sessions inside this workspace. Override per-session from the new-session dialog."
+        description="Defaults applied when you create new sessions inside this workspace. Override per-session from the new-session dialog."
       />
 
       <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/50 p-4">
@@ -624,7 +624,7 @@ function SectionShell({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <SectionHeader icon={icon} title={title} subtitle={subtitle} beta={beta} />
+      <DialogSectionHeader icon={icon} title={title} description={subtitle} beta={beta} />
       <div>{children}</div>
     </div>
   );
@@ -696,10 +696,10 @@ function DangerSection({
 }) {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<AlertTriangle size={14} aria-hidden className="text-danger" />}
         title="Danger zone"
-        subtitle="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk, re-add the same path later and everything comes back."
+        description="Hides the workspace from the sidebar. Sessions, transcripts, and worktrees stay safe on disk, re-add the same path later and everything comes back."
         tone="danger"
       />
 
@@ -758,49 +758,6 @@ function DangerSection({
           </div>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function SectionHeader({
-  icon,
-  title,
-  subtitle,
-  tone,
-  beta,
-}: {
-  icon: ReactNode;
-  title: string;
-  subtitle: string;
-  tone?: 'danger';
-  beta?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-md',
-            tone === 'danger' ? 'bg-danger/10' : 'bg-primary/10',
-          )}
-        >
-          {icon}
-        </span>
-        <h3
-          className={cn(
-            'text-base font-semibold',
-            tone === 'danger' ? 'text-danger' : 'text-foreground',
-          )}
-        >
-          {title}
-        </h3>
-        {beta ? (
-          <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
-            beta
-          </span>
-        ) : null}
-      </div>
-      <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
     </div>
   );
 }
