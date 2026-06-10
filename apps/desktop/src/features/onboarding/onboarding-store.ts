@@ -170,5 +170,9 @@ export const finishWizard = (): void => {
 };
 
 export const reopenWizard = (): void => {
+  if (cache.wizardDone) {
+    cache.wizardDone = false;
+    void setSetting(tauriDatabase, SETTING_WIZARD, '');
+  }
   window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT));
 };

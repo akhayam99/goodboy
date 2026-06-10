@@ -50,6 +50,8 @@
   --text-lg: 17px;
   --text-xl: 20px;
 
+  --chat-header-h: 2rem;
+
   /* Density grade, name three opinionated triplets so siblings agree on
      font-size + gap + padding instead of drifting independently. Apply via
      `var(--density-<grade>-*)` from component CSS. The sidebar lives at
