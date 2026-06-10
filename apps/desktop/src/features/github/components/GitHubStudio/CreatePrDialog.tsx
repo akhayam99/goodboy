@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { Dialog, Textarea, cn } from '@goodboy/ui';
+import { Dialog, Input, Textarea, cn } from '@goodboy/ui';
 import { Loader2, Sparkles } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
@@ -13,9 +13,6 @@ type Props = {
   readonly onClose: () => void;
   readonly onStudioClose: () => void;
 };
-
-const FIELD =
-  'w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-primary' as const;
 
 export const CreatePrDialog = ({
   sessionId,
@@ -167,11 +164,10 @@ export const CreatePrDialog = ({
           <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
             Title
           </span>
-          <input
+          <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="pull request title"
-            className={FIELD}
             autoFocus
           />
         </label>
@@ -193,11 +189,10 @@ export const CreatePrDialog = ({
             <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               Base branch
             </span>
-            <input
+            <Input
               value={base}
               onChange={(e) => setBase(e.target.value)}
               placeholder="default branch"
-              className={FIELD}
               list="pr-base-branches"
             />
             <datalist id="pr-base-branches">

@@ -10,6 +10,11 @@ export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 export { Dialog } from './components/Dialog';
 export type { DialogProps, DialogSize } from './components/Dialog';
+export { DialogSectionHeader } from './components/DialogSectionHeader';
+export type {
+  DialogSectionHeaderProps,
+  DialogSectionHeaderTone,
+} from './components/DialogSectionHeader';
 export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { EmptyState } from './components/EmptyState';

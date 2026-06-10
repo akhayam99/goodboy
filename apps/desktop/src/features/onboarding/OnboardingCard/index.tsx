@@ -20,7 +20,7 @@ export const OnboardingCard = () => {
   }
 
   return (
-    <div className="pointer-events-none absolute right-4 top-14 z-20">
+    <div className="pointer-events-none absolute right-4 top-[calc(var(--chat-header-h)+1.5rem)] z-20">
       <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2 rounded-[6px] border border-border-soft bg-elevated/80 p-3 shadow-md backdrop-blur-sm">
         {progress.isDone ? <CompletedBody /> : <ChecklistBody progress={progress} />}
       </div>

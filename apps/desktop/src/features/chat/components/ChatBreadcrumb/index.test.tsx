@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 type MockState = {
@@ -62,5 +62,34 @@ describe('ChatBreadcrumb', () => {
     state.workspaces = [];
     render(<ChatBreadcrumb session={session} />);
     expect(screen.getByText('no workspace')).toBeDefined();
+  });
+
+  it('fires open-workspace-settings with the session workspace id when the name is clicked', () => {
+    const spy = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', spy);
+    render(<ChatBreadcrumb session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: 'goodboy' }));
+    expect(spy).toHaveBeenCalledOnce();
+    const event = spy.mock.calls[0]![0] as CustomEvent<{ workspaceId: string }>;
+    expect(event.detail.workspaceId).toBe('ws-1');
+    window.removeEventListener('goodboy:open-workspace-settings', spy);
+  });
+
+  it('does not fire the legacy open-settings event', () => {
+    const legacy = vi.fn();
+    window.addEventListener('goodboy:open-settings', legacy);
+    render(<ChatBreadcrumb session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: 'goodboy' }));
+    expect(legacy).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:open-settings', legacy);
+  });
+
+  it('renders no clickable workspace button when none is linked', () => {
+    state.workspaces = [];
+    const spy = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', spy);
+    render(<ChatBreadcrumb session={session} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    window.removeEventListener('goodboy:open-workspace-settings', spy);
   });
 });

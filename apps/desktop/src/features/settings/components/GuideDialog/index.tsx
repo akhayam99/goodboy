@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Dialog, cn } from '@goodboy/ui';
+import { Button, Dialog, DialogSectionHeader, ScrollFade, cn } from '@goodboy/ui';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import {
   ArrowRight,
@@ -50,8 +50,8 @@ export const GuideDialog = ({ open, onClose }: Props) => {
       onClose={onClose}
       title="Getting started"
       description="How Goodboy, sessions, agents, and CLI providers fit together."
-      size="xl"
-      className="w-[64rem] max-w-[95vw]"
+      size="2xl"
+      className="max-w-[95vw]"
       bodyClassName="px-0 py-0 gap-0"
       fixedHeightClass="h-[720px]"
       fullScreenOnSmall
@@ -60,30 +60,26 @@ export const GuideDialog = ({ open, onClose }: Props) => {
           Close
         </Button>
       }
+      panel={NAV_ITEMS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => setActive(item.id)}
+          className={cn(
+            'relative flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
+            active === item.id
+              ? 'bg-background font-medium text-foreground shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary'
+              : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+          )}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </button>
+      ))}
     >
-      <div className="flex h-full min-h-0">
-        <nav className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border-soft bg-subtle/40 px-3 py-5">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActive(item.id)}
-              className={cn(
-                'relative flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
-                active === item.id
-                  ? 'bg-background font-medium text-foreground shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary'
-                  : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
-              )}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-        <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
-          <Content section={active} onJump={setActive} />
-        </div>
-      </div>
+      <ScrollFade className="flex-1" viewportClassName="px-8 py-6">
+        <Content section={active} onJump={setActive} />
+      </ScrollFade>
     </Dialog>
   );
 };
@@ -112,15 +108,15 @@ function Content({ section, onJump }: { section: Section; onJump: (s: Section) =
 function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<BookOpen size={14} aria-hidden className="text-primary" />}
         title="What is Goodboy?"
-        subtitle={
+        description={
           SESSION_FEATURES.budget
             ? 'Goodboy orchestrates coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with budget caps, audit logs, and structured workflows.'
             : 'Goodboy orchestrates coding CLIs (Claude, cursor-agent, Codex) so you can run multiple agents in parallel against your repo, with audit logs and structured workflows.'
         }
-        accent="primary"
+        tone="primary"
       />
 
       <Callout tone="info" icon={<Sparkles size={13} />}>
@@ -169,11 +165,11 @@ function OverviewSection({ onJump }: { onJump: (s: Section) => void }) {
 function SessionsSection() {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<GitBranch size={14} aria-hidden className="text-success" />}
         title="Sessions"
-        subtitle="One focused unit of work. Owns a git worktree, a branch, transcripts, and a goal."
-        accent="success"
+        description="One focused unit of work. Owns a git worktree, a branch, transcripts, and a goal."
+        tone="success"
       />
 
       <Block title="What gets created">
@@ -247,11 +243,11 @@ function SessionsSection() {
 function TurnsSection() {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<MessagesSquare size={14} aria-hidden className="text-info" />}
         title="Turns"
-        subtitle="One user message + the assistant's full response (which may include many tool calls and edits)."
-        accent="info"
+        description="One user message + the assistant's full response (which may include many tool calls and edits)."
+        tone="info"
       />
 
       <Block title="How turns are counted">
@@ -285,11 +281,11 @@ function TurnsSection() {
 function ToolsSection() {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<Wrench size={14} aria-hidden className="text-warning" />}
         title="Tools"
-        subtitle="Actions the agent takes beyond writing a reply: reading files, running shell commands, editing code, fetching docs."
-        accent="warning"
+        description="Actions the agent takes beyond writing a reply: reading files, running shell commands, editing code, fetching docs."
+        tone="warning"
       />
 
       <Block title="How they show up">
@@ -326,11 +322,11 @@ function ToolsSection() {
 function TokensSection() {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<Coins size={14} aria-hidden className="text-amber-400" />}
         title="Tokens & cost"
-        subtitle="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token ≈ ¾ of an English word."
-        accent="warning"
+        description="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token ≈ ¾ of an English word."
+        tone="warning"
       />
 
       <Block title="Input vs output">
@@ -391,11 +387,11 @@ function TokensSection() {
 function AgentsSection() {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<DogMascot size={14} className="text-warning" />}
         title="Agents"
-        subtitle="One provider invocation inside a session. A session can host multiple agents, same provider or different ones."
-        accent="warning"
+        description="One provider invocation inside a session. A session can host multiple agents, same provider or different ones."
+        tone="warning"
       />
 
       <Block title="Why multiple agents per session">
@@ -477,11 +473,11 @@ function TipsSection() {
   ];
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<Lightbulb size={14} aria-hidden className="text-amber-400" />}
         title="Tips"
-        subtitle="Patterns that compound across sessions."
-        accent="warning"
+        description="Patterns that compound across sessions."
+        tone="warning"
       />
       <div className="grid grid-cols-2 gap-3">
         {tips.map((t, i) => (
@@ -506,11 +502,11 @@ function TipsSection() {
 function LegendSection() {
   return (
     <div className="flex flex-col gap-7">
-      <SectionHeader
+      <DialogSectionHeader
         icon={<Palette size={14} aria-hidden className="text-primary" />}
         title="Legend"
-        subtitle="Color meanings used throughout the interface."
-        accent="primary"
+        description="Color meanings used throughout the interface."
+        tone="primary"
       />
 
       <LegendBlock title="Agent status, workflow steps">
@@ -641,32 +637,6 @@ const TONE_BORDER: Record<Tone, string> = {
   info: 'border-info/20',
   muted: 'border-border-soft',
 };
-
-function SectionHeader({
-  icon,
-  title,
-  subtitle,
-  accent = 'primary',
-}: {
-  icon: ReactNode;
-  title: string;
-  subtitle: string;
-  accent?: Tone;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2.5">
-        <span
-          className={cn('flex h-8 w-8 items-center justify-center rounded-md', TONE_BG[accent])}
-        >
-          {icon}
-        </span>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-      </div>
-      <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
