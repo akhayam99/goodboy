@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
+  AgentRole,
   IsoDateTime,
   SessionId,
   StepId,
@@ -10,6 +11,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
+import { AGENT_KIND_DEFAULTS, ROLE_TO_KIND } from '../features/session/agent-kind';
 
 const runTurnSpy = vi.fn();
 
@@ -562,5 +564,79 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
     await new Promise<void>((r) => setTimeout(r, 50));
 
     expect(runTurnSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('createSession, step.role drives agent kind over name inference (#793)', () => {
+  function makeRoleWorkflow(role: AgentRole): Workflow {
+    return {
+      id: WORKFLOW_ID,
+      workspaceId: WS_ID,
+      name: 'Custom',
+      description: 'single role-pinned step',
+      steps: [
+        {
+          id: 's-only' as StepId,
+          workflowId: WORKFLOW_ID,
+          ordinal: 0,
+          name: 'Scout',
+          promptPrefix: '',
+          role,
+        },
+      ],
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+  }
+
+  beforeEach(() => {
+    wirePhaseSpies();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('keeps the role-pinned kind even when the step name infers a different one', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRoleWorkflow('implementer')] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'role wins',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    const insertArgs = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(insertArgs['kind']).toBe(ROLE_TO_KIND['implementer']);
+
+    const state = useAppStore.getState();
+    const agentId = state.selectedAgentId[session.id];
+    expect(agentId).toBeDefined();
+    expect(state.agentModelOverride[agentId!]).toBe(
+      AGENT_KIND_DEFAULTS[ROLE_TO_KIND['implementer']].model,
+    );
+  });
+
+  it('falls back to name inference when the step has no role', async () => {
+    const { useAppStore } = await import('./store');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
+    });
+
+    await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'inference path',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+    });
+
+    const insertArgs = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(insertArgs['kind']).toBe('scout');
   });
 });
