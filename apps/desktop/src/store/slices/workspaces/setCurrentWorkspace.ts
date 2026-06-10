@@ -16,6 +16,7 @@ import {
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkspaceTelemetry,
   touchWorkspaceLastAccessed,
+  updateAgentStatus,
   updateSessionState,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -93,7 +94,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             return s;
           }
           if (liveRunIds.has(s.state.runId)) {
-            return s;
+            await cancelTurn(s.state.runId).catch(() => undefined);
           }
           const idleState: TurnState = { kind: 'idle', lastActivityAt: recoveryNow };
           await updateSessionState(tauriDatabase, s.id, idleState, recoveryNow).catch(
@@ -102,6 +103,18 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           return { ...s, state: idleState, updatedAt: recoveryNow };
         }),
       );
+      const recoverOrphanAgent = async (run: Agent): Promise<Agent> => {
+        if (run.status !== 'running') {
+          return run;
+        }
+        if (run.runId && liveRunIds.has(run.runId)) {
+          await cancelTurn(run.runId).catch(() => undefined);
+        }
+        await updateAgentStatus(tauriDatabase, run.id, { status: 'pending' }).catch(
+          () => undefined,
+        );
+        return { ...run, status: 'pending' };
+      };
       const sessionIds = sessions.map((s) => s.id);
       const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
@@ -121,7 +134,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             sessionBranches[s.id] = primaryRow.branch;
           }
         }
-        const runs = agentsBySession.get(s.id) ?? [];
+        const runs = await Promise.all((agentsBySession.get(s.id) ?? []).map(recoverOrphanAgent));
         sessionPhaseRuns[s.id] = runs;
         for (const run of runs) {
           if (run.kind) {

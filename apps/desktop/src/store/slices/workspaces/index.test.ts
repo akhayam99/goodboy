@@ -102,6 +102,7 @@ vi.mock('@goodboy/db', () => ({
   unarchiveSession: vi.fn(async () => undefined),
   updateSessionConfig: vi.fn(async () => undefined),
   updateAgentConfig: vi.fn(async () => undefined),
+  updateAgentStatus: vi.fn(async () => undefined),
   summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
@@ -157,9 +158,13 @@ vi.mock('../../../features/onboarding/onboarding-store', () => ({
   hydrateOnboardingFromDb: vi.fn(async () => undefined),
 }));
 
+const cancelTurnSpy = vi.fn(async () => undefined);
+const listLiveRunIdsSpy = vi.fn(async () => new Set<string>());
+
 vi.mock('../../../features/chat/turn', () => ({
   runTurn: vi.fn(),
-  cancelTurn: vi.fn(async () => undefined),
+  cancelTurn: cancelTurnSpy,
+  listLiveRunIds: listLiveRunIdsSpy,
   writeAttachment: vi.fn(async () => 'rel/path'),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
@@ -239,6 +244,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: invokeWorkflowListSpy,
   invokeWorkflowUpsert: invokeWorkflowUpsertSpy,
   invokeWorkflowDelete: invokeWorkflowDeleteSpy,
+  invokeWorkflowsForSession: vi.fn(async () => [] as ReadonlyArray<Workflow>),
+  invokeStepDefList: vi.fn(async () => []),
   invokeAgentList: invokeAgentListSpy,
   invokeAgentInsert: invokeAgentInsertSpy,
   invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
@@ -553,6 +560,54 @@ describe('store contract', () => {
     it('deleteWorkspace throws when workspace does not exist', async () => {
       const store = await getStore();
       await expect(store.getState().deleteWorkspace(WS_ID)).rejects.toThrow(/workspace not found/);
+    });
+
+    it('setCurrentWorkspace recovers an orphaned running session+agent left over after a reload', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const turn = await import('../../../features/chat/turn');
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } }),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listAgentsForSessions).mockResolvedValueOnce(
+        new Map([[SESSION_ID, [buildAgent({ id: AGENT_ID, status: 'running', runId: RUN_ID })]]]),
+      );
+      vi.mocked(turn.listLiveRunIds).mockResolvedValueOnce(new Set([RUN_ID as string]));
+      store.setState({ workspaces: [buildWorkspace()] });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      const orphan = store.getState().sessions.find((s) => s.id === SESSION_ID);
+      expect(orphan?.state.kind).toBe('idle');
+      expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.status).toBe('pending');
+      expect(turn.cancelTurn).toHaveBeenCalledWith(RUN_ID);
+      expect(db.updateAgentStatus).toHaveBeenCalledWith(expect.anything(), AGENT_ID, {
+        status: 'pending',
+      });
+    });
+
+    it('setCurrentWorkspace clears a dead running agent without cancelling (backend already gone)', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const turn = await import('../../../features/chat/turn');
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } }),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listAgentsForSessions).mockResolvedValueOnce(
+        new Map([[SESSION_ID, [buildAgent({ id: AGENT_ID, status: 'running', runId: RUN_ID })]]]),
+      );
+      vi.mocked(turn.listLiveRunIds).mockResolvedValueOnce(new Set<string>());
+      store.setState({ workspaces: [buildWorkspace()] });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.status).toBe('pending');
+      expect(turn.cancelTurn).not.toHaveBeenCalled();
+      expect(db.updateAgentStatus).toHaveBeenCalledWith(expect.anything(), AGENT_ID, {
+        status: 'pending',
+      });
     });
 
     it('setCurrentWorkspace(null) clears the active workspace and resets workspaceSummary etc.', async () => {
