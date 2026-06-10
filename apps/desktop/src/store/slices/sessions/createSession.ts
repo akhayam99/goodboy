@@ -26,6 +26,7 @@ import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
+  ROLE_TO_KIND,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../features/session/agent-kind';
@@ -216,7 +217,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       if (sortedSteps.length > 0) {
         const allAgents: Agent[] = [];
         for (const step of sortedSteps) {
-          const kind = inferAgentKindFromName(step.name);
+          const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
           const agent = await invokeAgentInsert({
             sessionId: session.id,
             stepId: step.id,
