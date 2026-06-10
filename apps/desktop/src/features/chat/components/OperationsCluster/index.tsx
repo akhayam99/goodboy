@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, ChevronRight, Layers } from 'lucide-react';
+import { ChevronRight, Layers } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -37,10 +37,15 @@ export const OperationsCluster = ({
   const [open, setOpen] = useState(false);
   const running = runningTool(items);
   const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
+  const successCount = items.length - errorCount;
   const showError = !running && errorCount > 0;
 
   const ariaLabel = `operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
-    running ? `, running ${running.toolName}` : showError ? `, ${errorCount} failed` : ''
+    running
+      ? `, running ${running.toolName}`
+      : showError
+        ? `, ${successCount} succeeded, ${errorCount} failed`
+        : ''
   }`;
 
   return (
@@ -50,10 +55,7 @@ export const OperationsCluster = ({
         aria-expanded={open}
         aria-label={ariaLabel}
         onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
-          showError && 'text-danger',
-        )}
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60"
       >
         <ChevronRight
           size={11}
@@ -63,20 +65,9 @@ export const OperationsCluster = ({
             open && 'rotate-90',
           )}
         />
-        <Layers
-          size={11}
-          aria-hidden
-          className={cn('shrink-0', showError ? 'text-danger' : 'text-muted-foreground')}
-        />
-        <span className={cn('font-medium', showError ? 'text-danger' : 'text-foreground/80')}>
-          operations
-        </span>
-        <span
-          className={cn(
-            'rounded-full px-1.5 text-2xs tabular-nums',
-            showError ? 'bg-danger/10 text-danger' : 'bg-muted text-muted-foreground',
-          )}
-        >
+        <Layers size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+        <span className="font-medium text-foreground/80">operations</span>
+        <span className="rounded-full bg-muted px-1.5 text-2xs tabular-nums text-muted-foreground">
           {items.length}
         </span>
         {running ? (
@@ -92,9 +83,15 @@ export const OperationsCluster = ({
             </span>
           </span>
         ) : showError ? (
-          <span className="flex shrink-0 items-center gap-1 text-danger">
-            <AlertTriangle size={10} aria-hidden />
-            <span className="text-2xs uppercase tracking-wide">{errorCount} failed</span>
+          <span className="flex shrink-0 items-center gap-1.5 text-2xs tabular-nums">
+            <span aria-hidden className="text-muted-foreground/40">
+              ·
+            </span>
+            <span className="text-primary">{successCount} success</span>
+            <span aria-hidden className="text-muted-foreground/40">
+              ·
+            </span>
+            <span className="text-danger">{errorCount} failed</span>
           </span>
         ) : null}
       </button>

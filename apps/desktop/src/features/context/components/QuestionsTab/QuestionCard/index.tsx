@@ -93,7 +93,9 @@ export const QuestionCard = ({
             aria-hidden
             className="mt-0.5 shrink-0 text-muted-foreground/50"
           />
-          <p className="text-xs leading-relaxed text-foreground">{question.text}</p>
+          <p className="min-w-0 break-words text-xs leading-relaxed text-foreground">
+            {question.text}
+          </p>
         </div>
         <button
           type="button"

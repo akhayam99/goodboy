@@ -50,8 +50,9 @@ describe('OperationsCluster', () => {
     expect(screen.queryByText('grep')).toBeNull();
   });
 
-  it('surfaces a failure count when a collapsed child errored', () => {
+  it('surfaces a success and failure breakdown when a collapsed child errored', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', true, true)]} />);
+    expect(screen.getByText('1 success')).toBeTruthy();
     expect(screen.getByText('1 failed')).toBeTruthy();
   });
 
