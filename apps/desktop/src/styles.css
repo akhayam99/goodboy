@@ -14,7 +14,7 @@
   --color-subtle: oklch(0.29 0.008 255);
   --color-muted: oklch(0.33 0.01 255);
   --color-elevated: oklch(0.37 0.011 255);
-  --color-muted-foreground: oklch(0.68 0.015 255);
+  --color-muted-foreground: oklch(0.78 0.015 255);
   --color-border: oklch(0.4 0.012 255);
   --color-border-soft: oklch(0.32 0.01 255);
 
