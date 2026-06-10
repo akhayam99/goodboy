@@ -361,7 +361,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const agentOverride: TurnProviderOverride | undefined = agentProvider
       ? { providerId: agentProvider, ...(agentModelPin != null && { model: agentModelPin }) }
       : undefined;
-    const effectiveOverride = phaseOverride ?? agentOverride ?? turnOverride;
+    const effectiveOverride = phaseOverride ?? turnOverride ?? agentOverride;
 
     const routingPreference =
       effectiveOverride === agentOverride && agentOverride !== undefined
@@ -388,10 +388,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const provider: ProviderId = routingDecision.selectedProvider;
     const agentKindModel = get().agentModelOverride[activeAgentId] ?? null;
+    const turnOverrideActive = turnOverride !== undefined && effectiveOverride === turnOverride;
     const model =
       phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
         ? phaseDefinition.modelOverride
-        : (agentKindModel ?? routingDecision.selectedModel);
+        : turnOverrideActive
+          ? routingDecision.selectedModel
+          : (agentKindModel ?? routingDecision.selectedModel);
 
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
