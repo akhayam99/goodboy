@@ -1,21 +1,26 @@
 import { useEffect, useState } from 'react';
 import { ChevronsUpDown, Settings } from 'lucide-react';
-import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
+import type { WorkspaceId } from '@goodboy/types';
+import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 
 export const WorkspaceHeader = () => {
   const currentWorkspace = useCurrentWorkspace();
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
+  const workspaces = useAppStore((s) => s.workspaces);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<string | undefined>(undefined);
+  const [settingsWorkspaceId, setSettingsWorkspaceId] = useState<WorkspaceId | null>(null);
 
   useEffect(() => {
     const handler = (e: Event) => {
-      if (!currentWorkspace) {
+      const detail = (e as CustomEvent<{ section?: string; workspaceId?: WorkspaceId }>).detail;
+      const target = detail?.workspaceId ?? currentWorkspace?.id ?? null;
+      if (!target) {
         return;
       }
-      const detail = (e as CustomEvent<{ section?: string }>).detail;
+      setSettingsWorkspaceId(target);
       setSettingsSection(detail?.section);
       setSettingsOpen(true);
     };
@@ -27,6 +32,8 @@ export const WorkspaceHeader = () => {
     return null;
   }
   const accent = workspaceAccent(currentWorkspace.id);
+  const settingsWorkspace =
+    workspaces.find((w) => w.id === settingsWorkspaceId) ?? currentWorkspace;
 
   return (
     <div className="shrink-0 px-3 py-3" data-tauri-drag-region="false">
@@ -63,6 +70,7 @@ export const WorkspaceHeader = () => {
         <button
           type="button"
           onClick={() => {
+            setSettingsWorkspaceId(currentWorkspace.id);
             setSettingsSection(undefined);
             setSettingsOpen(true);
           }}
@@ -75,8 +83,8 @@ export const WorkspaceHeader = () => {
         </button>
       </div>
       <WorkspaceSettingsDialog
-        workspaceId={currentWorkspace.id}
-        workspaceName={currentWorkspace.name}
+        workspaceId={settingsWorkspace.id}
+        workspaceName={settingsWorkspace.name}
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         initialSection={settingsSection}

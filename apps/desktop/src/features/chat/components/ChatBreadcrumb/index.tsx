@@ -92,7 +92,14 @@ export const ChatBreadcrumb = ({ session }: Props) => {
   }, [selectedAgent, agentKindOverride]);
 
   const openWorkspaceSettings = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-settings', { detail: { section: 'app' } }));
+    if (!workspace) {
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-workspace-settings', {
+        detail: { workspaceId: workspace.id },
+      }),
+    );
   };
 
   const sessionLabel = session.goal.trim() || 'untitled session';
@@ -100,7 +107,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
   return (
     <>
       <div
-        className="flex h-8 shrink-0 items-center gap-1.5 px-3 text-2xs text-muted-foreground"
+        className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3 text-2xs text-muted-foreground"
         role="navigation"
         aria-label="chat breadcrumb"
       >
