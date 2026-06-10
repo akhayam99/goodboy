@@ -244,6 +244,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: invokeWorkflowListSpy,
   invokeWorkflowUpsert: invokeWorkflowUpsertSpy,
   invokeWorkflowDelete: invokeWorkflowDeleteSpy,
+  invokeWorkflowsForSession: vi.fn(async () => [] as ReadonlyArray<Workflow>),
+  invokeStepDefList: vi.fn(async () => []),
   invokeAgentList: invokeAgentListSpy,
   invokeAgentInsert: invokeAgentInsertSpy,
   invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
