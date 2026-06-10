@@ -768,6 +768,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let assistantText = '';
     let lastError: unknown = null;
     let turnWasCancelled = false;
+    let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
 
     const resumeSessionId = agentRowEarly?.providerSessionId;
@@ -1038,7 +1039,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           });
           void get().refreshUnreadWorkspaces();
 
-          void get().maybeAutoAdvanceWorkflow(sessionId);
+          shouldAutoAdvanceWorkflow = true;
           if (ranKind === 'resolver') {
             const resolvedMarker = extractCommentResolved(assistantText);
             const wontfixMarker = extractCommentWontfix(assistantText);
@@ -1161,13 +1162,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
       enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
-      void capturePlanFromTurn(
+      const capturedPlan = await capturePlanFromTurn(
         set,
         sessionId,
         activeAgentId,
         assistantText,
         phaseWorkflowRunId ?? undefined,
-      ).then((plan) => emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, plan));
+      );
+      void emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, capturedPlan);
       const driftViolations = detectDrift({
         agentKind: earlyAgentKind,
         assistantText,
@@ -1190,6 +1192,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           .refreshSessionPr(sessionId, { force: true })
           .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }));
       }
+    }
+
+    if (!lastError && shouldAutoAdvanceWorkflow) {
+      await get().maybeAutoAdvanceWorkflow(sessionId);
     }
 
     if (lastError) {
