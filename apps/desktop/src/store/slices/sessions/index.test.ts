@@ -109,7 +109,6 @@ vi.mock('@goodboy/db', () => ({
   updateSessionPermissionMode: vi.fn(async () => undefined),
   updateSessionAutoRun: vi.fn(async () => undefined),
   updateSessionTitleUserEdited: vi.fn(async () => undefined),
-  updateSessionUserStatus: vi.fn(async () => undefined),
   updateSessionState: vi.fn(async () => undefined),
   attachWorkflowToSession: vi.fn(async () => undefined),
   detachWorkflowFromSession: vi.fn(async () => undefined),
@@ -380,7 +379,6 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     autoRun: false,
     titleUserEdited: false,
     workflowRuns: [],
-    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
@@ -562,13 +560,6 @@ describe('store contract', () => {
       store.setState({ sessions: [buildSession({ titleUserEdited: false, goal: 'old' })] });
       await store.getState().autoTitleSession(SESSION_ID, 'auto');
       expect(store.getState().sessions[0]?.goal).toBe('auto');
-    });
-
-    it('setSessionUserStatus mutates the session row', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession()] });
-      await store.getState().setSessionUserStatus(SESSION_ID, 'done');
-      expect(store.getState().sessions[0]?.userStatus).toBe('done');
     });
 
     it('setSessionPermissionMode mutates the session row', async () => {

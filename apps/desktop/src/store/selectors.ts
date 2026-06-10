@@ -9,6 +9,8 @@ import type {
   PlanWithCount,
   Session,
   SessionId,
+  SessionStage,
+  SessionStageInfo,
   SessionViewPrefs,
   WorkspaceId,
 } from '@goodboy/types';
@@ -19,9 +21,13 @@ import {
   type SessionLoadingFlags,
   type SummarizerSessionStatus,
 } from './store';
-import { sortAndGroupSessions, type GroupedSessions } from './slices/session-view';
+import {
+  deriveSessionStage,
+  sortAndGroupSessions,
+  type GroupedSessions,
+} from './slices/session-view';
 
-const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'none' };
+const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -40,19 +46,85 @@ export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionVie
 
 const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
 
+function countOpenQuestions(state: AppState, sessionId: SessionId): number {
+  const questions = state.sessionOpenQuestions[sessionId];
+  if (!questions) {
+    return 0;
+  }
+  return questions.filter((q) => q.status === 'open').length;
+}
+
+function sessionHasUnreadIn(state: AppState, sessionId: SessionId): boolean {
+  const runs = state.sessionPhaseRuns[sessionId];
+  if (!runs) {
+    return false;
+  }
+  const selected = state.selectedAgentId[sessionId] ?? null;
+  const isCurrent = state.currentSessionId === sessionId;
+  return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected));
+}
+
+function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
+  const sessionId = session.id as SessionId;
+  return deriveSessionStage({
+    session,
+    pr: state.sessionGithub[sessionId]?.pr ?? null,
+    hasUnread: sessionHasUnreadIn(state, sessionId),
+    openQuestionCount: countOpenQuestions(state, sessionId),
+  });
+}
+
+export const useSessionStageInfo = (session: Session): SessionStageInfo => {
+  const stage = useAppStore((s) => stageInfoOf(s, session).stage);
+  const reason = useAppStore((s) => stageInfoOf(s, session).reason);
+  return useMemo(() => ({ stage, reason }), [stage, reason]);
+};
+
 export const useSortedGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
-  const needsGithub = prefs.group === 'pr';
+  const needsGithub = prefs.group === 'pr' || prefs.group === 'stage';
+  const needsStage = prefs.group === 'stage';
   const sessionGithub = useAppStore((s) =>
     needsGithub ? s.sessionGithub : (EMPTY_GITHUB_STATE as typeof s.sessionGithub),
   );
-  return useMemo(
-    () => sortAndGroupSessions(sessions, prefs, sessionGithub),
-    [sessions, prefs, sessionGithub],
+  const sessionOpenQuestions = useAppStore((s) =>
+    needsStage ? s.sessionOpenQuestions : (EMPTY_GITHUB_STATE as typeof s.sessionOpenQuestions),
   );
+  const sessionPhaseRuns = useAppStore((s) =>
+    needsStage ? s.sessionPhaseRuns : (EMPTY_GITHUB_STATE as typeof s.sessionPhaseRuns),
+  );
+  const selectedAgentId = useAppStore((s) =>
+    needsStage ? s.selectedAgentId : (EMPTY_GITHUB_STATE as typeof s.selectedAgentId),
+  );
+  const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
+  return useMemo(() => {
+    const partial = {
+      sessionGithub,
+      sessionOpenQuestions,
+      sessionPhaseRuns,
+      selectedAgentId,
+      currentSessionId,
+    };
+    const stages: Record<SessionId, SessionStage> = {};
+    if (needsStage) {
+      for (const session of sessions) {
+        stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage;
+      }
+    }
+    return sortAndGroupSessions(sessions, prefs, sessionGithub, stages);
+  }, [
+    sessions,
+    prefs,
+    needsStage,
+    sessionGithub,
+    sessionOpenQuestions,
+    sessionPhaseRuns,
+    selectedAgentId,
+    currentSessionId,
+  ]);
 };
 
 const NO_LOADING: SessionLoadingFlags = {

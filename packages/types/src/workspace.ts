@@ -56,8 +56,6 @@ export type TurnState =
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
   | { kind: 'ended'; endedAt: IsoDateTime };
 
-export type SessionUserStatus = 'wip' | 'waiting' | 'blocked' | 'done';
-
 export type WorkflowRun = Readonly<{
   id: WorkflowRunId;
   workflowId: WorkflowId;
@@ -78,7 +76,6 @@ export type Session = Readonly<{
   workflowRuns: ReadonlyArray<WorkflowRun>;
   autoRun: boolean;
   titleUserEdited: boolean;
-  userStatus: SessionUserStatus;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';

@@ -9,7 +9,6 @@ import { setCurrentSession } from './setCurrentSession';
 import { setSessionAutoRun } from './setSessionAutoRun';
 import { setSessionConfig } from './setSessionConfig';
 import { setSessionPermissionMode } from './setSessionPermissionMode';
-import { setSessionUserStatus } from './setSessionUserStatus';
 import { unarchiveTask } from './unarchiveTask';
 import type { GetFn, SetFn } from './types';
 
@@ -21,7 +20,6 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     setAgentConfig: setAgentConfig(set, get),
     setSessionPermissionMode: setSessionPermissionMode(set),
     setSessionAutoRun: setSessionAutoRun(set, get),
-    setSessionUserStatus: setSessionUserStatus(set),
     setAgentVerbosity: setAgentVerbosity(set),
     deleteTask: deleteTask(set, get),
     archiveTask: archiveTask(set, get),

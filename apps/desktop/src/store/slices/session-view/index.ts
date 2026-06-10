@@ -4,6 +4,7 @@ import { setSessionSort } from './setSessionSort';
 import type { GetFn, SessionViewSlice, SetFn } from './types';
 
 export { sortAndGroupSessions } from './sortAndGroupSessions';
+export { deriveSessionStage } from './deriveSessionStage';
 export type { GroupedSessions, SessionViewSlice } from './types';
 
 export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {

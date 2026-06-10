@@ -35,7 +35,7 @@ describe('SessionViewMenu', () => {
     render(<SessionViewMenu workspaceId={'ws-1' as never} />);
     fireEvent.click(screen.getByLabelText(/display options/i));
     expect(screen.getByText('Recent')).toBeDefined();
-    expect(screen.getByText('Status')).toBeDefined();
+    expect(screen.getByText('Stage')).toBeDefined();
   });
 
   it('dispatches setSessionSort when a sort option is clicked', () => {

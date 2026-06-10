@@ -109,7 +109,6 @@ vi.mock('@goodboy/db', () => ({
   updateSessionPermissionMode: vi.fn(async () => undefined),
   updateSessionAutoRun: vi.fn(async () => undefined),
   updateSessionTitleUserEdited: vi.fn(async () => undefined),
-  updateSessionUserStatus: vi.fn(async () => undefined),
   updateSessionState: vi.fn(async () => undefined),
   attachWorkflowToSession: vi.fn(async () => undefined),
   detachWorkflowFromSession: vi.fn(async () => undefined),
@@ -380,7 +379,6 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     autoRun: false,
     titleUserEdited: false,
     workflowRuns: [],
-    userStatus: 'wip',
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
@@ -524,7 +522,7 @@ describe('store contract', () => {
     it('getSessionViewPrefs returns defaults for a workspace with no stored prefs', async () => {
       const store = await getStore();
       const prefs = store.getState().getSessionViewPrefs(WS_ID);
-      expect(prefs).toEqual({ sort: 'updatedAt', group: 'none' });
+      expect(prefs).toEqual({ sort: 'updatedAt', group: 'stage' });
     });
 
     it('setSessionSort persists the chosen sort key', async () => {

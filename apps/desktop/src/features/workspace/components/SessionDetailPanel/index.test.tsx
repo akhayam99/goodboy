@@ -7,7 +7,6 @@ import type { Session } from '@goodboy/types';
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
-    setSessionUserStatus: vi.fn(async () => undefined),
     renameTask: vi.fn(async () => undefined),
     sessionExternalTasks: {} as Record<string, unknown>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
@@ -29,8 +28,8 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
-vi.mock('../../../session/components/SessionStatusMenu', () => ({
-  SessionStatusMenu: () => null,
+vi.mock('../../../session/components/SessionStageBadge', () => ({
+  SessionStageBadge: () => null,
 }));
 
 vi.mock('../../../../shared/components/OverflowMenu', () => ({
@@ -51,7 +50,6 @@ const session: Session = {
   id: 'sess-1',
   workspaceId: 'ws-1',
   goal: 'refactor auth',
-  userStatus: 'wip',
   state: { kind: 'idle' },
 } as unknown as Session;
 

@@ -3,12 +3,11 @@ import type {
   SessionId,
   SessionPrGroup,
   SessionSortKey,
-  SessionUserStatus,
-  SessionUserStatusGroup,
+  SessionStage,
   SessionViewPrefs,
 } from '@goodboy/types';
 import type { SessionGithubState } from '../../store';
-import { PR_GROUP_ORDER, USER_STATUS_ORDER, type GroupedSessions } from './types';
+import { PR_GROUP_ORDER, STAGE_ORDER, type GroupedSessions } from './types';
 
 function compareStrLocale(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: 'base' });
@@ -35,19 +34,6 @@ function sortSessions(sessions: ReadonlyArray<Session>, sort: SessionSortKey): S
   }
 }
 
-function userStatusBucket(status: SessionUserStatus): SessionUserStatusGroup {
-  switch (status) {
-    case 'wip':
-      return 'wip';
-    case 'waiting':
-      return 'waiting';
-    case 'blocked':
-      return 'blocked';
-    case 'done':
-      return 'done';
-  }
-}
-
 function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
   const pr = github?.pr;
   if (!pr) {
@@ -68,36 +54,14 @@ function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
   return 'reviewable';
 }
 
-export const sortAndGroupSessions = (
+function bucketBy<K extends string>(
   sessions: ReadonlyArray<Session>,
-  prefs: SessionViewPrefs,
-  githubState: Readonly<Record<SessionId, SessionGithubState>>,
-): ReadonlyArray<GroupedSessions> => {
-  const sorted = sortSessions(sessions, prefs.sort);
-
-  if (prefs.group === 'none') {
-    return [{ key: 'all', sessions: sorted }];
-  }
-
-  if (prefs.group === 'userStatus') {
-    const buckets = new Map<SessionUserStatusGroup, Session[]>();
-    for (const s of sorted) {
-      const bucket = userStatusBucket(s.userStatus);
-      let arr = buckets.get(bucket);
-      if (!arr) {
-        arr = [];
-        buckets.set(bucket, arr);
-      }
-      arr.push(s);
-    }
-    return (Object.keys(USER_STATUS_ORDER) as SessionUserStatusGroup[])
-      .filter((k) => buckets.has(k))
-      .map((k) => ({ key: k, sessions: buckets.get(k)! }));
-  }
-
-  const buckets = new Map<SessionPrGroup, Session[]>();
-  for (const s of sorted) {
-    const bucket = prBucket(githubState[s.id]);
+  order: Record<K, number>,
+  keyOf: (session: Session) => K,
+): ReadonlyArray<GroupedSessions> {
+  const buckets = new Map<K, Session[]>();
+  for (const s of sessions) {
+    const bucket = keyOf(s);
     let arr = buckets.get(bucket);
     if (!arr) {
       arr = [];
@@ -105,7 +69,26 @@ export const sortAndGroupSessions = (
     }
     arr.push(s);
   }
-  return (Object.keys(PR_GROUP_ORDER) as SessionPrGroup[])
+  return (Object.keys(order) as K[])
     .filter((k) => buckets.has(k))
     .map((k) => ({ key: k, sessions: buckets.get(k)! }));
+}
+
+export const sortAndGroupSessions = (
+  sessions: ReadonlyArray<Session>,
+  prefs: SessionViewPrefs,
+  githubState: Readonly<Record<SessionId, SessionGithubState>>,
+  stageBySession: Readonly<Record<SessionId, SessionStage>> = {},
+): ReadonlyArray<GroupedSessions> => {
+  const sorted = sortSessions(sessions, prefs.sort);
+
+  if (prefs.group === 'none') {
+    return [{ key: 'all', sessions: sorted }];
+  }
+
+  if (prefs.group === 'stage') {
+    return bucketBy(sorted, STAGE_ORDER, (s) => stageBySession[s.id] ?? 'building');
+  }
+
+  return bucketBy(sorted, PR_GROUP_ORDER, (s) => prBucket(githubState[s.id]));
 };

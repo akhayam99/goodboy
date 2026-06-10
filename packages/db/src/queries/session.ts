@@ -6,7 +6,6 @@ import type {
   Session,
   SessionId,
   SessionProviderPreference,
-  SessionUserStatus,
   TurnState,
   WorkflowId,
   WorkflowRun,
@@ -52,24 +51,9 @@ type SessionRow = {
   effort: string | null;
   model_override: string | null;
   provider_override: string | null;
-  user_status: string;
   created_at: number;
   updated_at: number;
 };
-
-const VALID_USER_STATUSES: ReadonlySet<SessionUserStatus> = new Set([
-  'wip',
-  'waiting',
-  'blocked',
-  'done',
-]);
-
-function toUserStatus(raw: string): SessionUserStatus {
-  if ((VALID_USER_STATUSES as ReadonlySet<string>).has(raw)) {
-    return raw as SessionUserStatus;
-  }
-  return 'wip';
-}
 
 function toState(kind: TurnState['kind'], payload: string): TurnState {
   const data = JSON.parse(payload) as Record<string, unknown>;
@@ -131,7 +115,6 @@ function toDomain(
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
-    userStatus: toUserStatus(row.user_status),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
@@ -201,8 +184,8 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, auto_run, title_user_edited, user_status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, auto_run, title_user_edited, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -214,7 +197,6 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
       session.permissionMode,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,
-      session.userStatus,
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
     ],
@@ -243,19 +225,6 @@ export const updateSessionAutoRun = async (
 ): Promise<void> => {
   await db.execute('UPDATE sessions SET auto_run = ?, updated_at = ? WHERE id = ?', [
     autoRun ? 1 : 0,
-    Date.parse(updatedAt),
-    id,
-  ]);
-};
-
-export const updateSessionUserStatus = async (
-  db: Database,
-  id: SessionId,
-  status: SessionUserStatus,
-  updatedAt: IsoDateTime,
-): Promise<void> => {
-  await db.execute('UPDATE sessions SET user_status = ?, updated_at = ? WHERE id = ?', [
-    status,
     Date.parse(updatedAt),
     id,
   ]);

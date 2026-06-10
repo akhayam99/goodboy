@@ -147,7 +147,6 @@ function buildSession(): Session {
     workflowRuns: [],
     autoRun: false,
     titleUserEdited: false,
-    userStatus: 'wip',
     createdAt: T1,
     updatedAt: T1,
   };

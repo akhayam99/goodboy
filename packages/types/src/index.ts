@@ -29,7 +29,6 @@ export type {
   Session,
   SessionExternalTask,
   SessionExternalTaskProvider,
-  SessionUserStatus,
   TurnState,
   Workspace,
   WorkspaceKind,
@@ -153,7 +152,8 @@ export type {
   SessionGroupKey,
   SessionPrGroup,
   SessionSortKey,
-  SessionUserStatusGroup,
+  SessionStage,
+  SessionStageInfo,
   SessionViewPrefs,
 } from './session-view';
 export type {

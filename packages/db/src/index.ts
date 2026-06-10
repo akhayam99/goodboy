@@ -35,7 +35,6 @@ export {
   updateSessionPermissionMode,
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
-  updateSessionUserStatus,
   getSessionById,
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
