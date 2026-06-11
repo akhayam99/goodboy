@@ -134,7 +134,7 @@ export const WorkflowPlanner = ({
           ordinal,
           name: s.name,
           promptPrefix: s.promptPrefix,
-          role: s.role as AgentRole,
+          role: (ROLE_TO_KIND[s.role as AgentRole] ? s.role as AgentRole : 'custom'),
           modelOverride: o.model,
           effort: o.effort as AgentEffort,
           verbosity: o.verbosity as VerbosityLevel,

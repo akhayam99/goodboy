@@ -34,7 +34,7 @@ export const StepFlowCard = ({
   onMoveLeft,
   onMoveRight,
 }: Props) => {
-  const kind = ROLE_TO_KIND[def.role];
+  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
   const effProvider: ProviderId =
     (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
   const modelValue = def.modelOverride || getDefaultTurnModel(effProvider);

@@ -15,7 +15,7 @@ type Props = {
 
 export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
-  const kind = ROLE_TO_KIND[def.role];
+  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
   const isGlobal = def.workspaceId === null;
   return (
     <li

@@ -39,7 +39,7 @@ const PLAN_FIXTURE = {
     { name: 'scout', role: 'scout', promptPrefix: 'scout prefix', expectedOutput: 'scout output' },
     {
       name: 'implementer',
-      role: 'engineer',
+      role: 'implementer',
       promptPrefix: 'eng prefix',
       expectedOutput: 'eng output',
     },
@@ -93,7 +93,7 @@ describe('WorkflowPlanner', () => {
     it('persists the planner-assigned role on each step', async () => {
       const saved = await planAndSave();
       expect(saved.steps[0]!.role).toBe('scout');
-      expect(saved.steps[1]!.role).toBe('engineer');
+      expect(saved.steps[1]!.role).toBe('implementer');
     });
 
     it('preserves ordinal order matching planner output', async () => {
@@ -115,8 +115,8 @@ describe('WorkflowPlanner', () => {
           reasoning: '',
           steps: [
             { name: 'planner', role: 'architect', promptPrefix: '', expectedOutput: '' },
-            { name: 'coder', role: 'engineer', promptPrefix: '', expectedOutput: '' },
-            { name: 'qa', role: 'qa', promptPrefix: '', expectedOutput: '' },
+            { name: 'coder', role: 'implementer', promptPrefix: '', expectedOutput: '' },
+            { name: 'qa', role: 'tester', promptPrefix: '', expectedOutput: '' },
           ],
         },
       });
@@ -134,7 +134,7 @@ describe('WorkflowPlanner', () => {
       await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
       const saved = mockSavePhaseTemplate.mock.calls[0]![0] as Workflow;
       const roles = saved.steps.map((s) => s.role);
-      expect(roles).toEqual(['architect', 'engineer', 'qa']);
+      expect(roles).toEqual(['architect', 'implementer', 'tester']);
     });
 
     it('saves a role even for steps whose name would resolve to a different kind by regex', async () => {
@@ -145,7 +145,7 @@ describe('WorkflowPlanner', () => {
           steps: [
             {
               name: 'planner agent',
-              role: 'engineer',
+              role: 'implementer',
               promptPrefix: '',
               expectedOutput: '',
             },
@@ -165,7 +165,7 @@ describe('WorkflowPlanner', () => {
       fireEvent.click(screen.getByRole('button', { name: /use this workflow/i }));
       await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
       const saved = mockSavePhaseTemplate.mock.calls[0]![0] as Workflow;
-      expect(saved.steps[0]!.role).toBe('engineer');
+      expect(saved.steps[0]!.role).toBe('implementer');
     });
 
     it('calls onWorkflowReady with the generated workflowId on save', async () => {
@@ -199,7 +199,7 @@ describe('WorkflowPlanner', () => {
         output: {
           workflowName: 'Second Plan',
           reasoning: '',
-          steps: [{ name: 'debugger', role: 'debugger', promptPrefix: '', expectedOutput: '' }],
+          steps: [{ name: 'debugger', role: 'investigator', promptPrefix: '', expectedOutput: '' }],
         },
       });
       render(
@@ -217,7 +217,31 @@ describe('WorkflowPlanner', () => {
       fireEvent.click(screen.getByRole('button', { name: /use this workflow/i }));
       await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
       const saved = mockSavePhaseTemplate.mock.calls[0]![0] as Workflow;
-      expect(saved.steps[0]!.role).toBe('debugger');
+      expect(saved.steps[0]!.role).toBe('investigator');
+    });
+
+    it('normalizes an out-of-vocab planner role to custom on save', async () => {
+      mockPlan.mockResolvedValue({
+        output: {
+          workflowName: 'Unknown Role',
+          reasoning: '',
+          steps: [{ name: 'misc', role: 'other', promptPrefix: '', expectedOutput: '' }],
+        },
+      });
+      render(
+        <WorkflowPlanner
+          workspaceId={'ws-7' as never}
+          providerId="anthropic"
+          initialProcess="unknown role"
+          onWorkflowReady={vi.fn()}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+      await waitFor(() => screen.getByText('Unknown Role'));
+      fireEvent.click(screen.getByRole('button', { name: /use this workflow/i }));
+      await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+      const saved = mockSavePhaseTemplate.mock.calls[0]![0] as Workflow;
+      expect(saved.steps[0]!.role).toBe('custom');
     });
 
     it('shows a plan error and does not call savePhaseTemplate when planning fails', async () => {
