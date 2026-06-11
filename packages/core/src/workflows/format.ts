@@ -204,8 +204,15 @@ function extractMarkerBody(text: string): string | null {
 }
 
 function stripJsonFences(raw: string): string {
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
-  return (fenced?.[1] ?? raw).trim();
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith('```') || !trimmed.endsWith('```') || trimmed.length < 6) {
+    return trimmed;
+  }
+  let start = 3;
+  if (trimmed.slice(start, start + 4).toLowerCase() === 'json') {
+    start += 4;
+  }
+  return trimmed.slice(start, trimmed.length - 3).trim();
 }
 
 function extractJsonObject(text: string): string | null {
