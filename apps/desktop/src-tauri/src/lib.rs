@@ -113,6 +113,7 @@ pub fn run() {
       turn::turn_list_live,
       attachment::attachment_write,
       attachment::attachment_read,
+      attachment::attachment_delete,
       attachment::attachment_read_dropped,
       summarize::summarize_session,
       planner::planner_run,

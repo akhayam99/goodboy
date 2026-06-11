@@ -106,6 +106,7 @@ import {
   type ProviderLifecycleMap,
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
+import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -245,6 +246,7 @@ export type AppState = UpdaterState & {
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
   readonly resolverState: Readonly<Record<AgentId, 'awaiting' | 'committed' | 'wontfix'>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
+  readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
@@ -459,6 +461,8 @@ export type AppActions = {
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
+  setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
+  clearAgentAttachments(agentId: AgentId): void;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
@@ -686,6 +690,7 @@ export const initialState: AppState = {
   pendingResolverKickoff: {},
   resolverState: {},
   agentDraft: {},
+  agentAttachments: {},
   diffComments: {},
   notifications: [],
   sessionPlans: {},

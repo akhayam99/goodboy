@@ -208,6 +208,20 @@ pub fn attachment_read(worktree_dir: String, rel_path: String) -> Result<String,
     ))
 }
 
+#[tauri::command]
+pub fn attachment_delete(worktree_dir: String, rel_path: String) -> Result<(), AttachmentError> {
+    if rel_path.contains("..") || !rel_path.starts_with(ATTACH_SUBDIR) {
+        return Err(AttachmentError::InvalidPath);
+    }
+
+    let full = Path::new(&worktree_dir).join(&rel_path);
+    match fs::remove_file(&full) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(AttachmentError::Io(e)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -240,6 +254,36 @@ mod tests {
 
         let data_url = attachment_read(dir.to_string_lossy().to_string(), rel).unwrap();
         assert!(data_url.starts_with("data:image/png;base64,"));
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn delete_removes_file_and_rejects_traversal() {
+        let dir = std::env::temp_dir().join(format!("goodboy-attach-del-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        let rel = attachment_write(
+            dir.to_string_lossy().to_string(),
+            "att-del".to_string(),
+            "shot.png".to_string(),
+            png_b64.to_string(),
+        )
+        .unwrap();
+        let full = Path::new(&dir).join(&rel);
+        assert!(full.exists());
+
+        attachment_delete(dir.to_string_lossy().to_string(), rel.clone()).unwrap();
+        assert!(!full.exists());
+
+        attachment_delete(dir.to_string_lossy().to_string(), rel).unwrap();
+
+        let err = attachment_delete("/tmp".to_string(), "../../etc/passwd".to_string());
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+        let err = attachment_delete("/tmp".to_string(), "etc/passwd".to_string());
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
 
         let _ = fs::remove_dir_all(&dir);
     }
