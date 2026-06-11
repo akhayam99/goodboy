@@ -119,7 +119,8 @@ export const formatWorkflowFromNL = async (
   return parseFormattedWorkflow(text);
 };
 
-const WORKFLOW_MARKER_RE = /<<workflow>>([\s\S]*?)<<\/workflow>>/g;
+const WORKFLOW_MARKER_OPEN = '<<workflow>>';
+const WORKFLOW_MARKER_CLOSE = '<</workflow>>';
 
 export const parseFormattedWorkflow = (text: string): FormattedWorkflow | null => {
   const raw = extractMarkerBody(text) ?? text;
@@ -181,14 +182,23 @@ export const parseFormattedWorkflow = (text: string): FormattedWorkflow | null =
 };
 
 function extractMarkerBody(text: string): string | null {
-  WORKFLOW_MARKER_RE.lastIndex = 0;
   let body: string | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = WORKFLOW_MARKER_RE.exec(text)) !== null) {
-    const inner = (m[1] ?? '').trim();
+  let from = 0;
+  for (;;) {
+    const open = text.indexOf(WORKFLOW_MARKER_OPEN, from);
+    if (open === -1) {
+      break;
+    }
+    const contentStart = open + WORKFLOW_MARKER_OPEN.length;
+    const close = text.indexOf(WORKFLOW_MARKER_CLOSE, contentStart);
+    if (close === -1) {
+      break;
+    }
+    const inner = text.slice(contentStart, close).trim();
     if (inner.length > 0) {
       body = inner;
     }
+    from = close + WORKFLOW_MARKER_CLOSE.length;
   }
   return body;
 }
