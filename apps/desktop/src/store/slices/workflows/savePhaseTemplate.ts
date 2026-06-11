@@ -7,7 +7,7 @@ import {
 import type { SetFn } from './types';
 
 export const savePhaseTemplate = (set: SetFn) => {
-  return async (template: WorkflowUpsertArgs) => {
+  return async (template: WorkflowUpsertArgs): Promise<Workflow> => {
     const saved = await invokeWorkflowUpsert(template);
     const presets = await invokeWorkflowList(template.workspaceId);
     set((state) => {
@@ -22,5 +22,6 @@ export const savePhaseTemplate = (set: SetFn) => {
         phaseTemplates: { ...state.phaseTemplates, [template.workspaceId]: merged },
       };
     });
+    return saved;
   };
 };

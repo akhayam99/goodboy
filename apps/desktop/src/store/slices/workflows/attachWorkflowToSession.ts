@@ -7,6 +7,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
+import { autoModelForRole } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
@@ -49,6 +50,14 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
     const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+    const connectedProviders = get()
+      .providers.filter((p) => p.connection === 'connected')
+      .map((p) => p.id);
+    const enabled = session.providerPreference.enabledProviders;
+    const enabledSet = enabled && enabled.length > 0 ? new Set(enabled) : null;
+    const autoCandidates = connectedProviders.filter(
+      (p) => enabledSet === null || enabledSet.has(p),
+    );
     const newAgents: Agent[] = [];
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
@@ -64,7 +73,9 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         status: 'pending',
         kind,
       });
-      agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+      const autoModel = autoModelForRole(step.role ?? 'custom', autoCandidates)?.model;
+      agentModelOverrides[agent.id] =
+        step.modelOverride ?? autoModel ?? AGENT_KIND_DEFAULTS[kind].model;
       agentKindOverrides[agent.id] = kind;
       newAgents.push(agent);
     }

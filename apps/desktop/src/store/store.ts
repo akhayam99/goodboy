@@ -427,7 +427,7 @@ export type AppActions = {
   runWorkspaceScript(sessionId: SessionId, script: WorkspaceScript, cwd: string): Promise<void>;
   dismissScriptResult(sessionId: SessionId): void;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
-  savePhaseTemplate(template: WorkflowUpsertArgs): Promise<void>;
+  savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
   saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;

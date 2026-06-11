@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Divider } from '@goodboy/ui';
+import { formatWorkflowFromNL, type FormattedWorkflow } from '@goodboy/core';
+import { invoke } from '@tauri-apps/api/core';
 import type {
   AgentEffort,
   ProviderId,
@@ -9,6 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
+import { useToast } from '../../../../app/components/Toast';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { WorkflowUpsertArgs, WorkflowStepUpsertArgs } from '../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../form';
@@ -17,6 +20,7 @@ import { useWorkflowDrag } from '../../hooks/useWorkflowDrag';
 import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 import { WorkflowComposer } from '../WorkflowStudio/WorkflowComposer';
+import { WorkflowFormatPreview } from '../WorkflowStudio/WorkflowFormatPreview';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -35,6 +39,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const deleteStepDef = useAppStore((s) => s.deleteStepDef);
   const resetWorkflows = useAppStore((s) => s.resetWorkflows);
   const providers = useAppStore((s) => s.providers);
+  const { showToast } = useToast();
   const connectedProviders = useMemo(
     () => providers.filter((p) => p.connection === 'connected').map((p) => p.id),
     [providers],
@@ -47,6 +52,8 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [formatting, setFormatting] = useState(false);
+  const [preview, setPreview] = useState<FormattedWorkflow | null>(null);
 
   const presets = templates.filter((t) => t.isPreset !== false && !t.deletedAt);
 
@@ -74,7 +81,61 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setFormError(null);
   };
 
-  const onSave = async () => {
+  const onFormat = async (description: string) => {
+    const text = description.trim();
+    if (text.length === 0) {
+      return;
+    }
+    const providerId = connectedProviders[0];
+    if (!providerId) {
+      showToast('error', 'connect a provider to format workflows');
+      return;
+    }
+    setFormatting(true);
+    setFormError(null);
+    try {
+      const result = await formatWorkflowFromNL(
+        { providerId, invokeFn: invoke },
+        {
+          description: text,
+          currentName: form.name,
+          currentDescription: form.description,
+          currentStepNames: form.steps.map((s) => s.name).filter((n) => n.trim().length > 0),
+        },
+      );
+      if (!result) {
+        showToast('error', 'could not format workflow, try rephrasing');
+        return;
+      }
+      setPreview(result);
+    } catch (err) {
+      showToast('error', formatError(err));
+    } finally {
+      setFormatting(false);
+    }
+  };
+
+  const applyPreview = () => {
+    if (!preview) {
+      return;
+    }
+    setForm((prev) => ({
+      name: prev.name.trim() || preview.name,
+      description: prev.description.trim() || preview.description,
+      steps: preview.steps.map((s) => ({
+        ...emptyDefinition(),
+        role: s.role,
+        name: s.name,
+        promptPrefix: s.promptPrefix,
+      })),
+    }));
+    setExpandedIdx(null);
+    setPreview(null);
+  };
+
+  const rejectPreview = () => setPreview(null);
+
+  const onSave = async (isPreset: boolean) => {
     if (!form.name.trim()) {
       setFormError('name is required');
       return;
@@ -103,13 +164,20 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       name: form.name.trim(),
       description: form.description.trim(),
       steps: defs,
+      isPreset,
     };
 
     setSaving(true);
     setFormError(null);
     try {
-      await savePhaseTemplate(args);
-      setEditing(null);
+      const saved = await savePhaseTemplate(args);
+      if (isPreset) {
+        setEditing(null);
+        showToast('success', `workflow approved: ${saved.name}`);
+      } else {
+        setEditing(saved);
+        showToast('info', `saved as draft: ${saved.name}`);
+      }
     } catch (err) {
       setFormError(formatError(err));
     } finally {
@@ -235,6 +303,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       <WorkflowComposer
         open={editing !== null}
         isNew={editing === 'new'}
+        isApproved={editing !== null && editing !== 'new' ? editing.isPreset !== false : false}
         hasPresets={presets.length > 0}
         form={form}
         workspaceId={workspaceId}
@@ -243,6 +312,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         expandedIdx={expandedIdx}
         saving={saving}
         error={formError}
+        formatting={formatting}
+        canFormat={connectedProviders.length > 0}
+        onFormat={(description) => void onFormat(description)}
         dragging={drag !== null}
         dropIndex={dropIndex}
         onNew={openNew}
@@ -260,11 +332,19 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         onStartStepDrag={startStepDrag}
         onSaveDef={(args) => void saveStepDef(args, workspaceId)}
         onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}
-        onSave={() => void onSave()}
+        onSave={(isPreset) => void onSave(isPreset)}
         onCancel={cancelEdit}
       />
 
       <DragGhost ghost={ghost} />
+
+      <WorkflowFormatPreview
+        open={preview !== null}
+        proposal={preview}
+        currentStepNames={form.steps.map((s) => s.name)}
+        onAccept={applyPreview}
+        onReject={rejectPreview}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@goodboy/ui';
-import { Check, Trash2, X } from 'lucide-react';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
 import type { Workflow } from '@goodboy/types';
 import {
   AGENT_KIND_DEFAULTS,
@@ -86,18 +86,32 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setConfirming(true);
-          }}
-          title="delete workflow"
-          aria-label={`delete ${template.name}`}
-          className="absolute right-2 top-2 rounded p-1 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground hover:bg-danger/10 hover:!text-danger"
-        >
-          <Trash2 size={12} aria-hidden />
-        </button>
+        <div className="absolute right-2 top-2 flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            title="edit workflow"
+            aria-label={`edit ${template.name}`}
+            className="rounded p-1 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground hover:bg-muted/50 hover:!text-foreground"
+          >
+            <Pencil size={12} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirming(true);
+            }}
+            title="delete workflow"
+            aria-label={`delete ${template.name}`}
+            className="rounded p-1 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground hover:bg-danger/10 hover:!text-danger"
+          >
+            <Trash2 size={12} aria-hidden />
+          </button>
+        </div>
       )}
     </li>
   );

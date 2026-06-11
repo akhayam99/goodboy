@@ -42,6 +42,7 @@ type SessionRow = {
   state_payload: string;
   provider_default: string;
   provider_allow_override: number;
+  provider_enabled: string | null;
   permission_mode: string | null;
   auto_run: number;
   title_user_edited: number;
@@ -60,7 +61,27 @@ function toState(kind: TurnState['kind'], payload: string): TurnState {
   return { kind, ...data } as TurnState;
 }
 
-const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex']);
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex', 'gemini']);
+
+function serializeEnabledProviders(
+  providers: ReadonlyArray<ProviderId> | undefined,
+): string | null {
+  if (!providers || providers.length === 0) {
+    return null;
+  }
+  return providers.join(',');
+}
+
+function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | undefined {
+  if (raw === null) {
+    return undefined;
+  }
+  const parsed = raw
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => VALID_PROVIDER_IDS.has(id)) as ProviderId[];
+  return parsed.length > 0 ? parsed : undefined;
+}
 
 const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
   'default',
@@ -81,9 +102,11 @@ function toProviderPreference(row: SessionRow): SessionProviderPreference {
   const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
     ? (row.provider_default as ProviderId)
     : 'anthropic';
+  const enabledProviders = parseEnabledProviders(row.provider_enabled);
   return {
     defaultProvider,
     allowTurnOverride: row.provider_allow_override !== 0,
+    ...(enabledProviders && { enabledProviders }),
   };
 }
 
@@ -137,6 +160,7 @@ export type SessionConfigUpdate = {
   modelOverride?: string | null;
   providerOverride?: string | null;
   defaultProvider?: ProviderId | null;
+  enabledProviders?: ReadonlyArray<ProviderId> | null;
 };
 
 export const updateSessionConfig = async (
@@ -168,6 +192,10 @@ export const updateSessionConfig = async (
     updates.push('provider_override = ?');
     values.push(null);
   }
+  if (fields.enabledProviders !== undefined) {
+    updates.push('provider_enabled = ?');
+    values.push(serializeEnabledProviders(fields.enabledProviders ?? undefined));
+  }
   if (updates.length === 0) {
     return;
   }
@@ -184,8 +212,8 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, auto_run, title_user_edited, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -194,6 +222,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
       payload,
       session.providerPreference.defaultProvider,
       session.providerPreference.allowTurnOverride ? 1 : 0,
+      serializeEnabledProviders(session.providerPreference.enabledProviders),
       session.permissionMode,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,

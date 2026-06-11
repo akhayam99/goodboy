@@ -12,15 +12,30 @@ const { state } = vi.hoisted(() => ({
     loadStepLibrary: vi.fn(async () => undefined),
     savePhaseTemplate: vi.fn(async () => undefined),
     deleteWorkflow: vi.fn(async () => undefined),
+    saveStepDef: vi.fn(async () => undefined),
+    deleteStepDef: vi.fn(async () => undefined),
+    resetWorkflows: vi.fn(async () => undefined),
   },
 }));
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => undefined) }));
+
+vi.mock('@goodboy/core', () => ({ formatWorkflowFromNL: vi.fn(async () => null) }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
+import { ToastProvider } from '../../../../app/components/Toast';
 import { WorkflowsPanel } from './index';
+
+const renderPanel = () =>
+  render(
+    <ToastProvider>
+      <WorkflowsPanel workspaceId={'ws-1' as never} />
+    </ToastProvider>,
+  );
 
 beforeEach(() => {
   state.phaseTemplates = {};
@@ -30,22 +45,83 @@ beforeEach(() => {
   state.loadStepLibrary = vi.fn(async () => undefined);
   state.savePhaseTemplate = vi.fn(async () => undefined);
   state.deleteWorkflow = vi.fn(async () => undefined);
+  state.saveStepDef = vi.fn(async () => undefined);
+  state.deleteStepDef = vi.fn(async () => undefined);
+  state.resetWorkflows = vi.fn(async () => undefined);
 });
 afterEach(cleanup);
 
+const makeWorkflow = (overrides: Record<string, unknown> = {}) => ({
+  id: 'wf-1',
+  workspaceId: 'ws-1',
+  name: 'My workflow',
+  description: '',
+  steps: [],
+  isPreset: true,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+  ...overrides,
+});
+
 describe('WorkflowsPanel', () => {
   it('renders the empty-state copy when no workflows exist', () => {
-    render(<WorkflowsPanel workspaceId={'ws-1' as never} />);
+    renderPanel();
     expect(screen.getByText(/no presets yet/i)).toBeDefined();
   });
 
   it('renders a New workflow button', () => {
-    render(<WorkflowsPanel workspaceId={'ws-1' as never} />);
+    renderPanel();
     expect(screen.getByRole('button', { name: /new workflow/i })).toBeDefined();
   });
 
-  it('loads phase templates on mount', () => {
-    render(<WorkflowsPanel workspaceId={'ws-1' as never} />);
+  it('loads phase templates and step library on mount', () => {
+    renderPanel();
     expect(state.loadPhaseTemplates).toHaveBeenCalledWith('ws-1');
+    expect(state.loadStepLibrary).toHaveBeenCalledWith('ws-1');
+  });
+
+  it('renders preset workflow names when they exist', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    expect(screen.getByText('Plan and build')).toBeDefined();
+  });
+
+  it('hides soft-deleted (deletedAt) workflows from the preset list', () => {
+    state.phaseTemplates = {
+      'ws-1': [
+        makeWorkflow({ name: 'Visible workflow' }),
+        makeWorkflow({
+          id: 'wf-2',
+          name: 'Deleted workflow',
+          deletedAt: '2024-06-01T00:00:00.000Z',
+        }),
+      ],
+    };
+    renderPanel();
+    expect(screen.getByText('Visible workflow')).toBeDefined();
+    expect(screen.queryByText('Deleted workflow')).toBeNull();
+  });
+
+  it('hides draft workflows (isPreset=false) from the preset list', () => {
+    state.phaseTemplates = {
+      'ws-1': [
+        makeWorkflow({ name: 'Approved preset' }),
+        makeWorkflow({ id: 'wf-3', name: 'Draft workflow', isPreset: false }),
+      ],
+    };
+    renderPanel();
+    expect(screen.getByText('Approved preset')).toBeDefined();
+    expect(screen.queryByText('Draft workflow')).toBeNull();
+  });
+
+  it('shows empty state when all templates are deleted or drafts', () => {
+    state.phaseTemplates = {
+      'ws-1': [
+        makeWorkflow({ id: 'wf-d', name: 'Gone', deletedAt: '2024-01-01T00:00:00.000Z' }),
+        makeWorkflow({ id: 'wf-draft', name: 'Draft', isPreset: false }),
+      ],
+    };
+    renderPanel();
+    expect(screen.getByText(/no presets yet/i)).toBeDefined();
   });
 });

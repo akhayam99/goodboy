@@ -578,15 +578,36 @@ pub fn workflow_delete(
         return Err(PhaseError::TemplateNotFound(id));
     }
 
-    // Soft-delete only. A hard DELETE used to cascade: it dropped the workflow's
-    // steps (and via session_workflows the attachment), so every session that
-    // had run this preset lost its workflow view and its agents' step linkage.
-    // Setting deleted_at hides it from the preset picker while keeping attached
-    // sessions fully intact.
-    conn.execute(
-        "UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?1",
-        rusqlite::params![id],
-    )?;
+    // Seeded presets keep a deterministic id so "Restore defaults" can re-seed
+    // them; never hard-delete those (the row must survive to be un-deleted).
+    let is_seed = id.starts_with("wf_seed_");
+
+    // A workflow attached to any session must survive a hard DELETE: dropping its
+    // steps would null the step linkage of every agent that ran it, and the
+    // session would lose its workflow view entirely.
+    let is_attached: bool = {
+        let mut stmt =
+            conn.prepare("SELECT 1 FROM session_workflows WHERE workflow_id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
+        rows.next().is_some()
+    };
+
+    if is_seed || is_attached {
+        // Soft-delete: hide it from the preset picker while keeping seeded rows
+        // restorable and attached sessions fully intact.
+        conn.execute(
+            "UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?1",
+            rusqlite::params![id],
+        )?;
+    } else {
+        // User-created and unreferenced: hard-delete so deleted drafts/presets do
+        // not accumulate as hidden rows.
+        conn.execute(
+            "DELETE FROM steps WHERE workflow_id = ?1",
+            rusqlite::params![id],
+        )?;
+        conn.execute("DELETE FROM workflows WHERE id = ?1", rusqlite::params![id])?;
+    }
     Ok(())
 }
 

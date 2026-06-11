@@ -34,6 +34,11 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
 
   const useOverride = turnOverride !== undefined && sessionPreference.allowTurnOverride;
 
+  const enabled = sessionPreference.enabledProviders;
+  const enabledSet = enabled && enabled.length > 0 ? new Set<ProviderId>(enabled) : null;
+  const isEnabled = (provider: ProviderId): boolean =>
+    enabledSet === null || enabledSet.has(provider);
+
   const preferredProvider: ProviderId = useOverride
     ? turnOverride!.providerId
     : sessionPreference.defaultProvider;
@@ -47,9 +52,10 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
 
   const preferredName = PROVIDER_ID_TO_NAME[preferredProvider];
   const preferredConnected = connectedProviders.includes(preferredProvider);
+  const preferredAllowed = useOverride || isEnabled(preferredProvider);
   const preferredResult = await budgetChecker.checkProviderBudget(preferredName, 'monthly');
 
-  if (preferredConnected && !preferredResult.exceeded) {
+  if (preferredConnected && preferredAllowed && !preferredResult.exceeded) {
     return {
       selectedProvider: preferredProvider,
       selectedModel: preferredModel,
@@ -62,6 +68,9 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
     if (candidate === preferredProvider) {
       continue;
     }
+    if (!isEnabled(candidate)) {
+      continue;
+    }
 
     const candidateName = PROVIDER_ID_TO_NAME[candidate];
     const candidateResult = await budgetChecker.checkProviderBudget(candidateName, 'monthly');
@@ -70,7 +79,8 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
       return {
         selectedProvider: candidate,
         selectedModel: getDefaultModel(candidate),
-        reason: preferredConnected ? 'fallback-budget' : 'fallback-disconnected',
+        reason:
+          preferredConnected && preferredAllowed ? 'fallback-budget' : 'fallback-disconnected',
         fallbackUsed: true,
         fallbackFrom: preferredProvider,
       };

@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Archive,
   ArchiveRestore,
+  Check,
   ChevronDown,
   ChevronUp,
   DollarSign,
@@ -252,6 +253,35 @@ export const SessionSettingsDialog = ({
     }
   };
 
+  const onToggleEnabledProvider = async (next: ProviderId) => {
+    if (!session) {
+      return;
+    }
+    const pref = session.providerPreference;
+    if (next === pref.defaultProvider) {
+      return;
+    }
+    const effective = new Set<ProviderId>(pref.enabledProviders ?? connectedProviderIds);
+    if (effective.has(next)) {
+      effective.delete(next);
+    } else {
+      effective.add(next);
+    }
+    effective.add(pref.defaultProvider);
+    const selected = connectedProviderIds.filter((p) => effective.has(p));
+    const allEnabled = selected.length === connectedProviderIds.length;
+    setBusy(true);
+    setError(null);
+    try {
+      await setSessionConfig(sessionId, { enabledProviders: allEnabled ? null : selected });
+      showToast('success', 'routing providers updated');
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onDelete = async () => {
     setBusy(true);
     setError(null);
@@ -347,6 +377,7 @@ export const SessionSettingsDialog = ({
           busy={busy}
           connectedProviderIds={connectedProviderIds}
           onChangeProvider={(p) => void onChangeProvider(p)}
+          onToggleEnabledProvider={(p) => void onToggleEnabledProvider(p)}
           branchEditOpen={branchEditOpen}
           setBranchEditOpen={setBranchEditOpen}
           branchMode={branchMode}
@@ -390,7 +421,13 @@ export const SessionSettingsDialog = ({
 };
 
 type GeneralSectionProps = {
-  readonly session: { goal: string; providerPreference: { defaultProvider: ProviderId } };
+  readonly session: {
+    goal: string;
+    providerPreference: {
+      defaultProvider: ProviderId;
+      enabledProviders?: ReadonlyArray<ProviderId>;
+    };
+  };
   readonly goalDraft: string;
   readonly setGoalDraft: (v: string) => void;
   readonly onSaveGoal: () => void;
@@ -399,6 +436,7 @@ type GeneralSectionProps = {
   readonly busy: boolean;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly onChangeProvider: (p: ProviderId) => void;
+  readonly onToggleEnabledProvider: (p: ProviderId) => void;
   readonly branchEditOpen: boolean;
   readonly setBranchEditOpen: (v: boolean) => void;
   readonly branchMode: 'existing' | 'new';
@@ -426,6 +464,7 @@ function GeneralSection(props: GeneralSectionProps) {
     busy,
     connectedProviderIds,
     onChangeProvider,
+    onToggleEnabledProvider,
     branchEditOpen,
     setBranchEditOpen,
     branchMode,
@@ -606,6 +645,69 @@ function GeneralSection(props: GeneralSectionProps) {
           disabled={busy}
         />
       </Field>
+
+      <Field
+        label="Routing providers"
+        hint="Providers auto-routing may pick from when the default is over budget or offline. The default stays enabled. Leave all selected to allow every connected provider."
+      >
+        <EnabledProvidersPicker
+          defaultProvider={currentProvider}
+          enabled={session.providerPreference.enabledProviders ?? connectedProviderIds}
+          connected={connectedProviderIds}
+          onToggle={onToggleEnabledProvider}
+          disabled={busy}
+        />
+      </Field>
+    </div>
+  );
+}
+
+function EnabledProvidersPicker({
+  defaultProvider,
+  enabled,
+  connected,
+  onToggle,
+  disabled,
+}: {
+  defaultProvider: ProviderId;
+  enabled: ReadonlyArray<ProviderId>;
+  connected: ReadonlyArray<ProviderId>;
+  onToggle: (p: ProviderId) => void;
+  disabled: boolean;
+}) {
+  if (connected.length === 0) {
+    return <span className="text-2xs text-muted-foreground">No providers connected.</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {connected.map((id) => {
+        const isEnabled = enabled.includes(id);
+        const isDefault = id === defaultProvider;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onToggle(id)}
+            disabled={disabled || isDefault}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs motion-safe:transition-colors',
+              isEnabled
+                ? 'border-primary/40 bg-primary/10 font-medium text-primary'
+                : 'border-border-soft bg-background text-muted-foreground hover:border-border hover:text-foreground',
+              (disabled || isDefault) && 'cursor-not-allowed opacity-60',
+            )}
+            title={isDefault ? 'default provider is always enabled' : undefined}
+          >
+            {isEnabled ? <Check size={11} aria-hidden /> : <Zap size={11} aria-hidden />}
+            {PROVIDER_LABEL[id]}
+            {isDefault ? (
+              <span className="text-[9px] uppercase tracking-wide text-muted-foreground/70">
+                default
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }

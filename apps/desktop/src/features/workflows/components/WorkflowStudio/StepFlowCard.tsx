@@ -1,7 +1,5 @@
 import { cn } from '@goodboy/ui';
 import { ChevronLeft, ChevronRight, GripVertical, X } from 'lucide-react';
-import { getDefaultTurnModel } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
 import type { DefinitionForm } from '../../form';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -13,7 +11,6 @@ type Props = {
   readonly total: number;
   readonly selected: boolean;
   readonly isDragging: boolean;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onSelect: () => void;
   readonly onStartDrag: (e: React.PointerEvent) => void;
   readonly onRemove: () => void;
@@ -27,7 +24,6 @@ export const StepFlowCard = ({
   total,
   selected,
   isDragging,
-  connectedProviders,
   onSelect,
   onStartDrag,
   onRemove,
@@ -35,9 +31,7 @@ export const StepFlowCard = ({
   onMoveRight,
 }: Props) => {
   const kind = ROLE_TO_KIND[def.role];
-  const effProvider: ProviderId =
-    (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
-  const modelValue = def.modelOverride || getDefaultTurnModel(effProvider);
+  const modelLabel = def.modelOverride ? shortModel(def.modelOverride) : 'auto';
 
   return (
     <div
@@ -109,7 +103,7 @@ export const StepFlowCard = ({
           {ROLE_LABEL[def.role]}
         </span>
         <span className="truncate font-mono text-[10px] text-muted-foreground/60">
-          {shortModel(modelValue)} · {def.verbosity}
+          {modelLabel} · {def.verbosity}
         </span>
       </button>
     </div>

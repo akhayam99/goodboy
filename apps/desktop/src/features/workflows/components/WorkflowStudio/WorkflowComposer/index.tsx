@@ -1,6 +1,6 @@
-import { Fragment } from 'react';
-import { Button, Divider, Input, SectionHeader } from '@goodboy/ui';
-import { Plus } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { Button, Divider, Input, SectionHeader, Textarea } from '@goodboy/ui';
+import { Plus, Sparkles } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade } from '../../../../../shared/components/ScrollFade';
 import type { StepDefUpsertArgs } from '../../../workflows';
@@ -14,6 +14,7 @@ import { EmptyGuide } from '../EmptyGuide';
 type Props = {
   readonly open: boolean;
   readonly isNew: boolean;
+  readonly isApproved: boolean;
   readonly hasPresets: boolean;
   readonly form: TemplateForm;
   readonly workspaceId: WorkspaceId;
@@ -22,6 +23,9 @@ type Props = {
   readonly expandedIdx: number | null;
   readonly saving: boolean;
   readonly error: string | null;
+  readonly formatting: boolean;
+  readonly canFormat: boolean;
+  readonly onFormat: (description: string) => void;
   readonly dragging: boolean;
   readonly dropIndex: number | null;
   readonly onNew: () => void;
@@ -36,13 +40,14 @@ type Props = {
   readonly onStartStepDrag: (fromIndex: number, label: string, e: React.PointerEvent) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
-  readonly onSave: () => void;
+  readonly onSave: (isPreset: boolean) => void;
   readonly onCancel: () => void;
 };
 
 export const WorkflowComposer = ({
   open,
   isNew,
+  isApproved,
   hasPresets,
   form,
   workspaceId,
@@ -51,6 +56,9 @@ export const WorkflowComposer = ({
   expandedIdx,
   saving,
   error,
+  formatting,
+  canFormat,
+  onFormat,
   dragging,
   dropIndex,
   onNew,
@@ -76,6 +84,9 @@ export const WorkflowComposer = ({
     );
   }
 
+  const [magicOpen, setMagicOpen] = useState(false);
+  const [magicText, setMagicText] = useState('');
+
   const stepCount = form.steps.length;
   const title = form.name.trim() || (isNew ? 'New workflow' : 'Untitled workflow');
   const subtitle = [`${stepCount} ${stepCount === 1 ? 'step' : 'steps'}`, form.description.trim()]
@@ -90,16 +101,37 @@ export const WorkflowComposer = ({
     <section className="flex min-w-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-3 px-8 py-4">
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-base font-semibold text-foreground">{title}</span>
+          <span className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
+            {title}
+            {!isApproved ? (
+              <span className="shrink-0 rounded bg-warning/15 px-1.5 py-px text-[10px] font-semibold uppercase leading-none tracking-wide text-warning">
+                draft
+              </span>
+            ) : null}
+          </span>
           <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-3">
           {error ? <span className="text-2xs font-medium text-danger">{error}</span> : null}
+          {canFormat ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMagicOpen((v) => !v)}
+              disabled={saving || formatting}
+            >
+              <Sparkles size={13} aria-hidden className="mr-1" />
+              {formatting ? 'Formatting…' : 'Format with AI'}
+            </Button>
+          ) : null}
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button size="sm" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save workflow'}
+          <Button variant="secondary" size="sm" onClick={() => onSave(false)} disabled={saving}>
+            {saving ? 'Saving…' : 'Save as draft'}
+          </Button>
+          <Button size="sm" onClick={() => onSave(true)} disabled={saving}>
+            {saving ? 'Saving…' : 'Approve & save'}
           </Button>
         </div>
       </div>
@@ -129,6 +161,43 @@ export const WorkflowComposer = ({
             />
           </div>
         </div>
+
+        {magicOpen && canFormat ? (
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-10">
+            <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+              describe the workflow
+            </label>
+            <Textarea
+              value={magicText}
+              onChange={(e) => setMagicText(e.target.value)}
+              rows={3}
+              placeholder="e.g. plan the change, implement it carefully, then run tests and review the diff"
+              disabled={formatting}
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMagicOpen(false)}
+                disabled={formatting}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  onFormat(magicText);
+                  setMagicText('');
+                  setMagicOpen(false);
+                }}
+                disabled={formatting || magicText.trim().length === 0}
+              >
+                <Sparkles size={13} aria-hidden className="mr-1" />
+                {formatting ? 'Formatting…' : 'Format'}
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mx-auto w-full max-w-3xl px-10">
           <SectionHeader
@@ -166,7 +235,6 @@ export const WorkflowComposer = ({
                   total={stepCount}
                   selected={expandedIdx === idx}
                   isDragging={draggingStepIdx === idx}
-                  connectedProviders={connectedProviders}
                   onSelect={() => onToggleExpand(idx)}
                   onStartDrag={(e) => onStartStepDrag(idx, def.name || 'untitled step', e)}
                   onRemove={() => onRemoveStep(idx)}

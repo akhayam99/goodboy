@@ -54,6 +54,7 @@ import { m053ScoutFanout } from './m053-scout-fanout';
 import { m054WorkflowRunInstances } from './m054-workflow-run-instances';
 import { m055ResolverCommentLink } from './m055-resolver-comment-link';
 import { m056CompositeWorkspaces } from './m056-composite-workspaces';
+import { m057SessionEnabledProviders } from './m057-session-enabled-providers';
 
 export type Migration = {
   readonly version: number;
@@ -117,4 +118,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 54, sql: m054WorkflowRunInstances },
   { version: 55, sql: m055ResolverCommentLink },
   { version: 56, sql: m056CompositeWorkspaces },
+  { version: 57, sql: m057SessionEnabledProviders },
 ];

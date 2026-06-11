@@ -1,6 +1,6 @@
 import { Input, Textarea, cn } from '@goodboy/ui';
 import { X } from 'lucide-react';
-import { getDefaultTurnModel } from '@goodboy/core';
+import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import type { DefinitionForm } from '../../form';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
@@ -24,7 +24,8 @@ export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose
   const kind = ROLE_TO_KIND[def.role];
   const effProvider: ProviderId =
     (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
-  const modelValue = def.modelOverride || getDefaultTurnModel(effProvider);
+  const autoModel = autoModelForRole(def.role, connectedProviders)?.model;
+  const effortModel = def.modelOverride || autoModel || getDefaultTurnModel(effProvider);
 
   const onModelChange = (model: string) => {
     const levels = modelEffortLevels(model);
@@ -93,14 +94,15 @@ export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose
         <InlineField label="Model">
           <ModelSelect
             provider={effProvider}
-            value={modelValue}
+            value={def.modelOverride}
             onChange={onModelChange}
             disabled={false}
+            allowAuto
           />
         </InlineField>
         <InlineField label="Effort">
           <EffortSelect
-            model={modelValue}
+            model={effortModel}
             value={def.effort}
             onChange={(effort) => onUpdate({ effort })}
             disabled={false}

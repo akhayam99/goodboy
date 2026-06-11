@@ -4,6 +4,7 @@ export type SessionProviderPreference = {
   readonly defaultProvider: ProviderId;
   readonly defaultModel?: string;
   readonly allowTurnOverride: boolean;
+  readonly enabledProviders?: ReadonlyArray<ProviderId>;
 };
 
 export type TurnProviderOverride = {

@@ -76,6 +76,8 @@ export {
   getDefaultTurnModel,
 } from './providers/capabilities';
 
+export { autoModelForRole, type AutoModelChoice } from './providers/auto-model';
+
 export { getModelDescriptor } from './providers/model-display';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
@@ -155,6 +157,13 @@ export {
   seedWorkflowLibrary,
   type SeedResult,
   type SeedWorkflowLibraryDeps,
+  formatWorkflowFromNL,
+  buildWorkflowFormatUserPrompt,
+  parseFormattedWorkflow,
+  type FormattedWorkflow,
+  type FormattedWorkflowStep,
+  type WorkflowFormatInput,
+  type WorkflowFormatDeps,
 } from './workflows';
 
 export {
