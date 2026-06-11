@@ -232,6 +232,10 @@ export const readAttachment = async (worktreeDir: string, relPath: string): Prom
   return invoke<string>('attachment_read', { worktreeDir, relPath });
 };
 
+export const deleteAttachment = async (worktreeDir: string, relPath: string): Promise<void> => {
+  await invoke('attachment_delete', { worktreeDir, relPath });
+};
+
 export type DroppedAttachment = {
   readonly fileName: string;
   readonly mimeType: string;
