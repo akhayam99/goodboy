@@ -8,6 +8,8 @@ afterEach(cleanup);
 
 const baseProps = {
   direction: 'lighter' as const,
+  kind: 'strong' as const,
+  costMultiplier: null as number | null,
   currentModel: 'claude-opus-4-5',
   suggestedModel: 'claude-haiku-4-5',
   onUseSuggested: vi.fn(),
@@ -27,8 +29,64 @@ describe('RightSizeCard', () => {
   });
 
   it('renders the heavier copy for escalations', () => {
-    render(<RightSizeCard {...baseProps} direction="heavier" suggestedModel="claude-fable-5" />);
+    render(
+      <RightSizeCard
+        {...baseProps}
+        direction="heavier"
+        kind="strong"
+        suggestedModel="claude-fable-5"
+      />,
+    );
     expect(screen.getByText(/this looks heavy/i)).toBeDefined();
+  });
+
+  it('renders a plain savings line for strong lighter suggestions', () => {
+    render(<RightSizeCard {...baseProps} costMultiplier={1.7} />);
+    expect(screen.getByTestId('right-size-cost-line').textContent).toMatch(/about 1\.7x cheaper/i);
+  });
+
+  it('renders an underpowered note for strong heavier suggestions', () => {
+    render(
+      <RightSizeCard
+        {...baseProps}
+        direction="heavier"
+        kind="strong"
+        costMultiplier={null}
+        suggestedModel="claude-fable-5"
+      />,
+    );
+    expect(screen.getByTestId('right-size-cost-line').textContent).toMatch(/underpowered/i);
+  });
+
+  it('renders soft language and a plain cost line for optional heavier suggestions', () => {
+    render(
+      <RightSizeCard
+        {...baseProps}
+        direction="heavier"
+        kind="optional"
+        costMultiplier={2}
+        suggestedModel="claude-fable-5"
+      />,
+    );
+    expect(screen.getByText(/this might run heavy/i)).toBeDefined();
+    expect(screen.getByTestId('right-size-cost-line').textContent).toMatch(
+      /optional, about 2x cost/i,
+    );
+  });
+
+  it('omits the multiplier when an optional suggestion has no known cost', () => {
+    render(
+      <RightSizeCard
+        {...baseProps}
+        direction="heavier"
+        kind="optional"
+        costMultiplier={null}
+        suggestedModel="claude-fable-5"
+      />,
+    );
+    const line = screen.getByTestId('right-size-cost-line').textContent ?? '';
+    expect(line).toMatch(/optional/i);
+    expect(line).not.toMatch(/x cost/i);
   });
 
   it('triggers use-suggested when primary is clicked', () => {

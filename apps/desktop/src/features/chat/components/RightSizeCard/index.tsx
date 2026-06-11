@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
@@ -6,6 +5,8 @@ import { NudgeCard } from '../NudgeCard';
 
 export type Props = {
   readonly direction: 'lighter' | 'heavier';
+  readonly kind: 'strong' | 'optional';
+  readonly costMultiplier: number | null;
   readonly currentModel: string;
   readonly suggestedModel: string;
   readonly onUseSuggested: () => void;
@@ -13,14 +14,38 @@ export type Props = {
   readonly onChangeModel: () => void;
 };
 
+const lead = (direction: Props['direction'], kind: Props['kind']): string => {
+  if (direction === 'lighter') {
+    return 'This looks light.';
+  }
+  return kind === 'optional' ? 'This might run heavy.' : 'This looks heavy.';
+};
+
+const costLine = (
+  direction: Props['direction'],
+  kind: Props['kind'],
+  costMultiplier: number | null,
+): string | null => {
+  if (direction === 'lighter') {
+    return costMultiplier !== null ? `About ${costMultiplier}x cheaper.` : null;
+  }
+  if (kind === 'optional') {
+    return costMultiplier !== null ? `Optional, about ${costMultiplier}x cost.` : 'Optional.';
+  }
+  return 'Current model looks underpowered for this.';
+};
+
 export const RightSizeCard = ({
   direction,
+  kind,
+  costMultiplier,
   currentModel,
   suggestedModel,
   onUseSuggested,
   onKeepCurrent,
   onChangeModel,
 }: Props) => {
+  const body = costLine(direction, kind, costMultiplier);
   return (
     <NudgeCard
       severity="info"
@@ -30,7 +55,7 @@ export const RightSizeCard = ({
       autoFocusPrimary
       title={
         <>
-          {direction === 'lighter' ? 'This looks light.' : 'This looks heavy.'} Run with{' '}
+          {lead(direction, kind)} Run with{' '}
           <span className={cn('font-semibold', TIER_TEXT[modelTier(suggestedModel)])}>
             {modelLabel(suggestedModel)}
           </span>{' '}
@@ -41,6 +66,7 @@ export const RightSizeCard = ({
           ?
         </>
       }
+      body={body ? <span data-testid="right-size-cost-line">{body}</span> : undefined}
       primary={{
         label: `Use ${modelLabel(suggestedModel)}`,
         onClick: onUseSuggested,
