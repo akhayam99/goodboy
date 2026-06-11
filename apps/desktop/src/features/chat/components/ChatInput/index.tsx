@@ -32,7 +32,8 @@ import { tauriDatabase } from '../../../../shared/lib/db';
 import type { IsoDateTime } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { readDroppedAttachment } from '../../turn';
+import type { DraftAttachment } from '../../../../store/slices/agents/setAgentAttachments';
+import { readDroppedAttachment, readAttachment, writeAttachment } from '../../turn';
 import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, type ToastKind } from '../../../../app/components/Toast';
@@ -710,6 +711,33 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       return;
     }
 
+    // persist attachments to store before clearing
+    if (selectedAgentId && atts.length > 0) {
+      const draftAtts: DraftAttachment[] = [];
+      for (const att of atts) {
+        try {
+          if (!sessionWorktree) {
+            continue;
+          }
+          const relPath = await writeAttachment({
+            worktreeDir: sessionWorktree,
+            attachmentId: att.id,
+            fileName: att.fileName,
+            dataBase64: att.dataUrl.split(',')[1] ?? att.dataUrl,
+          });
+          draftAtts.push({
+            id: att.id,
+            fileName: att.fileName,
+            mimeType: att.mimeType,
+            relPath,
+          });
+        } catch {
+          // silently skip attachments that fail to write
+        }
+      }
+      setAgentAttachments(selectedAgentId, draftAtts);
+    }
+
     setValue('');
     setAttachments([]);
     await sendWith(content, atts, null);
@@ -911,12 +939,74 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   }, []);
 
   const lastAgentIdRef = useRef(selectedAgentId);
+  const sessionWorktreeRef = useRef(sessionWorktree);
+  sessionWorktreeRef.current = sessionWorktree;
+  const setAgentAttachments = useAppStore((s) => s.setAgentAttachments);
+  const clearAgentAttachments = useAppStore((s) => s.clearAgentAttachments);
+  const agentAttachments = useAppStore((s) =>
+    selectedAgentId ? (s.agentAttachments[selectedAgentId] ?? []) : [],
+  );
+
+  const restoreAttachments = useCallback(
+    async (draftAttachments: ReadonlyArray<DraftAttachment>) => {
+      const restored: PendingAttachment[] = [];
+      for (const att of draftAttachments) {
+        try {
+          if (!sessionWorktreeRef.current) {
+            continue;
+          }
+          const dataUrl = await readAttachment(sessionWorktreeRef.current, att.relPath);
+          restored.push({
+            id: att.id,
+            fileName: att.fileName,
+            mimeType: att.mimeType,
+            dataUrl,
+          });
+        } catch {
+          // silently skip unreadable attachments (file may have been deleted)
+        }
+      }
+      setAttachments(restored);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (lastAgentIdRef.current === selectedAgentId) {
       return;
     }
     const outgoingAgentId = lastAgentIdRef.current;
     lastAgentIdRef.current = selectedAgentId;
+
+    // save attachments from outgoing agent before switching
+    if (outgoingAgentId !== null && attachments.length > 0) {
+      const saveAttachments = async () => {
+        const draftAtts: DraftAttachment[] = [];
+        for (const att of attachments) {
+          try {
+            if (!sessionWorktreeRef.current) {
+              continue;
+            }
+            const relPath = await writeAttachment({
+              worktreeDir: sessionWorktreeRef.current,
+              attachmentId: att.id,
+              fileName: att.fileName,
+              dataBase64: att.dataUrl.split(',')[1] ?? att.dataUrl,
+            });
+            draftAtts.push({
+              id: att.id,
+              fileName: att.fileName,
+              mimeType: att.mimeType,
+              relPath,
+            });
+          } catch {
+            // silently skip attachments that fail to write
+          }
+        }
+        setAgentAttachments(outgoingAgentId, draftAtts);
+      };
+      void saveAttachments();
+    }
 
     if (outgoingAgentId !== null) {
       void storeSetAgentConfig(session.id, outgoingAgentId, {
@@ -947,13 +1037,21 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       setVerbosityState(restoredVerbosity);
     }
 
-    setAttachments([]);
     setQueue([]);
     setRightSizePending(null);
     setRightSizeDismissed(false);
     setScopePending(null);
     setScopeNudgeEventId(null);
-  }, [selectedAgentId]);
+
+    // restore attachments for the new agent
+    if (selectedAgentId !== null) {
+      const state = useAppStore.getState();
+      const stored = state.agentAttachments[selectedAgentId] ?? [];
+      void restoreAttachments(stored);
+    } else {
+      setAttachments([]);
+    }
+  }, [selectedAgentId, restoreAttachments]);
 
   useEffect(() => {
     void loadScripts(session.workspaceId);

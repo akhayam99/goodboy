@@ -30,6 +30,8 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       delete nextTranscripts[agentId];
       const nextDraft = { ...s.agentDraft };
       delete nextDraft[agentId];
+      const nextAttachments = { ...s.agentAttachments };
+      delete nextAttachments[agentId];
       const nextHistory = { ...s.agentRunHistory };
       delete nextHistory[agentId];
       const nextModelOverride = { ...s.agentModelOverride };
@@ -54,6 +56,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         agentTurnState: nextTurnState,
         transcripts: nextTranscripts,
         agentDraft: nextDraft,
+        agentAttachments: nextAttachments,
         agentRunHistory: nextHistory,
         agentModelOverride: nextModelOverride,
         agentProviderOverride: nextProviderOverride,
