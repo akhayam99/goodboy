@@ -996,18 +996,24 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const rightSizeSuggestion = useMemo<{
     readonly direction: 'lighter' | 'heavier';
     readonly model: string;
+    readonly kind: 'strong' | 'optional';
+    readonly costMultiplier: number | null;
   } | null>(() => {
     if (!isFirstTurnForAgent || rightSizeDismissed) {
       return null;
     }
     const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
     if (weight === 'light') {
-      const model = suggestLighterModel(effectiveModel, modelCandidates);
-      return model ? { direction: 'lighter', model } : null;
+      const s = suggestLighterModel(effectiveModel, modelCandidates);
+      return s
+        ? { direction: 'lighter', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
+        : null;
     }
     if (weight === 'heavy') {
-      const model = suggestHeavierModel(effectiveModel, modelCandidates);
-      return model ? { direction: 'heavier', model } : null;
+      const s = suggestHeavierModel(effectiveModel, modelCandidates);
+      return s
+        ? { direction: 'heavier', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
+        : null;
     }
     return null;
   }, [
@@ -1140,6 +1146,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       node: (
         <RightSizeCard
           direction={rightSizeSuggestion.direction}
+          kind={rightSizeSuggestion.kind}
+          costMultiplier={rightSizeSuggestion.costMultiplier}
           currentModel={effectiveModel}
           suggestedModel={rightSizeSuggestion.model}
           onUseSuggested={() => void onUseSuggested()}

@@ -29,7 +29,7 @@ const GPT5_PRICE: ModelPrice = {
   cachedInputPerMtok: 0.5,
 };
 
-const PRICES: Record<string, ModelPrice> = {
+export const CURSOR_PRICES: Record<string, ModelPrice> = {
   [CURSOR_CHEAP_MODEL]: COMPOSER_PRICE,
   'composer-2': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
@@ -51,7 +51,7 @@ const PRICES: Record<string, ModelPrice> = {
 const FALLBACK: ModelPrice = COMPOSER_PRICE;
 
 export const cursorPriceFor = (model: string): ModelPrice => {
-  return PRICES[model] ?? FALLBACK;
+  return CURSOR_PRICES[model] ?? FALLBACK;
 };
 
 export const computeCursorCostUsd = (usage: ProviderUsage, model: string): number => {
