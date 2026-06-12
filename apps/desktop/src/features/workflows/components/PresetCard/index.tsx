@@ -1,13 +1,12 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import { Check, Trash2, X } from 'lucide-react';
 import type { Workflow } from '@goodboy/types';
 import {
-  AGENT_KIND_DEFAULTS,
+  AGENT_KIND_PALETTE,
   inferAgentKindFromName,
   ROLE_TO_KIND,
 } from '../../../session/agent-kind';
-import { StepRowCompact } from '../StepRowCompact';
 
 type Props = {
   readonly template: Workflow;
@@ -19,42 +18,41 @@ type Props = {
 export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  const description = template.description?.trim();
   return (
     <li className="group relative">
       <button
         type="button"
         onClick={onSelect}
         className={cn(
-          'flex w-full flex-col gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors',
-          active
-            ? 'border-border-soft bg-primary/10 ring-1 ring-primary/30'
-            : 'border-border-soft bg-muted/20 hover:border-border hover:bg-muted/40',
+          'flex w-full flex-col gap-0.5 rounded-md px-2.5 py-2 text-left transition-colors',
+          active ? 'bg-primary/10' : 'hover:bg-muted/40',
         )}
       >
         <div className="flex items-center gap-2">
-          <span className="truncate text-xs font-semibold text-foreground">{template.name}</span>
-          <span className="ml-auto shrink-0 text-2xs text-muted-foreground/40">
-            {steps.length} step{steps.length === 1 ? '' : 's'}
+          <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
+          <span className="ml-auto shrink-0 text-2xs tabular-nums text-muted-foreground/50 group-hover:opacity-0">
+            {steps.length}
           </span>
         </div>
-        {steps.length > 0 && (
-          <ol className="flex flex-col gap-1">
+        {description ? (
+          <span className="line-clamp-1 text-2xs text-muted-foreground/70">{description}</span>
+        ) : null}
+        {steps.length > 0 ? (
+          <span className="truncate text-2xs">
             {steps.map((step, i) => {
               const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
               return (
-                <li key={step.id}>
-                  <StepRowCompact
-                    index={i}
-                    kind={kind}
-                    name={step.name}
-                    model={step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model}
-                    verbosity={step.verbosity ?? 'normal'}
-                  />
-                </li>
+                <Fragment key={step.id}>
+                  {i > 0 ? <span className="text-muted-foreground/40"> · </span> : null}
+                  <span className={cn('font-medium', AGENT_KIND_PALETTE[kind].fg)}>
+                    {step.name}
+                  </span>
+                </Fragment>
               );
             })}
-          </ol>
-        )}
+          </span>
+        ) : null}
       </button>
       {confirming ? (
         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm backdrop-blur-sm">
@@ -94,7 +92,7 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
           }}
           title="delete workflow"
           aria-label={`delete ${template.name}`}
-          className="absolute right-2 top-2 rounded p-1 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground hover:bg-danger/10 hover:!text-danger"
+          className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground/0 transition-colors hover:bg-danger/10 group-hover:text-muted-foreground hover:!text-danger"
         >
           <Trash2 size={12} aria-hidden />
         </button>

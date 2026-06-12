@@ -24,6 +24,7 @@ export type DefinitionForm = {
 export type TemplateForm = {
   name: string;
   description: string;
+  goal: string;
   steps: DefinitionForm[];
 };
 
@@ -43,6 +44,7 @@ export const emptyDefinition = (): DefinitionForm => ({
 export const emptyForm = (): TemplateForm => ({
   name: '',
   description: '',
+  goal: '',
   steps: [emptyDefinition()],
 });
 
@@ -50,6 +52,7 @@ export const templateToForm = (t: Workflow): TemplateForm => {
   return {
     name: t.name,
     description: t.description,
+    goal: t.goal ?? '',
     steps: t.steps
       .slice()
       .sort((a, b) => a.ordinal - b.ordinal)

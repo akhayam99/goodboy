@@ -1,18 +1,22 @@
+import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
-import { openProviderModal } from '../../../providers/components/ProviderModalHost';
+import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
 import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'cursor', 'gemini'];
 
+type ConnectTarget = { readonly providerId: ProviderId; readonly action: ProviderLifecycleAction };
+
 export const ProvidersStep = () => {
   const providers = useAppStore((s) => s.providers);
   const lifecycle = useAppStore((s) => s.providerLifecycle);
+  const [connectTarget, setConnectTarget] = useState<ConnectTarget | null>(null);
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
   );
@@ -31,17 +35,36 @@ export const ProvidersStep = () => {
 
       <ul className="flex flex-col gap-2">
         {ordered.map((info) => (
-          <ProviderRow key={info.id} info={info} phase={lifecycle[info.id].phase} />
+          <ProviderRow
+            key={info.id}
+            info={info}
+            phase={lifecycle[info.id].phase}
+            onConnect={setConnectTarget}
+          />
         ))}
       </ul>
+
+      <ProviderConnectModal
+        providerId={connectTarget?.providerId ?? null}
+        initialAction={connectTarget?.action ?? 'login'}
+        onClose={() => setConnectTarget(null)}
+      />
     </div>
   );
 };
 
-function ProviderRow({ info, phase }: { info: ProviderInfo; phase: ProviderLifecyclePhase }) {
+function ProviderRow({
+  info,
+  phase,
+  onConnect,
+}: {
+  info: ProviderInfo;
+  phase: ProviderLifecyclePhase;
+  onConnect: (target: ConnectTarget) => void;
+}) {
   const Icon = PROVIDER_BRAND[info.id].icon;
   const connected = info.connection === 'connected';
-  const action = info.connection === 'missing' ? 'install' : 'login';
+  const action: ProviderLifecycleAction = info.connection === 'missing' ? 'install' : 'login';
 
   return (
     <li className="flex items-center gap-3 rounded-lg border border-border-soft/50 bg-subtle/20 px-3.5 py-2.5">
@@ -65,7 +88,7 @@ function ProviderRow({ info, phase }: { info: ProviderInfo; phase: ProviderLifec
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => openProviderModal({ providerId: info.id, action })}
+          onClick={() => onConnect({ providerId: info.id, action })}
         >
           Connect
         </Button>

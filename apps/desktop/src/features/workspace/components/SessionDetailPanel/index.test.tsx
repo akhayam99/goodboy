@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { state, toastMock } = vi.hoisted(() => ({
@@ -10,9 +10,6 @@ const { state, toastMock } = vi.hoisted(() => ({
     renameTask: vi.fn(async () => undefined),
     sessionExternalTasks: {} as Record<string, unknown>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
-    workspaceScripts: {} as Record<string, ReadonlyArray<unknown>>,
-    loadScripts: vi.fn(async () => undefined),
-    runWorkspaceScript: vi.fn(async () => undefined),
     sessionBranches: {} as Record<string, string | null>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
   },
@@ -57,10 +54,8 @@ beforeEach(() => {
   state.sessionWorktrees = {};
   state.sessionExternalTasks = {};
   state.detectedEditors = [];
-  state.workspaceScripts = {};
   state.sessionBranches = {};
   state.sessionTelemetry = {};
-  state.loadScripts = vi.fn(async () => undefined);
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -71,13 +66,15 @@ describe('SessionDetailPanel', () => {
     expect(screen.getByText(/refactor auth/i)).toBeDefined();
   });
 
-  it('loads scripts on mount for this session workspace', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
-    expect(state.loadScripts).toHaveBeenCalledWith('ws-1');
+  it('opens session settings from the gear button', () => {
+    const onOpenSessionSettings = vi.fn();
+    render(<SessionDetailPanel session={session} onOpenSessionSettings={onOpenSessionSettings} />);
+    fireEvent.click(screen.getByRole('button', { name: /session settings/i }));
+    expect(onOpenSessionSettings).toHaveBeenCalledOnce();
   });
 
-  it('renders the overflow menu trigger', () => {
+  it('renders the editor menu trigger', () => {
     render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /session actions/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open in editor/i })).toBeDefined();
   });
 });

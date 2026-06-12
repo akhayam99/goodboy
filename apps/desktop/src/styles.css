@@ -378,7 +378,7 @@ dialog[open]::backdrop {
 }
 
 /* Linear-shrinking countdown bar. Used for the delete-arm window in
-   SessionSettingsDialog so users see how long the confirmation arm stays
+   SessionScopePanel so users see how long the confirmation arm stays
    open before disarming. Duration set inline via --duration. */
 @keyframes shrink-bar {
   from {

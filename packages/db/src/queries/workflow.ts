@@ -18,6 +18,7 @@ type WorkflowRow = {
   workspace_id: string;
   name: string;
   description: string;
+  goal: string | null;
   created_at: string;
   updated_at: string;
   is_preset: number | null;
@@ -62,6 +63,7 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
     workspaceId: row.workspace_id as WorkspaceId,
     name: row.name,
     description: row.description,
+    ...(row.goal != null && { goal: row.goal }),
     steps,
     isPreset: row.is_preset == null ? true : row.is_preset !== 0,
     ...(row.deleted_at != null && {
@@ -111,11 +113,12 @@ export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflo
 export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
   await db.execute(
     `INSERT INTO workflows
-      (id, workspace_id, name, description, created_at, updated_at, is_preset)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+      (id, workspace_id, name, description, goal, created_at, updated_at, is_preset)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        description = excluded.description,
+       goal = excluded.goal,
        updated_at = excluded.updated_at,
        is_preset = excluded.is_preset`,
     [
@@ -123,6 +126,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       workflow.workspaceId,
       workflow.name,
       workflow.description,
+      workflow.goal ?? null,
       workflow.createdAt,
       workflow.updatedAt,
       workflow.isPreset === false ? 0 : 1,

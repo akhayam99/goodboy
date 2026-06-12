@@ -82,6 +82,7 @@ pub struct WorkflowRow {
     pub workspace_id: String,
     pub name: String,
     pub description: String,
+    pub goal: Option<String>,
     pub steps: Vec<StepRow>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -125,6 +126,7 @@ pub struct PhaseTemplateUpsertInput {
     pub workspace_id: String,
     pub name: String,
     pub description: String,
+    pub goal: Option<String>,
     pub steps: Vec<StepInput>,
     // Defaults to true when omitted so existing callers keep producing presets.
     #[serde(rename = "isPreset", default = "default_true")]
@@ -308,6 +310,7 @@ fn row_to_template(
     workspace_id: String,
     name: String,
     description: String,
+    goal: Option<String>,
     created_at: String,
     updated_at: String,
     deleted_at: Option<i64>,
@@ -319,6 +322,7 @@ fn row_to_template(
         workspace_id,
         name,
         description,
+        goal,
         steps,
         created_at,
         updated_at,
@@ -338,13 +342,23 @@ pub fn workflow_list(
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, created_at, updated_at, deleted_at, is_preset
+        "SELECT id, workspace_id, name, description, goal, created_at, updated_at, deleted_at, is_preset
          FROM workflows
          WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
          ORDER BY created_at ASC",
     )?;
-    let template_ids: Vec<(String, String, String, String, String, String, Option<i64>, i64)> =
-        stmt.query_map(rusqlite::params![workspace_id], |row| {
+    let template_ids: Vec<(
+        String,
+        String,
+        String,
+        String,
+        Option<String>,
+        String,
+        String,
+        Option<i64>,
+        i64,
+    )> = stmt
+        .query_map(rusqlite::params![workspace_id], |row| {
             Ok((
                 row.get(0)?,
                 row.get(1)?,
@@ -354,16 +368,18 @@ pub fn workflow_list(
                 row.get(5)?,
                 row.get(6)?,
                 row.get(7)?,
+                row.get(8)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(template_ids.len());
-    for (id, ws, name, desc, created, updated, deleted, is_preset) in template_ids {
-        let template =
-            row_to_template(&conn, id, ws, name, desc, created, updated, deleted, is_preset != 0)
-                .map_err(PhaseError::Db)?;
+    for (id, ws, name, desc, goal, created, updated, deleted, is_preset) in template_ids {
+        let template = row_to_template(
+            &conn, id, ws, name, desc, goal, created, updated, deleted, is_preset != 0,
+        )
+        .map_err(PhaseError::Db)?;
         result.push(template);
     }
     Ok(result)
@@ -376,7 +392,7 @@ pub fn workflow_get(
 ) -> Result<Option<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, created_at, updated_at, deleted_at, is_preset
+        "SELECT id, workspace_id, name, description, goal, created_at, updated_at, deleted_at, is_preset
          FROM workflows
          WHERE id = ?1
          LIMIT 1",
@@ -387,18 +403,19 @@ pub fn workflow_get(
             row.get::<_, String>(1)?,
             row.get::<_, String>(2)?,
             row.get::<_, String>(3)?,
-            row.get::<_, String>(4)?,
+            row.get::<_, Option<String>>(4)?,
             row.get::<_, String>(5)?,
-            row.get::<_, Option<i64>>(6)?,
-            row.get::<_, i64>(7)?,
+            row.get::<_, String>(6)?,
+            row.get::<_, Option<i64>>(7)?,
+            row.get::<_, i64>(8)?,
         ))
     })?;
     match rows.next() {
         Some(r) => {
-            let (rid, ws, name, desc, created, updated, deleted, is_preset) =
+            let (rid, ws, name, desc, goal, created, updated, deleted, is_preset) =
                 r.map_err(PhaseError::Db)?;
             let template = row_to_template(
-                &conn, rid, ws, name, desc, created, updated, deleted, is_preset != 0,
+                &conn, rid, ws, name, desc, goal, created, updated, deleted, is_preset != 0,
             )
             .map_err(PhaseError::Db)?;
             Ok(Some(template))
@@ -446,11 +463,12 @@ pub fn workflow_upsert(
     };
 
     conn.execute(
-        "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at, is_preset)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+        "INSERT INTO workflows (id, workspace_id, name, description, goal, created_at, updated_at, is_preset)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
          ON CONFLICT(id) DO UPDATE SET
            name        = excluded.name,
            description = excluded.description,
+           goal        = excluded.goal,
            updated_at  = excluded.updated_at,
            is_preset   = excluded.is_preset,
            deleted_at  = NULL",
@@ -459,6 +477,7 @@ pub fn workflow_upsert(
             input.workspace_id,
             input.name,
             input.description,
+            input.goal,
             created_at,
             now,
             input.is_preset as i32,
@@ -552,6 +571,7 @@ pub fn workflow_upsert(
         workspace_id: input.workspace_id,
         name: input.name,
         description: input.description,
+        goal: input.goal,
         steps,
         created_at,
         updated_at: now,
@@ -578,15 +598,36 @@ pub fn workflow_delete(
         return Err(PhaseError::TemplateNotFound(id));
     }
 
-    // Soft-delete only. A hard DELETE used to cascade: it dropped the workflow's
-    // steps (and via session_workflows the attachment), so every session that
-    // had run this preset lost its workflow view and its agents' step linkage.
-    // Setting deleted_at hides it from the preset picker while keeping attached
-    // sessions fully intact.
-    conn.execute(
-        "UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?1",
-        rusqlite::params![id],
-    )?;
+    // Seeded presets keep a deterministic id so "Restore defaults" can re-seed
+    // them; never hard-delete those (the row must survive to be un-deleted).
+    let is_seed = id.starts_with("wf_seed_");
+
+    // A workflow attached to any session must survive a hard DELETE: dropping its
+    // steps would null the step linkage of every agent that ran it, and the
+    // session would lose its workflow view entirely.
+    let is_attached: bool = {
+        let mut stmt =
+            conn.prepare("SELECT 1 FROM session_workflows WHERE workflow_id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
+        rows.next().is_some()
+    };
+
+    if is_seed || is_attached {
+        // Soft-delete: hide it from the preset picker while keeping seeded rows
+        // restorable and attached sessions fully intact.
+        conn.execute(
+            "UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?1",
+            rusqlite::params![id],
+        )?;
+    } else {
+        // User-created and unreferenced: hard-delete so deleted drafts/presets do
+        // not accumulate as hidden rows.
+        conn.execute(
+            "DELETE FROM steps WHERE workflow_id = ?1",
+            rusqlite::params![id],
+        )?;
+        conn.execute("DELETE FROM workflows WHERE id = ?1", rusqlite::params![id])?;
+    }
     Ok(())
 }
 
@@ -601,14 +642,24 @@ pub fn workflows_for_session(
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT w.id, w.workspace_id, w.name, w.description, w.created_at, w.updated_at,
+        "SELECT w.id, w.workspace_id, w.name, w.description, w.goal, w.created_at, w.updated_at,
                 w.deleted_at, w.is_preset
          FROM workflows w
          JOIN session_workflows sw ON sw.workflow_id = w.id
          WHERE sw.session_id = ?1
          ORDER BY sw.ordinal ASC",
     )?;
-    let rows: Vec<(String, String, String, String, String, String, Option<i64>, i64)> = stmt
+    let rows: Vec<(
+        String,
+        String,
+        String,
+        String,
+        Option<String>,
+        String,
+        String,
+        Option<i64>,
+        i64,
+    )> = stmt
         .query_map(rusqlite::params![session_id], |row| {
             Ok((
                 row.get(0)?,
@@ -619,16 +670,18 @@ pub fn workflows_for_session(
                 row.get(5)?,
                 row.get(6)?,
                 row.get(7)?,
+                row.get(8)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(rows.len());
-    for (id, ws, name, desc, created, updated, deleted, is_preset) in rows {
-        let template =
-            row_to_template(&conn, id, ws, name, desc, created, updated, deleted, is_preset != 0)
-                .map_err(PhaseError::Db)?;
+    for (id, ws, name, desc, goal, created, updated, deleted, is_preset) in rows {
+        let template = row_to_template(
+            &conn, id, ws, name, desc, goal, created, updated, deleted, is_preset != 0,
+        )
+        .map_err(PhaseError::Db)?;
         result.push(template);
     }
     Ok(result)

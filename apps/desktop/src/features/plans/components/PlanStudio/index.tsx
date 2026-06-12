@@ -212,7 +212,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
           </ScrollFade>
           <Divider orientation="vertical" />
           <div className="min-h-0 flex-1">
-            <div className="flex min-h-0 min-w-0 h-full flex-col gap-2 px-6 py-4">
+            <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-3xl flex-col gap-2 px-6 py-4">
               {selected ? (
                 <>
                   <div className="flex shrink-0 items-start gap-3">

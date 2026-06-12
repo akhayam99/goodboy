@@ -26,7 +26,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
         onStartDrag(def, e);
       }}
       className={cn(
-        'group relative flex touch-none select-none items-start gap-2 rounded-lg border border-border-soft bg-muted/20 px-3 py-2 transition-colors hover:border-border hover:bg-muted/40',
+        'group relative flex touch-none select-none items-start gap-2.5 rounded-md px-1.5 py-2.5 transition-colors hover:bg-muted/30',
         dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
       )}
     >
@@ -37,12 +37,14 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
       />
       <AgentAvatar kind={kind} size="sm" />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate pr-2 text-xs font-medium text-foreground">{def.name}</span>
-        <span className={cn('text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
-          {ROLE_LABEL[def.role]}
-        </span>
+        <div className="flex items-baseline gap-2">
+          <span className="truncate text-xs font-medium text-foreground">{def.name}</span>
+          <span className={cn('shrink-0 text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
+            {ROLE_LABEL[def.role]}
+          </span>
+        </div>
         {def.promptPrefix ? (
-          <span className="line-clamp-2 text-2xs leading-relaxed text-muted-foreground/70">
+          <span className="line-clamp-1 pr-14 text-2xs leading-relaxed text-muted-foreground/60">
             {def.promptPrefix}
           </span>
         ) : null}
@@ -50,7 +52,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
         {isGlobal ? (
-          <span className="rounded bg-muted/60 px-1 text-[9px] uppercase tracking-[0.08em] text-muted-foreground/60 group-hover:hidden">
+          <span className="px-1 text-[9px] uppercase tracking-[0.08em] text-muted-foreground/40 group-hover:hidden">
             global
           </span>
         ) : null}

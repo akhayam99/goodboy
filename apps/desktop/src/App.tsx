@@ -1,16 +1,17 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
-import type { PlanId, ProviderId, SessionId } from '@goodboy/types';
+import type { PlanId, ProviderId, ProviderLifecycleAction, SessionId } from '@goodboy/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { ChatView } from './features/chat/components/ChatView';
 import { ContextPanel } from './features/context/components/ContextPanel';
 import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
 import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
-import { SettingsDialog } from './features/settings/components/SettingsDialog';
+import { SettingsStudio } from './features/settings/components/SettingsStudio';
+import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
+import { SessionSettingsPane } from './features/session/components/SessionSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
-import { ProviderModalHost } from './features/providers/components/ProviderModalHost';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
@@ -18,6 +19,8 @@ import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLaun
 import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
+import { WorkflowBuilderView } from './features/session/components/WorkflowBuilderView';
+import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { PlanStudio } from './features/plans/components/PlanStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
@@ -94,10 +97,13 @@ export const App = () => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const slots = useSessionSlots(currentSession?.id ?? null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsInitialSection, setSettingsInitialSection] = useState<string | undefined>(
+  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
+  const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
+  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
+  const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
     undefined,
   );
+  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -109,6 +115,9 @@ export const App = () => {
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
+  const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
+    null,
+  );
   const [githubStudioOpen, setGithubStudioOpen] = useState(false);
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
   const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
@@ -117,6 +126,8 @@ export const App = () => {
   const [planStudioPlanId, setPlanStudioPlanId] = useState<PlanId | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
+  const [workflowBuilderSessionId, setWorkflowBuilderSessionId] = useState<SessionId | null>(null);
+  const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [commitDiff, setCommitDiff] = useState<{ repo: string; sha: string } | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(
     () =>
@@ -165,12 +176,45 @@ export const App = () => {
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
-      setSettingsInitialSection(detail?.section);
-      setSettingsOpen(true);
+      setAppSettingsFocus(detail?.section);
+      setAppSettingsOpen(true);
     };
     window.addEventListener('goodboy:open-settings', handler);
     return () => window.removeEventListener('goodboy:open-settings', handler);
   }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ section?: string }>).detail;
+      if (workspaceSettingsOpen && detail?.section === undefined) {
+        setWorkspaceSettingsOpen(false);
+        setWorkspaceSettingsFocus(undefined);
+        return;
+      }
+      setWorkspaceSettingsFocus(detail?.section);
+      setSessionSettingsOpen(false);
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(true);
+    };
+    window.addEventListener('goodboy:open-workspace-settings', handler);
+    return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
+  }, [workspaceSettingsOpen]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (sessionSettingsOpen) {
+        setSessionSettingsOpen(false);
+        return;
+      }
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setWorkflowBuilderSessionId(null);
+      setNewSessionOpen(false);
+      setSessionSettingsOpen(true);
+    };
+    window.addEventListener('goodboy:open-session-settings', handler);
+    return () => window.removeEventListener('goodboy:open-session-settings', handler);
+  }, [sessionSettingsOpen]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -203,8 +247,11 @@ export const App = () => {
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ providerId?: ProviderId }>).detail;
+      const detail = (
+        event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
+      ).detail;
       setProviderStudioFocus(detail?.providerId ?? null);
+      setProviderStudioAction(detail?.action ?? null);
       setProviderStudioOpen(true);
     };
     window.addEventListener('goodboy:open-provider-studio', handler);
@@ -230,6 +277,36 @@ export const App = () => {
     window.addEventListener('goodboy:open-linear-studio', handler);
     return () => window.removeEventListener('goodboy:open-linear-studio', handler);
   }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      if (detail?.sessionId) {
+        setWorkspaceSettingsOpen(false);
+        setWorkspaceSettingsFocus(undefined);
+        setSessionSettingsOpen(false);
+        setNewSessionOpen(false);
+        setWorkflowBuilderSessionId(detail.sessionId);
+      }
+    };
+    window.addEventListener('goodboy:open-workflow-builder', handler);
+    return () => window.removeEventListener('goodboy:open-workflow-builder', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      if (!currentWorkspace) {
+        return;
+      }
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      setWorkflowBuilderSessionId(null);
+      setNewSessionOpen(true);
+    };
+    window.addEventListener('goodboy:new-session', handler);
+    return () => window.removeEventListener('goodboy:new-session', handler);
+  }, [currentWorkspace]);
 
   useEffect(() => {
     const handler = () => setAddWorkspaceOpen(true);
@@ -313,6 +390,21 @@ export const App = () => {
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
+    if (workflowBuilderSessionId && currentSession?.id !== workflowBuilderSessionId) {
+      setWorkflowBuilderSessionId(null);
+    }
+  }, [workflowBuilderSessionId, currentSession?.id]);
+
+  useEffect(() => {
+    setSessionSettingsOpen(false);
+  }, [currentSession?.id]);
+
+  useEffect(() => {
+    setWorkspaceSettingsOpen(false);
+    setNewSessionOpen(false);
+  }, [currentWorkspace?.id]);
+
+  useEffect(() => {
     const id = currentSession?.id ?? null;
     if (!id) {
       return;
@@ -327,7 +419,10 @@ export const App = () => {
     });
   }, [currentSession?.id]);
 
-  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const openSettings = useCallback(() => {
+    setAppSettingsFocus(undefined);
+    setAppSettingsOpen(true);
+  }, []);
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
       setDeleteOpen(true);
@@ -359,8 +454,8 @@ export const App = () => {
     return () => window.removeEventListener('goodboy:archive-session', handler);
   }, [currentSession]);
   const openShortcutHelp = useCallback(() => {
-    setSettingsInitialSection('shortcuts');
-    setSettingsOpen(true);
+    setAppSettingsFocus('shortcuts');
+    setAppSettingsOpen(true);
   }, []);
   const openPalette = useCallback((prefix = '') => {
     setPalettePrefix(prefix);
@@ -530,6 +625,7 @@ export const App = () => {
               }}
               onOpenProviders={() => {
                 setProviderStudioFocus(null);
+                setProviderStudioAction(null);
                 setProviderStudioOpen(true);
               }}
               onOpenGithub={() => {
@@ -582,16 +678,47 @@ export const App = () => {
           ) : null
         }
         rightSidebarCollapsed={rightSidebarCollapsed}
+        overlay={
+          newSessionOpen && currentWorkspace ? (
+            <NewSessionView
+              workspaceId={currentWorkspace.id}
+              onClose={() => setNewSessionOpen(false)}
+              onOpenSettings={() => {
+                setNewSessionOpen(false);
+                openSettings();
+              }}
+            />
+          ) : workspaceSettingsOpen && currentWorkspace ? (
+            <WorkspaceSettingsPane
+              workspaceId={currentWorkspace.id}
+              workspaceName={currentWorkspace.name}
+              initialSection={workspaceSettingsFocus}
+              onClose={() => {
+                setWorkspaceSettingsOpen(false);
+                setWorkspaceSettingsFocus(undefined);
+              }}
+            />
+          ) : sessionSettingsOpen && currentSession ? (
+            <SessionSettingsPane
+              session={currentSession}
+              onClose={() => setSessionSettingsOpen(false)}
+            />
+          ) : currentSession && workflowBuilderSessionId === currentSession.id ? (
+            <WorkflowBuilderView
+              session={currentSession}
+              onClose={() => setWorkflowBuilderSessionId(null)}
+            />
+          ) : undefined
+        }
       />
 
-      {settingsOpen ? (
-        <SettingsDialog
-          open
+      {appSettingsOpen ? (
+        <SettingsStudio
+          initialFocus={appSettingsFocus}
           onClose={() => {
-            setSettingsOpen(false);
-            setSettingsInitialSection(undefined);
+            setAppSettingsOpen(false);
+            setAppSettingsFocus(undefined);
           }}
-          initialSection={settingsInitialSection}
         />
       ) : null}
       {paletteOpen ? (
@@ -599,7 +726,7 @@ export const App = () => {
           initialQuery={palettePrefix}
           onClose={() => setPaletteOpen(false)}
           onOpenSettings={() => {
-            setSettingsOpen(true);
+            openSettings();
             setPaletteOpen(false);
           }}
           onNewSession={() => setPaletteOpen(false)}
@@ -643,7 +770,11 @@ export const App = () => {
         <ProviderStudio
           workspaceName={currentWorkspace.name}
           initialFocus={providerStudioFocus}
-          onClose={() => setProviderStudioOpen(false)}
+          initialAction={providerStudioAction}
+          onClose={() => {
+            setProviderStudioOpen(false);
+            setProviderStudioAction(null);
+          }}
         />
       ) : null}
       {budgetStudioOpen && currentWorkspace ? (
@@ -677,7 +808,6 @@ export const App = () => {
       ) : null}
       {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
 
-      <ProviderModalHost />
       <OnboardingWizard />
     </ToastProvider>
   );

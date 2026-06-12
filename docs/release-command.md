@@ -15,7 +15,7 @@ homebrew). This file is the step order plus the gotchas that bit previous runs.
    - "next patch" / "next version" (default): bump the patch, `0.1.11 -> 0.1.12`.
    - "next minor": bump the minor, reset patch, `0.1.11 -> 0.2.0`.
    - "next major": `0.1.11 -> 1.0.0`.
-   If the request is ambiguous, default to a patch bump and say so.
+     If the request is ambiguous, default to a patch bump and say so.
 3. Confirm the computed target with the user in one line before bumping.
 
 Below, `X` is the new version and `X-1` is the current latest.
@@ -37,7 +37,7 @@ Below, `X` is the new version and `X-1` is the current latest.
 4. rc dry-run: `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the dmg,
    `hdiutil attach`, run `spctl -a -vvv` (expect `accepted, source=Notarized
-   Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
+Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
    Serenis `FC96QL5F9R`). Detach. Then delete the rc (release + remote tag +
    local tag).
 5. Cut real: `git tag vX <merge-sha> && git push origin vX`. Wait for the build

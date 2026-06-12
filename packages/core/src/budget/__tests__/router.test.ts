@@ -153,3 +153,90 @@ describe('resolveProvider', () => {
     expect(decision.fallbackUsed).toBe(false);
   });
 });
+
+describe('resolveProvider, enabledProviders gate', () => {
+  it('empty enabledProviders behaves as all-enabled (preferred wins)', async () => {
+    const input = makeInput({
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        defaultModel: 'claude-3-5-sonnet',
+        allowTurnOverride: true,
+        enabledProviders: [],
+      },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+  });
+
+  it('preferred enabled and within budget → preferred, even with a narrowed set', async () => {
+    const input = makeInput({
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        allowTurnOverride: true,
+        enabledProviders: ['anthropic'],
+      },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('preferred disabled → routes to an enabled connected provider', async () => {
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor'],
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        allowTurnOverride: true,
+        enabledProviders: ['cursor'],
+      },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.reason).toBe('fallback-disconnected');
+    expect(decision.fallbackUsed).toBe(true);
+    expect(decision.fallbackFrom).toBe('anthropic');
+  });
+
+  it('budget fallback skips a connected but disabled provider', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'anthropic' ? exceeded() : notExceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor', 'gemini'],
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        allowTurnOverride: true,
+        enabledProviders: ['anthropic', 'gemini'],
+      },
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('gemini');
+    expect(decision.reason).toBe('fallback-budget');
+    expect(decision.fallbackFrom).toBe('anthropic');
+  });
+
+  it('turn override bypasses the enabled gate (explicit pin wins)', async () => {
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor'],
+      turnOverride: { providerId: 'cursor', model: 'cursor-fast' },
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        allowTurnOverride: true,
+        enabledProviders: ['anthropic'],
+      },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.selectedModel).toBe('cursor-fast');
+    expect(decision.reason).toBe('override');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+});

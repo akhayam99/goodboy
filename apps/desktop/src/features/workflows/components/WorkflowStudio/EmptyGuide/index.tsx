@@ -48,10 +48,7 @@ export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
           {STEPS.map((step, idx) => {
             const Arrow = step.arrow;
             return (
-              <li
-                key={idx}
-                className="flex items-start gap-2.5 rounded-lg border border-border-soft bg-muted/10 px-3 py-2.5"
-              >
+              <li key={idx} className="flex items-start gap-2.5 rounded-lg bg-muted/20 px-3 py-2.5">
                 <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-2xs font-medium text-muted-foreground">
                   {idx + 1}
                 </span>

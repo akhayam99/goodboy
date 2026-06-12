@@ -62,6 +62,7 @@ export type WorkflowRun = Readonly<{
   ordinal: number;
   currentStep: number;
   autoRun: boolean;
+  goal?: string;
   discardedAt?: IsoDateTime;
 }>;
 

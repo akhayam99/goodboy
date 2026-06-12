@@ -22,6 +22,7 @@ vi.mock('../../store', () => ({
       sessionTelemetry: {},
       sessionSummary: null,
       sessions: [],
+      detectedEditors: [],
       sessionPhaseRuns: {},
       sessionPlans: {},
       workspaceSummary: null,
@@ -85,7 +86,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { runA11yCheck } from './utils';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
-import { SettingsDialog } from '../../features/settings/components/SettingsDialog';
+import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { StatusBar } from '../../app/components/StatusBar';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
@@ -184,11 +185,11 @@ describe('a11y smoke, QuickActionsPopover', () => {
   });
 });
 
-describe('a11y smoke, SettingsDialog', () => {
+describe('a11y smoke, SettingsStudio app scope', () => {
   const KNOWN_VIOLATIONS = ['label'];
 
-  it('no new violations beyond whitelisted (dialog open)', async () => {
-    const { container } = render(<SettingsDialog open={true} onClose={vi.fn()} />);
+  it('no new violations beyond whitelisted (panel open)', async () => {
+    const { container } = render(<AppScopePanel requestClose={vi.fn()} />);
     const { violations } = await runA11yCheck(container);
     const unexpected = violations.filter((v) => !KNOWN_VIOLATIONS.includes(v.id));
     expect(unexpected).toHaveLength(0);

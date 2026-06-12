@@ -20,6 +20,7 @@ type SessionWorkflowRow = {
   ordinal: number;
   current_step_ordinal: number;
   auto_run: number;
+  goal: string | null;
   discarded_at: string | null;
 };
 
@@ -30,6 +31,7 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ordinal: row.ordinal,
     currentStep: row.current_step_ordinal,
     autoRun: row.auto_run !== 0,
+    ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
   };
 }
@@ -42,6 +44,7 @@ type SessionRow = {
   state_payload: string;
   provider_default: string;
   provider_allow_override: number;
+  provider_enabled: string | null;
   permission_mode: string | null;
   auto_run: number;
   title_user_edited: number;
@@ -60,7 +63,27 @@ function toState(kind: TurnState['kind'], payload: string): TurnState {
   return { kind, ...data } as TurnState;
 }
 
-const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex']);
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex', 'gemini']);
+
+function serializeEnabledProviders(
+  providers: ReadonlyArray<ProviderId> | undefined,
+): string | null {
+  if (!providers || providers.length === 0) {
+    return null;
+  }
+  return providers.join(',');
+}
+
+function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | undefined {
+  if (raw === null) {
+    return undefined;
+  }
+  const parsed = raw
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => VALID_PROVIDER_IDS.has(id)) as ProviderId[];
+  return parsed.length > 0 ? parsed : undefined;
+}
 
 const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
   'default',
@@ -81,9 +104,11 @@ function toProviderPreference(row: SessionRow): SessionProviderPreference {
   const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
     ? (row.provider_default as ProviderId)
     : 'anthropic';
+  const enabledProviders = parseEnabledProviders(row.provider_enabled);
   return {
     defaultProvider,
     allowTurnOverride: row.provider_allow_override !== 0,
+    ...(enabledProviders && { enabledProviders }),
   };
 }
 
@@ -125,7 +150,7 @@ async function loadWorkflowsForSession(
   sessionId: string,
 ): Promise<ReadonlyArray<WorkflowRun>> {
   const rows = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -137,6 +162,7 @@ export type SessionConfigUpdate = {
   modelOverride?: string | null;
   providerOverride?: string | null;
   defaultProvider?: ProviderId | null;
+  enabledProviders?: ReadonlyArray<ProviderId> | null;
 };
 
 export const updateSessionConfig = async (
@@ -168,6 +194,10 @@ export const updateSessionConfig = async (
     updates.push('provider_override = ?');
     values.push(null);
   }
+  if (fields.enabledProviders !== undefined) {
+    updates.push('provider_enabled = ?');
+    values.push(serializeEnabledProviders(fields.enabledProviders ?? undefined));
+  }
   if (updates.length === 0) {
     return;
   }
@@ -184,8 +214,8 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   const { kind, payload } = splitState(session.state);
   await db.execute(
     `INSERT INTO sessions
-      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, permission_mode, auto_run, title_user_edited, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       session.workspaceId,
@@ -194,6 +224,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
       payload,
       session.providerPreference.defaultProvider,
       session.providerPreference.allowTurnOverride ? 1 : 0,
+      serializeEnabledProviders(session.providerPreference.enabledProviders),
       session.permissionMode,
       session.autoRun ? 1 : 0,
       session.titleUserEdited ? 1 : 0,
@@ -203,7 +234,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   );
   for (const run of session.workflowRuns) {
     await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         run.id,
         session.id,
@@ -211,6 +242,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.ordinal,
         run.currentStep,
         run.autoRun ? 1 : 0,
+        run.goal ?? null,
         run.discardedAt ?? null,
       ],
     );
@@ -289,7 +321,7 @@ async function hydrateSessions(
   const sessionIds = rows.map((r) => r.id);
   const placeholders = sessionIds.map(() => '?').join(', ');
   const workflowRows = await db.select<SessionWorkflowRow & { session_id: string }>(
-    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
+    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
   );
 

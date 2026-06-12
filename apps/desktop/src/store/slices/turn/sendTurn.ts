@@ -1,6 +1,7 @@
 import {
   WorkflowPropagator,
   PermissionEngine,
+  autoModelForRole,
   buildClaudeFlags,
   autoPopulateContext,
   buildStepPrompt,
@@ -389,12 +390,20 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const provider: ProviderId = routingDecision.selectedProvider;
     const agentKindModel = get().agentModelOverride[activeAgentId] ?? null;
     const turnOverrideActive = turnOverride !== undefined && effectiveOverride === turnOverride;
+    const autoStepModel =
+      phaseDefinition != null && !phaseDefinition.modelOverride
+        ? (autoModelForRole(phaseDefinition.role ?? 'custom', [provider])?.model ?? null)
+        : null;
     const model =
       phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
         ? phaseDefinition.modelOverride
-        : turnOverrideActive
-          ? routingDecision.selectedModel
-          : (agentKindModel ?? routingDecision.selectedModel);
+        : autoStepModel != null
+          ? autoStepModel
+          : turnOverrideActive
+            ? routingDecision.selectedModel
+            : routingDecision.fallbackUsed
+              ? routingDecision.selectedModel
+              : (agentKindModel ?? routingDecision.selectedModel);
 
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};

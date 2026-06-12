@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive,
+  ArchiveRestore,
   Check,
   FolderOpen,
   GitBranch,
-  Play,
-  ScrollText,
   Settings2,
   Trash2,
 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { Session, SessionId, TelemetryRecord, WorkspaceScript } from '@goodboy/types';
+import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { SessionStageBadge } from '../../../session/components/SessionStageBadge';
 import { openInEditor } from '../../../../shared/lib/editor';
@@ -30,14 +29,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
     (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
   );
   const detectedEditors = useAppStore((s) => s.detectedEditors);
-  const scripts = useAppStore((s) => s.workspaceScripts[session.workspaceId]);
-  const loadScripts = useAppStore((s) => s.loadScripts);
-  const runWorkspaceScript = useAppStore((s) => s.runWorkspaceScript);
   const { showToast } = useToast();
-
-  useEffect(() => {
-    void loadScripts(session.workspaceId);
-  }, [session.workspaceId, loadScripts]);
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
@@ -52,21 +44,6 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
     } catch (err) {
       showToast('error', `couldn't open editor: ${formatError(err)}`);
     }
-  };
-
-  const onRunScript = (script: WorkspaceScript) => {
-    if (!worktreePath) {
-      return;
-    }
-    void runWorkspaceScript(session.id as SessionId, script, worktreePath);
-  };
-
-  const onDeleteSession = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:delete-session'));
-  };
-
-  const onArchiveSession = () => {
-    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
   };
 
   const actionItems = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
@@ -95,61 +72,9 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
       }
     }
 
-    items.push({ kind: 'separator', key: 'sep-scripts' });
-
-    const scriptList = scripts ?? [];
-    if (scriptList.length === 0) {
-      items.push({
-        kind: 'item',
-        key: 'no-scripts',
-        label: 'No scripts defined',
-        icon: ScrollText,
-        onClick: () => undefined,
-        disabled: true,
-      });
-    } else {
-      items.push({ kind: 'header', key: 'script-header', label: 'Run script' });
-      for (const s of scriptList) {
-        items.push({
-          kind: 'item',
-          key: `script-${s.id}`,
-          label: s.name,
-          icon: Play,
-          onClick: () => onRunScript(s),
-          disabled: !worktreePath,
-        });
-      }
-    }
-
-    items.push({ kind: 'separator', key: 'sep-settings' });
-    items.push({
-      kind: 'item',
-      key: 'settings',
-      label: 'Session settings',
-      icon: Settings2,
-      onClick: onOpenSessionSettings,
-    });
-    items.push({
-      kind: 'item',
-      key: 'archive',
-      label: 'Archive session',
-      icon: Archive,
-      onClick: onArchiveSession,
-      hint: '⌘⇧A',
-    });
-    items.push({
-      kind: 'item',
-      key: 'delete',
-      label: 'Delete session',
-      icon: Trash2,
-      onClick: onDeleteSession,
-      destructive: true,
-      hint: '⌘.',
-    });
-
     return items;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detectedEditors, scripts, worktreePath, onOpenSessionSettings]);
+  }, [detectedEditors, worktreePath]);
 
   const startRename = () => {
     setRenameDraft(session.goal);
@@ -182,7 +107,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   };
 
   return (
-    <div className="flex shrink-0 flex-col gap-2 px-3 pt-3 pb-2">
+    <div className="flex shrink-0 flex-col gap-2 px-2 pb-2 pt-2.5">
       <div className="flex items-center gap-2">
         <SessionStageBadge session={session} />
         <div className="min-w-0 flex-1">
@@ -225,7 +150,20 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
             <span className="font-mono">{externalTask.identifier}</span>
           </button>
         ) : null}
-        <OverflowMenu items={actionItems} label="session actions" />
+        <button
+          type="button"
+          onClick={onOpenSessionSettings}
+          title="Session settings"
+          aria-label="session settings"
+          className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        >
+          <Settings2 size={13} aria-hidden />
+        </button>
+        <OverflowMenu
+          items={actionItems}
+          label="open in editor"
+          trigger={<FolderOpen size={13} aria-hidden />}
+        />
       </div>
     </div>
   );
@@ -380,9 +318,22 @@ type SessionMetaFooterProps = {
 
 export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
+  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
+  const { showToast } = useToast();
+  const archived = Boolean(session.archivedAt);
+
+  const onToggleArchive = () => {
+    if (archived) {
+      unarchiveTask(session.id as SessionId).catch((err: unknown) => {
+        showToast('error', `couldn't unarchive: ${formatError(err)}`);
+      });
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
+  };
 
   return (
-    <div className="flex shrink-0 items-center gap-2 px-3 pb-3 pt-2">
+    <div className="flex shrink-0 items-center gap-2 px-2 pb-2.5 pt-2">
       {branch ? (
         <div className="min-w-0 flex-1">
           <BranchChip branch={branch} />
@@ -391,6 +342,24 @@ export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
         <div className="flex-1" />
       )}
       <SessionCostChip sessionId={session.id as SessionId} />
+      <button
+        type="button"
+        onClick={onToggleArchive}
+        title={archived ? 'Unarchive session' : 'Archive session (⌘⇧A)'}
+        aria-label={archived ? 'unarchive session' : 'archive session'}
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+      >
+        {archived ? <ArchiveRestore size={12} aria-hidden /> : <Archive size={12} aria-hidden />}
+      </button>
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:delete-session'))}
+        title="Delete session (⌘.)"
+        aria-label="delete session"
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+      >
+        <Trash2 size={12} aria-hidden />
+      </button>
     </div>
   );
 };

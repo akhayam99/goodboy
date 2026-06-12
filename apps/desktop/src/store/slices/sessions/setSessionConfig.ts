@@ -23,10 +23,21 @@ export const setSessionConfig = (set: SetFn, get: GetFn) => {
           : fields.providerOverride !== undefined
             ? fields.providerOverride
             : (providerOverride ?? null);
-      const nextPreference =
-        fields.defaultProvider !== undefined && fields.defaultProvider !== null
-          ? { ...s.providerPreference, defaultProvider: fields.defaultProvider }
-          : s.providerPreference;
+      let nextPreference = s.providerPreference;
+      if (fields.defaultProvider !== undefined && fields.defaultProvider !== null) {
+        nextPreference = { ...nextPreference, defaultProvider: fields.defaultProvider };
+      }
+      if (fields.enabledProviders !== undefined) {
+        const enabled = fields.enabledProviders;
+        nextPreference = {
+          defaultProvider: nextPreference.defaultProvider,
+          allowTurnOverride: nextPreference.allowTurnOverride,
+          ...(nextPreference.defaultModel !== undefined && {
+            defaultModel: nextPreference.defaultModel,
+          }),
+          ...(enabled !== null && enabled.length > 0 && { enabledProviders: enabled }),
+        };
+      }
       return {
         ...next,
         providerPreference: nextPreference,

@@ -69,6 +69,7 @@ export type Workflow = Readonly<{
   workspaceId: WorkspaceId;
   name: string;
   description: string;
+  goal?: string;
   steps: ReadonlyArray<Step>;
   isPreset?: boolean;
   deletedAt?: IsoDateTime;

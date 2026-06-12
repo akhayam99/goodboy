@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Sparkles } from 'lucide-react';
 import { shortModelWithVersion } from '../../agent-row-format';
 import { MODEL_COST_DOT, POPUP_BASE, POPUP_DOWN, POPUP_UP, modelCostTier } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
@@ -13,15 +13,17 @@ type Props = {
   value: string;
   onChange: (model: string) => void;
   disabled: boolean;
+  allowAuto?: boolean;
 };
 
-export const ModelSelect = ({ provider, value, onChange, disabled }: Props) => {
+export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
   const direction = useDropdownDirection(containerRef, open);
 
   const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
+  const isAuto = allowAuto === true && value === '';
   const tier = modelCostTier(value);
 
   return (
@@ -38,9 +40,16 @@ export const ModelSelect = ({ provider, value, onChange, disabled }: Props) => {
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
-        <span className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[tier])} aria-hidden />
+        {isAuto ? (
+          <Sparkles size={11} className="shrink-0 text-primary" aria-hidden />
+        ) : (
+          <span
+            className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[tier])}
+            aria-hidden
+          />
+        )}
         <span className="flex-1 truncate font-mono font-medium text-foreground">
-          {shortModelWithVersion(value)}
+          {isAuto ? 'Auto' : shortModelWithVersion(value)}
         </span>
         <ChevronDown
           size={11}
@@ -55,6 +64,25 @@ export const ModelSelect = ({ provider, value, onChange, disabled }: Props) => {
         <div
           className={cn(POPUP_BASE, 'min-w-[10rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
         >
+          {allowAuto === true ? (
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                setOpen(false);
+              }}
+              className={cn(
+                'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs font-mono transition-colors',
+                isAuto
+                  ? 'bg-primary/10 text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+              )}
+            >
+              <Sparkles size={11} className="shrink-0 text-primary" aria-hidden />
+              <span className="flex-1 truncate">Auto</span>
+              {isAuto ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
+            </button>
+          ) : null}
           {models.map((m) => {
             const active = value === m.id;
             const t = modelCostTier(m.id);

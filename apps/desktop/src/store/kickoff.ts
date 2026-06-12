@@ -21,12 +21,10 @@ export const buildPlanKickoffSection = async (
   }
 };
 
-export const composeKickoff = (planSection: string, baseKickoff: string): string => {
-  if (planSection.length === 0) {
-    return baseKickoff;
-  }
-  if (baseKickoff.length === 0) {
-    return planSection;
-  }
-  return `${planSection}\n\n${baseKickoff}`;
+export const composeKickoff = (...sections: ReadonlyArray<string>): string =>
+  sections.filter((s) => s.length > 0).join('\n\n');
+
+export const buildGoalKickoffSection = (goal?: string): string => {
+  const trimmed = (goal ?? '').trim();
+  return trimmed.length > 0 ? `Workflow goal:\n\n${trimmed}` : '';
 };

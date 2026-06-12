@@ -76,7 +76,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
-import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
+import { NewSessionView } from '../../features/session/components/NewSessionView';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
 
@@ -142,16 +142,11 @@ describe('keyboard, DeleteSessionDialog', () => {
   });
 });
 
-describe('keyboard, NewSessionDialog', () => {
-  it('renders without crash when open (multiple textbox inputs present)', () => {
+describe('keyboard, NewSessionView', () => {
+  it('renders without crash (multiple textbox inputs present)', () => {
     render(
       <ToastProvider>
-        <NewSessionDialog
-          open={true}
-          onClose={vi.fn()}
-          workspaceId={WS_ID}
-          onOpenSettings={vi.fn()}
-        />
+        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
     );
     const textboxes = screen.getAllByRole('textbox');
@@ -162,12 +157,7 @@ describe('keyboard, NewSessionDialog', () => {
     const user = userEvent.setup();
     render(
       <ToastProvider>
-        <NewSessionDialog
-          open={true}
-          onClose={vi.fn()}
-          workspaceId={WS_ID}
-          onOpenSettings={vi.fn()}
-        />
+        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
     );
     let foundInput = false;
@@ -182,15 +172,10 @@ describe('keyboard, NewSessionDialog', () => {
     expect(foundInput).toBe(true);
   });
 
-  it('dialog contains a submit button', () => {
+  it('view contains a submit button', () => {
     render(
       <ToastProvider>
-        <NewSessionDialog
-          open={true}
-          onClose={vi.fn()}
-          workspaceId={WS_ID}
-          onOpenSettings={vi.fn()}
-        />
+        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
     );
     const createBtn = screen.getByRole('button', { name: /create/i });

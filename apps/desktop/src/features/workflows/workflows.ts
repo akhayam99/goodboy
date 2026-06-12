@@ -58,6 +58,7 @@ type RawWorkflowRow = {
   readonly workspaceId: string;
   readonly name: string;
   readonly description: string;
+  readonly goal: string | null;
   readonly steps: ReadonlyArray<RawWorkflowStepRow>;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -129,6 +130,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     workspaceId: row.workspaceId as WorkspaceId,
     name: row.name,
     description: row.description,
+    ...(row.goal != null && { goal: row.goal }),
     steps: row.steps.map(rowToStep),
     isPreset: row.isPreset,
     createdAt: row.createdAt as IsoDateTime,
@@ -192,6 +194,7 @@ export type WorkflowUpsertArgs = {
   readonly workspaceId: WorkspaceId;
   readonly name: string;
   readonly description: string;
+  readonly goal?: string;
   readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
   readonly isPreset?: boolean;
 };
@@ -203,6 +206,7 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
       workspaceId: args.workspaceId,
       name: args.name,
       description: args.description,
+      goal: args.goal ?? null,
       isPreset: args.isPreset ?? true,
       steps: args.steps.map((d) => ({
         id: d.id ?? null,

@@ -1,39 +1,15 @@
-import { useEffect, useState } from 'react';
 import { ChevronsUpDown, Settings } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
-import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
+import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
-import { WorkspaceSettingsDialog } from '../WorkspaceSettingsDialog';
 
 export const WorkspaceHeader = () => {
   const currentWorkspace = useCurrentWorkspace();
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
-  const workspaces = useAppStore((s) => s.workspaces);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<string | undefined>(undefined);
-  const [settingsWorkspaceId, setSettingsWorkspaceId] = useState<WorkspaceId | null>(null);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ section?: string; workspaceId?: WorkspaceId }>).detail;
-      const target = detail?.workspaceId ?? currentWorkspace?.id ?? null;
-      if (!target) {
-        return;
-      }
-      setSettingsWorkspaceId(target);
-      setSettingsSection(detail?.section);
-      setSettingsOpen(true);
-    };
-    window.addEventListener('goodboy:open-workspace-settings', handler);
-    return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
-  }, [currentWorkspace]);
 
   if (!currentWorkspace) {
     return null;
   }
   const accent = workspaceAccent(currentWorkspace.id);
-  const settingsWorkspace =
-    workspaces.find((w) => w.id === settingsWorkspaceId) ?? currentWorkspace;
 
   return (
     <div className="shrink-0 px-3 py-3" data-tauri-drag-region="false">
@@ -69,11 +45,7 @@ export const WorkspaceHeader = () => {
         </button>
         <button
           type="button"
-          onClick={() => {
-            setSettingsWorkspaceId(currentWorkspace.id);
-            setSettingsSection(undefined);
-            setSettingsOpen(true);
-          }}
+          onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'))}
           data-tauri-drag-region="false"
           className="flex shrink-0 items-center p-1 text-muted-foreground/50 transition-colors hover:text-foreground"
           title={`workspace settings, ${currentWorkspace.name}`}
@@ -82,13 +54,6 @@ export const WorkspaceHeader = () => {
           <Settings size={13} aria-hidden />
         </button>
       </div>
-      <WorkspaceSettingsDialog
-        workspaceId={settingsWorkspace.id}
-        workspaceName={settingsWorkspace.name}
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        initialSection={settingsSection}
-      />
     </div>
   );
 };
