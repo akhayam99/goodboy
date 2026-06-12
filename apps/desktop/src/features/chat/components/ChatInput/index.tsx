@@ -32,7 +32,13 @@ import { tauriDatabase } from '../../../../shared/lib/db';
 import type { IsoDateTime } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { readDroppedAttachment } from '../../turn';
+import type { DraftAttachment } from '../../../../store/slices/agents/setAgentAttachments';
+import {
+  readDroppedAttachment,
+  readAttachment,
+  writeAttachment,
+  deleteAttachment,
+} from '../../turn';
 import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, type ToastKind } from '../../../../app/components/Toast';
@@ -92,6 +98,7 @@ type PendingAttachment = {
   readonly fileName: string;
   readonly mimeType: string;
   readonly dataUrl: string;
+  readonly relPath: string | null;
 };
 
 function extFromMime(mimeType: string): string {
@@ -457,6 +464,30 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const onQuickActionSelect = useCallback((item: QuickActionItem) => item.perform(), []);
   const dismissPopover = useCallback(() => setShowPopover(false), []);
 
+  const persistAttachmentToDisk = useCallback(
+    async (att: {
+      readonly id: string;
+      readonly fileName: string;
+      readonly dataUrl: string;
+    }): Promise<string | null> => {
+      const worktree = sessionWorktreeRef.current;
+      if (!worktree) {
+        return null;
+      }
+      try {
+        return await writeAttachment({
+          worktreeDir: worktree,
+          attachmentId: att.id,
+          fileName: att.fileName,
+          dataBase64: dataUrlToBase64(att.dataUrl),
+        });
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
   const addFiles = useCallback(
     async (files: ReadonlyArray<File>) => {
       const allowed = files.filter(isAllowedAttachment);
@@ -479,12 +510,10 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         try {
           const dataUrl = await readFileAsDataUrl(file);
           const mimeType = resolveAttachmentMime(file);
-          accepted.push({
-            id: crypto.randomUUID(),
-            fileName: file.name || `pasted-file.${extFromMime(mimeType)}`,
-            mimeType,
-            dataUrl,
-          });
+          const id = crypto.randomUUID();
+          const fileName = file.name || `pasted-file.${extFromMime(mimeType)}`;
+          const relPath = await persistAttachmentToDisk({ id, fileName, dataUrl });
+          accepted.push({ id, fileName, mimeType, dataUrl, relPath });
         } catch {
           showToast('error', `could not read ${file.name || 'file'}`);
         }
@@ -504,7 +533,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         return [...prev, ...accepted.slice(0, room)];
       });
     },
-    [showToast],
+    [showToast, persistAttachmentToDisk],
   );
 
   const removeAttachment = useCallback((id: string) => {
@@ -613,6 +642,18 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           },
         });
         setLastFailedTurn(null);
+        const sentAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+        const worktree = sessionWorktreeRef.current;
+        if (worktree) {
+          for (const att of atts) {
+            if (att.relPath !== null) {
+              void deleteAttachment(worktree, att.relPath).catch(() => {});
+            }
+          }
+        }
+        if (sentAgentId !== null) {
+          useAppStore.getState().clearAgentAttachments(sentAgentId);
+        }
       } catch (err) {
         setError(formatError(err));
         setLastFailedTurn({ content, attachments: atts, override });
@@ -815,6 +856,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   providerDisconnectedRef.current = providerDisconnected;
   const showToastRef = useRef(showToast);
   showToastRef.current = showToast;
+  const persistAttachmentToDiskRef = useRef(persistAttachmentToDisk);
+  persistAttachmentToDiskRef.current = persistAttachmentToDisk;
 
   useEffect(() => {
     let cancelled = false;
@@ -841,11 +884,19 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       for (const path of paths) {
         try {
           const r = await readDroppedAttachment(path);
+          const id = crypto.randomUUID();
+          const dataUrl = `data:${r.mimeType};base64,${r.dataBase64}`;
+          const relPath = await persistAttachmentToDiskRef.current({
+            id,
+            fileName: r.fileName,
+            dataUrl,
+          });
           dropped.push({
-            id: crypto.randomUUID(),
+            id,
             fileName: r.fileName,
             mimeType: r.mimeType,
-            dataUrl: `data:${r.mimeType};base64,${r.dataBase64}`,
+            dataUrl,
+            relPath,
           });
         } catch {
           // Unsupported / oversize drops are silently skipped: otherwise a
@@ -911,6 +962,71 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   }, []);
 
   const lastAgentIdRef = useRef(selectedAgentId);
+  const sessionWorktreeRef = useRef(sessionWorktree);
+  sessionWorktreeRef.current = sessionWorktree;
+  const attachmentsAgentIdRef = useRef<AgentId | null>(null);
+  const pendingRestoreAgentRef = useRef<AgentId | null>(selectedAgentId);
+  const setAgentAttachments = useAppStore((s) => s.setAgentAttachments);
+
+  const restoreAttachments = useCallback(
+    async (draftAttachments: ReadonlyArray<DraftAttachment>, agentId: AgentId) => {
+      const worktree = sessionWorktreeRef.current;
+      if (!worktree && draftAttachments.length > 0) {
+        return;
+      }
+      const restored: PendingAttachment[] = [];
+      if (worktree) {
+        for (const att of draftAttachments) {
+          try {
+            const dataUrl = await readAttachment(worktree, att.relPath);
+            restored.push({
+              id: att.id,
+              fileName: att.fileName,
+              mimeType: att.mimeType,
+              dataUrl,
+              relPath: att.relPath,
+            });
+          } catch {}
+        }
+      }
+      if (pendingRestoreAgentRef.current !== agentId) {
+        return;
+      }
+      setAttachments(restored);
+      attachmentsAgentIdRef.current = agentId;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (selectedAgentId === null) {
+      return;
+    }
+    if (attachmentsAgentIdRef.current !== selectedAgentId) {
+      return;
+    }
+    const draftAtts: DraftAttachment[] = attachments
+      .filter((a): a is PendingAttachment & { relPath: string } => a.relPath !== null)
+      .map((a) => ({
+        id: a.id,
+        fileName: a.fileName,
+        mimeType: a.mimeType,
+        relPath: a.relPath,
+      }));
+    setAgentAttachments(selectedAgentId, draftAtts);
+  }, [attachments, selectedAgentId, setAgentAttachments]);
+
+  useEffect(() => {
+    pendingRestoreAgentRef.current = selectedAgentId;
+    attachmentsAgentIdRef.current = null;
+    if (selectedAgentId === null) {
+      setAttachments([]);
+      return;
+    }
+    const stored = useAppStore.getState().agentAttachments[selectedAgentId] ?? [];
+    void restoreAttachments(stored, selectedAgentId);
+  }, [selectedAgentId, sessionWorktree, restoreAttachments]);
+
   useEffect(() => {
     if (lastAgentIdRef.current === selectedAgentId) {
       return;
@@ -947,7 +1063,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       setVerbosityState(restoredVerbosity);
     }
 
-    setAttachments([]);
     setQueue([]);
     setRightSizePending(null);
     setRightSizeDismissed(false);
@@ -996,18 +1111,24 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const rightSizeSuggestion = useMemo<{
     readonly direction: 'lighter' | 'heavier';
     readonly model: string;
+    readonly kind: 'strong' | 'optional';
+    readonly costMultiplier: number | null;
   } | null>(() => {
     if (!isFirstTurnForAgent || rightSizeDismissed) {
       return null;
     }
     const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
     if (weight === 'light') {
-      const model = suggestLighterModel(effectiveModel, modelCandidates);
-      return model ? { direction: 'lighter', model } : null;
+      const s = suggestLighterModel(effectiveModel, modelCandidates);
+      return s
+        ? { direction: 'lighter', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
+        : null;
     }
     if (weight === 'heavy') {
-      const model = suggestHeavierModel(effectiveModel, modelCandidates);
-      return model ? { direction: 'heavier', model } : null;
+      const s = suggestHeavierModel(effectiveModel, modelCandidates);
+      return s
+        ? { direction: 'heavier', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
+        : null;
     }
     return null;
   }, [
@@ -1140,6 +1261,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       node: (
         <RightSizeCard
           direction={rightSizeSuggestion.direction}
+          kind={rightSizeSuggestion.kind}
+          costMultiplier={rightSizeSuggestion.costMultiplier}
           currentModel={effectiveModel}
           suggestedModel={rightSizeSuggestion.model}
           onUseSuggested={() => void onUseSuggested()}

@@ -68,6 +68,7 @@ export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier'
 export { resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
+export { getModelPrice, type ModelPriceSummary } from './providers/model-price';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {

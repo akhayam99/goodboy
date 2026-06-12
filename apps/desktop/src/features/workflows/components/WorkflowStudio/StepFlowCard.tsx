@@ -29,7 +29,7 @@ export const StepFlowCard = ({
   onMoveLeft,
   onMoveRight,
 }: Props) => {
-  const kind = ROLE_TO_KIND[def.role];
+  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
   const modelLabel = def.modelOverride ? shortModel(def.modelOverride) : 'auto';
 
   return (

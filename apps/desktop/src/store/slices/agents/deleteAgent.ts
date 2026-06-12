@@ -1,7 +1,7 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelTurn } from '../../../features/chat/turn';
+import { cancelTurn, deleteAttachment } from '../../../features/chat/turn';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
@@ -13,6 +13,13 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
     if (agentRunId !== null) {
       cancelledRunIds.add(agentRunId);
       await cancelTurn(agentRunId).catch(() => undefined);
+    }
+
+    const worktree = (get().sessionWorktrees[sessionId] ?? [])[0] ?? null;
+    if (worktree !== null) {
+      for (const att of get().agentAttachments[agentId] ?? []) {
+        await deleteAttachment(worktree, att.relPath).catch(() => undefined);
+      }
     }
 
     await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
@@ -30,6 +37,8 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       delete nextTranscripts[agentId];
       const nextDraft = { ...s.agentDraft };
       delete nextDraft[agentId];
+      const nextAttachments = { ...s.agentAttachments };
+      delete nextAttachments[agentId];
       const nextHistory = { ...s.agentRunHistory };
       delete nextHistory[agentId];
       const nextModelOverride = { ...s.agentModelOverride };
@@ -54,6 +63,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         agentTurnState: nextTurnState,
         transcripts: nextTranscripts,
         agentDraft: nextDraft,
+        agentAttachments: nextAttachments,
         agentRunHistory: nextHistory,
         agentModelOverride: nextModelOverride,
         agentProviderOverride: nextProviderOverride,

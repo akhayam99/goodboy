@@ -1,5 +1,5 @@
 import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
-import { getModelDescriptor } from '@goodboy/core';
+import { getModelDescriptor, getModelPrice } from '@goodboy/core';
 import type { VerbosityLevel } from '../../settings/verbosity';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
@@ -233,10 +233,27 @@ export const modelWeight = (model: string): number => {
 
 const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
 
+export type ModelSuggestion = {
+  readonly id: string;
+  readonly kind: 'strong' | 'optional';
+  readonly costMultiplier: number | null;
+};
+
+const costRatio = (numerator: string, denominator: string): number | null => {
+  const a = getModelPrice(numerator);
+  const b = getModelPrice(denominator);
+  if (!a || !b) {
+    return null;
+  }
+  const avg = (a.inputPerMtok / b.inputPerMtok + a.outputPerMtok / b.outputPerMtok) / 2;
+  const rounded = Math.round(avg * 10) / 10;
+  return rounded === 1 ? null : rounded;
+};
+
 export const suggestLighterModel = (
   current: string,
   candidates: ReadonlyArray<string>,
-): string | null => {
+): ModelSuggestion | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   let best: { id: string; weight: number } | null = null;
   for (const id of candidates) {
@@ -252,13 +269,16 @@ export const suggestLighterModel = (
       best = { id, weight };
     }
   }
-  return best?.id ?? null;
+  if (!best) {
+    return null;
+  }
+  return { id: best.id, kind: 'strong', costMultiplier: costRatio(current, best.id) };
 };
 
 export const suggestHeavierModel = (
   current: string,
   candidates: ReadonlyArray<string>,
-): string | null => {
+): ModelSuggestion | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   const currentWeight = modelWeight(current);
   let best: { id: string; rank: number; weight: number } | null = null;
@@ -275,7 +295,11 @@ export const suggestHeavierModel = (
       best = { id, rank, weight };
     }
   }
-  return best?.id ?? null;
+  if (!best) {
+    return null;
+  }
+  const kind = modelTier(current) === 'expensive' ? 'optional' : 'strong';
+  return { id: best.id, kind, costMultiplier: costRatio(best.id, current) };
 };
 
 export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {

@@ -1,13 +1,29 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(async () => {
+const {
+  sendTurnMock,
+  cancelCurrentTurnMock,
+  mockStore,
+  writeAttachmentMock,
+  readAttachmentMock,
+  deleteAttachmentMock,
+  readDroppedAttachmentMock,
+} = await vi.hoisted(async () => {
   const { create } = await import('zustand');
   const send = vi.fn(async () => undefined);
   const cancel = vi.fn();
+  const writeAttachment = vi.fn(async () => 'attachments/att-pic.png');
+  const readAttachment = vi.fn(async () => 'data:image/png;base64,QUJD');
+  const deleteAttachment = vi.fn(async () => undefined);
+  const readDroppedAttachment = vi.fn(async () => ({
+    fileName: 'pic.png',
+    mimeType: 'image/png',
+    dataBase64: 'QUJD',
+  }));
   type S = {
     sendTurn: typeof send;
     cancelCurrentTurn: typeof cancel;
@@ -26,11 +42,14 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     agentKindOverride: Record<string, never>;
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
+    agentAttachments: Record<string, ReadonlyArray<never>>;
     sessionNudges: Record<string, null>;
     sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
     phaseTemplates: Record<string, never>;
     setAgentDraft: (agentId: string, value: string) => void;
     clearAgentDraft: (agentId: string) => void;
+    setAgentAttachments: (agentId: string, attachments: ReadonlyArray<never>) => void;
+    clearAgentAttachments: (agentId: string) => void;
     dismissSessionNudge: () => Promise<void>;
     acceptSessionNudgeHandoff: () => Promise<void>;
     spawnAgent: () => Promise<void>;
@@ -66,6 +85,7 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     agentKindOverride: {},
     agentRunHistory: {},
     agentDraft: {},
+    agentAttachments: {},
     sessionNudges: {},
     sessionPhaseRuns: {},
     phaseTemplates: {},
@@ -80,6 +100,17 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
         delete next[agentId];
         return { agentDraft: next };
       }),
+    setAgentAttachments: (agentId, attachments) =>
+      set((s) => ({ agentAttachments: { ...s.agentAttachments, [agentId]: attachments } })),
+    clearAgentAttachments: (agentId) =>
+      set((s) => {
+        if (!(agentId in s.agentAttachments)) {
+          return s;
+        }
+        const next = { ...s.agentAttachments };
+        delete next[agentId];
+        return { agentAttachments: next };
+      }),
     dismissSessionNudge: async () => undefined,
     acceptSessionNudgeHandoff: async () => undefined,
     spawnAgent: async () => undefined,
@@ -93,11 +124,19 @@ const { sendTurnMock, cancelCurrentTurnMock, mockStore } = await vi.hoisted(asyn
     loadPhaseTemplates: async () => undefined,
     loadPhaseRunsForSession: async () => undefined,
   }));
-  return { sendTurnMock: send, cancelCurrentTurnMock: cancel, mockStore: store };
+  return {
+    sendTurnMock: send,
+    cancelCurrentTurnMock: cancel,
+    mockStore: store,
+    writeAttachmentMock: writeAttachment,
+    readAttachmentMock: readAttachment,
+    deleteAttachmentMock: deleteAttachment,
+    readDroppedAttachmentMock: readDroppedAttachment,
+  };
 });
 
 function resetMockStore() {
-  mockStore.setState({ agentDraft: {} });
+  mockStore.setState({ agentDraft: {}, agentAttachments: {}, sessionWorktrees: {} });
 }
 
 vi.mock('../../../../store', () => ({
@@ -111,6 +150,13 @@ vi.mock('../../../../permissions', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
+}));
+
+vi.mock('../../turn', () => ({
+  writeAttachment: writeAttachmentMock,
+  readAttachment: readAttachmentMock,
+  deleteAttachment: deleteAttachmentMock,
+  readDroppedAttachment: readDroppedAttachmentMock,
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -262,5 +308,72 @@ describe('ChatInput, input wiring', () => {
         override: expect.objectContaining({ providerId: 'cursor' }),
       }),
     );
+  });
+});
+
+describe('ChatInput, attachment persistence', () => {
+  const pngFile = () => new File(['abc'], 'pic.png', { type: 'image/png' });
+
+  function fileInput(container: HTMLElement): HTMLInputElement {
+    const input = container.querySelector('input[type="file"]');
+    if (!input) {
+      throw new Error('file input not found');
+    }
+    return input as HTMLInputElement;
+  }
+
+  it('persists an added attachment to the store and restores it on remount', async () => {
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
+    const user = userEvent.setup();
+    const { container, unmount } = render(<ChatInput session={makeSession()} />);
+
+    await user.upload(fileInput(container), pngFile());
+
+    expect(await screen.findByAltText('pic.png')).toBeTruthy();
+    await waitFor(() => {
+      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
+    });
+    expect(writeAttachmentMock).toHaveBeenCalled();
+    expect(mockStore.getState().agentAttachments['agent-1']?.[0]).toMatchObject({
+      fileName: 'pic.png',
+      mimeType: 'image/png',
+      relPath: 'attachments/att-pic.png',
+    });
+
+    unmount();
+    readAttachmentMock.mockClear();
+    render(<ChatInput session={makeSession()} />);
+
+    expect(await screen.findByAltText('pic.png')).toBeTruthy();
+    expect(readAttachmentMock).toHaveBeenCalledWith('/wt', 'attachments/att-pic.png');
+  });
+
+  it('clears stored attachments and deletes the disk file on send', async () => {
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
+    const user = userEvent.setup();
+    const { container } = render(<ChatInput session={makeSession()} />);
+
+    await user.upload(fileInput(container), pngFile());
+    await screen.findByAltText('pic.png');
+    await waitFor(() => {
+      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
+    });
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'with attachment');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledOnce();
+    expect(sendTurnMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: expect.arrayContaining([expect.objectContaining({ fileName: 'pic.png' })]),
+      }),
+    );
+    await waitFor(() => {
+      expect(deleteAttachmentMock).toHaveBeenCalledWith('/wt', 'attachments/att-pic.png');
+    });
+    await waitFor(() => {
+      expect(mockStore.getState().agentAttachments['agent-1']).toBeUndefined();
+    });
   });
 });

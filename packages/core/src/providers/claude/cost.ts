@@ -22,7 +22,7 @@ const SONNET_PRICE: ModelPrice = {
   cachedInputPerMtok: 0.3,
 };
 
-const PRICES: Record<string, ModelPrice> = {
+export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5': FABLE_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,
@@ -36,10 +36,10 @@ const PRICES: Record<string, ModelPrice> = {
   },
 };
 
-const FALLBACK: ModelPrice = PRICES['claude-sonnet-4-6']!;
+const FALLBACK: ModelPrice = CLAUDE_PRICES['claude-sonnet-4-6']!;
 
 export const priceFor = (model: string): ModelPrice => {
-  return PRICES[model] ?? FALLBACK;
+  return CLAUDE_PRICES[model] ?? FALLBACK;
 };
 
 export const computeCostUsd = (usage: ProviderUsage, model: string): number => {
