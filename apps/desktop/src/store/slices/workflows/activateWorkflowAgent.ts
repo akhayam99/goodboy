@@ -10,7 +10,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildGoalKickoffSection, buildPlanKickoffSection, composeKickoff } from '../../kickoff';
-import { fanOutClusters } from './clusterImplementation';
+import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
@@ -56,7 +56,6 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         ? await buildPlanKickoffSection(sessionId, agent.workflowRunId)
         : { section: '', plan: null };
 
-    const planForKickoff = explicitPlan ?? latestPlan;
     const planSection = consumesPlan
       ? explicitPlan
         ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
@@ -74,12 +73,17 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       }));
     }
 
+    const fanOutPlan =
+      effectiveKind === 'implementer'
+        ? selectFanOutPlan(get, sessionId, {
+            workflowRunId: agent.workflowRunId,
+            explicitPlan,
+          })
+        : null;
     const clusters =
-      effectiveKind === 'implementer' && planForKickoff?.status === 'active'
-        ? planForKickoff.clusters
-        : undefined;
+      fanOutPlan?.clusters && fanOutPlan.clusters.length >= 2 ? fanOutPlan.clusters : undefined;
     if (clusters && clusters.length >= 2) {
-      await fanOutClusters(set, get, sessionId, agent, clusters, planForKickoff!.title);
+      await fanOutClusters(set, get, sessionId, agent, clusters, fanOutPlan!.title);
       return;
     }
 

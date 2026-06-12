@@ -3,6 +3,7 @@ import type {
   AgentId,
   ImplementationCluster,
   IsoDateTime,
+  PlanWithCount,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -135,18 +136,33 @@ function findClustersPlan(
   workflowRunId: WorkflowRunId | undefined,
 ) {
   const plans = get().sessionPlans[sessionId] ?? [];
+  const target = workflowRunId ?? undefined;
   for (let i = plans.length - 1; i >= 0; i--) {
     const p = plans[i];
     if (!p?.clusters || p.clusters.length < 2) {
       continue;
     }
-    if (p.workflowRunId !== workflowRunId) {
+    if ((p.workflowRunId ?? undefined) !== target) {
       continue;
     }
     return p;
   }
   return null;
 }
+
+export const selectFanOutPlan = (
+  get: GetFn,
+  sessionId: SessionId,
+  opts: {
+    readonly workflowRunId?: WorkflowRunId | undefined;
+    readonly explicitPlan?: PlanWithCount | null | undefined;
+  },
+): PlanWithCount | null => {
+  if (opts.explicitPlan?.clusters && opts.explicitPlan.clusters.length >= 2) {
+    return opts.explicitPlan;
+  }
+  return findClustersPlan(get, sessionId, opts.workflowRunId);
+};
 
 export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, childAgentId: AgentId, assistantText: string) => {

@@ -21,7 +21,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
-import { fanOutClusters } from '../workflows/clusterImplementation';
+import { fanOutClusters, selectFanOutPlan } from '../workflows/clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 type SpawnArgs = {
@@ -131,12 +131,13 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     let planSection = '';
     let planToConsume: PlanWithCount | null = null;
     let planForKickoff: PlanWithCount | null = null;
+    let explicitPlan: PlanWithCount | null = null;
     if (engagePlan) {
       const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(
         sessionId,
         args.workflowRunId,
       );
-      const explicitPlan =
+      explicitPlan =
         args.triggeredPlanId !== undefined
           ? (get().sessionPlans[sessionId]?.find((p) => p.id === args.triggeredPlanId) ?? null)
           : null;
@@ -148,10 +149,12 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
     }
 
+    const fanOutPlan =
+      isImplementer && !args.deferKickoff
+        ? selectFanOutPlan(get, sessionId, { workflowRunId: args.workflowRunId, explicitPlan })
+        : null;
     const clusters =
-      isImplementer && !args.deferKickoff && planForKickoff?.status === 'active'
-        ? planForKickoff.clusters
-        : undefined;
+      fanOutPlan?.clusters && fanOutPlan.clusters.length >= 2 ? fanOutPlan.clusters : undefined;
     if (clusters && clusters.length >= 2) {
       if (planToConsume) {
         await invokeAddPlanConsumption(planToConsume.id, inserted.id);
@@ -162,7 +165,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
           planConsumptions: { ...s.planConsumptions, [planToConsume.id]: consumptions },
         }));
       }
-      await fanOutClusters(set, get, sessionId, inserted, clusters, planForKickoff!.title);
+      await fanOutClusters(set, get, sessionId, inserted, clusters, fanOutPlan!.title);
       return inserted.id;
     }
 

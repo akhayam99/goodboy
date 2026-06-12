@@ -36,7 +36,10 @@ vi.mock('../../../features/plans/plans', () => ({
   listPlansForSession: listPlansForSessionSpy,
 }));
 
-vi.mock('./clusterImplementation', () => ({ fanOutClusters: fanOutClustersSpy }));
+vi.mock('./clusterImplementation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./clusterImplementation')>();
+  return { ...actual, fanOutClusters: fanOutClustersSpy };
+});
 
 import { activateWorkflowAgent } from './activateWorkflowAgent';
 
@@ -191,6 +194,24 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('fans out a 2+ cluster plan regardless of status (count-based, status-agnostic)', async () => {
+    const clusters: ReadonlyArray<ImplementationCluster> = [
+      { title: 'a', instructions: 'i1' },
+      { title: 'b', instructions: 'i2' },
+    ];
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ clusters, status: 'consumed' })],
+    });
+
+    await activate(SESSION_ID, AGENT_ID);
+
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 
   it('does not consume an already-consumed plan', async () => {
