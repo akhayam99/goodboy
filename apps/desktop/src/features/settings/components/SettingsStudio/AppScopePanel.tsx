@@ -42,9 +42,16 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const exportConfig = useAppStore((s) => s.exportConfig);
   const importConfig = useAppStore((s) => s.importConfig);
   const wipeLocalDatabase = useAppStore((s) => s.wipeLocalDatabase);
+  const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const detectedEditors = useAppStore((s) => s.detectedEditors);
 
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
+
+  useEffect(() => {
+    if (detectedEditors.length === 0) {
+      void loadDetectedEditors();
+    }
+  }, []);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [exportState, setExportState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');

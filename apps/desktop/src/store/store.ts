@@ -300,6 +300,7 @@ export type AppActions = {
   hydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
+  loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;
   setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
