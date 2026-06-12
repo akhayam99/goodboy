@@ -387,6 +387,30 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
   return { ready: true, reason: null };
 };
 
+const BLOCK_MARKER_ALT =
+  'plan|clusters|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
+const SELF_MARKER_ALT = 'handoff|comment-resolved|comment-wontfix|cluster-done';
+
+const CONTROL_BLOCK_STRIP_RE = new RegExp(
+  `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
+  'g',
+);
+const CONTROL_SELF_STRIP_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s[^>]*?>>`, 'g');
+const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
+const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*(?:\s[^>]*)?$/;
+
+export const stripControlMarkers = (text: string): string => {
+  CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
+  CONTROL_SELF_STRIP_RE.lastIndex = 0;
+  return text
+    .replace(CONTROL_BLOCK_STRIP_RE, '')
+    .replace(CONTROL_SELF_STRIP_RE, '')
+    .replace(CONTROL_OPEN_TAIL_RE, '')
+    .replace(CONTROL_PARTIAL_TAIL_RE, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
   const out: string[] = [];
   re.lastIndex = 0;
