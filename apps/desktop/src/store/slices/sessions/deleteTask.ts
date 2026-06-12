@@ -40,12 +40,15 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       for (const agent of state.sessionPhaseRuns[sessionId] ?? []) {
         delete nextTranscripts[agent.id];
       }
+      const nextWorkflowDrafts = { ...state.workflowDrafts };
+      delete nextWorkflowDrafts[sessionId];
       return {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
         currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
         sessionWorktrees: nextWorktrees,
         sessionBranches: nextBranches,
         transcripts: nextTranscripts,
+        workflowDrafts: nextWorkflowDrafts,
       };
     });
     void get().emitNotification(
