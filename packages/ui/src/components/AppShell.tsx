@@ -7,6 +7,7 @@ export type AppShellProps = {
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
+  overlay?: ReactNode;
   className?: string;
 };
 
@@ -92,6 +93,7 @@ export const AppShell = ({
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
+  overlay,
   className,
 }: AppShellProps) => {
   const hasLeftSidebar = leftSidebar != null;
@@ -272,6 +274,17 @@ export const AppShell = ({
           >
             {rightSidebar}
           </aside>
+        ) : null}
+        {overlay != null ? (
+          <div
+            className="relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden"
+            style={{
+              gridColumn: hasRightSidebar ? 'main-start / right-end' : 'main',
+              gridRow: '1 / -1',
+            }}
+          >
+            {overlay}
+          </div>
         ) : null}
       </div>
     </div>

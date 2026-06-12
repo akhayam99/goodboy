@@ -19,6 +19,8 @@ export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { EmptyState } from './components/EmptyState';
 export type { EmptyStateProps } from './components/EmptyState';
+export { FieldRow } from './components/FieldRow';
+export type { FieldRowProps } from './components/FieldRow';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
