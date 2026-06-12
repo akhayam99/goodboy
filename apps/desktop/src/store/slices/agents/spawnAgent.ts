@@ -149,7 +149,10 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     }
 
     const clusters =
-      isImplementer && !args.deferKickoff && planForKickoff?.status === 'active'
+      isImplementer &&
+      !args.deferKickoff &&
+      planForKickoff?.clusters?.length &&
+      planForKickoff.clusters.length >= 2
         ? planForKickoff.clusters
         : undefined;
     if (clusters && clusters.length >= 2) {

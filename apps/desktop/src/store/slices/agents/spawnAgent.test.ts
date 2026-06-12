@@ -163,4 +163,15 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
     expect(sendTurn).toHaveBeenCalledTimes(1);
   });
+
+  it('fans out a plan with 2+ clusters even if status is not active', async () => {
+    const { sendTurn, spawn } = buildHarness([
+      makePlan({ clusters: TWO_CLUSTERS, status: 'done' }),
+    ]);
+
+    await spawn(SESSION_ID, { triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
 });
