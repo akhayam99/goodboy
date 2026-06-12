@@ -1,309 +1,348 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`snapshot, empty states > NewSessionDialog: no workflows 1`] = `
-<dialog
-  aria-describedby="_r_0_-desc"
-  aria-labelledby="_r_0_-title"
-  class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-  open=""
+exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
+<div
+  class="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in"
 >
-  <div
-    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+  <header
+    class="flex shrink-0 items-center gap-3 px-6 py-3"
   >
-    <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
+    <span
+      class="flex size-8 items-center justify-center rounded-lg bg-primary/10"
     >
-      <div
-        class="flex min-w-0 flex-col gap-1"
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-plus text-primary"
+        fill="none"
+        height="16"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="16"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <h2
-          class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_0_-title"
-        >
-          New session
-        </h2>
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_0_-desc"
-        >
-          Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating.
-        </p>
-      </div>
-      <button
-        aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="text-base leading-none"
-        >
-          ×
-        </span>
-      </button>
-    </header>
+        <path
+          d="M5 12h14"
+        />
+        <path
+          d="M12 5v14"
+        />
+      </svg>
+    </span>
     <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
-    />
-    <div
-      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+      class="flex min-w-0 flex-col"
     >
-      <div
-        class="flex flex-col gap-7"
+      <h1
+        class="text-sm font-semibold text-foreground"
       >
-        <section
-          class="flex flex-col gap-2.5"
-        >
-          <header
-            class="flex items-start gap-2.5"
-          >
-            <span
-              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-target text-primary"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                />
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="6"
-                />
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="2"
-                />
-              </svg>
-            </span>
-            <div
-              class="flex flex-col gap-0.5"
-            >
-              <h3
-                class="text-sm font-semibold text-foreground"
-              >
-                Goal
-              </h3>
-              <p
-                class="text-2xs leading-relaxed text-muted-foreground"
-              >
-                What this session should accomplish. Be specific. This is the agent's primary context.
-              </p>
-            </div>
-          </header>
-          <div>
-            <textarea
-              class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
-              placeholder="Refactor auth domain to extract token validation into a shared module…"
-              style="overflow-y: hidden;"
-            />
-          </div>
-        </section>
-        <section
-          class="flex flex-col gap-2.5"
-        >
-          <header
-            class="flex items-start gap-2.5"
-          >
-            <span
-              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-success/10"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-git-branch text-success"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 6a9 9 0 0 0-9 9V3"
-                />
-                <circle
-                  cx="18"
-                  cy="6"
-                  r="3"
-                />
-                <circle
-                  cx="6"
-                  cy="18"
-                  r="3"
-                />
-              </svg>
-            </span>
-            <div
-              class="flex flex-col gap-0.5"
-            >
-              <h3
-                class="text-sm font-semibold text-foreground"
-              >
-                Branch
-              </h3>
-              <p
-                class="text-2xs leading-relaxed text-muted-foreground"
-              >
-                Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one.
-              </p>
-            </div>
-          </header>
-          <div>
-            <div
-              class="flex flex-col gap-2.5"
-            >
-              <div
-                aria-label="branch source"
-                class="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
-                role="tablist"
-              >
-                <button
-                  aria-selected="true"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-muted text-foreground shadow-sm"
-                  role="tab"
-                  type="button"
-                >
-                  New
-                </button>
-                <button
-                  aria-selected="false"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-                  role="tab"
-                  type="button"
-                >
-                  Existing
-                </button>
-              </div>
-              <div
-                class="flex items-center gap-1.5"
-              >
-                <span
-                  class="shrink-0 text-xs text-muted-foreground font-mono"
-                >
-                  kay/
-                </span>
-                <input
-                  aria-label="Branch slug"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  class="w-full rounded-md border border-border bg-background px-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 h-8 flex-1 font-mono text-sm"
-                  placeholder="branch-slug"
-                  spellcheck="false"
-                  type="text"
-                  value=""
-                />
-                <button
-                  aria-label="Generate branch name"
-                  class="shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors cursor-not-allowed text-muted-foreground/30"
-                  disabled=""
-                  title="Generate from goal"
-                  type="button"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-wand-sparkles"
-                    fill="none"
-                    height="13"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="13"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
-                    />
-                    <path
-                      d="m14 7 3 3"
-                    />
-                    <path
-                      d="M5 6v4"
-                    />
-                    <path
-                      d="M19 14v4"
-                    />
-                    <path
-                      d="M10 2v2"
-                    />
-                    <path
-                      d="M7 8H3"
-                    />
-                    <path
-                      d="M21 16h-4"
-                    />
-                    <path
-                      d="M11 3H9"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+        New session
+      </h1>
+      <span
+        class="truncate text-2xs text-muted-foreground"
+      >
+        creates a worktree on a fresh branch
+      </span>
     </div>
     <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
+      class="flex-1"
     />
-    <footer
-      class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
+    <button
+      aria-label="cancel new session"
+      class="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+      type="button"
     >
-      <div
-        class="flex w-full items-center gap-3"
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-x"
+        fill="none"
+        height="13"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="13"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <label
-          class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
-        >
-          <input
-            checked=""
-            class="accent-primary"
-            type="checkbox"
-          />
-          Set up workflow next
-        </label>
-        <div
-          class="flex-1 text-xs text-danger"
+        <path
+          d="M18 6 6 18"
         />
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
-          type="button"
+        <path
+          d="m6 6 12 12"
+        />
+      </svg>
+       Cancel
+    </button>
+  </header>
+  <div
+    aria-orientation="horizontal"
+    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+    role="separator"
+  />
+  <div
+    class="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5"
+  >
+    <div
+      class="mx-auto flex w-full max-w-2xl flex-col gap-7"
+    >
+      <section
+        class="flex flex-col gap-2.5"
+      >
+        <header
+          class="flex items-start gap-2.5"
         >
-          Cancel
-        </button>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
-          disabled=""
-          type="button"
+          <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-target text-primary"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="6"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2"
+              />
+            </svg>
+          </span>
+          <div
+            class="flex flex-col gap-0.5"
+          >
+            <h3
+              class="text-sm font-semibold text-foreground"
+            >
+              Goal
+            </h3>
+            <p
+              class="text-2xs leading-relaxed text-muted-foreground"
+            >
+              What this session should accomplish. Be specific. This is the agent's primary context.
+            </p>
+          </div>
+        </header>
+        <div>
+          <textarea
+            class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
+            placeholder="Refactor auth domain to extract token validation into a shared module…"
+            style="overflow-y: hidden;"
+          />
+        </div>
+      </section>
+      <section
+        class="flex flex-col gap-2.5"
+      >
+        <header
+          class="flex items-start gap-2.5"
         >
-          Create session
-        </button>
-      </div>
-    </footer>
+          <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-success/10"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-git-branch text-success"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15 6a9 9 0 0 0-9 9V3"
+              />
+              <circle
+                cx="18"
+                cy="6"
+                r="3"
+              />
+              <circle
+                cx="6"
+                cy="18"
+                r="3"
+              />
+            </svg>
+          </span>
+          <div
+            class="flex flex-col gap-0.5"
+          >
+            <h3
+              class="text-sm font-semibold text-foreground"
+            >
+              Branch
+            </h3>
+            <p
+              class="text-2xs leading-relaxed text-muted-foreground"
+            >
+              Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one.
+            </p>
+          </div>
+        </header>
+        <div>
+          <div
+            class="flex flex-col gap-2.5"
+          >
+            <div
+              aria-label="branch source"
+              class="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
+              role="tablist"
+            >
+              <button
+                aria-selected="true"
+                class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-muted text-foreground shadow-sm"
+                role="tab"
+                type="button"
+              >
+                New
+              </button>
+              <button
+                aria-selected="false"
+                class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                role="tab"
+                type="button"
+              >
+                Existing
+              </button>
+            </div>
+            <div
+              class="flex items-center gap-1.5"
+            >
+              <span
+                class="shrink-0 text-xs text-muted-foreground font-mono"
+              >
+                kay/
+              </span>
+              <input
+                aria-label="Branch slug"
+                autocapitalize="off"
+                autocorrect="off"
+                class="w-full rounded-md border border-border bg-background px-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 h-8 flex-1 font-mono text-sm"
+                placeholder="branch-slug"
+                spellcheck="false"
+                type="text"
+                value=""
+              />
+              <button
+                aria-label="Generate branch name"
+                class="shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors cursor-not-allowed text-muted-foreground/30"
+                disabled=""
+                title="Generate from goal"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-wand-sparkles"
+                  fill="none"
+                  height="13"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="13"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+                  />
+                  <path
+                    d="m14 7 3 3"
+                  />
+                  <path
+                    d="M5 6v4"
+                  />
+                  <path
+                    d="M19 14v4"
+                  />
+                  <path
+                    d="M10 2v2"
+                  />
+                  <path
+                    d="M7 8H3"
+                  />
+                  <path
+                    d="M21 16h-4"
+                  />
+                  <path
+                    d="M11 3H9"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
-</dialog>
+  <div
+    aria-orientation="horizontal"
+    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+    role="separator"
+  />
+  <footer
+    class="flex shrink-0 items-center gap-3 px-6 py-3"
+  >
+    <div
+      class="flex-1"
+    />
+    <button
+      aria-checked="true"
+      class="inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs transition-colors text-foreground"
+      role="switch"
+      type="button"
+    >
+      <span
+        aria-hidden="true"
+        class="relative h-4 w-7 shrink-0 rounded-full transition-colors bg-primary"
+      >
+        <span
+          class="absolute top-0.5 size-3 rounded-full bg-background shadow-sm transition-all left-3.5"
+        />
+      </span>
+      Set up workflow next
+    </button>
+    <span
+      aria-hidden="true"
+      class="h-5 w-px bg-border-soft"
+    />
+    <button
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+      type="button"
+    >
+      Cancel
+    </button>
+    <button
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+      disabled=""
+      type="button"
+    >
+      Create session
+    </button>
+  </footer>
+</div>
 `;
 
 exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
@@ -943,8 +982,8 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
 
 exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
 <dialog
-  aria-describedby="_r_2_-desc"
-  aria-labelledby="_r_2_-title"
+  aria-describedby="_r_0_-desc"
+  aria-labelledby="_r_0_-title"
   class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
   open=""
 >
@@ -959,13 +998,13 @@ exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
       >
         <h2
           class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_2_-title"
+          id="_r_0_-title"
         >
           Delete session?
         </h2>
         <p
           class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_2_-desc"
+          id="_r_0_-desc"
         >
           Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge.
         </p>
@@ -1068,310 +1107,349 @@ exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
 </dialog>
 `;
 
-exports[`snapshot, error states > NewSessionDialog: form error 1`] = `
-<dialog
-  aria-describedby="_r_1_-desc"
-  aria-labelledby="_r_1_-title"
-  class="overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl"
-  open=""
+exports[`snapshot, error states > NewSessionView: form error 1`] = `
+<div
+  class="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in"
 >
-  <div
-    class="flex flex-col max-h-[85vh] min-h-[28rem] w-[44rem]"
+  <header
+    class="flex shrink-0 items-center gap-3 px-6 py-3"
   >
-    <header
-      class="flex shrink-0 items-start justify-between gap-4 px-6 py-4"
+    <span
+      class="flex size-8 items-center justify-center rounded-lg bg-primary/10"
     >
-      <div
-        class="flex min-w-0 flex-col gap-1"
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-plus text-primary"
+        fill="none"
+        height="16"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="16"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <h2
-          class="text-sm font-semibold tracking-tight text-foreground"
-          id="_r_1_-title"
-        >
-          New session
-        </h2>
-        <p
-          class="text-xs leading-relaxed text-muted-foreground"
-          id="_r_1_-desc"
-        >
-          Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating.
-        </p>
-      </div>
-      <button
-        aria-label="close"
-        class="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="text-base leading-none"
-        >
-          ×
-        </span>
-      </button>
-    </header>
+        <path
+          d="M5 12h14"
+        />
+        <path
+          d="M12 5v14"
+        />
+      </svg>
+    </span>
     <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
-    />
-    <div
-      class="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm gap-4 px-6 py-5"
+      class="flex min-w-0 flex-col"
     >
-      <div
-        class="flex flex-col gap-7"
+      <h1
+        class="text-sm font-semibold text-foreground"
       >
-        <section
-          class="flex flex-col gap-2.5"
-        >
-          <header
-            class="flex items-start gap-2.5"
-          >
-            <span
-              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-target text-primary"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                />
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="6"
-                />
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="2"
-                />
-              </svg>
-            </span>
-            <div
-              class="flex flex-col gap-0.5"
-            >
-              <h3
-                class="text-sm font-semibold text-foreground"
-              >
-                Goal
-              </h3>
-              <p
-                class="text-2xs leading-relaxed text-muted-foreground"
-              >
-                What this session should accomplish. Be specific. This is the agent's primary context.
-              </p>
-            </div>
-          </header>
-          <div>
-            <textarea
-              class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
-              placeholder="Refactor auth domain to extract token validation into a shared module…"
-              style="overflow-y: hidden;"
-            />
-          </div>
-        </section>
-        <section
-          class="flex flex-col gap-2.5"
-        >
-          <header
-            class="flex items-start gap-2.5"
-          >
-            <span
-              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-success/10"
-            >
-              <svg
-                aria-hidden="true"
-                class="lucide lucide-git-branch text-success"
-                fill="none"
-                height="14"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="14"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 6a9 9 0 0 0-9 9V3"
-                />
-                <circle
-                  cx="18"
-                  cy="6"
-                  r="3"
-                />
-                <circle
-                  cx="6"
-                  cy="18"
-                  r="3"
-                />
-              </svg>
-            </span>
-            <div
-              class="flex flex-col gap-0.5"
-            >
-              <h3
-                class="text-sm font-semibold text-foreground"
-              >
-                Branch
-              </h3>
-              <p
-                class="text-2xs leading-relaxed text-muted-foreground"
-              >
-                Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one.
-              </p>
-            </div>
-          </header>
-          <div>
-            <div
-              class="flex flex-col gap-2.5"
-            >
-              <div
-                aria-label="branch source"
-                class="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
-                role="tablist"
-              >
-                <button
-                  aria-selected="true"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-muted text-foreground shadow-sm"
-                  role="tab"
-                  type="button"
-                >
-                  New
-                </button>
-                <button
-                  aria-selected="false"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
-                  role="tab"
-                  type="button"
-                >
-                  Existing
-                </button>
-              </div>
-              <div
-                class="flex items-center gap-1.5"
-              >
-                <span
-                  class="shrink-0 text-xs text-muted-foreground font-mono"
-                >
-                  kay/
-                </span>
-                <input
-                  aria-label="Branch slug"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  class="w-full rounded-md border border-border bg-background px-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 h-8 flex-1 font-mono text-sm"
-                  placeholder="branch-slug"
-                  spellcheck="false"
-                  type="text"
-                  value=""
-                />
-                <button
-                  aria-label="Generate branch name"
-                  class="shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors cursor-not-allowed text-muted-foreground/30"
-                  disabled=""
-                  title="Generate from goal"
-                  type="button"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="lucide lucide-wand-sparkles"
-                    fill="none"
-                    height="13"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="13"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
-                    />
-                    <path
-                      d="m14 7 3 3"
-                    />
-                    <path
-                      d="M5 6v4"
-                    />
-                    <path
-                      d="M19 14v4"
-                    />
-                    <path
-                      d="M10 2v2"
-                    />
-                    <path
-                      d="M7 8H3"
-                    />
-                    <path
-                      d="M21 16h-4"
-                    />
-                    <path
-                      d="M11 3H9"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+        New session
+      </h1>
+      <span
+        class="truncate text-2xs text-muted-foreground"
+      >
+        creates a worktree on a fresh branch
+      </span>
     </div>
     <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
+      class="flex-1"
     />
-    <footer
-      class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
+    <button
+      aria-label="cancel new session"
+      class="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+      type="button"
     >
-      <div
-        class="flex w-full items-center gap-3"
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-x"
+        fill="none"
+        height="13"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="13"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <label
-          class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
-        >
-          <input
-            checked=""
-            class="accent-primary"
-            type="checkbox"
-          />
-          Set up workflow next
-        </label>
-        <div
-          class="flex-1 text-xs text-danger"
+        <path
+          d="M18 6 6 18"
         />
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
-          type="button"
+        <path
+          d="m6 6 12 12"
+        />
+      </svg>
+       Cancel
+    </button>
+  </header>
+  <div
+    aria-orientation="horizontal"
+    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+    role="separator"
+  />
+  <div
+    class="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5"
+  >
+    <div
+      class="mx-auto flex w-full max-w-2xl flex-col gap-7"
+    >
+      <section
+        class="flex flex-col gap-2.5"
+      >
+        <header
+          class="flex items-start gap-2.5"
         >
-          Cancel
-        </button>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
-          disabled=""
-          type="button"
+          <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-target text-primary"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="6"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2"
+              />
+            </svg>
+          </span>
+          <div
+            class="flex flex-col gap-0.5"
+          >
+            <h3
+              class="text-sm font-semibold text-foreground"
+            >
+              Goal
+            </h3>
+            <p
+              class="text-2xs leading-relaxed text-muted-foreground"
+            >
+              What this session should accomplish. Be specific. This is the agent's primary context.
+            </p>
+          </div>
+        </header>
+        <div>
+          <textarea
+            class="w-full rounded-md border border-border/30 bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/15 disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md"
+            placeholder="Refactor auth domain to extract token validation into a shared module…"
+            style="overflow-y: hidden;"
+          />
+        </div>
+      </section>
+      <section
+        class="flex flex-col gap-2.5"
+      >
+        <header
+          class="flex items-start gap-2.5"
         >
-          Create session
-        </button>
-      </div>
-    </footer>
+          <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-success/10"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-git-branch text-success"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15 6a9 9 0 0 0-9 9V3"
+              />
+              <circle
+                cx="18"
+                cy="6"
+                r="3"
+              />
+              <circle
+                cx="6"
+                cy="18"
+                r="3"
+              />
+            </svg>
+          </span>
+          <div
+            class="flex flex-col gap-0.5"
+          >
+            <h3
+              class="text-sm font-semibold text-foreground"
+            >
+              Branch
+            </h3>
+            <p
+              class="text-2xs leading-relaxed text-muted-foreground"
+            >
+              Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one.
+            </p>
+          </div>
+        </header>
+        <div>
+          <div
+            class="flex flex-col gap-2.5"
+          >
+            <div
+              aria-label="branch source"
+              class="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
+              role="tablist"
+            >
+              <button
+                aria-selected="true"
+                class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-muted text-foreground shadow-sm"
+                role="tab"
+                type="button"
+              >
+                New
+              </button>
+              <button
+                aria-selected="false"
+                class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                role="tab"
+                type="button"
+              >
+                Existing
+              </button>
+            </div>
+            <div
+              class="flex items-center gap-1.5"
+            >
+              <span
+                class="shrink-0 text-xs text-muted-foreground font-mono"
+              >
+                kay/
+              </span>
+              <input
+                aria-label="Branch slug"
+                autocapitalize="off"
+                autocorrect="off"
+                class="w-full rounded-md border border-border bg-background px-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 h-8 flex-1 font-mono text-sm"
+                placeholder="branch-slug"
+                spellcheck="false"
+                type="text"
+                value=""
+              />
+              <button
+                aria-label="Generate branch name"
+                class="shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors cursor-not-allowed text-muted-foreground/30"
+                disabled=""
+                title="Generate from goal"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-wand-sparkles"
+                  fill="none"
+                  height="13"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="13"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+                  />
+                  <path
+                    d="m14 7 3 3"
+                  />
+                  <path
+                    d="M5 6v4"
+                  />
+                  <path
+                    d="M19 14v4"
+                  />
+                  <path
+                    d="M10 2v2"
+                  />
+                  <path
+                    d="M7 8H3"
+                  />
+                  <path
+                    d="M21 16h-4"
+                  />
+                  <path
+                    d="M11 3H9"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
-</dialog>
+  <div
+    aria-orientation="horizontal"
+    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+    role="separator"
+  />
+  <footer
+    class="flex shrink-0 items-center gap-3 px-6 py-3"
+  >
+    <div
+      class="flex-1"
+    />
+    <button
+      aria-checked="true"
+      class="inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs transition-colors text-foreground"
+      role="switch"
+      type="button"
+    >
+      <span
+        aria-hidden="true"
+        class="relative h-4 w-7 shrink-0 rounded-full transition-colors bg-primary"
+      >
+        <span
+          class="absolute top-0.5 size-3 rounded-full bg-background shadow-sm transition-all left-3.5"
+        />
+      </span>
+      Set up workflow next
+    </button>
+    <span
+      aria-hidden="true"
+      class="h-5 w-px bg-border-soft"
+    />
+    <button
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+      type="button"
+    >
+      Cancel
+    </button>
+    <button
+      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+      disabled=""
+      type="button"
+    >
+      Create session
+    </button>
+  </footer>
+</div>
 `;
 
 exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `

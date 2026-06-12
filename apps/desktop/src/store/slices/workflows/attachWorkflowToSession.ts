@@ -19,6 +19,7 @@ import type { GetFn, SetFn } from './types';
 
 type Options = {
   autoRun?: boolean;
+  goal?: string;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -36,6 +37,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
 
     const workflowRunId = crypto.randomUUID() as WorkflowRunId;
     const autoRun = options?.autoRun ?? session.autoRun;
+    const goal = options?.goal?.trim() || undefined;
     const ordinal = session.workflowRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const now = new Date().toISOString() as IsoDateTime;
     await attachWorkflowToSessionInDb(
@@ -45,6 +47,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       workflowId,
       autoRun,
       now,
+      goal,
     );
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
@@ -80,7 +83,14 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       newAgents.push(agent);
     }
 
-    const newRun: WorkflowRun = { id: workflowRunId, workflowId, ordinal, currentStep: 0, autoRun };
+    const newRun: WorkflowRun = {
+      id: workflowRunId,
+      workflowId,
+      ordinal,
+      currentStep: 0,
+      autoRun,
+      ...(goal && { goal }),
+    };
 
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};

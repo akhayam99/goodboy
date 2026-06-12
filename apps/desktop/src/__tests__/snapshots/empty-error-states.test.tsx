@@ -160,7 +160,7 @@ function mockStore(partial: Partial<AppStore>): void {
 }
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
-import { NewSessionDialog } from '../../features/session/components/NewSessionDialog';
+import { NewSessionView } from '../../features/session/components/NewSessionView';
 import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
@@ -219,15 +219,10 @@ describe('snapshot, empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NewSessionDialog: no workflows', () => {
+  it('NewSessionView: no workflows', () => {
     const { container } = render(
       <ToastProvider>
-        <NewSessionDialog
-          open={true}
-          onClose={vi.fn()}
-          workspaceId={WS_ID}
-          onOpenSettings={vi.fn()}
-        />
+        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
     );
     expect(container.firstChild).toMatchSnapshot();
@@ -245,7 +240,7 @@ describe('snapshot, error states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NewSessionDialog: form error', () => {
+  it('NewSessionView: form error', () => {
     mockStore({
       providers: [],
       skills: {},
@@ -259,12 +254,7 @@ describe('snapshot, error states', () => {
     });
     const { container } = render(
       <ToastProvider>
-        <NewSessionDialog
-          open={true}
-          onClose={vi.fn()}
-          workspaceId={WS_ID}
-          onOpenSettings={vi.fn()}
-        />
+        <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
     );
     expect(container.firstChild).toMatchSnapshot();

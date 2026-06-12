@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Dialog, Input, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Loader2, Target, Wand2 } from 'lucide-react';
+import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
+import { AlertTriangle, GitBranch, Loader2, Plus, Target, Wand2, X } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
@@ -16,9 +16,9 @@ import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
+import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 
 type Props = {
-  open: boolean;
   onClose: () => void;
   workspaceId: WorkspaceId;
   onOpenSettings: () => void;
@@ -168,7 +168,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
       text = parsed.result;
     }
   } catch {
-    // not json, use raw
+    text = raw;
   }
   return text
     .toLowerCase()
@@ -180,7 +180,7 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .join('-');
 }
 
-export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }: Props) => {
+export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
@@ -215,26 +215,25 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
   );
 
   const connectedProviders = providers.filter((p) => p.connection === 'connected');
-  const noProviderConnected = open && providers.length > 0 && connectedProviders.length === 0;
+  const noProviderConnected = providers.length > 0 && connectedProviders.length === 0;
   const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)));
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setGoal('');
-    setBranchSlug('');
-    setSlugTouched(false);
-    setSlugGenerating(false);
-    setBranchMode('new');
-    setExistingBranch('');
-    setError(null);
-    setBusy(false);
-    setLinearIssue(null);
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
-  }, [open, settingKey, loadSetting, workspaceId]);
+  }, [settingKey, loadSetting]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !busy) {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
+  }, [busy, onClose]);
 
   const onPickLinearIssue = (issue: LinearIssue) => {
     setLinearIssue(issue);
@@ -248,7 +247,7 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
   }, [workspaceId]);
 
   useEffect(() => {
-    if (!open || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
+    if (branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
       return;
     }
     setBranchesLoading(true);
@@ -259,7 +258,7 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
         setBranchesLoading(false);
         setBranchesLoaded(true);
       });
-  }, [open, branchMode, branchesLoaded, workspace?.rootPath]);
+  }, [branchMode, branchesLoaded, workspace?.rootPath]);
 
   useEffect(() => {
     if (slugTouched) {
@@ -279,9 +278,7 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
         setBranchSlug(slug);
         setSlugTouched(true);
       })
-      .catch(() => {
-        // silent, user can type manually
-      })
+      .catch(() => undefined)
       .finally(() => {
         setSlugGenerating(false);
       });
@@ -340,7 +337,7 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
       if (setupWorkflow) {
         setTimeout(() => {
           window.dispatchEvent(
-            new CustomEvent('goodboy:open-workflow-picker', {
+            new CustomEvent('goodboy:open-workflow-builder', {
               detail: { sessionId: session.id },
             }),
           );
@@ -358,210 +355,236 @@ export const NewSessionDialog = ({ open, onClose, workspaceId, onOpenSettings }:
     try {
       localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
     } catch {
-      // localStorage unavailable, ignore
+      return;
     }
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title="New session"
-      description="Creates a worktree on a fresh branch. Set up a workflow from the session panel after creating."
-      size="lg"
-      footer={
-        <div className="flex w-full items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={setupWorkflow}
-              onChange={(e) => onToggleSetupWorkflow(e.target.checked)}
-              className="accent-primary"
-              disabled={busy}
-            />
-            Set up workflow next
-          </label>
-          <div className="flex-1 text-xs text-danger">{error ?? ''}</div>
-          <Button variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
-          </Button>
-          {conflictSessionId ? (
-            <Button onClick={() => onOpenConflictSession(conflictSessionId)} disabled={busy}>
-              Open session
-            </Button>
-          ) : conflictWorktreePath ? (
-            <Button
-              variant="danger"
-              onClick={() => void onCreate(conflictWorktreePath)}
-              disabled={busy || !goalReady}
-            >
-              {busy ? (
-                <>
-                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
-                  Working…
-                </>
-              ) : (
-                'Erase worktree & create'
-              )}
-            </Button>
-          ) : (
-            <Button onClick={() => void onCreate()} disabled={!canCreate}>
-              {busy ? (
-                <>
-                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
-                  Creating…
-                </>
-              ) : (
-                'Create session'
-              )}
-            </Button>
-          )}
+    <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
+      <header className="flex shrink-0 items-center gap-3 px-6 py-3">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+          <Plus size={16} className="text-primary" aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-col">
+          <h1 className="text-sm font-semibold text-foreground">New session</h1>
+          <span className="truncate text-2xs text-muted-foreground">
+            {workspace ? `in: ${workspace.name}` : 'creates a worktree on a fresh branch'}
+          </span>
         </div>
-      }
-    >
-      <div className="flex flex-col gap-7">
-        {noProviderConnected ? (
-          <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs">
-            <span className="mt-0.5 text-warning">⚠</span>
-            <div className="flex-1 leading-relaxed text-foreground">
-              No provider is connected. A session needs at least one of{' '}
-              {PROVIDER_ORDER.map((id, i) => (
-                <span key={id}>
-                  <span className="font-medium">{PROVIDER_LABELS[id]}</span>
-                  {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
-                </span>
-              ))}{' '}
-              connected to run.
-              <button
-                type="button"
-                onClick={onOpenSettings}
-                className="ml-1 underline underline-offset-2 hover:text-warning"
-              >
-                Open settings
-              </button>
-              .
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={busy}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors',
+            'hover:border-border hover:bg-muted/50 hover:text-foreground',
+            busy && 'cursor-not-allowed opacity-50',
+          )}
+          aria-label="cancel new session"
+        >
+          <X size={13} aria-hidden /> Cancel
+        </button>
+      </header>
+      <Divider />
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-7">
+          {noProviderConnected ? (
+            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs">
+              <span className="mt-0.5 text-warning">⚠</span>
+              <div className="flex-1 leading-relaxed text-foreground">
+                No provider is connected. A session needs at least one of{' '}
+                {PROVIDER_ORDER.map((id, i) => (
+                  <span key={id}>
+                    <span className="font-medium">{PROVIDER_LABELS[id]}</span>
+                    {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
+                  </span>
+                ))}{' '}
+                connected to run.
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  className="ml-1 underline underline-offset-2 hover:text-warning"
+                >
+                  Open settings
+                </button>
+                .
+              </div>
             </div>
-          </div>
-        ) : null}
-        {hasLinear ? (
+          ) : null}
+          {hasLinear ? (
+            <Section
+              icon={
+                <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
+                  L
+                </span>
+              }
+              tone="primary"
+              title="Linear issue"
+              subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."
+            >
+              <IssuePicker
+                workspaceId={workspaceId}
+                value={linearIssue}
+                onPick={onPickLinearIssue}
+                onClear={() => setLinearIssue(null)}
+                disabled={busy}
+              />
+            </Section>
+          ) : null}
+
           <Section
-            icon={
-              <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
-                L
-              </span>
-            }
+            icon={<Target size={14} aria-hidden className="text-primary" />}
             tone="primary"
-            title="Linear issue"
-            subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."
+            title="Goal"
+            subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
           >
-            <IssuePicker
-              workspaceId={workspaceId}
-              value={linearIssue}
-              onPick={onPickLinearIssue}
-              onClear={() => setLinearIssue(null)}
+            <Textarea
+              value={goal}
+              placeholder="Refactor auth domain to extract token validation into a shared module…"
+              onChange={(e) => setGoal(e.target.value)}
+              autoGrow
+              minRows={4}
+              maxRows={12}
+              autoFocus
               disabled={busy}
             />
           </Section>
-        ) : null}
 
-        <Section
-          icon={<Target size={14} aria-hidden className="text-primary" />}
-          tone="primary"
-          title="Goal"
-          subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
-        >
-          <Textarea
-            value={goal}
-            placeholder="Refactor auth domain to extract token validation into a shared module…"
-            onChange={(e) => setGoal(e.target.value)}
-            autoGrow
-            minRows={4}
-            maxRows={12}
-            autoFocus
-            disabled={busy}
-          />
-        </Section>
-
-        <Section
-          icon={<GitBranch size={14} aria-hidden className="text-success" />}
-          tone="success"
-          title="Branch"
-          subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
-        >
-          <div className="flex flex-col gap-2.5">
-            <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
-            {branchMode === 'new' ? (
-              <div className="flex items-center gap-1.5">
-                <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                  {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
-                </span>
-                {slugGenerating ? (
-                  <span className="flex h-8 flex-1 animate-pulse items-center rounded border border-border bg-subtle px-2">
-                    <span className="h-2 w-full rounded bg-muted-foreground/20" />
+          <Section
+            icon={<GitBranch size={14} aria-hidden className="text-success" />}
+            tone="success"
+            title="Branch"
+            subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
+          >
+            <div className="flex flex-col gap-2.5">
+              <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
+              {branchMode === 'new' ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="shrink-0 text-xs text-muted-foreground font-mono">
+                    {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
                   </span>
-                ) : (
-                  <Input
-                    value={branchSlug}
-                    onChange={(e) => {
-                      setBranchSlug(sanitizeBranchSlug(e.target.value));
-                      setSlugTouched(true);
-                    }}
-                    placeholder="branch-slug"
-                    className="h-8 flex-1 font-mono text-sm"
-                    disabled={busy}
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    aria-label="Branch slug"
-                  />
-                )}
-                <button
-                  type="button"
-                  onClick={handleGenerateSlug}
-                  disabled={!goal.trim() || slugGenerating || busy}
-                  title="Generate from goal"
-                  aria-label="Generate branch name"
-                  className={cn(
-                    'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
-                    goal.trim() && !slugGenerating && !busy
-                      ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      : 'cursor-not-allowed text-muted-foreground/30',
-                  )}
-                >
-                  <Wand2 size={13} aria-hidden />
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                <BranchCombobox
-                  branches={existingBranches}
-                  value={existingBranch}
-                  onChange={setExistingBranch}
-                  disabled={busy || branchesLoading}
-                  loading={branchesLoading}
-                  openDirection="up"
-                />
-                {conflictSessionId ? (
-                  <p className="text-2xs leading-relaxed text-muted-foreground">
-                    This branch is already used by an open session. Open it instead of creating a
-                    duplicate.
-                  </p>
-                ) : conflictWorktreePath ? (
-                  <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
-                    <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
-                    <span>
-                      Checked out in another worktree (
-                      <span className="break-all font-mono">{conflictWorktreePath}</span>). Creating
-                      erases that worktree and recreates it here.
+                  {slugGenerating ? (
+                    <span className="flex h-8 flex-1 animate-pulse items-center rounded border border-border bg-subtle px-2">
+                      <span className="h-2 w-full rounded bg-muted-foreground/20" />
                     </span>
-                  </p>
-                ) : null}
-              </div>
-            )}
-          </div>
-        </Section>
+                  ) : (
+                    <Input
+                      value={branchSlug}
+                      onChange={(e) => {
+                        setBranchSlug(sanitizeBranchSlug(e.target.value));
+                        setSlugTouched(true);
+                      }}
+                      placeholder="branch-slug"
+                      className="h-8 flex-1 font-mono text-sm"
+                      disabled={busy}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      aria-label="Branch slug"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleGenerateSlug}
+                    disabled={!goal.trim() || slugGenerating || busy}
+                    title="Generate from goal"
+                    aria-label="Generate branch name"
+                    className={cn(
+                      'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
+                      goal.trim() && !slugGenerating && !busy
+                        ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        : 'cursor-not-allowed text-muted-foreground/30',
+                    )}
+                  >
+                    <Wand2 size={13} aria-hidden />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <BranchCombobox
+                    branches={existingBranches}
+                    value={existingBranch}
+                    onChange={setExistingBranch}
+                    disabled={busy || branchesLoading}
+                    loading={branchesLoading}
+                  />
+                  {conflictSessionId ? (
+                    <p className="text-2xs leading-relaxed text-muted-foreground">
+                      This branch is already used by an open session. Open it instead of creating a
+                      duplicate.
+                    </p>
+                  ) : conflictWorktreePath ? (
+                    <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
+                      <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
+                      <span>
+                        Checked out in another worktree (
+                        <span className="break-all font-mono">{conflictWorktreePath}</span>).
+                        Creating erases that worktree and recreates it here.
+                      </span>
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </Section>
+        </div>
       </div>
-    </Dialog>
+      <Divider />
+
+      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
+        <div className="flex-1">
+          {error ? (
+            <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
+              <AlertTriangle size={12} aria-hidden />
+              {error}
+            </span>
+          ) : null}
+        </div>
+        <ToggleSwitch
+          label="Set up workflow next"
+          checked={setupWorkflow}
+          onChange={onToggleSetupWorkflow}
+          disabled={busy}
+        />
+        <span className="h-5 w-px bg-border-soft" aria-hidden />
+        <Button variant="ghost" onClick={onClose} disabled={busy}>
+          Cancel
+        </Button>
+        {conflictSessionId ? (
+          <Button onClick={() => onOpenConflictSession(conflictSessionId)} disabled={busy}>
+            Open session
+          </Button>
+        ) : conflictWorktreePath ? (
+          <Button
+            variant="danger"
+            onClick={() => void onCreate(conflictWorktreePath)}
+            disabled={busy || !goalReady}
+          >
+            {busy ? (
+              <>
+                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                Working…
+              </>
+            ) : (
+              'Erase worktree & create'
+            )}
+          </Button>
+        ) : (
+          <Button onClick={() => void onCreate()} disabled={!canCreate}>
+            {busy ? (
+              <>
+                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                Creating…
+              </>
+            ) : (
+              'Create session'
+            )}
+          </Button>
+        )}
+      </footer>
+    </div>
   );
 };
 

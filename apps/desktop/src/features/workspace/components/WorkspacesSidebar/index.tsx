@@ -45,7 +45,6 @@ import {
   Zap,
   ZapOff,
 } from 'lucide-react';
-import { SessionSettingsDialog } from '../../../session/components/SessionSettingsDialog';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -55,6 +54,7 @@ import { OnboardingChip } from '../../../onboarding/OnboardingCard';
 import type {
   Agent,
   AgentId,
+  ProviderId,
   ProviderRunId,
   Session,
   SessionId,
@@ -78,8 +78,6 @@ import {
   useSessions,
   useWorkspaces,
 } from '../../../../store';
-import { NewSessionDialog } from '../../../session/components/NewSessionDialog';
-import { StartWorkflowDialog } from '../../../session/components/StartWorkflowDialog';
 import { pickNextWorkflowStep } from '../../../../features/workflows/components/WorkflowNextStepCta';
 import {
   workflowHasOpenQuestions,
@@ -90,7 +88,11 @@ import {
   formatCost,
   formatTokens,
 } from '../../../../features/session/agent-row-format';
-import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, getModelProvider } from '@goodboy/core';
+import {
+  PROVIDER_BRAND,
+  brandColor,
+} from '../../../../features/providers/components/provider-brand';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
@@ -158,7 +160,6 @@ export const WorkspacesSidebar = ({
     [setCurrentSession],
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
-  const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
 
   const theme = useThemeStore((s) => s.theme);
@@ -169,39 +170,12 @@ export const WorkspacesSidebar = ({
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Session>;
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
-  const archiveTaskAction = useAppStore((s) => s.archiveTask);
-  const unarchiveTaskAction = useAppStore((s) => s.unarchiveTask);
-  const archive = useCallback(
-    (id: SessionId) => {
-      void archiveTaskAction(id);
-    },
-    [archiveTaskAction],
-  );
-  const unarchive = useCallback(
-    (id: SessionId) => {
-      void unarchiveTaskAction(id);
-    },
-    [unarchiveTaskAction],
-  );
   const onArchivedTabOpen = useCallback(() => {
     if (!currentWorkspace) {
       return;
     }
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
-  const isCurrentArchived = !!currentSession?.archivedAt;
-
-  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
-
-  useEffect(() => {
-    const handler = () => {
-      if (!collapsed && currentWorkspace) {
-        setNewSessionOpen(true);
-      }
-    };
-    window.addEventListener('goodboy:new-session', handler);
-    return () => window.removeEventListener('goodboy:new-session', handler);
-  }, [collapsed, currentWorkspace]);
 
   if (collapsed) {
     return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
@@ -221,25 +195,29 @@ export const WorkspacesSidebar = ({
             const totalSessions = activeSessions.length + archivedSessions.length;
             const hasAnySession = totalSessions > 0;
             return (
-              <div className="mx-3 my-3 flex min-h-0 flex-1 overflow-hidden">
-                <div className="w-28 shrink-0 overflow-hidden">
+              <div className="mx-2 my-3 flex min-h-0 flex-1 overflow-hidden">
+                <div className="w-2/5 min-w-28 max-w-44 shrink-0 overflow-hidden">
                   <SessionActivityBar
                     workspaceId={currentWorkspace.id}
                     sessions={activeSessions}
                     archivedSessions={archivedSessions}
                     currentSessionId={currentSession?.id ?? null}
                     onSelectSession={onSelectSession}
-                    onNewSession={() => setNewSessionOpen(true)}
+                    onNewSession={() =>
+                      window.dispatchEvent(new CustomEvent('goodboy:new-session'))
+                    }
                     onArchivedTabOpen={onArchivedTabOpen}
                   />
                 </div>
                 <Divider orientation="vertical" className="mx-1.5" />
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                   {currentSession ? (
                     <>
                       <SessionDetailPanel
                         session={currentSession}
-                        onOpenSessionSettings={() => setSessionSettingsOpen(true)}
+                        onOpenSessionSettings={() =>
+                          window.dispatchEvent(new CustomEvent('goodboy:open-session-settings'))
+                        }
                       />
                       <Divider />
                       <ScrollArea className="min-h-0 flex-1">
@@ -331,24 +309,6 @@ export const WorkspacesSidebar = ({
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
       ) : null}
       {guideOpen ? <GuideDialog open onClose={() => setGuideOpen(false)} /> : null}
-      {currentWorkspace && newSessionOpen ? (
-        <NewSessionDialog
-          open
-          onClose={() => setNewSessionOpen(false)}
-          workspaceId={currentWorkspace.id}
-          onOpenSettings={onOpenSettings}
-        />
-      ) : null}
-      {currentSession && sessionSettingsOpen ? (
-        <SessionSettingsDialog
-          sessionId={currentSession.id as SessionId}
-          open
-          onClose={() => setSessionSettingsOpen(false)}
-          archived={isCurrentArchived}
-          onArchive={() => archive(currentSession.id as SessionId)}
-          onUnarchive={() => unarchive(currentSession.id as SessionId)}
-        />
-      ) : null}
     </div>
   );
 };
@@ -794,7 +754,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const loading = useSessionLoading(task.id);
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
-  const [startWorkflowOpen, setStartWorkflowOpen] = useState(false);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
   const [workflowExpand, setWorkflowExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
   const toggleWorkflowExpand = useCallback((id: string, isDiscarded: boolean) => {
@@ -813,17 +772,6 @@ function AgentsSection({ task }: AgentsSectionProps) {
       return next;
     });
   }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ sessionId?: string }>).detail;
-      if (!detail?.sessionId || detail.sessionId === task.id) {
-        setStartWorkflowOpen(true);
-      }
-    };
-    window.addEventListener('goodboy:open-workflow-picker', handler);
-    return () => window.removeEventListener('goodboy:open-workflow-picker', handler);
-  }, [task.id]);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
   const agentsByRunId = useMemo(() => {
@@ -1220,7 +1168,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
         </div>
         {expanded ? (
           wfAgents.length > 0 ? (
-            <div className="flex flex-col gap-1 pb-1 pl-5">
+            <div className="flex flex-col gap-1 pb-1 pl-3">
               {wfAgents.map((run, index) => {
                 const isActionable = run.stepId === actionableStepId && run.status === 'pending';
                 const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
@@ -1277,8 +1225,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
                           ) : (
                             <ChevronRight size={10} aria-hidden className="shrink-0" />
                           )}
-                          clusters {clusterChildren.filter((c) => c.status === 'completed').length}/
-                          {clusterChildren.length}
+                          <span className="min-w-0 truncate">
+                            clusters{' '}
+                            {clusterChildren.filter((c) => c.status === 'completed').length}/
+                            {clusterChildren.length}
+                          </span>
                         </button>
                         {clustersExpanded
                           ? clusterChildren.map((child, ci) => (
@@ -1300,7 +1251,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
               })}
             </div>
           ) : (
-            <p className="pb-1 pl-5 text-2xs text-muted-foreground/60">
+            <p className="pb-1 pl-3 text-2xs text-muted-foreground/60">
               no agents yet for this workflow.
             </p>
           )
@@ -1310,32 +1261,18 @@ function AgentsSection({ task }: AgentsSectionProps) {
   };
 
   return (
-    <section className="mt-2 flex flex-col px-3 pb-3">
+    <section className="mt-2 flex flex-col px-2 pb-3">
       <SectionHeader
         className="pb-1.5"
         icon={<Layers size={11} aria-hidden className="text-primary" />}
         label="Workflow"
       />
       {!hasAnyWorkflow ? (
-        <button
-          type="button"
-          onClick={() => setStartWorkflowOpen(true)}
-          className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-        >
-          <Plus size={13} aria-hidden />
-          Start a workflow
-        </button>
+        <WorkflowStartButton sessionId={task.id} variant="empty" />
       ) : (
         <>
           <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
-          <button
-            type="button"
-            onClick={() => setStartWorkflowOpen(true)}
-            className="mt-1.5 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-          >
-            <Plus size={11} aria-hidden />
-            Attach another workflow
-          </button>
+          <WorkflowStartButton sessionId={task.id} variant="attach" />
         </>
       )}
 
@@ -1370,32 +1307,35 @@ function AgentsSection({ task }: AgentsSectionProps) {
           {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
         </ul>
       )}
-      {resolverAgents.length > 0 && (
-        <ResolveCluster
-          agents={resolverAgents}
-          sessionId={task.id}
-          isTaskActive={isTaskActive}
-          prNumber={prNumber}
-          resolvedThreadIds={resolvedThreadIds}
-          pendingThreadIds={pendingThreadIds}
-          resolverState={resolverState}
-          selectedAgentId={selectedAgentId}
-          expanded={resolveExpanded}
-          onToggle={() => setResolveExpanded((v) => !v)}
-          onSelect={onPickAgent}
-          onForceNext={() => void activateNextResolver(task.id)}
-        />
-      )}
       <div className="flex flex-col gap-1 pl-2">
         <PlanReadySuggestion task={task} />
         <SpawnAgentControl sessionId={task.id} />
       </div>
       {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
-      <StartWorkflowDialog
-        open={startWorkflowOpen}
-        onClose={() => setStartWorkflowOpen(false)}
-        session={task}
-      />
+
+      {resolverAgents.length > 0 && (
+        <>
+          <SectionHeader
+            className="mt-6 pb-1.5"
+            icon={<CheckCheck size={11} aria-hidden className="text-lime-500" />}
+            label="Resolve"
+          />
+          <ResolveCluster
+            agents={resolverAgents}
+            sessionId={task.id}
+            isTaskActive={isTaskActive}
+            prNumber={prNumber}
+            resolvedThreadIds={resolvedThreadIds}
+            pendingThreadIds={pendingThreadIds}
+            resolverState={resolverState}
+            selectedAgentId={selectedAgentId}
+            expanded={resolveExpanded}
+            onToggle={() => setResolveExpanded((v) => !v)}
+            onSelect={onPickAgent}
+            onForceNext={() => void activateNextResolver(task.id)}
+          />
+        </>
+      )}
     </section>
   );
 }
@@ -1757,7 +1697,7 @@ function ResolveCluster({
     }
   };
   return (
-    <div className="ml-2 mt-1 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+    <div className="flex flex-col gap-0.5 pl-2">
       <div className="flex items-center gap-1 pr-1">
         <button
           type="button"
@@ -1771,7 +1711,7 @@ function ResolveCluster({
           ) : (
             <ChevronRight size={10} aria-hidden className="shrink-0" />
           )}
-          resolve {resolvedCount}/{agents.length}
+          {resolvedCount}/{agents.length} resolved
         </button>
         {stalled ? (
           <button
@@ -1903,6 +1843,28 @@ function ResolveClusterRow({
   );
 }
 
+function ProviderGlyph({
+  provider,
+  muted,
+}: {
+  readonly provider: string | null | undefined;
+  readonly muted?: boolean;
+}) {
+  if (!provider || !(provider in PROVIDER_BRAND)) {
+    return null;
+  }
+  const id = provider as ProviderId;
+  const Icon = PROVIDER_BRAND[id].icon;
+  return (
+    <Icon
+      size={11}
+      aria-hidden
+      className={cn('shrink-0', muted && 'opacity-40')}
+      style={{ color: brandColor(id) }}
+    />
+  );
+}
+
 type WorkflowBlockReason = 'questions' | 'summarizer';
 
 type WorkflowStepRowProps = {
@@ -1950,6 +1912,7 @@ function WorkflowStepRow({
   const isPendingFuture = run.status === 'pending' && !isActionable;
   const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
+  const stepCost = aggregate?.estimatedCostUsd ?? telemetry?.estimatedCostUsd ?? 0;
 
   const [draft, setDraft] = useState(run.name);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -1977,8 +1940,7 @@ function WorkflowStepRow({
     }
   };
 
-  const ROW_BASE =
-    'group flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 rounded border px-2.5 py-1.5 text-xs font-medium';
+  const ROW_BASE = 'group flex w-full flex-col rounded border px-2 py-1.5 text-xs font-medium';
   const isRunning = run.status === 'running';
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const containerClass = isRunning
@@ -2073,7 +2035,7 @@ function WorkflowStepRow({
         }}
         className={containerClass}
       >
-        <span className="flex min-w-0 items-center gap-1.5">
+        <div className="flex w-full items-center gap-1.5">
           <span
             aria-hidden
             className={cn(
@@ -2083,7 +2045,9 @@ function WorkflowStepRow({
           >
             {index + 1}.
           </span>
-          {renderStatusIcon()}
+          <span className="flex size-3.5 shrink-0 items-center justify-center">
+            {renderStatusIcon()}
+          </span>
           <AgentKindChip kind={kind} muted={isPendingFuture} />
           {isEditing ? (
             <input
@@ -2107,24 +2071,38 @@ function WorkflowStepRow({
               aria-label="rename agent"
             />
           ) : (
-            <span className="truncate font-semibold">{run.name}</span>
+            <span className="min-w-0 flex-1 truncate text-left font-semibold">{run.name}</span>
           )}
-        </span>
-        <span className="flex shrink-0 items-center gap-1.5">
-          <span
-            className={cn(
-              'text-[10px] font-normal tabular-nums',
-              isPendingFuture ? 'text-muted-foreground/60' : 'opacity-60',
-            )}
-            title={`model: ${resolvedModel}`}
-          >
-            {modelLabel}
-          </span>
           {renderActionIndicator()}
-        </span>
+        </div>
+        <div className="flex w-full items-center justify-between gap-2 pl-[22px] pt-0.5">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <ProviderGlyph
+              provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
+              muted={isPendingFuture}
+            />
+            <span
+              className={cn(
+                'min-w-0 truncate text-[10px] font-normal tabular-nums',
+                isPendingFuture ? 'text-muted-foreground/60' : 'opacity-60',
+              )}
+              title={`model: ${resolvedModel}`}
+            >
+              {modelLabel}
+            </span>
+          </span>
+          {stepCost > 0 && (
+            <span
+              className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/60"
+              title={`estimated cost: ${formatCost(stepCost)}`}
+            >
+              {formatCost(stepCost)}
+            </span>
+          )}
+        </div>
         <div
           className={cn(
-            'w-full basis-full grid transition-[grid-template-rows] duration-200 ease-out',
+            'grid w-full transition-[grid-template-rows] duration-200 ease-out',
             isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
           )}
         >
@@ -2144,35 +2122,32 @@ function WorkflowStepRow({
         </div>
       </div>
       {pendingConfirm ? (
-        <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
-          <p className="mb-2 font-medium text-foreground">
-            {blockReason === 'summarizer'
-              ? 'the summarizer is still running.'
-              : 'open questions to resolve first.'}
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPendingConfirm(false);
-              }}
-              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
-            >
-              {blockReason === 'summarizer' ? 'wait' : 'resolve first'}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPendingConfirm(false);
-                onStart();
-              }}
-              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
-            >
-              force spawn
-            </button>
-          </div>
+        <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-[11px]">
+          <AlertTriangle size={12} aria-hidden className="shrink-0 text-warning" />
+          <span className="min-w-0 flex-1 truncate text-foreground">
+            {blockReason === 'summarizer' ? 'Summarizer still running.' : 'Open questions first.'}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPendingConfirm(false);
+            }}
+            className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {blockReason === 'summarizer' ? 'Wait' : 'Resolve first'}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPendingConfirm(false);
+              onStart();
+            }}
+            className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold text-warning transition-colors hover:bg-warning/10"
+          >
+            Force start
+          </button>
         </div>
       ) : null}
     </div>
@@ -2335,6 +2310,7 @@ function AgentRow({
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-1.5">
+              <ProviderGlyph provider={telemetry?.provider} />
               <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
                 <AgentLifetime run={run} />
               </span>
@@ -2478,6 +2454,37 @@ function ContextWindowBar({
           style={{ width: `${pct * 100}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+function WorkflowStartButton({
+  sessionId,
+  variant,
+}: {
+  sessionId: SessionId;
+  variant: 'empty' | 'attach';
+}) {
+  const onClick = () => {
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
+    );
+  };
+  return (
+    <div className={variant === 'empty' ? '' : 'mt-1.5'}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          'flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground',
+          variant === 'empty' ? 'text-xs' : 'text-2xs',
+        )}
+      >
+        <Plus size={variant === 'empty' ? 13 : 11} aria-hidden className="shrink-0" />
+        <span className="min-w-0 truncate">
+          {variant === 'empty' ? 'Start a workflow' : 'Attach another workflow'}
+        </span>
+      </button>
     </div>
   );
 }

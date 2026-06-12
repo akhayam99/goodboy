@@ -21,6 +21,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
+import { fanOutClusters } from '../workflows/clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 type SpawnArgs = {
@@ -129,6 +130,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     const engagePlan = isImplementer || (kindConsumesPlan(effectiveKind) && hasExplicitPlanContext);
     let planSection = '';
     let planToConsume: PlanWithCount | null = null;
+    let planForKickoff: PlanWithCount | null = null;
     if (engagePlan) {
       const { section: latestSection, plan: latestPlan } = await buildPlanKickoffSection(
         sessionId,
@@ -141,9 +143,29 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       planSection = explicitPlan
         ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
         : latestSection;
+      planForKickoff = explicitPlan ?? latestPlan;
       const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';
       planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
     }
+
+    const clusters =
+      isImplementer && !args.deferKickoff && planForKickoff?.status === 'active'
+        ? planForKickoff.clusters
+        : undefined;
+    if (clusters && clusters.length >= 2) {
+      if (planToConsume) {
+        await invokeAddPlanConsumption(planToConsume.id, inserted.id);
+        const refreshedPlans = await invokeListPlansForSession(sessionId);
+        const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
+        set((s) => ({
+          sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
+          planConsumptions: { ...s.planConsumptions, [planToConsume.id]: consumptions },
+        }));
+      }
+      await fanOutClusters(set, get, sessionId, inserted, clusters, planForKickoff!.title);
+      return inserted.id;
+    }
+
     const kickoff = composeKickoff(planSection, baseKickoff);
     if (kickoff.length > 0) {
       if (args.deferKickoff) {
