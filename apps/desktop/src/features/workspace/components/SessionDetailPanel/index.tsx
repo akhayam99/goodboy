@@ -29,11 +29,18 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
     (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
   );
   const detectedEditors = useAppStore((s) => s.detectedEditors);
+  const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const { showToast } = useToast();
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (detectedEditors.length === 0) {
+      void loadDetectedEditors();
+    }
+  }, []);
 
   const launchEditor = async (binary: string) => {
     if (!worktreePath) {

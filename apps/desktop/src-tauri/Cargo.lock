@@ -1386,6 +1386,7 @@ dependencies = [
  "keyring",
  "libc",
  "log",
+ "objc2",
  "portable-pty",
  "regex",
  "reqwest 0.12.28",

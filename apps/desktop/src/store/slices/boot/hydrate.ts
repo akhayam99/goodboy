@@ -13,7 +13,6 @@ import {
   type ProviderAuthResults,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
-import { detectEditors } from '../../../shared/lib/editor';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
 import {
   SETTING_EDITOR_BINARY,
@@ -64,15 +63,12 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         });
 
         set({ bootPhase: 'detecting-cli' });
-        const [providerStatus, cursorStatus, codexStatus, geminiStatus, detectedEditors] =
-          await Promise.all([
-            getProviderStatus('anthropic'),
-            getCursorStatus(),
-            getCodexStatus(),
-            getGeminiStatus(),
-            detectEditors(),
-          ]);
-        set({ detectedEditors });
+        const [providerStatus, cursorStatus, codexStatus, geminiStatus] = await Promise.all([
+          getProviderStatus('anthropic'),
+          getCursorStatus(),
+          getCodexStatus(),
+          getGeminiStatus(),
+        ]);
         const statuses: ProviderStatuses = {
           anthropic: providerStatus,
           cursor: cursorStatus,

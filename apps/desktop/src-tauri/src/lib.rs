@@ -28,8 +28,25 @@ pub use secrets::read as read_secret;
 
 use std::sync::Mutex;
 
+#[cfg(target_os = "macos")]
+fn suppress_webkit_media_remote() {
+    use objc2::runtime::AnyObject;
+    use objc2::{class, msg_send};
+    unsafe {
+        let defaults: *mut AnyObject = msg_send![class!(NSUserDefaults), standardUserDefaults];
+        let key: *mut AnyObject = msg_send![
+            class!(NSString),
+            stringWithUTF8String: c"WebKitMediaRemoteEnabled".as_ptr()
+        ];
+        let no: i8 = 0;
+        let _: () = msg_send![defaults, setBool: no, forKey: key];
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "macos")]
+    suppress_webkit_media_remote();
   let database = db::open().expect("failed to open Goodboy database");
   let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
