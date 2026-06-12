@@ -13,7 +13,6 @@ import {
   type ProviderAuthResults,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
-import { detectEditors } from '../../../shared/lib/editor';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
 import {
   SETTING_EDITOR_BINARY,
