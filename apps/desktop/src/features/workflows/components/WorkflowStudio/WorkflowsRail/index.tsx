@@ -60,7 +60,7 @@ export const WorkflowsRail = ({
             bordered
           />
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-0.5">
             {presets.map((t) => (
               <PresetCard
                 key={t.id}
@@ -76,7 +76,7 @@ export const WorkflowsRail = ({
 
       <div className="shrink-0 px-3 pb-3 pt-1">
         {confirmReset ? (
-          <div className="flex items-center gap-1.5 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
+          <div className="flex items-center gap-1.5 rounded-lg bg-warning/5 px-2.5 py-2">
             <span className="flex-1 text-2xs leading-tight text-muted-foreground">
               Restore the built-in presets? Your edits to them are overwritten. Custom presets you
               made are kept.
@@ -107,9 +107,9 @@ export const WorkflowsRail = ({
             type="button"
             onClick={() => setConfirmReset(true)}
             className={cn(
-              'inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-1.5',
-              'border-border-soft text-2xs font-medium text-muted-foreground transition-colors',
-              'hover:border-border hover:bg-muted/40 hover:text-foreground',
+              'inline-flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5',
+              'text-2xs font-medium text-muted-foreground/70 transition-colors',
+              'hover:bg-muted/40 hover:text-foreground',
             )}
           >
             <RotateCcw size={11} aria-hidden /> Restore defaults

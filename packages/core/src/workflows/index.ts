@@ -18,3 +18,4 @@ export {
   type WorkflowFormatInput,
   type WorkflowFormatDeps,
 } from './format';
+export { polishWorkflowGoal, parsePolishedGoal, type GoalPolishDeps } from './polish';

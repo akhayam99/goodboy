@@ -9,6 +9,7 @@ export type WorkflowLibraryEntry = {
   readonly slug: string;
   readonly name: string;
   readonly description: string;
+  readonly goal?: string;
   readonly steps: ReadonlyArray<WorkflowLibraryStep>;
 };
 
@@ -17,6 +18,7 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     slug: 'refactor',
     name: 'Refactor',
     description: 'Scout the area, plan the change, refactor, then verify.',
+    goal: 'Restructure the target code without changing its behavior, keeping tests green throughout.',
     steps: [
       {
         name: 'Scout',
@@ -52,6 +54,7 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     slug: 'bug-fix',
     name: 'Bug fix',
     description: 'Reproduce with a failing test, diagnose, fix, verify.',
+    goal: 'Resolve the reported bug at its root cause and guard it with a regression test.',
     steps: [
       {
         name: 'Reproduce',
@@ -87,6 +90,7 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     slug: 'ship',
     name: 'Ship it',
     description: 'Plan, implement, test, review. End to end.',
+    goal: 'Take the change from plan to reviewed, tested, shippable code in one pass.',
     steps: [
       {
         name: 'Plan',
@@ -122,6 +126,7 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     slug: 'feature',
     name: 'Feature',
     description: 'Survey, plan, implement, test.',
+    goal: 'Deliver the new feature end to end, meeting its acceptance criteria with test coverage.',
     steps: [
       {
         name: 'Survey',

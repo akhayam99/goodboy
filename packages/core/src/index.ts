@@ -78,7 +78,7 @@ export {
 
 export { autoModelForRole, type AutoModelChoice } from './providers/auto-model';
 
-export { getModelDescriptor } from './providers/model-display';
+export { getModelDescriptor, getModelProvider } from './providers/model-display';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
@@ -164,6 +164,9 @@ export {
   type FormattedWorkflowStep,
   type WorkflowFormatInput,
   type WorkflowFormatDeps,
+  polishWorkflowGoal,
+  parsePolishedGoal,
+  type GoalPolishDeps,
 } from './workflows';
 
 export {

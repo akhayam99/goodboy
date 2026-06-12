@@ -122,6 +122,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setForm((prev) => ({
       name: prev.name.trim() || preview.name,
       description: prev.description.trim() || preview.description,
+      goal: prev.goal.trim() || (preview.goal ?? ''),
       steps: preview.steps.map((s) => ({
         ...emptyDefinition(),
         role: s.role,
@@ -163,6 +164,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       workspaceId,
       name: form.name.trim(),
       description: form.description.trim(),
+      ...(form.goal.trim() ? { goal: form.goal.trim() } : {}),
       steps: defs,
       isPreset,
     };

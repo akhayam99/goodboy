@@ -37,7 +37,7 @@ export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-muted/10 p-4">
+    <div className="flex flex-col gap-3 rounded-lg bg-muted/20 p-4">
       <div className="flex items-center gap-2">
         <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted/60 text-2xs font-mono font-semibold text-muted-foreground">
           {ordinal + 1}

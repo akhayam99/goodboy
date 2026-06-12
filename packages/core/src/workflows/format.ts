@@ -26,11 +26,11 @@ Rules:
 - expectedOutput: one sentence describing the artifact this step hands to the next.
 - Order steps so each depends only on prior outputs.
 
-Also propose a workflow name (kebab-or-short phrase) and a one-line description, and up to 3 short suggestions for how the user could improve the workflow further.
+Also propose a workflow name (kebab-or-short phrase), a one-line description, a one-sentence goal stating the overall objective the workflow works toward (shared with every step), and up to 3 short suggestions for how the user could improve the workflow further.
 
 Output ONLY a single marker block, nothing before or after:
 <<workflow>>
-{"name":"...","description":"...","steps":[{"name":"...","role":"...","promptPrefix":"...","expectedOutput":"..."}],"suggestions":["..."]}
+{"name":"...","description":"...","goal":"...","steps":[{"name":"...","role":"...","promptPrefix":"...","expectedOutput":"..."}],"suggestions":["..."]}
 <</workflow>>
 
 The block must contain valid JSON. No markdown fences, no comments, no trailing prose.`;
@@ -45,6 +45,7 @@ export type FormattedWorkflowStep = {
 export type FormattedWorkflow = {
   readonly name: string;
   readonly description: string;
+  readonly goal?: string;
   readonly steps: ReadonlyArray<FormattedWorkflowStep>;
   readonly suggestions: ReadonlyArray<string>;
 };
@@ -173,9 +174,12 @@ export const parseFormattedWorkflow = (text: string): FormattedWorkflow | null =
     .filter((s) => s.length > 0)
     .slice(0, 3);
 
+  const goal = typeof o.goal === 'string' ? o.goal.trim() : '';
+
   return {
     name: typeof o.name === 'string' ? o.name.trim() : '',
     description: typeof o.description === 'string' ? o.description.trim() : '',
+    ...(goal.length > 0 && { goal }),
     steps,
     suggestions,
   };

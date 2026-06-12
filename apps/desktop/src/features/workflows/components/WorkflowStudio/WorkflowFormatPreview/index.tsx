@@ -50,6 +50,11 @@ export const WorkflowFormatPreview = ({
             {proposal.description ? (
               <span className="text-xs text-muted-foreground">{proposal.description}</span>
             ) : null}
+            {proposal.goal ? (
+              <span className="mt-1 text-2xs text-muted-foreground/80">
+                <span className="font-semibold uppercase tracking-wide">goal</span> {proposal.goal}
+              </span>
+            ) : null}
           </div>
         ) : null}
 
@@ -66,10 +71,7 @@ export const WorkflowFormatPreview = ({
 
         <ol className="flex flex-col gap-2">
           {proposal.steps.map((step, i) => (
-            <li
-              key={i}
-              className="flex flex-col gap-1 rounded-lg border border-border-soft bg-muted/20 px-3 py-2.5"
-            >
+            <li key={i} className="flex flex-col gap-1 rounded-lg bg-muted/20 px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-2xs font-semibold text-foreground">
                   {i + 1}
@@ -90,7 +92,7 @@ export const WorkflowFormatPreview = ({
         </ol>
 
         {proposal.suggestions.length > 0 ? (
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-warning/5 px-3 py-2.5">
+          <div className="flex flex-col gap-1.5 rounded-lg bg-warning/5 px-3 py-2.5">
             <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               <Lightbulb size={11} aria-hidden /> suggestions
             </span>

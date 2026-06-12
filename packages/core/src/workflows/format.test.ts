@@ -67,6 +67,26 @@ describe('parseFormattedWorkflow', () => {
   it('returns null on non-JSON garbage', () => {
     expect(parseFormattedWorkflow('not json at all')).toBeNull();
   });
+
+  it('parses the optional goal when present', () => {
+    const json = JSON.stringify({
+      goal: 'Ship the gitlab integration.',
+      steps: [{ name: 'Do', role: 'custom', promptPrefix: 'x', expectedOutput: 'y' }],
+    });
+    expect(parseFormattedWorkflow(json)?.goal).toBe('Ship the gitlab integration.');
+  });
+
+  it('leaves goal undefined when absent or blank', () => {
+    const withoutGoal = JSON.stringify({
+      steps: [{ name: 'Do', role: 'custom', promptPrefix: 'x', expectedOutput: 'y' }],
+    });
+    expect(parseFormattedWorkflow(withoutGoal)?.goal).toBeUndefined();
+    const blankGoal = JSON.stringify({
+      goal: '   ',
+      steps: [{ name: 'Do', role: 'custom', promptPrefix: 'x', expectedOutput: 'y' }],
+    });
+    expect(parseFormattedWorkflow(blankGoal)?.goal).toBeUndefined();
+  });
 });
 
 describe('formatWorkflowFromNL', () => {

@@ -231,7 +231,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       if (setupWorkflow) {
         setTimeout(() => {
           window.dispatchEvent(
-            new CustomEvent('goodboy:open-workflow-picker', {
+            new CustomEvent('goodboy:open-workflow-builder', {
               detail: { sessionId: session.id },
             }),
           );

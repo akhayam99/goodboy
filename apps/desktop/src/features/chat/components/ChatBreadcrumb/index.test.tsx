@@ -64,32 +64,13 @@ describe('ChatBreadcrumb', () => {
     expect(screen.getByText('no workspace')).toBeDefined();
   });
 
-  it('fires open-workspace-settings with the session workspace id when the name is clicked', () => {
+  it('renders the workspace name as plain text, not a button', () => {
     const spy = vi.fn();
     window.addEventListener('goodboy:open-workspace-settings', spy);
     render(<ChatBreadcrumb session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'goodboy' }));
-    expect(spy).toHaveBeenCalledOnce();
-    const event = spy.mock.calls[0]![0] as CustomEvent<{ workspaceId: string }>;
-    expect(event.detail.workspaceId).toBe('ws-1');
-    window.removeEventListener('goodboy:open-workspace-settings', spy);
-  });
-
-  it('does not fire the legacy open-settings event', () => {
-    const legacy = vi.fn();
-    window.addEventListener('goodboy:open-settings', legacy);
-    render(<ChatBreadcrumb session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'goodboy' }));
-    expect(legacy).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-settings', legacy);
-  });
-
-  it('renders no clickable workspace button when none is linked', () => {
-    state.workspaces = [];
-    const spy = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', spy);
-    render(<ChatBreadcrumb session={session} />);
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'goodboy' })).toBeNull();
+    fireEvent.click(screen.getByText('goodboy'));
+    expect(spy).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-workspace-settings', spy);
   });
 });

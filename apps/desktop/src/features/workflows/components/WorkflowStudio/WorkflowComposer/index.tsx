@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { Button, Divider, Input, SectionHeader, Textarea } from '@goodboy/ui';
+import { Button, Divider, FieldRow, Input, SectionHeader, Textarea } from '@goodboy/ui';
 import { Plus, Sparkles } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade } from '../../../../../shared/components/ScrollFade';
@@ -29,7 +29,9 @@ type Props = {
   readonly dragging: boolean;
   readonly dropIndex: number | null;
   readonly onNew: () => void;
-  readonly onChangeMeta: (patch: Partial<Pick<TemplateForm, 'name' | 'description'>>) => void;
+  readonly onChangeMeta: (
+    patch: Partial<Pick<TemplateForm, 'name' | 'description' | 'goal'>>,
+  ) => void;
   readonly onAddBlank: () => void;
   readonly onToggleExpand: (idx: number) => void;
   readonly onUpdateStep: (idx: number, patch: Partial<DefinitionForm>) => void;
@@ -76,6 +78,9 @@ export const WorkflowComposer = ({
   onSave,
   onCancel,
 }: Props) => {
+  const [magicOpen, setMagicOpen] = useState(false);
+  const [magicText, setMagicText] = useState('');
+
   if (!open) {
     return (
       <section className="flex min-w-0 flex-1 flex-col">
@@ -83,9 +88,6 @@ export const WorkflowComposer = ({
       </section>
     );
   }
-
-  const [magicOpen, setMagicOpen] = useState(false);
-  const [magicText, setMagicText] = useState('');
 
   const stepCount = form.steps.length;
   const title = form.name.trim() || (isNew ? 'New workflow' : 'Untitled workflow');
@@ -99,7 +101,7 @@ export const WorkflowComposer = ({
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-3 px-8 py-4">
+      <div className="mx-auto flex w-full max-w-4xl shrink-0 items-center gap-3 px-8 py-4">
         <div className="flex min-w-0 flex-col">
           <span className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
             {title}
@@ -111,18 +113,21 @@ export const WorkflowComposer = ({
           </span>
           <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {error ? <span className="text-2xs font-medium text-danger">{error}</span> : null}
           {canFormat ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMagicOpen((v) => !v)}
-              disabled={saving || formatting}
-            >
-              <Sparkles size={13} aria-hidden className="mr-1" />
-              {formatting ? 'Formatting…' : 'Format with AI'}
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMagicOpen((v) => !v)}
+                disabled={saving || formatting}
+              >
+                <Sparkles size={13} aria-hidden className="mr-1" />
+                {formatting ? 'Formatting…' : 'Format with AI'}
+              </Button>
+              <span className="h-4 w-px bg-border-soft" aria-hidden />
+            </>
           ) : null}
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
             Cancel
@@ -139,67 +144,65 @@ export const WorkflowComposer = ({
       <Divider />
 
       <div className="flex shrink-0 flex-col gap-6 py-6">
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-3 px-10 sm:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-              name
-            </label>
+        <div className="mx-auto w-full max-w-4xl divide-y divide-border-soft/50 px-8">
+          <FieldRow label="Name">
             <Input
               value={form.name}
               onChange={(e) => onChangeMeta({ name: e.target.value })}
               placeholder="e.g. plan-implement-review"
+              className="sm:w-80"
             />
-          </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-              description
-            </label>
+          </FieldRow>
+          <FieldRow label="Description" help="What this workflow is for.">
             <Input
               value={form.description}
               onChange={(e) => onChangeMeta({ description: e.target.value })}
-              placeholder="what this workflow is for"
+              placeholder="short summary"
+              className="sm:w-80"
             />
-          </div>
+          </FieldRow>
         </div>
 
         {magicOpen && canFormat ? (
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-10">
-            <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-              describe the workflow
-            </label>
-            <Textarea
-              value={magicText}
-              onChange={(e) => setMagicText(e.target.value)}
-              rows={3}
-              placeholder="e.g. plan the change, implement it carefully, then run tests and review the diff"
-              disabled={formatting}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMagicOpen(false)}
+          <div className="mx-auto w-full max-w-4xl px-8">
+            <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-4">
+              <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+                describe the workflow
+              </label>
+              <Textarea
+                value={magicText}
+                onChange={(e) => setMagicText(e.target.value)}
+                rows={3}
+                placeholder="e.g. plan the change, implement it carefully, then run tests and review the diff"
                 disabled={formatting}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  onFormat(magicText);
-                  setMagicText('');
-                  setMagicOpen(false);
-                }}
-                disabled={formatting || magicText.trim().length === 0}
-              >
-                <Sparkles size={13} aria-hidden className="mr-1" />
-                {formatting ? 'Formatting…' : 'Format'}
-              </Button>
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMagicOpen(false)}
+                  disabled={formatting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onFormat(magicText);
+                    setMagicText('');
+                    setMagicOpen(false);
+                  }}
+                  disabled={formatting || magicText.trim().length === 0}
+                >
+                  <Sparkles size={13} aria-hidden className="mr-1" />
+                  {formatting ? 'Formatting…' : 'Format'}
+                </Button>
+              </div>
             </div>
           </div>
         ) : null}
 
-        <div className="mx-auto w-full max-w-3xl px-10">
+        <div className="mx-auto w-full max-w-4xl px-8">
           <SectionHeader
             label={`Steps (${stepCount})`}
             hint={
@@ -219,8 +222,8 @@ export const WorkflowComposer = ({
           />
         </div>
 
-        <ScrollFade orientation="horizontal" className="mx-auto w-full max-w-6xl pb-2">
-          <div className="flex w-max items-stretch px-10 py-1">
+        <ScrollFade orientation="horizontal" className="mx-auto w-full max-w-4xl pb-2">
+          <div className="flex w-max items-stretch px-8 py-1">
             {form.steps.map((def, idx) => (
               <Fragment key={idx}>
                 <StepFlowConnector
@@ -256,7 +259,7 @@ export const WorkflowComposer = ({
       <Divider />
 
       <div className="min-h-0 flex-1">
-        <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-6">
+        <ScrollFade className="mx-auto h-full max-w-4xl px-8 py-6">
           <div className="flex flex-col gap-6">
             {selectedStep ? (
               <>

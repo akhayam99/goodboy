@@ -63,10 +63,10 @@ export const StepLibraryPalette = ({
         />
       )}
 
-      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <ul className="flex flex-col divide-y divide-border-soft/50">
         {library.map((def) =>
           editing === def.id ? (
-            <li key={def.id} className="sm:col-span-2">
+            <li key={def.id} className="py-2">
               <LibraryStepForm
                 def={def}
                 workspaceId={workspaceId}

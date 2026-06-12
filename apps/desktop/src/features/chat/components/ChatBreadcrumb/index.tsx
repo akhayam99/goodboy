@@ -91,17 +91,6 @@ export const ChatBreadcrumb = ({ session }: Props) => {
     return inferAgentKindFromName(selectedAgent.name);
   }, [selectedAgent, agentKindOverride]);
 
-  const openWorkspaceSettings = () => {
-    if (!workspace) {
-      return;
-    }
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-workspace-settings', {
-        detail: { workspaceId: workspace.id },
-      }),
-    );
-  };
-
   const sessionLabel = session.goal.trim() || 'untitled session';
 
   return (
@@ -112,14 +101,9 @@ export const ChatBreadcrumb = ({ session }: Props) => {
         aria-label="chat breadcrumb"
       >
         {workspace ? (
-          <button
-            type="button"
-            onClick={openWorkspaceSettings}
-            className="truncate font-medium text-muted-foreground transition-colors hover:text-foreground"
-            title={`workspace: ${workspace.name}`}
-          >
+          <span className="truncate font-medium" title={`workspace: ${workspace.name}`}>
             {workspace.name}
-          </button>
+          </span>
         ) : (
           <span className="truncate text-muted-foreground/50">no workspace</span>
         )}
