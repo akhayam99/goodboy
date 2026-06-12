@@ -20,6 +20,7 @@ type SessionWorkflowRow = {
   ordinal: number;
   current_step_ordinal: number;
   auto_run: number;
+  goal: string | null;
   discarded_at: string | null;
 };
 
@@ -30,6 +31,7 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ordinal: row.ordinal,
     currentStep: row.current_step_ordinal,
     autoRun: row.auto_run !== 0,
+    ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
   };
 }
@@ -148,7 +150,7 @@ async function loadWorkflowsForSession(
   sessionId: string,
 ): Promise<ReadonlyArray<WorkflowRun>> {
   const rows = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -232,7 +234,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   );
   for (const run of session.workflowRuns) {
     await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         run.id,
         session.id,
@@ -240,6 +242,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.ordinal,
         run.currentStep,
         run.autoRun ? 1 : 0,
+        run.goal ?? null,
         run.discardedAt ?? null,
       ],
     );
@@ -318,7 +321,7 @@ async function hydrateSessions(
   const sessionIds = rows.map((r) => r.id);
   const placeholders = sessionIds.map(() => '?').join(', ');
   const workflowRows = await db.select<SessionWorkflowRow & { session_id: string }>(
-    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
+    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
   );
 

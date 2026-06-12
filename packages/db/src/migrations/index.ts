@@ -55,6 +55,8 @@ import { m054WorkflowRunInstances } from './m054-workflow-run-instances';
 import { m055ResolverCommentLink } from './m055-resolver-comment-link';
 import { m056CompositeWorkspaces } from './m056-composite-workspaces';
 import { m057SessionEnabledProviders } from './m057-session-enabled-providers';
+import { m058WorkflowGoal } from './m058-workflow-goal';
+import { m059WorkflowRunGoal } from './m059-workflow-run-goal';
 
 export type Migration = {
   readonly version: number;
@@ -119,4 +121,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 55, sql: m055ResolverCommentLink },
   { version: 56, sql: m056CompositeWorkspaces },
   { version: 57, sql: m057SessionEnabledProviders },
+  { version: 58, sql: m058WorkflowGoal },
+  { version: 59, sql: m059WorkflowRunGoal },
 ];

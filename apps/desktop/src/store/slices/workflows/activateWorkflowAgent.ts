@@ -9,7 +9,7 @@ import {
   kindConsumesPlan,
   type AgentKind,
 } from '../../../features/session/agent-kind';
-import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
+import { buildGoalKickoffSection, buildPlanKickoffSection, composeKickoff } from '../../kickoff';
 import { fanOutClusters } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
@@ -31,6 +31,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const template = run ? (templates.find((t) => t.id === run.workflowId) ?? null) : null;
     const step = template?.steps.find((s) => s.id === agent.stepId);
     const promptPrefix = step?.promptPrefix ?? '';
+    const goalSection = buildGoalKickoffSection(run?.goal ?? template?.goal);
 
     set((s) => ({
       selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId },
@@ -82,7 +83,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const kickoff = composeKickoff(planSection, promptPrefix);
+    const kickoff = composeKickoff(goalSection, planSection, promptPrefix);
     if (kickoff.length > 0) {
       void get().sendTurn({ sessionId, agentId, content: kickoff });
     }
