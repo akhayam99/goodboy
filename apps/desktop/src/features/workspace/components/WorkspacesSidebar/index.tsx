@@ -1209,7 +1209,12 @@ function AgentsSection({ task }: AgentsSectionProps) {
               {wfAgents.map((run, index) => {
                 const isActionable = run.stepId === actionableStepId && run.status === 'pending';
                 const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+                const stepModel =
+                  run.stepId != null
+                    ? workflow.steps.find((s) => s.id === run.stepId)?.modelOverride
+                    : undefined;
                 const resolvedModel =
+                  stepModel ??
                   agentModelOverride[run.id] ??
                   run.modelOverride ??
                   AGENT_KIND_DEFAULTS[kind].model;

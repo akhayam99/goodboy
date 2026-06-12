@@ -1,8 +1,8 @@
 import { memo, useEffect, useState } from 'react';
-import { ArrowUpRight, Check, ChevronRight, Copy, FileEdit, ImageOff, Wrench } from 'lucide-react';
+import { ArrowUpRight, Check, Copy, FileEdit, ImageOff } from 'lucide-react';
 import { CopyButton, Divider, Markdown, cn, formatUsd } from '@goodboy/ui';
 import type { AgentId, MessageAttachment, ProviderId, SessionId } from '@goodboy/types';
-import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
+import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
@@ -18,6 +18,9 @@ import { displayPath } from '../../../../shared/utils/display-path';
 import { HandoffChip } from '../HandoffChip';
 import { CommentResolvedChip } from '../CommentResolvedChip';
 import { CommentWontfixChip } from '../CommentWontfixChip';
+import { PlanChip } from '../PlanChip';
+import { ClustersCard } from '../ClustersCard';
+import { ToolCallCard } from '../ToolCallCard';
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -57,7 +60,7 @@ function TranscriptCardImpl({
     case 'assistant_text':
       return <AssistantText text={item.text} sessionId={sessionId} />;
     case 'tool_call':
-      return <ToolCall item={item} />;
+      return <ToolCallCard item={item} />;
     case 'file_edit':
       return (
         <FileEditBlock
@@ -188,17 +191,8 @@ function formatTokens(n: number): string {
   return `${Math.round(n / 1000)}k`;
 }
 
-const HANDOFF_MARKER_RE = /<<handoff\s+[^>]+?>>/g;
-const COMMENT_RESOLVED_MARKER_RE = /<<comment-resolved\s+[^>]+?>>/g;
-const COMMENT_WONTFIX_MARKER_RE = /<<comment-wontfix\s+[^>]+?>>/g;
-
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
-  const displayText = text
-    .replace(HANDOFF_MARKER_RE, '')
-    .replace(COMMENT_RESOLVED_MARKER_RE, '')
-    .replace(COMMENT_WONTFIX_MARKER_RE, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  const displayText = stripControlMarkers(text);
   const resolvedMarker = extractCommentResolved(text);
   const hasCommentResolvedMarker =
     resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
@@ -209,9 +203,11 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
           <CopyButton value={text} label="message" />
         </div>
       )}
-      <Markdown text={displayText} />
+      {displayText.length > 0 ? <Markdown text={displayText} /> : null}
       {sessionId ? (
         <>
+          <PlanChip assistantText={text} sessionId={sessionId} />
+          <ClustersCard assistantText={text} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} />
           <CommentWontfixChip assistantText={text} sessionId={sessionId} />
@@ -460,65 +456,5 @@ function ProviderFootnote({ provider, model }: { provider: ProviderId; model?: s
       <span>{label}</span>
       {model ? <span className="text-foreground/35">· {modelLabel(model)}</span> : null}
     </span>
-  );
-}
-
-function ToolCall({ item }: { item: Extract<TranscriptItem, { kind: 'tool_call' }> }) {
-  const [open, setOpen] = useState(false);
-  const running = !item.ended;
-  const accent = (() => {
-    if (item.isError) {
-      return 'text-danger';
-    }
-    if (running) {
-      return 'text-muted-foreground/70';
-    }
-    return 'text-muted-foreground';
-  })();
-
-  return (
-    <div className="group">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
-          item.isError && 'text-danger',
-        )}
-      >
-        <ChevronRight
-          size={11}
-          aria-hidden
-          className={cn(
-            'shrink-0 text-muted-foreground/60 motion-safe:transition-transform',
-            open && 'rotate-90',
-          )}
-        />
-        <Wrench size={11} aria-hidden className={cn('shrink-0', accent)} />
-        <span className="font-mono text-muted-foreground">{item.toolName}</span>
-        {running ? (
-          <span className="flex shrink-0 gap-0.5">
-            <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
-            <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
-            <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
-          </span>
-        ) : item.isError ? (
-          <span className="text-2xs uppercase tracking-wide text-danger">error</span>
-        ) : null}
-      </button>
-      {open ? (
-        <div className="ml-[1.125rem] mt-0.5 flex min-w-0 flex-col gap-1">
-          <pre className="min-w-0 whitespace-pre-wrap break-words border-l-2 border-primary/30 p-1.5 font-mono text-xs text-muted-foreground">
-            input: {JSON.stringify(item.input, null, 2)}
-          </pre>
-          {item.ended ? (
-            <pre className="min-w-0 whitespace-pre-wrap break-words border-l-2 border-primary/30 p-1.5 font-mono text-xs text-muted-foreground">
-              output: {JSON.stringify(item.output, null, 2)}
-            </pre>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
   );
 }

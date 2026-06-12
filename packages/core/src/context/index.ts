@@ -22,6 +22,7 @@ export {
   isReviewThreadId,
   mergeIntoSlot,
   removeFromSlot,
+  stripControlMarkers,
   type ExtractedCluster,
   type ExtractedScoutArea,
   type ExtractedCommentResolution,

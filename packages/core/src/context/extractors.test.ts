@@ -13,6 +13,7 @@ import {
   extractScoutSplit,
   isReviewThreadId,
   mergeIntoSlot,
+  stripControlMarkers,
 } from './extractors';
 
 function fileEdit(path: string): TurnEvent {
@@ -438,5 +439,104 @@ describe('extractScoutSplit', () => {
     const text =
       '<<scout-split>>[{"area":"old","query":"x"}]<</scout-split>> later <<scout-split>>[{"area":"new","query":"y"}]<</scout-split>>';
     expect(extractScoutSplit(text)).toEqual([{ area: 'new', query: 'y' }]);
+  });
+});
+
+describe('stripControlMarkers', () => {
+  it('strips block markers (plan, clusters, scout-split, ctx-*)', () => {
+    const text = 'before <<plan>>some plan<</plan>> middle <<clusters>>json<</clusters>> after';
+    expect(stripControlMarkers(text)).toBe('before  middle  after');
+  });
+
+  it('strips self-closing markers (handoff, comment-resolved, comment-wontfix, cluster-done)', () => {
+    const text =
+      'hello <<handoff kind=scout reason="r">> world <<comment-resolved threadid=T1 commit=abc>> end <<comment-wontfix threadid=T2 reason="x">> <<cluster-done id=c1>>';
+    expect(stripControlMarkers(text)).toBe('hello  world  end');
+  });
+
+  it('strips ctx-question with attributes', () => {
+    const text = 'ask <<ctx-question suggestions="a|b">>body<</ctx-question>> done';
+    expect(stripControlMarkers(text)).toBe('ask  done');
+  });
+
+  it('collapses excessive newlines to double', () => {
+    const text = 'a\n\n\n\n\nb';
+    expect(stripControlMarkers(text)).toBe('a\n\nb');
+  });
+
+  it('leaves ordinary text untouched', () => {
+    const text = 'just some text with <<angle brackets>>';
+    expect(stripControlMarkers(text)).toBe('just some text with <<angle brackets>>');
+  });
+
+  it('is idempotent', () => {
+    const text = 'a <<plan>>x<</plan>> b';
+    const once = stripControlMarkers(text);
+    expect(stripControlMarkers(once)).toBe(once);
+  });
+
+  it('resets regex state across calls (no leaked lastIndex)', () => {
+    stripControlMarkers('<<plan>>a<</plan>>');
+    expect(stripControlMarkers('<<plan>>b<</plan>>')).toBe('');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(stripControlMarkers('')).toBe('');
+  });
+
+  it('returns empty string when input is only markers', () => {
+    expect(stripControlMarkers('<<plan>>x<</plan>><<handoff kind=scout reason="r">>')).toBe('');
+  });
+
+  it('handles mixed block and self-closing markers in one string', () => {
+    const text =
+      'start <<plan>>p<</plan>> mid <<handoff kind=scout reason="r">> <<clusters>>[{"title":"a","instructions":"b"}]<</clusters>> end';
+    expect(stripControlMarkers(text)).toBe('start  mid   end');
+  });
+
+  it('strips ctx-decision and ctx-resolved block markers', () => {
+    const text =
+      'before <<ctx-decision>>d<</ctx-decision>> <<ctx-resolved>>r<</ctx-resolved>> after';
+    expect(stripControlMarkers(text)).toBe('before   after');
+  });
+
+  it('preserves text between multiple markers', () => {
+    const text = '<<plan>>a<</plan>> keep this <<plan>>b<</plan>>';
+    expect(stripControlMarkers(text)).toBe('keep this');
+  });
+
+  it('handles multiline marker content', () => {
+    const text = `hello
+<<plan>>line 1
+line 2
+line 3<</plan>>
+world`;
+    expect(stripControlMarkers(text)).toBe('hello\n\nworld');
+  });
+
+  it('strips goal and workflow block markers', () => {
+    const text = 'before <<goal>>ship it<</goal>> mid <<workflow>>[{"step":1}]<</workflow>> after';
+    expect(stripControlMarkers(text)).toBe('before  mid  after');
+  });
+
+  it('strips an unclosed block still streaming (no close tag yet)', () => {
+    const text = 'Scouting the codebase.\n<<scout-split>>[{"area":"a","query":"b"}]\n<';
+    expect(stripControlMarkers(text)).toBe('Scouting the codebase.');
+  });
+
+  it('strips a trailing partial self marker still streaming', () => {
+    const text = 'all set.\n<<cluster-done id="b6e49426-20e6';
+    expect(stripControlMarkers(text)).toBe('all set.');
+  });
+
+  it('strips a bare trailing marker fragment', () => {
+    expect(stripControlMarkers('done.\n<<')).toBe('done.');
+    expect(stripControlMarkers('done.\n<<clus')).toBe('done.');
+  });
+
+  it('strips a lone trailing angle bracket from a streaming marker', () => {
+    expect(stripControlMarkers('che serve?<')).toBe('che serve?');
+    expect(stripControlMarkers('che serve?</')).toBe('che serve?');
+    expect(stripControlMarkers('che serve?</ctx')).toBe('che serve?');
   });
 });

@@ -61,4 +61,44 @@ describe('OperationsCluster', () => {
     expect(screen.queryByText(/failed/)).toBeNull();
     expect(screen.getByText('grep')).toBeTruthy();
   });
+
+  it('shows grouped tool-name summary when all ended and no errors', () => {
+    render(<OperationsCluster items={[tool('a'), tool('c'), tool('b')]} />);
+    expect(screen.getByText('2 read · 1 grep')).toBeTruthy();
+  });
+
+  it('aria-label uses singular "item" for single item', () => {
+    render(<OperationsCluster items={[tool('a')]} />);
+    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('operations, 1 item');
+  });
+
+  it('aria-label uses plural "items" for multiple items', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b')]} />);
+    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('operations, 2 items');
+  });
+
+  it('aria-label includes running tool info', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
+    expect(screen.getByRole('button').getAttribute('aria-label')).toContain('running grep');
+  });
+
+  it('aria-label includes success/failure counts when errors present', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b', true, true)]} />);
+    const label = screen.getByRole('button').getAttribute('aria-label')!;
+    expect(label).toContain('1 succeeded');
+    expect(label).toContain('1 failed');
+  });
+
+  it('renders count badge with correct number', () => {
+    render(<OperationsCluster items={[tool('a')]} />);
+    expect(screen.getByText('1')).toBeTruthy();
+  });
+
+  it('collapses back when clicked twice', () => {
+    render(<OperationsCluster items={[tool('a')]} />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getAllByTestId('card')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.queryByTestId('card')).toBeNull();
+  });
 });

@@ -40,6 +40,7 @@ export {
   removeFromSlot,
   removeQuestionsFromSlot,
   serializeSlots,
+  stripControlMarkers,
   type AutoPopulateInput,
   type AutoPopulateResult,
   type ContextEngineDeps,
