@@ -167,6 +167,28 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 
+  it('honors an explicit initialPrompt instead of fanning out', async () => {
+    const { sendTurn, spawn } = buildHarness([makePlan({ clusters: TWO_CLUSTERS })]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'implementer',
+      initialPrompt: 'fix the typo in README',
+    });
+
+    expect(fanOutClustersSpy).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('fix the typo in README');
+  });
+
+  it('consumes the plan on ad-hoc fan-out so a re-spawn cannot fan out again', async () => {
+    const { spawn } = buildHarness([makePlan({ clusters: TWO_CLUSTERS })]);
+
+    await spawn(SESSION_ID, { kindOverride: 'implementer' });
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, INSERTED_ID);
+  });
+
   it('fans out a plan with 2+ clusters even if status is not active', async () => {
     const { sendTurn, spawn } = buildHarness([
       makePlan({ clusters: TWO_CLUSTERS, status: 'superseded' }),
