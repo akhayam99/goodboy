@@ -41,7 +41,10 @@ vi.mock('../../../features/plans/plans', () => ({
   listPlansForSession: listPlansForSessionSpy,
 }));
 
-vi.mock('../workflows/clusterImplementation', () => ({ fanOutClusters: fanOutClustersSpy }));
+vi.mock('../workflows/clusterImplementation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../workflows/clusterImplementation')>();
+  return { ...actual, fanOutClusters: fanOutClustersSpy };
+});
 
 import { spawnAgent } from './spawnAgent';
 
@@ -166,10 +169,23 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
   it('fans out a plan with 2+ clusters even if status is not active', async () => {
     const { sendTurn, spawn } = buildHarness([
-      makePlan({ clusters: TWO_CLUSTERS, status: 'done' }),
+      makePlan({ clusters: TWO_CLUSTERS, status: 'superseded' }),
     ]);
 
     await spawn(SESSION_ID, { triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('fans out an earlier clustered plan when the latest-overall plan has no clusters', async () => {
+    const CLUSTERED_ID = 'plan-clustered' as PlanId;
+    const { sendTurn, spawn } = buildHarness([
+      makePlan({ id: CLUSTERED_ID, clusters: TWO_CLUSTERS }),
+      makePlan({ id: 'plan-latest' as PlanId, clusters: undefined, status: 'active' }),
+    ]);
+
+    await spawn(SESSION_ID, { kindOverride: 'implementer' });
 
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
     expect(sendTurn).not.toHaveBeenCalled();

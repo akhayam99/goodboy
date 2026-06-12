@@ -152,10 +152,14 @@ vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
 
 const fanOutClustersSpy = vi.fn(async () => undefined);
 
-vi.mock('./slices/workflows/clusterImplementation', () => ({
-  fanOutClusters: fanOutClustersSpy,
-  advanceClusterImplementation: () => async () => undefined,
-}));
+vi.mock('./slices/workflows/clusterImplementation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./slices/workflows/clusterImplementation')>();
+  return {
+    ...actual,
+    fanOutClusters: fanOutClustersSpy,
+    advanceClusterImplementation: () => async () => undefined,
+  };
+});
 
 type PlanBackingStore = {
   plans: PlanWithCount[];
