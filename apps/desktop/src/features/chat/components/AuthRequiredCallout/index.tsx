@@ -1,7 +1,6 @@
 import { Button } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
-import { openProviderModal } from '../../../providers/components/ProviderModalHost';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -13,7 +12,11 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
   const label = PROVIDER_LABEL_LOWER[providerId];
 
   const onConnect = () => {
-    openProviderModal({ providerId, action: 'login' });
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-provider-studio', {
+        detail: { providerId, action: 'login' },
+      }),
+    );
   };
 
   return (

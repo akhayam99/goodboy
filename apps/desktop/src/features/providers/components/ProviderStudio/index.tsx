@@ -1,24 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Divider } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { ProviderStudioIcon } from '../brand-icons';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
+import { ProviderConnectPane } from './ProviderConnectPane';
 
 const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 type Props = {
   readonly workspaceName: string;
   readonly initialFocus?: ProviderId | null;
+  readonly initialAction?: ProviderLifecycleAction | null;
   readonly onClose: () => void;
 };
 
-export const ProviderStudio = ({ workspaceName, initialFocus, onClose }: Props) => {
+export const ProviderStudio = ({ workspaceName, initialFocus, initialAction, onClose }: Props) => {
   const providers = useAppStore((s) => s.providers);
   const [focused, setFocused] = useState<ProviderId | null>(initialFocus ?? null);
+  const [connectAction, setConnectAction] = useState<ProviderLifecycleAction | null>(
+    initialFocus && initialAction ? initialAction : null,
+  );
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
@@ -36,6 +41,11 @@ export const ProviderStudio = ({ workspaceName, initialFocus, onClose }: Props) 
 
   const selected = ordered.find((p) => p.id === focused) ?? null;
 
+  const onSelect = (id: ProviderId) => {
+    setConnectAction(null);
+    setFocused(id);
+  };
+
   return (
     <StudioShell
       icon={ProviderStudioIcon}
@@ -47,11 +57,19 @@ export const ProviderStudio = ({ workspaceName, initialFocus, onClose }: Props) 
       {() => (
         <>
           <div className="w-72 shrink-0 overflow-y-auto">
-            <ProvidersRail providers={ordered} focusedId={focused} onSelect={setFocused} />
+            <ProvidersRail providers={ordered} focusedId={focused} onSelect={onSelect} />
           </div>
           <Divider orientation="vertical" />
           <div className="min-h-0 flex-1">
-            <ProviderDetailPanel info={selected} />
+            {selected && connectAction ? (
+              <ProviderConnectPane
+                providerId={selected.id as ProviderId}
+                action={connectAction}
+                onBack={() => setConnectAction(null)}
+              />
+            ) : (
+              <ProviderDetailPanel info={selected} onConnect={setConnectAction} />
+            )}
           </div>
         </>
       )}

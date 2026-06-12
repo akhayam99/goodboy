@@ -10,19 +10,19 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
-import { openProviderModal } from '../ProviderModalHost';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 
 type Props = {
   readonly info: ProviderInfo | null;
+  readonly onConnect: (action: ProviderLifecycleAction) => void;
 };
 
-export const ProviderDetailPanel = ({ info }: Props) => {
+export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
@@ -30,10 +30,16 @@ export const ProviderDetailPanel = ({ info }: Props) => {
       </div>
     );
   }
-  return <Detail info={info} />;
+  return <Detail info={info} onConnect={onConnect} />;
 };
 
-function Detail({ info }: { readonly info: ProviderInfo }) {
+function Detail({
+  info,
+  onConnect,
+}: {
+  readonly info: ProviderInfo;
+  readonly onConnect: (action: ProviderLifecycleAction) => void;
+}) {
   const id = info.id as ProviderId;
   const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? Sparkles;
   const color = brandColor(id);
@@ -93,9 +99,7 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
             {inFlight ? (
               <InFlightCard
                 label={lifecycle.phase}
-                onView={() =>
-                  openProviderModal({ providerId: id, action: lifecycle.action ?? 'install' })
-                }
+                onView={() => onConnect(lifecycle.action ?? 'install')}
               />
             ) : info.connection === 'error' ? (
               <ErrorCard
@@ -109,13 +113,13 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
                 title={`${info.label} CLI not installed`}
                 description="Install the CLI to connect an account from Goodboy."
                 ctaLabel={`Install ${info.label}`}
-                onCta={() => openProviderModal({ providerId: id, action: 'install' })}
+                onCta={() => onConnect('install')}
               />
             ) : info.connection === 'connected' ? (
               <ConnectedAccount
                 identity={info.identity}
                 confirmDisconnect={confirmDisconnect}
-                onReauth={() => openProviderModal({ providerId: id, action: 'login' })}
+                onReauth={() => onConnect('login')}
                 onAskDisconnect={() => setConfirmDisconnect(true)}
                 onCancelDisconnect={() => setConfirmDisconnect(false)}
                 onConfirmDisconnect={() => {
@@ -129,7 +133,7 @@ function Detail({ info }: { readonly info: ProviderInfo }) {
                 title="No account connected"
                 description="Sign in to connect an account. Every step runs in the embedded terminal."
                 ctaLabel="Connect account"
-                onCta={() => openProviderModal({ providerId: id, action: 'login' })}
+                onCta={() => onConnect('login')}
               />
             )}
           </section>

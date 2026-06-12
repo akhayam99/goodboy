@@ -3,19 +3,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-const { openProviderModalMock } = vi.hoisted(() => ({
-  openProviderModalMock: vi.fn(),
-}));
-
-vi.mock('../../../providers/components/ProviderModalHost', () => ({
-  openProviderModal: openProviderModalMock,
-}));
-
 import { AuthRequiredCallout } from './index';
 
 afterEach(() => {
   cleanup();
-  openProviderModalMock.mockClear();
 });
 
 describe('AuthRequiredCallout', () => {
@@ -31,10 +22,15 @@ describe('AuthRequiredCallout', () => {
     expect(screen.getByText(/last known identity: amin@x\.io/i)).toBeDefined();
   });
 
-  it('opens the provider modal in login mode when Connect is clicked', () => {
+  it('dispatches the provider studio event in login mode when Connect is clicked', () => {
+    const handler = vi.fn();
+    window.addEventListener('goodboy:open-provider-studio', handler);
     render(<AuthRequiredCallout providerId="codex" onRefresh={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: /connect now/i }));
-    expect(openProviderModalMock).toHaveBeenCalledWith({ providerId: 'codex', action: 'login' });
+    window.removeEventListener('goodboy:open-provider-studio', handler);
+    expect(handler).toHaveBeenCalledOnce();
+    const event = handler.mock.calls[0]?.[0] as CustomEvent;
+    expect(event.detail).toEqual({ providerId: 'codex', action: 'login' });
   });
 
   it('calls onRefresh when the Refresh status button is clicked', () => {
