@@ -250,7 +250,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           ordinal,
           name,
           promptPrefix,
-          role: ROLE_TO_KIND[s.role as AgentRole] ? (s.role as AgentRole) : 'custom',
+          role: s.role as AgentRole,
           effort: baseEffort as AgentEffort,
           verbosity: 'normal',
         };
