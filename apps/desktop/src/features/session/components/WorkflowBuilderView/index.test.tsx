@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Session, Workflow } from '@goodboy/types';
+import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 
 const { mockSavePhaseTemplate, mockAttach, mockPlan, mockPolish, toastMock, storeState } =
   vi.hoisted(() => ({
@@ -14,21 +15,36 @@ const { mockSavePhaseTemplate, mockAttach, mockPlan, mockPolish, toastMock, stor
     storeState: {
       phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>>,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      workflowDrafts: {} as Record<string, WorkflowBuilderDraft | undefined>,
     },
   }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => undefined) }));
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (s: never) => T) =>
-    selector({
-      savePhaseTemplate: mockSavePhaseTemplate,
-      attachWorkflowToSession: mockAttach,
-      phaseTemplates: storeState.phaseTemplates,
-      sessionPhaseRuns: storeState.sessionPhaseRuns,
-    } as never),
-}));
+vi.mock('../../../../store', () => {
+  const setWorkflowDraft = (sessionId: string, draft: WorkflowBuilderDraft) => {
+    storeState.workflowDrafts = { ...storeState.workflowDrafts, [sessionId]: draft };
+  };
+  const clearWorkflowDraft = (sessionId: string) => {
+    const next = { ...storeState.workflowDrafts };
+    delete next[sessionId];
+    storeState.workflowDrafts = next;
+  };
+  const getState = () => ({
+    savePhaseTemplate: mockSavePhaseTemplate,
+    attachWorkflowToSession: mockAttach,
+    phaseTemplates: storeState.phaseTemplates,
+    sessionPhaseRuns: storeState.sessionPhaseRuns,
+    workflowDrafts: storeState.workflowDrafts,
+    setWorkflowDraft,
+    clearWorkflowDraft,
+  });
+  const useAppStore = Object.assign(
+    <T,>(selector: (s: never) => T) => selector(getState() as never),
+    { getState },
+  );
+  return { EMPTY_ARRAY: Object.freeze([]), useAppStore };
+});
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
@@ -110,6 +126,7 @@ afterEach(() => {
   vi.clearAllMocks();
   storeState.phaseTemplates = {};
   storeState.sessionPhaseRuns = {};
+  storeState.workflowDrafts = {};
 });
 
 const goalField = () =>
@@ -341,5 +358,59 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     );
     expect(goalField().value).toBe('rough goal');
     expect(screen.queryByRole('button', { name: /undo goal change/i })).toBeNull();
+  });
+});
+
+describe('WorkflowBuilderView (draft persistence)', () => {
+  it('rehydrates the draft after unmount and remount for the same session', () => {
+    const { unmount } = render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.change(goalField(), { target: { value: 'persist me' } });
+    expect(storeState.workflowDrafts['sess-1']?.goalText).toBe('persist me');
+    unmount();
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    expect(goalField().value).toBe('persist me');
+  });
+
+  it('keeps drafts isolated per session', () => {
+    const { unmount } = render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.change(goalField(), { target: { value: 'session one draft' } });
+    unmount();
+    const otherSession = { ...session, id: 'sess-2' } as Session;
+    render(<WorkflowBuilderView session={otherSession} onClose={vi.fn()} />);
+    expect(goalField().value).toBe('');
+    expect(storeState.workflowDrafts['sess-2']).toBeUndefined();
+  });
+
+  it('reset draft wipes local state and the stored draft', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.change(goalField(), { target: { value: 'throwaway' } });
+    expect(storeState.workflowDrafts['sess-1']).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /reset workflow draft/i }));
+    expect(goalField().value).toBe('');
+    expect(storeState.workflowDrafts['sess-1']).toBeUndefined();
+  });
+
+  it('hides the reset button while the draft is empty', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /reset workflow draft/i })).toBeNull();
+    fireEvent.change(goalField(), { target: { value: 'now dirty' } });
+    expect(screen.getByRole('button', { name: /reset workflow draft/i })).toBeDefined();
+  });
+
+  it('clears the draft after attaching a workflow', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    expect(storeState.workflowDrafts['sess-1']).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /start workflow/i }));
+    await waitFor(() => expect(mockAttach).toHaveBeenCalled());
+    await waitFor(() => expect(storeState.workflowDrafts['sess-1']).toBeUndefined());
+  });
+
+  it('clears the draft when cancelled', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.change(goalField(), { target: { value: 'discard me' } });
+    expect(storeState.workflowDrafts['sess-1']).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+    expect(storeState.workflowDrafts['sess-1']).toBeUndefined();
   });
 });

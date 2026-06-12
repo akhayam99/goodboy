@@ -497,6 +497,7 @@ describe('store contract', () => {
         agentModelOverride: {},
         agentKindOverride: {},
         agentDraft: {},
+        workflowDrafts: {},
         diffComments: {},
         notifications: [],
         sessionPlans: {},

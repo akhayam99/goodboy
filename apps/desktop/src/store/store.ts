@@ -108,6 +108,8 @@ import {
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
+import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
+import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -247,6 +249,7 @@ export type AppState = UpdaterState & {
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
   readonly resolverState: Readonly<Record<AgentId, 'awaiting' | 'committed' | 'wontfix'>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
+  readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly notifications: ReadonlyArray<Notification>;
@@ -469,6 +472,8 @@ export type AppActions = {
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
+  setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
+  clearWorkflowDraft(sessionId: SessionId): void;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
   clearAgentAttachments(agentId: AgentId): void;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -698,6 +703,7 @@ export const initialState: AppState = {
   pendingResolverKickoff: {},
   resolverState: {},
   agentDraft: {},
+  workflowDrafts: {},
   agentAttachments: {},
   diffComments: {},
   notifications: [],
@@ -732,6 +738,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPermissionsSlice(set, get),
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
+  ...createWorkflowDraftsSlice(set, get),
   ...createSlotsSlice(set, get),
   ...createOverridesSlice(set, get),
   ...createCredentialsSlice(set, get),

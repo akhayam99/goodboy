@@ -9,6 +9,7 @@ import {
   ListChecks,
   Loader2,
   Play,
+  RotateCcw,
   Sparkles,
   Target,
   Undo2,
@@ -39,6 +40,11 @@ import type {
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type {
+  Mode,
+  StepEdit,
+  WorkflowBuilderDraft,
+} from '../../../../store/slices/workflowDrafts/types';
 import {
   AGENT_KIND_PALETTE,
   ROLE_LABEL,
@@ -64,8 +70,6 @@ type Props = {
   readonly onClose: () => void;
 };
 
-type Mode = 'preset' | 'custom';
-
 const planStepKind = (step: PlannerOutput['steps'][number]): AgentKind =>
   ROLE_TO_KIND[step.role as AgentRole] ?? inferAgentKindFromName(step.name);
 
@@ -74,14 +78,6 @@ const templateStepKind = (step: Workflow['steps'][number]): AgentKind =>
 
 const sortedSteps = (template: Workflow): Workflow['steps'] =>
   [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-
-type StepEdit = {
-  readonly name?: string;
-  readonly promptPrefix?: string;
-  readonly model?: string;
-  readonly effort?: EffortLevel;
-  readonly dirty?: boolean;
-};
 
 const pruneToDirty = (edits: Record<number, StepEdit>): Record<number, StepEdit> => {
   const kept: Record<number, StepEdit> = {};
@@ -93,6 +89,16 @@ const pruneToDirty = (edits: Record<number, StepEdit>): Record<number, StepEdit>
   return kept;
 };
 
+const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
+  d.goalText.trim() === '' &&
+  d.goalHistory.length === 0 &&
+  d.selectedPresetId === null &&
+  d.processText.trim() === '' &&
+  d.plan === null &&
+  Object.keys(d.stepEdits).length === 0 &&
+  !d.saveAsPreset &&
+  !d.autoRun;
+
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
@@ -102,21 +108,33 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const sessionPhaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   );
+  const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
+  const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const { showToast } = useToast();
 
   const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
 
-  const [mode, setMode] = useState<Mode>(presets.length > 0 ? 'preset' : 'custom');
-  const [goalText, setGoalText] = useState('');
-  const [goalHistory, setGoalHistory] = useState<ReadonlyArray<string>>([]);
+  const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[session.id]);
+
+  const [mode, setMode] = useState<Mode>(
+    initialDraft?.mode ?? (presets.length > 0 ? 'preset' : 'custom'),
+  );
+  const [goalText, setGoalText] = useState(initialDraft?.goalText ?? '');
+  const [goalHistory, setGoalHistory] = useState<ReadonlyArray<string>>(
+    initialDraft?.goalHistory ?? [],
+  );
   const [polishing, setPolishing] = useState(false);
-  const [selectedPresetId, setSelectedPresetId] = useState<WorkflowId | null>(null);
-  const [processText, setProcessText] = useState('');
-  const [plan, setPlan] = useState<PlannerOutput | null>(null);
-  const [stepEdits, setStepEdits] = useState<Record<number, StepEdit>>({});
+  const [selectedPresetId, setSelectedPresetId] = useState<WorkflowId | null>(
+    initialDraft?.selectedPresetId ?? null,
+  );
+  const [processText, setProcessText] = useState(initialDraft?.processText ?? '');
+  const [plan, setPlan] = useState<PlannerOutput | null>(initialDraft?.plan ?? null);
+  const [stepEdits, setStepEdits] = useState<Record<number, StepEdit>>(
+    initialDraft?.stepEdits ?? {},
+  );
   const [planning, setPlanning] = useState(false);
-  const [saveAsPreset, setSaveAsPreset] = useState(false);
-  const [autoRun, setAutoRun] = useState(false);
+  const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
+  const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
   const [triggerMode, setTriggerMode] = useState<WorkflowTriggerMode>('immediate');
   const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null);
   const [busy, setBusy] = useState(false);
@@ -149,6 +167,58 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     }
   }, [activeRuns.length, triggerMode]);
 
+  const draft: WorkflowBuilderDraft = {
+    mode,
+    goalText,
+    goalHistory,
+    selectedPresetId,
+    processText,
+    plan,
+    stepEdits,
+    saveAsPreset,
+    autoRun,
+  };
+  const draftEmpty = isDraftEmpty(draft);
+
+  useEffect(() => {
+    if (draftEmpty) {
+      clearWorkflowDraft(session.id);
+    } else {
+      setWorkflowDraft(session.id, draft);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    session.id,
+    mode,
+    goalText,
+    goalHistory,
+    selectedPresetId,
+    processText,
+    plan,
+    stepEdits,
+    saveAsPreset,
+    autoRun,
+  ]);
+
+  const resetDraft = () => {
+    setMode(presets.length > 0 ? 'preset' : 'custom');
+    setGoalText('');
+    setGoalHistory([]);
+    setSelectedPresetId(null);
+    setProcessText('');
+    setPlan(null);
+    setStepEdits({});
+    setSaveAsPreset(false);
+    setAutoRun(false);
+    setError(null);
+    clearWorkflowDraft(session.id);
+  };
+
+  const handleClose = () => {
+    clearWorkflowDraft(session.id);
+    onClose();
+  };
+
   const providerId: ProviderId = session.providerPreference.defaultProvider;
   const blocked = busy || planning;
 
@@ -169,12 +239,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !blocked) {
         e.preventDefault();
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [blocked, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocked]);
 
   const replaceGoal = (next: string) => {
     setGoalHistory((h) => [...h, goalText]);
@@ -237,7 +308,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       await attachWorkflowToSession(session.id, selectedPreset.id, attachOptions());
       showToast('success', `workflow started: ${selectedPreset.name}`);
-      onClose();
+      handleClose();
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -322,7 +393,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       await savePhaseTemplate(workflow);
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
       showToast('success', `workflow started: ${plan.workflowName}`);
-      onClose();
+      handleClose();
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -344,9 +415,24 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <span className="truncate text-2xs text-muted-foreground">for: {session.goal}</span>
         </div>
         <div className="flex-1" />
+        {!draftEmpty ? (
+          <button
+            type="button"
+            onClick={resetDraft}
+            disabled={blocked}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors',
+              'hover:border-border hover:bg-muted/50 hover:text-foreground',
+              blocked && 'cursor-not-allowed opacity-50',
+            )}
+            aria-label="reset workflow draft"
+          >
+            <RotateCcw size={13} aria-hidden /> Reset draft
+          </button>
+        ) : null}
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           disabled={blocked}
           className={cn(
             'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors',
@@ -778,7 +864,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           disabled={busy}
         />
         <span className="h-5 w-px bg-border-soft" aria-hidden />
-        <Button variant="ghost" onClick={onClose} disabled={busy}>
+        <Button variant="ghost" onClick={handleClose} disabled={busy}>
           Cancel
         </Button>
         <Button onClick={() => void onStart()} disabled={startDisabled}>
