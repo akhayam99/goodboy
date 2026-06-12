@@ -154,15 +154,20 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
         ? selectFanOutPlan(get, sessionId, { workflowRunId: args.workflowRunId, explicitPlan })
         : null;
     const clusters =
-      fanOutPlan?.clusters && fanOutPlan.clusters.length >= 2 ? fanOutPlan.clusters : undefined;
+      fanOutPlan?.clusters &&
+      fanOutPlan.clusters.length >= 2 &&
+      (args.initialPrompt ?? '').length === 0
+        ? fanOutPlan.clusters
+        : undefined;
     if (clusters && clusters.length >= 2) {
-      if (planToConsume) {
-        await invokeAddPlanConsumption(planToConsume.id, inserted.id);
+      const consumeTarget = planToConsume ?? fanOutPlan;
+      if (consumeTarget) {
+        await invokeAddPlanConsumption(consumeTarget.id, inserted.id);
         const refreshedPlans = await invokeListPlansForSession(sessionId);
-        const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
+        const consumptions = await invokeListConsumptionsForPlan(consumeTarget.id);
         set((s) => ({
           sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
-          planConsumptions: { ...s.planConsumptions, [planToConsume.id]: consumptions },
+          planConsumptions: { ...s.planConsumptions, [consumeTarget.id]: consumptions },
         }));
       }
       await fanOutClusters(set, get, sessionId, inserted, clusters, fanOutPlan!.title);
