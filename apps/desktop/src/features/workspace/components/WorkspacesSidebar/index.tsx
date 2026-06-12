@@ -28,12 +28,14 @@ import {
   GitPullRequest,
   HelpCircle,
   Layers,
+  Link2,
   Loader2,
   MessageSquareReply,
   Moon,
   MousePointerClick,
   PanelLeftClose,
   PanelLeftOpen,
+  Pause,
   Play,
   Plug,
   Plus,
@@ -750,6 +752,14 @@ function AgentsSection({ task }: AgentsSectionProps) {
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
+  const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
+  const workflowNameByRunId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const { run, workflow } of attachedRuns) {
+      map.set(run.id, workflowKindName(workflow));
+    }
+    return map;
+  }, [attachedRuns]);
   const openQuestions = useSessionOpenQuestions(task.id);
   const loading = useSessionLoading(task.id);
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
@@ -1088,6 +1098,11 @@ function AgentsSection({ task }: AgentsSectionProps) {
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     const isCompleted = !isDiscarded && total > 0 && done >= total;
+    const isQueuedManual = !isDiscarded && run.triggerMode === 'manual';
+    const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run';
+    const predecessorName = run.chainAfterId
+      ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
+      : 'previous';
     return (
       <div key={run.id} className={cn('flex flex-col', isDiscarded && 'opacity-70')}>
         <div className="flex items-center gap-0.5">
@@ -1115,6 +1130,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
               <span className="inline-flex shrink-0 items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-success">
                 <Check size={10} aria-hidden /> completed
               </span>
+            ) : isQueuedManual ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <Pause size={10} aria-hidden /> queued (manual)
+              </span>
+            ) : isQueuedAfter ? (
+              <span
+                className="inline-flex max-w-[10rem] shrink-0 items-center gap-1 truncate rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                title={`after ${predecessorName}`}
+              >
+                <Link2 size={10} aria-hidden /> after {predecessorName}
+              </span>
             ) : total > 0 ? (
               <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
                 {done}/{total}
@@ -1123,6 +1149,17 @@ function AgentsSection({ task }: AgentsSectionProps) {
           </button>
           {!isDiscarded && !isCompleted && (
             <div className="flex shrink-0 items-center">
+              {isQueuedManual ? (
+                <button
+                  type="button"
+                  onClick={() => void startWorkflowRun(task.id, run.id)}
+                  title="start this workflow now"
+                  aria-label="start workflow now"
+                  className="rounded p-0.5 text-success transition-colors hover:bg-success/15"
+                >
+                  <Play size={11} aria-hidden />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}

@@ -47,7 +47,16 @@ function makeSession(overrides: Partial<Session> = {}): Session {
       allowTurnOverride: true,
     } as Session['providerPreference'],
     permissionMode: 'default' as Session['permissionMode'],
-    workflowRuns: [{ id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: false }],
+    workflowRuns: [
+      {
+        id: RUN_ID,
+        workflowId: WF_ID,
+        ordinal: 0,
+        currentStep: 0,
+        autoRun: false,
+        triggerMode: 'immediate' as const,
+      },
+    ],
     autoRun: false,
     titleUserEdited: false,
     createdAt: NOW,

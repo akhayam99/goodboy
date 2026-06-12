@@ -11,7 +11,10 @@ const { mockSavePhaseTemplate, mockAttach, mockPlan, mockPolish, toastMock, stor
     mockPlan: vi.fn(),
     mockPolish: vi.fn(),
     toastMock: vi.fn(),
-    storeState: { phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>> },
+    storeState: {
+      phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>>,
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    },
   }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => undefined) }));
@@ -23,6 +26,7 @@ vi.mock('../../../../store', () => ({
       savePhaseTemplate: mockSavePhaseTemplate,
       attachWorkflowToSession: mockAttach,
       phaseTemplates: storeState.phaseTemplates,
+      sessionPhaseRuns: storeState.sessionPhaseRuns,
     } as never),
 }));
 
@@ -105,6 +109,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   storeState.phaseTemplates = {};
+  storeState.sessionPhaseRuns = {};
 });
 
 const goalField = () =>
@@ -250,6 +255,57 @@ describe('WorkflowBuilderView (preset mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /custom/i }));
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
+  });
+});
+
+describe('WorkflowBuilderView (trigger modes)', () => {
+  it('queues the workflow as manual when "start manually" is picked', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    fireEvent.click(screen.getByRole('button', { name: /start manually/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start workflow/i }));
+    await waitFor(() =>
+      expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
+        autoRun: false,
+        triggerMode: 'manual',
+      }),
+    );
+  });
+
+  it('hides the run-after option when the session has no active runs', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    expect(screen.queryByRole('button', { name: /run after/i })).toBeNull();
+  });
+
+  it('chains behind an active predecessor when "run after" is picked', async () => {
+    storeState.phaseTemplates = {
+      'ws-1': [presetWorkflow('wf-prev', 'Scout First'), presetWorkflow('wf-next', 'Ship It')],
+    };
+    const chainedSession = {
+      ...session,
+      workflowRuns: [
+        {
+          id: 'run-prev',
+          workflowId: 'wf-prev',
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: false,
+          triggerMode: 'immediate',
+        },
+      ],
+    } as unknown as Session;
+    render(<WorkflowBuilderView session={chainedSession} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+    fireEvent.click(screen.getByRole('button', { name: /run after/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start workflow/i }));
+    await waitFor(() =>
+      expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-next', {
+        autoRun: false,
+        triggerMode: 'after_run',
+        chainAfterId: 'run-prev',
+      }),
+    );
   });
 });
 

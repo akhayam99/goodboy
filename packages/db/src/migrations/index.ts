@@ -57,6 +57,7 @@ import { m056CompositeWorkspaces } from './m056-composite-workspaces';
 import { m057SessionEnabledProviders } from './m057-session-enabled-providers';
 import { m058WorkflowGoal } from './m058-workflow-goal';
 import { m059WorkflowRunGoal } from './m059-workflow-run-goal';
+import { m060WorkflowTriggerMode } from './m060-workflow-trigger-mode';
 
 export type Migration = {
   readonly version: number;
@@ -123,4 +124,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 57, sql: m057SessionEnabledProviders },
   { version: 58, sql: m058WorkflowGoal },
   { version: 59, sql: m059WorkflowRunGoal },
+  { version: 60, sql: m060WorkflowTriggerMode },
 ];

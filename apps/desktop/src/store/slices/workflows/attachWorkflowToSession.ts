@@ -5,9 +5,10 @@ import type {
   WorkflowId,
   WorkflowRun,
   WorkflowRunId,
+  WorkflowTriggerMode,
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
-import { autoModelForRole } from '@goodboy/core';
+import { autoModelForRole, isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
@@ -20,6 +21,8 @@ import type { GetFn, SetFn } from './types';
 type Options = {
   autoRun?: boolean;
   goal?: string;
+  triggerMode?: WorkflowTriggerMode;
+  chainAfterId?: WorkflowRunId;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -38,6 +41,23 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const workflowRunId = crypto.randomUUID() as WorkflowRunId;
     const autoRun = options?.autoRun ?? session.autoRun;
     const goal = options?.goal?.trim() || undefined;
+    const chainAfterId = options?.chainAfterId;
+    let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
+    if (triggerMode === 'after_run' && chainAfterId) {
+      const predecessor = session.workflowRuns.find((r) => r.id === chainAfterId);
+      const predTemplate = predecessor
+        ? templates.find((t) => t.id === predecessor.workflowId)
+        : undefined;
+      if (predecessor && !predecessor.discardedAt && predTemplate) {
+        const predAgents = runsForWorkflowRun(
+          get().sessionPhaseRuns[sessionId] ?? [],
+          chainAfterId,
+        );
+        if (isWorkflowComplete(predTemplate, predAgents)) {
+          triggerMode = 'immediate';
+        }
+      }
+    }
     const ordinal = session.workflowRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const now = new Date().toISOString() as IsoDateTime;
     await attachWorkflowToSessionInDb(
@@ -48,6 +68,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       autoRun,
       now,
       goal,
+      triggerMode,
+      chainAfterId,
     );
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
@@ -89,6 +111,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       ordinal,
       currentStep: 0,
       autoRun,
+      triggerMode,
+      ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
     };
 
@@ -123,10 +147,12 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
 
     void get().reprocessGoalForWorkflow(sessionId);
 
-    if (autoRun) {
-      void get().maybeAutoAdvanceWorkflow(sessionId);
-    } else if (newAgents.length > 0) {
-      void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);
+    if (triggerMode === 'immediate') {
+      if (autoRun) {
+        void get().maybeAutoAdvanceWorkflow(sessionId);
+      } else if (newAgents.length > 0) {
+        void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);
+      }
     }
   };
 };

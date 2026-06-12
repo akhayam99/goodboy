@@ -145,7 +145,16 @@ export const createSession = (set: SetFn, get: GetFn) => {
       permissionMode: 'bypassPermissions',
       workflowRuns:
         workflowId !== undefined && workflowRunId !== undefined
-          ? [{ id: workflowRunId, workflowId, ordinal: 0, currentStep: 0, autoRun: runAutoRun }]
+          ? [
+              {
+                id: workflowRunId,
+                workflowId,
+                ordinal: 0,
+                currentStep: 0,
+                autoRun: runAutoRun,
+                triggerMode: 'immediate' as const,
+              },
+            ]
           : [],
       autoRun: runAutoRun,
       titleUserEdited: false,

@@ -34,6 +34,7 @@ export type {
   WorkspaceKind,
   WorkspaceMember,
   WorkflowRun,
+  WorkflowTriggerMode,
   WorkspaceIntegration,
   WorkspaceIntegrationProvider,
   WorkspaceScript,

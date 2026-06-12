@@ -182,7 +182,14 @@ function buildSession(): Session {
     autoRun: false,
     titleUserEdited: false,
     workflowRuns: [
-      { id: RUN_ID, workflowId: TEMPLATE_ID, ordinal: 0, currentStep: 0, autoRun: false },
+      {
+        id: RUN_ID,
+        workflowId: TEMPLATE_ID,
+        ordinal: 0,
+        currentStep: 0,
+        autoRun: false,
+        triggerMode: 'immediate' as const,
+      },
     ],
     createdAt: now,
     updatedAt: now,

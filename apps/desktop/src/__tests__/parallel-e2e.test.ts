@@ -101,6 +101,7 @@ function makeSession() {
         ordinal: 0,
         currentStep: 0,
         autoRun: false,
+        triggerMode: 'immediate' as const,
       },
     ],
     autoRun: false,
