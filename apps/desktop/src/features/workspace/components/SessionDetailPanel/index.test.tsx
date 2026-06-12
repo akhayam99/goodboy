@@ -8,6 +8,7 @@ const { state, toastMock } = vi.hoisted(() => ({
   state: {
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     renameTask: vi.fn(async () => undefined),
+    loadDetectedEditors: vi.fn(async () => undefined),
     sessionExternalTasks: {} as Record<string, unknown>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
     sessionBranches: {} as Record<string, string | null>,
