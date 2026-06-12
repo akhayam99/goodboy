@@ -267,7 +267,14 @@ function makeSession(): Session {
     autoRun: true,
     titleUserEdited: false,
     workflowRuns: [
-      { id: RUN_ID, workflowId: WORKFLOW_ID, ordinal: 0, currentStep: 0, autoRun: true },
+      {
+        id: RUN_ID,
+        workflowId: WORKFLOW_ID,
+        ordinal: 0,
+        currentStep: 0,
+        autoRun: true,
+        triggerMode: 'immediate' as const,
+      },
     ],
     createdAt: NOW,
     updatedAt: NOW,

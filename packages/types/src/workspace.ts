@@ -56,12 +56,16 @@ export type TurnState =
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
   | { kind: 'ended'; endedAt: IsoDateTime };
 
+export type WorkflowTriggerMode = 'immediate' | 'manual' | 'after_run';
+
 export type WorkflowRun = Readonly<{
   id: WorkflowRunId;
   workflowId: WorkflowId;
   ordinal: number;
   currentStep: number;
   autoRun: boolean;
+  triggerMode: WorkflowTriggerMode;
+  chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;
 }>;

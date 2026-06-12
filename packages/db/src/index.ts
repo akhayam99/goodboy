@@ -55,6 +55,7 @@ export {
   updateWorkflowOrder,
   updateSessionWorkflowStep,
   updateSessionWorkflowAutoRun,
+  updateSessionWorkflowTriggerMode,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {

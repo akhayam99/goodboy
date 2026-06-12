@@ -10,6 +10,7 @@ import type {
   WorkflowId,
   WorkflowRun,
   WorkflowRunId,
+  WorkflowTriggerMode,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -20,6 +21,8 @@ type SessionWorkflowRow = {
   ordinal: number;
   current_step_ordinal: number;
   auto_run: number;
+  trigger_mode: string;
+  chain_after_run_id: string | null;
   goal: string | null;
   discarded_at: string | null;
 };
@@ -31,6 +34,10 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ordinal: row.ordinal,
     currentStep: row.current_step_ordinal,
     autoRun: row.auto_run !== 0,
+    triggerMode: row.trigger_mode as WorkflowTriggerMode,
+    ...(row.chain_after_run_id != null && {
+      chainAfterId: row.chain_after_run_id as WorkflowRunId,
+    }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
   };
@@ -150,7 +157,7 @@ async function loadWorkflowsForSession(
   sessionId: string,
 ): Promise<ReadonlyArray<WorkflowRun>> {
   const rows = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -321,7 +328,7 @@ async function hydrateSessions(
   const sessionIds = rows.map((r) => r.id);
   const placeholders = sessionIds.map(() => '?').join(', ');
   const workflowRows = await db.select<SessionWorkflowRow & { session_id: string }>(
-    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
+    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
   );
 

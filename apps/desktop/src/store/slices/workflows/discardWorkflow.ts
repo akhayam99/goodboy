@@ -1,5 +1,9 @@
 import type { AgentId, IsoDateTime, SessionId, TurnState, WorkflowRunId } from '@goodboy/types';
-import { discardWorkflowInSession, updateSessionState } from '@goodboy/db';
+import {
+  discardWorkflowInSession,
+  updateSessionState,
+  updateSessionWorkflowTriggerMode,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
@@ -39,6 +43,16 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
 
     await discardWorkflowInSession(tauriDatabase, sessionId, workflowRunId, now);
 
+    const chainedIds = session.workflowRuns
+      .filter(
+        (r) => r.chainAfterId === workflowRunId && r.triggerMode === 'after_run' && !r.discardedAt,
+      )
+      .map((r) => r.id);
+    for (const chainedId of chainedIds) {
+      await updateSessionWorkflowTriggerMode(tauriDatabase, sessionId, chainedId, 'manual', now);
+    }
+    const chainedSet = new Set(chainedIds);
+
     let derived: TurnState | null = null;
     set((s) => {
       const nextTurnState = { ...s.agentTurnState, ...frozen };
@@ -54,7 +68,11 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
             ? {
                 ...sess,
                 workflowRuns: sess.workflowRuns.map((r) =>
-                  r.id === workflowRunId ? { ...r, discardedAt: now } : r,
+                  r.id === workflowRunId
+                    ? { ...r, discardedAt: now }
+                    : chainedSet.has(r.id)
+                      ? { ...r, triggerMode: 'manual' as const }
+                      : r,
                 ),
                 state: derived!,
                 updatedAt: now,

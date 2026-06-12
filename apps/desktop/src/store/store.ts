@@ -38,6 +38,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkflowRunId,
+  WorkflowTriggerMode,
   ProviderId,
   ProviderCredential,
   CredentialId,
@@ -355,10 +356,16 @@ export type AppActions = {
     workflowRunId: WorkflowRunId,
     autoRun: boolean,
   ): Promise<void>;
+  startWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,
     workflowId: WorkflowId,
-    options?: { autoRun?: boolean },
+    options?: {
+      autoRun?: boolean;
+      goal?: string;
+      triggerMode?: WorkflowTriggerMode;
+      chainAfterId?: WorkflowRunId;
+    },
   ): Promise<void>;
   detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   discardWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;

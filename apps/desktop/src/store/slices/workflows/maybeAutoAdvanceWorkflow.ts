@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import type { GetFn, SetFn } from './types';
@@ -13,11 +13,40 @@ export const maybeAutoAdvanceWorkflow = (_set: SetFn, get: GetFn) => {
       return;
     }
     const templates = state.phaseTemplates[session.workspaceId] ?? [];
-    const activeRuns = session.workflowRuns.filter((r) => r.autoRun && !r.discardedAt);
+    const runs = state.sessionPhaseRuns[sessionId] ?? [];
+
+    let firedChain = false;
+    for (const candidate of session.workflowRuns) {
+      if (
+        candidate.discardedAt ||
+        candidate.triggerMode !== 'after_run' ||
+        !candidate.chainAfterId
+      ) {
+        continue;
+      }
+      const predecessor = session.workflowRuns.find((r) => r.id === candidate.chainAfterId);
+      if (!predecessor || predecessor.discardedAt) {
+        continue;
+      }
+      const predTemplate = templates.find((t) => t.id === predecessor.workflowId);
+      if (!predTemplate) {
+        continue;
+      }
+      if (isWorkflowComplete(predTemplate, runsForWorkflowRun(runs, predecessor.id))) {
+        await get().startWorkflowRun(sessionId, candidate.id);
+        firedChain = true;
+      }
+    }
+    if (firedChain) {
+      return;
+    }
+
+    const activeRuns = session.workflowRuns.filter(
+      (r) => r.autoRun && !r.discardedAt && r.triggerMode === 'immediate',
+    );
     if (activeRuns.length === 0) {
       return;
     }
-    const runs = state.sessionPhaseRuns[sessionId] ?? [];
     if (runs.some((r) => r.status === 'failed')) {
       return;
     }

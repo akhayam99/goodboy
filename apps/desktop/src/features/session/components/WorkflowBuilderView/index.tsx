@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   AlertTriangle,
   Check,
+  Hand,
   Layers,
+  Link2,
   ListChecks,
   Loader2,
+  Play,
   Sparkles,
   Target,
   Undo2,
@@ -19,7 +22,9 @@ import {
   autoModelForRole,
   defaultsForRole,
   getDefaultTurnModel,
+  isWorkflowComplete,
   polishWorkflowGoal,
+  runsForWorkflowRun,
 } from '@goodboy/core';
 import type {
   AgentEffort,
@@ -30,6 +35,8 @@ import type {
   StepId,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
+  WorkflowTriggerMode,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
@@ -92,6 +99,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
+  const sessionPhaseRuns = useAppStore(
+    (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
+  );
   const { showToast } = useToast();
 
   const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
@@ -107,9 +117,37 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [planning, setPlanning] = useState(false);
   const [saveAsPreset, setSaveAsPreset] = useState(false);
   const [autoRun, setAutoRun] = useState(false);
+  const [triggerMode, setTriggerMode] = useState<WorkflowTriggerMode>('immediate');
+  const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const promptRef = useRef<HTMLDivElement>(null);
+
+  const activeRuns = useMemo(() => {
+    const runs = session.workflowRuns ?? [];
+    return [...runs]
+      .filter((r) => !r.discardedAt)
+      .map((r) => {
+        const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null;
+        const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
+        const complete = template ? isWorkflowComplete(template, agents) : false;
+        return { run: r, template, complete };
+      })
+      .filter(
+        (e): e is { run: (typeof e)['run']; template: Workflow; complete: boolean } =>
+          e.template !== null && !e.complete,
+      )
+      .sort((a, b) => a.run.ordinal - b.run.ordinal);
+  }, [session.workflowRuns, phaseTemplates, sessionPhaseRuns]);
+
+  const latestActiveRunId = activeRuns[activeRuns.length - 1]?.run.id ?? null;
+  const resolvedChainId = chainAfterId ?? latestActiveRunId;
+
+  useEffect(() => {
+    if (activeRuns.length === 0 && triggerMode === 'after_run') {
+      setTriggerMode('immediate');
+    }
+  }, [activeRuns.length, triggerMode]);
 
   const providerId: ProviderId = session.providerPreference.defaultProvider;
   const blocked = busy || planning;
@@ -181,7 +219,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const attachOptions = () => {
     const goal = goalText.trim();
-    return { autoRun, ...(goal.length > 0 && { goal }) };
+    const after = triggerMode === 'after_run' ? resolvedChainId : null;
+    return {
+      autoRun,
+      ...(goal.length > 0 && { goal }),
+      ...(triggerMode !== 'immediate' && { triggerMode }),
+      ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
+    };
   };
 
   const onStartPreset = async () => {
@@ -536,6 +580,67 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 </div>
               </div>
             )}
+
+            <div className="flex flex-col gap-1.5">
+              <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
+                When to start
+              </span>
+              <div className="flex w-fit items-center gap-0.5 rounded-lg bg-subtle/80 p-0.5 ring-1 ring-border-soft">
+                <TriggerButton
+                  active={triggerMode === 'immediate'}
+                  disabled={blocked}
+                  onClick={() => setTriggerMode('immediate')}
+                  icon={<Play size={12} aria-hidden />}
+                  label="Start now"
+                />
+                <TriggerButton
+                  active={triggerMode === 'manual'}
+                  disabled={blocked}
+                  onClick={() => setTriggerMode('manual')}
+                  icon={<Hand size={12} aria-hidden />}
+                  label="Start manually"
+                />
+                {activeRuns.length > 0 ? (
+                  <TriggerButton
+                    active={triggerMode === 'after_run'}
+                    disabled={blocked}
+                    onClick={() => {
+                      setTriggerMode('after_run');
+                      if (chainAfterId === null) {
+                        setChainAfterId(latestActiveRunId);
+                      }
+                    }}
+                    icon={<Link2 size={12} aria-hidden />}
+                    label="Run after"
+                  />
+                ) : null}
+              </div>
+              {triggerMode === 'after_run' && activeRuns.length > 1 ? (
+                <select
+                  value={resolvedChainId ?? ''}
+                  onChange={(e) => setChainAfterId(e.target.value as WorkflowRunId)}
+                  disabled={blocked}
+                  aria-label="run after which workflow"
+                  className="w-fit rounded-md bg-subtle/80 px-2 py-1 text-xs text-foreground ring-1 ring-border-soft focus-visible:ring-foreground/15"
+                >
+                  {activeRuns.map(({ run, template }) => (
+                    <option key={run.id} value={run.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
+                {triggerMode === 'immediate'
+                  ? 'Runs as soon as you start it.'
+                  : triggerMode === 'manual'
+                    ? 'Stays queued until you start it from the sidebar.'
+                    : `Starts after ${
+                        activeRuns.find((e) => e.run.id === resolvedChainId)?.template.name ??
+                        'the selected workflow'
+                      } completes.`}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -687,6 +792,31 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     </div>
   );
 };
+
+type TriggerButtonProps = {
+  readonly active: boolean;
+  readonly disabled: boolean;
+  readonly onClick: () => void;
+  readonly icon: ReactNode;
+  readonly label: string;
+};
+
+const TriggerButton = ({ active, disabled, onClick, icon, label }: TriggerButtonProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-pressed={active}
+    className={cn(
+      'inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors',
+      active
+        ? 'bg-background text-foreground shadow-sm'
+        : 'text-muted-foreground hover:text-foreground',
+    )}
+  >
+    {icon} {label}
+  </button>
+);
 
 type ReadOnlyStepCardProps = {
   readonly ordinal: number;
