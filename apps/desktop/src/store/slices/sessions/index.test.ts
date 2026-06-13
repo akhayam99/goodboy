@@ -604,6 +604,24 @@ describe('store contract', () => {
       expect(s.sessions.find((x) => x.id === SESSION_ID)).toBeDefined();
       expect(s.archivedSessions[WS_ID]).toEqual([]);
     });
+
+    it('deleteTask removes an archived session from the archived cache', async () => {
+      const store = await getStore();
+      const archived: Session = {
+        ...buildSession(),
+        archivedAt: NOW,
+      } as Session;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        currentWorkspaceId: WS_ID,
+        currentSessionId: SESSION_ID,
+        archivedSessions: { [WS_ID]: [archived] },
+      });
+      await store.getState().deleteTask(SESSION_ID);
+      const s = store.getState();
+      expect(s.archivedSessions[WS_ID]).toEqual([]);
+      expect(s.currentSessionId).toBeNull();
+    });
   });
 
   describe('config', () => {

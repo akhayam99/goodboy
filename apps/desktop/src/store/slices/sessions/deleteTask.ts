@@ -7,7 +7,11 @@ import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session =
+      get().sessions.find((s) => s.id === sessionId) ??
+      Object.values(get().archivedSessions)
+        .flat()
+        .find((s) => s.id === sessionId);
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
@@ -32,22 +36,55 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     const sessionWorkspaceId = session.workspaceId;
     await deleteSessionFromDb(tauriDatabase, sessionId);
     set((state) => {
+      const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
+      const nextTranscripts = { ...state.transcripts };
+      const nextMessages = { ...state.messages };
+      for (const agent of phaseRuns) {
+        delete nextTranscripts[agent.id];
+        delete nextMessages[agent.id];
+      }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
-      const nextTranscripts = { ...state.transcripts };
-      for (const agent of state.sessionPhaseRuns[sessionId] ?? []) {
-        delete nextTranscripts[agent.id];
-      }
+      const nextPhaseRuns = { ...state.sessionPhaseRuns };
+      delete nextPhaseRuns[sessionId];
+      const nextGithub = { ...state.sessionGithub };
+      delete nextGithub[sessionId];
+      const nextLoading = { ...state.sessionLoading };
+      delete nextLoading[sessionId];
+      const nextSelected = { ...state.selectedAgentId };
+      delete nextSelected[sessionId];
+      const nextConflicts = { ...state.sessionMergeConflicts };
+      delete nextConflicts[sessionId];
+      const nextOpenQs = { ...state.sessionOpenQuestions };
+      delete nextOpenQs[sessionId];
+      const nextWorkflows = { ...state.sessionWorkflows };
+      delete nextWorkflows[sessionId];
       const nextWorkflowDrafts = { ...state.workflowDrafts };
       delete nextWorkflowDrafts[sessionId];
+      const cachedArchived = state.archivedSessions[sessionWorkspaceId];
+      const nextArchived = cachedArchived
+        ? {
+            ...state.archivedSessions,
+            [sessionWorkspaceId]: cachedArchived.filter((s) => s.id !== sessionId),
+          }
+        : state.archivedSessions;
       return {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
+        archivedSessions: nextArchived,
         currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+        transcripts: nextTranscripts,
+        messages: nextMessages,
         sessionWorktrees: nextWorktrees,
         sessionBranches: nextBranches,
-        transcripts: nextTranscripts,
+        sessionPhaseRuns: nextPhaseRuns,
+        sessionGithub: nextGithub,
+        sessionLoading: nextLoading,
+        selectedAgentId: nextSelected,
+        sessionMergeConflicts: nextConflicts,
+        sessionOpenQuestions: nextOpenQs,
+        sessionWorkflows: nextWorkflows,
         workflowDrafts: nextWorkflowDrafts,
       };
     });
