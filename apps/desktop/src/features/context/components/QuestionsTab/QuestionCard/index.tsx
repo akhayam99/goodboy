@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, MessageCircleQuestion, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Markdown } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { SuggestionChip } from '../SuggestionChip';
 import { CustomAnswerField } from '../CustomAnswerField';
@@ -95,9 +95,10 @@ export const QuestionCard = ({
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
           <MessageCircleQuestion size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-          <p className="min-w-0 break-words text-xs font-medium leading-relaxed text-foreground">
-            {question.text}
-          </p>
+          <Markdown
+            text={question.text}
+            className="min-w-0 gap-1.5 break-words text-[13px] font-medium leading-relaxed text-foreground"
+          />
         </div>
         <button
           type="button"

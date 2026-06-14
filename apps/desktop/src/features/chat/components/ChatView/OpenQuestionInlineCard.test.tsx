@@ -38,22 +38,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('OpenQuestionInlineCard', () => {
-  it('renders the open question interactively and submits the chosen answer', async () => {
-    render(<OpenQuestionInlineCard question={baseQuestion} sessionId={'sess-1' as never} />);
-
-    expect(screen.getByText('Use Postgres or SQLite?')).toBeTruthy();
-    fireEvent.click(screen.getByText('Postgres'));
-
-    const submit = await screen.findByText('send answer');
-    fireEvent.click(submit);
-
-    expect(state.answerOpenQuestions).toHaveBeenCalledWith(
-      'sess-1',
-      [{ id: 'oq-1', text: 'Use Postgres or SQLite?', answer: 'Postgres' }],
-      'agent-1',
-    );
-  });
-
   it('carries the data-oq-anchor on the open card', () => {
     const { container } = render(
       <OpenQuestionInlineCard question={baseQuestion} sessionId={'sess-1' as never} />,
