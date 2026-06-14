@@ -14,7 +14,7 @@ import { CommentsPane } from './panes/CommentsPane';
 import { ReviewPane } from './panes/ReviewPane';
 
 export { pickSmartTab } from './lib';
-export { computeTabStatus, type TabStatus } from './status';
+export { computeTabStatus } from './status';
 export { TabBadge } from './parts/TabBadge';
 export type { GithubTabKey } from './lib';
 
