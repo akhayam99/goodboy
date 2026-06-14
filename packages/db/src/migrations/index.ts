@@ -58,6 +58,9 @@ import { m057SessionEnabledProviders } from './m057-session-enabled-providers';
 import { m058WorkflowGoal } from './m058-workflow-goal';
 import { m059WorkflowRunGoal } from './m059-workflow-run-goal';
 import { m060WorkflowTriggerMode } from './m060-workflow-trigger-mode';
+import { m061DiffCommentLineRange } from './m061-diff-comment-line-range';
+import { m062OpenQuestionsTurnOrdinal } from './m062-open-questions-turn-ordinal';
+import { m063OpenQuestionsRecommendedAnswer } from './m063-open-questions-recommended-answer';
 
 export type Migration = {
   readonly version: number;
@@ -125,4 +128,7 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 58, sql: m058WorkflowGoal },
   { version: 59, sql: m059WorkflowRunGoal },
   { version: 60, sql: m060WorkflowTriggerMode },
+  { version: 61, sql: m061DiffCommentLineRange },
+  { version: 62, sql: m062OpenQuestionsTurnOrdinal },
+  { version: 63, sql: m063OpenQuestionsRecommendedAnswer },
 ];

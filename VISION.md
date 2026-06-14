@@ -28,17 +28,26 @@ A session always has at least one agent (auto-spawned at creation). Spawning mor
 
 Eight role labels that shape how an agent works: **scout**, **planner**, **implementer**, **debugger**, **tester**, **reviewer**, **docs**, **generic**. Each kind carries default model, effort, and optional system prompt settings. Kind is inferred automatically from the agent's name or first user message, or set manually via the kind menu.
 
+### Workflows
+
+A workflow is a reusable sequence of steps. Attach a preset from the sidebar, or assemble your own in a custom builder. A workflow can carry an optional goal, overridable per run.
+
+- **Runs are instances.** Attaching a workflow starts a run; the same workflow can be re-run any number of times in a session, each run independent.
+- **Trigger modes** decide when a run begins: run on attach (default), wait for a manual start, or chain after a predecessor run completes — a chained run waits for the one before it, then proceeds on its own.
+- **Drafts survive session switches.** A workflow you're building in the editor is kept as you move between sessions, and cleared once you create or discard it.
+- **Natural language drafts a workflow.** Describe what you want and Goodboy formats a draft of the steps, which you then edit before attaching.
+
 ### Shared context
 
-Agents inside the same session do **not** share their conversation history. What they share is the **context panel** on the right — synthetic slots (goal, files touched, decisions, open questions, last summary) that the LLM auto-populates after every turn. You can also edit slots by hand.
+Agents inside the same session do **not** share their conversation history. What they share is the **right panel** — the session's detail and work products alongside the context slots: synthetic slots (goal, files touched, decisions, open questions, last summary) that the LLM auto-populates after every turn. You can also edit slots by hand.
 
-Slots are collapsible, rendered as markdown, and maintain history. Switching between agents swaps the central chat to that agent's transcript. The context panel doesn't move; it's the session's, not the agent's. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
+Slots are collapsible, rendered as markdown, and maintain history. Switching between agents swaps the central chat to that agent's transcript. The right panel doesn't move; it's the session's, not the agent's. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
 
 Context is a resource, not a dump.
 
 ### Plans
 
-Planner agents emit structured plans wrapped in `<<plan>>...<<plan>>` markers. These become first-class session artifacts — not buried in chat transcripts. Plans have lifecycle status (active / consumed / superseded) and are consumed by other agents who act on them. Consumption is tracked, and plans are viewable in a dedicated modal with tree rendering.
+Planner agents emit structured plans wrapped in `<<plan>>...<<plan>>` markers. These become first-class session artifacts — not buried in chat transcripts. Plans have lifecycle status (active / consumed / superseded) and are consumed by other agents who act on them. Consumption is tracked, and plans are viewable in a dedicated studio that renders them as a tree.
 
 ### Next-actions
 
@@ -46,10 +55,11 @@ After each agent turn, the summarizer infers what should happen next: scout (exp
 
 ### Provider routing & balance
 
-Register your AI providers (Anthropic, Cursor, Codex, Gemini). Set priorities. Set budgets. Goodboy routes work to the right provider automatically.
+Register your AI providers (Anthropic, Cursor, Codex, Gemini). Set priorities. Set budgets. Enable or disable providers per session. Goodboy routes work to the right provider automatically.
 
 - Provider 1 hits 75% budget → fallback to provider 2.
 - Quick task → fast cheap model. Complex architecture → best available model.
+- Each workflow step picks its model automatically by role, tier, and cost; an explicit pin overrides the auto choice.
 - You see the spend in real time. No surprises at end of month.
 
 ### Telemetry & cost awareness

@@ -77,7 +77,9 @@ describe('extractMarkers', () => {
     `;
     const out = extractMarkers(text);
     expect(out.decisions).toEqual(['use sqlite for local persistence', 'tauri 2 over electron']);
-    expect(out.questions).toEqual([{ text: 'do we need wal mode?', suggestedAnswers: [] }]);
+    expect(out.questions).toEqual([
+      { text: 'do we need wal mode?', suggestedAnswers: [], recommendedAnswer: null },
+    ]);
   });
 
   it('extracts question with suggestions', () => {
@@ -85,14 +87,26 @@ describe('extractMarkers', () => {
       '<<ctx-question suggestions="yes | no | maybe">>do we need wal mode?<</ctx-question>>';
     const out = extractMarkers(text);
     expect(out.questions).toEqual([
-      { text: 'do we need wal mode?', suggestedAnswers: ['yes', 'no', 'maybe'] },
+      {
+        text: 'do we need wal mode?',
+        suggestedAnswers: ['yes', 'no', 'maybe'],
+        recommendedAnswer: null,
+      },
     ]);
   });
 
   it('extracts question without suggestions as empty array', () => {
     const text = '<<ctx-question>>plain question<</ctx-question>>';
     expect(extractMarkers(text).questions).toEqual([
-      { text: 'plain question', suggestedAnswers: [] },
+      { text: 'plain question', suggestedAnswers: [], recommendedAnswer: null },
+    ]);
+  });
+
+  it('extracts recommended answer attribute (any order)', () => {
+    const text =
+      '<<ctx-question recommended="yes" suggestions="yes | no">>do we need wal mode?<</ctx-question>>';
+    expect(extractMarkers(text).questions).toEqual([
+      { text: 'do we need wal mode?', suggestedAnswers: ['yes', 'no'], recommendedAnswer: 'yes' },
     ]);
   });
 

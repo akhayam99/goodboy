@@ -1093,6 +1093,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }
           return undefined;
         })();
+        const turnOrdinal = (get().transcripts[activeAgentId] ?? []).filter(
+          (e) => e.kind === 'user_text',
+        ).length;
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
@@ -1105,6 +1108,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               workflowRunId: activeAgentRow.workflowRunId,
             }),
             stepOrdinal: stepLookup?.ordinal,
+            turnOrdinal,
           },
         });
         if (result.updatedSlots.length > 0) {

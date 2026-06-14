@@ -218,7 +218,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           <div ref={anchor('scout')} className="py-4 first:pt-0 last:pb-0">
             <FieldRow
               label="Parallel scouts"
-              help="Scouts split broad searches across parallel sub-scouts. Slightly more tokens, much faster on large codebases."
+              help="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
             >
               <ToggleSwitch
                 label={scoutFanout ? 'On' : 'Off'}

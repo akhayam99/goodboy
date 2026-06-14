@@ -5,6 +5,7 @@ import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
 import { Fragment } from 'react';
 import type { Notification, NotificationSeverity } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
   switch (severity) {
@@ -166,10 +167,8 @@ export const NotificationCenter = () => {
                     No notifications
                   </p>
                 ) : (
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-muted to-transparent" />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-4 bg-gradient-to-t from-muted to-transparent" />
-                    <ul className="max-h-80 overflow-y-auto">
+                  <ScrollFade className="max-h-80" fade={16}>
+                    <ul>
                       {notifications.map((n, i) => (
                         <Fragment key={n.id}>
                           {i > 0 && (
@@ -181,7 +180,7 @@ export const NotificationCenter = () => {
                         </Fragment>
                       ))}
                     </ul>
-                  </div>
+                  </ScrollFade>
                 )}
               </Popover>
             </>,

@@ -113,7 +113,7 @@ export const SessionActivityBar = ({
               className="mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />
-              New session
+              New
             </Button>
           )}
 

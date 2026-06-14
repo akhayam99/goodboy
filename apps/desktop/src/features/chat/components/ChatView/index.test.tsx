@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const { state } = vi.hoisted(() => ({
+const { state, openQuestions, answeredQuestions } = vi.hoisted(() => ({
+  openQuestions: { current: [] as ReadonlyArray<unknown> },
+  answeredQuestions: { current: [] as ReadonlyArray<unknown> },
   state: {
     selectedAgentId: {} as Record<string, string | null>,
     transcripts: {} as Record<string, unknown>,
@@ -20,6 +22,10 @@ const { state } = vi.hoisted(() => ({
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     sessionMergeConflicts: {} as Record<string, ReadonlyArray<unknown>>,
     resolveMergeConflicts: vi.fn(async () => undefined),
+    loadSessionOpenQuestions: vi.fn(async () => undefined),
+    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+    openQuestionScrollTarget: null as { agentId: string; questionId: string } | null,
+    clearOpenQuestionScroll: vi.fn(() => undefined),
   },
 }));
 
@@ -27,7 +33,13 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionLoading: () => ({ transcript: false }),
+  useSessionOpenQuestions: () => openQuestions.current,
+  useSessionAnsweredQuestions: () => answeredQuestions.current,
   useTranscript: () => [],
+}));
+
+vi.mock('./OpenQuestionInlineCard', () => ({
+  OpenQuestionInlineCard: () => null,
 }));
 
 vi.mock('../../utils/transcript-items', () => ({
@@ -95,6 +107,14 @@ beforeEach(() => {
   state.agentKindOverride = {};
   state.sessionWorkflows = {};
   state.sessionMergeConflicts = {};
+  state.openQuestionScrollTarget = null;
+  state.loadSessionOpenQuestions.mockClear();
+  state.loadSessionAnsweredQuestions.mockClear();
+  state.clearOpenQuestionScroll.mockClear();
+  openQuestions.current = [];
+  answeredQuestions.current = [];
+  (Element.prototype as unknown as { scrollTo: unknown }).scrollTo = vi.fn();
+  (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = vi.fn();
 });
 afterEach(cleanup);
 
@@ -102,5 +122,18 @@ describe('ChatView', () => {
   it('renders without throwing on an empty session', () => {
     const { container } = render(<ChatView session={session} />);
     expect(container.firstChild).not.toBeNull();
+  });
+
+  it('loads open and answered questions on mount', () => {
+    render(<ChatView session={session} />);
+    expect(state.loadSessionOpenQuestions).toHaveBeenCalledWith('sess-1');
+    expect(state.loadSessionAnsweredQuestions).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('consumes a matching scroll target with no painted anchor', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    state.openQuestionScrollTarget = { agentId: 'agent-1', questionId: 'oq-1' };
+    render(<ChatView session={session} />);
+    expect(state.clearOpenQuestionScroll).toHaveBeenCalled();
   });
 });

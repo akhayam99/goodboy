@@ -37,6 +37,7 @@ export const answerOpenQuestions = (get: GetFn) => {
       valid.map((p) => p.text),
     );
     await get().loadSessionOpenQuestions(sessionId);
+    await get().loadSessionAnsweredQuestions(sessionId);
     if (slotChanged) {
       await get().loadSessionSlots(sessionId);
     }

@@ -6,6 +6,7 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
+  useSessionAnsweredQuestions,
   useSessionById,
   useSessionLoading,
   useSessionOpenQuestions,

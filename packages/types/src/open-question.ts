@@ -19,7 +19,9 @@ export type OpenQuestion = Readonly<{
   createdByAgentId?: AgentId;
   text: string;
   suggestedAnswers: ReadonlyArray<string>;
+  recommendedAnswer?: string;
   userAnswer: string | null;
+  turnOrdinal?: number;
   status: OpenQuestionStatus;
   createdAt: IsoDateTime;
   answeredAt?: IsoDateTime;

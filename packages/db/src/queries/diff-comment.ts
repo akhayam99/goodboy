@@ -21,12 +21,17 @@ type DiffCommentRow = {
   consumed_by_agent_id: string | null;
   line_number: number | null;
   line_side: string | null;
+  end_line_number: number | null;
 };
 
 function toDomain(row: DiffCommentRow): DiffComment {
   const anchor: DiffCommentAnchor | undefined =
     row.line_number !== null && row.line_side !== null
-      ? { lineNumber: row.line_number, side: row.line_side as DiffCommentSide }
+      ? {
+          lineNumber: row.line_number,
+          side: row.line_side as DiffCommentSide,
+          ...(row.end_line_number != null ? { endLineNumber: row.end_line_number } : {}),
+        }
       : undefined;
   return {
     id: row.id,
@@ -50,7 +55,7 @@ function toDomain(row: DiffCommentRow): DiffComment {
 }
 
 const SELECT_COLUMNS = `id, session_id, file_path, body, status, created_at, resolved_at,
-    consumed_at, consumed_by_agent_id, line_number, line_side`;
+    consumed_at, consumed_by_agent_id, line_number, line_side, end_line_number`;
 
 export const insertDiffComment = async (
   db: Database,
@@ -61,9 +66,18 @@ export const insertDiffComment = async (
   anchor?: DiffCommentAnchor,
 ): Promise<void> => {
   await db.execute(
-    `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, line_number, line_side)
-     VALUES (?, ?, ?, ?, 'open', ?, ?, ?)`,
-    [id, sessionId, filePath, body, Date.now(), anchor?.lineNumber ?? null, anchor?.side ?? null],
+    `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, line_number, line_side, end_line_number)
+     VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?)`,
+    [
+      id,
+      sessionId,
+      filePath,
+      body,
+      Date.now(),
+      anchor?.lineNumber ?? null,
+      anchor?.side ?? null,
+      anchor?.endLineNumber ?? null,
+    ],
   );
 };
 

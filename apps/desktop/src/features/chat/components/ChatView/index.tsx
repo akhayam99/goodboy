@@ -22,9 +22,16 @@ import {
   inferAgentKindFromName,
   type AgentKind as AgentKindLabel,
 } from '../../../session/agent-kind';
-import type { AgentId, ProviderRunId, Session } from '@goodboy/types';
+import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
 import { cn, Divider, Skeleton } from '@goodboy/ui';
-import { EMPTY_ARRAY, useAppStore, useSessionLoading, useTranscript } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionAnsweredQuestions,
+  useSessionLoading,
+  useSessionOpenQuestions,
+  useTranscript,
+} from '../../../../store';
 import {
   detectParallelRunIds,
   filterEventsByRunId,
@@ -46,6 +53,7 @@ import {
 } from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
+import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
 
 type ChatViewProps = {
   session: Session;
@@ -326,6 +334,76 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
     void refreshProviders();
   }, [refreshProviders]);
 
+  const openQuestions = useSessionOpenQuestions(session.id);
+  const answeredQuestions = useSessionAnsweredQuestions(session.id);
+  const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
+  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
+  const openQuestionScrollTarget = useAppStore((s) => s.openQuestionScrollTarget);
+  const clearOpenQuestionScroll = useAppStore((s) => s.clearOpenQuestionScroll);
+
+  useEffect(() => {
+    void loadSessionOpenQuestions(session.id);
+  }, [session.id, loadSessionOpenQuestions]);
+
+  useEffect(() => {
+    void loadSessionAnsweredQuestions(session.id);
+  }, [session.id, loadSessionAnsweredQuestions]);
+
+  const oqByTurnOrdinal = useMemo(() => {
+    const map = new Map<number, OpenQuestion[]>();
+    for (const q of [...openQuestions, ...answeredQuestions]) {
+      if (q.createdByAgentId !== selectedAgentId || q.turnOrdinal == null) {
+        continue;
+      }
+      const bucket = map.get(q.turnOrdinal);
+      if (bucket) {
+        bucket.push(q);
+      } else {
+        map.set(q.turnOrdinal, [q]);
+      }
+    }
+    for (const bucket of map.values()) {
+      bucket.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    }
+    return map;
+  }, [openQuestions, answeredQuestions, selectedAgentId]);
+
+  useEffect(() => {
+    const target = openQuestionScrollTarget;
+    if (!target || target.agentId !== selectedAgentId || transcriptStale) {
+      return;
+    }
+    const node = document.querySelector(`[data-oq-anchor="${target.questionId}"]`);
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      clearOpenQuestionScroll();
+      return;
+    }
+    let hasOrdinalBearing = false;
+    for (const cards of oqByTurnOrdinal.values()) {
+      if (cards.some((q) => q.id === target.questionId)) {
+        hasOrdinalBearing = true;
+        break;
+      }
+    }
+    if (hasOrdinalBearing) {
+      return;
+    }
+    const el = scrollerRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
+    clearOpenQuestionScroll();
+  }, [
+    openQuestionScrollTarget,
+    selectedAgentId,
+    deferredItems,
+    transcriptStale,
+    oqByTurnOrdinal,
+    clearOpenQuestionScroll,
+    scrollerRef,
+  ]);
+
   const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(
     () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
     [rawMergeConflicts],
@@ -451,7 +529,12 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
             atTop ? 'opacity-0' : 'opacity-100',
           )}
         />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent" />
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent transition-opacity duration-200',
+            pinned ? 'opacity-0' : 'opacity-100',
+          )}
+        />
         <div
           ref={scrollerRef}
           onScroll={onScroll}
@@ -487,24 +570,42 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
               aria-relevant="additions"
             >
               {(() => {
+                const out: React.ReactNode[] = [];
                 let lastDay: string | null = null;
-                return rows.map((row, idx) => {
-                  const node: React.ReactNode[] = [];
+                let userTurnOrdinal = 0;
+
+                const flushOrdinal = (ordinal: number) => {
+                  const cards = oqByTurnOrdinal.get(ordinal);
+                  if (!cards || cards.length === 0) {
+                    return;
+                  }
+                  out.push(
+                    <li key={`oq-${ordinal}`} className="mt-2.5 flex flex-col gap-2">
+                      {cards.map((q) => (
+                        <OpenQuestionInlineCard key={q.id} question={q} sessionId={session.id} />
+                      ))}
+                    </li>,
+                  );
+                };
+
+                rows.forEach((row, idx) => {
                   let isTurnBreak = false;
                   if (row.kind === 'item' && row.item.kind === 'user_text') {
+                    flushOrdinal(userTurnOrdinal);
+                    userTurnOrdinal += 1;
                     const at = row.item.at;
                     const day = dayKey(at);
                     const dayChanged = day !== lastDay;
                     if (idx > 0 && !dayChanged) {
                       isTurnBreak = true;
-                      node.push(
+                      out.push(
                         <li key={`turn-${row.key}`} className="my-2.5">
                           <Divider />
                         </li>,
                       );
                     }
                     if (dayChanged) {
-                      node.push(
+                      out.push(
                         <li key={`day-${day}-${idx}`} className="my-2.5 flex justify-center">
                           <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
                             {formatDayLabel(at)}
@@ -515,7 +616,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                     }
                   }
                   const itemSpacing = idx === 0 || isTurnBreak ? '' : 'mt-2.5';
-                  node.push(
+                  out.push(
                     <li
                       key={row.key}
                       className={cn(
@@ -544,8 +645,10 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                       )}
                     </li>,
                   );
-                  return node;
                 });
+
+                flushOrdinal(userTurnOrdinal);
+                return out;
               })()}
               {isThinking ? (
                 <li className="mt-2.5">

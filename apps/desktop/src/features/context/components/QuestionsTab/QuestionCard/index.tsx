@@ -62,17 +62,23 @@ export const QuestionCard = ({
   }, [justAnswered, question.id, onClearJustAnswered]);
 
   const hasPendingAnswer = selectedSuggestions.length > 0 || customAnswer.trim().length > 0;
-  const suggestions =
+  const baseSuggestions =
     question.suggestedAnswers.length > 0
       ? question.suggestedAnswers
       : deriveSuggestions(question.text);
 
+  const recommended = question.recommendedAnswer?.trim() ?? '';
+  const suggestions =
+    recommended.length > 0 && !baseSuggestions.includes(recommended)
+      ? [recommended, ...baseSuggestions]
+      : baseSuggestions;
+
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-lg border border-border-soft bg-elevated py-2.5 pl-3 pr-2.5 shadow-sm',
+        'group relative overflow-hidden rounded-lg border border-warning/30 bg-warning/[0.06] py-2.5 pl-3 pr-2.5 shadow-sm',
         'transition-[border-color,background-color,box-shadow,transform] duration-200',
-        !hasPendingAnswer && 'hover:border-border',
+        !hasPendingAnswer && 'hover:border-warning/50',
         animate
           ? 'motion-safe:animate-answer-lock motion-reduce:bg-success/5'
           : 'motion-safe:animate-fade-in',
@@ -82,18 +88,14 @@ export const QuestionCard = ({
         aria-hidden
         className={cn(
           'pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors duration-200',
-          hasPendingAnswer ? 'bg-primary/70' : 'bg-transparent',
+          hasPendingAnswer ? 'bg-primary/70' : 'bg-warning/60',
         )}
       />
 
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
-          <MessageCircleQuestion
-            size={13}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-muted-foreground/50"
-          />
-          <p className="min-w-0 break-words text-xs leading-relaxed text-foreground">
+          <MessageCircleQuestion size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+          <p className="min-w-0 break-words text-xs font-medium leading-relaxed text-foreground">
             {question.text}
           </p>
         </div>
@@ -119,6 +121,7 @@ export const QuestionCard = ({
             key={suggestion}
             label={suggestion}
             selected={selectedSuggestions.includes(suggestion)}
+            recommended={recommended.length > 0 && suggestion === recommended}
             onToggle={() => onToggleSuggestion(question.id, suggestion)}
           />
         ))}

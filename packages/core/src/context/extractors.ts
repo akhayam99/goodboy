@@ -18,7 +18,8 @@ export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyA
 };
 
 const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
-const QUESTION_RE = /<<ctx-question(?:\s+suggestions="([^"]*)")?>>([\s\S]*?)<<\/ctx-question>>/g;
+const QUESTION_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>([\s\S]*?)<<\/ctx-question>>/g;
+const QUESTION_ATTR_RE = /([\w-]+)="([^"]*)"/g;
 const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
 const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
 const HANDOFF_RE = /<<handoff\s+([^>]+?)>>/g;
@@ -27,6 +28,7 @@ const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
 export type ExtractedQuestion = {
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
+  readonly recommendedAnswer: string | null;
 };
 
 export const extractMarkers = (
@@ -42,16 +44,27 @@ export const extractMarkers = (
   return { decisions, questions, resolved };
 };
 
+function parseQuestionAttrs(raw: string): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  QUESTION_ATTR_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = QUESTION_ATTR_RE.exec(raw)) !== null) {
+    attrs[m[1]!] = m[2] ?? '';
+  }
+  return attrs;
+}
+
 function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
   const out: ExtractedQuestion[] = [];
   QUESTION_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = QUESTION_RE.exec(text)) !== null) {
-    const suggestionsRaw = (m[1] ?? '').trim();
+    const attrs = parseQuestionAttrs(m[1] ?? '');
     const body = (m[2] ?? '').trim();
     if (body.length === 0) {
       continue;
     }
+    const suggestionsRaw = attrs.suggestions ?? '';
     const suggestedAnswers =
       suggestionsRaw.length > 0
         ? suggestionsRaw
@@ -59,7 +72,12 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
             .map((s) => s.trim())
             .filter((s) => s.length > 0)
         : [];
-    out.push({ text: body, suggestedAnswers });
+    const recommended = (attrs.recommended ?? '').trim();
+    out.push({
+      text: body,
+      suggestedAnswers,
+      recommendedAnswer: recommended.length > 0 ? recommended : null,
+    });
   }
   return out;
 }

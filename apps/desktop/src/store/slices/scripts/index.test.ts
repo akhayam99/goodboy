@@ -410,19 +410,6 @@ function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
   };
 }
 
-function buildScript(overrides: Partial<WorkspaceScript> = {}): WorkspaceScript {
-  return {
-    id: 'sc-1' as WorkspaceScriptId,
-    workspaceId: WS_ID,
-    name: 'sync env',
-    body: 'echo hi',
-    sortOrder: 0,
-    createdAt: NOW,
-    updatedAt: NOW,
-    ...overrides,
-  };
-}
-
 async function getStore() {
   const mod = await import('../../store');
   return mod.useAppStore;
@@ -488,7 +475,6 @@ describe('store contract', () => {
         skills: {},
         workspaceScripts: {},
         scriptRuns: {},
-        sessionScriptResult: {},
         phaseTemplates: {},
         sessionWorkflows: {},
         sessionPhaseRuns: {},
@@ -563,59 +549,6 @@ describe('store contract', () => {
       store.setState({ workspaceScripts: { [WS_ID]: [script] } });
       await store.getState().deleteScript(script.id, WS_ID);
       expect(store.getState().workspaceScripts[WS_ID]).toEqual([]);
-    });
-
-    it('runWorkspaceScript writes a pending result synchronously', async () => {
-      const store = await getStore();
-      const script = buildScript();
-      void store.getState().runWorkspaceScript(SESSION_ID, script, '/wt');
-      expect(store.getState().sessionScriptResult[SESSION_ID]).toEqual({
-        script,
-        status: 'pending',
-        result: null,
-      });
-    });
-
-    it('runWorkspaceScript maps a zero exit to an ok result', async () => {
-      const store = await getStore();
-      const original = store.getState().runScript;
-      store.setState({ runScript: async () => ({ stdout: 'done', stderr: '', exitCode: 0 }) });
-      const script = buildScript();
-      try {
-        await store.getState().runWorkspaceScript(SESSION_ID, script, '/wt');
-        expect(store.getState().sessionScriptResult[SESSION_ID]).toEqual({
-          script,
-          status: 'ok',
-          result: { stdout: 'done', stderr: '', exitCode: 0 },
-        });
-      } finally {
-        store.setState({ runScript: original });
-      }
-    });
-
-    it('runWorkspaceScript maps a non-zero exit to an error result', async () => {
-      const store = await getStore();
-      const original = store.getState().runScript;
-      store.setState({ runScript: async () => ({ stdout: '', stderr: 'boom', exitCode: 1 }) });
-      const script = buildScript();
-      try {
-        await store.getState().runWorkspaceScript(SESSION_ID, script, '/wt');
-        expect(store.getState().sessionScriptResult[SESSION_ID]?.status).toBe('error');
-      } finally {
-        store.setState({ runScript: original });
-      }
-    });
-
-    it('dismissScriptResult clears the session result', async () => {
-      const store = await getStore();
-      const script = buildScript();
-      store.setState({
-        sessionScriptResult: {
-          [SESSION_ID]: { script, status: 'ok', result: { stdout: '', stderr: '', exitCode: 0 } },
-        },
-      });
-      store.getState().dismissScriptResult(SESSION_ID);
-      expect(store.getState().sessionScriptResult[SESSION_ID]).toBeNull();
     });
   });
 });

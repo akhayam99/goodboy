@@ -8,6 +8,31 @@ Stack: Tauri 2 (Rust shell) + React + Vite + TypeScript, Zustand store, SQLite v
 
 ## File system layout
 
+### Top-level (`apps/desktop/src/`)
+
+```
+app/        # App shell only: routing, layout, boot, global error handling
+features/   # One directory per product domain
+shared/     # Code used by 2+ features, no domain owner
+store/      # Zustand store + slice packages
+main.tsx
+```
+
+Nothing else at `src/` root. No `src/types/`, `src/constants/`, `src/models/`: each becomes a magnet for undisciplined global state. Domain code lives in its feature; cross-feature code earns its way into `shared/`.
+
+### Feature modules (`features/<domain>/`)
+
+A feature is self-contained:
+
+- `<domain>.ts`: core domain logic (types, constants, pure functions). No React, no Zustand imports.
+- `utils/`: private to the feature. Promote to `shared/utils/` only once a second feature needs it.
+- `components/<Name>/`: see Components below.
+- Assets (JSON, SVG) live next to the feature that owns them, never in `public/` or a global `src/data/`.
+
+### App shell (`app/`)
+
+Only code that is global by definition: `App.tsx`, `main.tsx`, `styles.css`, and shell components (boot splash, error boundary, status bar, toast). A component rendered in a single feature's view belongs in that feature, not here.
+
 ### Components (`apps/desktop/src/features/**/components/`, `apps/desktop/src/shared/components/`)
 
 Rule: **1 file = 1 export = 1 definition**.
@@ -57,7 +82,23 @@ slices/<name>/
 ### Shared utilities
 
 - Reusable utilities → `apps/desktop/src/shared/utils/<name>.ts`
+- A file enters `shared/` only when imported by 2+ distinct features. When in doubt, keep it in the feature; do not pre-share.
 - Before creating a new shared util, grep `apps/desktop/src/shared/utils/` for an existing one to reuse.
+
+### Where new code goes
+
+```
+used only inside one feature?
+  → React component  → features/<domain>/components/<Name>/index.tsx
+  → utility/helper   → features/<domain>/utils/<name>.ts
+  → otherwise        → features/<domain>/<domain>.ts
+used by the app shell (routing, layout, boot)?
+  → app/components/<Name>/index.tsx
+used by 2+ features, no domain owner?
+  → shared/{lib|hooks|utils}/<name>.ts
+Zustand state?
+  → store/slices/<domain>/
+```
 
 ---
 
@@ -240,6 +281,15 @@ goodboy/
 │   └── ui/             # Shadcn-based shared UI components
 └── website/            # Marketing site (standalone, not in pnpm workspace)
 ```
+
+## Subprocess environment
+
+macOS/Linux GUI apps launched from Finder/Dock inherit a minimal environment, not the user's terminal one. The Rust shell resolves the real environment from the login shell and replays it onto spawned processes (`apps/desktop/src-tauri/src/path_env.rs`):
+
+- `command(binary)`: PATH only. The default. Use for internal git plumbing (`rev-parse`, worktree management) and any subprocess that runs no user hooks.
+- `command_with_login_env(binary)`: full login-shell env, resolved once via `zsh -ilc env` and cached. Use for subprocesses that can trigger user-authored git hooks or tooling, so they behave as they would in a terminal. `run_git_push` uses it: a repo's `pre-push` hook can read variables exported in `~/.zshrc` (registry tokens, tool config).
+
+Never skip hooks (`git push --no-verify`) to dodge a missing-env failure; replay the environment instead. Windows has no login-shell probe; this is macOS/Linux scoped.
 
 ## Provider system
 

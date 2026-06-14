@@ -3,12 +3,12 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
-  ChevronLeft,
   ChevronRight,
   ChevronsDown,
-  ChevronsRight,
   Copy,
   ExternalLink,
+  FileEdit,
+  GitBranch,
   Loader2,
   MessageSquarePlus,
   PanelLeftClose,
@@ -26,6 +26,7 @@ import type {
   BranchCommit,
   DiffComment,
   DiffCommentAnchor,
+  DiffCommentSide,
   DiffHunkLine,
   DiffView,
   FileDiff,
@@ -53,9 +54,9 @@ import {
   worktreeStatus,
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
+import { StudioShell } from '../../../../shared/components/StudioShell';
 
-type DiffViewerDialogProps = {
-  open: boolean;
+type DiffViewerContentProps = {
   onClose: () => void;
   sessionId?: SessionId;
   title?: string;
@@ -67,6 +68,15 @@ type DiffViewerDialogProps = {
   worktreePath?: string;
   jumpToFirstCommented?: boolean;
   jumpToFile?: string;
+  showToolbarClose?: boolean;
+};
+
+type DiffViewerDialogProps = DiffViewerContentProps & {
+  open: boolean;
+};
+
+type DiffViewerPaneProps = DiffViewerContentProps & {
+  workspaceName: string;
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -272,7 +282,11 @@ function buildNotesPrompt(notes: ReadonlyArray<DiffComment>): string {
   const sections: string[] = [];
   for (const [file, items] of byFile) {
     const lines = items.map((n) => {
-      const anchor = n.anchor ? `[${n.anchor.side}:${n.anchor.lineNumber}]` : '[file-level]';
+      const anchor = n.anchor
+        ? n.anchor.endLineNumber
+          ? `[${n.anchor.side}:${n.anchor.lineNumber}-${n.anchor.endLineNumber}]`
+          : `[${n.anchor.side}:${n.anchor.lineNumber}]`
+        : '[file-level]';
       return `  - ${anchor} (id ${n.id}) ${n.body.replace(/\n+/g, ' ')}`;
     });
     sections.push(`### ${file}\n${lines.join('\n')}`);
@@ -290,9 +304,9 @@ function buildNotesPrompt(notes: ReadonlyArray<DiffComment>): string {
 
 function readSidebarPref(): boolean {
   if (typeof window === 'undefined') {
-    return false;
+    return true;
   }
-  return window.localStorage.getItem(SIDEBAR_PREF_KEY) === '1';
+  return window.localStorage.getItem(SIDEBAR_PREF_KEY) !== '0';
 }
 
 function writeSidebarPref(collapsed: boolean): void {
@@ -302,8 +316,63 @@ function writeSidebarPref(collapsed: boolean): void {
   window.localStorage.setItem(SIDEBAR_PREF_KEY, collapsed ? '1' : '0');
 }
 
-export const DiffViewerDialog = ({
-  open,
+type ReviewState = 'none' | 'reviewed' | 'stale';
+type ReviewedMap = Record<string, string>;
+
+function viewKeyOf(view: DiffView): string {
+  if (view.kind === 'commit') {
+    return `commit:${view.sha}`;
+  }
+  if (view.kind === 'working') {
+    return `working:${view.scope}`;
+  }
+  return 'branch';
+}
+
+function fileSignature(f: FileDiff): string {
+  return `${f.status}:${f.additions}:${f.deletions}:${f.hunks.length}:${f.hunks
+    .map((h) => h.header)
+    .join('§')}`;
+}
+
+function reviewedStorageKey(sessionId: SessionId | undefined, view: DiffView): string | null {
+  return sessionId ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${viewKeyOf(view)}` : null;
+}
+
+function readReviewedMap(sessionId: SessionId | undefined, view: DiffView): ReviewedMap {
+  const key = reviewedStorageKey(sessionId, view);
+  if (!key || typeof window === 'undefined') {
+    return {};
+  }
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw) as ReviewedMap;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeReviewedMap(
+  sessionId: SessionId | undefined,
+  view: DiffView,
+  map: ReviewedMap,
+): void {
+  const key = reviewedStorageKey(sessionId, view);
+  if (!key || typeof window === 'undefined') {
+    return;
+  }
+  try {
+    window.localStorage.setItem(key, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+}
+
+const DiffViewerContent = ({
   onClose,
   sessionId,
   title,
@@ -315,14 +384,16 @@ export const DiffViewerDialog = ({
   worktreePath,
   jumpToFirstCommented = false,
   jumpToFile,
-}: DiffViewerDialogProps) => {
+  showToolbarClose = true,
+}: DiffViewerContentProps) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
-  const [selectedIdx, setSelectedIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPref);
-  const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
-  const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
+  const [activePath, setActivePath] = useState<string | null>(null);
+  const fileRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const didInitialScroll = useRef(false);
 
   const [view, setViewState] = useState<DiffView>(
     () => readPersistedView(sessionId) ?? DEFAULT_VIEW,
@@ -351,9 +422,19 @@ export const DiffViewerDialog = ({
   const summarizer = useSummarizerStatus(sessionId ?? null);
   const prevSummarizerStatus = useRef(summarizer.status);
 
+  const editorBinary = useAppStore(
+    (s) =>
+      s.settings[SETTING_DEFAULT_EDITOR] ??
+      s.settings[SETTING_EDITOR_BINARY] ??
+      DEFAULT_EDITOR_BINARY,
+  );
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const sendTurn = useAppStore((s) => s.sendTurn);
+  const [spawning, setSpawning] = useState(false);
+
   useEffect(() => {
     if (
-      open &&
       isGitAware &&
       prevSummarizerStatus.current === 'running' &&
       summarizer.status !== 'running'
@@ -361,9 +442,8 @@ export const DiffViewerDialog = ({
       setRefreshTick((t) => t + 1);
     }
     prevSummarizerStatus.current = summarizer.status;
-  }, [summarizer.status, open, isGitAware]);
+  }, [summarizer.status, isGitAware]);
 
-  const selectAgent = useAppStore((s) => s.selectAgent);
   const phaseRuns = useAppStore((s) =>
     sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
   );
@@ -386,14 +466,67 @@ export const DiffViewerDialog = ({
     return m;
   }, [comments]);
 
-  useEffect(() => {
-    if (open) {
-      setViewState(DEFAULT_VIEW);
+  const commentsByFile = useMemo(() => {
+    const m = new Map<string, DiffComment[]>();
+    for (const c of comments) {
+      const arr = m.get(c.filePath);
+      if (arr) {
+        arr.push(c);
+      } else {
+        m.set(c.filePath, [c]);
+      }
     }
-  }, [open]);
+    return m;
+  }, [comments]);
+
+  const [reviewedMap, setReviewedMap] = useState<ReviewedMap>(() =>
+    readReviewedMap(sessionId, view),
+  );
+  useEffect(() => {
+    setReviewedMap(readReviewedMap(sessionId, view));
+  }, [sessionId, view, files]);
+
+  const reviewStateByPath = useMemo(() => {
+    const m = new Map<string, ReviewState>();
+    for (const f of files) {
+      const saved = reviewedMap[f.path];
+      m.set(f.path, !saved ? 'none' : saved === fileSignature(f) ? 'reviewed' : 'stale');
+    }
+    return m;
+  }, [files, reviewedMap]);
+
+  const reviewedCount = useMemo(() => {
+    let n = 0;
+    for (const s of reviewStateByPath.values()) {
+      if (s === 'reviewed') {
+        n += 1;
+      }
+    }
+    return n;
+  }, [reviewStateByPath]);
+
+  const toggleReviewed = useCallback(
+    (file: FileDiff, next: boolean) => {
+      setReviewedMap((prev) => {
+        const updated = { ...prev };
+        if (next) {
+          updated[file.path] = fileSignature(file);
+        } else {
+          delete updated[file.path];
+        }
+        writeReviewedMap(sessionId, view, updated);
+        return updated;
+      });
+    },
+    [sessionId, view],
+  );
 
   useEffect(() => {
-    if (!open || !worktreePath) {
+    setViewState(DEFAULT_VIEW);
+  }, []);
+
+  useEffect(() => {
+    if (!worktreePath) {
       return;
     }
     let cancelled = false;
@@ -411,12 +544,13 @@ export const DiffViewerDialog = ({
     return () => {
       cancelled = true;
     };
-  }, [open, worktreePath, refreshTick]);
+  }, [worktreePath, refreshTick]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    didInitialScroll.current = false;
+  }, [view, refreshTick]);
+
+  useEffect(() => {
     const fetcher = isGitAware
       ? () => loadDiffForView(worktreePath as string, view)
       : (loader ??
@@ -431,24 +565,13 @@ export const DiffViewerDialog = ({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setActiveAnchor(null);
     fetcher()
       .then((raw) => {
         if (cancelled) {
           return;
         }
-        const parsed = parseUnifiedDiff(raw);
-        setFiles(parsed);
+        setFiles(parseUnifiedDiff(raw));
         setLoading(false);
-        if (jumpToFile) {
-          const idx = parsed.findIndex((f) => f.path === jumpToFile || jumpToFile.endsWith(f.path));
-          setSelectedIdx(idx >= 0 ? idx : 0);
-        } else if (jumpToFirstCommented && openCommentsByFile.size > 0) {
-          const idx = parsed.findIndex((f) => openCommentsByFile.has(f.path));
-          setSelectedIdx(idx >= 0 ? idx : 0);
-        } else {
-          setSelectedIdx(0);
-        }
       })
       .catch((err) => {
         if (cancelled) {
@@ -460,26 +583,57 @@ export const DiffViewerDialog = ({
     return () => {
       cancelled = true;
     };
-  }, [
-    open,
-    isGitAware,
-    worktreePath,
-    view,
-    refreshTick,
-    loader,
-    repoSlug,
-    prNumber,
-    cwd,
-    jumpToFirstCommented,
-    jumpToFile,
-    openCommentsByFile,
-  ]);
+  }, [isGitAware, worktreePath, view, refreshTick, loader, repoSlug, prNumber, cwd]);
 
   useEffect(() => {
-    if (open && sessionId) {
+    if (sessionId) {
       void loadDiffComments(sessionId);
     }
-  }, [open, sessionId, loadDiffComments]);
+  }, [sessionId, loadDiffComments]);
+
+  const scrollToFile = useCallback((path: string) => {
+    fileRefs.current.get(path)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    if (files.length === 0 || didInitialScroll.current) {
+      return;
+    }
+    let target: string | undefined;
+    if (jumpToFile) {
+      target = files.find((f) => f.path === jumpToFile || jumpToFile.endsWith(f.path))?.path;
+    } else if (jumpToFirstCommented && openCommentsByFile.size > 0) {
+      target = files.find((f) => openCommentsByFile.has(f.path))?.path;
+    }
+    if (target) {
+      didInitialScroll.current = true;
+      const path = target;
+      requestAnimationFrame(() => scrollToFile(path));
+    }
+  }, [files, jumpToFile, jumpToFirstCommented, openCommentsByFile, scrollToFile]);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined' || files.length === 0) {
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            const p = e.target.getAttribute('data-file-path');
+            if (p) {
+              setActivePath(p);
+            }
+          }
+        }
+      },
+      { root: scrollRef.current, rootMargin: '0px 0px -70% 0px', threshold: 0 },
+    );
+    for (const el of fileRefs.current.values()) {
+      obs.observe(el);
+    }
+    return () => obs.disconnect();
+  }, [files]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((v) => {
@@ -499,40 +653,18 @@ export const DiffViewerDialog = ({
         onClose();
         return;
       }
-      if (e.key === 'j') {
-        setSelectedIdx((i) => Math.min(i + 1, files.length - 1));
-      } else if (e.key === 'k') {
-        setSelectedIdx((i) => Math.max(i - 1, 0));
+      if (e.key === 'j' || e.key === 'k') {
+        const idx = files.findIndex((f) => f.path === activePath);
+        const cur = idx < 0 ? 0 : idx;
+        const nextIdx = e.key === 'j' ? Math.min(cur + 1, files.length - 1) : Math.max(cur - 1, 0);
+        const t = files[nextIdx];
+        if (t) {
+          scrollToFile(t.path);
+        }
       }
     },
-    [files.length, onClose],
+    [files, activePath, onClose, scrollToFile],
   );
-
-  const selected = files[selectedIdx];
-  const selectedComments = useMemo(
-    () => (selected ? comments.filter((c) => c.filePath === selected.path) : []),
-    [comments, selected],
-  );
-  const fileLevelComments = useMemo(
-    () => selectedComments.filter((c) => !c.anchor),
-    [selectedComments],
-  );
-
-  useEffect(() => {
-    setActiveAnchor(null);
-    setFileLevelComposerOpen(false);
-  }, [selectedIdx]);
-
-  const editorBinary = useAppStore(
-    (s) =>
-      s.settings[SETTING_DEFAULT_EDITOR] ??
-      s.settings[SETTING_EDITOR_BINARY] ??
-      DEFAULT_EDITOR_BINARY,
-  );
-
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const sendTurn = useAppStore((s) => s.sendTurn);
-  const [spawning, setSpawning] = useState(false);
 
   const openComments = useMemo(() => comments.filter((c) => c.status === 'open'), [comments]);
 
@@ -573,237 +705,296 @@ export const DiffViewerDialog = ({
     onClose();
   };
 
-  const handleOpenInEditor = async () => {
-    if (!selected || !workingDir) {
+  const handleOpenInEditor = useCallback(
+    async (filePath: string) => {
+      if (!workingDir) {
+        return;
+      }
+      const root = workingDir.replace(/\/$/, '');
+      try {
+        await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
+      } catch {
+        // swallow, error surfaced via console
+      }
+    },
+    [workingDir, editorBinary],
+  );
+
+  const handleAddComment = async (filePath: string, anchor: DiffCommentAnchor, body: string) => {
+    if (!sessionId) {
       return;
     }
-    const root = workingDir.replace(/\/$/, '');
-    const absPath = `${root}/${selected.path}`;
-    try {
-      await openFileInWorkspace(root, absPath, editorBinary);
-    } catch {
-      // swallow, error surfaced via console
-    }
+    await addDiffComment(sessionId, filePath, body, anchor);
   };
 
-  const handleAddComment = async (anchor: DiffCommentAnchor, body: string) => {
-    if (!selected || !sessionId) {
+  const handleAddFileLevelComment = async (filePath: string, body: string) => {
+    if (!sessionId) {
       return;
     }
-    await addDiffComment(sessionId, selected.path, body, anchor);
-    setActiveAnchor(null);
+    await addDiffComment(sessionId, filePath, body);
   };
 
-  const handleAddFileLevelComment = async (body: string) => {
-    if (!selected || !sessionId) {
-      return;
-    }
-    await addDiffComment(sessionId, selected.path, body);
-    setFileLevelComposerOpen(false);
-  };
-
-  const handleSelectFile = (idx: number) => {
-    setSelectedIdx(idx);
-    setFileLevelComposerOpen(false);
-    setActiveAnchor(null);
-  };
-
-  const handleRailFileComment = (idx: number) => {
-    setSelectedIdx(idx);
-    setActiveAnchor(null);
-    setFileLevelComposerOpen(true);
-  };
+  const registerFileRef = useCallback(
+    (path: string) => (el: HTMLElement | null) => {
+      if (el) {
+        fileRefs.current.set(path, el);
+      } else {
+        fileRefs.current.delete(path);
+      }
+    },
+    [],
+  );
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      size="xl"
-      fixedHeightClass="h-[92vh] max-w-[1400px]"
-      className="w-[92vw] max-w-[1400px]"
-      showClose={false}
-      bodyClassName=""
-    >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- dialog handles keyboard nav */}
-      <div className="flex h-full min-h-0 flex-col" onKeyDown={handleKeyDown}>
-        {isGitAware ? (
-          <GitStatusHeader
-            status={status}
-            onRefresh={() => setRefreshTick((t) => t + 1)}
-            refreshing={loading}
-          />
-        ) : null}
-        <Toolbar
-          title={title}
-          prNumber={prNumber}
-          selected={selected}
-          filesCount={files.length}
-          openCommentsCount={comments.filter((c) => c.status === 'open').length}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={toggleSidebar}
-          canOpenEditor={Boolean(selected && workingDir)}
-          onOpenInEditor={() => void handleOpenInEditor()}
-          onPrev={() => setSelectedIdx((i) => Math.max(i - 1, 0))}
-          onNext={() => setSelectedIdx((i) => Math.min(i + 1, files.length - 1))}
-          onClose={onClose}
-          viewSelector={
-            isGitAware ? (
-              <DiffViewSelector
-                view={view}
-                onChange={setView}
-                commits={commits}
-                status={status}
-                filesCount={loading ? null : files.length}
-                loading={loading}
-              />
-            ) : null
-          }
-        />
+    /* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- container handles keyboard nav */
+    <div className="flex h-full min-h-0 w-full flex-col" onKeyDown={handleKeyDown}>
+      <DiffToolbar
+        title={title}
+        prNumber={prNumber}
+        openCommentsCount={comments.filter((c) => c.status === 'open').length}
+        reviewedCount={files.length > 0 ? reviewedCount : null}
+        filesCount={files.length}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={toggleSidebar}
+        status={isGitAware ? status : null}
+        onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+        refreshing={loading}
+        showClose={showToolbarClose}
+        onClose={onClose}
+        viewSelector={
+          isGitAware ? (
+            <DiffViewSelector
+              view={view}
+              onChange={setView}
+              commits={commits}
+              status={status}
+              filesCount={loading ? null : files.length}
+              loading={loading}
+            />
+          ) : null
+        }
+      />
 
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          {loading ? (
-            <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Loader2 size={14} className="animate-spin" aria-hidden />
-              loading diff…
-            </div>
-          ) : error ? (
-            <div className="flex flex-1 items-center justify-center text-xs text-danger">
-              {error}
-            </div>
-          ) : files.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-              <span
-                aria-hidden
-                className="flex size-14 items-center justify-center rounded-full bg-success/10 ring-1 ring-success/20"
-              >
-                <CheckCircle2 size={26} className="text-success" />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Loader2 size={14} className="animate-spin" aria-hidden />
+            loading diff…
+          </div>
+        ) : error ? (
+          <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
+        ) : files.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+            <span
+              aria-hidden
+              className="flex size-12 items-center justify-center rounded-full bg-muted/50"
+            >
+              <CheckCircle2 size={22} className="text-success" />
+            </span>
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-sm font-medium text-foreground">
+                {emptyStateLabel(view, isGitAware)}
               </span>
-              <div className="flex flex-col items-center gap-1.5">
-                <span className="text-sm font-medium text-foreground">
-                  {emptyStateLabel(view, isGitAware)}
+              {emptyStateBlurb(view, isGitAware) ? (
+                <span className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                  {emptyStateBlurb(view, isGitAware)}
                 </span>
-                {emptyStateBlurb(view, isGitAware) ? (
-                  <span className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                    {emptyStateBlurb(view, isGitAware)}
-                  </span>
-                ) : null}
-                {isGitAware ? (
-                  <span className="mt-1.5 text-[11px] text-muted-foreground/60">
-                    Pick another view from the selector above.
-                  </span>
-                ) : null}
-              </div>
+              ) : null}
+              {isGitAware ? (
+                <span className="mt-1.5 text-[11px] text-muted-foreground/60">
+                  Pick another view from the selector above.
+                </span>
+              ) : null}
             </div>
-          ) : (
-            <>
-              {!sidebarCollapsed && (
-                <FileRail
-                  files={files}
-                  selectedIdx={selectedIdx}
-                  onSelect={handleSelectFile}
-                  onStartFileComment={sessionId ? handleRailFileComment : undefined}
-                  commentCounts={openCommentsByFile}
+          </div>
+        ) : (
+          <>
+            {!sidebarCollapsed && (
+              <FileRail
+                files={files}
+                activePath={activePath}
+                onSelect={scrollToFile}
+                reviewStateByPath={reviewStateByPath}
+                commentCounts={openCommentsByFile}
+              />
+            )}
+            <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+              {files.map((file) => (
+                <FileDiffCard
+                  key={file.path}
+                  file={file}
+                  registerRef={registerFileRef(file.path)}
+                  reviewState={reviewStateByPath.get(file.path) ?? 'none'}
+                  onToggleReviewed={(next) => toggleReviewed(file, next)}
+                  canOpenEditor={Boolean(workingDir)}
+                  onOpenInEditor={() => void handleOpenInEditor(file.path)}
+                  comments={commentsByFile.get(file.path) ?? []}
+                  canComment={Boolean(sessionId)}
+                  onAddComment={(anchor, body) => void handleAddComment(file.path, anchor, body)}
+                  onAddFileLevelComment={(body) => void handleAddFileLevelComment(file.path, body)}
+                  onResolve={(id) => sessionId && void resolveDiffComment(sessionId, id)}
+                  onReopen={(id) => sessionId && void reopenDiffComment(sessionId, id)}
+                  onDelete={(id) => sessionId && void deleteDiffComment(sessionId, id)}
+                  onViewAgent={(id) => void handleViewAgent(id)}
+                  getAgentName={(id) => agentNameById.get(id)}
                 />
-              )}
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                {selected ? (
-                  <FileDiffPane
-                    key={selected.path}
-                    file={selected}
-                    comments={selectedComments}
-                    fileLevelComments={fileLevelComments}
-                    activeAnchor={activeAnchor}
-                    fileLevelComposerOpen={fileLevelComposerOpen}
-                    canComment={Boolean(sessionId)}
-                    onStartComment={(anchor) => setActiveAnchor(anchor)}
-                    onCancelComment={() => setActiveAnchor(null)}
-                    onSubmitComment={(anchor, body) => void handleAddComment(anchor, body)}
-                    onStartFileLevelComment={() => setFileLevelComposerOpen(true)}
-                    onCancelFileLevelComment={() => setFileLevelComposerOpen(false)}
-                    onSubmitFileLevelComment={(body) => void handleAddFileLevelComment(body)}
-                    onResolve={(id) => sessionId && void resolveDiffComment(sessionId, id)}
-                    onReopen={(id) => sessionId && void reopenDiffComment(sessionId, id)}
-                    onDelete={(id) => sessionId && void deleteDiffComment(sessionId, id)}
-                    onViewAgent={(id) => void handleViewAgent(id)}
-                    getAgentName={(id) => agentNameById.get(id)}
-                  />
-                ) : null}
-              </div>
-            </>
-          )}
-        </div>
-
-        {sessionId && openComments.length > 0 ? (
-          <NotesFooter
-            openCount={openComments.length}
-            spawning={spawning}
-            onPropose={() => void handleProposeFixes()}
-          />
-        ) : null}
+              ))}
+            </div>
+          </>
+        )}
       </div>
-    </Dialog>
+
+      {sessionId && openComments.length > 0 ? (
+        <NotesFooter
+          openCount={openComments.length}
+          spawning={spawning}
+          onPropose={() => void handleProposeFixes()}
+        />
+      ) : null}
+    </div>
   );
 };
 
-type GitStatusHeaderProps = {
+export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
+  <Dialog
+    open={open}
+    onClose={rest.onClose}
+    size="xl"
+    fixedHeightClass="h-[92vh] max-w-[1400px]"
+    className="w-[92vw] max-w-[1400px]"
+    showClose={false}
+    bodyClassName=""
+  >
+    {open ? <DiffViewerContent {...rest} /> : null}
+  </Dialog>
+);
+
+export const DiffViewerPane = ({ workspaceName, onClose, ...rest }: DiffViewerPaneProps) => (
+  <StudioShell
+    icon={FileEdit}
+    title="Files touched"
+    workspaceName={workspaceName}
+    closeLabel="close files touched"
+    onClose={onClose}
+    variant="slot"
+  >
+    {(requestClose) => (
+      <DiffViewerContent {...rest} onClose={requestClose} showToolbarClose={false} />
+    )}
+  </StudioShell>
+);
+
+type DiffToolbarProps = {
+  title?: string;
+  prNumber?: number;
+  openCommentsCount: number;
+  reviewedCount: number | null;
+  filesCount: number;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
   status: WorktreeStatus | null;
-  onRefresh: () => void;
+  onRefresh?: () => void;
   refreshing: boolean;
+  showClose: boolean;
+  onClose: () => void;
+  viewSelector?: React.ReactNode;
 };
 
-function GitStatusHeader({ status, onRefresh, refreshing }: GitStatusHeaderProps) {
-  const headLabel = status?.head ? status.head.slice(0, 7) : null;
-  const subject = status?.headSubject ?? null;
-  const counts: string[] = [];
-  if (status) {
-    if (status.unstaged > 0) {
-      counts.push(`${status.unstaged} unstaged`);
-    }
-    if (status.staged > 0) {
-      counts.push(`${status.staged} staged`);
-    }
-    if (status.untracked > 0) {
-      counts.push(`${status.untracked} untracked`);
-    }
-    if (status.hasUpstream) {
-      counts.push(`ahead ${status.ahead} / behind ${status.behind}`);
-    } else if (status.branch) {
-      counts.push('no upstream');
-    }
-  }
+function DiffToolbar({
+  title,
+  prNumber,
+  openCommentsCount,
+  reviewedCount,
+  filesCount,
+  sidebarCollapsed,
+  onToggleSidebar,
+  status,
+  onRefresh,
+  refreshing,
+  showClose,
+  onClose,
+  viewSelector,
+}: DiffToolbarProps) {
+  const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
+  const aheadBehind =
+    status?.hasUpstream && (status.ahead > 0 || status.behind > 0)
+      ? `↑${status.ahead} ↓${status.behind}`
+      : null;
   return (
-    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-subtle/30 px-4 py-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex min-w-0 items-center gap-1.5 text-xs">
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            HEAD
-          </span>
-          {headLabel ? (
-            <span className="shrink-0 font-mono text-foreground">{headLabel}</span>
-          ) : (
-            <span className="shrink-0 italic text-muted-foreground/60">no commit</span>
-          )}
-          {subject ? (
-            <span className="min-w-0 truncate text-muted-foreground" title={subject}>
-              {subject}
-            </span>
-          ) : null}
-        </div>
-        <div className="text-[11px] text-muted-foreground/70">
-          {status?.branch ? <span className="mr-2 font-mono">{status.branch}</span> : null}
-          {counts.length > 0 ? counts.join(' · ') : 'clean'}
-        </div>
-      </div>
+    <div className="flex shrink-0 items-center gap-2 border-b border-border-soft px-2.5 py-1.5">
       <button
         type="button"
-        onClick={onRefresh}
-        disabled={refreshing}
-        title="refresh git state"
-        aria-label="refresh git state"
-        className={cn(TOOLBAR_ICON_BTN, 'mt-0.5 disabled:opacity-50')}
+        onClick={onToggleSidebar}
+        className={TOOLBAR_ICON_BTN}
+        title={sidebarCollapsed ? 'show file list' : 'hide file list'}
+        aria-label={sidebarCollapsed ? 'show file list' : 'hide file list'}
       >
-        <RefreshCw size={12} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
+        {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
       </button>
+
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {viewSelector ?? (
+          <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
+            {titleText}
+          </span>
+        )}
+        {openCommentsCount > 0 ? (
+          <span
+            className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+            title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
+          >
+            {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
+          </span>
+        ) : null}
+        {reviewedCount !== null && filesCount > 0 ? (
+          <span
+            className={cn(
+              'shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+              reviewedCount === filesCount
+                ? 'bg-success/15 text-success'
+                : 'bg-muted text-muted-foreground',
+            )}
+            title={`${reviewedCount} of ${filesCount} files reviewed`}
+          >
+            <Check size={9} aria-hidden />
+            {reviewedCount}/{filesCount} reviewed
+          </span>
+        ) : null}
+      </div>
+
+      {status?.branch ? (
+        <span className="hidden min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground md:flex">
+          <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
+          <span className="truncate font-mono">{status.branch}</span>
+          {aheadBehind ? <span className="shrink-0 tabular-nums">{aheadBehind}</span> : null}
+        </span>
+      ) : null}
+
+      <div className="flex shrink-0 items-center gap-0.5">
+        {onRefresh ? (
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            title="refresh git state"
+            aria-label="refresh git state"
+            className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
+          >
+            <RefreshCw size={12} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
+          </button>
+        ) : null}
+        {showClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            title="close"
+            aria-label="close"
+            className={TOOLBAR_ICON_BTN}
+          >
+            <X size={13} />
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -816,7 +1007,7 @@ type NotesFooterProps = {
 
 function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-subtle/30 px-4 py-2.5">
+    <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border-soft bg-muted/20 px-4 py-2.5">
       <span className="text-xs text-muted-foreground">
         {openCount} open {openCount === 1 ? 'note' : 'notes'} · spawn a reviewer to propose fixes
       </span>
@@ -824,7 +1015,7 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
         type="button"
         onClick={onPropose}
         disabled={spawning}
-        className="inline-flex items-center gap-1.5 rounded-sm border border-info/30 bg-info/5 px-2.5 py-1 text-xs font-medium text-info hover:bg-info/10 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
         title="spawn a reviewer agent that proposes fixes without touching code"
       >
         {spawning ? (
@@ -838,147 +1029,17 @@ function NotesFooter({ openCount, spawning, onPropose }: NotesFooterProps) {
   );
 }
 
-type ToolbarProps = {
-  title?: string;
-  prNumber?: number;
-  selected: FileDiff | undefined;
-  filesCount: number;
-  openCommentsCount: number;
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-  canOpenEditor: boolean;
-  onOpenInEditor: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  onClose: () => void;
-  viewSelector?: React.ReactNode;
-};
-
-function Toolbar({
-  title,
-  prNumber,
-  selected,
-  filesCount,
-  openCommentsCount,
-  sidebarCollapsed,
-  onToggleSidebar,
-  canOpenEditor,
-  onOpenInEditor,
-  onPrev,
-  onNext,
-  onClose,
-  viewSelector,
-}: ToolbarProps) {
-  const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
-  return (
-    <div className="flex shrink-0 items-center gap-2 px-3 py-2">
-      <button
-        type="button"
-        onClick={onToggleSidebar}
-        className={TOOLBAR_ICON_BTN}
-        title={sidebarCollapsed ? 'show file list' : 'hide file list'}
-        aria-label={sidebarCollapsed ? 'show file list' : 'hide file list'}
-      >
-        {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
-      </button>
-
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        {viewSelector ? (
-          viewSelector
-        ) : (
-          <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
-            {titleText}
-          </span>
-        )}
-        {selected ? (
-          <>
-            <ChevronsRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
-            <span
-              className={cn(
-                'shrink-0 w-3 text-center font-mono font-bold text-[11px]',
-                STATUS_COLOR[selected.status],
-              )}
-              title={selected.status}
-            >
-              {STATUS_GLYPH[selected.status]}
-            </span>
-            <span
-              className="min-w-0 truncate font-mono text-xs text-muted-foreground"
-              title={selected.path}
-            >
-              {selected.path}
-            </span>
-          </>
-        ) : viewSelector ? null : (
-          <span className="text-xs text-muted-foreground">
-            {filesCount} {filesCount === 1 ? 'file' : 'files'}
-          </span>
-        )}
-        {openCommentsCount > 0 && (
-          <span
-            className="ml-1 shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
-            title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
-          >
-            {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
-          </span>
-        )}
-      </div>
-
-      <div className="flex shrink-0 items-center gap-0.5">
-        {canOpenEditor ? (
-          <button
-            type="button"
-            onClick={onOpenInEditor}
-            title="open file in editor"
-            aria-label="open file in editor"
-            className={TOOLBAR_ICON_BTN}
-          >
-            <ExternalLink size={12} />
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={onPrev}
-          title="previous file (k)"
-          aria-label="previous file"
-          className={TOOLBAR_ICON_BTN}
-        >
-          <ChevronLeft size={13} />
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          title="next file (j)"
-          aria-label="next file"
-          className={TOOLBAR_ICON_BTN}
-        >
-          <ChevronRight size={13} />
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          title="close"
-          aria-label="close"
-          className={cn('ml-1', TOOLBAR_ICON_BTN)}
-        >
-          <X size={13} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function FileRail({
   files,
-  selectedIdx,
+  activePath,
   onSelect,
-  onStartFileComment,
+  reviewStateByPath,
   commentCounts,
 }: {
   files: ReadonlyArray<FileDiff>;
-  selectedIdx: number;
-  onSelect: (i: number) => void;
-  onStartFileComment?: (i: number) => void;
+  activePath: string | null;
+  onSelect: (path: string) => void;
+  reviewStateByPath: Map<string, ReviewState>;
   commentCounts: Map<string, number>;
 }) {
   const selectedRef = useRef<HTMLButtonElement>(null);
@@ -986,10 +1047,10 @@ function FileRail({
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIdx]);
+  }, [activePath]);
 
   return (
-    <ScrollArea className="w-[26%] shrink-0 overflow-y-auto border-r border-border-soft bg-subtle/20">
+    <ScrollArea className="w-[26%] shrink-0 overflow-y-auto border-r border-border-soft bg-muted/10">
       <div className="py-1">
         {tree.kind === 'dir' &&
           tree.children.map((child, i) => (
@@ -997,10 +1058,10 @@ function FileRail({
               key={`${child.kind}-${child.name}-${i}`}
               node={child}
               depth={0}
-              selectedIdx={selectedIdx}
+              activePath={activePath}
               onSelect={onSelect}
-              onStartFileComment={onStartFileComment}
               selectedRef={selectedRef}
+              reviewStateByPath={reviewStateByPath}
               commentCounts={commentCounts}
             />
           ))}
@@ -1012,18 +1073,18 @@ function FileRail({
 function TreeNodeView({
   node,
   depth,
-  selectedIdx,
+  activePath,
   onSelect,
-  onStartFileComment,
   selectedRef,
+  reviewStateByPath,
   commentCounts,
 }: {
   node: TreeNode;
   depth: number;
-  selectedIdx: number;
-  onSelect: (i: number) => void;
-  onStartFileComment?: (i: number) => void;
+  activePath: string | null;
+  onSelect: (path: string) => void;
   selectedRef: React.RefObject<HTMLButtonElement | null>;
+  reviewStateByPath: Map<string, ReviewState>;
   commentCounts: Map<string, number>;
 }) {
   const [expanded, setExpanded] = useState(true);
@@ -1046,35 +1107,49 @@ function TreeNodeView({
   };
 
   if (node.kind === 'file') {
-    const { file, index } = node;
-    const isSelected = index === selectedIdx;
+    const { file } = node;
+    const isSelected = file.path === activePath;
     const noteCount = commentCounts.get(file.path) ?? 0;
+    const reviewState = reviewStateByPath.get(file.path) ?? 'none';
     return (
       <div
         className={cn(
           'group relative flex w-full items-center gap-2 py-1 pr-1 font-mono text-xs transition-colors',
           isSelected
-            ? 'border-l-2 border-primary bg-subtle text-foreground'
+            ? 'border-l-2 border-primary bg-muted/60 text-foreground'
             : 'border-l-2 border-transparent text-muted-foreground/80 hover:bg-muted/30 hover:text-foreground',
+          reviewState === 'reviewed' && !isSelected && 'opacity-50',
         )}
         style={{ paddingLeft: 10 + indent }}
       >
         <button
           ref={isSelected ? selectedRef : null}
           type="button"
-          onClick={() => onSelect(index)}
+          onClick={() => onSelect(file.path)}
           title={file.path}
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
-          <span
-            className={cn(
-              'w-3 shrink-0 text-center text-[10px] font-bold',
-              STATUS_COLOR[file.status],
-            )}
-          >
-            {STATUS_GLYPH[file.status]}
-          </span>
+          {reviewState === 'reviewed' ? (
+            <Check size={11} aria-hidden className="w-3 shrink-0 text-success" />
+          ) : (
+            <span
+              className={cn(
+                'w-3 shrink-0 text-center text-[10px] font-bold',
+                STATUS_COLOR[file.status],
+              )}
+            >
+              {STATUS_GLYPH[file.status]}
+            </span>
+          )}
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
+          {reviewState === 'stale' ? (
+            <span
+              className="shrink-0 rounded-full bg-muted px-1 text-[9px] font-medium text-muted-foreground"
+              title="previously reviewed, changed since"
+            >
+              ↻
+            </span>
+          ) : null}
           {noteCount > 0 && (
             <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
               {noteCount}
@@ -1095,20 +1170,6 @@ function TreeNodeView({
         >
           {pathCopied ? <Check size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
         </button>
-        {onStartFileComment ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStartFileComment(index);
-            }}
-            title="add file-level note"
-            aria-label="add file-level note"
-            className="shrink-0 rounded-sm p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-          >
-            <MessageSquarePlus size={10} aria-hidden />
-          </button>
-        ) : null}
       </div>
     );
   }
@@ -1128,6 +1189,13 @@ function TreeNodeView({
           className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')}
         />
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
+        {!expanded && (node.additions > 0 || node.deletions > 0) ? (
+          <span className="shrink-0 text-[10px] tabular-nums">
+            {node.additions > 0 && <span className="text-success/70">+{node.additions}</span>}
+            {node.additions > 0 && node.deletions > 0 && <span className="opacity-40"> </span>}
+            {node.deletions > 0 && <span className="text-danger/70">−{node.deletions}</span>}
+          </span>
+        ) : null}
       </button>
       {expanded
         ? node.children.map((child, i) => (
@@ -1135,10 +1203,10 @@ function TreeNodeView({
               key={`${child.kind}-${child.name}-${i}`}
               node={child}
               depth={depth + 1}
-              selectedIdx={selectedIdx}
+              activePath={activePath}
               onSelect={onSelect}
-              onStartFileComment={onStartFileComment}
               selectedRef={selectedRef}
+              reviewStateByPath={reviewStateByPath}
               commentCounts={commentCounts}
             />
           ))
@@ -1169,19 +1237,33 @@ function CommentItem({
       : comment.status === 'consumed'
         ? 'border-info/40 bg-info/5'
         : 'border-warning bg-warning/5';
+  const statusPill =
+    comment.status === 'resolved'
+      ? { label: 'resolved', cls: 'bg-success/15 text-success' }
+      : comment.status === 'consumed'
+        ? { label: 'in progress', cls: 'bg-info/15 text-info' }
+        : null;
   return (
     <div
-      className={cn('group flex flex-col gap-1 rounded-md border-l-2 px-3 py-1.5', containerClass)}
+      className={cn('group flex flex-col gap-1.5 rounded-md border-l-2 px-3 py-2', containerClass)}
     >
-      <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">
-          {comment.status === 'resolved' ? (
-            <span className="line-through">{comment.body}</span>
-          ) : (
-            comment.body
-          )}
-        </p>
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-[9px] font-semibold uppercase text-muted-foreground"
+        >
+          ME
+        </span>
+        <span className="text-[11px] font-medium text-foreground">you</span>
+        <span className="text-[10px] text-muted-foreground/70">
+          {relativeTime(comment.createdAt)}
+        </span>
+        {statusPill ? (
+          <span className={cn('rounded-full px-1.5 py-0.5 text-[9px] font-medium', statusPill.cls)}>
+            {statusPill.label}
+          </span>
+        ) : null}
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           {comment.status === 'open' && (
             <button
               type="button"
@@ -1215,6 +1297,13 @@ function CommentItem({
           </button>
         </div>
       </div>
+      <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground">
+        {comment.status === 'resolved' ? (
+          <span className="line-through">{comment.body}</span>
+        ) : (
+          comment.body
+        )}
+      </p>
       {comment.status === 'consumed' && (
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {agentName && comment.consumedByAgentId ? (
@@ -1238,6 +1327,26 @@ function CommentItem({
   );
 }
 
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) {
+    return '';
+  }
+  const diff = Date.now() - then;
+  const min = Math.round(diff / 60000);
+  if (min < 1) {
+    return 'just now';
+  }
+  if (min < 60) {
+    return `${min}m ago`;
+  }
+  const hr = Math.round(min / 60);
+  if (hr < 24) {
+    return `${hr}h ago`;
+  }
+  return `${Math.round(hr / 24)}d ago`;
+}
+
 function lineAnchor(line: DiffHunkLine): DiffCommentAnchor | null {
   if (line.kind === 'del') {
     return line.oldLine !== null ? { side: 'old', lineNumber: line.oldLine } : null;
@@ -1249,19 +1358,17 @@ function anchorKey(a: DiffCommentAnchor): string {
   return `${a.side}:${a.lineNumber}`;
 }
 
-type FileDiffPaneProps = {
+type FileDiffCardProps = {
   file: FileDiff;
+  registerRef: (el: HTMLElement | null) => void;
+  reviewState: ReviewState;
+  onToggleReviewed: (next: boolean) => void;
+  canOpenEditor: boolean;
+  onOpenInEditor: () => void;
   comments: ReadonlyArray<DiffComment>;
-  fileLevelComments: ReadonlyArray<DiffComment>;
-  activeAnchor: DiffCommentAnchor | null;
-  fileLevelComposerOpen: boolean;
   canComment: boolean;
-  onStartComment: (anchor: DiffCommentAnchor) => void;
-  onCancelComment: () => void;
-  onSubmitComment: (anchor: DiffCommentAnchor, body: string) => void;
-  onStartFileLevelComment: () => void;
-  onCancelFileLevelComment: () => void;
-  onSubmitFileLevelComment: (body: string) => void;
+  onAddComment: (anchor: DiffCommentAnchor, body: string) => void;
+  onAddFileLevelComment: (body: string) => void;
   onResolve: (id: string) => void;
   onReopen: (id: string) => void;
   onDelete: (id: string) => void;
@@ -1269,28 +1376,64 @@ type FileDiffPaneProps = {
   getAgentName: (agentId: AgentId) => string | undefined;
 };
 
-function FileDiffPane({
+function FileDiffCard({
   file,
+  registerRef,
+  reviewState,
+  onToggleReviewed,
+  canOpenEditor,
+  onOpenInEditor,
   comments,
-  fileLevelComments,
-  activeAnchor,
-  fileLevelComposerOpen,
   canComment,
-  onStartComment,
-  onCancelComment,
-  onSubmitComment,
-  onStartFileLevelComment,
-  onCancelFileLevelComment,
-  onSubmitFileLevelComment,
+  onAddComment,
+  onAddFileLevelComment,
   onResolve,
   onReopen,
   onDelete,
   onViewAgent,
   getAgentName,
-}: FileDiffPaneProps) {
+}: FileDiffCardProps) {
+  const { showToast } = useToast();
+  const [collapsed, setCollapsed] = useState(reviewState === 'reviewed');
+  const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
+  const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
+  const [showResolved, setShowResolved] = useState(false);
+  const [pathCopied, setPathCopied] = useState(false);
+
+  const isReviewed = reviewState === 'reviewed';
+  const handleToggleReviewed = () => {
+    const next = !isReviewed;
+    onToggleReviewed(next);
+    setCollapsed(next);
+  };
+
+  const copyPath = () => {
+    navigator.clipboard.writeText(file.path).then(
+      () => {
+        setPathCopied(true);
+        showToast('success', 'path copied');
+        window.setTimeout(() => setPathCopied(false), 1500);
+      },
+      () => showToast('error', 'failed to copy path'),
+    );
+  };
+
+  const resolvedCount = useMemo(
+    () => comments.filter((c) => c.status === 'resolved').length,
+    [comments],
+  );
+  const visibleComments = useMemo(
+    () => (showResolved ? comments : comments.filter((c) => c.status !== 'resolved')),
+    [comments, showResolved],
+  );
+  const fileLevelComments = useMemo(
+    () => visibleComments.filter((c) => !c.anchor),
+    [visibleComments],
+  );
+
   const commentsByAnchor = useMemo(() => {
     const m = new Map<string, DiffComment[]>();
-    for (const c of comments) {
+    for (const c of visibleComments) {
       if (!c.anchor) {
         continue;
       }
@@ -1303,7 +1446,59 @@ function FileDiffPane({
       }
     }
     return m;
+  }, [visibleComments]);
+
+  const commentedRange = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of comments) {
+      if (!c.anchor?.endLineNumber || c.status === 'resolved') {
+        continue;
+      }
+      for (let n = c.anchor.lineNumber; n <= c.anchor.endLineNumber; n++) {
+        set.add(`${c.anchor.side}:${n}`);
+      }
+    }
+    return set;
   }, [comments]);
+
+  const [drag, setDrag] = useState<{ side: DiffCommentSide; start: number; end: number } | null>(
+    null,
+  );
+  const dragLo = drag ? Math.min(drag.start, drag.end) : 0;
+  const dragHi = drag ? Math.max(drag.start, drag.end) : 0;
+  const inDrag = (a: DiffCommentAnchor | null): boolean =>
+    drag !== null &&
+    a !== null &&
+    a.side === drag.side &&
+    a.lineNumber >= dragLo &&
+    a.lineNumber <= dragHi;
+
+  useEffect(() => {
+    if (!drag) {
+      return;
+    }
+    const onUp = () => {
+      const lo = Math.min(drag.start, drag.end);
+      const hi = Math.max(drag.start, drag.end);
+      setActiveAnchor({
+        side: drag.side,
+        lineNumber: lo,
+        ...(hi > lo ? { endLineNumber: hi } : {}),
+      });
+      setDrag(null);
+    };
+    window.addEventListener('pointerup', onUp);
+    return () => window.removeEventListener('pointerup', onUp);
+  }, [drag]);
+
+  const handleSubmitComment = (anchor: DiffCommentAnchor, body: string) => {
+    onAddComment(anchor, body);
+    setActiveAnchor(null);
+  };
+  const handleSubmitFileLevel = (body: string) => {
+    onAddFileLevelComment(body);
+    setFileLevelComposerOpen(false);
+  };
 
   const rows = useMemo(() => {
     const out: Array<
@@ -1338,179 +1533,334 @@ function FileDiffPane({
   }, [rows, visibleLines, totalLines]);
 
   const remaining = Math.max(0, totalLines - visibleLines);
+  const noteCount = comments.filter((c) => c.status === 'open').length;
 
   return (
-    <ScrollArea className="flex-1 overflow-auto">
-      <div className="p-3">
-        {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
-          <div className="mb-3 flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                file notes
-              </span>
-              {canComment && !fileLevelComposerOpen ? (
-                <button
-                  type="button"
-                  onClick={onStartFileLevelComment}
-                  title="add file-level note"
-                  aria-label="add file-level note"
-                  className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <MessageSquarePlus size={11} aria-hidden />
-                </button>
-              ) : null}
-            </div>
-            {fileLevelComments.map((c) => (
-              <CommentItem
-                key={c.id}
-                comment={c}
-                onResolve={onResolve}
-                onReopen={onReopen}
-                onDelete={onDelete}
-                onViewAgent={onViewAgent}
-                getAgentName={getAgentName}
-              />
-            ))}
-            {fileLevelComposerOpen ? (
-              <InlineComposer
-                onSubmit={onSubmitFileLevelComment}
-                onCancel={onCancelFileLevelComment}
-              />
-            ) : null}
-          </div>
-        ) : canComment ? (
-          <div className="mb-3">
+    <section ref={registerRef} data-file-path={file.path} className="border-b border-border-soft">
+      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border-soft bg-background px-3 py-1.5">
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? 'expand file' : 'collapse file'}
+          aria-label={collapsed ? 'expand file' : 'collapse file'}
+          className={TOOLBAR_ICON_BTN}
+        >
+          <ChevronRight
+            size={13}
+            aria-hidden
+            className={cn('transition-transform duration-150', !collapsed && 'rotate-90')}
+          />
+        </button>
+        <span
+          className={cn(
+            'w-3 shrink-0 text-center font-mono text-[11px] font-bold',
+            STATUS_COLOR[file.status],
+          )}
+          title={file.status}
+        >
+          {STATUS_GLYPH[file.status]}
+        </span>
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="min-w-0 flex-1 truncate text-left font-mono text-xs text-foreground"
+          title={file.path}
+        >
+          {file.path}
+        </button>
+        {reviewState === 'stale' ? (
+          <span
+            className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+            title="this file changed since you last reviewed it"
+          >
+            previously reviewed
+          </span>
+        ) : null}
+        {noteCount > 0 ? (
+          <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+            {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+          </span>
+        ) : null}
+        <span className="shrink-0 text-[10px] tabular-nums">
+          {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
+          {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
+          {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
+        </span>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={copyPath}
+            title="copy path"
+            aria-label="copy file path"
+            className={TOOLBAR_ICON_BTN}
+          >
+            {pathCopied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
+          </button>
+          {canOpenEditor ? (
             <button
               type="button"
-              onClick={onStartFileLevelComment}
-              title="add file-level note"
-              className="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={onOpenInEditor}
+              title="open file in editor"
+              aria-label="open file in editor"
+              className={TOOLBAR_ICON_BTN}
             >
-              <MessageSquarePlus size={10} aria-hidden />
-              Add file note
+              <ExternalLink size={12} />
             </button>
-          </div>
-        ) : null}
-        {file.binary ? (
-          <p className="py-4 text-center text-xs text-muted-foreground">binary file, no diff</p>
-        ) : file.hunks.length === 0 ? (
-          <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
-        ) : (
-          <>
-            <table className="w-full border-collapse font-mono text-xs leading-5">
-              <tbody>
-                {visibleRows.map((row) => {
-                  if (row.type === 'header') {
+          ) : null}
+          <button
+            type="button"
+            onClick={handleToggleReviewed}
+            title={isReviewed ? 'mark as not reviewed' : 'mark as reviewed'}
+            className={cn(
+              'ml-1 inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+              isReviewed
+                ? 'border-success/40 bg-success/10 text-success'
+                : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            <span
+              className={cn(
+                'flex size-3 items-center justify-center rounded-[3px] border',
+                isReviewed
+                  ? 'border-success bg-success text-background'
+                  : 'border-muted-foreground/50',
+              )}
+            >
+              {isReviewed ? <Check size={8} aria-hidden /> : null}
+            </span>
+            Viewed
+          </button>
+        </div>
+      </div>
+      {collapsed ? null : (
+        <div className="p-3">
+          {resolvedCount > 0 ? (
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setShowResolved((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRight
+                  size={10}
+                  aria-hidden
+                  className={cn('transition-transform duration-150', showResolved && 'rotate-90')}
+                />
+                {showResolved ? 'hide' : 'show'} {resolvedCount} resolved{' '}
+                {resolvedCount === 1 ? 'comment' : 'comments'}
+              </button>
+            </div>
+          ) : null}
+          {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
+            <div className="mb-3 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  file notes
+                </span>
+                {canComment && !fileLevelComposerOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setFileLevelComposerOpen(true)}
+                    title="add file-level note"
+                    aria-label="add file-level note"
+                    className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <MessageSquarePlus size={11} aria-hidden />
+                  </button>
+                ) : null}
+              </div>
+              {fileLevelComments.map((c) => (
+                <CommentItem
+                  key={c.id}
+                  comment={c}
+                  onResolve={onResolve}
+                  onReopen={onReopen}
+                  onDelete={onDelete}
+                  onViewAgent={onViewAgent}
+                  getAgentName={getAgentName}
+                />
+              ))}
+              {fileLevelComposerOpen ? (
+                <InlineComposer
+                  onSubmit={handleSubmitFileLevel}
+                  onCancel={() => setFileLevelComposerOpen(false)}
+                />
+              ) : null}
+            </div>
+          ) : canComment ? (
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setFileLevelComposerOpen(true)}
+                title="add file-level note"
+                className="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <MessageSquarePlus size={10} aria-hidden />
+                Add file note
+              </button>
+            </div>
+          ) : null}
+          {file.binary ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">binary file, no diff</p>
+          ) : file.hunks.length === 0 ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
+          ) : (
+            <>
+              <table
+                className={cn(
+                  'w-full border-collapse font-mono text-xs leading-5',
+                  drag && 'select-none',
+                )}
+              >
+                <tbody>
+                  {visibleRows.map((row) => {
+                    if (row.type === 'header') {
+                      return (
+                        <tr key={`hunk-${row.hi}`}>
+                          <td
+                            colSpan={4}
+                            className="bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            {row.header}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const { line, hi, li } = row;
+                    const anchor = lineAnchor(line);
+                    const lineComments = anchor
+                      ? (commentsByAnchor.get(anchorKey(anchor)) ?? [])
+                      : [];
+                    const isActive =
+                      anchor !== null &&
+                      activeAnchor !== null &&
+                      activeAnchor.side === anchor.side &&
+                      activeAnchor.lineNumber === anchor.lineNumber;
+                    const linePrefix = LINE_PREFIX[line.kind];
+                    const rangeCommented = anchor !== null && commentedRange.has(anchorKey(anchor));
+                    const selecting = inDrag(anchor);
                     return (
-                      <tr key={`hunk-${row.hi}`}>
-                        <td
-                          colSpan={4}
-                          className="bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
-                        >
-                          {row.header}
-                        </td>
-                      </tr>
-                    );
-                  }
-                  const { line, hi, li } = row;
-                  const anchor = lineAnchor(line);
-                  const lineComments = anchor
-                    ? (commentsByAnchor.get(anchorKey(anchor)) ?? [])
-                    : [];
-                  const isActive =
-                    anchor !== null &&
-                    activeAnchor !== null &&
-                    activeAnchor.side === anchor.side &&
-                    activeAnchor.lineNumber === anchor.lineNumber;
-                  const linePrefix = LINE_PREFIX[line.kind];
-                  return (
-                    <Fragment key={`hunk-${hi}-line-${li}`}>
-                      <tr
-                        className={cn(
-                          'group',
-                          line.kind === 'add' && 'bg-success/10',
-                          line.kind === 'del' && 'bg-danger/10',
-                        )}
-                      >
-                        <td className="w-6 select-none px-0.5 align-top">
-                          {canComment && anchor ? (
-                            <button
-                              type="button"
-                              onClick={() => onStartComment(anchor)}
-                              title="add comment on this line"
-                              aria-label="add comment on this line"
-                              className={cn(
-                                'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
-                                isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-                              )}
-                            >
-                              <MessageSquarePlus size={9} aria-hidden />
-                            </button>
-                          ) : null}
-                        </td>
-                        <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
-                          {line.oldLine ?? ''}
-                        </td>
-                        <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
-                          {line.newLine ?? ''}
-                        </td>
-                        <td
+                      <Fragment key={`hunk-${hi}-line-${li}`}>
+                        <tr
+                          onMouseEnter={() => {
+                            if (drag && anchor && anchor.side === drag.side) {
+                              setDrag((d) => (d ? { ...d, end: anchor.lineNumber } : d));
+                            }
+                          }}
                           className={cn(
-                            'whitespace-pre px-2',
-                            line.kind === 'add' && 'text-success',
-                            line.kind === 'del' && 'text-danger',
+                            'group',
+                            line.kind === 'add' && 'bg-success/10',
+                            line.kind === 'del' && 'bg-danger/10',
+                            selecting && 'bg-primary/15',
                           )}
                         >
-                          {linePrefix}
-                          {line.text}
-                        </td>
-                      </tr>
-                      {lineComments.length > 0 && (
-                        <tr>
-                          <td colSpan={4} className="bg-background px-3 py-2">
-                            <div className="flex flex-col gap-1.5">
-                              {lineComments.map((c) => (
-                                <CommentItem
-                                  key={c.id}
-                                  comment={c}
-                                  onResolve={onResolve}
-                                  onReopen={onReopen}
-                                  onDelete={onDelete}
-                                  onViewAgent={onViewAgent}
-                                  getAgentName={getAgentName}
-                                />
-                              ))}
-                            </div>
+                          <td
+                            className={cn(
+                              'w-6 select-none px-0.5 align-top',
+                              rangeCommented && 'border-l-2 border-warning/60',
+                            )}
+                          >
+                            {canComment && anchor ? (
+                              <button
+                                type="button"
+                                onPointerDown={(e) => {
+                                  e.preventDefault();
+                                  setDrag({
+                                    side: anchor.side,
+                                    start: anchor.lineNumber,
+                                    end: anchor.lineNumber,
+                                  });
+                                }}
+                                title="comment on this line (drag to select a range)"
+                                aria-label="comment on this line"
+                                className={cn(
+                                  'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
+                                  isActive || selecting
+                                    ? 'opacity-100'
+                                    : 'opacity-0 group-hover:opacity-100',
+                                )}
+                              >
+                                <MessageSquarePlus size={9} aria-hidden />
+                              </button>
+                            ) : null}
+                          </td>
+                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                            {line.oldLine ?? ''}
+                          </td>
+                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                            {line.newLine ?? ''}
+                          </td>
+                          <td
+                            className={cn(
+                              'whitespace-pre px-2',
+                              line.kind === 'add' && 'text-success',
+                              line.kind === 'del' && 'text-danger',
+                            )}
+                          >
+                            {linePrefix}
+                            {line.text}
                           </td>
                         </tr>
-                      )}
-                      {isActive && anchor ? (
-                        <tr>
-                          <td colSpan={4} className="bg-background px-3 py-2">
-                            <InlineComposer
-                              onSubmit={(body) => onSubmitComment(anchor, body)}
-                              onCancel={onCancelComment}
-                            />
-                          </td>
-                        </tr>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-            {remaining > 0 && (
-              <ShowMoreBar
-                step={Math.min(VISIBLE_LINES_STEP, remaining)}
-                rendered={Math.min(visibleLines, totalLines)}
-                total={totalLines}
-                onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </ScrollArea>
+                        {lineComments.length > 0 && (
+                          <tr>
+                            <td colSpan={4} className="bg-background px-3 py-2">
+                              <div className="flex flex-col gap-1.5">
+                                {lineComments.map((c) => (
+                                  <div key={c.id} className="flex flex-col gap-0.5">
+                                    {c.anchor?.endLineNumber ? (
+                                      <span className="text-[10px] font-medium text-muted-foreground">
+                                        lines {c.anchor.lineNumber}–{c.anchor.endLineNumber}
+                                      </span>
+                                    ) : null}
+                                    <CommentItem
+                                      comment={c}
+                                      onResolve={onResolve}
+                                      onReopen={onReopen}
+                                      onDelete={onDelete}
+                                      onViewAgent={onViewAgent}
+                                      getAgentName={getAgentName}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        {isActive && anchor ? (
+                          <tr>
+                            <td colSpan={4} className="bg-background px-3 py-2">
+                              <InlineComposer
+                                label={
+                                  activeAnchor?.endLineNumber
+                                    ? `commenting on lines ${activeAnchor.lineNumber}–${activeAnchor.endLineNumber}`
+                                    : `commenting on line ${anchor.lineNumber}`
+                                }
+                                onSubmit={(body) =>
+                                  handleSubmitComment(activeAnchor ?? anchor, body)
+                                }
+                                onCancel={() => setActiveAnchor(null)}
+                              />
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {remaining > 0 && (
+                <ShowMoreBar
+                  step={Math.min(VISIBLE_LINES_STEP, remaining)}
+                  rendered={Math.min(visibleLines, totalLines)}
+                  total={totalLines}
+                  onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
+                />
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1526,7 +1876,7 @@ function ShowMoreBar({
   onShowMore: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 border-t border-border-soft bg-subtle/30 py-3">
+    <div className="flex flex-col items-center gap-1 border-t border-border-soft bg-muted/20 py-3">
       <button
         type="button"
         onClick={onShowMore}
@@ -1545,16 +1895,21 @@ function ShowMoreBar({
 function InlineComposer({
   onSubmit,
   onCancel,
+  label,
 }: {
   onSubmit: (body: string) => void;
   onCancel: () => void;
+  label?: string;
 }) {
   const [body, setBody] = useState('');
   const trimmed = body.trim();
   return (
-    <div className="flex gap-2 rounded-md border border-border-soft bg-background px-2 py-1.5 shadow-sm">
+    <div className="flex gap-2 rounded-md border border-border-soft bg-background px-2 py-1.5">
       <MessageSquarePlus size={13} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
+        {label ? (
+          <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
+        ) : null}
         <Textarea
           autoFocus
           value={body}

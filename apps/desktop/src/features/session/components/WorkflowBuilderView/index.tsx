@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import {
   AlertTriangle,
   Check,
+  ChevronDown,
   Hand,
   Layers,
   Link2,
@@ -14,7 +15,6 @@ import {
   Target,
   Undo2,
   Wand2,
-  X,
 } from 'lucide-react';
 import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
 import {
@@ -39,7 +39,7 @@ import type {
   WorkflowRunId,
   WorkflowTriggerMode,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import type {
   Mode,
   StepEdit,
@@ -64,6 +64,10 @@ import {
 import { formatError } from '../../../../shared/lib/errors';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { useToast } from '../../../../app/components/Toast';
+import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 
 type Props = {
   readonly session: Session;
@@ -110,6 +114,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   );
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
+  const sessionSlots = useSessionSlots(session.id);
   const { showToast } = useToast();
 
   const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
@@ -232,7 +237,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     }
     return autoModelForRole(role, [providerId])?.model ?? getDefaultTurnModel(providerId);
   };
-  const sessionGoal = (session.goal ?? '').trim();
+  const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
 
   useEffect(() => {
@@ -406,44 +411,30 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   return (
     <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
-      <header className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-          <Sparkles size={16} className="text-primary" aria-hidden />
-        </span>
-        <div className="flex min-w-0 flex-col">
-          <h1 className="text-sm font-semibold text-foreground">Start a workflow</h1>
-          <span className="truncate text-2xs text-muted-foreground">for: {session.goal}</span>
-        </div>
-        <div className="flex-1" />
+      <OverlayHeader
+        icon={Sparkles}
+        title="Start a workflow"
+        subtitle={`for: ${session.goal}`}
+        onClose={handleClose}
+        closeLabel="cancel workflow builder"
+        closeDisabled={blocked}
+      >
         {!draftEmpty ? (
           <button
             type="button"
             onClick={resetDraft}
             disabled={blocked}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors',
-              'hover:border-border hover:bg-muted/50 hover:text-foreground',
+              'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors',
+              'hover:bg-muted/50 hover:text-foreground',
               blocked && 'cursor-not-allowed opacity-50',
             )}
             aria-label="reset workflow draft"
           >
-            <RotateCcw size={13} aria-hidden /> Reset draft
+            <RotateCcw size={11} aria-hidden /> Reset
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={handleClose}
-          disabled={blocked}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors',
-            'hover:border-border hover:bg-muted/50 hover:text-foreground',
-            blocked && 'cursor-not-allowed opacity-50',
-          )}
-          aria-label="cancel workflow builder"
-        >
-          <X size={13} aria-hidden /> Cancel
-        </button>
-      </header>
+      </OverlayHeader>
       <Divider />
 
       <div className="flex min-h-0 flex-1">
@@ -671,51 +662,46 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
               <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
                 When to start
               </span>
-              <div className="flex w-fit items-center gap-0.5 rounded-lg bg-subtle/80 p-0.5 ring-1 ring-border-soft">
-                <TriggerButton
-                  active={triggerMode === 'immediate'}
-                  disabled={blocked}
-                  onClick={() => setTriggerMode('immediate')}
-                  icon={<Play size={12} aria-hidden />}
-                  label="Start now"
-                />
-                <TriggerButton
-                  active={triggerMode === 'manual'}
-                  disabled={blocked}
-                  onClick={() => setTriggerMode('manual')}
-                  icon={<Hand size={12} aria-hidden />}
-                  label="Start manually"
-                />
-                {activeRuns.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex w-fit items-center gap-0.5 rounded-lg bg-subtle/80 p-0.5 ring-1 ring-border-soft">
                   <TriggerButton
-                    active={triggerMode === 'after_run'}
+                    active={triggerMode === 'immediate'}
                     disabled={blocked}
-                    onClick={() => {
-                      setTriggerMode('after_run');
-                      if (chainAfterId === null) {
-                        setChainAfterId(latestActiveRunId);
-                      }
-                    }}
-                    icon={<Link2 size={12} aria-hidden />}
-                    label="Run after"
+                    onClick={() => setTriggerMode('immediate')}
+                    icon={<Play size={12} aria-hidden />}
+                    label="Start now"
+                  />
+                  <TriggerButton
+                    active={triggerMode === 'manual'}
+                    disabled={blocked}
+                    onClick={() => setTriggerMode('manual')}
+                    icon={<Hand size={12} aria-hidden />}
+                    label="Start manually"
+                  />
+                  {activeRuns.length > 0 ? (
+                    <TriggerButton
+                      active={triggerMode === 'after_run'}
+                      disabled={blocked}
+                      onClick={() => {
+                        setTriggerMode('after_run');
+                        if (chainAfterId === null) {
+                          setChainAfterId(latestActiveRunId);
+                        }
+                      }}
+                      icon={<Link2 size={12} aria-hidden />}
+                      label="Run after"
+                    />
+                  ) : null}
+                </div>
+                {triggerMode === 'after_run' && activeRuns.length > 1 ? (
+                  <ChainAfterSelect
+                    runs={activeRuns}
+                    value={resolvedChainId}
+                    disabled={blocked}
+                    onChange={setChainAfterId}
                   />
                 ) : null}
               </div>
-              {triggerMode === 'after_run' && activeRuns.length > 1 ? (
-                <select
-                  value={resolvedChainId ?? ''}
-                  onChange={(e) => setChainAfterId(e.target.value as WorkflowRunId)}
-                  disabled={blocked}
-                  aria-label="run after which workflow"
-                  className="w-fit rounded-md bg-subtle/80 px-2 py-1 text-xs text-foreground ring-1 ring-border-soft focus-visible:ring-foreground/15"
-                >
-                  {activeRuns.map(({ run, template }) => (
-                    <option key={run.id} value={run.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
               <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
                 {triggerMode === 'immediate'
                   ? 'Runs as soon as you start it.'
@@ -903,6 +889,82 @@ const TriggerButton = ({ active, disabled, onClick, icon, label }: TriggerButton
     {icon} {label}
   </button>
 );
+
+type ChainRun = { readonly run: { readonly id: WorkflowRunId }; readonly template: Workflow };
+
+type ChainAfterSelectProps = {
+  readonly runs: ReadonlyArray<ChainRun>;
+  readonly value: WorkflowRunId | null;
+  readonly disabled: boolean;
+  readonly onChange: (id: WorkflowRunId) => void;
+};
+
+const ChainAfterSelect = ({ runs, value, disabled, onChange }: ChainAfterSelectProps) => {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useClickOutside(containerRef, () => setOpen(false));
+  const direction = useDropdownDirection(containerRef, open);
+  const selected = runs.find((r) => r.run.id === value) ?? null;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        aria-label="run after which workflow"
+        className={cn(
+          'flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
+          open
+            ? 'border-primary bg-primary/5'
+            : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+          disabled && 'cursor-not-allowed opacity-50',
+        )}
+      >
+        <Link2 size={11} className="shrink-0 text-muted-foreground" aria-hidden />
+        <span className="max-w-[12rem] truncate font-medium text-foreground">
+          {selected?.template.name ?? 'Select workflow'}
+        </span>
+        <ChevronDown
+          size={11}
+          className={cn(
+            'shrink-0 text-muted-foreground transition-transform',
+            open && 'rotate-180',
+          )}
+          aria-hidden
+        />
+      </button>
+      {open ? (
+        <div
+          className={cn(POPUP_BASE, 'min-w-[12rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
+        >
+          {runs.map(({ run, template }) => {
+            const active = run.id === value;
+            return (
+              <button
+                key={run.id}
+                type="button"
+                onClick={() => {
+                  onChange(run.id);
+                  setOpen(false);
+                }}
+                className={cn(
+                  'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
+                  active
+                    ? 'bg-primary/10 text-foreground'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                )}
+              >
+                <span className="flex-1 truncate">{template.name}</span>
+                {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+};
 
 type ReadOnlyStepCardProps = {
   readonly ordinal: number;

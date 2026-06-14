@@ -7,6 +7,7 @@ export type DiffCommentSide = 'old' | 'new';
 export type DiffCommentAnchor = Readonly<{
   side: DiffCommentSide;
   lineNumber: number;
+  endLineNumber?: number;
 }>;
 
 export type DiffComment = Readonly<{

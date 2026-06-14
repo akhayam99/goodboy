@@ -22,7 +22,7 @@ vi.mock('../store', () => ({
       retrySummarizer: vi.fn(),
       summarizerStatus: {},
       sessionTelemetry: {},
-      sessionWorktrees: {},
+      sessionWorktrees: { 'sess-1': ['/work/sess-1'] },
       settings: {},
       githubStatus: null,
       sessionBranches: {},
@@ -32,6 +32,10 @@ vi.mock('../store', () => ({
       pushAllResolutions: vi.fn().mockResolvedValue({ pushed: false, resolved: 0, failed: 0 }),
       sessions: [],
       workspaces: [],
+      phaseTemplates: {},
+      selectedAgentId: {},
+      selectAgent: vi.fn().mockResolvedValue(undefined),
+      requestOpenQuestionScroll: vi.fn(),
       refreshSessionPr: vi.fn(),
       refreshSessionPrDetail: vi.fn(),
       createPrForSession: vi.fn(),
@@ -57,15 +61,13 @@ vi.mock('../store', () => ({
     return selector(state);
   }),
   useSessionSlots: vi.fn().mockReturnValue([]),
-  useSummarizerStatus: vi
-    .fn()
-    .mockReturnValue({
-      status: 'idle',
-      lastUpdate: null,
-      error: null,
-      lastUsage: null,
-      lastAttempt: null,
-    }),
+  useSummarizerStatus: vi.fn().mockReturnValue({
+    status: 'idle',
+    lastUpdate: null,
+    error: null,
+    lastUsage: null,
+    lastAttempt: null,
+  }),
   useSlotHistory: vi.fn().mockReturnValue([]),
   useDiffComments: vi.fn().mockReturnValue([]),
   useFilesTouched: vi.fn().mockReturnValue({ paths: [], count: 0 }),
@@ -205,17 +207,114 @@ describe('ContextPanel, 2-tab rail', () => {
     expect(dispatchedEvents[0]?.detail?.sessionId).toBe('sess-1');
   });
 
-  it('questions section does not render when useSessionOpenQuestions returns empty', () => {
+  it('files-touched row exists and dispatches goodboy:open-diff-viewer', async () => {
+    const storeModule = await import('../store');
+    vi.mocked(storeModule.useFilesTouched).mockReturnValueOnce({
+      paths: ['a.ts'],
+      count: 1,
+    } as never);
     render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
-    expect(screen.queryByText(/open questions/i)).toBeNull();
+    const dispatchedEvents: CustomEvent[] = [];
+    window.addEventListener('goodboy:open-diff-viewer', (e) => {
+      dispatchedEvents.push(e as CustomEvent);
+    });
+    const diffBtn = screen.getByRole('button', { name: /files? touched/i });
+    diffBtn.click();
+    expect(dispatchedEvents.length).toBeGreaterThan(0);
+    expect(dispatchedEvents[0]?.detail?.sessionId).toBe('sess-1');
+    expect(dispatchedEvents[0]?.detail?.workingDir).toBe('/work/sess-1');
   });
 
-  it('questions section renders when useSessionOpenQuestions returns items', async () => {
+  it('open-questions strip does not render when useSessionOpenQuestions returns empty', () => {
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    expect(screen.queryByText(/open question/i)).toBeNull();
+  });
+
+  it('open-questions strip renders when useSessionOpenQuestions returns open items', async () => {
     const storeModule = await import('../store');
-    vi.mocked(storeModule.useSessionOpenQuestions).mockReturnValueOnce([
-      { id: 'q1', text: 'What is the approach?', sessionId: 'sess-1' } as never,
+    vi.mocked(storeModule.useSessionOpenQuestions).mockReturnValue([
+      {
+        id: 'q1',
+        text: 'What is the approach?',
+        sessionId: 'sess-1',
+        status: 'open',
+        suggestedAnswers: [],
+        userAnswer: null,
+      } as never,
     ]);
     render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
-    expect(screen.getByText(/open questions/i)).toBeDefined();
+    expect(screen.getByText(/1 open question/i)).toBeDefined();
+    expect(screen.getByText(/unassigned/i)).toBeDefined();
+    vi.mocked(storeModule.useSessionOpenQuestions).mockReturnValue([]);
+  });
+
+  it('files-touched row does not dispatch when workingDir is null', async () => {
+    const storeModule = await import('../store');
+    vi.mocked(storeModule.useFilesTouched).mockReturnValueOnce({
+      paths: ['a.ts'],
+      count: 1,
+    } as never);
+    vi.mocked(storeModule.useAppStore).mockImplementation(((selector: (s: unknown) => unknown) => {
+      const noWorktreeState = {
+        upsertSessionSlot: vi.fn(),
+        toggleSessionSlot: vi.fn(),
+        loadSessionOpenQuestions: vi.fn().mockResolvedValue(undefined),
+        loadSessionPlans: vi.fn().mockResolvedValue(undefined),
+        reconcileSessionBranch: vi.fn().mockResolvedValue(undefined),
+        loadSlotHistory: vi.fn().mockResolvedValue(undefined),
+        retrySummarizer: vi.fn(),
+        summarizerStatus: {},
+        sessionTelemetry: {},
+        sessionWorktrees: {},
+        settings: {},
+        githubStatus: null,
+        sessionBranches: {},
+        sessionGithub: {},
+        sessionPendingResolutions: {},
+        loadPendingResolutions: vi.fn().mockResolvedValue(undefined),
+        pushAllResolutions: vi.fn().mockResolvedValue({ pushed: false, resolved: 0, failed: 0 }),
+        sessions: [],
+        workspaces: [],
+        phaseTemplates: {},
+        selectedAgentId: {},
+        selectAgent: vi.fn().mockResolvedValue(undefined),
+        requestOpenQuestionScroll: vi.fn(),
+        refreshSessionPr: vi.fn(),
+        refreshSessionPrDetail: vi.fn(),
+        createPrForSession: vi.fn(),
+        spawnAgent: vi.fn(),
+        clearSessionNextActions: vi.fn(),
+        loadDiffComments: vi.fn().mockResolvedValue(undefined),
+        scriptRuns: {},
+        terminalSessions: {},
+        openTerminal: vi.fn().mockResolvedValue(undefined),
+        closeTerminal: vi.fn().mockResolvedValue(undefined),
+        terminalTabs: {},
+        activeTerminalTab: {},
+        addTerminalTab: vi.fn(() => 'sess-1::t1'),
+        closeTerminalTab: vi.fn(),
+        setActiveTerminalTab: vi.fn(),
+        setTerminalTabStatus: vi.fn(),
+        sessionPlans: {},
+        sessionPhaseRuns: {},
+        setPlanStatus: vi.fn(),
+        updatePlanBody: vi.fn(),
+        deletePlan: vi.fn(),
+      };
+      return selector(noWorktreeState);
+    }) as never);
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    const diffBtn = screen.getByRole('button', { name: /files? touched/i });
+    expect(diffBtn.getAttribute('disabled')).not.toBeNull();
+  });
+
+  it('plan button shows plan count when plans exist', async () => {
+    const storeModule = await import('../store');
+    vi.mocked(storeModule.useSessionPlans).mockReturnValueOnce([
+      { id: 'p1', title: 'Plan A', status: 'active' },
+      { id: 'p2', title: 'Plan B', status: 'consumed' },
+    ] as never);
+    render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
+    expect(screen.getByText(/2 plans/i)).toBeDefined();
   });
 });

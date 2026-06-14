@@ -33,15 +33,28 @@ functional. One register per surface; let the other supply only texture.
 ## Layout & navigation
 
 - **Three-pane shell**: workspaces sidebar (where am I, what's running) ·
-  chat (the work) · context panel (the artifacts). Each pane owns one job.
+  chat (the work) · right pane (session detail and artifacts). Each pane owns
+  one job; the right pane shows the active session's state alongside its plans,
+  PRs, and other work products.
 - **Sidebar is presence, palette is transit.** The sidebar answers "where am
   I"; the command palette (⌘K) answers "where do I want to be". They must not
   compete — navigation belongs to the palette, spatial state to the sidebar.
 - **Pin the structure, flex the density.** Nothing appears or disappears at a
   count threshold. Panels collapse to a rail; they never vanish. A control's
   position is fixed so it can be learned.
-- **One settings surface.** Configuration lives in a single dialog with
-  contextual sections — not scattered across per-context modals.
+- **Settings match the scope they edit.** Configuration splits into three
+  surfaces by ownership: application settings is a full-page studio; workspace
+  and session settings are lightweight scoped panes. Each surface edits only
+  what belongs to its scope. Changes save instantly — no Save/Cancel footer, no
+  stacking one settings surface on another. The scope of a setting matches the
+  scope of the surface it's edited on.
+- **One overlay slot.** Full-surface editors — new session, workflow builder,
+  scoped settings, plan studio, diff viewer — share a single overlay spanning
+  the main and right panes. Only one occupies it at a time, by strict
+  precedence; they never stack as competing dialogs. Scope decides the pattern:
+  session- and workspace-scoped editors take the overlay slot so the workspaces
+  sidebar stays visible; app-level studios are full-page; transient
+  confirmations are dialogs.
 
 ## Density
 
@@ -78,6 +91,10 @@ the two collapse into the same texture.
 - **Chips carry a word.** Status chips — PR state, CI, agent kind — pair an
   icon with a label. Icon-only is allowed only where space is truly gone, and
   then the label survives as a tooltip.
+- **Control markers render, never leak.** In-band control signals — tool calls,
+  clusters, plans — surface as structured cards and chips drawn from one shared
+  accent mapping, so a kind of signal reads the same wherever it appears. A raw
+  marker never reaches the transcript.
 
 ## Spend
 
@@ -89,9 +106,10 @@ before sending, a running total after.
 ## Components & interaction
 
 - **Tabs when you return, accordion when you'd forget.** Tabs reward "I came
-  back to find this"; accordions reward discovery. The context panel is tabs.
-- **Read inline, edit in a modal.** Plans and PR bodies render in place;
-  editing opens a focused dialog. The transcript is for reading.
+  back to find this"; accordions reward discovery. The right pane is tabs.
+- **Read inline, edit on a focused surface.** Plans and PR bodies render in
+  place; editing opens a focused surface — a modal or an overlay pane. The
+  transcript is for reading.
 - **Empty states teach.** Every empty state says what the thing is, why it
   matters, and offers one action to create it. Never a dead end.
 - **Loading is a skeleton, not a spinner.** A card or substantial element

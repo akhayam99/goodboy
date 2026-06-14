@@ -357,7 +357,8 @@ pub fn worktree_diff(
         .ok_or_else(|| WorktreeError::Git {
             message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
         })?;
-    git(p, &["diff", &resolved])
+    let tracked = git(p, &["diff", &resolved])?;
+    Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
 }
 
 #[derive(Debug, Serialize)]
@@ -557,7 +558,10 @@ pub fn worktree_diff_working(
     match scope.as_str() {
         "unstaged" => git(p, &["diff"]),
         "staged" => git(p, &["diff", "--cached"]),
-        "all" => git(p, &["diff", "HEAD"]),
+        "all" => {
+            let tracked = git(p, &["diff", "HEAD"])?;
+            Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
+        }
         other => Err(WorktreeError::Git {
             message: format!("unknown scope: {other} (expected unstaged|staged|all)"),
         }),
@@ -766,6 +770,58 @@ fn resolve_origin_base(repo_path: &Path, base: &str) -> Result<String, WorktreeE
             candidates.join(", ")
         ),
     })
+}
+
+fn untracked_new_file_diffs(p: &Path) -> String {
+    let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
+    let mut out = String::new();
+    for line in untracked.lines() {
+        let rel = line.trim();
+        if rel.is_empty() {
+            continue;
+        }
+        out.push_str(&format!("diff --git a/{rel} b/{rel}\n"));
+        out.push_str("new file mode 100644\n");
+        let bytes = match std::fs::read(p.join(rel)) {
+            Ok(b) => b,
+            Err(_) => {
+                out.push_str("--- /dev/null\n");
+                out.push_str(&format!("+++ b/{rel}\n"));
+                continue;
+            }
+        };
+        if bytes.contains(&0) {
+            out.push_str(&format!("Binary files /dev/null and b/{rel} differ\n"));
+            continue;
+        }
+        let content = match String::from_utf8(bytes) {
+            Ok(s) => s,
+            Err(_) => {
+                out.push_str(&format!("Binary files /dev/null and b/{rel} differ\n"));
+                continue;
+            }
+        };
+        out.push_str("--- /dev/null\n");
+        out.push_str(&format!("+++ b/{rel}\n"));
+        if content.is_empty() {
+            continue;
+        }
+        let ends_with_nl = content.ends_with('\n');
+        let lines: Vec<&str> = if ends_with_nl {
+            content.split_terminator('\n').collect()
+        } else {
+            content.split('\n').collect()
+        };
+        let n = lines.len();
+        out.push_str(&format!("@@ -0,0 +1,{n} @@\n"));
+        for (i, l) in lines.iter().enumerate() {
+            out.push_str(&format!("+{l}\n"));
+            if !ends_with_nl && i == n - 1 {
+                out.push_str("\\ No newline at end of file\n");
+            }
+        }
+    }
+    out
 }
 
 fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {

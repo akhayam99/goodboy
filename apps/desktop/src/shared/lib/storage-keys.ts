@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
 export const STORAGE_PREFIXES = {
   contextPanelOpen: `${PREFIX}context-panel-open:`,
   diffView: `${PREFIX}diff-view:`,
+  diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,
 } as const;
 

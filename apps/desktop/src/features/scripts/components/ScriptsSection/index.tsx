@@ -1,0 +1,353 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { cn, Popover, SectionHeader } from '@goodboy/ui';
+import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
+import {
+  ChevronDown,
+  ChevronRight,
+  Play,
+  Plus,
+  ScrollText,
+  Square,
+  Terminal,
+  X,
+} from 'lucide-react';
+import { useAppStore } from '../../../../store';
+import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
+
+type ScriptsSectionProps = {
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
+  readonly worktreePath: string | null;
+};
+
+type LogTarget = {
+  readonly scriptId: WorkspaceScriptId;
+  readonly anchor: DOMRect;
+};
+
+export const ScriptsSection = ({ sessionId, workspaceId, worktreePath }: ScriptsSectionProps) => {
+  const [expanded, setExpanded] = useState(true);
+  const [log, setLog] = useState<LogTarget | null>(null);
+  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
+  const runs = useAppStore((s) => s.scriptRuns[sessionId]);
+  const loadScripts = useAppStore((s) => s.loadScripts);
+  const runScript = useAppStore((s) => s.runScript);
+  const cancelScript = useAppStore((s) => s.cancelScript);
+
+  useEffect(() => {
+    void loadScripts(workspaceId);
+  }, [workspaceId, loadScripts]);
+
+  const onRun = useCallback(
+    (script: WorkspaceScript) => {
+      if (!worktreePath) {
+        return;
+      }
+      void runScript(sessionId, script.id, worktreePath);
+    },
+    [runScript, sessionId, worktreePath],
+  );
+
+  const onCancel = useCallback(
+    (scriptId: WorkspaceScriptId) => {
+      void cancelScript(sessionId, scriptId);
+    },
+    [cancelScript, sessionId],
+  );
+
+  const onToggleLog = useCallback((scriptId: WorkspaceScriptId, anchor: DOMRect) => {
+    setLog((prev) => (prev?.scriptId === scriptId ? null : { scriptId, anchor }));
+  }, []);
+
+  const list = scripts ?? [];
+
+  const openSettings = () =>
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-workspace-settings', { detail: { section: 'scripts' } }),
+    );
+
+  const logScript = log ? list.find((s) => s.id === log.scriptId) : null;
+  const logResult = log ? (runs?.[log.scriptId]?.result ?? null) : null;
+
+  return (
+    <>
+      <SectionHeader
+        className="mt-6 pb-1.5"
+        icon={<Terminal size={11} aria-hidden className="text-info" />}
+        label="Scripts"
+        action={
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
+            className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            {expanded ? (
+              <ChevronDown size={12} aria-hidden />
+            ) : (
+              <ChevronRight size={12} aria-hidden />
+            )}
+          </button>
+        }
+      />
+      {expanded ? (
+        <>
+          {list.length > 0 ? (
+            <ul className="flex flex-col gap-1 pl-2">
+              {list.map((script) => (
+                <li key={script.id}>
+                  <ScriptRow
+                    script={script}
+                    run={runs?.[script.id] ?? null}
+                    disabled={!worktreePath}
+                    logOpen={log?.scriptId === script.id}
+                    onRun={() => onRun(script)}
+                    onCancel={() => onCancel(script.id)}
+                    onToggleLog={(anchor) => onToggleLog(script.id, anchor)}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <button
+            type="button"
+            onClick={openSettings}
+            className="mt-1.5 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus size={13} aria-hidden className="shrink-0" />
+            <span className="min-w-0 truncate">Create script</span>
+          </button>
+        </>
+      ) : (
+        <p className="pb-1 pl-2 text-2xs text-muted-foreground/60">
+          {list.length === 0
+            ? 'No scripts yet'
+            : `${list.length} script${list.length === 1 ? '' : 's'}`}
+        </p>
+      )}
+      {logScript && logResult ? (
+        <LogFlyout
+          script={logScript}
+          result={logResult}
+          anchor={log!.anchor}
+          onClose={() => setLog(null)}
+        />
+      ) : null}
+    </>
+  );
+};
+
+type ScriptRowProps = {
+  readonly script: WorkspaceScript;
+  readonly run: ScriptRunRecord | null;
+  readonly disabled: boolean;
+  readonly logOpen: boolean;
+  readonly onRun: () => void;
+  readonly onCancel: () => void;
+  readonly onToggleLog: (anchor: DOMRect) => void;
+};
+
+function ScriptRow({
+  script,
+  run,
+  disabled,
+  logOpen,
+  onRun,
+  onCancel,
+  onToggleLog,
+}: ScriptRowProps) {
+  const status: ScriptRunStatus = run?.status ?? 'idle';
+  const result = run?.result ?? null;
+  const isPending = status === 'pending';
+  const preview = script.body.trim().split('\n')[0] ?? '';
+  const hasOutput = result !== null;
+  const logRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <div
+      className={cn(
+        'group flex items-center gap-2 rounded border border-transparent px-2 py-1.5 transition-colors',
+        !isPending && 'hover:bg-muted/60',
+        isPending && 'spin-border spin-border-info',
+      )}
+    >
+      <StatusDot status={status} />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-xs font-medium text-foreground">{script.name}</span>
+        <span className="truncate font-mono text-2xs text-muted-foreground/80">{preview}</span>
+      </div>
+      {hasOutput ? (
+        <button
+          ref={logRef}
+          type="button"
+          onClick={() => {
+            const rect = logRef.current?.getBoundingClientRect();
+            if (rect) {
+              onToggleLog(rect);
+            }
+          }}
+          aria-expanded={logOpen}
+          title={logOpen ? 'hide log' : 'show log'}
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
+            logOpen
+              ? 'bg-primary/15 text-primary ring-1 ring-primary/30 ring-inset'
+              : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+          )}
+        >
+          <ScrollText size={12} aria-hidden />
+        </button>
+      ) : null}
+      {isPending ? (
+        <button
+          type="button"
+          onClick={onCancel}
+          title="stop script"
+          aria-label="stop script"
+          className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
+        >
+          <Square size={11} fill="currentColor" aria-hidden />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onRun}
+          disabled={disabled}
+          title="run script"
+          aria-label="run script"
+          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Play size={12} aria-hidden />
+        </button>
+      )}
+    </div>
+  );
+}
+
+type LogFlyoutProps = {
+  readonly script: WorkspaceScript;
+  readonly result: ScriptRunResult;
+  readonly anchor: DOMRect;
+  readonly onClose: () => void;
+};
+
+function computePosition(anchor: DOMRect) {
+  const margin = 16;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const width = Math.min(640, Math.max(480, vw - anchor.right - margin * 3));
+  const height = Math.min(vh - margin * 2, 640);
+  let left = anchor.right + 16;
+  if (left + width > vw - margin) {
+    left = anchor.left - 16 - width;
+  }
+  left = Math.max(margin, Math.min(left, vw - width - margin));
+  const top = Math.max(margin, (vh - height) / 2);
+  return { left, top, width, height };
+}
+
+function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyoutProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    const onDown = (e: MouseEvent) => {
+      if (!panelRef.current?.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('mousedown', onDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('mousedown', onDown);
+    };
+  }, [onClose]);
+
+  const [pos, setPos] = useState(() => computePosition(initialAnchor));
+  useEffect(() => {
+    const recompute = () => setPos(computePosition(initialAnchor));
+    window.addEventListener('resize', recompute);
+    return () => window.removeEventListener('resize', recompute);
+  }, [initialAnchor]);
+
+  return createPortal(
+    <Popover
+      innerRef={panelRef}
+      role="dialog"
+      ariaLabel={`${script.name} log`}
+      style={{
+        position: 'fixed',
+        left: pos.left,
+        top: pos.top,
+        width: pos.width,
+        height: pos.height,
+      }}
+      className="z-50 flex flex-col"
+    >
+      <div className="flex items-center gap-2 border-b border-border-soft px-3 py-2">
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+          {script.name}
+        </span>
+        <span className="shrink-0 text-2xs text-muted-foreground">exit {result.exitCode}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          title="close"
+          aria-label="close log"
+          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+        >
+          <X size={12} aria-hidden />
+        </button>
+      </div>
+      <pre className="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
+        {result.stdout}
+        {result.stderr ? (
+          <span className="text-danger">
+            {result.stdout ? '\n' : ''}
+            {result.stderr}
+          </span>
+        ) : null}
+        {!result.stdout && !result.stderr && '(no output)'}
+      </pre>
+    </Popover>,
+    document.body,
+  );
+}
+
+function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
+  if (status === 'ok') {
+    return (
+      <span
+        className="size-2 shrink-0 rounded-full bg-success"
+        aria-label="last run ok"
+        role="img"
+      />
+    );
+  }
+  if (status === 'error') {
+    return (
+      <span
+        className="size-2 shrink-0 rounded-full bg-danger"
+        aria-label="last run failed"
+        role="img"
+      />
+    );
+  }
+  if (status === 'cancelled') {
+    return (
+      <span
+        className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
+        aria-label="last run cancelled"
+        role="img"
+      />
+    );
+  }
+  return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />;
+}

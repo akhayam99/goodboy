@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
+import { ScriptsSection } from '../../../scripts/components/ScriptsSection';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
@@ -185,75 +186,7 @@ export const WorkspacesSidebar = ({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0">
-        <WorkspaceHeader />
-      </div>
-
-      <Divider />
-
-      <div className="flex min-h-0 flex-1">
-        {currentWorkspace ? (
-          (() => {
-            const totalSessions = activeSessions.length + archivedSessions.length;
-            const hasAnySession = totalSessions > 0;
-            return (
-              <div className="mx-2 my-3 flex min-h-0 flex-1 overflow-hidden">
-                <div className="w-2/5 min-w-28 max-w-44 shrink-0 overflow-hidden">
-                  <SessionActivityBar
-                    workspaceId={currentWorkspace.id}
-                    sessions={activeSessions}
-                    archivedSessions={archivedSessions}
-                    currentSessionId={currentSession?.id ?? null}
-                    onSelectSession={onSelectSession}
-                    onNewSession={() =>
-                      window.dispatchEvent(new CustomEvent('goodboy:new-session'))
-                    }
-                    onArchivedTabOpen={onArchivedTabOpen}
-                  />
-                </div>
-                <Divider orientation="vertical" className="mx-1.5" />
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                  {currentSession ? (
-                    <>
-                      <SessionDetailPanel
-                        session={currentSession}
-                        onOpenSessionSettings={() =>
-                          window.dispatchEvent(new CustomEvent('goodboy:open-session-settings'))
-                        }
-                      />
-                      <Divider />
-                      <ScrollArea className="min-h-0 flex-1">
-                        <AgentsSection task={currentSession} />
-                      </ScrollArea>
-                      <SessionMetaFooter session={currentSession} />
-                    </>
-                  ) : (
-                    <SidebarDetailHint hasAnySession={hasAnySession} />
-                  )}
-                </div>
-              </div>
-            );
-          })()
-        ) : (
-          <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
-        )}
-      </div>
-
-      <Divider />
-
-      {currentWorkspace ? (
-        <QuickActionsRow
-          onOpenPalette={onOpenPalette}
-          onOpenWorkflows={onOpenWorkflows}
-          onOpenLinear={onOpenLinear}
-          onOpenProviders={onOpenProviders}
-          onOpenGithub={onOpenGithub}
-          linearEnabled={hasLinear}
-          skillsEnabled={WORKSPACE_FEATURES.skills}
-        />
-      ) : null}
-
-      <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-3">
+      <div className="flex shrink-0 items-center gap-1.5 px-2.5 py-2">
         <SidebarLogo />
         <div className="flex-1" />
         <OnboardingChip />
@@ -306,6 +239,78 @@ export const WorkspacesSidebar = ({
           </button>
         </div>
       </div>
+
+      <Divider />
+
+      {currentWorkspace ? (
+        <>
+          <WorkspaceHeader />
+          <Divider />
+        </>
+      ) : null}
+
+      <div className="flex min-h-0 flex-1">
+        {currentWorkspace ? (
+          (() => {
+            const totalSessions = activeSessions.length + archivedSessions.length;
+            const hasAnySession = totalSessions > 0;
+            return (
+              <div className="mx-2 my-3 flex min-h-0 flex-1 overflow-hidden">
+                <div className="w-2/5 min-w-28 max-w-44 shrink-0 overflow-hidden">
+                  <SessionActivityBar
+                    workspaceId={currentWorkspace.id}
+                    sessions={activeSessions}
+                    archivedSessions={archivedSessions}
+                    currentSessionId={currentSession?.id ?? null}
+                    onSelectSession={onSelectSession}
+                    onNewSession={() =>
+                      window.dispatchEvent(new CustomEvent('goodboy:new-session'))
+                    }
+                    onArchivedTabOpen={onArchivedTabOpen}
+                  />
+                </div>
+                <Divider orientation="vertical" className="mx-1.5" />
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                  {currentSession ? (
+                    <>
+                      <SessionDetailPanel
+                        session={currentSession}
+                        onOpenSessionSettings={() =>
+                          window.dispatchEvent(new CustomEvent('goodboy:open-session-settings'))
+                        }
+                      />
+                      <Divider />
+                      <ScrollArea className="min-h-0 flex-1">
+                        <AgentsSection task={currentSession} />
+                      </ScrollArea>
+                      <SessionMetaFooter session={currentSession} />
+                    </>
+                  ) : (
+                    <SidebarDetailHint hasAnySession={hasAnySession} />
+                  )}
+                </div>
+              </div>
+            );
+          })()
+        ) : (
+          <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+        )}
+      </div>
+
+      {currentWorkspace ? (
+        <>
+          <Divider />
+          <QuickActionsRow
+            onOpenPalette={onOpenPalette}
+            onOpenWorkflows={onOpenWorkflows}
+            onOpenLinear={onOpenLinear}
+            onOpenProviders={onOpenProviders}
+            onOpenGithub={onOpenGithub}
+            linearEnabled={hasLinear}
+            skillsEnabled={WORKSPACE_FEATURES.skills}
+          />
+        </>
+      ) : null}
 
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
@@ -428,12 +433,12 @@ function QuickAction({
 }
 
 function workflowKindName(workflow: Workflow): string {
-  const needle = workflow.name.trim().toLowerCase();
-  if (!needle) {
+  const raw = workflow.name.trim();
+  if (!raw) {
     return 'custom';
   }
-  const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === needle);
-  return match?.name.toLowerCase() ?? 'custom';
+  const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === raw.toLowerCase());
+  return match ? match.name.toLowerCase() : raw;
 }
 
 function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
@@ -633,6 +638,33 @@ function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
   );
 }
 
+type SectionToggleProps = {
+  readonly expanded: boolean;
+  readonly label: string;
+  readonly onToggle: () => void;
+};
+
+function SectionToggle({ expanded, label, onToggle }: SectionToggleProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={`${expanded ? 'collapse' : 'expand'} ${label}`}
+      className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+    >
+      {expanded ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
+    </button>
+  );
+}
+
+const pluralize = (count: number, singular: string) =>
+  `${count} ${singular}${count === 1 ? '' : 's'}`;
+
+function CollapsedSummary({ text }: { readonly text: string }) {
+  return <p className="pb-1 pl-2 text-2xs text-muted-foreground/60">{text}</p>;
+}
+
 type AgentsSectionProps = {
   task: Session;
 };
@@ -695,6 +727,7 @@ function AgentsSection({ task }: AgentsSectionProps) {
     }),
   );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
+  const worktreePath = useAppStore((s) => (s.sessionWorktrees[task.id] ?? [])[0] ?? null);
   const prNumber = useAppStore((s) => s.sessionGithub[task.id]?.pr?.number ?? null);
   const resolvedThreadIds = useAppStore(
     useShallow(
@@ -774,6 +807,8 @@ function AgentsSection({ task }: AgentsSectionProps) {
     });
   }, []);
   const [resolveExpanded, setResolveExpanded] = useState(true);
+  const [workflowExpanded, setWorkflowExpanded] = useState(true);
+  const [agentsExpanded, setAgentsExpanded] = useState(true);
   const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
   const toggleClusterExpand = useCallback((id: string) => {
     setClusterExpand((prev) => {
@@ -1098,8 +1133,9 @@ function AgentsSection({ task }: AgentsSectionProps) {
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     const isCompleted = !isDiscarded && total > 0 && done >= total;
-    const isQueuedManual = !isDiscarded && run.triggerMode === 'manual';
-    const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run';
+    const hasStarted = wfAgents.length > 0;
+    const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
+    const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
     const predecessorName = run.chainAfterId
       ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
       : 'previous';
@@ -1308,52 +1344,89 @@ function AgentsSection({ task }: AgentsSectionProps) {
         className="pb-1.5"
         icon={<Layers size={11} aria-hidden className="text-primary" />}
         label="Workflow"
+        action={
+          <SectionToggle
+            expanded={workflowExpanded}
+            label="workflow"
+            onToggle={() => setWorkflowExpanded((v) => !v)}
+          />
+        }
       />
-      {!hasAnyWorkflow ? (
-        <WorkflowStartButton sessionId={task.id} variant="empty" />
+      {workflowExpanded ? (
+        !hasAnyWorkflow ? (
+          <WorkflowStartButton sessionId={task.id} variant="empty" />
+        ) : (
+          <>
+            <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
+            <WorkflowStartButton sessionId={task.id} variant="attach" />
+          </>
+        )
       ) : (
-        <>
-          <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
-          <WorkflowStartButton sessionId={task.id} variant="attach" />
-        </>
+        <CollapsedSummary
+          text={hasAnyWorkflow ? pluralize(attachedRuns.length, 'workflow') : 'No workflows yet'}
+        />
       )}
 
       <SectionHeader
         className="mt-6 pb-1.5"
         icon={<DogMascot size={14} className="shrink-0 text-success" />}
         label="Agents"
+        action={
+          <SectionToggle
+            expanded={agentsExpanded}
+            label="agents"
+            onToggle={() => setAgentsExpanded((v) => !v)}
+          />
+        }
       />
-      {hasAnyWorkflow ? (
-        adHocAgents.some((r) => !resolverIds.has(r.id)) ? (
-          <ul className="flex flex-col gap-1 pl-2">
-            {adHocAgents.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
-          </ul>
-        ) : null
-      ) : sorted.length === 0 ? (
-        loading.agents ? (
-          <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
-            {[0, 1].map((i) => (
-              <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
-                <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
-                <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
-              </li>
-            ))}
-          </ul>
-        ) : resolverAgents.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-muted-foreground/70">
-            No agents yet. Spawn one below.
-          </p>
-        ) : null
+      {agentsExpanded ? (
+        <>
+          {hasAnyWorkflow ? (
+            adHocAgents.some((r) => !resolverIds.has(r.id)) ? (
+              <ul className="flex flex-col gap-1 pl-2">
+                {adHocAgents.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
+              </ul>
+            ) : null
+          ) : sorted.length === 0 ? (
+            loading.agents ? (
+              <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
+                {[0, 1].map((i) => (
+                  <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
+                    <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
+                    <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                  </li>
+                ))}
+              </ul>
+            ) : resolverAgents.length === 0 ? (
+              <p className="px-2 py-2 text-xs text-muted-foreground/70">
+                No agents yet. Spawn one below.
+              </p>
+            ) : null
+          ) : (
+            <ul className="flex flex-col gap-1 pl-2">
+              {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
+            </ul>
+          )}
+          <div className="flex flex-col gap-1">
+            <PlanReadySuggestion task={task} />
+            <SpawnAgentControl sessionId={task.id} />
+          </div>
+          {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
+        </>
       ) : (
-        <ul className="flex flex-col gap-1 pl-2">
-          {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
-        </ul>
+        <CollapsedSummary
+          text={(() => {
+            const count = sorted.filter((r) => !resolverIds.has(r.id)).length;
+            return count === 0 ? 'No agents yet' : pluralize(count, 'agent');
+          })()}
+        />
       )}
-      <div className="flex flex-col gap-1 pl-2">
-        <PlanReadySuggestion task={task} />
-        <SpawnAgentControl sessionId={task.id} />
-      </div>
-      {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
+
+      <ScriptsSection
+        sessionId={task.id}
+        workspaceId={task.workspaceId}
+        worktreePath={worktreePath}
+      />
 
       {resolverAgents.length > 0 && (
         <>
@@ -1730,7 +1803,7 @@ function ResolveCluster({
   const jump = (agent: Agent) => {
     if (agent.sourceThreadId != null && prNumber != null) {
       window.dispatchEvent(
-        new CustomEvent('goodboy:open-github-studio', {
+        new CustomEvent('goodboy:open-github-session', {
           detail: { sessionId, prNumber, threadId: agent.sourceThreadId },
         }),
       );
@@ -2517,12 +2590,9 @@ function WorkflowStartButton({
       <button
         type="button"
         onClick={onClick}
-        className={cn(
-          'flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground',
-          variant === 'empty' ? 'text-xs' : 'text-2xs',
-        )}
+        className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
       >
-        <Plus size={variant === 'empty' ? 13 : 11} aria-hidden className="shrink-0" />
+        <Plus size={13} aria-hidden className="shrink-0" />
         <span className="min-w-0 truncate">
           {variant === 'empty' ? 'Start a workflow' : 'Attach another workflow'}
         </span>

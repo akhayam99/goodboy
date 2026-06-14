@@ -70,7 +70,9 @@ export const buildQuestionClusters = ({
     if (q.status !== 'open') {
       continue;
     }
-    const owner = resolveOwnerAgent(q, stepsByWorkflowOrdinal, agentByStepId, agentByRunStep);
+    const stepOwner = resolveOwnerAgent(q, stepsByWorkflowOrdinal, agentByStepId, agentByRunStep);
+    const owner =
+      stepOwner ?? (q.createdByAgentId ? (agentById.get(q.createdByAgentId) ?? null) : null);
     const key = owner ? owner.id : '__orphan__';
     let bucket = buckets.get(key);
     if (!bucket) {
