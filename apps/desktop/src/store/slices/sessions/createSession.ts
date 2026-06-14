@@ -4,6 +4,7 @@ import type {
   Session,
   SessionId,
   SessionExternalTask,
+  SessionExternalTaskProvider,
   SessionProviderPreference,
   TurnState,
   WorkflowId,
@@ -52,7 +53,8 @@ type Input = {
   autoRun?: boolean;
   firstAgentKind?: AgentKind;
   firstAgentModel?: string;
-  linearIssue?: {
+  externalTask?: {
+    provider: SessionExternalTaskProvider;
     externalId: string;
     identifier: string;
     url: string;
@@ -72,7 +74,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     autoRun,
     firstAgentKind,
     firstAgentModel: requestedModel,
-    linearIssue,
+    externalTask,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) {
@@ -162,21 +164,21 @@ export const createSession = (set: SetFn, get: GetFn) => {
       updatedAt: now,
     };
     await insertSession(tauriDatabase, session);
-    let externalTask: SessionExternalTask | null = null;
-    if (linearIssue) {
-      externalTask = {
+    let externalTaskRow: SessionExternalTask | null = null;
+    if (externalTask) {
+      externalTaskRow = {
         sessionId: session.id,
-        provider: 'linear',
-        externalId: linearIssue.externalId,
-        identifier: linearIssue.identifier,
-        url: linearIssue.url,
-        title: linearIssue.title,
+        provider: externalTask.provider,
+        externalId: externalTask.externalId,
+        identifier: externalTask.identifier,
+        url: externalTask.url,
+        title: externalTask.title,
         createdAt: now,
       };
       try {
-        await setSessionExternalTask(tauriDatabase, externalTask);
+        await setSessionExternalTask(tauriDatabase, externalTaskRow);
       } catch {
-        externalTask = null;
+        externalTaskRow = null;
       }
     }
     await insertSessionWorktree(tauriDatabase, {
@@ -287,8 +289,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
       currentSessionId: session.id,
       sessionSummary: null,
-      sessionExternalTasks: externalTask
-        ? { ...state.sessionExternalTasks, [session.id]: externalTask }
+      sessionExternalTasks: externalTaskRow
+        ? { ...state.sessionExternalTasks, [session.id]: externalTaskRow }
         : state.sessionExternalTasks,
       sessionWorktrees: {
         ...state.sessionWorktrees,

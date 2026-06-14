@@ -52,6 +52,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
   SessionExternalTask,
+  SessionExternalTaskProvider,
   Workspace,
   WorkspaceId,
   WorkspaceIntegration,
@@ -123,6 +124,7 @@ import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState, type UpdaterState } from './slices/updater/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
+import type { SentryProject } from '../features/integrations/sentry/client';
 
 export type BootPhase =
   | 'pending'
@@ -331,6 +333,13 @@ export type AppActions = {
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
   disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
+  connectSentry(
+    workspaceId: WorkspaceId,
+    token: string,
+    org: string,
+    project: string,
+  ): Promise<SentryProject>;
+  disconnectSentry(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -342,7 +351,8 @@ export type AppActions = {
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
-    linearIssue?: {
+    externalTask?: {
+      provider: SessionExternalTaskProvider;
       externalId: string;
       identifier: string;
       url: string;

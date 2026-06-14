@@ -27,6 +27,7 @@ export type {
   ContextSlotHistoryEntry,
   LinearIntegrationConfig,
   Session,
+  SentryIntegrationConfig,
   SessionExternalTask,
   SessionExternalTaskProvider,
   TurnState,

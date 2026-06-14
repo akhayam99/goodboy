@@ -126,6 +126,7 @@ type WorkspacesSidebarProps = {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
+  onOpenSentry: () => void;
   onOpenProviders: () => void;
   onOpenGithub: () => void;
   onOpenBudget: () => void;
@@ -141,6 +142,7 @@ export const WorkspacesSidebar = ({
   onOpenPalette,
   onOpenWorkflows,
   onOpenLinear,
+  onOpenSentry,
   onOpenProviders,
   onOpenGithub,
   onOpenBudget,
@@ -152,6 +154,11 @@ export const WorkspacesSidebar = ({
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
+    ),
+  );
+  const hasSentry = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'sentry',
     ),
   );
   const currentSession = useCurrentSession();
@@ -304,9 +311,11 @@ export const WorkspacesSidebar = ({
             onOpenPalette={onOpenPalette}
             onOpenWorkflows={onOpenWorkflows}
             onOpenLinear={onOpenLinear}
+            onOpenSentry={onOpenSentry}
             onOpenProviders={onOpenProviders}
             onOpenGithub={onOpenGithub}
             linearEnabled={hasLinear}
+            sentryEnabled={hasSentry}
             skillsEnabled={WORKSPACE_FEATURES.skills}
           />
         </>
@@ -341,17 +350,21 @@ function QuickActionsRow({
   onOpenPalette,
   onOpenWorkflows,
   onOpenLinear,
+  onOpenSentry,
   onOpenProviders,
   onOpenGithub,
   linearEnabled,
+  sentryEnabled,
   skillsEnabled,
 }: {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
+  onOpenSentry: () => void;
   onOpenProviders: () => void;
   onOpenGithub: () => void;
   linearEnabled: boolean;
+  sentryEnabled: boolean;
   skillsEnabled: boolean;
 }) {
   const noProviderConnected = useAppStore(
@@ -389,6 +402,18 @@ function QuickActionsRow({
           label="Linear"
           title="launch a session from a Linear issue"
           onClick={onOpenLinear}
+        />
+      ) : null}
+      {sentryEnabled ? (
+        <QuickAction
+          icon={
+            <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-sentry text-[7px] font-bold text-white">
+              S
+            </span>
+          }
+          label="Sentry"
+          title="launch a session from a Sentry issue"
+          onClick={onOpenSentry}
         />
       ) : null}
       <QuickAction

@@ -292,6 +292,14 @@ vi.mock('../../../features/integrations/linear/client', () => ({
   linearDisconnect: linearDisconnectSpy,
 }));
 
+const sentryConnectSpy = vi.fn();
+const sentryDisconnectSpy = vi.fn(async () => undefined);
+
+vi.mock('../../../features/integrations/sentry/client', () => ({
+  sentryConnect: sentryConnectSpy,
+  sentryDisconnect: sentryDisconnectSpy,
+}));
+
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
   available: true,
   mode: 'gh-cli',
@@ -563,6 +571,120 @@ describe('store contract', () => {
       store.setState({ workspaceIntegrations: { [WS_ID]: [integ] } });
       await store.getState().disconnectLinear(WS_ID);
       expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([]);
+    });
+
+    it('connectSentry upserts a sentry row, derives config, and caches it', async () => {
+      const store = await getStore();
+      sentryConnectSpy.mockResolvedValueOnce({
+        slug: 'desktop',
+        name: 'Desktop',
+        organization: { slug: 'goodboy', name: 'Goodboy' },
+      });
+      const out = await store.getState().connectSentry(WS_ID, 'tok', 'goodboy', 'desktop');
+      expect(out.slug).toBe('desktop');
+      expect(sentryConnectSpy).toHaveBeenCalledWith(WS_ID, 'tok', 'goodboy', 'desktop');
+      expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
+      const cached = store.getState().workspaceIntegrations[WS_ID];
+      const sentry = cached?.find((i) => i.provider === 'sentry');
+      expect(sentry).toBeDefined();
+      expect(sentry?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.sentry`);
+      expect(sentry?.config).toEqual({
+        org: 'goodboy',
+        project: 'desktop',
+        projectName: 'Desktop',
+        orgName: 'Goodboy',
+      });
+    });
+
+    it('connectSentry reuses an existing row id and createdAt on reconnect', async () => {
+      const store = await getStore();
+      const existing: WorkspaceIntegration = {
+        id: 'sentry-old' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'sentry',
+        config: { org: 'goodboy', project: 'old', projectName: 'Old' },
+        credentialKey: `goodboy.workspace.${WS_ID}.sentry`,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+      sentryConnectSpy.mockResolvedValueOnce({
+        slug: 'new',
+        name: 'New',
+        organization: { slug: 'goodboy', name: 'Goodboy' },
+      });
+      await store.getState().connectSentry(WS_ID, 'tok', 'goodboy', 'new');
+      const cached = store.getState().workspaceIntegrations[WS_ID] ?? [];
+      const sentryRows = cached.filter((i) => i.provider === 'sentry');
+      expect(sentryRows).toHaveLength(1);
+      expect(sentryRows[0]?.id).toBe('sentry-old');
+      expect(sentryRows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
+      expect((sentryRows[0]?.config as { project: string }).project).toBe('new');
+    });
+
+    it('connectSentry preserves a coexisting linear row', async () => {
+      const store = await getStore();
+      const linear: WorkspaceIntegration = {
+        id: 'lin-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'linear',
+        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
+        credentialKey: 'k',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linear] } });
+      sentryConnectSpy.mockResolvedValueOnce({
+        slug: 'desktop',
+        name: 'Desktop',
+        organization: { slug: 'goodboy', name: 'Goodboy' },
+      });
+      await store.getState().connectSentry(WS_ID, 'tok', 'goodboy', 'desktop');
+      const providers = (store.getState().workspaceIntegrations[WS_ID] ?? [])
+        .map((i) => i.provider)
+        .sort();
+      expect(providers).toEqual(['linear', 'sentry']);
+    });
+
+    it('connectSentry propagates a backend error and leaves cache untouched', async () => {
+      const store = await getStore();
+      sentryConnectSpy.mockRejectedValueOnce(new Error('invalid token'));
+      await expect(
+        store.getState().connectSentry(WS_ID, 'bad', 'goodboy', 'desktop'),
+      ).rejects.toThrow('invalid token');
+      expect(upsertWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(store.getState().workspaceIntegrations[WS_ID]).toBeUndefined();
+    });
+
+    it('disconnectSentry calls backend + db and removes only the sentry row', async () => {
+      const store = await getStore();
+      const linear: WorkspaceIntegration = {
+        id: 'lin-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'linear',
+        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
+        credentialKey: 'k',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      const sentry: WorkspaceIntegration = {
+        id: 'sentry-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'sentry',
+        config: { org: 'goodboy', project: 'desktop' },
+        credentialKey: `goodboy.workspace.${WS_ID}.sentry`,
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, sentry] } });
+      await store.getState().disconnectSentry(WS_ID);
+      expect(sentryDisconnectSpy).toHaveBeenCalledWith(WS_ID);
+      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        WS_ID,
+        'sentry',
+      );
+      expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([linear]);
     });
   });
 });

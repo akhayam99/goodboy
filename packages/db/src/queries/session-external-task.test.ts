@@ -52,6 +52,30 @@ describe('session_external_tasks queries', () => {
     expect(got!.title).toBe(task.title);
   });
 
+  it('persists a sentry-provider task (widened provider CHECK)', async () => {
+    const db = await seed();
+    const task = makeTask({
+      provider: 'sentry',
+      externalId: 'sentry-issue-42',
+      identifier: 'GOODBOY-7A',
+      url: 'https://sentry.io/organizations/goodboy/issues/42/',
+      title: 'TypeError: undefined is not a function',
+    });
+    await setSessionExternalTask(db, task);
+
+    const got = await getSessionExternalTask(db, sessionId);
+    expect(got!.provider).toBe('sentry');
+    expect(got!.externalId).toBe('sentry-issue-42');
+    expect(got!.identifier).toBe('GOODBOY-7A');
+  });
+
+  it('rejects an unknown provider via the CHECK constraint', async () => {
+    const db = await seed();
+    await expect(
+      setSessionExternalTask(db, makeTask({ provider: 'asana' as never })),
+    ).rejects.toThrow(/CHECK constraint/);
+  });
+
   it('set on conflict replaces fields (1:1 per session)', async () => {
     const db = await seed();
     await setSessionExternalTask(db, makeTask());

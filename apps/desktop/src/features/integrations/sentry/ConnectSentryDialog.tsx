@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { LinearIntegrationConfig, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
+import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Loader2, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
@@ -12,22 +12,24 @@ type Props = {
   onClose: () => void;
 };
 
-export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
+export const ConnectSentryDialog = ({ workspaceId, open, onClose }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear =
-    (integrations.find((i) => i.provider === 'linear') as
-      | (WorkspaceIntegration & { config: LinearIntegrationConfig })
-      | undefined) ?? null;
-  const connectLinear = useAppStore((s) => s.connectLinear);
-  const disconnectLinear = useAppStore((s) => s.disconnectLinear);
+  const sentry = integrations.find((i) => i.provider === 'sentry') ?? null;
+  const sentryConfig = (sentry?.config ?? null) as SentryIntegrationConfig | null;
+  const connectSentry = useAppStore((s) => s.connectSentry);
+  const disconnectSentry = useAppStore((s) => s.disconnectSentry);
 
   const [token, setToken] = useState('');
+  const [org, setOrg] = useState('');
+  const [project, setProject] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
       setToken('');
+      setOrg('');
+      setProject('');
       setError(null);
       setBusy(false);
     }
@@ -37,8 +39,10 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
     setBusy(true);
     setError(null);
     try {
-      await connectLinear(workspaceId, token.trim());
+      await connectSentry(workspaceId, token.trim(), org.trim(), project.trim());
       setToken('');
+      setOrg('');
+      setProject('');
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -50,7 +54,7 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
     setBusy(true);
     setError(null);
     try {
-      await disconnectLinear(workspaceId);
+      await disconnectSentry(workspaceId);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -58,20 +62,22 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
     }
   };
 
+  const canConnect = token.trim().length > 0 && org.trim().length > 0 && project.trim().length > 0;
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title="Connect Linear"
-      description="Personal access token. Stored in your OS keychain."
+      title="Connect Sentry"
+      description="Auth token plus org and project slugs. Stored in your OS keychain."
       size="md"
       footer={
         <div className="flex w-full items-center justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Close
           </Button>
-          {linear ? null : (
-            <Button onClick={() => void onConnect()} disabled={busy || token.trim().length === 0}>
+          {sentry ? null : (
+            <Button onClick={() => void onConnect()} disabled={busy || !canConnect}>
               {busy ? (
                 <>
                   <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden /> Verifying…
@@ -85,17 +91,17 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
       }
     >
       <div className="flex flex-col gap-5">
-        {linear ? (
+        {sentry && sentryConfig ? (
           <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <CheckCircle2 size={14} aria-hidden className="text-success" />
-              Connected as {linear.config.viewerName}
+              Connected to {sentryConfig.projectName ?? sentryConfig.project}
             </div>
             <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-xs">
-              <dt className="text-muted-foreground">workspace</dt>
-              <dd className="font-mono text-foreground">
-                linear.app/{linear.config.workspaceUrlKey}
-              </dd>
+              <dt className="text-muted-foreground">organization</dt>
+              <dd className="font-mono text-foreground">{sentryConfig.org}</dd>
+              <dt className="text-muted-foreground">project</dt>
+              <dd className="font-mono text-foreground">{sentryConfig.project}</dd>
             </dl>
             <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
               <Unplug size={12} aria-hidden className="mr-1.5" />
@@ -105,30 +111,60 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
         ) : (
           <>
             <div className="flex flex-col gap-2">
-              <label htmlFor="linear-pat" className="text-xs font-semibold text-foreground">
-                Personal access token
+              <label htmlFor="sentry-token" className="text-xs font-semibold text-foreground">
+                Auth token
               </label>
               <Input
-                id="linear-pat"
+                id="sentry-token"
                 type="password"
                 autoFocus
-                placeholder="lin_api_…"
+                placeholder="sntryu_…"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 disabled={busy}
               />
               <a
-                href="https://linear.app/settings/account/security"
+                href="https://sentry.io/settings/account/api/auth-tokens/"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
               >
-                Create a token in Linear settings <ExternalLink size={10} aria-hidden />
+                Create a token in Sentry settings <ExternalLink size={10} aria-hidden />
               </a>
             </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="sentry-org" className="text-xs font-semibold text-foreground">
+                Organization slug
+              </label>
+              <Input
+                id="sentry-org"
+                placeholder="my-org"
+                value={org}
+                onChange={(e) => setOrg(e.target.value)}
+                disabled={busy}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="sentry-project" className="text-xs font-semibold text-foreground">
+                Project slug
+              </label>
+              <Input
+                id="sentry-project"
+                placeholder="my-project"
+                value={project}
+                onChange={(e) => setProject(e.target.value)}
+                disabled={busy}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </div>
             <p className="text-2xs leading-relaxed text-muted-foreground">
-              Read-only scope is enough. The token is stored encrypted in your operating system
-              keychain and never leaves this machine.
+              A token with issue read scope is enough. It is stored encrypted in your operating
+              system keychain and never leaves this machine.
             </p>
           </>
         )}

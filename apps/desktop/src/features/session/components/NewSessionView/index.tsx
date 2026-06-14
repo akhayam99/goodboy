@@ -324,7 +324,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
         ...(linearIssue
           ? {
-              linearIssue: {
+              externalTask: {
+                provider: 'linear' as const,
                 externalId: linearIssue.id,
                 identifier: linearIssue.identifier,
                 url: linearIssue.url,
