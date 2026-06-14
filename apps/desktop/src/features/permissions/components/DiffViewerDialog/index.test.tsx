@@ -177,7 +177,7 @@ describe('line comment add (single + multi-line drag)', () => {
     );
     await screen.findByText(/alpha/);
     const btns = screen.getAllByLabelText('comment on this line');
-    fireEvent.pointerDown(btns[0]);
+    fireEvent.pointerDown(btns[0]!);
     fireEvent.pointerUp(window);
     expect(await screen.findByText('commenting on line 1')).toBeDefined();
   });
@@ -194,7 +194,7 @@ describe('line comment add (single + multi-line drag)', () => {
     );
     await screen.findByText(/alpha/);
     const btns = screen.getAllByLabelText('comment on this line');
-    fireEvent.pointerDown(btns[0]);
+    fireEvent.pointerDown(btns[0]!);
     const lastRow = screen.getByText(/gamma/).closest('tr');
     expect(lastRow).not.toBeNull();
     fireEvent.mouseEnter(lastRow as HTMLElement);
@@ -306,7 +306,7 @@ describe('per-file reviewed state', () => {
     );
     await screen.findByText(/alpha/);
     const viewedButtons = screen.getAllByRole('button', { name: /viewed/i });
-    fireEvent.click(viewedButtons[0]);
+    fireEvent.click(viewedButtons[0]!);
     expect(await screen.findByText(/1\/2 reviewed/)).toBeDefined();
     expect(screen.queryByText(/alpha/)).toBeNull();
     expect(localStorage.getItem(`goodboy:diff-reviewed:${SID}:branch`)).not.toBeNull();

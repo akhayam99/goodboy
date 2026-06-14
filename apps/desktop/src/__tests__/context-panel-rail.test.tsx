@@ -254,7 +254,7 @@ describe('ContextPanel, 2-tab rail', () => {
       paths: ['a.ts'],
       count: 1,
     } as never);
-    vi.mocked(storeModule.useAppStore).mockImplementation((selector: (s: unknown) => unknown) => {
+    vi.mocked(storeModule.useAppStore).mockImplementation(((selector: (s: unknown) => unknown) => {
       const noWorktreeState = {
         upsertSessionSlot: vi.fn(),
         toggleSessionSlot: vi.fn(),
@@ -302,7 +302,7 @@ describe('ContextPanel, 2-tab rail', () => {
         deletePlan: vi.fn(),
       };
       return selector(noWorktreeState);
-    });
+    }) as never);
     render(<ContextPanel session={makeSession()} collapsed={false} onCollapse={vi.fn()} />);
     const diffBtn = screen.getByRole('button', { name: /files? touched/i });
     expect(diffBtn.getAttribute('disabled')).not.toBeNull();

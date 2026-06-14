@@ -65,7 +65,7 @@ describe('ScriptsSection', () => {
     fireEvent.click(screen.getByText('Create script'));
     window.removeEventListener('goodboy:open-workspace-settings', spy);
     expect(spy).toHaveBeenCalledTimes(1);
-    expect((spy.mock.calls[0][0] as CustomEvent).detail).toEqual({ section: 'scripts' });
+    expect((spy.mock.calls[0]![0] as CustomEvent).detail).toEqual({ section: 'scripts' });
   });
 
   it('lists the workspace scripts', () => {

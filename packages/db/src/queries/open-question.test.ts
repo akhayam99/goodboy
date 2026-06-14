@@ -39,7 +39,7 @@ describe('open_questions queries', () => {
 
     const open = await listOpenQuestionsForSession(db, sessionId, 'open');
     expect(open).toHaveLength(1);
-    expect(open[0].turnOrdinal).toBe(3);
+    expect(open[0]!.turnOrdinal).toBe(3);
   });
 
   it('omitted turnOrdinal stores null and reads undefined', async () => {
@@ -52,7 +52,7 @@ describe('open_questions queries', () => {
     });
 
     const open = await listOpenQuestionsForSession(db, sessionId, 'open');
-    expect(open[0].turnOrdinal).toBeUndefined();
+    expect(open[0]!.turnOrdinal).toBeUndefined();
   });
 
   it('recommendedAnswer round-trips and omitted reads undefined', async () => {
@@ -90,7 +90,7 @@ describe('open_questions queries', () => {
 
     const answered = await listOpenQuestionsForSession(db, sessionId, 'answered');
     expect(answered).toHaveLength(1);
-    expect(answered[0].turnOrdinal).toBe(5);
-    expect(answered[0].userAnswer).toBe('yes');
+    expect(answered[0]!.turnOrdinal).toBe(5);
+    expect(answered[0]!.userAnswer).toBe('yes');
   });
 });
