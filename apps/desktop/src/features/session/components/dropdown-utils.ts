@@ -1,16 +1,9 @@
 import { getModelDescriptor } from '@goodboy/core';
-import type { VerbosityLevel } from '../../settings/verbosity';
 
 export const MODEL_COST_DOT: Record<string, string> = {
   cheap: 'bg-emerald-400',
   mid: 'bg-amber-400',
   premium: 'bg-rose-400',
-};
-
-export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
-  brief: 'bg-emerald-400',
-  normal: 'bg-amber-400',
-  verbose: 'bg-rose-400',
 };
 
 export const modelCostTier = (modelId: string): 'cheap' | 'mid' | 'premium' => {

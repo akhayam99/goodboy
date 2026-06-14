@@ -17,7 +17,6 @@ import {
   FAMILY_SECTION_LABEL,
   type ModelFamily,
   TIER_TEXT,
-  VERBOSITY_DOT,
   VERBOSITY_TEXT,
   modelLabel,
   modelTier,

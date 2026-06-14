@@ -16,6 +16,13 @@ export const PROVIDER_TEXT: Record<ProviderId, string> = {
   gemini: 'text-[var(--color-provider-gemini)]',
 };
 
+export const PROVIDER_DOT: Record<ProviderId, string> = {
+  anthropic: 'bg-[var(--color-provider-anthropic)]',
+  cursor: 'bg-[var(--color-provider-cursor)]',
+  codex: 'bg-[var(--color-provider-codex)]',
+  gemini: 'bg-[var(--color-provider-gemini)]',
+};
+
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
 export type EffortLevel = ModelEffort;
 
@@ -94,12 +101,6 @@ export const TIER_TEXT: Record<CostTier, string> = {
   cheap: 'text-success',
   mid: 'text-warning',
   expensive: 'text-danger',
-};
-
-export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {
-  brief: 'bg-success',
-  normal: 'bg-info',
-  verbose: 'bg-danger',
 };
 
 export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
