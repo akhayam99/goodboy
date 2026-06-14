@@ -115,6 +115,30 @@ describe('buildQuestionClusters', () => {
     expect(orphan.questions.map((q) => q.id)).toEqual(['q2', 'q3']);
   });
 
+  it('clusters ad-hoc questions by creator agent when there is no workflow owner', () => {
+    const scout = agent('agent_scout', undefined, 'scout');
+    const fixer = agent('agent_fixer', undefined, 'fixer');
+
+    const qs: OpenQuestion[] = [
+      question('q1', { createdByAgentId: scout.id }),
+      question('q2', { createdByAgentId: fixer.id }),
+      question('q3', { createdByAgentId: scout.id }),
+    ];
+
+    const clusters = buildQuestionClusters({
+      questions: qs,
+      agents: [scout, fixer],
+      workflows: [],
+    });
+
+    expect(clusters).toHaveLength(2);
+    expect(clusters[0]?.ownerAgentId).toBe(scout.id);
+    expect(clusters[0]?.ownerAgentName).toBe('scout');
+    expect(clusters[0]?.questions.map((q) => q.id)).toEqual(['q1', 'q3']);
+    expect(clusters[1]?.ownerAgentId).toBe(fixer.id);
+    expect(clusters[1]?.questions.map((q) => q.id)).toEqual(['q2']);
+  });
+
   it('skips dismissed and answered questions', () => {
     const wfA = workflow(WF_A, 1);
     const planner = agent('agent_planner', wfA.steps[0]!.id, 'planner');

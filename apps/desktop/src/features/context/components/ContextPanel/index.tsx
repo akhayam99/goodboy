@@ -38,9 +38,8 @@ import type {
   SessionId,
   TelemetryRecord,
 } from '@goodboy/types';
-import { QuestionsTab } from '../QuestionsTab';
+import { OpenQuestionsStrip } from '../OpenQuestionsStrip';
 import { PullRequestChip } from '../../../../features/github/components/PullRequestChip';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeStatus } from '../../../../features/worktree/worktree';
 import { TerminalDock } from '../../../../features/terminal/components/TerminalDock';
 import {
@@ -48,7 +47,6 @@ import {
   useAppStore,
   useFilesTouched,
   useSessionLoading,
-  useSessionOpenQuestions,
   useSessionPlans,
   useSessionSlots,
   useSlotHistory,
@@ -87,8 +85,6 @@ export function ContextPanel({
   const plans = useSessionPlans(session.id);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
   const [tab, setTab] = useState<PanelTab>('context');
-  const [questionsExpanded, setQuestionsExpanded] = useState(true);
-  const questions = useSessionOpenQuestions(session.id);
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
 
   useEffect(() => {
@@ -270,48 +266,6 @@ export function ContextPanel({
                       );
                     })}
 
-                    {questions.length > 0 ? (
-                      <li className="flex flex-none flex-col rounded-lg ring-1 ring-warning/60 bg-muted/40 overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => setQuestionsExpanded((v) => !v)}
-                          aria-expanded={questionsExpanded}
-                          className="flex items-center gap-2 p-3 text-left w-full"
-                        >
-                          <span
-                            aria-hidden
-                            className="flex size-5 shrink-0 items-center justify-center rounded-md bg-warning/10 ring-1 ring-warning/20"
-                          >
-                            <HelpCircle size={11} className="text-warning" aria-hidden />
-                          </span>
-                          <span className="flex min-w-0 flex-1 items-baseline gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
-                            Open Questions
-                            <span className="inline-flex min-w-[1rem] items-center justify-center rounded-full bg-warning/20 px-1 text-[9px] font-medium normal-case tracking-normal text-warning">
-                              {questions.length}
-                            </span>
-                          </span>
-                          {questionsExpanded ? (
-                            <ChevronDown
-                              size={11}
-                              aria-hidden
-                              className="shrink-0 text-muted-foreground/50"
-                            />
-                          ) : (
-                            <ChevronRight
-                              size={11}
-                              aria-hidden
-                              className="shrink-0 text-muted-foreground/50"
-                            />
-                          )}
-                        </button>
-                        {questionsExpanded ? (
-                          <div className="px-3 pb-3">
-                            <QuestionsTab sessionId={session.id} inlineMode />
-                          </div>
-                        ) : null}
-                      </li>
-                    ) : null}
-
                     {visibleSlotKeys.slice(1).map((key) => {
                       const slot = slotsByKey.get(key);
                       return (
@@ -343,24 +297,7 @@ export function ContextPanel({
 
         <Divider />
 
-        {questions.length > 0 && (tab === 'terminal' || !questionsExpanded) ? (
-          <button
-            type="button"
-            onClick={() => {
-              setTab('context');
-              setQuestionsExpanded(true);
-            }}
-            className="flex shrink-0 items-center justify-between gap-2 border-t border-border-soft/40 bg-warning/5 px-4 py-2.5 text-xs text-warning transition-colors hover:bg-warning/10"
-          >
-            <span className="flex items-center gap-1.5">
-              <HelpCircle size={12} aria-hidden />
-              <span className="font-medium">
-                {questions.length} open question{questions.length !== 1 ? 's' : ''}
-              </span>
-            </span>
-            <ChevronRight size={12} aria-hidden className="shrink-0 opacity-60" />
-          </button>
-        ) : null}
+        <OpenQuestionsStrip sessionId={session.id} />
       </div>
     </>
   );
@@ -471,11 +408,15 @@ function ChangesStrip({
   plansLoading,
   hasActivePlan,
 }: ChangesStripProps) {
-  const [diffOpen, setDiffOpen] = useState(false);
   const count = filesTouched.count;
 
   const openPlanStudio = () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-plan-studio', { detail: { sessionId } }));
+
+  const openDiffViewer = () =>
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-diff-viewer', { detail: { sessionId, workingDir } }),
+    );
 
   return (
     <div className="flex shrink-0 flex-col gap-2 border-t border-border-soft/50 pt-2.5">
@@ -522,7 +463,7 @@ function ChangesStrip({
       {count > 0 ? (
         <button
           type="button"
-          onClick={() => setDiffOpen(true)}
+          onClick={openDiffViewer}
           disabled={!workingDir}
           title={workingDir ? 'open the diff viewer' : 'no worktree for this session'}
           className="flex w-full items-center justify-between gap-2 rounded-lg bg-info/5 px-3 py-2 text-xs text-info ring-1 ring-info/20 transition-colors hover:bg-info/10 disabled:cursor-default disabled:opacity-60"
@@ -553,16 +494,6 @@ function ChangesStrip({
           <span className="font-medium">working tree clean</span>
         </div>
       )}
-      {count > 0 ? (
-        <DiffViewerDialog
-          open={diffOpen}
-          onClose={() => setDiffOpen(false)}
-          sessionId={sessionId}
-          title={`${count} file${count === 1 ? '' : 's'} touched`}
-          workingDir={workingDir ?? undefined}
-          worktreePath={workingDir ?? undefined}
-        />
-      ) : null}
     </div>
   );
 }
@@ -620,7 +551,7 @@ function GithubStrip({ sessionId }: { sessionId: SessionId }) {
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
   const openStudio = () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-github-studio', { detail: { sessionId } }));
+    window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
 
   const detail = github?.detail ?? null;
   const unresolvedComments = (detail?.comments ?? []).filter(

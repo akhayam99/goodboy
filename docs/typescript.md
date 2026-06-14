@@ -5,7 +5,7 @@ and forbidden patterns and points here for the detail. These are rules, not
 suggestions.
 
 Goodboy is feature-first (`features/<domain>/`, see
-[adr/0001](./adr/0001-feature-first-code-placement.md)). The rules below are about
+[AGENTS.md](../AGENTS.md) → File system layout). The rules below are about
 how each file reads, not how the tree is organized.
 
 ## Types

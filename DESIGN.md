@@ -49,9 +49,12 @@ functional. One register per surface; let the other supply only texture.
   stacking one settings surface on another. The scope of a setting matches the
   scope of the surface it's edited on.
 - **One overlay slot.** Full-surface editors — new session, workflow builder,
-  scoped settings — share a single overlay spanning the main and right panes.
-  Only one occupies it at a time, by strict precedence; they never stack as
-  competing dialogs.
+  scoped settings, plan studio, diff viewer — share a single overlay spanning
+  the main and right panes. Only one occupies it at a time, by strict
+  precedence; they never stack as competing dialogs. Scope decides the pattern:
+  session- and workspace-scoped editors take the overlay slot so the workspaces
+  sidebar stays visible; app-level studios are full-page; transient
+  confirmations are dialogs.
 
 ## Density
 

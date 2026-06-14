@@ -22,12 +22,16 @@ import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { WorkflowBuilderView } from './features/session/components/WorkflowBuilderView';
 import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
+import { GitHubSessionPane } from './features/github/components/GitHubSessionPane';
 import { PlanStudio } from './features/plans/components/PlanStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
-import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
+import {
+  DiffViewerDialog,
+  DiffViewerPane,
+} from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
 import { DogMascot } from './shared/components/DogMascot';
@@ -124,6 +128,13 @@ export const App = () => {
   const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
   const [planStudioSession, setPlanStudioSession] = useState<SessionId | null>(null);
   const [planStudioPlanId, setPlanStudioPlanId] = useState<PlanId | null>(null);
+  const [diffViewerSession, setDiffViewerSession] = useState<SessionId | null>(null);
+  const [diffViewerWorkingDir, setDiffViewerWorkingDir] = useState<string | null>(null);
+  const [githubSessionPane, setGithubSessionPane] = useState<{
+    sessionId: SessionId;
+    prNumber: number | null;
+    threadId: string | null;
+  } | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [workflowBuilderSessionId, setWorkflowBuilderSessionId] = useState<SessionId | null>(null);
@@ -194,6 +205,9 @@ export const App = () => {
       setWorkspaceSettingsFocus(detail?.section);
       setSessionSettingsOpen(false);
       setNewSessionOpen(false);
+      setPlanStudioSession(null);
+      setDiffViewerSession(null);
+      setGithubSessionPane(null);
       setWorkspaceSettingsOpen(true);
     };
     window.addEventListener('goodboy:open-workspace-settings', handler);
@@ -210,6 +224,9 @@ export const App = () => {
       setWorkspaceSettingsFocus(undefined);
       setWorkflowBuilderSessionId(null);
       setNewSessionOpen(false);
+      setPlanStudioSession(null);
+      setDiffViewerSession(null);
+      setGithubSessionPane(null);
       setSessionSettingsOpen(true);
     };
     window.addEventListener('goodboy:open-session-settings', handler);
@@ -238,11 +255,63 @@ export const App = () => {
           planId?: PlanId;
         }>
       ).detail;
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      setWorkflowBuilderSessionId(null);
+      setDiffViewerSession(null);
+      setGithubSessionPane(null);
       setPlanStudioSession(detail?.sessionId ?? null);
       setPlanStudioPlanId(detail?.planId ?? null);
     };
     window.addEventListener('goodboy:open-plan-studio', handler);
     return () => window.removeEventListener('goodboy:open-plan-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      setWorkflowBuilderSessionId(null);
+      setPlanStudioSession(null);
+      setGithubSessionPane(null);
+      setDiffViewerSession(detail.sessionId);
+      setDiffViewerWorkingDir(detail.workingDir ?? null);
+    };
+    window.addEventListener('goodboy:open-diff-viewer', handler);
+    return () => window.removeEventListener('goodboy:open-diff-viewer', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
+      ).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      setWorkflowBuilderSessionId(null);
+      setPlanStudioSession(null);
+      setDiffViewerSession(null);
+      setGithubSessionPane({
+        sessionId: detail.sessionId,
+        prNumber: detail.prNumber ?? null,
+        threadId: detail.threadId ?? null,
+      });
+    };
+    window.addEventListener('goodboy:open-github-session', handler);
+    return () => window.removeEventListener('goodboy:open-github-session', handler);
   }, []);
 
   useEffect(() => {
@@ -286,6 +355,9 @@ export const App = () => {
         setWorkspaceSettingsFocus(undefined);
         setSessionSettingsOpen(false);
         setNewSessionOpen(false);
+        setPlanStudioSession(null);
+        setDiffViewerSession(null);
+        setGithubSessionPane(null);
         setWorkflowBuilderSessionId(detail.sessionId);
       }
     };
@@ -302,6 +374,9 @@ export const App = () => {
       setWorkspaceSettingsFocus(undefined);
       setSessionSettingsOpen(false);
       setWorkflowBuilderSessionId(null);
+      setPlanStudioSession(null);
+      setDiffViewerSession(null);
+      setGithubSessionPane(null);
       setNewSessionOpen(true);
     };
     window.addEventListener('goodboy:new-session', handler);
@@ -396,6 +471,12 @@ export const App = () => {
   }, [workflowBuilderSessionId, currentSession?.id]);
 
   useEffect(() => {
+    if (githubSessionPane && currentSession?.id !== githubSessionPane.sessionId) {
+      setGithubSessionPane(null);
+    }
+  }, [githubSessionPane, currentSession?.id]);
+
+  useEffect(() => {
     setSessionSettingsOpen(false);
   }, [currentSession?.id]);
 
@@ -420,6 +501,9 @@ export const App = () => {
   }, [currentSession?.id]);
 
   const openSettings = useCallback(() => {
+    setPlanStudioSession(null);
+    setDiffViewerSession(null);
+    setGithubSessionPane(null);
     setAppSettingsFocus(undefined);
     setAppSettingsOpen(true);
   }, []);
@@ -708,6 +792,35 @@ export const App = () => {
               session={currentSession}
               onClose={() => setWorkflowBuilderSessionId(null)}
             />
+          ) : planStudioSession && currentWorkspace ? (
+            <PlanStudio
+              sessionId={planStudioSession}
+              workspaceName={currentWorkspace.name}
+              initialPlanId={planStudioPlanId ?? undefined}
+              onClose={() => {
+                setPlanStudioSession(null);
+                setPlanStudioPlanId(null);
+              }}
+            />
+          ) : diffViewerSession && currentWorkspace ? (
+            <DiffViewerPane
+              sessionId={diffViewerSession}
+              workspaceName={currentWorkspace.name}
+              workingDir={diffViewerWorkingDir ?? undefined}
+              worktreePath={diffViewerWorkingDir ?? undefined}
+              onClose={() => {
+                setDiffViewerSession(null);
+                setDiffViewerWorkingDir(null);
+              }}
+            />
+          ) : githubSessionPane && currentWorkspace ? (
+            <GitHubSessionPane
+              sessionId={githubSessionPane.sessionId}
+              workspaceName={currentWorkspace.name}
+              initialPrNumber={githubSessionPane.prNumber}
+              initialThreadId={githubSessionPane.threadId}
+              onClose={() => setGithubSessionPane(null)}
+            />
           ) : undefined
         }
       />
@@ -753,17 +866,6 @@ export const App = () => {
           initialPrNumber={githubStudioPrNumber}
           initialThreadId={githubStudioThreadId}
           onClose={() => setGithubStudioOpen(false)}
-        />
-      ) : null}
-      {planStudioSession && currentWorkspace ? (
-        <PlanStudio
-          sessionId={planStudioSession}
-          workspaceName={currentWorkspace.name}
-          initialPlanId={planStudioPlanId ?? undefined}
-          onClose={() => {
-            setPlanStudioSession(null);
-            setPlanStudioPlanId(null);
-          }}
         />
       ) : null}
       {providerStudioOpen && currentWorkspace ? (

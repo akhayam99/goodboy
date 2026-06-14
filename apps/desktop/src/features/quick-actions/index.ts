@@ -8,4 +8,3 @@ export {
   buildWorkflowActions,
 } from './registry';
 export { QuickActionsPopover } from './QuickActionsPopover';
-export { ScriptResultRow } from './ScriptResultRow';

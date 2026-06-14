@@ -20,7 +20,9 @@ type OpenQuestionRow = {
   created_by_agent_id: string | null;
   text: string;
   suggested_answers: string;
+  recommended_answer: string | null;
   user_answer: string | null;
+  turn_ordinal: number | null;
   status: string;
   created_at: number;
   answered_at: number | null;
@@ -38,7 +40,9 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
     createdByAgentId: row.created_by_agent_id ? (row.created_by_agent_id as AgentId) : undefined,
     text: row.text,
     suggestedAnswers: JSON.parse(row.suggested_answers) as ReadonlyArray<string>,
+    recommendedAnswer: row.recommended_answer ?? undefined,
     userAnswer: row.user_answer,
+    turnOrdinal: row.turn_ordinal ?? undefined,
     status: row.status as OpenQuestionStatus,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     answeredAt: row.answered_at
@@ -60,6 +64,8 @@ export type InsertOpenQuestionInput = {
   readonly createdByAgentId?: AgentId;
   readonly text: string;
   readonly suggestedAnswers: ReadonlyArray<string>;
+  readonly recommendedAnswer?: string;
+  readonly turnOrdinal?: number;
 };
 
 export type InsertOpenQuestionResult = {
@@ -75,8 +81,8 @@ export const insertOpenQuestion = async (
   await db.execute(
     `INSERT OR IGNORE INTO open_questions
        (id, session_id, workflow_id, workflow_run_id, created_by_step_ordinal, owned_by_step_ordinal,
-        created_by_agent_id, text, suggested_answers, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+        created_by_agent_id, text, suggested_answers, recommended_answer, turn_ordinal, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
     [
       input.id,
       input.sessionId,
@@ -87,6 +93,8 @@ export const insertOpenQuestion = async (
       input.createdByAgentId ?? null,
       input.text,
       JSON.stringify(input.suggestedAnswers),
+      input.recommendedAnswer ?? null,
+      input.turnOrdinal ?? null,
       now,
     ],
   );

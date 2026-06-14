@@ -43,4 +43,24 @@ describe('QuestionCard', () => {
     fireEvent.click(screen.getByTitle(/dismiss question/i));
     expect(onDismiss).toHaveBeenCalledWith('q1');
   });
+
+  it('marks a recommended answer that matches a suggestion and toggles it on click', () => {
+    const onToggleSuggestion = vi.fn();
+    const question = { ...baseQuestion, recommendedAnswer: 'sqlite' } as OpenQuestion;
+    render(
+      <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
+    );
+    fireEvent.click(screen.getByTitle('sqlite (suggested)'));
+    expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'sqlite');
+  });
+
+  it('prepends a free-form recommendation as a marked chip when it is not a suggestion', () => {
+    const onToggleSuggestion = vi.fn();
+    const question = { ...baseQuestion, recommendedAnswer: 'use both' } as OpenQuestion;
+    render(
+      <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
+    );
+    fireEvent.click(screen.getByTitle('use both (suggested)'));
+    expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'use both');
+  });
 });

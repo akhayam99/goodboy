@@ -164,6 +164,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
       workspaceName={workspaceName}
       closeLabel="close plan studio"
       onClose={onClose}
+      variant="slot"
     >
       {(requestClose) => (
         <>
@@ -417,27 +418,23 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
                   <div className="shrink-0 py-2">
                     <Divider />
                   </div>
-                  <div className="relative min-h-0 flex-1">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-background to-transparent" />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-background to-transparent" />
-                    <div
-                      className={cn(
-                        'h-full overflow-y-auto',
-                        mode === 'edit' && 'rounded-md border border-border-soft p-2',
-                      )}
-                    >
-                      {mode === 'edit' ? (
-                        <Textarea
-                          autoFocus
-                          value={draft}
-                          onChange={(e) => setDraft(e.target.value)}
-                          className="h-full w-full resize-none border-0 bg-transparent p-0 font-mono text-xs shadow-none focus-visible:shadow-none focus-visible:ring-0"
-                        />
-                      ) : (
-                        <Markdown text={selected.bodyMd} className="text-xs" />
-                      )}
-                    </div>
-                  </div>
+                  <ScrollFade
+                    className={cn(
+                      'min-h-0 flex-1',
+                      mode === 'edit' && 'rounded-md border border-border-soft p-2',
+                    )}
+                  >
+                    {mode === 'edit' ? (
+                      <Textarea
+                        autoFocus
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        className="h-full w-full resize-none border-0 bg-transparent p-0 font-mono text-xs shadow-none focus-visible:shadow-none focus-visible:ring-0"
+                      />
+                    ) : (
+                      <Markdown text={selected.bodyMd} className="text-xs" />
+                    )}
+                  </ScrollFade>
                 </>
               ) : (
                 <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">

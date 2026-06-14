@@ -190,6 +190,15 @@ export const useSessionOpenQuestions = (sessionId: SessionId | null): ReadonlyAr
     sessionId ? (s.sessionOpenQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS) : EMPTY_OPEN_QUESTIONS,
   );
 
+export const useSessionAnsweredQuestions = (
+  sessionId: SessionId | null,
+): ReadonlyArray<OpenQuestion> =>
+  useAppStore((s) =>
+    sessionId
+      ? (s.sessionAnsweredQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS)
+      : EMPTY_OPEN_QUESTIONS,
+  );
+
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',
   lastUpdate: null,

@@ -12,11 +12,11 @@ export const WorkspaceHeader = () => {
   const accent = workspaceAccent(currentWorkspace.id);
 
   return (
-    <div className="shrink-0 px-3 py-3" data-tauri-drag-region="false">
+    <div className="shrink-0 px-3 py-2" data-tauri-drag-region="false">
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="h-5 w-1 shrink-0 rounded-full"
+          className="h-4 w-1 shrink-0 rounded-full"
           style={{ backgroundColor: accent }}
         />
         <button
@@ -27,7 +27,7 @@ export const WorkspaceHeader = () => {
           title="Switch or open a workspace"
           aria-label="Switch or open a workspace"
         >
-          <span className="truncate text-sm font-semibold text-foreground">
+          <span className="truncate text-xs font-semibold text-foreground">
             {currentWorkspace.name}
           </span>
           {hasUnreadElsewhere ? (

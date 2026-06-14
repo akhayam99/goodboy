@@ -44,7 +44,6 @@ import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, type ToastKind } from '../../../../app/components/Toast';
 import {
   QuickActionsPopover,
-  ScriptResultRow,
   buildAgentActions,
   buildScriptActions,
   buildSkillActions,
@@ -204,9 +203,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const workspaceScripts = useAppStore(
     useShallow((s) => s.workspaceScripts[session.workspaceId] ?? EMPTY_ARRAY),
   );
-  const runWorkspaceScript = useAppStore((s) => s.runWorkspaceScript);
-  const dismissScriptResult = useAppStore((s) => s.dismissScriptResult);
-  const scriptResult = useAppStore((s) => s.sessionScriptResult[session.id] ?? null);
+  const runScript = useAppStore((s) => s.runScript);
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const workspaceWorkflows = useAppStore(
@@ -355,9 +352,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       }
       setValue('');
       setShowPopover(false);
-      void runWorkspaceScript(session.id, script, sessionWorktree);
+      void runScript(session.id, script.id, sessionWorktree);
     },
-    [runWorkspaceScript, setValue, session.id, sessionWorktree, showToast],
+    [runScript, setValue, session.id, sessionWorktree, showToast],
   );
 
   const onPickSkill = useCallback(
@@ -1285,9 +1282,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           />
         )}
         <SuggestionStack items={suggestions} />
-        {scriptResult ? (
-          <ScriptResultRow state={scriptResult} onDismiss={() => dismissScriptResult(session.id)} />
-        ) : null}
         <QueuedMessages
           items={queue}
           canEdit={value.trim().length === 0 && attachments.length === 0}

@@ -79,11 +79,7 @@ import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
 import { type CreatedWorktree } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
-import type {
-  ScriptRunResult,
-  ScriptRunRecord,
-  ScriptResultState,
-} from '../features/scripts/scripts';
+import type { ScriptRunResult, ScriptRunRecord } from '../features/scripts/scripts';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
 import type { TerminalTab, TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
@@ -220,7 +216,6 @@ export type AppState = UpdaterState & {
   readonly scriptRuns: Readonly<
     Record<SessionId, Readonly<Record<WorkspaceScriptId, ScriptRunRecord>>>
   >;
-  readonly sessionScriptResult: Readonly<Record<SessionId, ScriptResultState | null>>;
   readonly phaseTemplates: Readonly<Record<WorkspaceId, ReadonlyArray<Workflow>>>;
   readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
@@ -256,6 +251,11 @@ export type AppState = UpdaterState & {
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
+  readonly sessionAnsweredQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
+  readonly openQuestionScrollTarget: {
+    readonly agentId: AgentId;
+    readonly questionId: OpenQuestionId;
+  } | null;
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
@@ -437,8 +437,6 @@ export type AppActions = {
     rows?: number,
   ): Promise<ScriptRunResult>;
   cancelScript(sessionId: SessionId, scriptId: WorkspaceScriptId): Promise<void>;
-  runWorkspaceScript(sessionId: SessionId, script: WorkspaceScript, cwd: string): Promise<void>;
-  dismissScriptResult(sessionId: SessionId): void;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
@@ -598,6 +596,9 @@ export type AppActions = {
   markNotificationsRead(): Promise<void>;
   clearNotifications(): Promise<void>;
   loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
+  loadSessionAnsweredQuestions(sessionId: SessionId): Promise<void>;
+  requestOpenQuestionScroll(target: { agentId: AgentId; questionId: OpenQuestionId }): void;
+  clearOpenQuestionScroll(): void;
   answerOpenQuestions(
     sessionId: SessionId,
     pairs: ReadonlyArray<{ id: OpenQuestionId; text: string; answer: string }>,
@@ -673,7 +674,6 @@ export const initialState: AppState = {
   skills: {},
   workspaceScripts: {},
   scriptRuns: {},
-  sessionScriptResult: {},
   phaseTemplates: {},
   stepLibrary: {},
   sessionWorkflows: {},
@@ -711,6 +711,8 @@ export const initialState: AppState = {
   sessionNudges: {},
   planConsumptions: {},
   sessionOpenQuestions: {},
+  sessionAnsweredQuestions: {},
+  openQuestionScrollTarget: null,
   sessionLoading: {},
   sessionViewPrefs: {},
   terminalSessions: {},

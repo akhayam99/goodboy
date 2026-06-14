@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Loader2, Plus, Target, Wand2, X } from 'lucide-react';
+import { AlertTriangle, GitBranch, Loader2, Plus, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
@@ -17,6 +17,7 @@ import { IssuePicker } from '../../../../features/integrations/linear/IssuePicke
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
+import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
 
 type Props = {
   onClose: () => void;
@@ -361,31 +362,14 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   return (
     <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
-      <header className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-          <Plus size={16} className="text-primary" aria-hidden />
-        </span>
-        <div className="flex min-w-0 flex-col">
-          <h1 className="text-sm font-semibold text-foreground">New session</h1>
-          <span className="truncate text-2xs text-muted-foreground">
-            {workspace ? `in: ${workspace.name}` : 'creates a worktree on a fresh branch'}
-          </span>
-        </div>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={busy}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors',
-            'hover:border-border hover:bg-muted/50 hover:text-foreground',
-            busy && 'cursor-not-allowed opacity-50',
-          )}
-          aria-label="cancel new session"
-        >
-          <X size={13} aria-hidden /> Cancel
-        </button>
-      </header>
+      <OverlayHeader
+        icon={Plus}
+        title="New session"
+        subtitle={workspace ? `in: ${workspace.name}` : 'creates a worktree on a fresh branch'}
+        onClose={onClose}
+        closeLabel="cancel new session"
+        closeDisabled={busy}
+      />
       <Divider />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">

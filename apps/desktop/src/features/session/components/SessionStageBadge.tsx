@@ -12,20 +12,13 @@ export const SessionStageBadge = ({ session }: Props) => {
   const meta = SESSION_STAGE_META[stage];
   return (
     <span
-      title={reason}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5"
-    >
-      <span
-        aria-hidden
-        className={cn(
-          'size-1.5 rounded-full',
-          meta.dotClassName,
-          stage === 'running' && 'animate-pulse',
-        )}
-      />
-      <span className={cn('whitespace-nowrap text-2xs font-medium', meta.textClassName)}>
-        {meta.label}
-      </span>
-    </span>
+      title={reason ?? meta.label}
+      aria-label={meta.label}
+      className={cn(
+        'inline-block size-2 shrink-0 rounded-full',
+        meta.dotClassName,
+        stage === 'running' && 'animate-pulse',
+      )}
+    />
   );
 };

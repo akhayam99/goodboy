@@ -21,6 +21,7 @@ export type AgentContext = {
   readonly workflowId?: WorkflowId;
   readonly workflowRunId?: WorkflowRunId;
   readonly stepOrdinal?: number;
+  readonly turnOrdinal?: number;
 };
 
 export type AutoPopulateInput = {
@@ -78,6 +79,8 @@ export const autoPopulateContext = async (
       createdByAgentId: input.agentContext?.agentId,
       text: q.text,
       suggestedAnswers: q.suggestedAnswers,
+      recommendedAnswer: q.recommendedAnswer ?? undefined,
+      turnOrdinal: input.agentContext?.turnOrdinal,
     });
     if (res.inserted) {
       insertedCount += 1;
