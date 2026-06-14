@@ -358,7 +358,7 @@ function QuickActionsRow({
     (s) => !s.providers.some((p) => p.connection === 'connected'),
   );
   return (
-    <div className="flex shrink-0 items-center gap-1 px-2.5 pt-2">
+    <div className="flex shrink-0 items-center gap-1 px-2.5 py-2">
       {skillsEnabled ? (
         <QuickAction
           icon={<Sparkles size={12} className="text-warning" aria-hidden />}
