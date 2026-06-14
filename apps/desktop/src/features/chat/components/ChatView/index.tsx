@@ -53,7 +53,7 @@ import {
 } from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
-import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
+import { OpenQuestionCluster } from './OpenQuestionCluster';
 
 type ChatViewProps = {
   session: Session;
@@ -580,10 +580,8 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                     return;
                   }
                   out.push(
-                    <li key={`oq-${ordinal}`} className="mt-2.5 flex flex-col gap-2">
-                      {cards.map((q) => (
-                        <OpenQuestionInlineCard key={q.id} question={q} sessionId={session.id} />
-                      ))}
+                    <li key={`oq-${ordinal}`} className="mt-2.5">
+                      <OpenQuestionCluster questions={cards} sessionId={session.id} />
                     </li>,
                   );
                 };

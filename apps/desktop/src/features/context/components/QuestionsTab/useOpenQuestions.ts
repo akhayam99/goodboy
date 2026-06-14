@@ -31,6 +31,11 @@ function emptyDraft(): QuestionDraft {
   return { selectedSuggestions: [], customAnswer: '', showCustomField: false };
 }
 
+export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string =>
+  (draft?.customAnswer.trim().length ?? 0) > 0
+    ? draft!.customAnswer.trim()
+    : (draft?.selectedSuggestions ?? []).join(', ');
+
 export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   drafts: {},
   justAnswered: [],

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { ArrowRight, Bot, CheckCircle2, ChevronDown } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Bot, CheckCircle2, ChevronDown } from 'lucide-react';
+import { cn, Markdown } from '@goodboy/ui';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { QuestionCard } from '../../../context/components/QuestionsTab/QuestionCard';
@@ -36,30 +36,11 @@ const InteractiveCard = ({ question, sessionId }: Props) => {
     toggleSuggestion,
     setCustomAnswer,
     toggleCustomField,
-    flashAnswered,
     clearJustAnswered,
   } = useOpenQuestions();
-  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
 
   const draft = drafts[question.id];
-  const answer =
-    (draft?.customAnswer.trim().length ?? 0) > 0
-      ? draft!.customAnswer.trim()
-      : (draft?.selectedSuggestions ?? []).join(', ');
-  const hasPendingAnswer = answer.length > 0;
-
-  const handleSubmit = useCallback(async () => {
-    if (answer.length === 0) {
-      return;
-    }
-    flashAnswered([question.id]);
-    await answerOpenQuestions(
-      sessionId,
-      [{ id: question.id, text: question.text, answer }],
-      question.createdByAgentId ?? null,
-    );
-  }, [answer, flashAnswered, answerOpenQuestions, sessionId, question]);
 
   const handleDismiss = useCallback(() => {
     void dismissOpenQuestion(sessionId, question);
@@ -79,25 +60,6 @@ const InteractiveCard = ({ question, sessionId }: Props) => {
         onDismiss={handleDismiss}
         onClearJustAnswered={clearJustAnswered}
       />
-      {hasPendingAnswer && (
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
-          className={cn(
-            'group flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold',
-            'bg-primary text-primary-foreground shadow-sm transition-all duration-150',
-            'hover:brightness-105 active:scale-[0.99]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-          )}
-        >
-          <span>send answer</span>
-          <ArrowRight
-            size={13}
-            aria-hidden
-            className="transition-transform group-hover:translate-x-0.5"
-          />
-        </button>
-      )}
     </div>
   );
 };
@@ -125,14 +87,16 @@ const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
           ) : (
             <CheckCircle2 size={13} aria-hidden className="mt-0.5 shrink-0 text-success" />
           )}
-          <p
-            className={cn(
-              'min-w-0 break-words text-xs leading-relaxed text-foreground',
-              !expanded && 'line-clamp-1',
-            )}
-          >
-            {question.text}
-          </p>
+          {expanded ? (
+            <Markdown
+              text={question.text}
+              className="min-w-0 gap-1.5 break-words text-[13px] leading-relaxed text-foreground"
+            />
+          ) : (
+            <p className="min-w-0 break-words text-xs leading-relaxed text-foreground line-clamp-1">
+              {question.text}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5 text-2xs text-muted-foreground">
           <span>{relativeTime(answeredAt)}</span>
@@ -151,9 +115,10 @@ const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
           ) : (
             <>
               <span className="text-2xs font-medium text-muted-foreground">You answered:</span>
-              <p className="mt-0.5 break-words text-xs leading-relaxed text-foreground">
-                {question.userAnswer}
-              </p>
+              <Markdown
+                text={question.userAnswer ?? ''}
+                className="mt-0.5 gap-1.5 break-words text-[13px] leading-relaxed text-foreground"
+              />
             </>
           )}
         </div>

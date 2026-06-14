@@ -40,7 +40,7 @@ export const SuggestionChip = ({ label, selected, recommended = false, onToggle 
       {recommended && !selected && (
         <Sparkles size={11} aria-hidden className="mr-1 shrink-0 text-warning" />
       )}
-      <span className="truncate">{label}</span>
+      <span className="min-w-0 break-words text-left">{label}</span>
     </button>
   );
 };
