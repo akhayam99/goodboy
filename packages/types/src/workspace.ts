@@ -101,7 +101,7 @@ export type WorkspaceScript = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceIntegrationProvider = 'linear';
+export type WorkspaceIntegrationProvider = 'linear' | 'sentry';
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -109,17 +109,24 @@ export type LinearIntegrationConfig = Readonly<{
   viewerName: string;
 }>;
 
+export type SentryIntegrationConfig = Readonly<{
+  org: string;
+  project: string;
+  projectName?: string;
+  orgName?: string;
+}>;
+
 export type WorkspaceIntegration = Readonly<{
   id: WorkspaceIntegrationId;
   workspaceId: WorkspaceId;
   provider: WorkspaceIntegrationProvider;
-  config: LinearIntegrationConfig;
+  config: LinearIntegrationConfig | SentryIntegrationConfig;
   credentialKey: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
 
-export type SessionExternalTaskProvider = 'linear';
+export type SessionExternalTaskProvider = 'linear' | 'sentry';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;

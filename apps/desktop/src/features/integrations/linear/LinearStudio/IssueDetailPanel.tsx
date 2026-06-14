@@ -219,7 +219,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
         branchSlug: branchSlug.trim() || undefined,
         ...(adoptBranch ? { existingBranch: adoptBranch } : {}),
-        linearIssue: {
+        externalTask: {
+          provider: 'linear',
           externalId: issue.id,
           identifier: issue.identifier,
           url: issue.url,

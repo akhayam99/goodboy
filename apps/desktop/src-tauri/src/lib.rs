@@ -17,6 +17,7 @@ mod providers;
 mod repo;
 mod scripts;
 mod secrets;
+mod sentry;
 mod settings_overrides;
 mod skills;
 mod summarize;
@@ -57,6 +58,7 @@ pub fn run() {
   let terminal_registry = terminal::TerminalRegistry::new();
   let provider_lifecycle_registry = provider_lifecycle::ProviderLifecycleRegistry::new();
   let linear_token_cache = linear::LinearTokenCache::new();
+  let sentry_token_cache = sentry::SentryTokenCache::new();
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
@@ -71,6 +73,7 @@ pub fn run() {
     .manage(terminal_registry)
     .manage(provider_lifecycle_registry)
     .manage(linear_token_cache)
+    .manage(sentry_token_cache)
     .setup(|app| {
       #[cfg(desktop)]
       app
@@ -209,6 +212,10 @@ pub fn run() {
       linear::linear_connect,
       linear::linear_disconnect,
       linear::linear_fetch_assigned_issues,
+      sentry::sentry_connect,
+      sentry::sentry_disconnect,
+      sentry::sentry_fetch_issues,
+      sentry::sentry_fetch_issue_detail,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

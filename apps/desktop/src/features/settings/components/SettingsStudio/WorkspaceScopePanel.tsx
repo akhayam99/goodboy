@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { GhTokenStatus, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import type {
+  GhTokenStatus,
+  LinearIntegrationConfig,
+  ProviderId,
+  SentryIntegrationConfig,
+  VerbosityLevel,
+  WorkspaceId,
+  WorkspaceIntegration,
+} from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, FieldRow, cn } from '@goodboy/ui';
 import { Check, GitBranch, Loader2, Unplug } from 'lucide-react';
@@ -10,6 +18,7 @@ import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel'
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
+import { ConnectSentryDialog } from '../../../../features/integrations/sentry/ConnectSentryDialog';
 import { ConnectGithubDialog } from '../../../../features/integrations/github/ConnectGithubDialog';
 import { ghStatus } from '../../../../features/github/github';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
@@ -236,6 +245,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
           <div ref={anchor('integrations')} className="py-4 first:pt-0 last:pb-0">
             <LinearRow workspaceId={workspaceId} />
+            <SentryRow workspaceId={workspaceId} />
           </div>
           <GithubRow workspaceId={workspaceId} />
 
@@ -318,7 +328,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
 function LinearRow({ workspaceId }: { workspaceId: WorkspaceId }) {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
+  const linear =
+    (integrations.find((i) => i.provider === 'linear') as
+      | (WorkspaceIntegration & { config: LinearIntegrationConfig })
+      | undefined) ?? null;
   const [open, setOpen] = useState(false);
 
   return (
@@ -334,6 +347,31 @@ function LinearRow({ workspaceId }: { workspaceId: WorkspaceId }) {
         {linear ? 'Manage' : 'Connect'}
       </Button>
       <ConnectLinearDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
+    </FieldRow>
+  );
+}
+
+function SentryRow({ workspaceId }: { workspaceId: WorkspaceId }) {
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
+  const sentry =
+    (integrations.find((i) => i.provider === 'sentry') as
+      | (WorkspaceIntegration & { config: SentryIntegrationConfig })
+      | undefined) ?? null;
+  const [open, setOpen] = useState(false);
+
+  return (
+    <FieldRow
+      label="Sentry"
+      help={
+        sentry
+          ? `Connected to ${sentry.config.org}/${sentry.config.project}`
+          : 'Pull app issues into session goals.'
+      }
+    >
+      <Button variant={sentry ? 'ghost' : 'secondary'} size="sm" onClick={() => setOpen(true)}>
+        {sentry ? 'Manage' : 'Connect'}
+      </Button>
+      <ConnectSentryDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
     </FieldRow>
   );
 }
