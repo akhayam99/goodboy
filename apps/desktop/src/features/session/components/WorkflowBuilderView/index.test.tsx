@@ -43,7 +43,8 @@ vi.mock('../../../../store', () => {
     <T,>(selector: (s: never) => T) => selector(getState() as never),
     { getState },
   );
-  return { EMPTY_ARRAY: Object.freeze([]), useAppStore };
+  const useSessionSlots = () => [{ key: 'goal', value: 'do a thing' }];
+  return { EMPTY_ARRAY: Object.freeze([]), useAppStore, useSessionSlots };
 });
 
 vi.mock('../../../../app/components/Toast', () => ({
