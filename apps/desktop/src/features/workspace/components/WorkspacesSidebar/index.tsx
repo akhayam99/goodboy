@@ -1,16 +1,7 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
-import {
-  Button,
-  Dialog,
-  Divider,
-  EmptyState,
-  Popover,
-  ScrollArea,
-  SectionHeader,
-  cn,
-} from '@goodboy/ui';
+import { Button, Dialog, Divider, Popover, ScrollArea, SectionHeader, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -22,25 +13,19 @@ import {
   ChevronUp,
   Clock,
   DollarSign,
-  FolderPlus,
   Gauge,
   GitCommit,
-  GitPullRequest,
   HelpCircle,
   Layers,
   Link2,
   Loader2,
   MessageSquareReply,
   Moon,
-  MousePointerClick,
   PanelLeftClose,
-  PanelLeftOpen,
   Pause,
   Play,
-  Plug,
   Plus,
   Settings,
-  Sparkles,
   Sun,
   Trash2,
   X,
@@ -52,16 +37,13 @@ import { NotificationCenter } from '../../../../features/notifications/component
 import { ScriptsSection } from '../../../scripts/components/ScriptsSection';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
 import { OnboardingChip } from '../../../onboarding/OnboardingCard';
 import type {
   Agent,
   AgentId,
-  ProviderId,
   ProviderRunId,
   Session,
   SessionId,
-  StepId,
   TelemetryRecord,
   TurnState,
   Workflow,
@@ -77,15 +59,11 @@ import {
   useCurrentWorkspace,
   useSessionLoading,
   useSessionOpenQuestions,
-  useSessionPlans,
   useSessions,
   useWorkspaces,
 } from '../../../../store';
 import { pickNextWorkflowStep } from '../../../../features/workflows/components/WorkflowNextStepCta';
-import {
-  workflowHasOpenQuestions,
-  workflowRunHasOpenQuestions,
-} from '../../../../features/context/openQuestionsGate';
+import { workflowRunHasOpenQuestions } from '../../../../features/context/openQuestionsGate';
 import {
   computeLatestTelemetryByAgentId,
   formatCost,
@@ -93,17 +71,12 @@ import {
 } from '../../../../features/session/agent-row-format';
 import { PROVIDER_CAPABILITIES, WORKFLOW_LIBRARY, getModelProvider } from '@goodboy/core';
 import {
-  PROVIDER_BRAND,
-  brandColor,
-} from '../../../../features/providers/components/provider-brand';
-import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   AGENT_KIND_ORDER,
   AGENT_KIND_PALETTE,
   type AgentKind,
   inferAgentKindFromName,
-  kindConsumesPlan,
   resolveAgentKind,
 } from '../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../features/session/components/AgentKindChip';
@@ -120,6 +93,15 @@ import { SessionDetailPanel, SessionMetaFooter } from '../SessionDetailPanel';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { openUrl } from '../../../../shared/lib/editor';
+import { FOOTER_ICON_BTN } from './lib';
+import { CollapsedSidebarRail } from './parts/CollapsedSidebarRail';
+import { QuickActionsRow } from './parts/QuickActionsRow';
+import { SectionToggle } from './parts/SectionToggle';
+import { SidebarLogo } from './parts/SidebarLogo';
+import { SidebarDetailHint } from './parts/SidebarDetailHint';
+import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
+import { PlanReadySuggestion } from './parts/PlanReadySuggestion';
+import { ProviderGlyph } from './parts/ProviderGlyph';
 
 type WorkspacesSidebarProps = {
   onOpenSettings: () => void;
@@ -134,9 +116,6 @@ type WorkspacesSidebarProps = {
   collapsed?: boolean;
   onToggleCollapse: () => void;
 };
-
-const FOOTER_ICON_BTN =
-  'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
 export const WorkspacesSidebar = ({
   onOpenSettings,
@@ -338,152 +317,6 @@ export const WorkspacesSidebar = ({
   );
 };
 
-function CollapsedSidebarRail({ onExpand }: { onExpand: () => void }) {
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-between py-3">
-      <DogMascot size={18} className="shrink-0 text-foreground" />
-      <button
-        type="button"
-        onClick={onExpand}
-        title="expand sidebar (⌘B)"
-        aria-label="expand sidebar"
-        className={FOOTER_ICON_BTN}
-      >
-        <PanelLeftOpen size={16} aria-hidden />
-      </button>
-    </div>
-  );
-}
-
-function QuickActionsRow({
-  onOpenPalette,
-  onOpenWorkflows,
-  onOpenLinear,
-  onOpenSentry,
-  onOpenGitlab,
-  onOpenProviders,
-  onOpenGithub,
-  linearEnabled,
-  sentryEnabled,
-  gitlabEnabled,
-  skillsEnabled,
-}: {
-  onOpenPalette: (initialQuery?: string) => void;
-  onOpenWorkflows: () => void;
-  onOpenLinear: () => void;
-  onOpenSentry: () => void;
-  onOpenGitlab: () => void;
-  onOpenProviders: () => void;
-  onOpenGithub: () => void;
-  linearEnabled: boolean;
-  sentryEnabled: boolean;
-  gitlabEnabled: boolean;
-  skillsEnabled: boolean;
-}) {
-  const noProviderConnected = useAppStore(
-    (s) => !s.providers.some((p) => p.connection === 'connected'),
-  );
-  return (
-    <div className="flex shrink-0 items-center gap-1 px-2.5 py-2">
-      {skillsEnabled ? (
-        <QuickAction
-          icon={<Sparkles size={12} className="text-warning" aria-hidden />}
-          label="Skills"
-          onClick={() => onOpenPalette('/')}
-        />
-      ) : null}
-
-      <QuickAction
-        icon={<Layers size={12} className="text-primary" aria-hidden />}
-        label="Workflows"
-        onClick={onOpenWorkflows}
-      />
-      <QuickAction
-        icon={<Plug size={12} className="text-info" aria-hidden />}
-        label="Providers"
-        title="connect and manage your provider accounts"
-        onClick={onOpenProviders}
-        pulse={noProviderConnected}
-      />
-      {linearEnabled ? (
-        <QuickAction
-          icon={
-            <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-linear text-[7px] font-bold text-white">
-              L
-            </span>
-          }
-          label="Linear"
-          title="launch a session from a Linear issue"
-          onClick={onOpenLinear}
-        />
-      ) : null}
-      {sentryEnabled ? (
-        <QuickAction
-          icon={
-            <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-sentry text-[7px] font-bold text-white">
-              S
-            </span>
-          }
-          label="Sentry"
-          title="launch a session from a Sentry issue"
-          onClick={onOpenSentry}
-        />
-      ) : null}
-      {gitlabEnabled ? (
-        <QuickAction
-          icon={
-            <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-gitlab text-[7px] font-bold text-white">
-              G
-            </span>
-          }
-          label="GitLab"
-          title="launch a session from a GitLab issue"
-          onClick={onOpenGitlab}
-        />
-      ) : null}
-      {!gitlabEnabled ? (
-        <QuickAction
-          icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
-          label="GitHub"
-          title="review and act on pull requests across this workspace"
-          onClick={onOpenGithub}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function QuickAction({
-  icon,
-  label,
-  title,
-  onClick,
-  pulse,
-}: {
-  icon: ReactNode;
-  label: string;
-  title?: string;
-  onClick: () => void;
-  pulse?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title ?? `browse ${label.toLowerCase()} in the command palette`}
-      className={cn(
-        'flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border px-1.5 py-1.5 text-2xs font-medium transition-colors',
-        pulse
-          ? 'animate-soft-pulse border-info/55 bg-info/5 text-foreground hover:bg-info/10'
-          : 'border-border-soft bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground',
-      )}
-    >
-      {icon}
-      <span className="min-w-0 truncate">{label}</span>
-    </button>
-  );
-}
-
 function workflowKindName(workflow: Workflow): string {
   const raw = workflow.name.trim();
   if (!raw) {
@@ -532,180 +365,6 @@ function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
       className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-danger/10 hover:text-danger"
     >
       <Ban size={11} aria-hidden />
-    </button>
-  );
-}
-
-function PlanReadySuggestion({ task }: { task: Session }) {
-  const plans = useSessionPlans(task.id);
-  const openQuestions = useSessionOpenQuestions(task.id);
-  const phaseRuns = useAppStore(
-    (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
-  const runPlan = useAppStore((s) => s.runPlan);
-  const [spawning, setSpawning] = useState(false);
-
-  const latest = plans[plans.length - 1];
-  if (!latest || latest.status !== 'active') {
-    return null;
-  }
-
-  const creator = phaseRuns.find((r) => r.id === latest.agentId);
-  const creatorWorkflow = creator?.stepId
-    ? (phaseTemplates.find((t) => t.steps.some((s) => s.id === creator.stepId)) ?? null)
-    : null;
-  if (creatorWorkflow) {
-    if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) {
-      return null;
-    }
-  } else if (openQuestions.some((q) => q.status === 'open')) {
-    return null;
-  }
-
-  const liveStepIds = new Set<StepId>();
-  for (const run of task.workflowRuns) {
-    if (run.discardedAt) {
-      continue;
-    }
-    phaseTemplates
-      .find((t) => t.id === run.workflowId)
-      ?.steps.forEach((s) => liveStepIds.add(s.id));
-  }
-  const hasPendingConsumer = phaseRuns.some(
-    (a) =>
-      a.status === 'pending' &&
-      a.stepId !== undefined &&
-      liveStepIds.has(a.stepId) &&
-      kindConsumesPlan((a.kind as AgentKind | undefined) ?? inferAgentKindFromName(a.name)),
-  );
-  if (hasPendingConsumer) {
-    return null;
-  }
-
-  const onSpawn = async () => {
-    if (spawning) {
-      return;
-    }
-    setSpawning(true);
-    try {
-      await runPlan(task.id, latest.id);
-    } finally {
-      setSpawning(false);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={() => void onSpawn()}
-      disabled={spawning}
-      data-testid="plan-ready-suggestion"
-      title={latest.title}
-      aria-label={`spawn an implementer agent to execute the plan: ${latest.title}`}
-      className="group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      <span
-        className={cn(
-          'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary',
-          spawning && 'animate-pulse',
-        )}
-        aria-hidden
-      >
-        {spawning ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-          <span>plan ready</span>
-          <span aria-hidden className="opacity-40">
-            ·
-          </span>
-          <span className="font-normal normal-case tracking-normal text-muted-foreground">
-            spawn implementer
-          </span>
-        </span>
-        <span className="line-clamp-2 text-xs text-foreground/90">{latest.title}</span>
-      </span>
-      <ArrowRight
-        size={12}
-        aria-hidden
-        className="mt-0.5 shrink-0 text-primary/70 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-      />
-    </button>
-  );
-}
-
-function SidebarLogo() {
-  return (
-    <span className="flex items-center gap-1.5">
-      <DogMascot size={16} className="shrink-0 text-foreground" />
-      <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
-      <UpdateIndicator variant="pip" />
-    </span>
-  );
-}
-
-function SidebarDetailHint({ hasAnySession }: { hasAnySession: boolean }) {
-  return (
-    <div className="flex h-full items-center justify-center">
-      <EmptyState
-        icon={hasAnySession ? MousePointerClick : Sparkles}
-        title={hasAnySession ? 'No session selected' : 'No sessions yet'}
-        description={
-          hasAnySession
-            ? 'Pick a session from the list to the left.'
-            : 'Create your first session from the list to the left.'
-        }
-      />
-    </div>
-  );
-}
-
-function NoWorkspaceEmpty({ onAddWorkspace }: { onAddWorkspace: () => void }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-      <div className="relative">
-        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
-          <FolderPlus size={26} className="text-info" aria-hidden />
-        </div>
-      </div>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
-        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
-          Point at a local git repo. Each session opens its own worktree off it.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onAddWorkspace}
-        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
-      >
-        <Plus size={12} aria-hidden />
-        <span>Add workspace</span>
-      </button>
-    </div>
-  );
-}
-
-type SectionToggleProps = {
-  readonly expanded: boolean;
-  readonly label: string;
-  readonly onToggle: () => void;
-};
-
-function SectionToggle({ expanded, label, onToggle }: SectionToggleProps) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={expanded}
-      aria-label={`${expanded ? 'collapse' : 'expand'} ${label}`}
-      className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
-    >
-      {expanded ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
     </button>
   );
 }
@@ -2007,28 +1666,6 @@ function ResolveClusterRow({
         </button>
       ) : null}
     </div>
-  );
-}
-
-function ProviderGlyph({
-  provider,
-  muted,
-}: {
-  readonly provider: string | null | undefined;
-  readonly muted?: boolean;
-}) {
-  if (!provider || !(provider in PROVIDER_BRAND)) {
-    return null;
-  }
-  const id = provider as ProviderId;
-  const Icon = PROVIDER_BRAND[id].icon;
-  return (
-    <Icon
-      size={11}
-      aria-hidden
-      className={cn('shrink-0', muted && 'opacity-40')}
-      style={{ color: brandColor(id) }}
-    />
   );
 }
 
