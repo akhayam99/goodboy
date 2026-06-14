@@ -173,6 +173,16 @@ async function* doneOnlyStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
   };
 }
 
+async function* throwingStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
+  yield {
+    kind: 'assistant_text',
+    runId,
+    delta: 'partial',
+    at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
+  };
+  throw new Error('provider crashed mid-stream');
+}
+
 describe('sendTurn, terminal state guarantees', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
@@ -291,5 +301,44 @@ describe('sendTurn, terminal state guarantees', () => {
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvents = transcript.filter((e) => e.kind === 'error');
     expect(errorEvents).toHaveLength(0);
+  });
+
+  it('transitions session to error and rethrows when the stream throws mid-turn', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId));
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
+    ).rejects.toThrow('provider crashed mid-stream');
+
+    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
+    expect(session?.state.kind).toBe('error');
+
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const errorEvent = transcript.find((e) => e.kind === 'error');
+    expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toMatch(
+      /provider crashed mid-stream/i,
+    );
+  });
+
+  it('marks the provider run failed when the stream throws mid-turn', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId));
+
+    const { updateProviderRunStatus } = await import('@goodboy/db');
+    (updateProviderRunStatus as ReturnType<typeof vi.fn>).mockClear();
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
+    ).rejects.toThrow();
+
+    const statuses = (updateProviderRunStatus as ReturnType<typeof vi.fn>).mock.calls.map(
+      (c) => (c[2] as { kind: string }).kind,
+    );
+    expect(statuses).toContain('failed');
   });
 });
