@@ -1,6 +1,5 @@
 import {
   WorkflowPropagator,
-  PermissionEngine,
   autoModelForRole,
   buildClaudeFlags,
   autoPopulateContext,
@@ -10,22 +9,13 @@ import {
   extractScoutSplit,
   findReusableAgent,
   runsForWorkflowRun,
-  parseSlashCommand,
   turnReducer,
   type ClaudeFlagSet,
-  computeCostUsd,
-  computeCodexCostUsd,
-  computeCursorCostUsd,
-  computeGeminiCostUsd,
 } from '@goodboy/core';
 import {
   insertMessage,
   insertProviderRun,
-  insertTelemetry,
   listContextSlotsForSession,
-  summarizeSessionTelemetry,
-  summarizeWorkspaceProviderTelemetry,
-  summarizeWorkspaceTelemetry,
   updateProviderRunStatus,
   updateSessionState,
   updateSessionWorkflowStep,
@@ -37,19 +27,13 @@ import type {
   BudgetAlert,
   IsoDateTime,
   Message,
-  MessageAttachment,
   MessageId,
-  PermissionDecision,
-  PermissionRequest,
-  PermissionRequestId,
   PermissionRule,
   ProviderId,
   ProviderRun,
   ProviderRunId,
   SessionId,
   Step,
-  TelemetryRecord,
-  TelemetryRecordId,
   TurnEvent,
   TurnProviderOverride,
   TurnState,
@@ -58,27 +42,18 @@ import type {
 } from '@goodboy/types';
 import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
-import {
-  invokePermissionAuditInsert,
-  invokeAuditRetryEnqueue,
-  invokePermissionRuleList,
-  type PermissionAuditInsertPayload,
-} from '../../../features/permissions/permissions';
+import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import {
   invokeAgentInsert,
   invokeAgentList,
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
-import { resolveSkillInvocation } from '../../../features/skills/skills';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
   runTurn,
-  writeAttachment,
 } from '../../../features/chat/turn';
-import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
 import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
@@ -88,30 +63,25 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
-import {
-  getCodexPriceOverride,
-  getGeminiPriceOverride,
-  refreshPricingTable,
-} from '../../../features/providers/provider-pricing';
+import { refreshPricingTable } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
-import {
-  detectParallelGroup,
-  runParallelBranch,
-  type ParallelBranchEffects,
-} from '../../parallel-turn';
+import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
-import { applyAgentTurnState, applySessionUpdate, cancelledRunIds } from '../../session-mutators';
-import { buildProviderSpendBreakdown } from '../budget';
+import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import {
   applyHeuristicTitle,
-  buildAttachmentPromptBlock,
   capturePlanFromTurn,
   emitTurnNudges,
   enqueueSummarizer,
   toRelPath,
 } from '../../turn-helpers';
+import { resolveSkillPrompt } from './resolveSkillPrompt';
+import { persistAttachments } from './persistAttachments';
+import { dispatchParallelTurn } from './dispatchParallelTurn';
+import { auditToolCall } from './auditToolCall';
+import { recordUsageTelemetry } from './recordUsageTelemetry';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
@@ -163,94 +133,35 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     const userTurnText = content;
-    let resolvedPrompt = content;
 
-    const slashCmd = parseSlashCommand(content);
-    if (slashCmd !== null) {
-      const workspaceSkills = before.skills[session.workspaceId] ?? [];
-      const skill = workspaceSkills.find((s) => s.name === slashCmd.name);
-      if (!skill) {
-        const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId: errRunId,
-          message: `unknown skill: /${slashCmd.name}`,
-          at: now(),
-        });
-        return;
-      }
-      const workspace = before.workspaces.find((w) => w.id === session.workspaceId);
-      if (!workspace) {
-        const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId: errRunId,
-          message: `workspace not found: ${session.workspaceId}`,
-          at: now(),
-        });
-        return;
-      }
-      try {
-        const result = await resolveSkillInvocation({
-          skill,
-          args: slashCmd.args,
-          workingDir,
-          workspaceRoot: workspace.rootPath,
-        });
-        resolvedPrompt = result.resolvedPrompt;
-        const skillRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'skill_invocation',
-          runId: skillRunId,
-          skillName: result.skillName,
-          args: result.args,
-          at: now(),
-        });
-      } catch (err) {
-        const message = formatError(err);
-        const errRunId = crypto.randomUUID() as ProviderRunId;
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId: errRunId,
-          message,
-          at: now(),
-        });
-        return;
-      }
+    const slashResult = await resolveSkillPrompt(get, {
+      before,
+      session,
+      sessionId,
+      activeAgentId,
+      workingDir,
+      content,
+      now,
+    });
+    if (!slashResult.ok) {
+      return;
     }
+    let resolvedPrompt = slashResult.resolvedPrompt;
 
     const attachmentInputs = attachments ?? [];
-    let attachmentRefs: ReadonlyArray<MessageAttachment> = [];
-    if (attachmentInputs.length > 0) {
-      try {
-        attachmentRefs = await Promise.all(
-          attachmentInputs.map(async (a): Promise<MessageAttachment> => {
-            const relPath = await writeAttachment({
-              worktreeDir: workingDir,
-              attachmentId: a.id,
-              fileName: a.fileName,
-              dataBase64: a.dataBase64,
-            });
-            return {
-              id: a.id,
-              kind: attachmentKindFor(a.mimeType),
-              fileName: a.fileName,
-              mimeType: a.mimeType,
-              relPath,
-            };
-          }),
-        );
-      } catch (err) {
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId: crypto.randomUUID() as ProviderRunId,
-          message: `failed to save attachment: ${formatError(err)}`,
-          at: now(),
-        });
-        return;
-      }
-      resolvedPrompt = `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(attachmentRefs)}`;
+    const attachmentResult = await persistAttachments(get, {
+      attachmentInputs,
+      workingDir,
+      activeAgentId,
+      sessionId,
+      resolvedPrompt,
+      now,
+    });
+    if (!attachmentResult.ok) {
+      return;
     }
+    const attachmentRefs = attachmentResult.attachmentRefs;
+    resolvedPrompt = attachmentResult.resolvedPrompt;
 
     let phaseDefinition: Step | null = null;
     let phaseWorkflowRunId: WorkflowRunId | null = null;
@@ -573,151 +484,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     if (parallelDispatch !== null) {
-      const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-      if (!workspace) {
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId: crypto.randomUUID() as ProviderRunId,
-          message: `workspace not found: ${session.workspaceId}`,
-          at: now(),
-        });
-        return;
-      }
-
-      const N = Math.min(parallelDispatch.groupDefs.length, AGENT_FEATURES.maxParallelism);
-
-      const sessBudget = get().sessionBudgets[sessionId];
-      if (sessBudget) {
-        const tele = get().sessionTelemetry[sessionId] ?? [];
-        const lastTurnCost = tele.length > 0 ? (tele[tele.length - 1]?.estimatedCostUsd ?? 0) : 0;
-        const projected = lastTurnCost * N;
-        const sessSpent = (get().sessionSummary?.estimatedCostUsd ?? 0) + projected;
-        if (lastTurnCost > 0 && sessSpent > sessBudget.softCapUsd) {
-          get().appendTurnEvent(activeAgentId, sessionId, {
-            kind: 'error',
-            runId: crypto.randomUUID() as ProviderRunId,
-            message: `parallel turn aborted: projected spend (${sessSpent.toFixed(4)} USD) would exceed session soft cap (${sessBudget.softCapUsd.toFixed(4)} USD).`,
-            at: now(),
-          });
-          return;
-        }
-      }
-
-      const userMessage: Message = {
-        id: crypto.randomUUID() as MessageId,
+      await dispatchParallelTurn(set, get, {
+        session,
         sessionId,
-        agentId: activeAgentId,
-        role: 'user',
-        content: userTurnText,
-        createdAt: now(),
-      };
-      await insertMessage(tauriDatabase, userMessage);
-
-      const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
-      get().appendTurnEvent(activeAgentId, sessionId, {
-        kind: 'user_text',
-        runId: groupSessionRunId,
-        text: userTurnText,
+        activeAgentId,
         provider,
         model,
-        at: userMessage.createdAt,
+        parallelDispatch,
+        claudeFlags,
+        apiKeyBinding,
+        providerBinary: providerInfo?.binary,
+        workingDir,
+        userTurnText,
+        userPromptForPhase,
+        phasePromptCarryForward,
+        now,
       });
-      let nextStateP: TurnState = session.state;
-      if (nextStateP.kind === 'draft') {
-        nextStateP = turnReducer(nextStateP, { kind: 'start', at: now() });
-      }
-      if (nextStateP.kind === 'error') {
-        nextStateP = turnReducer(nextStateP, { kind: 'retry', at: now() });
-      }
-      nextStateP = turnReducer(nextStateP, {
-        kind: 'send',
-        runId: groupSessionRunId,
-        at: now(),
-      });
-      await updateSessionState(tauriDatabase, sessionId, nextStateP, now());
-      applySessionUpdate(set, sessionId, nextStateP, activeAgentId);
-
-      const effects: ParallelBranchEffects = {
-        appendTurnEvent: (agentId, sid, ev) => get().appendTurnEvent(agentId, sid, ev),
-        refreshPhaseRuns: async (sid) => {
-          const runs = await invokeAgentList(sid);
-          set((state) => ({
-            sessionPhaseRuns: { ...state.sessionPhaseRuns, [sid]: runs },
-          }));
-        },
-        setMergeConflicts: (sid, conflicts) => get().setSessionMergeConflicts(sid, conflicts),
-      };
-
-      try {
-        const result = await runParallelBranch(
-          {
-            session,
-            orchestratingAgentId: activeAgentId,
-            workspace,
-            currentDef: parallelDispatch.currentDef,
-            groupDefs: parallelDispatch.groupDefs,
-            workingDir,
-            resolvedPromptBase: userPromptForPhase,
-            carryForwardContext: phasePromptCarryForward,
-            mergeStrategy: 'last_write_wins',
-            maxParallelism: AGENT_FEATURES.maxParallelism,
-          },
-          {
-            now,
-            provider,
-            providerBinary: providerInfo?.binary,
-            model,
-            ...(claudeFlags.permissionMode !== undefined && {
-              permissionMode: claudeFlags.permissionMode,
-            }),
-            ...(claudeFlags.allowedTools !== undefined && {
-              allowedTools: claudeFlags.allowedTools,
-            }),
-            ...(claudeFlags.disallowedTools !== undefined && {
-              disallowedTools: claudeFlags.disallowedTools,
-            }),
-            ...(apiKeyBinding ?? {}),
-            effects,
-          },
-        );
-
-        if (result.allFailed) {
-          const errorState: TurnState = {
-            kind: 'error',
-            message: 'all parallel runs failed',
-            failedAt: now(),
-          };
-          await updateSessionState(tauriDatabase, sessionId, errorState, now());
-          applySessionUpdate(set, sessionId, errorState, activeAgentId);
-        } else {
-          const current = get().sessions.find((s) => s.id === sessionId)?.state ?? nextStateP;
-          const doneState: TurnState =
-            current.kind === 'running'
-              ? turnReducer(current, {
-                  kind: 'receive_event',
-                  event: { kind: 'done', runId: result.runIds[0]!, at: now() },
-                })
-              : { kind: 'idle', lastActivityAt: now() };
-          await updateSessionState(tauriDatabase, sessionId, doneState, now());
-          applySessionUpdate(set, sessionId, doneState, activeAgentId);
-        }
-      } catch (err) {
-        const rawMessage = formatError(err);
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId: groupSessionRunId,
-          message: rawMessage,
-          at: now(),
-        });
-        const errorState: TurnState = {
-          kind: 'error',
-          message: rawMessage,
-          failedAt: now(),
-        };
-        await updateSessionState(tauriDatabase, sessionId, errorState, now());
-        applySessionUpdate(set, sessionId, errorState, activeAgentId);
-        throw err;
-      }
       return;
     }
     void refreshPricingTable();
@@ -849,115 +631,25 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
-          const engine = new PermissionEngine();
-          const auditRequestId = crypto.randomUUID() as PermissionRequestId;
-          const request: PermissionRequest = {
-            id: auditRequestId,
-            runId,
-            toolUseId: event.toolUseId,
-            toolName: event.toolName,
-            input: event.input,
-            at: event.at,
-          };
-          const volatile = get().volatilePermissionAllows;
-          const isVolatileAllow = volatile.has(event.toolUseId);
-          if (isVolatileAllow) {
-            set((state) => {
-              const next = new Set(state.volatilePermissionAllows);
-              next.delete(event.toolUseId);
-              return { volatilePermissionAllows: next };
-            });
-          }
-          const decision: PermissionDecision = isVolatileAllow
-            ? {
-                requestId: auditRequestId,
-                decision: 'allow',
-                ruleId: null,
-                decidedBy: 'user',
-                at: event.at,
-              }
-            : engine.decide(request, effectiveRules, {
-                sessionId,
-                workspaceId: session.workspaceId,
-              });
-          const auditPayload: PermissionAuditInsertPayload = {
-            id: auditRequestId,
+          await auditToolCall(set, get, {
+            event,
             runId,
             sessionId,
-            toolUseId: event.toolUseId,
-            toolName: event.toolName,
-            inputJson: JSON.stringify(event.input),
-            decision: decision.decision,
-            ...(decision.ruleId != null && { ruleId: decision.ruleId }),
-            decidedBy: decision.decidedBy,
-            requestedAt: event.at,
-            decidedAt: decision.at,
-          };
-          try {
-            await invokePermissionAuditInsert(auditPayload);
-          } catch {
-            try {
-              await invokeAuditRetryEnqueue(auditRequestId, JSON.stringify(auditPayload));
-            } catch (enqueueErr) {
-              console.error('permission audit retry enqueue failed', enqueueErr);
-            }
-          }
+            workspaceId: session.workspaceId,
+            effectiveRules,
+          });
         }
 
         if (event.kind === 'usage') {
-          const cost = (() => {
-            if (provider === 'codex') {
-              return computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model));
-            }
-            if (provider === 'cursor') {
-              return computeCursorCostUsd(event.usage, model);
-            }
-            if (provider === 'gemini') {
-              return computeGeminiCostUsd(event.usage, model, getGeminiPriceOverride(null, model));
-            }
-            return computeCostUsd(event.usage, model);
-          })();
-          const record: TelemetryRecord = {
-            id: crypto.randomUUID() as TelemetryRecordId,
-            runId,
-            sessionId,
-            kind: 'turn',
+          await recordUsageTelemetry(set, get, {
+            event,
             provider,
             model,
-            inputTokens: event.usage.inputTokens,
-            outputTokens: event.usage.outputTokens,
-            estimatedCostUsd: cost,
-            recordedAt: now(),
-          };
-          await insertTelemetry(tauriDatabase, record);
-          set((state) => ({
-            sessionTelemetry: {
-              ...state.sessionTelemetry,
-              [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
-            },
-          }));
-          const currentSession = get().sessions.find((s) => s.id === sessionId);
-          if (currentSession) {
-            const [sessSummary, wsSummary, providerSummaries, budgetRules, freshAlerts] =
-              await Promise.all([
-                summarizeSessionTelemetry(tauriDatabase, sessionId),
-                summarizeWorkspaceTelemetry(tauriDatabase, currentSession.workspaceId),
-                summarizeWorkspaceProviderTelemetry(tauriDatabase, currentSession.workspaceId),
-                invokeBudgetRuleList(),
-                invokeBudgetAlertsList(),
-              ]);
-            const knownIds = new Set(get().budgetAlerts.map((a) => a.id));
-            const newAlerts = freshAlerts.filter((a) => !knownIds.has(a.id));
-            set({
-              sessionSummary: sessSummary,
-              workspaceSummary: wsSummary,
-              providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
-              budgetAlerts: freshAlerts,
-            });
-            if (newAlerts.length > 0 && onNewAlerts) {
-              onNewAlerts(newAlerts);
-            }
-          }
+            runId,
+            sessionId,
+            now,
+            ...(onNewAlerts !== undefined && { onNewAlerts }),
+          });
         }
 
         const currentAgentState = get().agentTurnState[activeAgentId];
