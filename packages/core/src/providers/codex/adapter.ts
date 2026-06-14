@@ -1,5 +1,4 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createInterface } from 'node:readline';
 import type {
   DetectResult,
   IsoDateTime,
@@ -12,6 +11,7 @@ import type {
 import { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './constants';
 import { computeCodexCostUsd, type CodexModelPriceOverride } from './cost';
 import { parseJsonLine } from './parser';
+import { streamChildEvents } from '../shared/stream-events';
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
@@ -114,82 +114,9 @@ async function* spawnCodex(
     throw new Error('codex CLI started without stdout');
   }
 
-  const queue: TurnEvent[] = [];
-  let resolver: ((value: IteratorResult<TurnEvent>) => void) | null = null;
-  let rejector: ((err: unknown) => void) | null = null;
-  let ended = false;
-  let error: unknown = null;
-
   const ctx = { runId: request.runId, now, onUnknown };
 
-  const flush = () => {
-    if (resolver && queue.length > 0) {
-      const value = queue.shift()!;
-      const r = resolver;
-      resolver = null;
-      r({ value, done: false });
-    } else if (resolver && ended) {
-      const r = resolver;
-      resolver = null;
-      if (error) {
-        const rej = rejector;
-        rejector = null;
-        rej?.(error);
-      } else {
-        r({ value: undefined, done: true });
-      }
-    }
-  };
-
-  const lineReader = createInterface({ input: child.stdout });
-
-  lineReader.on('line', (line) => {
-    const events = parseJsonLine(line, ctx);
-    for (const event of events) queue.push(event);
-    flush();
+  yield* streamChildEvents(child, ctx, parseJsonLine, {
+    onClose: () => [{ kind: 'done', runId: request.runId, at: now() }],
   });
-
-  lineReader.on('close', () => {
-    queue.push({ kind: 'done', runId: request.runId, at: now() });
-    ended = true;
-    flush();
-  });
-
-  child.on('error', (err) => {
-    error = err;
-    ended = true;
-    flush();
-  });
-
-  child.stderr?.on('data', () => {
-    // captured but not surfaced as TurnEvent for v0.0.1
-  });
-
-  try {
-    while (true) {
-      if (queue.length > 0) {
-        yield queue.shift()!;
-        continue;
-      }
-      if (ended) {
-        if (error) {
-          throw error;
-        }
-        return;
-      }
-      const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
-        resolver = resolve;
-        rejector = reject;
-      });
-      if (value.done) {
-        return;
-      }
-      yield value.value;
-    }
-  } finally {
-    if (!child.killed && child.exitCode === null) {
-      child.kill('SIGTERM');
-    }
-    lineReader.close();
-  }
 }
