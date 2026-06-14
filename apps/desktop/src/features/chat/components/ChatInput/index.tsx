@@ -4,56 +4,23 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  type ChangeEvent as ReactChangeEvent,
-  type ClipboardEvent as ReactClipboardEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { Clock, Paperclip, Send, Square, Telescope, X } from 'lucide-react';
+import { ClipboardCheck, Paperclip, Send, Square, Telescope } from 'lucide-react';
 import { Divider, Textarea } from '@goodboy/ui';
-import type {
-  Agent,
-  AgentId,
-  AttachmentInput,
-  BudgetAlert,
-  BudgetAlertKind,
-  ProviderId,
-  Session,
-  SessionId,
-  Skill,
-  TurnProviderOverride,
-  Workflow,
-  WorkspaceScript,
-} from '@goodboy/types';
+import type { IsoDateTime, ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core';
 import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
 import { tauriDatabase } from '../../../../shared/lib/db';
-import type { IsoDateTime } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import type { DraftAttachment } from '../../../../store/slices/agents/setAgentAttachments';
-import {
-  readDroppedAttachment,
-  readAttachment,
-  writeAttachment,
-  deleteAttachment,
-} from '../../turn';
+import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
-import { useToast, type ToastKind } from '../../../../app/components/Toast';
-import {
-  QuickActionsPopover,
-  buildAgentActions,
-  buildScriptActions,
-  buildSkillActions,
-  buildWorkflowActions,
-  parseQuery,
-  type QuickActionItem,
-} from '../../../quick-actions';
+import { useToast } from '../../../../app/components/Toast';
+import { QuickActionsPopover } from '../../../quick-actions';
 import { type VerbosityLevel } from '../../../../features/settings/verbosity';
 import {
-  EFFORT_LEVELS,
   type EffortLevel,
   clampEffort,
   suggestHeavierModel,
@@ -63,108 +30,37 @@ import { ProviderUsagePill } from '../ProviderUsagePill';
 import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { RightSizeCard } from '../RightSizeCard';
-import { ImageLightbox } from '../ImageLightbox';
-import {
-  ATTACHMENT_ACCEPT,
-  attachmentKindFor,
-  fileIconFor,
-  isAllowedAttachment,
-  resolveAttachmentMime,
-} from '../../attachment-kinds';
+import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
 import { NudgeCard } from '../NudgeCard';
-import { ClipboardCheck } from 'lucide-react';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../session/agent-kind';
 import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-mismatch';
-
-const RUNNING_KINDS = new Set(['starting', 'running']);
-
-const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
-
-const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
-
-const VALID_PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
-
-const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
-const ATTACHMENT_LIMIT = 10;
-
-type PendingAttachment = {
-  readonly id: string;
-  readonly fileName: string;
-  readonly mimeType: string;
-  readonly dataUrl: string;
-  readonly relPath: string | null;
-};
-
-function extFromMime(mimeType: string): string {
-  const slash = mimeType.indexOf('/');
-  const ext = slash >= 0 ? mimeType.slice(slash + 1) : '';
-  return ext.length > 0 && ext.length <= 5 ? ext : 'png';
-}
-
-function dataUrlToBase64(dataUrl: string): string {
-  const comma = dataUrl.indexOf(',');
-  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-      } else {
-        reject(new Error('unexpected file reader result'));
-      }
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('file read failed'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function toAttachmentInput(a: PendingAttachment): AttachmentInput {
-  return {
-    id: a.id,
-    fileName: a.fileName,
-    mimeType: a.mimeType,
-    dataBase64: dataUrlToBase64(a.dataUrl),
-  };
-}
-
-function asEffortLevel(v: string | undefined | null): EffortLevel | null {
-  return v && EFFORT_LEVELS.includes(v as EffortLevel) ? (v as EffortLevel) : null;
-}
-
-function asProvider(v: string | undefined | null): ProviderId | null {
-  return v && VALID_PROVIDERS.includes(v as ProviderId) ? (v as ProviderId) : null;
-}
+import {
+  CHAT_PLACEHOLDER,
+  RUNNING_KINDS,
+  asEffortLevel,
+  asProvider,
+  toAttachmentInput,
+  toastKindForAlert,
+  toastMessageForAlert,
+  type PendingAttachment,
+  type QueuedTurn,
+} from './lib';
+import { useAttachments } from './hooks/useAttachments';
+import { useChatPrefix } from './hooks/useChatPrefix';
+import { useMessageQueue } from './hooks/useMessageQueue';
+import { AttachmentChip } from './parts/AttachmentChip';
+import { QueuedMessages } from './parts/QueuedMessages';
+import { SuggestionStack } from './parts/SuggestionStack';
 
 type Props = {
   readonly session: Session;
   readonly providerDisconnected?: boolean;
 };
-
-function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
-  return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
-}
-
-function toastMessageForAlert(alert: BudgetAlert): string {
-  const pct = alert.capUsd > 0 ? Math.round((alert.currentUsd / alert.capUsd) * 100) : 0;
-  if (alert.kind === 'provider-threshold') {
-    return `provider ${alert.provider ?? '?'} budget at ${pct}%`;
-  }
-  if (alert.kind === 'provider-exceeded') {
-    return `provider ${alert.provider ?? '?'} budget exceeded`;
-  }
-  if (alert.kind === 'session-threshold') {
-    return `session budget at ${pct}%`;
-  }
-  return 'session budget exceeded';
-}
 
 export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const sendTurn = useAppStore((s) => s.sendTurn);
@@ -184,7 +80,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
-  const sessionAgentKindOverrides = useAppStore((s) => s.agentKindOverride);
   const selectedAgentName = useAppStore((s) => {
     if (!selectedAgentId) {
       return null;
@@ -197,23 +92,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
-  const workspaceSkills = useAppStore(
-    useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
-  );
-  const workspaceScripts = useAppStore(
-    useShallow((s) => s.workspaceScripts[session.workspaceId] ?? EMPTY_ARRAY),
-  );
-  const runScript = useAppStore((s) => s.runScript);
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const loadScripts = useAppStore((s) => s.loadScripts);
-  const workspaceWorkflows = useAppStore(
-    useShallow((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY),
-  ) as ReadonlyArray<Workflow>;
-  const sessionAgents = useAppStore(
-    useShallow((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
-  ) as ReadonlyArray<Agent>;
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
 
@@ -242,10 +122,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     readonly override: TurnProviderOverride | undefined;
   };
   const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
-  const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const composerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
     asProvider(session.providerOverride),
   );
@@ -265,11 +142,33 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       (agentRow?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? 'normal'
     );
   });
-  const [showPopover, setShowPopover] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const parsed = useMemo(() => parseQuery(value), [value]);
-  const inPrefixMode = CHAT_PREFIX_RE.test(value);
+  const {
+    attachments,
+    setAttachments,
+    isDragging,
+    composerRef,
+    fileInputRef,
+    onPaste,
+    onFileInputChange,
+    removeAttachment,
+    cleanupSentAttachments,
+  } = useAttachments({
+    sessionId: session.id,
+    selectedAgentId,
+    sessionWorktree,
+    providerDisconnected,
+    showToast,
+  });
+
+  const {
+    onValueChange,
+    popoverOpen,
+    filteredQuickItems,
+    quickEmptyHint,
+    onQuickActionSelect,
+    dismissPopover,
+  } = useChatPrefix({ session, value, setValue, sessionWorktree, showToast, wrapperRef });
 
   const selectedAgentState = useAppStore((s) =>
     selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
@@ -281,7 +180,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
   );
   const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
-  const wasRunning = useRef(isRunning);
 
   const currentProviderRef = useRef(selectedProvider);
   currentProviderRef.current = selectedProvider;
@@ -289,15 +187,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   currentModelRef.current = selectedModel;
   const currentEffortRef = useRef(effort);
   currentEffortRef.current = effort;
-  const currentVerbosityRef = useRef(verbosity);
-  currentVerbosityRef.current = verbosity;
-  type QueuedTurn = {
-    readonly id: string;
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-    readonly override: TurnProviderOverride | undefined;
-  };
-  const [queue, setQueue] = useState<ReadonlyArray<QueuedTurn>>([]);
+
   type RightSizePending = {
     readonly content: string;
     readonly attachments: ReadonlyArray<PendingAttachment>;
@@ -338,223 +228,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
-
-  const onValueChange = (next: string) => {
-    setValue(next);
-    setShowPopover(CHAT_PREFIX_RE.test(next));
-  };
-
-  const onPickScript = useCallback(
-    (script: WorkspaceScript) => {
-      if (!sessionWorktree) {
-        showToast('warning', `${script.name}, open a session worktree to run scripts`);
-        return;
-      }
-      setValue('');
-      setShowPopover(false);
-      void runScript(session.id, script.id, sessionWorktree);
-    },
-    [runScript, setValue, session.id, sessionWorktree, showToast],
-  );
-
-  const onPickSkill = useCallback(
-    (skill: Skill) => {
-      setValue(`/${skill.name} `);
-      setShowPopover(false);
-      wrapperRef.current?.querySelector('textarea')?.focus();
-    },
-    [setValue],
-  );
-
-  const onPickWorkflow = useCallback(
-    async (workflow: Workflow) => {
-      setValue('');
-      setShowPopover(false);
-      try {
-        await attachWorkflowToSession(session.id, workflow.id);
-        showToast('success', `workflow "${workflow.name}" started`);
-      } catch (err) {
-        showToast('error', formatError(err));
-      }
-    },
-    [attachWorkflowToSession, session.id, showToast, setValue],
-  );
-
-  const onSwitchAgent = useCallback(
-    (agent: Agent) => {
-      setValue('');
-      setShowPopover(false);
-      void selectAgent(session.id, agent.id);
-    },
-    [selectAgent, session.id, setValue],
-  );
-
-  const onSpawnAgent = useCallback(async () => {
-    setValue('');
-    setShowPopover(false);
-    try {
-      await spawnAgent(session.id, {});
-      showToast('success', 'new agent spawned');
-    } catch (err) {
-      showToast('error', formatError(err));
-    }
-  }, [spawnAgent, session.id, showToast, setValue]);
-
-  const quickItems = useMemo<ReadonlyArray<QuickActionItem> | null>(() => {
-    const symbol = parsed.prefix?.symbol;
-    if (symbol === '$') {
-      return buildScriptActions(workspaceScripts, (script) => void onPickScript(script));
-    }
-    if (symbol === '~') {
-      return buildWorkflowActions(workspaceWorkflows, (workflow) => void onPickWorkflow(workflow));
-    }
-    if (symbol === '@') {
-      return buildAgentActions(
-        sessionAgents,
-        sessionAgentKindOverrides,
-        onSwitchAgent,
-        () => void onSpawnAgent(),
-      );
-    }
-    if (symbol === '/' && WORKSPACE_FEATURES.skills) {
-      return buildSkillActions(workspaceSkills, onPickSkill);
-    }
-    return null;
-  }, [
-    parsed.prefix,
-    workspaceScripts,
-    workspaceWorkflows,
-    sessionAgents,
-    sessionAgentKindOverrides,
-    workspaceSkills,
-    onPickScript,
-    onPickWorkflow,
-    onSwitchAgent,
-    onSpawnAgent,
-    onPickSkill,
-  ]);
-
-  const filteredQuickItems = useMemo<ReadonlyArray<QuickActionItem>>(() => {
-    if (!quickItems) {
-      return EMPTY_ARRAY;
-    }
-    const q = parsed.query.toLowerCase();
-    if (q.length === 0) {
-      return quickItems;
-    }
-    return quickItems.filter(
-      (it) =>
-        it.label.toLowerCase().includes(q) || (it.sublabel?.toLowerCase().includes(q) ?? false),
-    );
-  }, [quickItems, parsed.query]);
-
-  const popoverOpen = showPopover && inPrefixMode && quickItems !== null;
-  const quickEmptyHint =
-    parsed.prefix?.symbol === '$'
-      ? 'no scripts yet. add them in workspace settings'
-      : parsed.prefix?.symbol === '~'
-        ? 'no workflows yet. create one in workspace settings'
-        : parsed.prefix?.symbol === '@'
-          ? 'no agents in this session yet'
-          : 'no skills yet. create one in settings';
-
-  const onQuickActionSelect = useCallback((item: QuickActionItem) => item.perform(), []);
-  const dismissPopover = useCallback(() => setShowPopover(false), []);
-
-  const persistAttachmentToDisk = useCallback(
-    async (att: {
-      readonly id: string;
-      readonly fileName: string;
-      readonly dataUrl: string;
-    }): Promise<string | null> => {
-      const worktree = sessionWorktreeRef.current;
-      if (!worktree) {
-        return null;
-      }
-      try {
-        return await writeAttachment({
-          worktreeDir: worktree,
-          attachmentId: att.id,
-          fileName: att.fileName,
-          dataBase64: dataUrlToBase64(att.dataUrl),
-        });
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
-
-  const addFiles = useCallback(
-    async (files: ReadonlyArray<File>) => {
-      const allowed = files.filter(isAllowedAttachment);
-      const skipped = files.length - allowed.length;
-      if (skipped > 0) {
-        showToast(
-          'warning',
-          `${skipped} file${skipped === 1 ? '' : 's'} skipped, unsupported type`,
-        );
-      }
-      if (allowed.length === 0) {
-        return;
-      }
-      const accepted: PendingAttachment[] = [];
-      for (const file of allowed) {
-        if (file.size > MAX_ATTACHMENT_BYTES) {
-          showToast('error', `${file.name || 'file'} is over 15MB`);
-          continue;
-        }
-        try {
-          const dataUrl = await readFileAsDataUrl(file);
-          const mimeType = resolveAttachmentMime(file);
-          const id = crypto.randomUUID();
-          const fileName = file.name || `pasted-file.${extFromMime(mimeType)}`;
-          const relPath = await persistAttachmentToDisk({ id, fileName, dataUrl });
-          accepted.push({ id, fileName, mimeType, dataUrl, relPath });
-        } catch {
-          showToast('error', `could not read ${file.name || 'file'}`);
-        }
-      }
-      if (accepted.length === 0) {
-        return;
-      }
-      setAttachments((prev) => {
-        const room = ATTACHMENT_LIMIT - prev.length;
-        if (room <= 0) {
-          showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-          return prev;
-        }
-        if (accepted.length > room) {
-          showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-        }
-        return [...prev, ...accepted.slice(0, room)];
-      });
-    },
-    [showToast, persistAttachmentToDisk],
-  );
-
-  const removeAttachment = useCallback((id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
-  }, []);
-
-  const onPaste = useCallback(
-    (event: ReactClipboardEvent<HTMLTextAreaElement>) => {
-      const files = Array.from(event.clipboardData.files).filter(isAllowedAttachment);
-      if (files.length > 0) {
-        event.preventDefault();
-        void addFiles(files);
-      }
-    },
-    [addFiles],
-  );
-
-  const onFileInputChange = (event: ReactChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files ? Array.from(event.target.files) : [];
-    if (files.length > 0) {
-      void addFiles(files);
-    }
-    event.target.value = '';
-  };
 
   const setEffort = (level: EffortLevel) => {
     setEffortState(level);
@@ -639,25 +312,29 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           },
         });
         setLastFailedTurn(null);
-        const sentAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
-        const worktree = sessionWorktreeRef.current;
-        if (worktree) {
-          for (const att of atts) {
-            if (att.relPath !== null) {
-              void deleteAttachment(worktree, att.relPath).catch(() => {});
-            }
-          }
-        }
-        if (sentAgentId !== null) {
-          useAppStore.getState().clearAgentAttachments(sentAgentId);
-        }
+        cleanupSentAttachments(atts);
       } catch (err) {
         setError(formatError(err));
         setLastFailedTurn({ content, attachments: atts, override });
       }
     },
-    [sendTurn, session.id, showToast],
+    [sendTurn, session.id, showToast, cleanupSentAttachments],
   );
+
+  const onEditQueued = useCallback(
+    (item: QueuedTurn) => {
+      setValue(item.content);
+      setAttachments(item.attachments);
+      wrapperRef.current?.querySelector('textarea')?.focus();
+    },
+    [setValue, setAttachments],
+  );
+
+  const { queue, enqueue, removeQueued, editQueued, clearQueue } = useMessageQueue({
+    isRunning,
+    dispatchTurn,
+    onEdit: onEditQueued,
+  });
 
   const sendWith = async (
     content: string,
@@ -674,33 +351,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         : undefined;
 
     if (isRunning) {
-      setQueue((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), content, attachments: atts, override },
-      ]);
+      enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
       return;
     }
 
     await dispatchTurn(content, atts, override);
   };
-
-  const removeQueued = useCallback((id: string) => {
-    setQueue((prev) => prev.filter((q) => q.id !== id));
-  }, []);
-
-  const editQueued = useCallback(
-    (id: string) => {
-      const item = queue.find((q) => q.id === id);
-      if (!item) {
-        return;
-      }
-      setQueue((prev) => prev.filter((q) => q.id !== id));
-      setValue(item.content);
-      setAttachments(item.attachments);
-      wrapperRef.current?.querySelector('textarea')?.focus();
-    },
-    [queue, setValue],
-  );
 
   const onSend = async () => {
     const content = value.trim();
@@ -837,192 +493,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setRightSizeDismissed(true);
   };
 
-  useEffect(() => {
-    const wasRun = wasRunning.current;
-    wasRunning.current = isRunning;
-    if (wasRun && !isRunning && queue.length > 0) {
-      const [next, ...rest] = queue;
-      setQueue(rest);
-      if (next) {
-        void dispatchTurn(next.content, next.attachments, next.override);
-      }
-    }
-  }, [isRunning, queue, dispatchTurn]);
-
-  const providerDisconnectedRef = useRef(providerDisconnected);
-  providerDisconnectedRef.current = providerDisconnected;
-  const showToastRef = useRef(showToast);
-  showToastRef.current = showToast;
-  const persistAttachmentToDiskRef = useRef(persistAttachmentToDisk);
-  persistAttachmentToDiskRef.current = persistAttachmentToDisk;
-
-  useEffect(() => {
-    let cancelled = false;
-    let unlisten: (() => void) | null = null;
-
-    const isInsideComposer = (px: number, py: number): boolean => {
-      const el = composerRef.current;
-      if (!el) {
-        return false;
-      }
-      const rect = el.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const candidates: ReadonlyArray<readonly [number, number]> = [
-        [px / dpr, py / dpr],
-        [px, py],
-      ];
-      return candidates.some(
-        ([x, y]) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom,
-      );
-    };
-
-    const ingestDroppedPaths = async (paths: ReadonlyArray<string>) => {
-      const dropped: PendingAttachment[] = [];
-      for (const path of paths) {
-        try {
-          const r = await readDroppedAttachment(path);
-          const id = crypto.randomUUID();
-          const dataUrl = `data:${r.mimeType};base64,${r.dataBase64}`;
-          const relPath = await persistAttachmentToDiskRef.current({
-            id,
-            fileName: r.fileName,
-            dataUrl,
-          });
-          dropped.push({
-            id,
-            fileName: r.fileName,
-            mimeType: r.mimeType,
-            dataUrl,
-            relPath,
-          });
-        } catch {
-          // Unsupported / oversize drops are silently skipped: otherwise a
-          // folder drop would spam a toast per child.
-        }
-      }
-      if (dropped.length === 0) {
-        return;
-      }
-      setAttachments((prev) => {
-        const room = ATTACHMENT_LIMIT - prev.length;
-        if (room <= 0) {
-          showToastRef.current('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-          return prev;
-        }
-        if (dropped.length > room) {
-          showToastRef.current('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
-        }
-        return [...prev, ...dropped.slice(0, room)];
-      });
-    };
-
-    void (async () => {
-      try {
-        const off = await getCurrentWebview().onDragDropEvent((event) => {
-          const p = event.payload;
-          if (providerDisconnectedRef.current) {
-            setIsDragging(false);
-            return;
-          }
-          switch (p.type) {
-            case 'enter':
-            case 'over':
-              setIsDragging(true);
-              break;
-            case 'leave':
-              setIsDragging(false);
-              break;
-            case 'drop': {
-              setIsDragging(false);
-              if (!isInsideComposer(p.position.x, p.position.y)) {
-                return;
-              }
-              void ingestDroppedPaths(p.paths);
-              break;
-            }
-          }
-        });
-        if (cancelled) {
-          off();
-        } else {
-          unlisten = off;
-        }
-      } catch (err) {
-        console.warn('drag-drop listener registration failed:', err);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, []);
-
   const lastAgentIdRef = useRef(selectedAgentId);
-  const sessionWorktreeRef = useRef(sessionWorktree);
-  sessionWorktreeRef.current = sessionWorktree;
-  const attachmentsAgentIdRef = useRef<AgentId | null>(null);
-  const pendingRestoreAgentRef = useRef<AgentId | null>(selectedAgentId);
-  const setAgentAttachments = useAppStore((s) => s.setAgentAttachments);
-
-  const restoreAttachments = useCallback(
-    async (draftAttachments: ReadonlyArray<DraftAttachment>, agentId: AgentId) => {
-      const worktree = sessionWorktreeRef.current;
-      if (!worktree && draftAttachments.length > 0) {
-        return;
-      }
-      const restored: PendingAttachment[] = [];
-      if (worktree) {
-        for (const att of draftAttachments) {
-          try {
-            const dataUrl = await readAttachment(worktree, att.relPath);
-            restored.push({
-              id: att.id,
-              fileName: att.fileName,
-              mimeType: att.mimeType,
-              dataUrl,
-              relPath: att.relPath,
-            });
-          } catch {}
-        }
-      }
-      if (pendingRestoreAgentRef.current !== agentId) {
-        return;
-      }
-      setAttachments(restored);
-      attachmentsAgentIdRef.current = agentId;
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (selectedAgentId === null) {
-      return;
-    }
-    if (attachmentsAgentIdRef.current !== selectedAgentId) {
-      return;
-    }
-    const draftAtts: DraftAttachment[] = attachments
-      .filter((a): a is PendingAttachment & { relPath: string } => a.relPath !== null)
-      .map((a) => ({
-        id: a.id,
-        fileName: a.fileName,
-        mimeType: a.mimeType,
-        relPath: a.relPath,
-      }));
-    setAgentAttachments(selectedAgentId, draftAtts);
-  }, [attachments, selectedAgentId, setAgentAttachments]);
-
-  useEffect(() => {
-    pendingRestoreAgentRef.current = selectedAgentId;
-    attachmentsAgentIdRef.current = null;
-    if (selectedAgentId === null) {
-      setAttachments([]);
-      return;
-    }
-    const stored = useAppStore.getState().agentAttachments[selectedAgentId] ?? [];
-    void restoreAttachments(stored, selectedAgentId);
-  }, [selectedAgentId, sessionWorktree, restoreAttachments]);
 
   useEffect(() => {
     if (lastAgentIdRef.current === selectedAgentId) {
@@ -1060,7 +531,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       setVerbosityState(restoredVerbosity);
     }
 
-    setQueue([]);
+    clearQueue();
     setRightSizePending(null);
     setRightSizeDismissed(false);
     setScopePending(null);
@@ -1451,189 +922,3 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     </div>
   );
 };
-
-type QueuedItem = {
-  readonly id: string;
-  readonly content: string;
-  readonly attachments: ReadonlyArray<PendingAttachment>;
-};
-
-function QueuedMessages({
-  items,
-  canEdit,
-  onEdit,
-  onRemove,
-}: {
-  readonly items: ReadonlyArray<QueuedItem>;
-  readonly canEdit: boolean;
-  readonly onEdit: (id: string) => void;
-  readonly onRemove: (id: string) => void;
-}) {
-  if (items.length === 0) {
-    return null;
-  }
-  return (
-    <div className="flex flex-col gap-1 rounded-[6px] bg-subtle/80 p-1 ring-1 ring-border-soft">
-      <div className="flex items-center gap-1.5 px-1.5 pt-0.5 text-2xs text-muted-foreground">
-        <Clock size={11} aria-hidden />
-        <span>
-          {items.length === 1
-            ? 'queued, sends when the current turn finishes'
-            : `${items.length} queued, send in order`}
-        </span>
-      </div>
-      {items.map((item, i) => {
-        const trimmed = item.content.trim();
-        const attachmentCount = item.attachments.length;
-        const preview =
-          trimmed.length > 0
-            ? trimmed
-            : `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`;
-        return (
-          <div
-            key={item.id}
-            className="group flex items-center gap-2 rounded bg-background/60 px-1.5 py-1"
-          >
-            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xs font-medium text-primary">
-              {i + 1}
-            </span>
-            <button
-              type="button"
-              disabled={!canEdit}
-              onClick={() => onEdit(item.id)}
-              title={canEdit ? 'edit, moves it back to the composer' : 'clear the composer to edit'}
-              className="min-w-0 flex-1 truncate text-left text-xs text-foreground/80 transition-colors enabled:hover:text-foreground disabled:cursor-default"
-            >
-              {preview}
-            </button>
-            {attachmentCount > 0 && trimmed.length > 0 && (
-              <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground">
-                <Paperclip size={10} aria-hidden />
-                {attachmentCount}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(item.id)}
-              title="remove from queue"
-              aria-label="remove queued message"
-              className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
-            >
-              <X size={11} aria-hidden />
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function AttachmentChip({
-  attachment,
-  onRemove,
-}: {
-  readonly attachment: PendingAttachment;
-  readonly onRemove: () => void;
-}) {
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const removeButton = (
-    <button
-      type="button"
-      onClick={onRemove}
-      title={`remove ${attachment.fileName}`}
-      aria-label={`remove ${attachment.fileName}`}
-      className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground group-hover:opacity-100"
-    >
-      <X size={10} aria-hidden />
-    </button>
-  );
-
-  if (attachmentKindFor(attachment.mimeType) === 'image') {
-    return (
-      <div className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft">
-        <button
-          type="button"
-          onClick={() => setPreviewOpen(true)}
-          title={`preview ${attachment.fileName}`}
-          aria-label={`preview ${attachment.fileName}`}
-          className="block h-full w-full cursor-zoom-in"
-        >
-          <img
-            src={attachment.dataUrl}
-            alt={attachment.fileName}
-            className="h-full w-full object-cover"
-          />
-        </button>
-        {previewOpen ? (
-          <ImageLightbox
-            src={attachment.dataUrl}
-            alt={attachment.fileName}
-            onClose={() => setPreviewOpen(false)}
-          />
-        ) : null}
-        {removeButton}
-      </div>
-    );
-  }
-
-  const Icon = fileIconFor(attachment.mimeType);
-  const isPdf = attachment.mimeType === 'application/pdf';
-  return (
-    <div className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background/60 py-2 pl-2.5 pr-6 ring-1 ring-border-soft">
-      <button
-        type="button"
-        disabled={!isPdf}
-        onClick={() => setPreviewOpen(true)}
-        title={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
-        aria-label={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
-        className="flex min-w-0 items-center gap-2 enabled:cursor-zoom-in"
-      >
-        <Icon size={18} aria-hidden className="shrink-0 text-muted-foreground" />
-        <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
-      </button>
-      {previewOpen && isPdf ? (
-        <ImageLightbox
-          media="pdf"
-          src={`data:application/pdf;base64,${dataUrlToBase64(attachment.dataUrl)}`}
-          alt={attachment.fileName}
-          onClose={() => setPreviewOpen(false)}
-        />
-      ) : null}
-      {removeButton}
-    </div>
-  );
-}
-
-function SuggestionStack({
-  items,
-}: {
-  items: ReadonlyArray<{ readonly key: string; readonly node: ReactNode }>;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  if (items.length === 0) {
-    return null;
-  }
-  const [top, ...rest] = items;
-  if (!top) {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {top.node}
-      {expanded ? rest.map((it) => <div key={it.key}>{it.node}</div>) : null}
-      {rest.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="self-start rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          {expanded
-            ? 'show fewer suggestions'
-            : `+${rest.length} more suggestion${rest.length === 1 ? '' : 's'}`}
-        </button>
-      )}
-    </div>
-  );
-}
