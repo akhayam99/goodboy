@@ -3,37 +3,15 @@ import type {
   PermissionDecisionOutcome,
   PermissionRequest,
   PermissionRule,
-  PermissionRuleScope,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
 import { formatToolPattern, parseToolPattern } from './matcher';
+import { SCOPE_RANK, isApplicable } from './shared';
 
 export type PermissionEngineDeps = {
   readonly defaultDecision?: 'allow' | 'deny';
 };
-
-const SCOPE_RANK: Record<PermissionRuleScope, number> = {
-  session: 2,
-  workspace: 1,
-  global: 0,
-};
-
-function isApplicable(
-  rule: PermissionRule,
-  context: { sessionId: SessionId; workspaceId: WorkspaceId },
-): boolean {
-  if (rule.scope === 'global') {
-    return true;
-  }
-  if (rule.scope === 'session') {
-    return rule.sessionId === context.sessionId;
-  }
-  if (rule.scope === 'workspace') {
-    return rule.workspaceId === context.workspaceId;
-  }
-  return false;
-}
 
 function isSpecific(rule: PermissionRule): boolean {
   const pattern = formatToolPattern(rule.pattern);
