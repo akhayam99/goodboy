@@ -64,6 +64,7 @@ const props = {
   onOpenWorkflows: vi.fn(),
   onOpenLinear: vi.fn(),
   onOpenGitlab: vi.fn(),
+  onOpenSentry: vi.fn(),
   onOpenProviders: vi.fn(),
   onOpenGithub: vi.fn(),
   onOpenBudget: vi.fn(),
