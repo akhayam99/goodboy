@@ -16,7 +16,8 @@ import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { formatError } from '../../../../shared/lib/errors';
+import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors';
+import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { removeWorktree } from '../../../worktree/worktree';
 import { useBranchConflict } from '../../../worktree/useBranchConflict';
@@ -114,6 +115,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   }
 
   const openableSessionId = sessionId ?? branchSessionId;
+  const missingBase = error !== null && isMissingBaseRefError(error);
   const blockedByConflict = conflictPath !== null;
   const canLaunch = goal.trim().length > 0 && branchValid && !busy && !blockedByConflict;
 
@@ -289,6 +291,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                     ) : null}
                   </LaunchField>
 
+                  {missingBase ? <BaseBranchGuide /> : null}
+
                   <div className="flex items-center gap-3 pt-1">
                     <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                       <input
@@ -301,7 +305,9 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                       Set up workflow next
                     </label>
                     <span className="flex-1" />
-                    {error ? <span className="text-xs text-danger">{error}</span> : null}
+                    {error && !missingBase ? (
+                      <span className="text-xs text-danger">{error}</span>
+                    ) : null}
                     {blockedByConflict ? (
                       <Button
                         variant="danger"
