@@ -3,7 +3,7 @@ import { cn } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 
 type Props = {
-  readonly icon: LucideIcon;
+  readonly icon?: LucideIcon;
   readonly title: string;
   readonly subtitle?: string;
   readonly beta?: boolean;
@@ -24,7 +24,7 @@ export const OverlayHeader = ({
   children,
 }: Props) => (
   <header className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3">
-    <Icon size={12} className="shrink-0 text-primary" aria-hidden />
+    {Icon ? <Icon size={12} className="shrink-0 text-primary" aria-hidden /> : null}
     <h1 className="shrink-0 text-2xs font-semibold text-foreground">{title}</h1>
     {beta ? (
       <span className="shrink-0 rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">

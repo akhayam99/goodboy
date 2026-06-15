@@ -23,6 +23,7 @@ import { WorkflowBuilderView } from './features/session/components/WorkflowBuild
 import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { GitHubSessionPane } from './features/github/components/GitHubSessionPane';
+import { MrSessionPane } from './features/integrations/gitlab/MrSessionPane';
 import { PlanStudio } from './features/plans/components/PlanStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
@@ -141,6 +142,7 @@ export const App = () => {
     prNumber: number | null;
     threadId: string | null;
   } | null>(null);
+  const [gitlabMrPane, setGitlabMrPane] = useState<{ sessionId: SessionId } | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [workflowBuilderSessionId, setWorkflowBuilderSessionId] = useState<SessionId | null>(null);
@@ -214,6 +216,7 @@ export const App = () => {
       setPlanStudioSession(null);
       setDiffViewerSession(null);
       setGithubSessionPane(null);
+      setGitlabMrPane(null);
       setWorkspaceSettingsOpen(true);
     };
     window.addEventListener('goodboy:open-workspace-settings', handler);
@@ -233,6 +236,7 @@ export const App = () => {
       setPlanStudioSession(null);
       setDiffViewerSession(null);
       setGithubSessionPane(null);
+      setGitlabMrPane(null);
       setSessionSettingsOpen(true);
     };
     window.addEventListener('goodboy:open-session-settings', handler);
@@ -268,6 +272,7 @@ export const App = () => {
       setWorkflowBuilderSessionId(null);
       setDiffViewerSession(null);
       setGithubSessionPane(null);
+      setGitlabMrPane(null);
       setPlanStudioSession(detail?.sessionId ?? null);
       setPlanStudioPlanId(detail?.planId ?? null);
     };
@@ -288,6 +293,7 @@ export const App = () => {
       setWorkflowBuilderSessionId(null);
       setPlanStudioSession(null);
       setGithubSessionPane(null);
+      setGitlabMrPane(null);
       setDiffViewerSession(detail.sessionId);
       setDiffViewerWorkingDir(detail.workingDir ?? null);
     };
@@ -310,6 +316,7 @@ export const App = () => {
       setWorkflowBuilderSessionId(null);
       setPlanStudioSession(null);
       setDiffViewerSession(null);
+      setGitlabMrPane(null);
       setGithubSessionPane({
         sessionId: detail.sessionId,
         prNumber: detail.prNumber ?? null,
@@ -318,6 +325,26 @@ export const App = () => {
     };
     window.addEventListener('goodboy:open-github-session', handler);
     return () => window.removeEventListener('goodboy:open-github-session', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      setWorkflowBuilderSessionId(null);
+      setPlanStudioSession(null);
+      setDiffViewerSession(null);
+      setGithubSessionPane(null);
+      setGitlabMrPane({ sessionId: detail.sessionId });
+    };
+    window.addEventListener('goodboy:open-gitlab-mr', handler);
+    return () => window.removeEventListener('goodboy:open-gitlab-mr', handler);
   }, []);
 
   useEffect(() => {
@@ -384,6 +411,7 @@ export const App = () => {
         setPlanStudioSession(null);
         setDiffViewerSession(null);
         setGithubSessionPane(null);
+        setGitlabMrPane(null);
         setWorkflowBuilderSessionId(detail.sessionId);
       }
     };
@@ -403,6 +431,7 @@ export const App = () => {
       setPlanStudioSession(null);
       setDiffViewerSession(null);
       setGithubSessionPane(null);
+      setGitlabMrPane(null);
       setNewSessionOpen(true);
     };
     window.addEventListener('goodboy:new-session', handler);
@@ -503,6 +532,12 @@ export const App = () => {
   }, [githubSessionPane, currentSession?.id]);
 
   useEffect(() => {
+    if (gitlabMrPane && currentSession?.id !== gitlabMrPane.sessionId) {
+      setGitlabMrPane(null);
+    }
+  }, [gitlabMrPane, currentSession?.id]);
+
+  useEffect(() => {
     setSessionSettingsOpen(false);
   }, [currentSession?.id]);
 
@@ -530,6 +565,7 @@ export const App = () => {
     setPlanStudioSession(null);
     setDiffViewerSession(null);
     setGithubSessionPane(null);
+    setGitlabMrPane(null);
     setAppSettingsFocus(undefined);
     setAppSettingsOpen(true);
   }, []);
@@ -854,6 +890,12 @@ export const App = () => {
               initialPrNumber={githubSessionPane.prNumber}
               initialThreadId={githubSessionPane.threadId}
               onClose={() => setGithubSessionPane(null)}
+            />
+          ) : gitlabMrPane && currentWorkspace ? (
+            <MrSessionPane
+              sessionId={gitlabMrPane.sessionId}
+              workspaceName={currentWorkspace.name}
+              onClose={() => setGitlabMrPane(null)}
             />
           ) : undefined
         }
