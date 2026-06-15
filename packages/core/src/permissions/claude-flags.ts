@@ -1,39 +1,12 @@
-import type {
-  ClaudePermissionMode,
-  PermissionRule,
-  PermissionRuleScope,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { ClaudePermissionMode, PermissionRule, SessionId, WorkspaceId } from '@goodboy/types';
 import { formatToolPattern } from './matcher';
+import { SCOPE_RANK, isApplicable } from './shared';
 
 export type ClaudeFlagSet = {
   readonly allowedTools: ReadonlyArray<string>;
   readonly disallowedTools: ReadonlyArray<string>;
   readonly permissionMode: ClaudePermissionMode;
 };
-
-const SCOPE_RANK: Record<PermissionRuleScope, number> = {
-  session: 2,
-  workspace: 1,
-  global: 0,
-};
-
-function isApplicable(
-  rule: PermissionRule,
-  scope: { workspaceId: WorkspaceId; sessionId: SessionId },
-): boolean {
-  if (rule.scope === 'global') {
-    return true;
-  }
-  if (rule.scope === 'session') {
-    return rule.sessionId === scope.sessionId;
-  }
-  if (rule.scope === 'workspace') {
-    return rule.workspaceId === scope.workspaceId;
-  }
-  return false;
-}
 
 export const buildClaudeFlags = (input: {
   readonly rules: ReadonlyArray<PermissionRule>;

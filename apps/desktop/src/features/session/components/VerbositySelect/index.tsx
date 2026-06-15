@@ -4,9 +4,10 @@ import { Check, ChevronDown } from 'lucide-react';
 import {
   VERBOSITY_LABEL,
   VERBOSITY_LEVELS,
+  VERBOSITY_DOT,
   type VerbosityLevel,
 } from '../../../settings/verbosity';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP, VERBOSITY_DOT } from '../dropdown-utils';
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 

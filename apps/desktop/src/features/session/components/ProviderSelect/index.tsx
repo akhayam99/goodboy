@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { Check, ChevronDown } from 'lucide-react';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL, PROVIDER_DOT } from '../../../chat/utils/chat-constants';
 import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
@@ -14,13 +14,6 @@ type Props = {
   providers: ReadonlyArray<ProviderId>;
   onChange: (value: Value) => void;
   disabled: boolean;
-};
-
-const PROVIDER_DOT: Record<ProviderId, string> = {
-  anthropic: 'bg-orange-400',
-  codex: 'bg-zinc-300',
-  cursor: 'bg-sky-400',
-  gemini: 'bg-blue-400',
 };
 
 function label(value: Value): string {
