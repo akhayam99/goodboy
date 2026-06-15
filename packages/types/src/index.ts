@@ -25,7 +25,10 @@ export type {
   ContextSlot,
   ContextSlotAuthor,
   ContextSlotHistoryEntry,
+  GitlabIntegrationConfig,
+  GitlabWorkspaceIntegration,
   LinearIntegrationConfig,
+  LinearWorkspaceIntegration,
   Session,
   SentryIntegrationConfig,
   SessionExternalTask,
@@ -37,6 +40,7 @@ export type {
   WorkflowRun,
   WorkflowTriggerMode,
   WorkspaceIntegration,
+  WorkspaceIntegrationConfig,
   WorkspaceIntegrationProvider,
   WorkspaceScript,
 } from './workspace';

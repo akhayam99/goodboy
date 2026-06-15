@@ -43,6 +43,7 @@
   --color-provider-gemini: oklch(0.72 0.16 240);
   --color-provider-linear: oklch(0.57 0.16 277);
   --color-provider-sentry: oklch(0.55 0.18 320);
+  --color-provider-gitlab: oklch(0.68 0.18 45);
 
   --text-2xs: 11px;
   --text-xs: 12px;

@@ -69,6 +69,22 @@ describe('session_external_tasks queries', () => {
     expect(got!.identifier).toBe('GOODBOY-7A');
   });
 
+  it('round-trips a gitlab-provider task', async () => {
+    const db = await seed();
+    const task = makeTask({
+      provider: 'gitlab',
+      externalId: '101',
+      identifier: 'acme/web#7',
+      url: 'https://gitlab.com/acme/web/-/issues/7',
+    });
+    await setSessionExternalTask(db, task);
+
+    const got = await getSessionExternalTask(db, sessionId);
+    expect(got!.provider).toBe('gitlab');
+    expect(got!.externalId).toBe('101');
+    expect(got!.identifier).toBe('acme/web#7');
+  });
+
   it('rejects an unknown provider via the CHECK constraint', async () => {
     const db = await seed();
     await expect(

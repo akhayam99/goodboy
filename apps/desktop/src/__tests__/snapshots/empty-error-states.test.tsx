@@ -211,6 +211,7 @@ describe('snapshot, empty states', () => {
         onOpenWorkflows={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenBudget={vi.fn()}

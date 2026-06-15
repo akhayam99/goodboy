@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Button, Dialog, Input } from '@goodboy/ui';
 import { CheckCircle2, Loader2, Unplug } from 'lucide-react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
+import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
 import { CreateTokenLink } from './CreateTokenLink';
 
@@ -17,6 +19,13 @@ export const ConnectGithubDialog = ({ workspaceId, open, onClose }: Props) => {
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const gitlabConnected = useAppStore(
+    useShallow((s) =>
+      (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab'),
+    ),
+  );
+  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
 
   const refresh = useCallback(async () => {
     try {
@@ -81,7 +90,7 @@ export const ConnectGithubDialog = ({ workspaceId, open, onClose }: Props) => {
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Close
           </Button>
-          {scoped ? null : (
+          {scoped || gitlabConnected ? null : (
             <Button onClick={() => void onConnect()} disabled={busy || token.trim().length === 0}>
               {busy ? (
                 <>
@@ -108,6 +117,21 @@ export const ConnectGithubDialog = ({ workspaceId, open, onClose }: Props) => {
             <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
               <Unplug size={12} aria-hidden className="mr-1.5" />
               {busy ? 'Disconnecting…' : 'Disconnect'}
+            </Button>
+          </div>
+        ) : gitlabConnected ? (
+          <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              GitLab is connected for this workspace. Disconnect GitLab to use a GitHub token.
+            </p>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => void disconnectGitlab(workspaceId)}
+              disabled={busy}
+            >
+              <Unplug size={12} aria-hidden className="mr-1.5" />
+              Disconnect GitLab
             </Button>
           </div>
         ) : (

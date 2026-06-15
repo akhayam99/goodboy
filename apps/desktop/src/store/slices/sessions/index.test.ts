@@ -624,6 +624,64 @@ describe('store contract', () => {
     });
   });
 
+  describe('createSession external task', () => {
+    const GITLAB_TASK = {
+      provider: 'gitlab' as const,
+      externalId: '101',
+      identifier: 'acme/web#7',
+      url: 'https://gitlab.com/acme/web/-/issues/7',
+      title: 'Fix the thing',
+    };
+
+    async function primeWorktree() {
+      const { listWorkspaces } = await import('@goodboy/db');
+      (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        buildWorkspace(),
+      ]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/repo/wt',
+        branchName: 'kay/101-fix-the-thing',
+        slug: '101-fix-the-thing',
+        reused: false,
+      });
+    }
+
+    it('persists a gitlab external task and caches it on the session', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      await primeWorktree();
+      const { setSessionExternalTask } = await import('@goodboy/db');
+      const spy = setSessionExternalTask as unknown as ReturnType<typeof vi.fn>;
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      const cached = store.getState().sessionExternalTasks[session.id];
+      expect(cached?.provider).toBe('gitlab');
+      expect(cached?.externalId).toBe('101');
+      expect(cached?.sessionId).toBe(session.id);
+    });
+
+    it('still creates the session but caches no task when persistence fails', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      await primeWorktree();
+      const { setSessionExternalTask } = await import('@goodboy/db');
+      (setSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('db down'),
+      );
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
+
+      expect(session.id).toBeDefined();
+      expect(store.getState().sessionExternalTasks[session.id]).toBeUndefined();
+    });
+  });
+
   describe('config', () => {
     it('setSessionConfig writes verbosity through', async () => {
       const store = await getStore();

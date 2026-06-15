@@ -5,8 +5,8 @@ import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
-import { useLinearIssues } from './useLinearIssues';
-import type { LinearIssue } from '../client';
+import { useGitlabIssues } from './useGitlabIssues';
+import type { GitlabIssue } from '../client';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -15,9 +15,9 @@ type Props = {
   readonly onClose: () => void;
 };
 
-export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
-  const { groups, loading, error, refetch } = useLinearIssues(workspaceId);
-  const [focused, setFocused] = useState<LinearIssue | null>(null);
+export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
+  const { groups, loading, error, refetch } = useGitlabIssues(workspaceId);
+  const [focused, setFocused] = useState<GitlabIssue | null>(null);
 
   useEffect(() => {
     if (focused !== null) {
@@ -25,7 +25,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     }
     if (initialIssueId) {
       for (const group of groups) {
-        const row = group.rows.find((r) => r.issue.id === initialIssueId);
+        const row = group.rows.find((r) => String(r.issue.id) === initialIssueId);
         if (row) {
           setFocused(row.issue);
           return;
@@ -54,15 +54,15 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
   return (
     <StudioShell
       glyph={
-        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-linear/10">
-          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
-            L
+        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-gitlab/10">
+          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-gitlab text-[9px] font-bold text-white">
+            G
           </span>
         </span>
       }
-      title="Linear"
+      title="GitLab"
       workspaceName={workspaceName}
-      closeLabel="close linear studio"
+      closeLabel="close gitlab studio"
       headerAccessory={
         <button
           type="button"

@@ -26,6 +26,7 @@ import { GitHubSessionPane } from './features/github/components/GitHubSessionPan
 import { PlanStudio } from './features/plans/components/PlanStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
+import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
@@ -120,6 +121,8 @@ export const App = () => {
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
   const [sentryStudioOpen, setSentryStudioOpen] = useState(false);
   const [sentryStudioFocus, setSentryStudioFocus] = useState<string | null>(null);
+  const [gitlabStudioOpen, setGitlabStudioOpen] = useState(false);
+  const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
@@ -358,6 +361,16 @@ export const App = () => {
     };
     window.addEventListener('goodboy:open-sentry-studio', handler);
     return () => window.removeEventListener('goodboy:open-sentry-studio', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setGitlabStudioFocus(detail?.issueExternalId ?? null);
+      setGitlabStudioOpen(true);
+    };
+    window.addEventListener('goodboy:open-gitlab-studio', handler);
+    return () => window.removeEventListener('goodboy:open-gitlab-studio', handler);
   }, []);
 
   useEffect(() => {
@@ -724,6 +737,10 @@ export const App = () => {
                 setSentryStudioFocus(null);
                 setSentryStudioOpen(true);
               }}
+              onOpenGitlab={() => {
+                setGitlabStudioFocus(null);
+                setGitlabStudioOpen(true);
+              }}
               onOpenProviders={() => {
                 setProviderStudioFocus(null);
                 setProviderStudioAction(null);
@@ -917,6 +934,14 @@ export const App = () => {
           workspaceName={currentWorkspace.name}
           initialIssueId={sentryStudioFocus}
           onClose={() => setSentryStudioOpen(false)}
+        />
+      ) : null}
+      {gitlabStudioOpen && currentWorkspace ? (
+        <GitlabStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialIssueId={gitlabStudioFocus}
+          onClose={() => setGitlabStudioOpen(false)}
         />
       ) : null}
       {commitDiff ? (

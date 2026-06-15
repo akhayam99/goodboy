@@ -101,7 +101,7 @@ export type WorkspaceScript = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceIntegrationProvider = 'linear' | 'sentry';
+export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab';
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -116,17 +116,49 @@ export type SentryIntegrationConfig = Readonly<{
   orgName?: string;
 }>;
 
-export type WorkspaceIntegration = Readonly<{
+export type GitlabIntegrationConfig = Readonly<{
+  userName: string;
+  userId: string;
+  host: string;
+}>;
+
+export type WorkspaceIntegrationConfig =
+  | LinearIntegrationConfig
+  | SentryIntegrationConfig
+  | GitlabIntegrationConfig;
+
+type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
   workspaceId: WorkspaceId;
-  provider: WorkspaceIntegrationProvider;
-  config: LinearIntegrationConfig | SentryIntegrationConfig;
   credentialKey: string;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
 
-export type SessionExternalTaskProvider = 'linear' | 'sentry';
+export type LinearWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'linear';
+    config: LinearIntegrationConfig;
+  }>;
+
+export type SentryWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'sentry';
+    config: SentryIntegrationConfig;
+  }>;
+
+export type GitlabWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'gitlab';
+    config: GitlabIntegrationConfig;
+  }>;
+
+export type WorkspaceIntegration =
+  | LinearWorkspaceIntegration
+  | SentryWorkspaceIntegration
+  | GitlabWorkspaceIntegration;
+
+export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;

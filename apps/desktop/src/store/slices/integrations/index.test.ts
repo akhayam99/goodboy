@@ -300,6 +300,16 @@ vi.mock('../../../features/integrations/sentry/client', () => ({
   sentryDisconnect: sentryDisconnectSpy,
 }));
 
+const gitlabConnectSpy = vi.fn();
+const gitlabDisconnectSpy = vi.fn(async () => undefined);
+
+vi.mock('../../../features/integrations/gitlab/client', () => ({
+  gitlabConnect: gitlabConnectSpy,
+  gitlabDisconnect: gitlabDisconnectSpy,
+  gitlabFetchAssignedIssues: vi.fn(async () => []),
+  issueIdentifier: vi.fn(),
+}));
+
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
   available: true,
   mode: 'gh-cli',
@@ -685,6 +695,79 @@ describe('store contract', () => {
         'sentry',
       );
       expect(store.getState().workspaceIntegrations[WS_ID]).toEqual([linear]);
+    });
+
+    it('connectGitlab upserts a row carrying host + user config and caches it', async () => {
+      const store = await getStore();
+      gitlabConnectSpy.mockResolvedValueOnce({ id: 99, username: 'amin', name: 'Amin K' });
+      const out = await store.getState().connectGitlab(WS_ID, 'https://gitlab.example.com', 'tok');
+      expect(out.id).toBe(99);
+      expect(gitlabConnectSpy).toHaveBeenCalledWith(WS_ID, 'https://gitlab.example.com', 'tok');
+      expect(upsertWorkspaceIntegrationSpy).toHaveBeenCalledTimes(1);
+      const cached = store
+        .getState()
+        .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'gitlab');
+      expect(cached?.config).toEqual({
+        userName: 'Amin K',
+        userId: '99',
+        host: 'https://gitlab.example.com',
+      });
+      expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.gitlab`);
+    });
+
+    it('connectGitlab preserves id + createdAt and refreshes host on reconnect', async () => {
+      const store = await getStore();
+      const existing: WorkspaceIntegration = {
+        id: 'gl-keep' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'gitlab',
+        config: { userName: 'old', userId: '1', host: 'https://gitlab.com' },
+        credentialKey: `goodboy.workspace.${WS_ID}.gitlab`,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+      gitlabConnectSpy.mockResolvedValueOnce({ id: 2, username: 'amin', name: 'Amin K' });
+      await store.getState().connectGitlab(WS_ID, 'https://self.hosted', 'tok2');
+      const rows = store.getState().workspaceIntegrations[WS_ID] ?? [];
+      const gitlab = rows.filter((i) => i.provider === 'gitlab');
+      expect(gitlab).toHaveLength(1);
+      expect(gitlab[0]?.id).toBe('gl-keep');
+      expect(gitlab[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
+      expect(gitlab[0]?.updatedAt).not.toBe('2026-01-01T00:00:00.000Z');
+      expect((gitlab[0]?.config as { host: string }).host).toBe('https://self.hosted');
+    });
+
+    it('disconnectGitlab removes only the gitlab row, leaving other providers intact', async () => {
+      const store = await getStore();
+      const linear: WorkspaceIntegration = {
+        id: 'li-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'linear',
+        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
+        credentialKey: 'k',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      const gitlab: WorkspaceIntegration = {
+        id: 'gl-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'gitlab',
+        config: { userName: 'a', userId: '1', host: 'https://gitlab.com' },
+        credentialKey: 'g',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, gitlab] } });
+      await store.getState().disconnectGitlab(WS_ID);
+      expect(gitlabDisconnectSpy).toHaveBeenCalledWith(WS_ID);
+      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        WS_ID,
+        'gitlab',
+      );
+      const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
+      expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });
   });
 });

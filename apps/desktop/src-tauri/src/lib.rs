@@ -5,6 +5,7 @@ mod db;
 mod editor;
 mod external_terminal;
 mod github;
+mod gitlab;
 mod linear;
 mod parallel_groups;
 mod path_env;
@@ -59,6 +60,7 @@ pub fn run() {
   let provider_lifecycle_registry = provider_lifecycle::ProviderLifecycleRegistry::new();
   let linear_token_cache = linear::LinearTokenCache::new();
   let sentry_token_cache = sentry::SentryTokenCache::new();
+  let gitlab_token_cache = gitlab::GitlabTokenCache::new();
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
@@ -74,6 +76,7 @@ pub fn run() {
     .manage(provider_lifecycle_registry)
     .manage(linear_token_cache)
     .manage(sentry_token_cache)
+    .manage(gitlab_token_cache)
     .setup(|app| {
       #[cfg(desktop)]
       app
@@ -216,6 +219,9 @@ pub fn run() {
       sentry::sentry_disconnect,
       sentry::sentry_fetch_issues,
       sentry::sentry_fetch_issue_detail,
+      gitlab::gitlab_connect,
+      gitlab::gitlab_disconnect,
+      gitlab::gitlab_fetch_assigned_issues,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

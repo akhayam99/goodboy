@@ -125,6 +125,7 @@ import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState, type UpdaterState } from './slices/updater/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
+import type { GitlabUser } from '../features/integrations/gitlab/client';
 
 export type BootPhase =
   | 'pending'
@@ -340,6 +341,8 @@ export type AppActions = {
     project: string,
   ): Promise<SentryProject>;
   disconnectSentry(workspaceId: WorkspaceId): Promise<void>;
+  connectGitlab(workspaceId: WorkspaceId, host: string, token: string): Promise<GitlabUser>;
+  disconnectGitlab(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;

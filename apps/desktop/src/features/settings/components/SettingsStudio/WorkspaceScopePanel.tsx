@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   GhTokenStatus,
+  GitlabIntegrationConfig,
   LinearIntegrationConfig,
   ProviderId,
   SentryIntegrationConfig,
@@ -19,6 +20,7 @@ import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
 import { ConnectSentryDialog } from '../../../../features/integrations/sentry/ConnectSentryDialog';
+import { ConnectGitlabDialog } from '../../../../features/integrations/gitlab/ConnectGitlabDialog';
 import { ConnectGithubDialog } from '../../../../features/integrations/github/ConnectGithubDialog';
 import { ghStatus } from '../../../../features/github/github';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
@@ -246,6 +248,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           <div ref={anchor('integrations')} className="py-4 first:pt-0 last:pb-0">
             <LinearRow workspaceId={workspaceId} />
             <SentryRow workspaceId={workspaceId} />
+            <GitlabRow workspaceId={workspaceId} />
           </div>
           <GithubRow workspaceId={workspaceId} />
 
@@ -328,18 +331,16 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
 function LinearRow({ workspaceId }: { workspaceId: WorkspaceId }) {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear =
-    (integrations.find((i) => i.provider === 'linear') as
-      | (WorkspaceIntegration & { config: LinearIntegrationConfig })
-      | undefined) ?? null;
+  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
+  const config = linear ? (linear.config as LinearIntegrationConfig) : null;
   const [open, setOpen] = useState(false);
 
   return (
     <FieldRow
       label="Linear"
       help={
-        linear
-          ? `Connected as ${linear.config.viewerName} · linear.app/${linear.config.workspaceUrlKey}`
+        config
+          ? `Connected as ${config.viewerName} · linear.app/${config.workspaceUrlKey}`
           : 'Pull issues assigned to you into session goals.'
       }
     >
@@ -372,6 +373,29 @@ function SentryRow({ workspaceId }: { workspaceId: WorkspaceId }) {
         {sentry ? 'Manage' : 'Connect'}
       </Button>
       <ConnectSentryDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
+    </FieldRow>
+  );
+}
+
+function GitlabRow({ workspaceId }: { workspaceId: WorkspaceId }) {
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
+  const gitlab = integrations.find((i) => i.provider === 'gitlab') ?? null;
+  const config = gitlab ? (gitlab.config as GitlabIntegrationConfig) : null;
+  const [open, setOpen] = useState(false);
+
+  return (
+    <FieldRow
+      label="GitLab"
+      help={
+        config
+          ? `Connected as ${config.userName} · ${config.host.replace(/^https?:\/\//, '')}`
+          : 'Pull issues assigned to you into session goals.'
+      }
+    >
+      <Button variant={gitlab ? 'ghost' : 'secondary'} size="sm" onClick={() => setOpen(true)}>
+        {gitlab ? 'Manage' : 'Connect'}
+      </Button>
+      <ConnectGitlabDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
     </FieldRow>
   );
 }
