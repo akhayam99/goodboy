@@ -16,7 +16,20 @@ type Props = {
 const DEFAULT_HOST = 'https://gitlab.com';
 
 function normalizeHost(input: string): string {
-  return input.trim().replace(/\/+$/, '') || DEFAULT_HOST;
+  const trimmed = input.trim().replace(/\/+$/, '');
+  if (trimmed === '') {
+    return DEFAULT_HOST;
+  }
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return DEFAULT_HOST;
+    }
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return DEFAULT_HOST;
+  }
 }
 
 export const ConnectGitlabDialog = ({ workspaceId, open, onClose }: Props) => {
