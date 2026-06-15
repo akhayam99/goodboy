@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
-import { Button, Divider, EmptyState } from '@goodboy/ui';
-import { AlertCircle, GitPullRequest, Inbox, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { Divider, EmptyState } from '@goodboy/ui';
+import { AlertCircle, Inbox, Loader2, RefreshCw } from 'lucide-react';
 import {
   buildCommentAgentArgs,
   type CommentAgentArgs,
@@ -9,12 +9,11 @@ import {
 } from '../../../chat/spawn-from-comment';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
 import { groupThreads, type CommentThread } from '../../comment-threads';
-import { CreatePrDialog } from './CreatePrDialog';
+import { CreatePrPanel } from './CreatePrPanel';
 import { PrActionBar, type ActionBusy } from './PrActionBar';
 import { PrChecks } from './PrChecks';
 import { PrConversation } from './PrConversation';
@@ -298,29 +297,13 @@ export const PrDetailPanel = ({
 
   if (!activePr) {
     return (
-      <div className="flex h-full items-center justify-center px-6">
-        <EmptyState
-          icon={GitPullRequest}
-          title="Ready to open a pull request"
-          description="Write the title and description, or hand it to an agent."
-          action={
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus size={14} aria-hidden />
-                Create PR
-              </Button>
-              <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="secondary" />
-            </div>
-          }
+      <div className="flex h-full flex-col">
+        <CreatePrPanel
+          sessionId={sessionId}
+          defaultTitle={session.goal}
+          onCreated={onMutated}
+          onStudioClose={onClose}
         />
-        {createOpen ? (
-          <CreatePrDialog
-            sessionId={sessionId}
-            defaultTitle={session.goal}
-            onClose={() => setCreateOpen(false)}
-            onStudioClose={onClose}
-          />
-        ) : null}
       </div>
     );
   }
@@ -375,56 +358,60 @@ export const PrDetailPanel = ({
 
         <Divider />
 
-        <ScrollFade className="min-h-0 flex-1">
-          {section === 'overview' ? (
-            <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
-          ) : (
-            <SectionBody
-              detailLoading={detailLoading}
-              detailError={detailError}
-              detail={detail}
-              onRetry={refreshActive}
-            >
-              {section === 'resolve' ? (
-                <ResolveBoard
-                  threads={groupThreads(detail?.comments ?? []).filter(
-                    (t) => t.head.source === 'review' && t.head.resolved === false,
-                  )}
-                  onSpawnOne={onSpawnOne}
-                  onSpawnBatch={onSpawnBatch}
-                  onOpenThread={(threadId) => {
-                    setJumpThreadId(threadId);
-                    setSection('comments');
-                  }}
-                />
-              ) : section === 'comments' ? (
-                <PrConversation
-                  comments={detail?.comments ?? []}
-                  pr={activePr}
-                  scrollToThreadId={jumpThreadId ?? initialThreadId}
-                  onOpenUrl={(u) => void openUrl(u)}
-                />
-              ) : (
-                <PrChecks
-                  checks={detail?.checks ?? []}
-                  pr={activePr}
-                  onOpenUrl={(u) => void openUrl(u)}
-                />
-              )}
-            </SectionBody>
-          )}
-        </ScrollFade>
+        {createOpen ? (
+          <CreatePrPanel
+            sessionId={sessionId}
+            defaultTitle={session.goal}
+            closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
+            onCreated={() => {
+              setCreateOpen(false);
+              onMutated();
+            }}
+            onCancel={() => setCreateOpen(false)}
+            onStudioClose={onClose}
+          />
+        ) : (
+          <ScrollFade className="min-h-0 flex-1">
+            {section === 'overview' ? (
+              <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
+            ) : (
+              <SectionBody
+                detailLoading={detailLoading}
+                detailError={detailError}
+                detail={detail}
+                onRetry={refreshActive}
+              >
+                {section === 'resolve' ? (
+                  <ResolveBoard
+                    threads={groupThreads(detail?.comments ?? []).filter(
+                      (t) => t.head.source === 'review' && t.head.resolved === false,
+                    )}
+                    onSpawnOne={onSpawnOne}
+                    onSpawnBatch={onSpawnBatch}
+                    onOpenThread={(threadId) => {
+                      setJumpThreadId(threadId);
+                      setSection('comments');
+                    }}
+                  />
+                ) : section === 'comments' ? (
+                  <PrConversation
+                    comments={detail?.comments ?? []}
+                    pr={activePr}
+                    scrollToThreadId={jumpThreadId ?? initialThreadId}
+                    onOpenUrl={(u) => void openUrl(u)}
+                  />
+                ) : (
+                  <PrChecks
+                    checks={detail?.checks ?? []}
+                    pr={activePr}
+                    onOpenUrl={(u) => void openUrl(u)}
+                  />
+                )}
+              </SectionBody>
+            )}
+          </ScrollFade>
+        )}
       </div>
-
-      {createOpen ? (
-        <CreatePrDialog
-          sessionId={sessionId}
-          defaultTitle={session.goal}
-          closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
-          onClose={() => setCreateOpen(false)}
-          onStudioClose={onClose}
-        />
-      ) : null}
     </div>
   );
 };

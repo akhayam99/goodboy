@@ -1,0 +1,226 @@
+import { useEffect, useState } from 'react';
+import type { SessionId } from '@goodboy/types';
+import { Button, Input, SectionHeader, Textarea } from '@goodboy/ui';
+import { ArrowRight, GitBranch, Loader2, Sparkles } from 'lucide-react';
+import { ghBaseBranches } from '../../github';
+import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { useAppStore } from '../../../../store';
+
+type Props = {
+  readonly sessionId: SessionId;
+  readonly defaultTitle: string;
+  readonly closedPr?: { number: number; url: string };
+  readonly onCreated: () => void;
+  readonly onStudioClose: () => void;
+  readonly onCancel?: () => void;
+};
+
+export const CreatePrPanel = ({
+  sessionId,
+  defaultTitle,
+  closedPr,
+  onCreated,
+  onStudioClose,
+  onCancel,
+}: Props) => {
+  const createPrForSession = useAppStore((s) => s.createPrForSession);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const workspaceRoot = useAppStore((s) => {
+    const sess = s.sessions.find((x) => x.id === sessionId);
+    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
+    return ws?.rootPath ?? null;
+  });
+  const workspaceId = useAppStore((s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId);
+
+  const [title, setTitle] = useState(defaultTitle);
+  const [body, setBody] = useState('');
+  const [base, setBase] = useState('');
+  const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
+  const [draft, setDraft] = useState(true);
+  const [busy, setBusy] = useState<'create' | 'ai' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!workspaceRoot) {
+      return;
+    }
+    let cancelled = false;
+    void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
+      if (cancelled) {
+        return;
+      }
+      setBranches(list);
+      if (defaultBranch) {
+        setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceRoot, workspaceId]);
+
+  const onCreate = async () => {
+    if (busy || title.trim().length === 0) {
+      return;
+    }
+    setBusy('create');
+    setError(null);
+    try {
+      await createPrForSession(sessionId, { title, body, base, draft });
+      onCreated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onCreateWithAi = async () => {
+    if (busy) {
+      return;
+    }
+    setBusy('ai');
+    setError(null);
+    try {
+      const prompt = [
+        `Open a GitHub pull request for this session's branch.`,
+        ...(closedPr
+          ? [
+              `- IMPORTANT: a previous PR #${closedPr.number} (${closedPr.url}) on this branch was CLOSED on purpose. Open a brand new pull request. Do NOT reopen #${closedPr.number}, and do not be confused if you find that closed PR while checking.`,
+            ]
+          : []),
+        `- Write a clear, conventional title and a concise description from the committed changes.`,
+        `- Session goal: "${defaultTitle}".`,
+        `- If this project defines a PR-creation skill, command, or template (look under .claude/), follow it.`,
+        `- Open it as a ${draft ? 'draft' : 'ready-for-review'} PR.`,
+        `Then run \`gh pr create\` to open it and report the PR URL.`,
+      ].join('\n');
+      const agentId = await spawnAgent(sessionId, {
+        name: 'open pull request',
+        initialPrompt: prompt,
+        model: AGENT_KIND_DEFAULTS.generic.model,
+        effort: AGENT_KIND_DEFAULTS.generic.effort,
+      });
+      await selectAgent(sessionId, agentId);
+      await setCurrentSession(sessionId);
+      onStudioClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="min-h-0 flex-1">
+      <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-8">
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <SectionHeader label="open a pull request" />
+            <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground">
+              <GitBranch size={11} aria-hidden />
+              {branch ?? 'no branch'}
+            </span>
+          </div>
+          <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
+            <div className="flex flex-col gap-1.5">
+              <SectionHeader label="title" />
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="pull request title"
+                disabled={busy !== null}
+                aria-label="Pull request title"
+                className="h-8 text-sm"
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <SectionHeader label="description" />
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="what changed and why (markdown supported)"
+                className="text-sm"
+                autoGrow
+                minRows={3}
+                maxRows={12}
+                disabled={busy !== null}
+                aria-label="Pull request description"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <SectionHeader label="base branch" icon={<GitBranch size={13} aria-hidden />} />
+              <Input
+                value={base}
+                onChange={(e) => setBase(e.target.value)}
+                placeholder="default branch"
+                list="pr-base-branches"
+                className="h-8 font-mono text-sm"
+                disabled={busy !== null}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-label="Base branch"
+              />
+              <datalist id="pr-base-branches">
+                {branches.map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={draft}
+                  onChange={(e) => setDraft(e.target.checked)}
+                  className="accent-primary"
+                  disabled={busy !== null}
+                />
+                Mark as draft
+              </label>
+              <span className="flex-1" />
+              {onCancel ? (
+                <Button variant="secondary" onClick={onCancel} disabled={busy !== null}>
+                  Cancel
+                </Button>
+              ) : null}
+              <Button
+                variant="secondary"
+                onClick={() => void onCreateWithAi()}
+                disabled={busy !== null}
+                title="hand it to an agent: it drafts the title and description, then opens the PR"
+              >
+                {busy === 'ai' ? (
+                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                ) : (
+                  <Sparkles size={13} className="mr-1.5" aria-hidden />
+                )}
+                Draft with an agent
+              </Button>
+              <Button
+                onClick={() => void onCreate()}
+                disabled={busy !== null || title.trim().length === 0}
+              >
+                {busy === 'create' ? (
+                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                ) : null}
+                Create PR
+                <ArrowRight size={13} className="ml-1.5" aria-hidden />
+              </Button>
+            </div>
+            {error ? (
+              <span className="text-xs text-danger" title={error}>
+                {error}
+              </span>
+            ) : null}
+          </div>
+        </section>
+      </ScrollFade>
+    </div>
+  );
+};
