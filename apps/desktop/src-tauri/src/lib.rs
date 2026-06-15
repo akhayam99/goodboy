@@ -107,6 +107,7 @@ pub fn run() {
       worktree::worktree_create,
       worktree::worktree_remove,
       worktree::worktree_list,
+      worktree::worktree_remote_url,
       worktree::worktree_exists,
       worktree::worktree_diff,
       worktree::worktree_changed_files,
@@ -222,6 +223,9 @@ pub fn run() {
       gitlab::gitlab_connect,
       gitlab::gitlab_disconnect,
       gitlab::gitlab_fetch_assigned_issues,
+      gitlab::gitlab_mr_for_branch,
+      gitlab::gitlab_create_mr,
+      gitlab::gitlab_merge_mr,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

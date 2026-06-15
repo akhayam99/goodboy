@@ -337,6 +337,14 @@ pub fn worktree_list(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeErr
 }
 
 #[tauri::command]
+pub fn worktree_remote_url(repo_path: String) -> Option<String> {
+    git(Path::new(&repo_path), &["remote", "get-url", "origin"])
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+#[tauri::command]
 pub fn worktree_diff(
     worktree_path: String,
     base: Option<String>,
@@ -825,7 +833,14 @@ fn untracked_new_file_diffs(p: &Path) -> String {
 }
 
 fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
-    let output = crate::path_env::command("git").args(args).current_dir(cwd).output()?;
+    let output = crate::path_env::command("git")
+        .args(args)
+        .current_dir(cwd)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_ASKPASS", "")
+        .env("SSH_ASKPASS", "")
+        .env("GIT_SSH_COMMAND", "ssh -oBatchMode=yes")
+        .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
         return Err(WorktreeError::Git {

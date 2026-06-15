@@ -105,6 +105,48 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     serde_json::from_str(&body).map_err(|e| GitlabError::InvalidShape(e.to_string()))
 }
 
+async fn send_json<T: serde::de::DeserializeOwned>(
+    method: reqwest::Method,
+    host: &str,
+    token: &str,
+    path: &str,
+    body: &serde_json::Value,
+) -> Result<T, GitlabError> {
+    let url = format!("{}{}", api_base(host)?, path);
+    let res = http_client()
+        .request(method, &url)
+        .header("PRIVATE-TOKEN", token)
+        .json(body)
+        .send()
+        .await?;
+    let status = res.status();
+    let text = res.text().await?;
+    if !status.is_success() {
+        return Err(GitlabError::Http {
+            status: status.as_u16(),
+            body: text,
+        });
+    }
+    serde_json::from_str(&text).map_err(|e| GitlabError::InvalidShape(e.to_string()))
+}
+
+fn percent_encode(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                out.push(byte as char)
+            }
+            _ => out.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    out
+}
+
+fn encode_project_path(project_path: &str) -> String {
+    percent_encode(project_path.trim().trim_matches('/'))
+}
+
 fn read_token(workspace_id: &str, cache: &GitlabTokenCache) -> Result<String, GitlabError> {
     if let Some(tok) = cache.0.lock().unwrap().get(workspace_id) {
         return Ok(tok.clone());
@@ -192,6 +234,103 @@ pub async fn gitlab_fetch_assigned_issues(
     .await
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMergeRequest {
+    pub id: i64,
+    pub iid: i64,
+    #[serde(rename = "projectId", alias = "project_id")]
+    pub project_id: i64,
+    pub title: String,
+    pub description: Option<String>,
+    pub state: String,
+    #[serde(rename = "webUrl", alias = "web_url")]
+    pub web_url: String,
+    #[serde(rename = "sourceBranch", alias = "source_branch")]
+    pub source_branch: String,
+    #[serde(rename = "targetBranch", alias = "target_branch")]
+    pub target_branch: String,
+    #[serde(default)]
+    pub draft: bool,
+    #[serde(rename = "hasConflicts", alias = "has_conflicts", default)]
+    pub has_conflicts: bool,
+    #[serde(rename = "mergeStatus", alias = "merge_status", default)]
+    pub merge_status: Option<String>,
+}
+
+#[tauri::command]
+pub async fn gitlab_mr_for_branch(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    source_branch: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Option<GitlabMergeRequest>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let branch = percent_encode(&source_branch);
+    let path = format!(
+        "/projects/{encoded}/merge_requests?source_branch={branch}&state=all&order_by=updated_at&per_page=1"
+    );
+    let mrs: Vec<GitlabMergeRequest> = get_json(&host, &token, &path).await?;
+    Ok(mrs.into_iter().next())
+}
+
+#[tauri::command]
+pub async fn gitlab_create_mr(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    source_branch: String,
+    target_branch: String,
+    title: String,
+    description: String,
+    draft: bool,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeRequest, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let mr_title = if draft {
+        format!("Draft: {title}")
+    } else {
+        title
+    };
+    let body = serde_json::json!({
+        "source_branch": source_branch,
+        "target_branch": target_branch,
+        "title": mr_title,
+        "description": description,
+        "remove_source_branch": true,
+    });
+    send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests"),
+        &body,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_merge_mr(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeRequest, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    send_json(
+        reqwest::Method::PUT,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/merge"),
+        &serde_json::json!({}),
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,6 +360,42 @@ mod tests {
     fn api_base_rejects_a_host_without_scheme() {
         let err = api_base("gitlab.com").unwrap_err();
         assert!(matches!(err, GitlabError::InvalidShape(_)));
+    }
+
+    #[test]
+    fn encode_project_path_percent_encodes_namespace_slashes() {
+        assert_eq!(encode_project_path("group/sub/repo"), "group%2Fsub%2Frepo");
+        assert_eq!(encode_project_path("/acme/web/"), "acme%2Fweb");
+    }
+
+    #[test]
+    fn percent_encode_escapes_branch_slashes_and_reserved() {
+        assert_eq!(percent_encode("ak/feat-x"), "ak%2Ffeat-x");
+        assert_eq!(percent_encode("a b"), "a%20b");
+        assert_eq!(percent_encode("keep-._~"), "keep-._~");
+    }
+
+    #[test]
+    fn merge_request_deserializes_snake_case_payload() {
+        let raw = r#"{
+            "id": 9,
+            "iid": 2,
+            "project_id": 3,
+            "title": "Draft: wip",
+            "description": null,
+            "state": "opened",
+            "web_url": "https://gitlab.com/acme/web/-/merge_requests/2",
+            "source_branch": "ak/feat-x",
+            "target_branch": "main",
+            "draft": true,
+            "has_conflicts": false,
+            "merge_status": "can_be_merged"
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        assert_eq!(mr.iid, 2);
+        assert_eq!(mr.source_branch, "ak/feat-x");
+        assert!(mr.draft);
+        assert_eq!(mr.merge_status.as_deref(), Some("can_be_merged"));
     }
 
     #[test]

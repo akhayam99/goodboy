@@ -41,6 +41,10 @@ export const worktreeDiff = async (worktreePath: string, base?: string): Promise
   return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
 };
 
+export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null> => {
+  return invoke<string | null>('worktree_remote_url', { repoPath });
+};
+
 export type ChangedFilesSummary = {
   readonly paths: ReadonlyArray<string>;
   readonly additions: number;
