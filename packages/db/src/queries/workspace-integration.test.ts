@@ -69,7 +69,7 @@ function makeSentryIntegration(
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
-  };
+  } as WorkspaceIntegration;
 }
 
 describe('workspace_integrations queries', () => {

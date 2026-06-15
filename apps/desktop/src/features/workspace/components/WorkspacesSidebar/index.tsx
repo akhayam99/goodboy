@@ -441,12 +441,14 @@ function QuickActionsRow({
           onClick={onOpenGitlab}
         />
       ) : null}
-      <QuickAction
-        icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
-        label="GitHub"
-        title="review and act on pull requests across this workspace"
-        onClick={onOpenGithub}
-      />
+      {!gitlabEnabled ? (
+        <QuickAction
+          icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
+          label="GitHub"
+          title="review and act on pull requests across this workspace"
+          onClick={onOpenGithub}
+        />
+      ) : null}
     </div>
   );
 }
