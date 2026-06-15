@@ -127,6 +127,7 @@ type WorkspacesSidebarProps = {
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
   onOpenSentry: () => void;
+  onOpenGitlab: () => void;
   onOpenProviders: () => void;
   onOpenGithub: () => void;
   onOpenBudget: () => void;
@@ -143,6 +144,7 @@ export const WorkspacesSidebar = ({
   onOpenWorkflows,
   onOpenLinear,
   onOpenSentry,
+  onOpenGitlab,
   onOpenProviders,
   onOpenGithub,
   onOpenBudget,
@@ -159,6 +161,11 @@ export const WorkspacesSidebar = ({
   const hasSentry = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'sentry',
+    ),
+  );
+  const hasGitlab = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'gitlab',
     ),
   );
   const currentSession = useCurrentSession();
@@ -312,10 +319,12 @@ export const WorkspacesSidebar = ({
             onOpenWorkflows={onOpenWorkflows}
             onOpenLinear={onOpenLinear}
             onOpenSentry={onOpenSentry}
+            onOpenGitlab={onOpenGitlab}
             onOpenProviders={onOpenProviders}
             onOpenGithub={onOpenGithub}
             linearEnabled={hasLinear}
             sentryEnabled={hasSentry}
+            gitlabEnabled={hasGitlab}
             skillsEnabled={WORKSPACE_FEATURES.skills}
           />
         </>
@@ -351,20 +360,24 @@ function QuickActionsRow({
   onOpenWorkflows,
   onOpenLinear,
   onOpenSentry,
+  onOpenGitlab,
   onOpenProviders,
   onOpenGithub,
   linearEnabled,
   sentryEnabled,
+  gitlabEnabled,
   skillsEnabled,
 }: {
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
   onOpenLinear: () => void;
   onOpenSentry: () => void;
+  onOpenGitlab: () => void;
   onOpenProviders: () => void;
   onOpenGithub: () => void;
   linearEnabled: boolean;
   sentryEnabled: boolean;
+  gitlabEnabled: boolean;
   skillsEnabled: boolean;
 }) {
   const noProviderConnected = useAppStore(
@@ -416,12 +429,26 @@ function QuickActionsRow({
           onClick={onOpenSentry}
         />
       ) : null}
-      <QuickAction
-        icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
-        label="GitHub"
-        title="review and act on pull requests across this workspace"
-        onClick={onOpenGithub}
-      />
+      {gitlabEnabled ? (
+        <QuickAction
+          icon={
+            <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-gitlab text-[7px] font-bold text-white">
+              G
+            </span>
+          }
+          label="GitLab"
+          title="launch a session from a GitLab issue"
+          onClick={onOpenGitlab}
+        />
+      ) : null}
+      {!gitlabEnabled ? (
+        <QuickAction
+          icon={<GitPullRequest size={12} className="text-merged" aria-hidden />}
+          label="GitHub"
+          title="review and act on pull requests across this workspace"
+          onClick={onOpenGithub}
+        />
+      ) : null}
     </div>
   );
 }

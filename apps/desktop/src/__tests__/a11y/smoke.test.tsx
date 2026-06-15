@@ -140,6 +140,7 @@ describe('a11y smoke, WorkspacesSidebar', () => {
         onOpenWorkflows={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenBudget={vi.fn()}

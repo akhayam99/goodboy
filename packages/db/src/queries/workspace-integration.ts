@@ -26,7 +26,7 @@ function toDomain(row: WorkspaceIntegrationRow): WorkspaceIntegration {
     credentialKey: row.credential_key,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  };
+  } as WorkspaceIntegration;
 }
 
 export const upsertWorkspaceIntegration = async (

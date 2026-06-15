@@ -92,6 +92,8 @@ import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createGithubSlice } from './slices/github';
+import { createGitlabMrSlice } from './slices/gitlab-mr';
+import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSessionViewSlice } from './slices/session-view';
@@ -125,6 +127,7 @@ import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState, type UpdaterState } from './slices/updater/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
+import type { GitlabUser } from '../features/integrations/gitlab/client';
 
 export type BootPhase =
   | 'pending'
@@ -237,6 +240,7 @@ export type AppState = UpdaterState & {
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
+  readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
   readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
@@ -273,6 +277,13 @@ export type SessionLoadingFlags = {
   readonly slots: boolean;
   readonly plans: boolean;
   readonly summary: boolean;
+};
+
+export type SessionGitlabMrState = {
+  readonly mr: GitlabMergeRequest | null;
+  readonly fetchedAt: IsoDateTime | null;
+  readonly loading: boolean;
+  readonly error: string | null;
 };
 
 export type SessionGithubState = {
@@ -340,6 +351,8 @@ export type AppActions = {
     project: string,
   ): Promise<SentryProject>;
   disconnectSentry(workspaceId: WorkspaceId): Promise<void>;
+  connectGitlab(workspaceId: WorkspaceId, host: string, token: string): Promise<GitlabUser>;
+  disconnectGitlab(workspaceId: WorkspaceId): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -558,6 +571,15 @@ export type AppActions = {
   markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
   mergePr(sessionId: SessionId, prNumber?: number): Promise<void>;
+  refreshSessionMr(
+    sessionId: SessionId,
+    opts?: { force?: boolean; silent?: boolean },
+  ): Promise<void>;
+  createMrForSession(
+    sessionId: SessionId,
+    opts?: { title?: string; description?: string; targetBranch?: string; draft?: boolean },
+  ): Promise<void>;
+  mergeMrForSession(sessionId: SessionId): Promise<void>;
   closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
   reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
   editPr(
@@ -704,6 +726,7 @@ export const initialState: AppState = {
   sidebarProviderFilter: [],
   githubStatus: null,
   sessionGithub: {},
+  sessionGitlabMr: {},
   sessionPendingResolutions: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
@@ -742,6 +765,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),
   ...createGithubSlice(set, get),
+  ...createGitlabMrSlice(set, get),
   ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),

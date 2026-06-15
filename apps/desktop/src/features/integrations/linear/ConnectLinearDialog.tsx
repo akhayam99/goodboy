@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { LinearIntegrationConfig, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
+import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, Dialog, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Loader2, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
@@ -14,10 +14,8 @@ type Props = {
 
 export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear =
-    (integrations.find((i) => i.provider === 'linear') as
-      | (WorkspaceIntegration & { config: LinearIntegrationConfig })
-      | undefined) ?? null;
+  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
+  const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null;
   const connectLinear = useAppStore((s) => s.connectLinear);
   const disconnectLinear = useAppStore((s) => s.disconnectLinear);
 
@@ -89,12 +87,12 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => {
           <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <CheckCircle2 size={14} aria-hidden className="text-success" />
-              Connected as {linear.config.viewerName}
+              Connected as {linearConfig?.viewerName}
             </div>
             <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-xs">
               <dt className="text-muted-foreground">workspace</dt>
               <dd className="font-mono text-foreground">
-                linear.app/{linear.config.workspaceUrlKey}
+                linear.app/{linearConfig?.workspaceUrlKey}
               </dd>
             </dl>
             <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>

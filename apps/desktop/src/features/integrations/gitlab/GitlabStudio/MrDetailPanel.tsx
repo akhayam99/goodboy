@@ -1,0 +1,326 @@
+import { useEffect, useState } from 'react';
+import { Button, Divider, EmptyState, Input, SectionHeader, Textarea, cn } from '@goodboy/ui';
+import {
+  AlertTriangle,
+  ArrowRight,
+  ExternalLink,
+  GitBranch,
+  GitMerge,
+  Loader2,
+  MousePointerClick,
+  RefreshCw,
+  Sparkles,
+} from 'lucide-react';
+import type { SessionId } from '@goodboy/types';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
+import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
+import { formatError } from '../../../../shared/lib/errors';
+
+type Props = {
+  readonly sessionId: SessionId;
+  readonly onClose: () => void;
+};
+
+const STATE_STYLE: Record<string, string> = {
+  opened: 'bg-success/15 text-success',
+  merged: 'bg-info/15 text-info',
+  closed: 'bg-danger/15 text-danger',
+  locked: 'bg-muted text-muted-foreground',
+};
+
+export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
+  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId]);
+  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
+  const createMrForSession = useAppStore((s) => s.createMrForSession);
+  const mergeMrForSession = useAppStore((s) => s.mergeMrForSession);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const { showToast } = useToast();
+
+  const mr = mrState?.mr ?? null;
+  const loading = mrState?.loading ?? false;
+  const error = mrState?.error ?? null;
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [targetBranch, setTargetBranch] = useState('main');
+  const [draft, setDraft] = useState(true);
+  const [busy, setBusy] = useState<'create' | 'ai' | 'merge' | null>(null);
+
+  useEffect(() => {
+    void refreshSessionMr(sessionId, { silent: true });
+  }, [sessionId, refreshSessionMr]);
+
+  useEffect(() => {
+    setTitle(session?.goal ?? '');
+  }, [session?.goal]);
+
+  if (!session) {
+    return (
+      <div className="flex h-full items-center justify-center px-8">
+        <EmptyState
+          icon={MousePointerClick}
+          title="No session selected"
+          description="Pick a session to manage its merge request."
+        />
+      </div>
+    );
+  }
+
+  const onCreate = async () => {
+    if (busy !== null || title.trim().length === 0) {
+      return;
+    }
+    setBusy('create');
+    try {
+      await createMrForSession(sessionId, {
+        title: title.trim(),
+        description,
+        targetBranch: targetBranch.trim() || 'main',
+        draft,
+      });
+      showToast('success', 'Merge request created');
+    } catch (err) {
+      showToast('error', formatError(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onCreateWithAi = async () => {
+    if (busy !== null) {
+      return;
+    }
+    setBusy('ai');
+    try {
+      const prompt = [
+        `Open a GitLab merge request for this session's branch.`,
+        `- Write a clear, conventional title and a concise description from the committed changes.`,
+        `- Session goal: "${session.goal}".`,
+        `- Target branch: ${targetBranch.trim() || 'main'}.`,
+        `- If this project defines an MR-creation skill, command, or template (look under .claude/), follow it.`,
+        `- Open it as a ${draft ? 'draft' : 'ready-for-review'} merge request.`,
+        `Then open it with \`glab mr create\` (or the GitLab REST API if glab is unavailable) and report the MR URL.`,
+      ].join('\n');
+      const agentId = await spawnAgent(sessionId, {
+        name: 'open merge request',
+        initialPrompt: prompt,
+        model: AGENT_KIND_DEFAULTS.generic.model,
+        effort: AGENT_KIND_DEFAULTS.generic.effort,
+      });
+      await selectAgent(sessionId, agentId);
+      await setCurrentSession(sessionId);
+      onClose();
+    } catch (err) {
+      showToast('error', formatError(err));
+      setBusy(null);
+    }
+  };
+
+  const onMerge = async () => {
+    if (busy !== null) {
+      return;
+    }
+    setBusy('merge');
+    try {
+      await mergeMrForSession(sessionId);
+      showToast('success', 'Merge request merged');
+      onClose();
+    } catch (err) {
+      showToast('error', formatError(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex shrink-0 items-center gap-2 px-8 py-4">
+        <span className="inline-flex items-center gap-1.5 font-mono text-2xs text-muted-foreground">
+          <GitBranch size={11} aria-hidden />
+          {branch ?? 'no branch'}
+        </span>
+        {mr ? (
+          <span
+            className={cn(
+              'rounded px-1.5 py-0.5 text-2xs font-medium',
+              STATE_STYLE[mr.state] ?? 'bg-muted text-muted-foreground',
+            )}
+          >
+            !{mr.iid} · {mr.state}
+          </span>
+        ) : null}
+        <span className="flex-1" />
+        <button
+          type="button"
+          onClick={() => void refreshSessionMr(sessionId, { force: true })}
+          disabled={loading}
+          title={error ? `refresh failed: ${error}` : 'refresh merge request'}
+          aria-label="refresh merge request"
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw size={12} aria-hidden className={loading ? 'animate-spin' : undefined} />
+        </button>
+        {mr ? (
+          <a
+            href={mr.webUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Open in GitLab <ExternalLink size={11} aria-hidden />
+          </a>
+        ) : null}
+      </div>
+      <Divider />
+
+      <div className="min-h-0 flex-1">
+        <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-8">
+          {mr ? (
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-lg font-semibold leading-snug text-foreground">{mr.title}</h2>
+                <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+                  <span className="font-mono">{mr.sourceBranch}</span>
+                  <ArrowRight size={11} aria-hidden />
+                  <span className="font-mono">{mr.targetBranch}</span>
+                  {mr.draft ? (
+                    <span className="rounded bg-warning/15 px-1.5 py-0.5 font-medium text-warning">
+                      draft
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+
+              {mr.hasConflicts ? (
+                <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
+                  <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                  <span>
+                    This merge request has conflicts that must be resolved before merging.
+                  </span>
+                </div>
+              ) : null}
+
+              {mr.state === 'opened' ? (
+                <div className="flex items-center gap-3">
+                  {mr.mergeStatus ? (
+                    <span className="text-2xs text-muted-foreground">
+                      merge status: {mr.mergeStatus}
+                    </span>
+                  ) : null}
+                  <span className="flex-1" />
+                  <Button
+                    onClick={() => void onMerge()}
+                    disabled={busy !== null || mr.hasConflicts}
+                  >
+                    {busy === 'merge' ? (
+                      <>
+                        <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                        Merging…
+                      </>
+                    ) : (
+                      <>
+                        <GitMerge size={13} className="mr-1.5" aria-hidden />
+                        Merge request
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <section className="flex flex-col gap-4">
+              <SectionHeader label="create merge request" />
+              <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
+                <div className="flex flex-col gap-1.5">
+                  <SectionHeader label="title" />
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={busy !== null}
+                    aria-label="Merge request title"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <SectionHeader label="description" />
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    autoGrow
+                    minRows={3}
+                    maxRows={10}
+                    disabled={busy !== null}
+                    aria-label="Merge request description"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <SectionHeader label="target branch" icon={<GitBranch size={13} aria-hidden />} />
+                  <Input
+                    value={targetBranch}
+                    onChange={(e) => setTargetBranch(e.target.value)}
+                    placeholder="main"
+                    className="h-8 font-mono text-sm"
+                    disabled={busy !== null}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label="Target branch"
+                  />
+                </div>
+                <div className="flex items-center gap-3 pt-1">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={draft}
+                      onChange={(e) => setDraft(e.target.checked)}
+                      className="accent-primary"
+                      disabled={busy !== null}
+                    />
+                    Mark as draft
+                  </label>
+                  <span className="flex-1" />
+                  <Button
+                    variant="secondary"
+                    onClick={() => void onCreateWithAi()}
+                    disabled={busy !== null || !branch}
+                    title="hand it to an agent: it drafts the title and description, then opens the MR"
+                  >
+                    {busy === 'ai' ? (
+                      <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                    ) : (
+                      <Sparkles size={13} className="mr-1.5" aria-hidden />
+                    )}
+                    Draft with an agent
+                  </Button>
+                  <Button
+                    onClick={() => void onCreate()}
+                    disabled={busy !== null || title.trim().length === 0 || !branch}
+                  >
+                    {busy === 'create' ? (
+                      <>
+                        <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                        Creating…
+                      </>
+                    ) : (
+                      <>
+                        Create MR
+                        <ArrowRight size={13} className="ml-1.5" aria-hidden />
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {error ? <span className="text-xs text-danger">{error}</span> : null}
+              </div>
+            </section>
+          )}
+        </ScrollFade>
+      </div>
+    </div>
+  );
+};

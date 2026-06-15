@@ -18,6 +18,8 @@ import { goalFromIssue } from '../../../../features/integrations/linear/goal-fro
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
+import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
+import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 
 type Props = {
   onClose: () => void;
@@ -516,11 +518,18 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           </Section>
         </div>
       </div>
+
+      {error && isMissingBaseRefError(error) ? (
+        <div className="px-6 pb-2">
+          <BaseBranchGuide />
+        </div>
+      ) : null}
+
       <Divider />
 
       <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
         <div className="flex-1">
-          {error ? (
+          {error && !isMissingBaseRefError(error) ? (
             <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
               <AlertTriangle size={12} aria-hidden />
               {error}

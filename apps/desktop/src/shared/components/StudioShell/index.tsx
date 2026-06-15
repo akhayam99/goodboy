@@ -5,10 +5,12 @@ import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import { OverlayHeader } from '../OverlayHeader';
 
 type Props = {
-  readonly icon: LucideIcon;
+  readonly icon?: LucideIcon;
+  readonly glyph?: ReactNode;
   readonly title: string;
   readonly workspaceName: string;
   readonly closeLabel: string;
+  readonly headerAccessory?: ReactNode;
   readonly onClose: () => void;
   readonly variant?: 'fullscreen' | 'slot';
   readonly children: (requestClose: () => void) => ReactNode;
@@ -16,9 +18,11 @@ type Props = {
 
 export const StudioShell = ({
   icon: Icon,
+  glyph,
   title,
   workspaceName,
   closeLabel,
+  headerAccessory,
   onClose,
   variant = 'fullscreen',
   children,
@@ -45,9 +49,12 @@ export const StudioShell = ({
         />
       ) : (
         <header className="flex shrink-0 items-center gap-3 px-6 py-3">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-            <Icon size={16} className="text-primary" aria-hidden />
-          </span>
+          {glyph ??
+            (Icon ? (
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                <Icon size={16} className="text-primary" aria-hidden />
+              </span>
+            ) : null)}
           <div className="flex min-w-0 flex-col">
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-semibold text-foreground">{title}</h1>
@@ -58,6 +65,7 @@ export const StudioShell = ({
             <span className="truncate text-2xs text-muted-foreground">{workspaceName}</span>
           </div>
           <div className="flex-1" />
+          {headerAccessory}
           <button
             type="button"
             onClick={requestClose}

@@ -62,6 +62,7 @@ import { m061DiffCommentLineRange } from './m061-diff-comment-line-range';
 import { m062OpenQuestionsTurnOrdinal } from './m062-open-questions-turn-ordinal';
 import { m063OpenQuestionsRecommendedAnswer } from './m063-open-questions-recommended-answer';
 import { m064SentryProvider } from './m064-sentry-provider';
+import { m065IntegrationGitlabProvider } from './m065-integration-gitlab-provider';
 
 export type Migration = {
   readonly version: number;
@@ -133,4 +134,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 62, sql: m062OpenQuestionsTurnOrdinal },
   { version: 63, sql: m063OpenQuestionsRecommendedAnswer },
   { version: 64, sql: m064SentryProvider },
+  { version: 65, sql: m065IntegrationGitlabProvider },
 ];

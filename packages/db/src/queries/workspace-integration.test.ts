@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  GitlabIntegrationConfig,
   LinearIntegrationConfig,
   SentryIntegrationConfig,
   WorkspaceId,
@@ -46,7 +47,7 @@ function makeIntegration(overrides: Partial<WorkspaceIntegration> = {}): Workspa
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
-  };
+  } as WorkspaceIntegration;
 }
 
 function makeSentryIntegration(
@@ -68,7 +69,7 @@ function makeSentryIntegration(
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
-  };
+  } as WorkspaceIntegration;
 }
 
 describe('workspace_integrations queries', () => {
@@ -119,6 +120,50 @@ describe('workspace_integrations queries', () => {
     await deleteWorkspaceIntegration(db, workspaceId, 'linear');
     const after = await listIntegrationsForWorkspace(db, workspaceId);
     expect(after).toHaveLength(0);
+  });
+
+  it('round-trips a gitlab integration with its host field and discriminates by provider', async () => {
+    const db = await seed();
+    const gitlabConfig: GitlabIntegrationConfig = {
+      userName: 'Amin K',
+      userId: '99',
+      host: 'https://gitlab.example.com',
+    };
+    const gitlab = makeIntegration({
+      id: 'gl-1' as WorkspaceIntegrationId,
+      provider: 'gitlab',
+      config: gitlabConfig,
+      credentialKey: `goodboy.workspace.${workspaceId}.gitlab`,
+    });
+    await upsertWorkspaceIntegration(db, makeIntegration());
+    await upsertWorkspaceIntegration(db, gitlab);
+
+    const got = await getWorkspaceIntegration(db, workspaceId, 'gitlab');
+    expect(got).not.toBeNull();
+    expect(got!.provider).toBe('gitlab');
+    expect((got!.config as GitlabIntegrationConfig).host).toBe('https://gitlab.example.com');
+    expect((got!.config as GitlabIntegrationConfig).userId).toBe('99');
+
+    const all = await listIntegrationsForWorkspace(db, workspaceId);
+    expect(all.map((i) => i.provider).sort()).toEqual(['gitlab', 'linear']);
+  });
+
+  it('deletes only the targeted provider, leaving co-located integrations intact', async () => {
+    const db = await seed();
+    await upsertWorkspaceIntegration(db, makeIntegration());
+    await upsertWorkspaceIntegration(
+      db,
+      makeIntegration({
+        id: 'gl-2' as WorkspaceIntegrationId,
+        provider: 'gitlab',
+        config: { userName: 'a', userId: '1', host: 'https://gitlab.com' },
+        credentialKey: `goodboy.workspace.${workspaceId}.gitlab`,
+      }),
+    );
+
+    await deleteWorkspaceIntegration(db, workspaceId, 'gitlab');
+    const remaining = await listIntegrationsForWorkspace(db, workspaceId);
+    expect(remaining.map((i) => i.provider)).toEqual(['linear']);
   });
 
   it('integration survives soft-delete + reconnect of its workspace', async () => {
