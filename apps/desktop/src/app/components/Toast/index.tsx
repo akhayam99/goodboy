@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
@@ -86,7 +86,6 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
       className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2"
       role="region"
       aria-label="notifications"
-      aria-live="polite"
     >
       {toasts.map((t) => (
         <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
@@ -99,6 +98,36 @@ type ToastCardProps = {
   toast: ToastItem;
   onDismiss: (id: string) => void;
 };
+
+const KIND_ICON = {
+  error: AlertCircle,
+  warning: AlertTriangle,
+  success: CheckCircle2,
+  info: Info,
+} as const;
+
+const KIND_CLASSES = {
+  error: {
+    card: 'border-danger/25 bg-elevated',
+    strip: 'bg-danger',
+    icon: 'text-danger',
+  },
+  warning: {
+    card: 'border-warning/25 bg-elevated',
+    strip: 'bg-warning',
+    icon: 'text-warning',
+  },
+  success: {
+    card: 'border-success/25 bg-elevated',
+    strip: 'bg-success',
+    icon: 'text-success',
+  },
+  info: {
+    card: 'border-info/25 bg-elevated',
+    strip: 'bg-info',
+    icon: 'text-info',
+  },
+} as const;
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
   const [visible, setVisible] = useState(false);
@@ -121,46 +150,50 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
     };
   }, [toast.id, toast.persist, onDismiss]);
 
+  const { card, strip, icon } = KIND_CLASSES[toast.kind];
+  const Icon = KIND_ICON[toast.kind];
+  const hasTitle = Boolean(toast.title);
+  const assertive = toast.kind === 'error' || toast.kind === 'warning';
+
   return (
     <div
       className={cn(
-        'pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 shadow-md motion-safe:transition-all motion-safe:duration-200',
-        toast.title ? 'max-w-sm' : 'max-w-xs',
-        visible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0',
-        toast.kind === 'error'
-          ? 'border-danger/30 bg-subtle text-danger'
-          : toast.kind === 'success'
-            ? 'border-success/30 bg-subtle text-success'
-            : toast.kind === 'info'
-              ? 'border-info/30 bg-subtle text-info'
-              : 'border-warning/30 bg-subtle text-warning',
+        'pointer-events-auto flex min-w-[22rem] max-w-[30rem] overflow-hidden rounded-lg border shadow-lg motion-safe:transition-all motion-safe:duration-200',
+        card,
+        visible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0',
       )}
-      role="alert"
+      role={assertive ? 'alert' : 'status'}
     >
-      <div className="min-w-0 flex-1">
-        {toast.title ? <p className="text-xs font-semibold leading-snug">{toast.title}</p> : null}
-        {toast.message ? (
-          <p
-            className={cn(
-              'whitespace-pre-line break-words text-xs leading-snug',
-              toast.title && 'mt-0.5 line-clamp-4 text-foreground/80',
-            )}
-          >
-            {toast.message}
-          </p>
-        ) : null}
-        {toast.context ? (
-          <p className="mt-1 truncate text-2xs opacity-70">{toast.context}</p>
-        ) : null}
+      <div className={cn('w-1 shrink-0', strip)} />
+      <div className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3">
+        <Icon size={16} className={cn('mt-px shrink-0', icon)} aria-hidden />
+        <div className="min-w-0 flex-1">
+          {hasTitle ? (
+            <p className="text-sm font-semibold leading-snug text-foreground">{toast.title}</p>
+          ) : null}
+          {toast.message ? (
+            <p
+              className={cn(
+                'break-words text-xs leading-snug',
+                hasTitle ? 'mt-0.5 text-muted-foreground' : 'text-foreground',
+              )}
+            >
+              {toast.message}
+            </p>
+          ) : null}
+          {toast.context ? (
+            <p className="mt-1.5 line-clamp-2 text-2xs text-muted-foreground/70">{toast.context}</p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+          onClick={() => onDismiss(toast.id)}
+          aria-label="dismiss notification"
+        >
+          <X size={13} aria-hidden />
+        </button>
       </div>
-      <button
-        type="button"
-        className="mt-0.5 shrink-0 opacity-60 hover:opacity-100"
-        onClick={() => onDismiss(toast.id)}
-        aria-label="dismiss notification"
-      >
-        <X size={12} aria-hidden />
-      </button>
     </div>
   );
 }
