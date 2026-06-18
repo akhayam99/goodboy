@@ -26,7 +26,7 @@ thiserror = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 dirs = "5"
 regex = "1"
-sha2 = "0.10"
+sha2 = "0.11"
 base64 = "0.22"
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
