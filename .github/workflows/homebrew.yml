@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: checkout (template)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: resolve version and sha256
         id: meta
@@ -37,7 +37,7 @@ jobs:
               packaging/goodboy.rb > goodboy.rb
 
       - name: checkout tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akhayam99/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
