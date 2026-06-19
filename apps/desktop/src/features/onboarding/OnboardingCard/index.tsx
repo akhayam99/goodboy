@@ -5,9 +5,17 @@ import {
   collapse,
   finish,
   reopen,
+  type OnboardingGroup,
   type OnboardingStepId,
 } from '../onboarding-store';
 import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnboardingProgress';
+
+const GROUP_LABEL: Record<OnboardingGroup, string> = {
+  setup: 'Setup',
+  build: 'First steps',
+};
+
+const GROUP_ORDER: ReadonlyArray<OnboardingGroup> = ['setup', 'build'];
 
 export const OnboardingCard = () => {
   const progress = useOnboardingProgress();
@@ -45,17 +53,32 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
           <X size={11} aria-hidden />
         </button>
       </div>
-      <ul className="flex flex-col gap-1">
-        {ONBOARDING_STEPS.map((step) => (
-          <StepRow
-            key={step.id}
-            id={step.id}
-            title={step.title}
-            why={step.why}
-            done={progress.completed.has(step.id)}
-          />
-        ))}
-      </ul>
+      <div className="flex flex-col gap-2.5">
+        {GROUP_ORDER.map((group) => {
+          const steps = ONBOARDING_STEPS.filter((s) => s.group === group);
+          if (steps.length === 0) {
+            return null;
+          }
+          return (
+            <div key={group} className="flex flex-col gap-1">
+              <span className="px-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/50">
+                {GROUP_LABEL[group]}
+              </span>
+              <ul className="flex flex-col gap-1">
+                {steps.map((step) => (
+                  <StepRow
+                    key={step.id}
+                    id={step.id}
+                    title={step.title}
+                    why={step.why}
+                    done={progress.completed.has(step.id)}
+                  />
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
       <p className="text-[10px] leading-snug text-muted-foreground/60">
         {progress.completedCount} of {progress.totalCount} steps done
       </p>
@@ -84,13 +107,6 @@ function CompletedBody() {
       <p className="text-[11px] leading-snug text-muted-foreground/80">
         Nice, you've got the hang of Goodboy. That was the last step.
       </p>
-      <button
-        type="button"
-        onClick={() => finish()}
-        className="self-start rounded-md bg-primary px-2 py-1 text-2xs font-semibold text-primary-foreground transition-colors hover:brightness-110"
-      >
-        Done
-      </button>
     </>
   );
 }

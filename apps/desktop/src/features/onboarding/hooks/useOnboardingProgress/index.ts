@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useAppStore, useCurrentSession, useWorkspaces } from '../../../../store';
+import { ghStatus } from '../../../github/github';
 import {
   ONBOARDING_STEPS,
   getCompleted,
@@ -58,9 +59,44 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   });
   const currentSession = useCurrentSession();
 
+  const workspaceId = workspaces[0]?.id ?? null;
+  const needsCodeHostDetect = !persistedCompleted.has('codeHost');
+  const needsToolsDetect = !persistedCompleted.has('tools');
+  const gitlabConnected = useAppStore((s) =>
+    workspaceId
+      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
+      : false,
+  );
+  const hasTools = useAppStore((s) =>
+    workspaceId
+      ? (s.workspaceIntegrations[workspaceId] ?? []).some(
+          (i) => i.provider === 'linear' || i.provider === 'sentry',
+        )
+      : false,
+  );
+
+  const [githubScoped, setGithubScoped] = useState(false);
+  const refreshGithubStatus = useCallback(() => {
+    if (!workspaceId || !needsCodeHostDetect) {
+      return;
+    }
+    void ghStatus(workspaceId)
+      .then((status) => setGithubScoped(status.scoped ?? false))
+      .catch(() => setGithubScoped(false));
+  }, [workspaceId, needsCodeHostDetect]);
+  useEffect(() => {
+    refreshGithubStatus();
+  }, [refreshGithubStatus]);
+
   useEffect(() => {
     if (workspaces.length > 0 && !persistedCompleted.has('workspace')) {
       markStepComplete('workspace');
+    }
+    if ((gitlabConnected || githubScoped) && !persistedCompleted.has('codeHost')) {
+      markStepComplete('codeHost');
+    }
+    if (hasTools && !persistedCompleted.has('tools')) {
+      markStepComplete('tools');
     }
     if (sessionCount > 0 && !persistedCompleted.has('session')) {
       markStepComplete('session');
@@ -71,7 +107,17 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     if (anyPlan && !persistedCompleted.has('plan')) {
       markStepComplete('plan');
     }
-  }, [workspaces.length, sessionCount, anyAgent, anyPlan, persistedCompleted, currentSession]);
+  }, [
+    workspaces.length,
+    sessionCount,
+    anyAgent,
+    anyPlan,
+    gitlabConnected,
+    githubScoped,
+    hasTools,
+    persistedCompleted,
+    currentSession,
+  ]);
 
   const totalCount = ONBOARDING_STEPS.length;
   const completedCount = persistedCompleted.size;

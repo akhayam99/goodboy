@@ -6,6 +6,7 @@ import { Boxes, Check, FolderGit2, FolderPlus, Loader2 } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
+import { reopenWizard } from '../../../onboarding/onboarding-store';
 
 type Props = {
   open: boolean;
@@ -163,6 +164,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       const ws = await addWorkspace({ rootPath: path });
       await setCurrentWorkspace(ws.id);
       onClose();
+      reopenWizard('setup');
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {
@@ -185,6 +187,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       });
       await setCurrentWorkspace(ws.id);
       onClose();
+      reopenWizard('setup');
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {

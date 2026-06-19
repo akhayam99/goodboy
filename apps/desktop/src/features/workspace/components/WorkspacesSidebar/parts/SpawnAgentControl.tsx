@@ -117,6 +117,7 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
                     onClick={() => {
                       setOpen(false);
                       void spawnAgent(sessionId, { kindOverride: kind });
+                      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
                     }}
                     className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
                   >

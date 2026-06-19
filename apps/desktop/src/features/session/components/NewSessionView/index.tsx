@@ -376,7 +376,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       <Divider />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-7">
+        <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-7">
           {noProviderConnected ? (
             <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs">
               <span className="mt-0.5 text-warning">⚠</span>

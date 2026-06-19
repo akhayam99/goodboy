@@ -439,7 +439,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-6 py-5">
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+          <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <label

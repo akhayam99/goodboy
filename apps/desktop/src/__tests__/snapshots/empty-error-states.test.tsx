@@ -158,6 +158,8 @@ function mockStore(partial: Partial<AppStore>): void {
     selector({ providerLifecycle: DEFAULT_LIFECYCLE_MAP, ...partial } as AppStore),
   );
 }
+import { EmptyState } from '../../app/components/AppEmptyState';
+import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
 import { NewSessionView } from '../../features/session/components/NewSessionView';
@@ -232,6 +234,40 @@ describe('snapshot, empty states', () => {
 
   it('NotificationCenter: no notifications', () => {
     const { container } = render(<NotificationCenter />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('AppEmptyState: workspace with no sessions, create-first CTA', () => {
+    const { container, getByRole } = render(
+      <EmptyState
+        hasWorkspace
+        hasSessions={false}
+        onAddWorkspace={vi.fn()}
+        onCreateSession={vi.fn()}
+      />,
+    );
+    expect(getByRole('button', { name: /new session/i })).toBeTruthy();
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('AppEmptyState: workspace with sessions, pick up where you left off', () => {
+    const { container, queryByRole } = render(
+      <EmptyState hasWorkspace hasSessions onAddWorkspace={vi.fn()} onCreateSession={vi.fn()} />,
+    );
+    expect(queryByRole('button', { name: /new session/i })).toBeNull();
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {
+    const { container, getByRole } = render(
+      <ChatEmptyState
+        sessionId={'sess-1' as SessionId}
+        selectedAgentId={null}
+        phaseRuns={[]}
+        hasWorkflow={false}
+      />,
+    );
+    expect(getByRole('button', { name: /set up a workflow/i })).toBeTruthy();
     expect(container.firstChild).toMatchSnapshot();
   });
 });

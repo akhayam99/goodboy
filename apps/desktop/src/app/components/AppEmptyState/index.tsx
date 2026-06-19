@@ -1,13 +1,15 @@
-import { BookOpen, MessageSquare, MessagesSquare } from 'lucide-react';
+import { BookOpen, MessageSquare, MessagesSquare, Plus } from 'lucide-react';
+import { Button } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 
-export function EmptyState({
-  hasWorkspace,
-  onAddWorkspace,
-}: {
-  hasWorkspace: boolean;
-  onAddWorkspace: () => void;
-}) {
+type Props = {
+  readonly hasWorkspace: boolean;
+  readonly hasSessions: boolean;
+  readonly onAddWorkspace: () => void;
+  readonly onCreateSession: () => void;
+};
+
+export function EmptyState({ hasWorkspace, hasSessions, onAddWorkspace, onCreateSession }: Props) {
   if (!hasWorkspace) {
     return <OnboardingScreen onAddWorkspace={onAddWorkspace} />;
   }
@@ -24,15 +26,33 @@ export function EmptyState({
       />
       <div className="relative flex max-w-md flex-col items-center gap-6 text-center">
         <EmptyStateLogo />
-        <div className="flex flex-col gap-2.5">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            Pick up where you left off
-          </h2>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Create a new session from the sidebar, or jump back into an existing one. Each session
-            lives in its own worktree.
-          </p>
-        </div>
+        {hasSessions ? (
+          <div className="flex flex-col gap-2.5">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              Pick up where you left off
+            </h2>
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Create a new session from the sidebar, or jump back into an existing one. Each session
+              lives in its own worktree.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2.5">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                Create your first session
+              </h2>
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                A session spins up its own worktree and branch so your main checkout stays
+                untouched. Set a goal and let an agent run.
+              </p>
+            </div>
+            <Button size="md" onClick={onCreateSession} className="px-6 py-2.5">
+              <Plus size={16} aria-hidden />
+              New session
+            </Button>
+          </>
+        )}
         <KeyboardHints hasWorkspace />
       </div>
     </div>
