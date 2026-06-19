@@ -198,8 +198,8 @@ export function AgentsSection({ task }: AgentsSectionProps) {
     });
   }, []);
   const [resolveExpanded, setResolveExpanded] = useState(true);
-  const [workflowExpanded, setWorkflowExpanded] = useState(true);
-  const [agentsExpanded, setAgentsExpanded] = useState(true);
+  const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
+  const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
   const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
   const toggleClusterExpand = useCallback((id: string) => {
     setClusterExpand((prev) => {
@@ -349,6 +349,13 @@ export function AgentsSection({ task }: AgentsSectionProps) {
     [sorted, firstUserTextByAgentId, agentKindOverride],
   );
   const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
+  const standaloneAgentCount = useMemo(
+    () => adHocAgents.filter((r) => !resolverIds.has(r.id)).length,
+    [adHocAgents, resolverIds],
+  );
+  const agentsExpanded = useAppStore(
+    (s) => s.sessionPanelExpanded[task.id]?.agents ?? standaloneAgentCount > 0,
+  );
 
   const aggregatesByAgentId = useMemo(() => {
     const map = new Map<
@@ -739,7 +746,7 @@ export function AgentsSection({ task }: AgentsSectionProps) {
           <SectionToggle
             expanded={workflowExpanded}
             label="workflow"
-            onToggle={() => setWorkflowExpanded((v) => !v)}
+            onToggle={() => setPanelSectionExpanded(task.id, 'workflow', !workflowExpanded)}
           />
         }
       />
@@ -766,7 +773,7 @@ export function AgentsSection({ task }: AgentsSectionProps) {
           <SectionToggle
             expanded={agentsExpanded}
             label="agents"
-            onToggle={() => setAgentsExpanded((v) => !v)}
+            onToggle={() => setPanelSectionExpanded(task.id, 'agents', !agentsExpanded)}
           />
         }
       />
@@ -798,20 +805,17 @@ export function AgentsSection({ task }: AgentsSectionProps) {
               {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
             </ul>
           )}
-          <div className="flex flex-col gap-1">
-            <PlanReadySuggestion task={task} />
-            <SpawnAgentControl sessionId={task.id} />
-          </div>
+          <SpawnAgentControl sessionId={task.id} />
           {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
         </>
       ) : (
         <CollapsedSummary
-          text={(() => {
-            const count = sorted.filter((r) => !resolverIds.has(r.id)).length;
-            return count === 0 ? 'No agents yet' : pluralize(count, 'agent');
-          })()}
+          text={
+            standaloneAgentCount === 0 ? 'No agents yet' : pluralize(standaloneAgentCount, 'agent')
+          }
         />
       )}
+      <PlanReadySuggestion task={task} />
 
       <ScriptsSection
         sessionId={task.id}

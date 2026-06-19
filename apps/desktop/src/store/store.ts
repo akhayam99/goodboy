@@ -96,6 +96,7 @@ import { createGitlabMrSlice } from './slices/gitlab-mr';
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
+import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
@@ -238,6 +239,9 @@ export type AppState = UpdaterState & {
   readonly unreadWorkspaceIds: ReadonlySet<WorkspaceId>;
   readonly sidebarStateFilter: ReadonlyArray<TurnState['kind']>;
   readonly sidebarProviderFilter: ReadonlyArray<ProviderId>;
+  readonly sessionPanelExpanded: Readonly<
+    Record<SessionId, Partial<Record<PanelSection, boolean>>>
+  >;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
@@ -536,6 +540,7 @@ export type AppActions = {
   refreshUnreadWorkspaces(): Promise<void>;
   setSidebarStateFilter(states: ReadonlyArray<TurnState['kind']>): void;
   setSidebarProviderFilter(providers: ReadonlyArray<ProviderId>): void;
+  setPanelSectionExpanded(sessionId: SessionId, section: PanelSection, expanded: boolean): void;
   exportConfig(): Promise<string | null>;
   importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
@@ -724,6 +729,7 @@ export const initialState: AppState = {
   unreadWorkspaceIds: new Set<WorkspaceId>(),
   sidebarStateFilter: [],
   sidebarProviderFilter: [],
+  sessionPanelExpanded: {},
   githubStatus: null,
   sessionGithub: {},
   sessionGitlabMr: {},

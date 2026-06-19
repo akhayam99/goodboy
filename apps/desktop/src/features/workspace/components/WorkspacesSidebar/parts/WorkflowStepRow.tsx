@@ -4,7 +4,6 @@ import { AlertTriangle, ArrowRight, Check, Clock, Loader2, Play } from 'lucide-r
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
-import { formatCost } from '../../../../../features/session/agent-row-format';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
 import {
@@ -60,7 +59,6 @@ export function WorkflowStepRow({
   const isPendingFuture = run.status === 'pending' && !isActionable;
   const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
-  const stepCost = aggregate?.estimatedCostUsd ?? telemetry?.estimatedCostUsd ?? 0;
 
   const [draft, setDraft] = useState(run.name);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -239,14 +237,6 @@ export function WorkflowStepRow({
               {modelLabel}
             </span>
           </span>
-          {stepCost > 0 && (
-            <span
-              className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/60"
-              title={`estimated cost: ${formatCost(stepCost)}`}
-            >
-              {formatCost(stepCost)}
-            </span>
-          )}
         </div>
         <div
           className={cn(

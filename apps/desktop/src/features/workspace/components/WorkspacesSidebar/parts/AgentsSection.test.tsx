@@ -1,0 +1,236 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  Session,
+  SessionId,
+  StepId,
+  WorkflowRunId,
+  WorkspaceId,
+} from '@goodboy/types';
+
+const h = vi.hoisted(() => {
+  const state: Record<string, unknown> = {};
+  const setPanelSectionExpanded = vi.fn((sessionId: string, section: string, expanded: boolean) => {
+    const prev = (state.sessionPanelExpanded ?? {}) as Record<string, Record<string, boolean>>;
+    state.sessionPanelExpanded = {
+      ...prev,
+      [sessionId]: { ...prev[sessionId], [section]: expanded },
+    };
+  });
+  return { state, setPanelSectionExpanded };
+});
+
+vi.mock('../../../../../store', () => ({
+  useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
+  useSessionLoading: () => ({ agents: false, transcript: false }),
+  useSessionOpenQuestions: () => [],
+  useSessionPlans: () => [],
+  EMPTY_ARRAY: [] as never[],
+}));
+
+vi.mock('@goodboy/ui', () => ({
+  SectionHeader: ({ label, action }: { label: string; action?: unknown }) => (
+    <div data-testid={`header-${label}`}>
+      {label}
+      {action as never}
+    </div>
+  ),
+  cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
+}));
+
+vi.mock('./SectionToggle', () => ({
+  SectionToggle: ({
+    expanded,
+    label,
+    onToggle,
+  }: {
+    expanded: boolean;
+    label: string;
+    onToggle: () => void;
+  }) => (
+    <button data-testid={`toggle-${label}`} onClick={onToggle}>
+      {expanded ? 'expanded' : 'collapsed'}
+    </button>
+  ),
+}));
+
+vi.mock('./PlanReadySuggestion', () => ({
+  PlanReadySuggestion: () => <div data-testid="plan-ready" />,
+}));
+vi.mock('./SpawnAgentControl', () => ({ SpawnAgentControl: () => <div data-testid="spawn" /> }));
+vi.mock('./CollapsedSummary', () => ({
+  CollapsedSummary: ({ text }: { text: string }) => <div data-testid="collapsed">{text}</div>,
+}));
+vi.mock('./AgentRow', () => ({
+  AgentRow: ({ run }: { run: Agent }) => <li data-testid="agent-row">{run.name}</li>,
+}));
+vi.mock('./WorkflowStartButton', () => ({
+  WorkflowStartButton: () => <div data-testid="wf-start" />,
+}));
+vi.mock('./WorkflowStepRow', () => ({ WorkflowStepRow: () => null }));
+vi.mock('./ResolveCluster', () => ({ ResolveCluster: () => null }));
+vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }));
+vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
+vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
+vi.mock('../../../../scripts/components/ScriptsSection', () => ({
+  ScriptsSection: () => <div data-testid="scripts" />,
+}));
+vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
+
+vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
+  pickNextWorkflowStep: () => null,
+}));
+vi.mock('../../../../../features/context/openQuestionsGate', () => ({
+  workflowRunHasOpenQuestions: () => false,
+}));
+vi.mock('../../../../../features/session/agent-row-format', () => ({
+  computeLatestTelemetryByAgentId: () => new Map(),
+}));
+vi.mock('../../../../../features/session/agent-kind', () => ({
+  AGENT_KIND_DEFAULTS: new Proxy({}, { get: () => ({ model: 'm' }) }),
+  inferAgentKindFromName: () => 'implementer',
+  resolveAgentKind: () => 'implementer',
+}));
+vi.mock('../../../../../shared/lib/errors', () => ({ formatError: (e: unknown) => String(e) }));
+
+import { AgentsSection } from './AgentsSection';
+
+const WS_ID = 'ws-1' as WorkspaceId;
+const SESSION_ID = 'session-1' as SessionId;
+const NOW = '2026-06-16T00:00:00.000Z' as IsoDateTime;
+
+function buildSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: SESSION_ID,
+    workspaceId: WS_ID,
+    goal: 'do a thing',
+    state: { kind: 'idle', lastActivityAt: NOW },
+    contextSlots: [],
+    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+    permissionMode: 'bypassPermissions',
+    autoRun: false,
+    titleUserEdited: false,
+    workflowRuns: [],
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...overrides,
+  };
+}
+
+function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
+  return {
+    sessionId: SESSION_ID,
+    ordinal: 0,
+    name: 'agent one',
+    status: 'pending',
+    ...overrides,
+  };
+}
+
+function reset() {
+  Object.keys(h.state).forEach((k) => delete h.state[k]);
+  Object.assign(h.state, {
+    currentSessionId: null,
+    sessionPhaseRuns: {},
+    sessionTelemetry: {},
+    messages: {},
+    agentRunHistory: {},
+    agentKindOverride: {},
+    agentModelOverride: {},
+    selectedAgentId: {},
+    sessionWorktrees: {},
+    sessionGithub: {},
+    sessionPendingResolutions: {},
+    resolverState: {},
+    selectAgent: vi.fn(),
+    activateNextResolver: vi.fn(),
+    spawnAgent: vi.fn(),
+    activateWorkflowAgent: vi.fn(),
+    renameAgent: vi.fn(),
+    deleteAgent: vi.fn(),
+    phaseTemplates: {},
+    sessionWorkflows: {},
+    discardWorkflow: vi.fn(),
+    reorderSessionWorkflows: vi.fn(),
+    setWorkflowRunAutoRun: vi.fn(),
+    startWorkflowRun: vi.fn(),
+    summarizerStatus: {},
+    setPanelSectionExpanded: h.setPanelSectionExpanded,
+    sessionPanelExpanded: {},
+  });
+}
+
+describe('AgentsSection collapse defaults', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    reset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('empty session: workflow expanded, agents collapsed with no-agents summary', () => {
+    render(<AgentsSection task={buildSession()} />);
+
+    expect(screen.getByTestId('toggle-workflow').textContent).toBe('expanded');
+    expect(screen.queryByTestId('wf-start')).not.toBeNull();
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
+    expect(screen.getByTestId('collapsed').textContent).toBe('No agents yet');
+    expect(screen.queryByTestId('spawn')).toBeNull();
+  });
+
+  it('renders PlanReadySuggestion even when agents collapsed', () => {
+    render(<AgentsSection task={buildSession()} />);
+
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
+    expect(screen.queryByTestId('plan-ready')).not.toBeNull();
+  });
+
+  it('with agents present, agents section defaults expanded', () => {
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] };
+    render(<AgentsSection task={buildSession()} />);
+
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded');
+    expect(screen.getByTestId('agent-row').textContent).toBe('agent one');
+    expect(screen.queryByTestId('spawn')).not.toBeNull();
+  });
+
+  it('agent count excludes workflow-step and child agents', () => {
+    h.state.sessionPanelExpanded = { [SESSION_ID]: { agents: false } };
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({ id: 'agent-1' as AgentId }),
+        buildAgent({
+          id: 'wf-1' as AgentId,
+          workflowRunId: 'run-1' as WorkflowRunId,
+          stepId: 'step-1' as StepId,
+        }),
+        buildAgent({ id: 'child-1' as AgentId, parentAgentId: 'agent-1' as AgentId }),
+      ],
+    };
+    render(<AgentsSection task={buildSession()} />);
+
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
+    expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
+  });
+
+  it('agents toggle persists across remount', () => {
+    const { unmount } = render(<AgentsSection task={buildSession()} />);
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
+
+    fireEvent.click(screen.getByTestId('toggle-agents'));
+    expect(h.setPanelSectionExpanded).toHaveBeenCalledWith(SESSION_ID, 'agents', true);
+
+    unmount();
+    render(<AgentsSection task={buildSession()} />);
+
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded');
+    expect(screen.queryByTestId('spawn')).not.toBeNull();
+  });
+});
