@@ -543,6 +543,23 @@ describe('store contract', () => {
       expect(store.getState().sidebarProviderFilter).toEqual(['anthropic']);
     });
 
+    it('setPanelSectionExpanded merges per-session without clobbering siblings', async () => {
+      const store = await getStore();
+      store.getState().setPanelSectionExpanded(SESSION_ID, 'workflow', true);
+      store.getState().setPanelSectionExpanded(SESSION_ID, 'agents', false);
+      store.getState().setPanelSectionExpanded(SESSION_ID_2, 'scripts', true);
+      const state = store.getState().sessionPanelExpanded;
+      expect(state[SESSION_ID]).toEqual({ workflow: true, agents: false });
+      expect(state[SESSION_ID_2]).toEqual({ scripts: true });
+    });
+
+    it('setPanelSectionExpanded leaves absent values to fall back', async () => {
+      const store = await getStore();
+      store.getState().setPanelSectionExpanded(SESSION_ID, 'workflow', true);
+      const state = store.getState().sessionPanelExpanded;
+      expect(state[SESSION_ID]?.scripts ?? 'fallback').toBe('fallback');
+    });
+
     it('refreshUnreadWorkspaces stores the set returned by the invoker', async () => {
       const store = await getStore();
       invokeWorkspacesWithUnreadSpy.mockResolvedValueOnce([WS_ID, WS_ID_2]);

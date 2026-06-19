@@ -27,7 +27,8 @@ type LogTarget = {
 };
 
 export const ScriptsSection = ({ sessionId, workspaceId, worktreePath }: ScriptsSectionProps) => {
-  const [expanded, setExpanded] = useState(true);
+  const expanded = useAppStore((s) => s.sessionPanelExpanded[sessionId]?.scripts ?? false);
+  const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const [log, setLog] = useState<LogTarget | null>(null);
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
   const runs = useAppStore((s) => s.scriptRuns[sessionId]);
@@ -79,7 +80,7 @@ export const ScriptsSection = ({ sessionId, workspaceId, worktreePath }: Scripts
         action={
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !expanded)}
             aria-expanded={expanded}
             aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
             className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
@@ -161,7 +162,6 @@ function ScriptRow({
   const status: ScriptRunStatus = run?.status ?? 'idle';
   const result = run?.result ?? null;
   const isPending = status === 'pending';
-  const preview = script.body.trim().split('\n')[0] ?? '';
   const hasOutput = result !== null;
   const logRef = useRef<HTMLButtonElement>(null);
 
@@ -174,10 +174,9 @@ function ScriptRow({
       )}
     >
       <StatusDot status={status} />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-xs font-medium text-foreground">{script.name}</span>
-        <span className="truncate font-mono text-2xs text-muted-foreground/80">{preview}</span>
-      </div>
+      <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+        {script.name}
+      </span>
       {hasOutput ? (
         <button
           ref={logRef}
