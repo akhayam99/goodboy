@@ -1,37 +1,64 @@
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 
-export type OnboardingStepId = 'workspace' | 'session' | 'agent' | 'plan' | 'palette';
+export type OnboardingStepId =
+  | 'workspace'
+  | 'codeHost'
+  | 'tools'
+  | 'session'
+  | 'agent'
+  | 'plan'
+  | 'palette';
+
+export type OnboardingGroup = 'setup' | 'build';
 
 export const ONBOARDING_STEPS: ReadonlyArray<{
   readonly id: OnboardingStepId;
   readonly title: string;
   readonly why: string;
+  readonly group: OnboardingGroup;
 }> = [
   {
     id: 'workspace',
     title: 'Connect a workspace',
     why: 'Point Goodboy at a git repo, every session worktree lives off it.',
+    group: 'setup',
+  },
+  {
+    id: 'codeHost',
+    title: 'Connect a code host',
+    why: 'Link GitHub or GitLab so agents can read PRs, branches, and reviews.',
+    group: 'setup',
+  },
+  {
+    id: 'tools',
+    title: 'Connect your tools',
+    why: 'Wire Linear or Sentry to pull issues and errors into context.',
+    group: 'setup',
   },
   {
     id: 'session',
     title: 'Create your first session',
     why: 'A session = one goal on its own worktree + branch. Pick something concrete.',
+    group: 'build',
   },
   {
     id: 'agent',
     title: 'Create your first agent',
     why: 'Sessions host agents (planner, scout, implementer…). Create the one that fits the work.',
+    group: 'build',
   },
   {
     id: 'plan',
     title: 'Make your first plan',
     why: 'Spawn a planner, it emits a structured plan you can hand off to an implementer.',
+    group: 'build',
   },
   {
     id: 'palette',
     title: 'Open the command palette',
     why: '⌘K. Navigate workspaces, sessions, and agents, everything from one input.',
+    group: 'build',
   },
 ];
 
@@ -42,13 +69,9 @@ const SETTING_WIZARD = 'onboarding.wizard';
 
 export const OPEN_WIZARD_EVENT = 'goodboy:open-onboarding-wizard';
 
-const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
-  'workspace',
-  'session',
-  'agent',
-  'plan',
-  'palette',
-];
+export type WizardMode = 'full' | 'setup';
+
+const STEP_IDS: ReadonlyArray<OnboardingStepId> = ONBOARDING_STEPS.map((s) => s.id);
 
 type OnboardingCache = {
   completed: ReadonlyArray<OnboardingStepId>;
@@ -169,10 +192,10 @@ export const finishWizard = (): void => {
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 };
 
-export const reopenWizard = (): void => {
+export const reopenWizard = (mode: WizardMode = 'full'): void => {
   if (cache.wizardDone) {
     cache.wizardDone = false;
     void setSetting(tauriDatabase, SETTING_WIZARD, '');
   }
-  window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT));
+  window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail: { mode } }));
 };

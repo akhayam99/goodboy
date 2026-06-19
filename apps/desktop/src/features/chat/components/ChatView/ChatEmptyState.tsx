@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { AgentId } from '@goodboy/types';
+import { useCallback, useMemo } from 'react';
+import { Sparkles, Workflow } from 'lucide-react';
+import { Button, cn } from '@goodboy/ui';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import agentDebugger from '../../../../assets/agents/debugger.png';
 import agentDocs from '../../../../assets/agents/docs.png';
@@ -73,12 +73,13 @@ type EmptyCopy = {
 };
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly selectedAgentId: AgentId | null;
   readonly phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>;
   readonly hasWorkflow: boolean;
 };
 
-export const ChatEmptyState = ({ selectedAgentId, phaseRuns, hasWorkflow }: Props) => {
+export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkflow }: Props) => {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const selectedAgent = useMemo(
     () => (selectedAgentId ? (phaseRuns.find((r) => r.id === selectedAgentId) ?? null) : null),
@@ -111,7 +112,7 @@ export const ChatEmptyState = ({ selectedAgentId, phaseRuns, hasWorkflow }: Prop
         return {
           eyebrow: `${meta.label} agent · fresh transcript`,
           title: `You're talking to a ${meta.label} agent`,
-          body: `${meta.hint}. It already knows the session brief on the right: goal, decisions, open questions. No need to re-explain. Say what you want next.`,
+          body: 'It already knows the session brief on the right, so just say what you want next.',
           hints: [
             selectedKind === 'scout' ? 'Try: "find where X is defined"' : null,
             selectedKind === 'planner' ? 'Try: "plan how to add X to Y"' : null,
@@ -128,22 +129,22 @@ export const ChatEmptyState = ({ selectedAgentId, phaseRuns, hasWorkflow }: Prop
         return {
           eyebrow: `${phaseRuns.length === 1 ? 'agent' : 'agents'} in this session`,
           title: 'Pick an agent on the left',
-          body: 'Agents share the session context on the right. Every new one starts already knowing the goal, decisions and open questions. Only the chat history is per-agent. Pick one to keep talking, or spawn a new one: it will hit the ground running.',
+          body: 'Agents share the session context, so pick one to keep talking or spawn a new one.',
           hints: ['Select an agent to see its transcript', 'Spawn fresh, context travels with it'],
         };
       case 'workflow_no_agent':
         return {
           eyebrow: 'Workflow ready · No agents yet',
           title: 'Start the first step',
-          body: 'No agents have run yet. Write here to shape the session brief on the right: goal, constraints, anything important. The first agent, and every one after, will start already knowing it.',
-          hints: ['Describe the goal in 1–2 lines', 'Lands in the shared context'],
+          body: 'Type your goal below to shape the shared brief before the first agent runs.',
+          hints: ['Describe the goal in 1-2 lines', 'Lands in the shared context'],
         };
       case 'fresh':
       default:
         return {
           eyebrow: 'Fresh session · No context yet',
           title: "Let's populate the context",
-          body: "Whatever you write here feeds the shared session brief on the right: goal, decisions, open questions. Every agent you spawn from now on starts already knowing the essentials, so you don't repeat yourself.",
+          body: 'What you type below becomes the shared brief every agent you spawn starts from.',
           hints: [
             'What are we building',
             'Any constraints or non-goals',
@@ -154,6 +155,13 @@ export const ChatEmptyState = ({ selectedAgentId, phaseRuns, hasWorkflow }: Prop
   }, [scenario, selectedKind, phaseRuns.length]);
 
   const agentVisual = scenario === 'agent_focus' && selectedKind ? KIND_ICON[selectedKind] : null;
+
+  const showWorkflowCta = scenario === 'fresh' || scenario === 'workflow_no_agent';
+  const openWorkflowBuilder = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
+    );
+  }, [sessionId]);
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
@@ -186,6 +194,12 @@ export const ChatEmptyState = ({ selectedAgentId, phaseRuns, hasWorkflow }: Prop
           </span>
         ))}
       </div>
+      {showWorkflowCta ? (
+        <Button variant="secondary" size="sm" onClick={openWorkflowBuilder}>
+          <Workflow size={13} aria-hidden />
+          Set up a workflow
+        </Button>
+      ) : null}
     </div>
   );
 };

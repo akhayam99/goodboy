@@ -389,6 +389,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <ChatEmptyState
+                  sessionId={session.id}
                   selectedAgentId={selectedAgentId}
                   phaseRuns={phaseRuns}
                   hasWorkflow={session.workflowRuns.length > 0}

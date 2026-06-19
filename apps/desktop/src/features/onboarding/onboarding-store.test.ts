@@ -88,4 +88,26 @@ describe('onboarding-store wizard flag', () => {
     expect(spy).toHaveBeenCalledOnce();
     window.removeEventListener(OPEN_WIZARD_EVENT, spy);
   });
+
+  it('reopenWizard defaults to full mode in the event detail', () => {
+    let detail: unknown;
+    const spy = (e: Event) => {
+      detail = (e as CustomEvent).detail;
+    };
+    window.addEventListener(OPEN_WIZARD_EVENT, spy);
+    reopenWizard();
+    window.removeEventListener(OPEN_WIZARD_EVENT, spy);
+    expect(detail).toEqual({ mode: 'full' });
+  });
+
+  it('reopenWizard forwards the requested setup mode in the event detail', () => {
+    let detail: unknown;
+    const spy = (e: Event) => {
+      detail = (e as CustomEvent).detail;
+    };
+    window.addEventListener(OPEN_WIZARD_EVENT, spy);
+    reopenWizard('setup');
+    window.removeEventListener(OPEN_WIZARD_EVENT, spy);
+    expect(detail).toEqual({ mode: 'setup' });
+  });
 });

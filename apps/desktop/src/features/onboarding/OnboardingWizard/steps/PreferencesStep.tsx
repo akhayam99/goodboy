@@ -1,0 +1,232 @@
+import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import type { OverrideSettings, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
+import { Button, FieldRow, cn } from '@goodboy/ui';
+import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { ProviderChip } from '../../../providers/components/ProviderChip';
+import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
+import { VerbositySelect } from '../../../session/components/VerbositySelect';
+import { formatError } from '../../../../shared/lib/errors';
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
+import { useAppStore } from '../../../../store';
+
+type Props = {
+  readonly workspaceId: WorkspaceId | null;
+};
+
+const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+
+const sanitizePrefix = (input: string): string =>
+  input
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '')
+    .replace(/^-+/, '')
+    .slice(0, 16);
+
+export const PreferencesStep = ({ workspaceId }: Props) => {
+  return (
+    <div className="flex flex-col items-center gap-6 text-center">
+      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
+        <SlidersHorizontal size={26} aria-hidden />
+      </span>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Set your defaults</h2>
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+          A few preferences for this workspace. Every new session inherits them, and you can change
+          any of it later in settings.
+        </p>
+      </div>
+
+      {workspaceId === null ? <EmptyState /> : <PreferencesForm workspaceId={workspaceId} />}
+    </div>
+  );
+};
+
+const EmptyState = () => (
+  <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-border-soft/40 bg-subtle/20 px-4 py-6 text-center">
+    <span className="flex size-10 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-muted-foreground">
+      <FolderGit2 size={18} aria-hidden />
+    </span>
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      Add a workspace first to set its defaults.
+    </p>
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={() => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'))}
+    >
+      <FolderGit2 size={14} aria-hidden /> Add workspace
+    </Button>
+  </div>
+);
+
+const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
+  const loadSetting = useAppStore((s) => s.loadSetting);
+  const saveSetting = useAppStore((s) => s.saveSetting);
+  const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
+  const setWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
+  const connectedProviderIds = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
+  );
+
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
+  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
+  const defaultProvider =
+    wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
+  const scoutFanout = wsOverrides?.scoutFanout ?? false;
+
+  useEffect(() => {
+    void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
+      const value = v ?? DEFAULT_BRANCH_PREFIX;
+      setBranchPrefix(value);
+      setSavedBranchPrefix(value);
+    });
+  }, [workspaceId, loadSetting]);
+
+  const persistOverrides = async (
+    partial: Partial<
+      Pick<OverrideSettings, 'defaultProviderId' | 'defaultVerbosity' | 'scoutFanout'>
+    >,
+  ) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await setWorkspaceOverrides(workspaceId, {
+        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
+        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
+        defaultBranchPrefix: wsOverrides?.defaultBranchPrefix ?? null,
+        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
+        defaultVerbosity: verbosity,
+        providerBindings: wsOverrides?.providerBindings ?? null,
+        scoutFanout,
+        ...partial,
+      });
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const commitBranchPrefix = async () => {
+    const next = branchPrefix.trim() || DEFAULT_BRANCH_PREFIX;
+    setBranchPrefix(next);
+    if (next === savedBranchPrefix) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await saveSetting(settingBranchPrefix(workspaceId), next);
+      setSavedBranchPrefix(next);
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-4 text-left">
+      <div className="flex flex-col divide-y divide-border-soft/50 rounded-lg border border-border-soft/40 bg-subtle/20 px-4">
+        <FieldRow
+          label="Branch prefix"
+          help="Prefixes every new session branch, e.g. your initials."
+        >
+          <div className="flex items-center gap-1.5">
+            <GitBranch size={13} aria-hidden className="shrink-0 text-muted-foreground" />
+            <input
+              type="text"
+              value={branchPrefix}
+              onChange={(e) => setBranchPrefix(sanitizePrefix(e.target.value))}
+              onBlur={() => void commitBranchPrefix()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  void commitBranchPrefix();
+                }
+              }}
+              placeholder={DEFAULT_BRANCH_PREFIX}
+              disabled={busy}
+              maxLength={16}
+              size={12}
+              aria-label="branch prefix"
+              className={cn(
+                'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
+                'placeholder:text-muted-foreground/40',
+                'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+                busy && 'cursor-not-allowed opacity-50',
+              )}
+            />
+            <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
+          </div>
+        </FieldRow>
+
+        <FieldRow
+          label="Default provider"
+          help="New sessions start on it and can override it."
+          layout="stacked"
+        >
+          <div className="flex flex-col gap-2.5">
+            <div className="flex flex-wrap gap-1.5">
+              {PROVIDER_OPTIONS.map((id) => (
+                <ProviderChip
+                  key={id}
+                  id={id}
+                  selected={defaultProvider === id}
+                  disabled={busy || !connectedProviderIds.includes(id)}
+                  onClick={() => void persistOverrides({ defaultProviderId: id })}
+                  trailing={
+                    connectedProviderIds.includes(id) ? null : (
+                      <span className="text-[9px] uppercase tracking-wide text-warning">
+                        offline
+                      </span>
+                    )
+                  }
+                />
+              ))}
+            </div>
+            <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-muted-foreground">
+              <Sparkles
+                size={12}
+                aria-hidden
+                className="mt-0.5 shrink-0"
+                style={{ color: 'var(--color-provider-anthropic)' }}
+              />
+              Goodboy runs best on Claude today. The other providers work and are catching up fast.
+            </p>
+          </div>
+        </FieldRow>
+
+        <FieldRow label="Output verbosity" help="How much agents say in their replies.">
+          <div className="w-40">
+            <VerbositySelect
+              value={verbosity as VerbosityLevel}
+              onChange={(v) => void persistOverrides({ defaultVerbosity: v })}
+              disabled={busy}
+            />
+          </div>
+        </FieldRow>
+
+        <FieldRow
+          label="Parallel scouts"
+          help="Split broad searches across parallel sub-scouts. Much faster on large codebases."
+        >
+          <ToggleSwitch
+            label={scoutFanout ? 'On' : 'Off'}
+            checked={scoutFanout}
+            disabled={busy}
+            onChange={(next) => void persistOverrides({ scoutFanout: next })}
+          />
+        </FieldRow>
+      </div>
+
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
+    </div>
+  );
+};

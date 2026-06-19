@@ -1,11 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 import { KbdPill } from '@goodboy/ui';
 
-const TIPS: ReadonlyArray<{ readonly combo: ReadonlyArray<string>; readonly label: string }> = [
-  { combo: ['⌘', 'K'], label: 'command palette' },
-  { combo: ['⌘', 'N'], label: 'new session' },
-];
-
 export const ReadyStep = () => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
@@ -16,26 +11,27 @@ export const ReadyStep = () => {
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">You are all set</h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Create a session from the sidebar to get going. The checklist in the corner covers the
-          rest.
+          Jump in and start your first session from the workspace, or explore from the sidebar. The
+          checklist in the corner covers whatever is left.
         </p>
       </div>
 
-      <ul className="flex w-full max-w-sm flex-col gap-2">
-        {TIPS.map((tip) => (
-          <li
-            key={tip.label}
-            className="flex items-center justify-between rounded-lg border border-border-soft/40 bg-subtle/20 px-3.5 py-2.5"
-          >
-            <span className="text-xs text-foreground">{tip.label}</span>
-            <span className="flex items-center gap-0.5">
-              {tip.combo.map((k) => (
-                <KbdPill key={k}>{k}</KbdPill>
-              ))}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground/70">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-0.5">
+            <KbdPill>⌘</KbdPill>
+            <KbdPill>K</KbdPill>
+          </span>
+          command palette
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-0.5">
+            <KbdPill>⌘</KbdPill>
+            <KbdPill>N</KbdPill>
+          </span>
+          new session
+        </span>
+      </p>
     </div>
   );
 };

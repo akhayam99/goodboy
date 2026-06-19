@@ -96,6 +96,7 @@ describe('WorkspaceScopePanel', () => {
   });
 
   it('persists a provider pick from a brand chip', () => {
+    state.providers = [{ id: 'cursor', connection: 'connected' }];
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /cursor/i }));
     expect(state.setWorkspaceOverrides).toHaveBeenCalledOnce();

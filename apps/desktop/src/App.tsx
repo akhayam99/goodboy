@@ -409,6 +409,24 @@ export const App = () => {
   }, [currentWorkspace]);
 
   useEffect(() => {
+    const handler = () => {
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      setWorkflowBuilderSessionId(null);
+      setPlanStudioSession(null);
+      setPlanStudioPlanId(null);
+      setDiffViewerSession(null);
+      setDiffViewerWorkingDir(null);
+      setGithubSessionPane(null);
+      setGitlabMrPane(null);
+    };
+    window.addEventListener('goodboy:reveal-chat', handler);
+    return () => window.removeEventListener('goodboy:reveal-chat', handler);
+  }, []);
+
+  useEffect(() => {
     const handler = () => setAddWorkspaceOpen(true);
     window.addEventListener('goodboy:add-workspace', handler);
     return () => window.removeEventListener('goodboy:add-workspace', handler);
@@ -669,14 +687,11 @@ export const App = () => {
     );
   }
 
-  if (hasWorkspaces && !currentWorkspace && isMainWindow()) {
+  if (hasWorkspaces && !currentWorkspace && isMainWindow() && !addWorkspaceOpen) {
     return (
       <ToastProvider>
         <NotificationToastBridge />
         <WorkspaceLauncher />
-        {addWorkspaceOpen ? (
-          <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
-        ) : null}
         {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
       </ToastProvider>
     );
@@ -739,7 +754,9 @@ export const App = () => {
             ) : (
               <EmptyState
                 hasWorkspace={Boolean(currentWorkspace)}
+                hasSessions={currentWorkspaceSessions.length > 0}
                 onAddWorkspace={() => setAddWorkspaceOpen(true)}
+                onCreateSession={openNewSession}
               />
             )}
 

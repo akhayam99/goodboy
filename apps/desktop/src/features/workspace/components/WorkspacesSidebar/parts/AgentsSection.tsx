@@ -432,13 +432,16 @@ export function AgentsSection({ task }: AgentsSectionProps) {
 
   const onPickAgent = (sid: AgentId) => {
     if (sid === selectedAgentId) {
+      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
       return;
     }
     void selectAgent(task.id, sid);
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
   const onStartStepAgent = async (agent: Agent, model?: string) => {
     setSpawnError(null);
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     try {
       if (agent.status === 'pending') {
         await activateWorkflowAgent(task.id, agent.id);
@@ -728,7 +731,7 @@ export function AgentsSection({ task }: AgentsSectionProps) {
             </div>
           ) : (
             <p className="pb-1 pl-3 text-2xs text-muted-foreground/60">
-              no agents yet for this workflow.
+              No agents yet for this workflow.
             </p>
           )
         ) : null}

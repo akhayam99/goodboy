@@ -1,0 +1,175 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { OnboardingWizardState } from './useOnboardingWizard';
+
+const { hookState, finishWizard } = vi.hoisted(() => ({
+  hookState: {} as OnboardingWizardState,
+  finishWizard: vi.fn(),
+}));
+
+vi.mock('./useOnboardingWizard', () => ({
+  useOnboardingWizard: () => hookState,
+}));
+
+vi.mock('../onboarding-store', () => ({
+  finishWizard,
+}));
+
+vi.mock('./Stepper', () => ({
+  Stepper: ({ current, total }: { current: number; total: number }) => (
+    <div data-testid="stepper">{`${current}/${total}`}</div>
+  ),
+}));
+
+vi.mock('./steps/WelcomeStep', () => ({ WelcomeStep: () => <div data-testid="WelcomeStep" /> }));
+vi.mock('./steps/ProvidersStep', () => ({
+  ProvidersStep: () => <div data-testid="ProvidersStep" />,
+}));
+vi.mock('./steps/WorkspaceStep', () => ({
+  WorkspaceStep: () => <div data-testid="WorkspaceStep" />,
+}));
+vi.mock('./steps/PreferencesStep', () => ({
+  PreferencesStep: () => <div data-testid="PreferencesStep" />,
+}));
+vi.mock('./steps/CodeHostStep', () => ({ CodeHostStep: () => <div data-testid="CodeHostStep" /> }));
+vi.mock('./steps/TrackerStep', () => ({ TrackerStep: () => <div data-testid="TrackerStep" /> }));
+vi.mock('./steps/SentryStep', () => ({ SentryStep: () => <div data-testid="SentryStep" /> }));
+vi.mock('./steps/ReadyStep', () => ({ ReadyStep: () => <div data-testid="ReadyStep" /> }));
+
+const baseState: OnboardingWizardState = {
+  open: true,
+  mode: 'full',
+  providersConnected: 0,
+  hasWorkspace: false,
+  workspaceId: null,
+  githubConnected: false,
+  gitlabConnected: false,
+  hasCodeHost: false,
+  hasLinear: false,
+  hasSentry: false,
+  refreshGithubStatus: vi.fn(),
+};
+
+const setHook = (partial: Partial<OnboardingWizardState>) =>
+  Object.assign(hookState, baseState, partial);
+
+beforeEach(() => {
+  finishWizard.mockClear();
+  Object.assign(hookState, baseState);
+});
+afterEach(cleanup);
+
+import { OnboardingWizard } from './index';
+
+const advance = (label: RegExp, times: number) => {
+  for (let i = 0; i < times; i += 1) {
+    fireEvent.click(screen.getByRole('button', { name: label }));
+  }
+};
+
+describe('OnboardingWizard', () => {
+  it('renders nothing when closed', () => {
+    setHook({ open: false });
+    const { container } = render(<OnboardingWizard />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('opens on the welcome step with no stepper, back, or skip', () => {
+    setHook({ hasWorkspace: false });
+    render(<OnboardingWizard />);
+    expect(screen.getByTestId('WelcomeStep')).toBeDefined();
+    expect(screen.getByRole('button', { name: /get started/i })).toBeDefined();
+    expect(screen.queryByTestId('stepper')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
+  });
+
+  describe('mandatory gates', () => {
+    it('keeps Continue disabled on the providers step until one is connected', () => {
+      setHook({ providersConnected: 0, hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      expect(screen.getByTestId('ProvidersStep')).toBeDefined();
+      expect(
+        (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+    });
+
+    it('enables Continue on the providers step once one is connected', () => {
+      setHook({ providersConnected: 1, hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      expect(
+        (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
+
+    it('keeps Continue disabled on the workspace step until a workspace exists', () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      expect(screen.getByTestId('WorkspaceStep')).toBeDefined();
+      expect(
+        (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+    });
+  });
+
+  describe('optional steps', () => {
+    it('offers Skip for now on the code host step when none is connected', () => {
+      setHook({ providersConnected: 1, hasWorkspace: true, hasCodeHost: false });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 3);
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+      expect(screen.getByRole('button', { name: /skip for now/i })).toBeDefined();
+    });
+
+    it('offers Continue on the code host step once connected', () => {
+      setHook({ providersConnected: 1, hasWorkspace: true, hasCodeHost: true });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 3);
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+      expect(screen.getByRole('button', { name: /continue/i })).toBeDefined();
+    });
+  });
+
+  describe('setup mode', () => {
+    it('starts at the preferences step with no back button', () => {
+      setHook({ mode: 'setup', hasWorkspace: true });
+      render(<OnboardingWizard />);
+      expect(screen.getByTestId('PreferencesStep')).toBeDefined();
+      expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
+      expect(screen.queryByTestId('stepper')).toBeNull();
+    });
+  });
+
+  describe('exit', () => {
+    it('shows Skip setup once a workspace exists and finishes the wizard', async () => {
+      setHook({ hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /skip setup/i }));
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+    });
+
+    it('finishes the wizard from the ready step', async () => {
+      setHook({
+        providersConnected: 1,
+        hasWorkspace: true,
+        hasCodeHost: true,
+        hasLinear: true,
+        hasSentry: true,
+      });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 6);
+      expect(screen.getByTestId('ReadyStep')).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: /start building/i }));
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+    });
+  });
+});

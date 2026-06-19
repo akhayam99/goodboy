@@ -195,7 +195,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   key={id}
                   id={id}
                   selected={defaultProvider === id}
-                  disabled={busy}
+                  disabled={busy || !connectedProviderIds.includes(id)}
                   onClick={() =>
                     void persistOverrides(
                       { defaultProviderId: id },
