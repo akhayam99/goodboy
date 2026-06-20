@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { cn } from '../cn';
 
 export type AppShellProps = {
+  topBar?: ReactNode;
   leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
   main: ReactNode;
@@ -11,10 +12,10 @@ export type AppShellProps = {
   className?: string;
 };
 
-const LEFT_SIDEBAR_MIN = 300;
-const LEFT_SIDEBAR_MAX = 520;
-const LEFT_SIDEBAR_DEFAULT = 380;
-const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width';
+const LEFT_SIDEBAR_MIN = 260;
+const LEFT_SIDEBAR_MAX = 640;
+const LEFT_SIDEBAR_DEFAULT = 340;
+const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
 const LEFT_RAIL_WIDTH = 80;
 
 const RIGHT_SIDEBAR_MIN = 260;
@@ -88,6 +89,7 @@ function buildLayout(opts: {
 }
 
 export const AppShell = ({
+  topBar,
   leftSidebar,
   leftSidebarCollapsed = false,
   main,
@@ -214,10 +216,11 @@ export const AppShell = ({
   };
 
   return (
-    <div className="h-screen w-screen bg-background">
+    <div className="flex h-screen w-screen flex-col bg-background">
+      {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
         className={cn(
-          'grid h-full w-full overflow-hidden text-foreground transition-[grid-template-columns] duration-200 ease-out',
+          'grid min-h-0 w-full flex-1 overflow-hidden text-foreground transition-[grid-template-columns] duration-200 ease-out',
           className,
         )}
         style={gridStyle}

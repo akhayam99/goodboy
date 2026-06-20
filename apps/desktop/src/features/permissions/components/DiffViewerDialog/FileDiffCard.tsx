@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Check, ChevronRight, Copy, ExternalLink, MessageSquarePlus } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
 import type {
   AgentId,
@@ -203,101 +203,104 @@ export const FileDiffCard = ({
   const noteCount = comments.filter((c) => c.status === 'open').length;
 
   return (
-    <section ref={registerRef} data-file-path={file.path} className="border-b border-border-soft">
-      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border-soft bg-background px-3 py-1.5">
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? 'expand file' : 'collapse file'}
-          aria-label={collapsed ? 'expand file' : 'collapse file'}
-          className={TOOLBAR_ICON_BTN}
-        >
-          <ChevronRight
-            size={13}
-            aria-hidden
-            className={cn('transition-transform duration-150', !collapsed && 'rotate-90')}
-          />
-        </button>
-        <span
-          className={cn(
-            'w-3 shrink-0 text-center font-mono text-[11px] font-bold',
-            STATUS_COLOR[file.status],
-          )}
-          title={file.status}
-        >
-          {STATUS_GLYPH[file.status]}
-        </span>
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          className="min-w-0 flex-1 truncate text-left font-mono text-xs text-foreground"
-          title={file.path}
-        >
-          {file.path}
-        </button>
-        {reviewState === 'stale' ? (
-          <span
-            className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-            title="this file changed since you last reviewed it"
-          >
-            previously reviewed
-          </span>
-        ) : null}
-        {noteCount > 0 ? (
-          <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
-            {noteCount} {noteCount === 1 ? 'note' : 'notes'}
-          </span>
-        ) : null}
-        <span className="shrink-0 text-[10px] tabular-nums">
-          {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
-          {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
-          {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
-        </span>
-        <div className="flex shrink-0 items-center gap-0.5">
+    <section ref={registerRef} data-file-path={file.path}>
+      <div className="sticky top-0 z-10 bg-background">
+        <div className="flex items-center gap-2 px-3 py-1.5">
           <button
             type="button"
-            onClick={copyPath}
-            title="copy path"
-            aria-label="copy file path"
+            onClick={() => setCollapsed((c) => !c)}
+            title={collapsed ? 'expand file' : 'collapse file'}
+            aria-label={collapsed ? 'expand file' : 'collapse file'}
             className={TOOLBAR_ICON_BTN}
           >
-            {pathCopied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
+            <ChevronRight
+              size={13}
+              aria-hidden
+              className={cn('transition-transform duration-150', !collapsed && 'rotate-90')}
+            />
           </button>
-          {canOpenEditor ? (
-            <button
-              type="button"
-              onClick={onOpenInEditor}
-              title="open file in editor"
-              aria-label="open file in editor"
-              className={TOOLBAR_ICON_BTN}
-            >
-              <ExternalLink size={12} />
-            </button>
-          ) : null}
+          <span
+            className={cn(
+              'w-3 shrink-0 text-center font-mono text-[11px] font-bold',
+              STATUS_COLOR[file.status],
+            )}
+            title={file.status}
+          >
+            {STATUS_GLYPH[file.status]}
+          </span>
           <button
             type="button"
-            onClick={handleToggleReviewed}
-            title={isReviewed ? 'mark as not reviewed' : 'mark as reviewed'}
-            className={cn(
-              'ml-1 inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-colors',
-              isReviewed
-                ? 'border-success/40 bg-success/10 text-success'
-                : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
+            onClick={() => setCollapsed((c) => !c)}
+            className="min-w-0 flex-1 truncate text-left font-mono text-xs text-foreground"
+            title={file.path}
           >
+            {file.path}
+          </button>
+          {reviewState === 'stale' ? (
             <span
+              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              title="this file changed since you last reviewed it"
+            >
+              previously reviewed
+            </span>
+          ) : null}
+          {noteCount > 0 ? (
+            <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+              {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+            </span>
+          ) : null}
+          <span className="shrink-0 text-[10px] tabular-nums">
+            {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
+            {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
+            {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
+          </span>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              onClick={copyPath}
+              title="copy path"
+              aria-label="copy file path"
+              className={TOOLBAR_ICON_BTN}
+            >
+              {pathCopied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
+            </button>
+            {canOpenEditor ? (
+              <button
+                type="button"
+                onClick={onOpenInEditor}
+                title="open file in editor"
+                aria-label="open file in editor"
+                className={TOOLBAR_ICON_BTN}
+              >
+                <ExternalLink size={12} />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleToggleReviewed}
+              title={isReviewed ? 'mark as not reviewed' : 'mark as reviewed'}
               className={cn(
-                'flex size-3 items-center justify-center rounded-[3px] border',
+                'ml-1 inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-colors',
                 isReviewed
-                  ? 'border-success bg-success text-background'
-                  : 'border-muted-foreground/50',
+                  ? 'border-success/40 bg-success/10 text-success'
+                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
-              {isReviewed ? <Check size={8} aria-hidden /> : null}
-            </span>
-            Viewed
-          </button>
+              <span
+                className={cn(
+                  'flex size-3 items-center justify-center rounded-[3px] border',
+                  isReviewed
+                    ? 'border-success bg-success text-background'
+                    : 'border-muted-foreground/50',
+                )}
+              >
+                {isReviewed ? <Check size={8} aria-hidden /> : null}
+              </span>
+              Viewed
+            </button>
+          </div>
         </div>
+        <Divider />
       </div>
       {collapsed ? null : (
         <div className="p-3">

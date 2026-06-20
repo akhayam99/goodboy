@@ -29,6 +29,7 @@ import type {
 } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
+  agentHasUnread,
   useAppStore,
   useSessionLoading,
   useSessionOpenQuestions,
@@ -58,9 +59,15 @@ import { pluralize, workflowKindName, type WorkflowBlockReason } from '../lib';
 
 type AgentsSectionProps = {
   task: Session;
+  only?: 'workflows' | 'agents' | 'scripts' | 'resolve';
 };
 
-export function AgentsSection({ task }: AgentsSectionProps) {
+export function AgentsSection({ task, only }: AgentsSectionProps) {
+  const showWorkflows = only == null || only === 'workflows';
+  const showAgents = only == null || only === 'agents';
+  const showScripts = only == null || only === 'scripts';
+  const showResolve = only == null || only === 'resolve';
+  const forceExpanded = only != null;
   const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -189,14 +196,8 @@ export function AgentsSection({ task }: AgentsSectionProps) {
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
-  const [workflowExpand, setWorkflowExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
-  const toggleWorkflowExpand = useCallback((id: string, isDiscarded: boolean) => {
-    setWorkflowExpand((prev) => {
-      const next = new Map(prev);
-      next.set(id, !(prev.get(id) ?? !isDiscarded));
-      return next;
-    });
-  }, []);
+  const workflowExpand = useAppStore((s) => s.workflowExpand[task.id]);
+  const toggleWorkflowExpand = useAppStore((s) => s.toggleWorkflowExpand);
   const [resolveExpanded, setResolveExpanded] = useState(true);
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
@@ -524,7 +525,6 @@ export function AgentsSection({ task }: AgentsSectionProps) {
     idx: number,
   ) => {
     const isDiscarded = run.discardedAt != null;
-    const expanded = workflowExpand.get(run.id) ?? !isDiscarded;
     const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
     const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
     const wfBlockReason = blockReasonByRunId.get(run.id) ?? null;
@@ -534,6 +534,11 @@ export function AgentsSection({ task }: AgentsSectionProps) {
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     const isCompleted = !isDiscarded && total > 0 && done >= total;
+    const unreadCount = wfAgents.filter((a) =>
+      agentHasUnread(a, a.id === selectedAgentId && isTaskActive),
+    ).length;
+    const expanded =
+      workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0));
     const hasStarted = wfAgents.length > 0;
     const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
     const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
@@ -545,7 +550,7 @@ export function AgentsSection({ task }: AgentsSectionProps) {
         <div className="flex items-center gap-0.5">
           <button
             type="button"
-            onClick={() => toggleWorkflowExpand(run.id, isDiscarded)}
+            onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
             title={workflow.name || name}
             aria-expanded={expanded}
             aria-label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
@@ -559,6 +564,15 @@ export function AgentsSection({ task }: AgentsSectionProps) {
             <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
               {name}
             </span>
+            {unreadCount > 0 ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+                title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
+              >
+                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                {unreadCount}
+              </span>
+            ) : null}
             {isDiscarded ? (
               <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 <Ban size={10} aria-hidden /> discarded
@@ -636,6 +650,11 @@ export function AgentsSection({ task }: AgentsSectionProps) {
                   </button>
                 </>
               )}
+              <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+            </div>
+          )}
+          {!isDiscarded && isCompleted && (
+            <div className="flex shrink-0 items-center">
               <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
             </div>
           )}
@@ -739,116 +758,181 @@ export function AgentsSection({ task }: AgentsSectionProps) {
     );
   };
 
+  const wfExpanded = forceExpanded || workflowExpanded;
+  const agExpanded = forceExpanded || agentsExpanded;
+
   return (
-    <section className="mt-2 flex flex-col px-2 pb-3">
-      <SectionHeader
-        className="pb-1.5"
-        icon={<Layers size={11} aria-hidden className="text-primary" />}
-        label="Workflow"
-        action={
-          <SectionToggle
-            expanded={workflowExpanded}
-            label="workflow"
-            onToggle={() => setPanelSectionExpanded(task.id, 'workflow', !workflowExpanded)}
-          />
-        }
-      />
-      {workflowExpanded ? (
-        !hasAnyWorkflow ? (
-          <WorkflowStartButton sessionId={task.id} variant="empty" />
-        ) : (
-          <>
-            <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
-            <WorkflowStartButton sessionId={task.id} variant="attach" />
-          </>
-        )
-      ) : (
-        <CollapsedSummary
-          text={hasAnyWorkflow ? pluralize(attachedRuns.length, 'workflow') : 'No workflows yet'}
-        />
-      )}
-
-      <SectionHeader
-        className="mt-6 pb-1.5"
-        icon={<DogMascot size={14} className="shrink-0 text-success" />}
-        label="Agents"
-        action={
-          <SectionToggle
-            expanded={agentsExpanded}
-            label="agents"
-            onToggle={() => setPanelSectionExpanded(task.id, 'agents', !agentsExpanded)}
-          />
-        }
-      />
-      {agentsExpanded ? (
+    <section className="flex flex-col">
+      {showWorkflows ? (
         <>
-          {hasAnyWorkflow ? (
-            adHocAgents.some((r) => !resolverIds.has(r.id)) ? (
-              <ul className="flex flex-col gap-1 pl-2">
-                {adHocAgents.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
-              </ul>
-            ) : null
-          ) : sorted.length === 0 ? (
-            loading.agents ? (
-              <ul role="status" aria-label="loading agents" className="flex flex-col gap-1 pl-2">
-                {[0, 1].map((i) => (
-                  <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
-                    <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
-                    <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
-                  </li>
-                ))}
-              </ul>
-            ) : resolverAgents.length === 0 ? (
-              <p className="px-2 py-2 text-xs text-muted-foreground/70">
-                No agents yet. Spawn one below.
-              </p>
-            ) : null
-          ) : (
-            <ul className="flex flex-col gap-1 pl-2">
-              {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
-            </ul>
+          {forceExpanded ? null : (
+            <SectionHeader
+              className="pb-1.5"
+              icon={<Layers size={11} aria-hidden className="text-primary" />}
+              label="Workflow"
+              action={
+                <SectionToggle
+                  expanded={workflowExpanded}
+                  label="workflow"
+                  onToggle={() => setPanelSectionExpanded(task.id, 'workflow', !workflowExpanded)}
+                />
+              }
+            />
           )}
-          <SpawnAgentControl sessionId={task.id} />
-          {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
+          {wfExpanded ? (
+            !hasAnyWorkflow ? (
+              <WorkflowStartButton sessionId={task.id} variant="empty" />
+            ) : (
+              <>
+                <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
+                <WorkflowStartButton sessionId={task.id} variant="attach" />
+              </>
+            )
+          ) : (
+            <CollapsedSummary
+              text={
+                hasAnyWorkflow ? pluralize(attachedRuns.length, 'workflow') : 'No workflows yet'
+              }
+            />
+          )}
         </>
-      ) : (
-        <CollapsedSummary
-          text={
-            standaloneAgentCount === 0 ? 'No agents yet' : pluralize(standaloneAgentCount, 'agent')
-          }
-        />
-      )}
-      <PlanReadySuggestion task={task} />
+      ) : null}
 
-      <ScriptsSection
-        sessionId={task.id}
-        workspaceId={task.workspaceId}
-        worktreePath={worktreePath}
-      />
-
-      {resolverAgents.length > 0 && (
+      {showAgents ? (
         <>
-          <SectionHeader
-            className="mt-6 pb-1.5"
-            icon={<CheckCheck size={11} aria-hidden className="text-lime-500" />}
-            label="Resolve"
-          />
-          <ResolveCluster
-            agents={resolverAgents}
-            sessionId={task.id}
-            isTaskActive={isTaskActive}
-            prNumber={prNumber}
-            resolvedThreadIds={resolvedThreadIds}
-            pendingThreadIds={pendingThreadIds}
-            resolverState={resolverState}
-            selectedAgentId={selectedAgentId}
-            expanded={resolveExpanded}
-            onToggle={() => setResolveExpanded((v) => !v)}
-            onSelect={onPickAgent}
-            onForceNext={() => void activateNextResolver(task.id)}
-          />
+          {forceExpanded ? null : (
+            <SectionHeader
+              className="mt-6 pb-1.5"
+              icon={<DogMascot size={14} className="shrink-0 text-success" />}
+              label="Agents"
+              action={
+                <SectionToggle
+                  expanded={agentsExpanded}
+                  label="agents"
+                  onToggle={() => setPanelSectionExpanded(task.id, 'agents', !agentsExpanded)}
+                />
+              }
+            />
+          )}
+          {agExpanded ? (
+            <>
+              {hasAnyWorkflow ? (
+                adHocAgents.some((r) => !resolverIds.has(r.id)) ? (
+                  <ul className="flex flex-col gap-1 pl-2">
+                    {adHocAgents.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
+                  </ul>
+                ) : null
+              ) : sorted.length === 0 ? (
+                loading.agents ? (
+                  <ul
+                    role="status"
+                    aria-label="loading agents"
+                    className="flex flex-col gap-1 pl-2"
+                  >
+                    {[0, 1].map((i) => (
+                      <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
+                        <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
+                        <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                      </li>
+                    ))}
+                  </ul>
+                ) : resolverAgents.length === 0 ? (
+                  forceExpanded ? (
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+                      <span
+                        aria-hidden
+                        className="flex size-12 items-center justify-center rounded-full bg-success/10"
+                      >
+                        <DogMascot size={26} className="text-success" />
+                      </span>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm font-medium text-foreground">No agents yet</p>
+                        <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+                          Spawn an agent to start working on this session, or kick off a workflow to
+                          run a sequence of agents toward the goal.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="px-2 py-2 text-xs text-muted-foreground/70">
+                      No agents yet. Spawn one below.
+                    </p>
+                  )
+                ) : null
+              ) : (
+                <ul className="flex flex-col gap-1 pl-2">
+                  {sorted.filter((r) => !resolverIds.has(r.id)).map(renderAdHocRow)}
+                </ul>
+              )}
+              <SpawnAgentControl sessionId={task.id} />
+              {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
+            </>
+          ) : (
+            <CollapsedSummary
+              text={
+                standaloneAgentCount === 0
+                  ? 'No agents yet'
+                  : pluralize(standaloneAgentCount, 'agent')
+              }
+            />
+          )}
+          <PlanReadySuggestion task={task} />
         </>
-      )}
+      ) : null}
+
+      {showScripts ? (
+        <ScriptsSection
+          sessionId={task.id}
+          workspaceId={task.workspaceId}
+          worktreePath={worktreePath}
+          forceExpanded={forceExpanded}
+          hideHeader={forceExpanded}
+        />
+      ) : null}
+
+      {showResolve ? (
+        resolverAgents.length > 0 ? (
+          <>
+            {forceExpanded ? null : (
+              <SectionHeader
+                className="mt-6 pb-1.5"
+                icon={<CheckCheck size={11} aria-hidden className="text-lime-500" />}
+                label="Resolve"
+              />
+            )}
+            <ResolveCluster
+              agents={resolverAgents}
+              sessionId={task.id}
+              isTaskActive={isTaskActive}
+              prNumber={prNumber}
+              resolvedThreadIds={resolvedThreadIds}
+              pendingThreadIds={pendingThreadIds}
+              resolverState={resolverState}
+              selectedAgentId={selectedAgentId}
+              expanded={forceExpanded || resolveExpanded}
+              onToggle={() => setResolveExpanded((v) => !v)}
+              onSelect={onPickAgent}
+              onForceNext={() => void activateNextResolver(task.id)}
+            />
+          </>
+        ) : forceExpanded ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+            <span
+              aria-hidden
+              className="flex size-12 items-center justify-center rounded-full bg-lime-500/10"
+            >
+              <CheckCheck size={24} className="text-lime-500" aria-hidden />
+            </span>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-foreground">Nothing to resolve</p>
+              <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+                Spawn a resolver from a pull request comment or a diff selection and it will show up
+                here.
+              </p>
+            </div>
+          </div>
+        ) : null
+      ) : null}
     </section>
   );
 }

@@ -85,5 +85,5 @@ export function SummarizerBadge({
     );
   }
 
-  return costPill;
+  return null;
 }

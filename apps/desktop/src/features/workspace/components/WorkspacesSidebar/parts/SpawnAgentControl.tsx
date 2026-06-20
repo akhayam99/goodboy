@@ -15,6 +15,10 @@ type SpawnAgentControlProps = {
   sessionId: SessionId;
 };
 
+const MENU_WIDTH = 320;
+const MENU_MAX_HEIGHT = 288;
+const MENU_MARGIN = 8;
+
 type PopoverAnchor = {
   readonly left: number;
   readonly top: number | null;
@@ -36,12 +40,16 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
     }
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
-    const direction: 'up' | 'down' = spaceBelow > spaceAbove ? 'down' : 'up';
-    const left = rect.right + 4;
+    const direction: 'up' | 'down' =
+      spaceBelow > MENU_MAX_HEIGHT || spaceBelow > spaceAbove ? 'down' : 'up';
+    const left = Math.max(
+      MENU_MARGIN,
+      Math.min(rect.left, window.innerWidth - MENU_WIDTH - MENU_MARGIN),
+    );
     if (direction === 'down') {
-      return { left, top: rect.top, bottom: null, direction };
+      return { left, top: rect.bottom + 4, bottom: null, direction };
     }
-    return { left, top: null, bottom: window.innerHeight - rect.bottom, direction };
+    return { left, top: null, bottom: window.innerHeight - rect.top + 4, direction };
   }, []);
 
   useEffect(() => {
@@ -95,12 +103,13 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
             style={{
               position: 'fixed',
               left: anchor.left,
+              width: MENU_WIDTH,
               ...(anchor.top !== null ? { top: anchor.top } : {}),
               ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
             }}
-            className="z-50 w-80 max-h-72 overflow-y-auto py-1"
+            className="z-50 max-h-72 overflow-y-auto py-1"
           >
-            <div className="px-2.5 pb-1 pt-1.5 text-2xs uppercase tracking-wide text-muted-foreground/70">
+            <div className="px-3 pb-1 pt-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
               by role
             </div>
             {[...AGENT_KIND_ORDER]
@@ -119,11 +128,18 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
                       void spawnAgent(sessionId, { kindOverride: kind });
                       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
                     }}
-                    className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                    className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted"
                   >
-                    <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
-                    <span className="font-medium text-foreground">{meta.label}</span>
-                    <span className="truncate text-2xs text-muted-foreground">{meta.hint}</span>
+                    <span
+                      className={cn('mt-1 size-2 shrink-0 rounded-full', palette.bg)}
+                      aria-hidden
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-xs font-medium text-foreground">{meta.label}</span>
+                      <span className="text-2xs leading-snug text-muted-foreground">
+                        {meta.hint}
+                      </span>
+                    </span>
                   </button>
                 );
               })}

@@ -1,11 +1,6 @@
 import type { ContextSlot } from '@goodboy/types';
 
-export type PanelTab = 'context' | 'terminal';
-
 export type SummarizerStatusKind = 'idle' | 'running' | 'error';
-
-export const ICON_BTN =
-  'rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
 export interface FilesTouchedShape {
   readonly paths: ReadonlyArray<string>;
