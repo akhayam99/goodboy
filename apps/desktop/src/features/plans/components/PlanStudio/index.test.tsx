@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -34,23 +34,17 @@ import { PlanStudio } from './index';
 
 describe('PlanStudio', () => {
   it('renders the Plans title', () => {
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={vi.fn()} />,
-    );
+    render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText('Plans')).toBeDefined();
   });
 
   it('shows No plans yet when the list is empty', () => {
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={vi.fn()} />,
-    );
+    render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText(/no plans yet/i)).toBeDefined();
   });
 
   it('shows No plan selected placeholder when nothing is selected', () => {
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={vi.fn()} />,
-    );
+    render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText(/no plan selected/i)).toBeDefined();
   });
 
@@ -67,56 +61,19 @@ describe('PlanStudio', () => {
         runCount: 0,
       },
     ];
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={vi.fn()} />,
-    );
+    render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText('Implement auth module')).toBeDefined();
     expect(screen.getByText(/active/i)).toBeDefined();
   });
 });
 
-describe('PlanStudio overlay slot', () => {
-  it('uses variant="slot" (relative positioning, not fixed)', () => {
-    const { container } = render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={vi.fn()} />,
-    );
+describe('PlanStudio subpage', () => {
+  it('fills the pane (relative, not a fixed overlay)', () => {
+    const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('relative');
     expect(shell.className).not.toContain('fixed');
     expect(shell.className).not.toContain('z-50');
-  });
-
-  it('displays workspace name in the studio header', () => {
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="my-project" onClose={vi.fn()} />,
-    );
-    expect(screen.getByText('my-project')).toBeDefined();
-  });
-
-  it('Escape triggers close after animation delay', () => {
-    vi.useFakeTimers();
-    const onClose = vi.fn();
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={onClose} />,
-    );
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(onClose).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(300);
-    expect(onClose).toHaveBeenCalledOnce();
-    vi.useRealTimers();
-  });
-
-  it('Done button triggers close after animation delay', () => {
-    vi.useFakeTimers();
-    const onClose = vi.fn();
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={onClose} />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /close plan studio/i }));
-    expect(onClose).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(300);
-    expect(onClose).toHaveBeenCalledOnce();
-    vi.useRealTimers();
   });
 
   it('selects initial plan by id when initialPlanId is provided', () => {
@@ -142,14 +99,7 @@ describe('PlanStudio overlay slot', () => {
         runCount: 0,
       },
     ];
-    render(
-      <PlanStudio
-        sessionId={'sess-1' as never}
-        workspaceName="test-workspace"
-        initialPlanId={'plan-2' as never}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<PlanStudio sessionId={'sess-1' as never} initialPlanId={'plan-2' as never} />);
     expect(screen.getByText('body two')).toBeDefined();
   });
 
@@ -176,9 +126,7 @@ describe('PlanStudio overlay slot', () => {
         runCount: 0,
       },
     ];
-    render(
-      <PlanStudio sessionId={'sess-1' as never} workspaceName="test-workspace" onClose={vi.fn()} />,
-    );
+    render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText('beta body')).toBeDefined();
   });
 });
