@@ -125,7 +125,7 @@ describe('DiffViewerPane', () => {
 
   it('renders the studio header for the overlay slot', () => {
     render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
-    expect(screen.getByRole('heading', { name: /files touched/i })).toBeDefined();
+    expect(screen.getByRole('heading', { name: /^diff$/i })).toBeDefined();
     expect(screen.getByText('acme')).toBeDefined();
   });
 
@@ -151,7 +151,7 @@ describe('DiffViewerPane', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     render(<DiffViewerPane workspaceName="acme" onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: /close files touched/i }));
+    fireEvent.click(screen.getByRole('button', { name: /back to overview/i }));
     expect(onClose).not.toHaveBeenCalled();
     vi.advanceTimersByTime(300);
     expect(onClose).toHaveBeenCalledOnce();

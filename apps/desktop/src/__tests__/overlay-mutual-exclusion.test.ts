@@ -1,316 +1,160 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-type OverlayKind =
-  | 'planStudio'
-  | 'diffViewer'
-  | 'githubSession'
-  | 'sessionSettings'
-  | 'workspaceSettings'
-  | 'newSession'
-  | 'workflowBuilder';
+type SessionStudioKind = 'workflow' | 'github' | 'mr';
 
-type OverlayState = {
-  planStudioSession: string | null;
-  diffViewerSession: string | null;
-  githubSessionPane: string | null;
-  sessionSettingsOpen: boolean;
-  workspaceSettingsOpen: boolean;
+type FullPageOverlay = 'newSession' | 'workspaceSettings' | 'sessionSettings';
+
+type AppOverlayState = {
   newSessionOpen: boolean;
-  workflowBuilderSessionId: string | null;
+  workspaceSettingsOpen: boolean;
+  sessionSettingsOpen: boolean;
+  sessionStudio: SessionStudioKind | null;
 };
 
-function emptyState(): OverlayState {
+function emptyState(): AppOverlayState {
   return {
-    planStudioSession: null,
-    diffViewerSession: null,
-    githubSessionPane: null,
-    sessionSettingsOpen: false,
-    workspaceSettingsOpen: false,
     newSessionOpen: false,
-    workflowBuilderSessionId: null,
+    workspaceSettingsOpen: false,
+    sessionSettingsOpen: false,
+    sessionStudio: null,
   };
 }
 
-function applyOpenPlanStudio(state: OverlayState, sessionId: string): OverlayState {
+function openSessionStudio(state: AppOverlayState, kind: SessionStudioKind): AppOverlayState {
   return {
     ...state,
     newSessionOpen: false,
     workspaceSettingsOpen: false,
     sessionSettingsOpen: false,
-    workflowBuilderSessionId: null,
-    diffViewerSession: null,
-    githubSessionPane: null,
-    planStudioSession: sessionId,
+    sessionStudio: kind,
   };
 }
 
-function applyOpenDiffViewer(state: OverlayState, sessionId: string): OverlayState {
-  return {
-    ...state,
-    newSessionOpen: false,
-    workspaceSettingsOpen: false,
-    sessionSettingsOpen: false,
-    workflowBuilderSessionId: null,
-    planStudioSession: null,
-    githubSessionPane: null,
-    diffViewerSession: sessionId,
-  };
-}
-
-function applyOpenGithubSession(state: OverlayState, sessionId: string): OverlayState {
-  return {
-    ...state,
-    newSessionOpen: false,
-    workspaceSettingsOpen: false,
-    sessionSettingsOpen: false,
-    workflowBuilderSessionId: null,
-    planStudioSession: null,
-    diffViewerSession: null,
-    githubSessionPane: sessionId,
-  };
-}
-
-function applyOpenSessionSettings(state: OverlayState): OverlayState {
-  return {
-    ...state,
-    workspaceSettingsOpen: false,
-    workflowBuilderSessionId: null,
-    newSessionOpen: false,
-    planStudioSession: null,
-    diffViewerSession: null,
-    githubSessionPane: null,
-    sessionSettingsOpen: true,
-  };
-}
-
-function applyOpenWorkspaceSettings(state: OverlayState): OverlayState {
-  return {
-    ...state,
-    sessionSettingsOpen: false,
-    newSessionOpen: false,
-    planStudioSession: null,
-    diffViewerSession: null,
-    githubSessionPane: null,
-    workspaceSettingsOpen: true,
-  };
-}
-
-function applyOpenNewSession(state: OverlayState): OverlayState {
+function openNewSession(state: AppOverlayState): AppOverlayState {
   return {
     ...state,
     workspaceSettingsOpen: false,
     sessionSettingsOpen: false,
-    workflowBuilderSessionId: null,
-    planStudioSession: null,
-    diffViewerSession: null,
-    githubSessionPane: null,
+    sessionStudio: null,
     newSessionOpen: true,
   };
 }
 
-function applyOpenWorkflowBuilder(state: OverlayState, sessionId: string): OverlayState {
+function openWorkspaceSettings(state: AppOverlayState): AppOverlayState {
   return {
     ...state,
-    workspaceSettingsOpen: false,
-    sessionSettingsOpen: false,
     newSessionOpen: false,
-    planStudioSession: null,
-    diffViewerSession: null,
-    githubSessionPane: null,
-    workflowBuilderSessionId: sessionId,
+    sessionSettingsOpen: false,
+    sessionStudio: null,
+    workspaceSettingsOpen: true,
   };
 }
 
-function activeOverlay(state: OverlayState): OverlayKind | null {
+function openSessionSettings(state: AppOverlayState): AppOverlayState {
+  return {
+    ...state,
+    newSessionOpen: false,
+    workspaceSettingsOpen: false,
+    sessionStudio: null,
+    sessionSettingsOpen: true,
+  };
+}
+
+function activeFullPageOverlay(state: AppOverlayState): FullPageOverlay | null {
   if (state.newSessionOpen) return 'newSession';
   if (state.workspaceSettingsOpen) return 'workspaceSettings';
   if (state.sessionSettingsOpen) return 'sessionSettings';
-  if (state.workflowBuilderSessionId) return 'workflowBuilder';
-  if (state.planStudioSession) return 'planStudio';
-  if (state.diffViewerSession) return 'diffViewer';
-  if (state.githubSessionPane) return 'githubSession';
   return null;
 }
 
-describe('overlay mutual exclusion state machine', () => {
-  it('starts with no active overlay', () => {
-    expect(activeOverlay(emptyState())).toBeNull();
+describe('full-page overlay mutual exclusion', () => {
+  it('starts with no overlay and no studio', () => {
+    const s = emptyState();
+    expect(activeFullPageOverlay(s)).toBeNull();
+    expect(s.sessionStudio).toBeNull();
   });
 
-  it('opening plan studio clears diff viewer', () => {
-    let s = emptyState();
-    s = applyOpenDiffViewer(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('diffViewer');
-    s = applyOpenPlanStudio(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('planStudio');
-    expect(s.diffViewerSession).toBeNull();
+  it('opening a session studio clears any full-page overlay', () => {
+    let s = openWorkspaceSettings(emptyState());
+    expect(activeFullPageOverlay(s)).toBe('workspaceSettings');
+    s = openSessionStudio(s, 'workflow');
+    expect(activeFullPageOverlay(s)).toBeNull();
+    expect(s.sessionStudio).toBe('workflow');
   });
 
-  it('opening diff viewer clears plan studio', () => {
-    let s = emptyState();
-    s = applyOpenPlanStudio(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('planStudio');
-    s = applyOpenDiffViewer(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('diffViewer');
-    expect(s.planStudioSession).toBeNull();
+  it('opening a full-page overlay clears the inline studio', () => {
+    let s = openSessionStudio(emptyState(), 'github');
+    expect(s.sessionStudio).toBe('github');
+    s = openSessionSettings(s);
+    expect(activeFullPageOverlay(s)).toBe('sessionSettings');
+    expect(s.sessionStudio).toBeNull();
   });
 
-  it('opening session settings clears plan studio and diff viewer', () => {
-    let s = emptyState();
-    s = applyOpenPlanStudio(s, 'sess-1');
-    s = applyOpenSessionSettings(s);
-    expect(activeOverlay(s)).toBe('sessionSettings');
-    expect(s.planStudioSession).toBeNull();
-    expect(s.diffViewerSession).toBeNull();
+  it('a session holds at most one studio (latest wins)', () => {
+    let s = openSessionStudio(emptyState(), 'workflow');
+    expect(s.sessionStudio).toBe('workflow');
+    s = openSessionStudio(s, 'github');
+    expect(s.sessionStudio).toBe('github');
+    s = openSessionStudio(s, 'mr');
+    expect(s.sessionStudio).toBe('mr');
   });
 
-  it('opening workspace settings clears plan studio and diff viewer', () => {
-    let s = emptyState();
-    s = applyOpenDiffViewer(s, 'sess-1');
-    s = applyOpenWorkspaceSettings(s);
-    expect(activeOverlay(s)).toBe('workspaceSettings');
-    expect(s.planStudioSession).toBeNull();
-    expect(s.diffViewerSession).toBeNull();
+  it('newSession takes priority over workspaceSettings and sessionSettings', () => {
+    const s: AppOverlayState = {
+      newSessionOpen: true,
+      workspaceSettingsOpen: true,
+      sessionSettingsOpen: true,
+      sessionStudio: null,
+    };
+    expect(activeFullPageOverlay(s)).toBe('newSession');
   });
 
-  it('opening new session clears all overlays', () => {
-    let s = emptyState();
-    s = applyOpenPlanStudio(s, 'sess-1');
-    s = applyOpenNewSession(s);
-    expect(activeOverlay(s)).toBe('newSession');
-    expect(s.planStudioSession).toBeNull();
-    expect(s.diffViewerSession).toBeNull();
-    expect(s.workspaceSettingsOpen).toBe(false);
-    expect(s.sessionSettingsOpen).toBe(false);
-    expect(s.workflowBuilderSessionId).toBeNull();
+  it('workspaceSettings takes priority over sessionSettings', () => {
+    const s: AppOverlayState = {
+      ...emptyState(),
+      workspaceSettingsOpen: true,
+      sessionSettingsOpen: true,
+    };
+    expect(activeFullPageOverlay(s)).toBe('workspaceSettings');
   });
 
-  it('opening workflow builder clears plan studio and diff viewer', () => {
-    let s = emptyState();
-    s = applyOpenDiffViewer(s, 'sess-1');
-    s = applyOpenWorkflowBuilder(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('workflowBuilder');
-    expect(s.diffViewerSession).toBeNull();
-    expect(s.planStudioSession).toBeNull();
-  });
-
-  it('opening github session clears plan studio and diff viewer', () => {
-    let s = emptyState();
-    s = applyOpenDiffViewer(s, 'sess-1');
-    s = applyOpenGithubSession(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('githubSession');
-    expect(s.diffViewerSession).toBeNull();
-    expect(s.planStudioSession).toBeNull();
-  });
-
-  it('opening diff viewer clears github session', () => {
-    let s = emptyState();
-    s = applyOpenGithubSession(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('githubSession');
-    s = applyOpenDiffViewer(s, 'sess-1');
-    expect(activeOverlay(s)).toBe('diffViewer');
-    expect(s.githubSessionPane).toBeNull();
-  });
-
-  it('at most one overlay renders across all transition pairs (priority chain)', () => {
+  it('never renders a full-page overlay and an inline studio at once', () => {
     const transitions = [
-      (s: OverlayState) => applyOpenPlanStudio(s, 'sess-1'),
-      (s: OverlayState) => applyOpenDiffViewer(s, 'sess-1'),
-      (s: OverlayState) => applyOpenGithubSession(s, 'sess-1'),
-      (s: OverlayState) => applyOpenSessionSettings(s),
-      (s: OverlayState) => applyOpenWorkspaceSettings(s),
-      (s: OverlayState) => applyOpenNewSession(s),
-      (s: OverlayState) => applyOpenWorkflowBuilder(s, 'sess-1'),
+      (s: AppOverlayState) => openSessionStudio(s, 'github'),
+      (s: AppOverlayState) => openSessionStudio(s, 'mr'),
+      (s: AppOverlayState) => openSessionStudio(s, 'workflow'),
+      openNewSession,
+      openWorkspaceSettings,
+      openSessionSettings,
     ];
-
     for (const first of transitions) {
       for (const second of transitions) {
         let s = emptyState();
         s = first(s);
         s = second(s);
-
-        const rendered = activeOverlay(s);
-        expect(rendered).not.toBeNull();
+        const overlay = activeFullPageOverlay(s);
+        const bothVisible = overlay !== null && s.sessionStudio !== null;
+        expect(bothVisible).toBe(false);
       }
     }
   });
 });
 
-describe('overlay rendering priority chain', () => {
-  it('newSession takes priority over everything', () => {
-    const s: OverlayState = {
-      planStudioSession: 'sess-1',
-      diffViewerSession: 'sess-1',
-      githubSessionPane: 'sess-1',
-      sessionSettingsOpen: true,
-      workspaceSettingsOpen: true,
-      newSessionOpen: true,
-      workflowBuilderSessionId: 'sess-1',
-    };
-    expect(activeOverlay(s)).toBe('newSession');
-  });
-
-  it('workspaceSettings takes priority over sessionSettings and below', () => {
-    const s: OverlayState = {
-      ...emptyState(),
-      workspaceSettingsOpen: true,
-      sessionSettingsOpen: true,
-      planStudioSession: 'sess-1',
-    };
-    expect(activeOverlay(s)).toBe('workspaceSettings');
-  });
-
-  it('sessionSettings takes priority over workflowBuilder, planStudio, diffViewer', () => {
-    const s: OverlayState = {
-      ...emptyState(),
-      sessionSettingsOpen: true,
-      workflowBuilderSessionId: 'sess-1',
-      planStudioSession: 'sess-1',
-      diffViewerSession: 'sess-1',
-    };
-    expect(activeOverlay(s)).toBe('sessionSettings');
-  });
-
-  it('planStudio takes priority over diffViewer', () => {
-    const s: OverlayState = {
-      ...emptyState(),
-      planStudioSession: 'sess-1',
-      diffViewerSession: 'sess-1',
-    };
-    expect(activeOverlay(s)).toBe('planStudio');
-  });
-
-  it('diffViewer takes priority over githubSession', () => {
-    const s: OverlayState = {
-      ...emptyState(),
-      diffViewerSession: 'sess-1',
-      githubSessionPane: 'sess-1',
-    };
-    expect(activeOverlay(s)).toBe('diffViewer');
-  });
-});
-
-describe('overlay event dispatch contracts', () => {
-  beforeEach(() => {
-    window.dispatchEvent = window.dispatchEvent.bind(window);
-  });
-
-  afterEach(() => {
-    (window as Window & { _listeners?: unknown[] })._listeners = [];
-  });
-
+describe('session studio event dispatch contracts', () => {
   it('goodboy:open-plan-studio event carries sessionId and optional planId', () => {
     let received: CustomEvent | null = null;
-    window.addEventListener('goodboy:open-plan-studio', (e) => {
+    const onEvent = (e: Event) => {
       received = e as CustomEvent;
-    });
+    };
+    window.addEventListener('goodboy:open-plan-studio', onEvent);
     window.dispatchEvent(
       new CustomEvent('goodboy:open-plan-studio', {
         detail: { sessionId: 'sess-42', planId: 'plan-7' },
       }),
     );
+    window.removeEventListener('goodboy:open-plan-studio', onEvent);
     expect(received).not.toBeNull();
     expect(received!.detail.sessionId).toBe('sess-42');
     expect(received!.detail.planId).toBe('plan-7');
@@ -318,39 +162,33 @@ describe('overlay event dispatch contracts', () => {
 
   it('goodboy:open-diff-viewer event carries sessionId and workingDir', () => {
     let received: CustomEvent | null = null;
-    window.addEventListener('goodboy:open-diff-viewer', (e) => {
+    const onEvent = (e: Event) => {
       received = e as CustomEvent;
-    });
+    };
+    window.addEventListener('goodboy:open-diff-viewer', onEvent);
     window.dispatchEvent(
       new CustomEvent('goodboy:open-diff-viewer', {
         detail: { sessionId: 'sess-42', workingDir: '/tmp/wt' },
       }),
     );
+    window.removeEventListener('goodboy:open-diff-viewer', onEvent);
     expect(received).not.toBeNull();
     expect(received!.detail.sessionId).toBe('sess-42');
     expect(received!.detail.workingDir).toBe('/tmp/wt');
   });
 
-  it('goodboy:open-diff-viewer with missing sessionId is a no-op by convention', () => {
-    let received: CustomEvent | null = null;
-    window.addEventListener('goodboy:open-diff-viewer', (e) => {
-      received = e as CustomEvent;
-    });
-    window.dispatchEvent(new CustomEvent('goodboy:open-diff-viewer', { detail: {} }));
-    expect(received).not.toBeNull();
-    expect(received!.detail.sessionId).toBeUndefined();
-  });
-
   it('goodboy:open-github-session event carries sessionId, prNumber and threadId', () => {
     let received: CustomEvent | null = null;
-    window.addEventListener('goodboy:open-github-session', (e) => {
+    const onEvent = (e: Event) => {
       received = e as CustomEvent;
-    });
+    };
+    window.addEventListener('goodboy:open-github-session', onEvent);
     window.dispatchEvent(
       new CustomEvent('goodboy:open-github-session', {
         detail: { sessionId: 'sess-42', prNumber: 12, threadId: 'PRRT_x' },
       }),
     );
+    window.removeEventListener('goodboy:open-github-session', onEvent);
     expect(received).not.toBeNull();
     expect(received!.detail.sessionId).toBe('sess-42');
     expect(received!.detail.prNumber).toBe(12);

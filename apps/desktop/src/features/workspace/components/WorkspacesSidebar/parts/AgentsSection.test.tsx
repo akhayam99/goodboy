@@ -67,7 +67,11 @@ vi.mock('./CollapsedSummary', () => ({
   CollapsedSummary: ({ text }: { text: string }) => <div data-testid="collapsed">{text}</div>,
 }));
 vi.mock('./AgentRow', () => ({
-  AgentRow: ({ run }: { run: Agent }) => <li data-testid="agent-row">{run.name}</li>,
+  AgentRow: ({ run, onClick }: { run: Agent; onClick?: () => void }) => (
+    <li data-testid="agent-row">
+      <button onClick={onClick}>{run.name}</button>
+    </li>
+  ),
 }));
 vi.mock('./WorkflowStartButton', () => ({
   WorkflowStartButton: () => <div data-testid="wf-start" />,
@@ -162,6 +166,8 @@ function reset() {
     summarizerStatus: {},
     setPanelSectionExpanded: h.setPanelSectionExpanded,
     sessionPanelExpanded: {},
+    workflowExpand: {},
+    toggleWorkflowExpand: vi.fn(),
   });
 }
 
@@ -218,6 +224,21 @@ describe('AgentsSection collapse defaults', () => {
 
     expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
     expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
+  });
+
+  it('picking an agent selects it and reveals the chat (full-width swap trigger)', () => {
+    const selectAgent = vi.fn();
+    h.state.selectAgent = selectAgent;
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] };
+    const reveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', reveal);
+    render(<AgentsSection task={buildSession()} />);
+
+    fireEvent.click(screen.getByText('agent one'));
+
+    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+    expect(reveal).toHaveBeenCalled();
+    window.removeEventListener('goodboy:reveal-chat', reveal);
   });
 
   it('agents toggle persists across remount', () => {
