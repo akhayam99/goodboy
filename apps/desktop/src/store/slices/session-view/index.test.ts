@@ -31,6 +31,8 @@ import type {
   WorkspaceScript,
   WorkspaceScriptId,
 } from '@goodboy/types';
+import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
+import { readPersistedLens } from './workSurfaceStorage';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
@@ -466,7 +468,6 @@ describe('store contract', () => {
         sessionSlots: {},
         slotHistory: {},
         summarizerStatus: {},
-        sessionNextActions: {},
         budgetRules: [],
         sessionBudgets: {},
         providerSpendBreakdown: [],
@@ -506,6 +507,12 @@ describe('store contract', () => {
         sessionLoading: {},
         sessionViewPrefs: {},
         terminalSessions: {},
+        activeLens: {},
+        lensHistory: {},
+        workflowExpand: {},
+        focusedAgentId: {},
+        focusedPlanId: {},
+        sessionStudio: {},
       };
     }
     store.setState(resetState as never);
@@ -535,6 +542,87 @@ describe('store contract', () => {
       const store = await getStore();
       store.getState().setSessionGroup(WS_ID, 'pr');
       expect(store.getState().sessionViewPrefs[WS_ID]?.group).toBe('pr');
+    });
+
+    it('setActiveLens persists and readPersistedLens restores it', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(readPersistedLens(SESSION_ID)).toBe('agents');
+    });
+
+    it('setActiveLens(null) clears the persisted lens (Overview empty-state)', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, null);
+      expect(store.getState().activeLens[SESSION_ID]).toBeNull();
+      expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('migrates a legacy "dashboard" persisted value to null (Overview)', async () => {
+      globalThis.localStorage.setItem(
+        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
+        'dashboard',
+      );
+      expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('migrates a legacy "context" persisted value to null (Overview)', async () => {
+      globalThis.localStorage.setItem(
+        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
+        'context',
+      );
+      expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('lensGo walks back and forward through visited lenses', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      store.getState().lensGo(SESSION_ID, -1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      store.getState().lensGo(SESSION_ID, 1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
+    });
+
+    it('lensGo clamps at history bounds', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().lensGo(SESSION_ID, -5);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      store.getState().lensGo(SESSION_ID, 5);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+    });
+
+    it('selecting a new lens after going back truncates the forward history', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      store.getState().lensGo(SESSION_ID, -1);
+      store.getState().setActiveLens(SESSION_ID, 'files');
+      store.getState().lensGo(SESSION_ID, 1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+    });
+
+    it('toggleWorkflowExpand flips around the supplied default and persists per run', async () => {
+      const store = await getStore();
+      store.getState().toggleWorkflowExpand(SESSION_ID, 'run-a', true);
+      expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(false);
+      store.getState().toggleWorkflowExpand(SESSION_ID, 'run-a', true);
+      expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(true);
+      store.getState().toggleWorkflowExpand(SESSION_ID, 'run-b', false);
+      expect(store.getState().workflowExpand[SESSION_ID]?.['run-b']).toBe(true);
+      expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(true);
+    });
+
+    it('setFocusedAgentId, setFocusedPlanId and setSessionStudio update per-session state', async () => {
+      const store = await getStore();
+      store.getState().setFocusedAgentId(SESSION_ID, AGENT_ID);
+      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
+      store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
+      expect(store.getState().focusedAgentId[SESSION_ID]).toBe(AGENT_ID);
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
+      expect(store.getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'workflow' });
     });
   });
 });

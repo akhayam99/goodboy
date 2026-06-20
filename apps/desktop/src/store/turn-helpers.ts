@@ -285,7 +285,6 @@ async function runSummarizer(
           lastAttempt: null,
         },
       },
-      sessionNextActions: { ...state.sessionNextActions, [sessionId]: result.nextActions },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
     void get().emitNotification('summarizer-success', 'info', 'context summarized', undefined, {

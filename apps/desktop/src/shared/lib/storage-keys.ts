@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const STORAGE_PREFIXES = {
-  contextPanelOpen: `${PREFIX}context-panel-open:`,
+  workSurfaceView: `${PREFIX}work-surface-view:`,
   diffView: `${PREFIX}diff-view:`,
   diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,

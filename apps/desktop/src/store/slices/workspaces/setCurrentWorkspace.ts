@@ -67,7 +67,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionMergeConflicts: {},
       sessionBudgets: {},
       summarizerStatus: {},
-      sessionNextActions: {},
       budgetAlerts: [],
       unknownPayloadCounts: {},
       sidebarSessionSearch: '',

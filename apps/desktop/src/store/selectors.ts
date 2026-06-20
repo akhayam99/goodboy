@@ -230,7 +230,7 @@ const EMPTY_PLANS: ReadonlyArray<PlanWithCount> = [];
 export const useSessionPlans = (sessionId: SessionId | null): ReadonlyArray<PlanWithCount> =>
   useAppStore((s) => (sessionId ? (s.sessionPlans[sessionId] ?? EMPTY_PLANS) : EMPTY_PLANS));
 
-type FilesTouched = {
+export type FilesTouched = {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
   readonly additions: number;

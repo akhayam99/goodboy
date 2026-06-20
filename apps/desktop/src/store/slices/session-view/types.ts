@@ -1,6 +1,9 @@
 import type {
+  AgentId,
+  PlanId,
   Session,
   SessionGroupKey,
+  SessionId,
   SessionPrGroup,
   SessionSortKey,
   SessionStage,
@@ -9,6 +12,40 @@ import type {
 } from '@goodboy/types';
 
 export type { SetFn, GetFn } from '../../slice-types';
+
+export type LensKind =
+  | 'questions'
+  | 'agents'
+  | 'workflows'
+  | 'resolve'
+  | 'plans'
+  | 'scripts'
+  | 'terminal'
+  | 'goal'
+  | 'decisions'
+  | 'last_output_summary'
+  | 'pr'
+  | 'files';
+
+export const LENS_KINDS = new Set<LensKind>([
+  'questions',
+  'agents',
+  'workflows',
+  'resolve',
+  'plans',
+  'scripts',
+  'terminal',
+  'goal',
+  'decisions',
+  'last_output_summary',
+  'pr',
+  'files',
+]);
+
+export type SessionStudio =
+  | { readonly kind: 'workflow' }
+  | { readonly kind: 'github'; readonly prNumber?: number; readonly threadId?: string }
+  | { readonly kind: 'mr' };
 
 export const DEFAULT_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 
@@ -32,14 +69,31 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 5,
 };
 
+export type LensHistory = {
+  readonly entries: ReadonlyArray<LensKind | null>;
+  readonly index: number;
+};
+
 type SessionViewSliceState = {
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
+  readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
+  readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
+  readonly focusedAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
+  readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
 };
 
 type SessionViewSliceActions = {
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
+  setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
+  lensGo(sessionId: SessionId, delta: number): void;
+  toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
+  setFocusedAgentId(sessionId: SessionId, agentId: AgentId | null): void;
+  setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;
