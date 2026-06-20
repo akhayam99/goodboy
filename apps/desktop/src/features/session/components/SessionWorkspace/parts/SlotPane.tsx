@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { History, RotateCcw } from 'lucide-react';
 import { Dialog, Markdown, Textarea, cn } from '@goodboy/ui';
-import type { ContextSlotHistoryEntry, Session, SessionId, TelemetryRecord } from '@goodboy/types';
+import type { ContextSlotHistoryEntry, Session, SessionId } from '@goodboy/types';
 import {
-  EMPTY_ARRAY,
   useAppStore,
   useSessionLoading,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
 } from '../../../../../store';
-import { SummarizerBadge } from '../../../../context/components/ContextPanel/parts/SummarizerBadge';
 import { PaneShell } from './PaneShell';
 
 type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
@@ -48,9 +46,6 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const history = useSlotHistory(sessionId, slotKey);
-  const telemetry = useAppStore(
-    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
 
   const slot = useMemo(() => slots.find((s) => s.key === slotKey), [slots, slotKey]);
   const value = slot?.value ?? '';
@@ -65,25 +60,6 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
   useEffect(() => {
     if (!editing) setDraft(value);
   }, [value, editing]);
-
-  const summarizerTotals = useMemo(() => {
-    let inputTokens = 0;
-    let outputTokens = 0;
-    let estimatedCostUsd = 0;
-    let count = 0;
-    for (const rec of telemetry) {
-      if (rec.kind !== 'summarizer') continue;
-      inputTokens += rec.inputTokens;
-      outputTokens += rec.outputTokens;
-      estimatedCostUsd += rec.estimatedCostUsd;
-      count += 1;
-    }
-    return { inputTokens, outputTokens, estimatedCostUsd, count };
-  }, [telemetry]);
-
-  const showSummarizer =
-    slotKey === 'last_output_summary' &&
-    (summarizer.status === 'running' || summarizer.status === 'error');
 
   const commit = () => {
     setEditing(false);
@@ -106,16 +82,6 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
       description={SLOT_DESCRIPTION[slotKey]}
       actions={
         <>
-          {showSummarizer ? (
-            <SummarizerBadge
-              sessionId={sessionId}
-              status={summarizer.status}
-              lastUpdate={summarizer.lastUpdate}
-              error={summarizer.error}
-              totals={summarizerTotals}
-              canRetry={summarizer.lastAttempt !== null}
-            />
-          ) : null}
           {history.length > 0 ? (
             <button
               type="button"

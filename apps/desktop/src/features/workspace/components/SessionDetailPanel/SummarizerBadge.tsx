@@ -1,36 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Loader2, RotateCw } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import type { SummarizerStatusKind } from '../lib';
+import type { SessionId, TelemetryRecord } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore, useSummarizerStatus } from '../../../../store';
 
-export function SummarizerBadge({
-  sessionId,
-  status,
-  lastUpdate,
-  error,
-  totals,
-  canRetry,
-}: {
-  sessionId: SessionId;
-  status: SummarizerStatusKind;
-  lastUpdate: string | null;
-  error: string | null;
-  totals: {
-    readonly inputTokens: number;
-    readonly outputTokens: number;
-    readonly estimatedCostUsd: number;
-    readonly count: number;
-  };
-  canRetry: boolean;
-}) {
+export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
+  const { status, lastUpdate, error, lastAttempt } = useSummarizerStatus(sessionId);
+  const canRetry = lastAttempt !== null;
+  const telemetry = useAppStore(
+    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
   const retrySummarizer = useAppStore((s) => s.retrySummarizer);
   const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (status !== 'error') setRetrying(false);
   }, [status]);
+
+  const totals = useMemo(() => {
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let estimatedCostUsd = 0;
+    let count = 0;
+    for (const rec of telemetry) {
+      if (rec.kind !== 'summarizer') continue;
+      inputTokens += rec.inputTokens;
+      outputTokens += rec.outputTokens;
+      estimatedCostUsd += rec.estimatedCostUsd;
+      count += 1;
+    }
+    return { inputTokens, outputTokens, estimatedCostUsd, count };
+  }, [telemetry]);
 
   const costTooltip =
     totals.count === 0
@@ -85,5 +85,7 @@ export function SummarizerBadge({
     );
   }
 
+  if (status === 'idle') return totals.count > 0 ? costPill : null;
+
   return null;
-}
+};

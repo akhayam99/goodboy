@@ -1,7 +1,5 @@
 import type { ContextSlot } from '@goodboy/types';
 
-export type SummarizerStatusKind = 'idle' | 'running' | 'error';
-
 export interface FilesTouchedShape {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
