@@ -108,7 +108,10 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   if (!pr) {
     return (
-      <div className="animate-fade-in flex flex-col items-center gap-5 rounded-2xl border border-border-soft bg-elevated px-8 py-10 text-center">
+      <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-2xl border border-border-soft bg-elevated px-8 py-10 text-center">
+        <div className="absolute right-3 top-3">
+          <RefreshButton onClick={refresh} loading={loading} error={error} />
+        </div>
         <span
           aria-hidden
           className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/15"
