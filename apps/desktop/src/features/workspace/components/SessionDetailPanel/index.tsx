@@ -16,6 +16,7 @@ import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
+import { SummarizerBadge } from './SummarizerBadge';
 
 type SessionDetailPanelProps = {
   session: Session;
@@ -360,6 +361,7 @@ export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
       ) : (
         <div className="flex-1" />
       )}
+      <SummarizerBadge sessionId={session.id as SessionId} />
       <SessionCostChip sessionId={session.id as SessionId} />
       <button
         type="button"
