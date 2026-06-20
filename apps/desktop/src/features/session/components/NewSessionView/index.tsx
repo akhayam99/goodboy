@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
 import { AlertTriangle, GitBranch, Loader2, Plus, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
+import { CURSOR_AUTO_MODEL } from '@goodboy/core';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -77,7 +78,7 @@ function getCheapModel(providerId: ProviderId): string {
     case 'anthropic':
       return 'claude-haiku-4-5';
     case 'cursor':
-      return 'composer-2-fast';
+      return CURSOR_AUTO_MODEL;
     case 'codex':
       return 'gpt-5.4-mini';
     case 'gemini':

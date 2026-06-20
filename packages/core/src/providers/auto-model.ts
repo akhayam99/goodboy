@@ -1,5 +1,6 @@
 import type { ModelCostTier, ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
+import { CURSOR_AUTO_MODEL } from './cursor/models';
 import { defaultsForRole } from '../roles';
 
 export type AutoModelChoice = {
@@ -42,5 +43,11 @@ export const autoModelForRole = (
       }
     }
   }
-  return best === null ? null : { provider: best.provider, model: best.model };
+  if (best === null) {
+    return null;
+  }
+  return {
+    provider: best.provider,
+    model: best.provider === 'cursor' ? CURSOR_AUTO_MODEL : best.model,
+  };
 };

@@ -1,10 +1,14 @@
 import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { CURSOR_AUTO_MODEL } from '../providers/cursor/models';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
 export const getCheapModel = (providerId: ProviderId): string => {
+  if (providerId === 'cursor') {
+    return CURSOR_AUTO_MODEL;
+  }
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
 };
