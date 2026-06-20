@@ -2,6 +2,7 @@ import { activateNextResolver } from './activateNextResolver';
 import { clearAgentAttachments } from './clearAgentAttachments';
 import { clearAgentDraft } from './clearAgentDraft';
 import { deleteAgent } from './deleteAgent';
+import { deselectAgent } from './deselectAgent';
 import { markAgentViewed } from './markAgentViewed';
 import { renameAgent } from './renameAgent';
 import { selectAgent } from './selectAgent';
@@ -21,6 +22,7 @@ export const createAgentsSlice = (set: SetFn, get: GetFn) => {
     setAgentAttachments: setAgentAttachments(set),
     clearAgentAttachments: clearAgentAttachments(set),
     selectAgent: selectAgent(set, get),
+    deselectAgent: deselectAgent(set),
     markAgentViewed: markAgentViewed(set, get),
     renameAgent: renameAgent(set),
     spawnAgent: spawnAgent(set, get),

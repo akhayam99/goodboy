@@ -466,7 +466,6 @@ describe('store contract', () => {
         sessionSlots: {},
         slotHistory: {},
         summarizerStatus: {},
-        sessionNextActions: {},
         budgetRules: [],
         sessionBudgets: {},
         providerSpendBreakdown: [],
@@ -529,15 +528,6 @@ describe('store contract', () => {
       });
       store.getState().dismissSystemAlert('a1');
       expect(store.getState().systemAlerts.map((a) => a.id)).toEqual(['a2']);
-    });
-
-    it('clearSessionNextActions removes the entry for sid', async () => {
-      const store = await getStore();
-      store.setState({
-        sessionNextActions: { [SESSION_ID]: [{ kind: 'create_pr' } as never] },
-      });
-      store.getState().clearSessionNextActions(SESSION_ID);
-      expect(store.getState().sessionNextActions[SESSION_ID]).toBeUndefined();
     });
   });
 

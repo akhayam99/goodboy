@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type FileConflict, type NextAction, type SlotKey } from '@goodboy/core';
+import { type FileConflict, type SlotKey } from '@goodboy/core';
 import {
   type SessionConfigUpdate,
   type AgentConfigUpdate,
@@ -98,6 +98,7 @@ import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
+import type { LensHistory, LensKind, SessionStudio } from './slices/session-view';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
@@ -211,7 +212,6 @@ export type AppState = UpdaterState & {
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
   >;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
-  readonly sessionNextActions: Readonly<Record<SessionId, ReadonlyArray<NextAction>>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
@@ -269,6 +269,12 @@ export type AppState = UpdaterState & {
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
+  readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
+  readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
+  readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
+  readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
+  readonly focusedAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;
@@ -473,6 +479,7 @@ export type AppActions = {
   resetWorkflows(workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  deselectAgent(sessionId: SessionId): void;
   markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
   spawnAgent(
     sessionId: SessionId,
@@ -597,7 +604,6 @@ export type AppActions = {
     prNumber: number,
     reviewers: ReadonlyArray<string>,
   ): Promise<void>;
-  clearSessionNextActions(sessionId: SessionId): void;
   resolvePermissionRequest(input: {
     sessionId: SessionId;
     agentId: AgentId;
@@ -660,6 +666,12 @@ export type AppActions = {
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
+  setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
+  lensGo(sessionId: SessionId, delta: number): void;
+  toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
+  setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
+  setFocusedAgentId(sessionId: SessionId, agentId: AgentId | null): void;
+  setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;
@@ -703,7 +715,6 @@ export const initialState: AppState = {
   sessionSlots: {},
   slotHistory: {},
   summarizerStatus: {},
-  sessionNextActions: {},
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
@@ -754,6 +765,12 @@ export const initialState: AppState = {
   openQuestionScrollTarget: null,
   sessionLoading: {},
   sessionViewPrefs: {},
+  activeLens: {},
+  lensHistory: {},
+  workflowExpand: {},
+  sessionStudio: {},
+  focusedAgentId: {},
+  focusedPlanId: {},
   terminalSessions: {},
   terminalTabs: {},
   activeTerminalTab: {},

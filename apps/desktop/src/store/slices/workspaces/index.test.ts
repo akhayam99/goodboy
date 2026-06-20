@@ -473,7 +473,6 @@ describe('store contract', () => {
         sessionSlots: {},
         slotHistory: {},
         summarizerStatus: {},
-        sessionNextActions: {},
         budgetRules: [],
         sessionBudgets: {},
         providerSpendBreakdown: [],
