@@ -101,13 +101,6 @@ export const LensColumn = ({
   const hasPr = useAppStore(
     (s) => s.sessionGithub[sessionId]?.pr != null || s.sessionGitlabMr[sessionId]?.mr != null,
   );
-  const resolverTotal = useAppStore((s) => {
-    const runs = s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY;
-    return runs.reduce(
-      (n, r) => n + (isResolverAgent(r, s.agentKindOverride[r.id] ?? null) ? 1 : 0),
-      0,
-    );
-  });
   const openResolvers = useAppStore((s) => {
     const runs = s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY;
     return runs.reduce(
@@ -132,17 +125,13 @@ export const LensColumn = ({
       tone: 'accent',
       dot: hasPr ? 'running' : undefined,
     },
-    ...(resolverTotal > 0
-      ? [
-          {
-            kind: 'resolve' as const,
-            label: 'Resolve',
-            icon: MessageSquareReply,
-            tone: 'success' as const,
-            count: openResolvers,
-          },
-        ]
-      : []),
+    {
+      kind: 'questions',
+      label: 'Questions',
+      icon: CircleHelp,
+      tone: 'warning',
+      count: openCount,
+    },
   ];
 
   const groups: ReadonlyArray<LensGroup> = [
@@ -163,6 +152,13 @@ export const LensColumn = ({
           icon: Bot,
           tone: 'primary',
           dot: attentionLens === 'agents' ? 'attention' : hasRunningAgent ? 'running' : undefined,
+        },
+        {
+          kind: 'resolve',
+          label: 'Resolve',
+          icon: MessageSquareReply,
+          tone: 'success',
+          count: openResolvers,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],
@@ -187,18 +183,6 @@ export const LensColumn = ({
           icon: SquareTerminal,
           tone: 'neutral',
           dot: terminalOpen ? 'running' : undefined,
-        },
-      ],
-    },
-    {
-      label: 'Attention',
-      rows: [
-        {
-          kind: 'questions',
-          label: 'Questions',
-          icon: CircleHelp,
-          tone: 'warning',
-          count: openCount,
         },
       ],
     },
