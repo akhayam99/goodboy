@@ -19,6 +19,8 @@ type ScriptsSectionProps = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly worktreePath: string | null;
+  readonly forceExpanded?: boolean;
+  readonly hideHeader?: boolean;
 };
 
 type LogTarget = {
@@ -26,8 +28,15 @@ type LogTarget = {
   readonly anchor: DOMRect;
 };
 
-export const ScriptsSection = ({ sessionId, workspaceId, worktreePath }: ScriptsSectionProps) => {
-  const expanded = useAppStore((s) => s.sessionPanelExpanded[sessionId]?.scripts ?? false);
+export const ScriptsSection = ({
+  sessionId,
+  workspaceId,
+  worktreePath,
+  forceExpanded = false,
+  hideHeader = false,
+}: ScriptsSectionProps) => {
+  const storedExpanded = useAppStore((s) => s.sessionPanelExpanded[sessionId]?.scripts ?? false);
+  const expanded = forceExpanded || storedExpanded;
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const [log, setLog] = useState<LogTarget | null>(null);
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
@@ -73,26 +82,28 @@ export const ScriptsSection = ({ sessionId, workspaceId, worktreePath }: Scripts
 
   return (
     <>
-      <SectionHeader
-        className="mt-6 pb-1.5"
-        icon={<Terminal size={11} aria-hidden className="text-info" />}
-        label="Scripts"
-        action={
-          <button
-            type="button"
-            onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !expanded)}
-            aria-expanded={expanded}
-            aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
-            className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            {expanded ? (
-              <ChevronDown size={12} aria-hidden />
-            ) : (
-              <ChevronRight size={12} aria-hidden />
-            )}
-          </button>
-        }
-      />
+      {hideHeader ? null : (
+        <SectionHeader
+          className="mt-6 pb-1.5"
+          icon={<Terminal size={11} aria-hidden className="text-info" />}
+          label="Scripts"
+          action={
+            <button
+              type="button"
+              onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !storedExpanded)}
+              aria-expanded={expanded}
+              aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
+              className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              {expanded ? (
+                <ChevronDown size={12} aria-hidden />
+              ) : (
+                <ChevronRight size={12} aria-hidden />
+              )}
+            </button>
+          }
+        />
+      )}
       {expanded ? (
         <>
           {list.length > 0 ? (

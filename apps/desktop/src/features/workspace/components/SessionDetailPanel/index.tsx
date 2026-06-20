@@ -172,7 +172,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         <button
           type="button"
           onClick={onOpenSessionSettings}
-          title="Session settings"
+          title="Open settings for this session"
           aria-label="session settings"
           className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
         >
@@ -366,18 +366,20 @@ export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
         onClick={onToggleArchive}
         title={archived ? 'Unarchive session' : 'Archive session (⌘⇧A)'}
         aria-label={archived ? 'unarchive session' : 'archive session'}
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border-soft bg-muted/30 px-2 py-1 text-2xs font-medium text-foreground/80 transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
       >
         {archived ? <ArchiveRestore size={12} aria-hidden /> : <Archive size={12} aria-hidden />}
+        {archived ? 'Unarchive' : 'Archive'}
       </button>
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('goodboy:delete-session'))}
         title="Delete session (⌘.)"
         aria-label="delete session"
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-danger/30 bg-danger/10 px-2 py-1 text-2xs font-medium text-danger transition-colors hover:border-danger/50 hover:bg-danger/15"
       >
         <Trash2 size={12} aria-hidden />
+        Delete
       </button>
     </div>
   );

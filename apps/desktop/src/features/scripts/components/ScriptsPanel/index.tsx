@@ -1,25 +1,34 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Button, Input, Textarea, cn } from '@goodboy/ui';
-import type { WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
-import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
+import type { SessionId, WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
+import { Check, Copy, Pencil, Play, Plus, ScrollText, Square, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
+import type { ScriptRunStatus } from '../../scripts';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly sessionId?: SessionId;
+  readonly worktreePath?: string | null;
 };
 
 type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
 
-export const ScriptsPanel = ({ workspaceId }: Props) => {
+export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const saveScript = useAppStore((s) => s.saveScript);
   const deleteScript = useAppStore((s) => s.deleteScript);
+  const runScript = useAppStore((s) => s.runScript);
+  const cancelScript = useAppStore((s) => s.cancelScript);
+  const runs = useAppStore((s) => (sessionId ? s.scriptRuns[sessionId] : undefined));
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [logId, setLogId] = useState<WorkspaceScriptId | null>(null);
+
+  const runnable = sessionId != null;
 
   useEffect(() => {
     void loadScripts(workspaceId);
@@ -63,6 +72,26 @@ export const ScriptsPanel = ({ workspaceId }: Props) => {
       }
     },
     [deleteScript, workspaceId],
+  );
+
+  const onRun = useCallback(
+    (id: WorkspaceScriptId) => {
+      if (!sessionId || !worktreePath) {
+        return;
+      }
+      void runScript(sessionId, id, worktreePath);
+    },
+    [runScript, sessionId, worktreePath],
+  );
+
+  const onCancel = useCallback(
+    (id: WorkspaceScriptId) => {
+      if (!sessionId) {
+        return;
+      }
+      void cancelScript(sessionId, id);
+    },
+    [cancelScript, sessionId],
   );
 
   const list = scripts ?? [];
@@ -110,15 +139,45 @@ export const ScriptsPanel = ({ workspaceId }: Props) => {
               </li>
             );
           }
+          const run = runs?.[script.id] ?? null;
+          const status: ScriptRunStatus = run?.status ?? 'idle';
+          const isPending = status === 'pending';
+          const result = run?.result ?? null;
+          const logOpen = logId === script.id;
           return (
             <li
               key={script.id}
               className="overflow-hidden rounded-md border border-border-soft bg-background"
             >
               <div className="flex items-center gap-2 px-3 py-2">
+                {runnable ? <StatusDot status={status} /> : null}
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {script.name}
                 </span>
+                {runnable ? (
+                  isPending ? (
+                    <RowAction
+                      icon={<Square size={11} fill="currentColor" aria-hidden />}
+                      label="stop script"
+                      tone="danger"
+                      onClick={() => onCancel(script.id)}
+                    />
+                  ) : (
+                    <RowAction
+                      icon={<Play size={13} aria-hidden />}
+                      label="run script"
+                      disabled={!worktreePath}
+                      onClick={() => onRun(script.id)}
+                    />
+                  )
+                ) : null}
+                {runnable && result ? (
+                  <RowAction
+                    icon={<ScrollText size={13} aria-hidden />}
+                    label={logOpen ? 'hide log' : 'show log'}
+                    onClick={() => setLogId((prev) => (prev === script.id ? null : script.id))}
+                  />
+                ) : null}
                 <RowAction
                   icon={
                     copiedId === script.id ? (
@@ -144,9 +203,22 @@ export const ScriptsPanel = ({ workspaceId }: Props) => {
                   onClick={() => void onDelete(script.id)}
                 />
               </div>
-              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
-                {script.body}
-              </pre>
+              {logOpen && result ? (
+                <pre className="m-0 max-h-60 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
+                  {result.stdout}
+                  {result.stderr ? (
+                    <span className="text-danger">
+                      {result.stdout ? '\n' : ''}
+                      {result.stderr}
+                    </span>
+                  ) : null}
+                  {!result.stdout && !result.stderr ? '(no output)' : null}
+                </pre>
+              ) : (
+                <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
+                  {script.body}
+                </pre>
+              )}
             </li>
           );
         })}
@@ -198,6 +270,20 @@ function RowAction({
       {icon}
     </button>
   );
+}
+
+function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
+  const tone =
+    status === 'ok'
+      ? 'bg-success'
+      : status === 'error'
+        ? 'bg-danger'
+        : status === 'cancelled'
+          ? 'bg-muted-foreground/50'
+          : status === 'pending'
+            ? 'animate-pulse bg-info'
+            : 'bg-border';
+  return <span aria-hidden className={cn('size-2 shrink-0 rounded-full', tone)} />;
 }
 
 function ScriptEditor({

@@ -95,8 +95,8 @@ export const SessionActivityBar = ({
   return (
     <div className="flex h-full w-full shrink-0 flex-col">
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-1.5 px-2 py-2">
-          <div className="mb-1 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
+        <div className="flex flex-col gap-1.5 px-2.5 py-2.5">
+          <div className="mb-1.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Sessions
             </span>
@@ -249,7 +249,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
       onClick={onClick}
       title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}`}
       className={cn(
-        'flex w-full flex-col items-start gap-1 rounded-md border px-2 py-2 text-left transition-colors',
+        'flex w-full flex-col items-start gap-1.5 rounded-lg border px-2.5 py-2.5 text-left transition-colors',
         isActive
           ? 'bg-elevated text-foreground shadow-sm'
           : 'bg-muted/40 text-foreground/70 hover:bg-muted/60 hover:text-foreground',
@@ -265,27 +265,29 @@ const SessionActivityItem = memo(function SessionActivityItem({
         dimmed && 'opacity-50',
       )}
     >
-      <span className="flex w-full items-start gap-1.5">
+      <span className="flex w-full items-start gap-2">
         <span
           aria-hidden
           className={cn(
-            'mt-1 size-1.5 shrink-0 rounded-full',
+            'mt-[5px] size-1.5 shrink-0 rounded-full',
             isAutoMode ? 'bg-danger' : stageMeta.dotClassName,
             stage === 'running' && 'animate-pulse',
           )}
         />
-        <span className="line-clamp-2 min-w-0 flex-1 text-xs leading-snug">{session.goal}</span>
-        {prState && <PullRequestChip state={prState} variant="icon" iconSize={10} />}
+        <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
+          {session.goal}
+        </span>
+        {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
       </span>
-      <span className="flex w-full items-center gap-1 pl-3">
-        <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-muted-foreground/60">
+      <span className="flex w-full items-center gap-1.5 pl-[14px]">
+        <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-muted-foreground/60">
           {reason}
         </span>
         {sessionCost > 0 && (
           <CostBadge
             value={sessionCost}
             title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
-            className="shrink-0 text-[10px] font-medium text-muted-foreground/55"
+            className="shrink-0 text-[11px] font-medium text-muted-foreground/55"
           />
         )}
       </span>

@@ -38,6 +38,7 @@ export const QuickActionsRow = ({
         <QuickAction
           icon={<Sparkles size={12} className="text-warning" aria-hidden />}
           label="Skills"
+          title="browse and run skills for this workspace"
           onClick={() => onOpenPalette('/')}
         />
       ) : null}
@@ -45,6 +46,7 @@ export const QuickActionsRow = ({
       <QuickAction
         icon={<Layers size={12} className="text-primary" aria-hidden />}
         label="Workflows"
+        title="open the workflow library for this workspace"
         onClick={onOpenWorkflows}
       />
       <QuickAction

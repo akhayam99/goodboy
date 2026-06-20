@@ -15,7 +15,6 @@ import {
 import { Divider, Markdown, Textarea, cn } from '@goodboy/ui';
 import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
-import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
@@ -34,12 +33,10 @@ const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
 
 interface Props {
   readonly sessionId: SessionId;
-  readonly workspaceName: string;
   readonly initialPlanId?: PlanId;
-  readonly onClose: () => void;
 }
 
-export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }: Props) {
+export function PlanStudio({ sessionId, initialPlanId }: Props) {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -102,14 +99,15 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
     void updatePlanBody(sessionId, selected.id, next.title, next.bodyMd);
   }, [selected, draft, sessionId, updatePlanBody]);
 
-  const handleClose = useCallback(
-    (requestClose: () => void) => {
-      if (mode === 'edit') commitEdit();
-      setMode('preview');
-      requestClose();
-    },
-    [mode, commitEdit],
-  );
+  const flushEdit = useCallback(() => {
+    if (mode === 'edit') commitEdit();
+    setMode('preview');
+  }, [mode, commitEdit]);
+
+  const openAgent = (agentId: Agent['id']) => {
+    flushEdit();
+    void selectAgent(sessionId, agentId);
+  };
 
   const handleSelectPlan = (id: PlanId) => {
     if (mode === 'edit') commitEdit();
@@ -117,7 +115,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
     setSelectedId(id);
   };
 
-  const handleTrigger = async (requestClose: () => void) => {
+  const handleTrigger = async () => {
     if (!selected || spawning) return;
     if (selected.status === 'consumed' && !retriggerArmed) {
       setRetriggerArmed(true);
@@ -136,7 +134,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
     setSpawning(true);
     try {
       await runPlan(sessionId, selected.id);
-      handleClose(requestClose);
+      flushEdit();
     } finally {
       setSpawning(false);
     }
@@ -158,15 +156,20 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
   const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown agent') : '';
 
   return (
-    <StudioShell
-      icon={ClipboardList}
-      title="Plans"
-      workspaceName={workspaceName}
-      closeLabel="close plan studio"
-      onClose={onClose}
-      variant="slot"
-    >
-      {(requestClose) => (
+    <div className="relative flex h-full w-full flex-col bg-background">
+      <div className="flex shrink-0 items-center gap-2.5 px-6 py-4">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
+          <ClipboardList size={16} aria-hidden className="text-success" />
+        </span>
+        <div className="flex flex-col">
+          <h1 className="text-xl font-semibold leading-snug text-foreground">Plans</h1>
+          <p className="text-sm text-muted-foreground">
+            Plans agents drafted for this session. Edit, then run one to spawn an executor.
+          </p>
+        </div>
+      </div>
+      <Divider />
+      <div className="flex min-h-0 flex-1">
         <>
           <ScrollFade className="w-72 shrink-0">
             <ul className="flex w-full flex-col gap-1 px-3 py-4">
@@ -230,8 +233,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
                               );
                               return;
                             }
-                            void selectAgent(sessionId, selected.agentId);
-                            handleClose(requestClose);
+                            openAgent(selected.agentId);
                           }}
                           className={cn(
                             'truncate font-medium underline-offset-2',
@@ -272,8 +274,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
                                   );
                                   return;
                                 }
-                                void selectAgent(sessionId, c.agentId);
-                                handleClose(requestClose);
+                                openAgent(c.agentId);
                               }}
                               className={cn(
                                 'truncate font-medium underline-offset-2',
@@ -351,7 +352,7 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
                       {selected.status !== 'discarded' ? (
                         <button
                           type="button"
-                          onClick={() => void handleTrigger(requestClose)}
+                          onClick={() => void handleTrigger()}
                           disabled={spawning}
                           className={cn(
                             'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm transition',
@@ -444,8 +445,8 @@ export function PlanStudio({ sessionId, workspaceName, initialPlanId, onClose }:
             </div>
           </div>
         </>
-      )}
-    </StudioShell>
+      </div>
+    </div>
   );
 }
 

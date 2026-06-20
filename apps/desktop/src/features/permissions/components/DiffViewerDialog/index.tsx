@@ -745,9 +745,9 @@ export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
 export const DiffViewerPane = ({ workspaceName, onClose, ...rest }: DiffViewerPaneProps) => (
   <StudioShell
     icon={FileEdit}
-    title="Files touched"
+    title="Diff"
     workspaceName={workspaceName}
-    closeLabel="close files touched"
+    closeLabel="back to overview"
     onClose={onClose}
     variant="slot"
   >
