@@ -31,7 +31,10 @@ import {
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../features/session/agent-kind';
-import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
+import {
+  SETTING_LAST_SESSION_ID,
+  DEFAULT_BRANCH_PREFIX,
+} from '../../../features/settings/settings';
 import type { GetFn, SetFn } from './types';
 
 const slugifyDir = (raw: string): string =>
@@ -81,7 +84,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
 
-    const prefix = branchPrefix?.trim() || 'kay';
+    const prefix = branchPrefix?.trim() || DEFAULT_BRANCH_PREFIX;
     const slugSeed =
       branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
     const trimmedExisting = existingBranch?.trim();

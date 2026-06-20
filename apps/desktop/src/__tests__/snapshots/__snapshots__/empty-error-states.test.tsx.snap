@@ -659,7 +659,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               <span
                 class="shrink-0 text-xs text-muted-foreground font-mono"
               >
-                kay/
+                goodboy/
               </span>
               <input
                 aria-label="Branch slug"
@@ -1739,7 +1739,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               <span
                 class="shrink-0 text-xs text-muted-foreground font-mono"
               >
-                kay/
+                goodboy/
               </span>
               <input
                 aria-label="Branch slug"

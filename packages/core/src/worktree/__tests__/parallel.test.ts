@@ -56,7 +56,7 @@ describe('createParallelWorktrees', () => {
     );
   });
 
-  it('uses "kay" prefix when parentBranch has no slash', async () => {
+  it('uses "goodboy" prefix when parentBranch has no slash', async () => {
     const deps = makeDeps();
     await createParallelWorktrees(deps, {
       sessionId: SESSION_ID,
@@ -67,7 +67,7 @@ describe('createParallelWorktrees', () => {
     });
 
     expect(deps.invokeWorktreeCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ branchPrefix: 'kay', slug: 'my-seed-p0' }),
+      expect.objectContaining({ branchPrefix: 'goodboy', slug: 'my-seed-p0' }),
     );
   });
 
