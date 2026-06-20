@@ -179,7 +179,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 </div>
               </div>
               <Divider orientation="vertical" />
-              <div className="min-h-0 flex-1">
+              <div className="min-h-0 min-w-0 flex-1">
                 <ChatView session={session} isActive={isActive && selectedAgentId != null} />
               </div>
             </div>
