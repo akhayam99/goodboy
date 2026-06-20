@@ -183,7 +183,7 @@ function SessionsSection() {
             },
             {
               term: 'branch',
-              desc: 'kay/<slug> (or your prefix), derived from the goal. Configurable per workspace.',
+              desc: 'goodboy/<slug> (or your prefix), derived from the goal. Configurable per workspace.',
               icon: <GitBranch size={11} aria-hidden />,
               tone: 'success',
             },

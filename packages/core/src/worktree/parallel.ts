@@ -29,7 +29,7 @@ export type ParallelWorktreeResult = {
 function splitParentBranch(parentBranch: string): { prefix: string; base: string } {
   const slashIdx = parentBranch.indexOf('/');
   if (slashIdx === -1) {
-    return { prefix: 'kay', base: parentBranch };
+    return { prefix: 'goodboy', base: parentBranch };
   }
   return {
     prefix: parentBranch.slice(0, slashIdx),
