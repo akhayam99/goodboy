@@ -10,7 +10,6 @@ import type {
 } from '@goodboy/types';
 import { upsertWorkflow, type Database } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
-import { defaultsForRole } from '../roles';
 
 const SEEDED_ROLES = new Set<AgentRole>([
   'scout',
@@ -58,7 +57,6 @@ export const seedWorkflowLibrary = async (
   for (const entry of WORKFLOW_LIBRARY) {
     const workflowId = makeWorkflowId(entry.slug, workspaceId);
     const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
-      const roleDefaults = defaultsForRole(s.role);
       const libraryStepId = libraryStepIdForRole(s.role);
       return {
         id: makeStepId(entry.slug, s.name, workspaceId),
@@ -68,8 +66,6 @@ export const seedWorkflowLibrary = async (
         ordinal,
         name: s.name,
         promptPrefix: s.promptPrefix,
-        providerOverride: roleDefaults.provider,
-        modelOverride: roleDefaults.model,
       };
     });
 
