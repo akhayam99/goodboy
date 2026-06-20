@@ -3,6 +3,7 @@ import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
 import { computeCostUsd } from '../providers/claude/cost';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { CURSOR_AUTO_MODEL } from '../providers/cursor/models';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 
 type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
@@ -97,6 +98,9 @@ Only include slots that actually change. Omit slots that stay the same. Never in
 If nothing should change, return { "upserts": [] }.`;
 
 function getCheapModel(providerId: ProviderId): string {
+  if (providerId === 'cursor') {
+    return CURSOR_AUTO_MODEL;
+  }
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
 }

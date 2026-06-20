@@ -4,6 +4,7 @@ import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
 import { migrate, listWorkflows, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 import { seedWorkflowLibrary } from './seeder';
+import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -91,5 +92,34 @@ describe('seedWorkflowLibrary', () => {
       expect(wf.createdAt).toBe(fixed);
       expect(wf.updatedAt).toBe(fixed);
     }
+  });
+
+  describe('provider routing (regression for cursor/codex sessions)', () => {
+    it('does not hardcode providerOverride on seeded steps', async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+
+      const workflows = await listWorkflows(db, workspaceId);
+      const steps = workflows.flatMap((w) => w.steps);
+
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps.every((s) => s.providerOverride === undefined)).toBe(true);
+    });
+
+    it('does not pin anthropic model IDs on seeded steps', async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+
+      const workflows = await listWorkflows(db, workspaceId);
+      const steps = workflows.flatMap((w) => w.steps);
+
+      const anthropicModelIds = new Set(PROVIDER_CAPABILITIES.anthropic.models.map((m) => m.id));
+
+      const stepsWithAnthropicModelId = steps.filter(
+        (s) => s.modelOverride !== undefined && anthropicModelIds.has(s.modelOverride),
+      );
+
+      expect(stepsWithAnthropicModelId).toHaveLength(0);
+    });
   });
 });

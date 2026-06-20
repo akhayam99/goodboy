@@ -3,6 +3,8 @@ import { CURSOR_CHEAP_MODEL } from './cost';
 
 export const CURSOR_DEFAULT_MODEL = 'composer-2';
 
+export const CURSOR_AUTO_MODEL = 'auto';
+
 export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
   {
     id: 'composer-2',
@@ -29,7 +31,7 @@ export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
     effort: null,
   },
   {
-    id: 'auto',
+    id: CURSOR_AUTO_MODEL,
     tier: 'cheap',
     contextWindow: 200_000,
     family: 'cursor-auto',

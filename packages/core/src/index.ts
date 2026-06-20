@@ -85,7 +85,7 @@ export { getModelDescriptor, getModelProvider } from './providers/model-display'
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
 export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
-export { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
+export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
 export {
   parseCursorStreamLine,
   type ParseContext as CursorParseContext,
