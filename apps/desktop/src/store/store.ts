@@ -538,8 +538,10 @@ export type AppActions = {
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
+  bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   archiveTask(sessionId: SessionId): Promise<void>;
   unarchiveTask(sessionId: SessionId): Promise<void>;
+  bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   setSidebarWorkspaceSearch(query: string): void;
