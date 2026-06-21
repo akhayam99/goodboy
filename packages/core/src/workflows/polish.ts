@@ -6,6 +6,7 @@ const GOAL_POLISH_SYSTEM_PROMPT = `You polish goal statements for AI coding work
 You receive a rough, hand-written goal. Rewrite it as a clear, specific objective for a team of coding agents.
 
 Rules:
+- Match the language of the input goal exactly. If the goal is written in Italian, write the polished goal in Italian; same for any other language.
 - Preserve every concrete detail: file names, paths, feature names, constraints, do-not items.
 - Imperative voice, one to three sentences.
 - Do not invent requirements, scope, or constraints that are not in the input.

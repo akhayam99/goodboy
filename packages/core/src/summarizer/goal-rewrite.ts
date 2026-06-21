@@ -6,6 +6,7 @@ const GOAL_REWRITE_SYSTEM_PROMPT = `You clean the "goal" note for an AI coding s
 You receive the current goal text and the ordered list of workflow steps.
 
 Rewrite the goal so that it:
+- matches the language of the CURRENT GOAL exactly. If the current goal is written in Italian, write the rewritten goal in Italian; same for any other language.
 - keeps the concrete objective: what to build, change, or fix, plus domain specifics, constraints, acceptance criteria, and any ticket id.
 - removes every procedural instruction that a workflow step already owns. Examples to strip: "scout" or "explore the code", "write a plan" or "plan it out", "implement it", "review", "write tests", "commit", "push", "open a PR" or "raise a pull request". Each of those is a workflow step's job; if they stay in the goal, the wrong agent performs them too early.
 - stays short: one to three plain sentences. No markdown, no headings, no bullet list of phases, no step numbers.

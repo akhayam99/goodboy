@@ -128,6 +128,36 @@ describe('parsePlannerOutput', () => {
     }
   });
 
+  it('falls back to custom when role is not a canonical AgentRole', () => {
+    const translated = JSON.stringify({
+      workflowName: 'X',
+      reasoning: 'x',
+      steps: [{ name: 'X', role: 'implementatore', promptPrefix: 'p', expectedOutput: 'o' }],
+    });
+    const out = parsePlannerOutput(translated);
+    expect(out.steps[0]!.role).toBe('custom');
+  });
+
+  it('maps the non-canonical "other" role to custom', () => {
+    const other = JSON.stringify({
+      workflowName: 'X',
+      reasoning: 'x',
+      steps: [{ name: 'X', role: 'other', promptPrefix: 'p', expectedOutput: 'o' }],
+    });
+    const out = parsePlannerOutput(other);
+    expect(out.steps[0]!.role).toBe('custom');
+  });
+
+  it('preserves a canonical role verbatim', () => {
+    const canonical = JSON.stringify({
+      workflowName: 'X',
+      reasoning: 'x',
+      steps: [{ name: 'X', role: 'reviewer', promptPrefix: 'p', expectedOutput: 'o' }],
+    });
+    const out = parsePlannerOutput(canonical);
+    expect(out.steps[0]!.role).toBe('reviewer');
+  });
+
   it('trims whitespace from workflowName', () => {
     const padded = JSON.stringify({
       workflowName: '  Auth  ',

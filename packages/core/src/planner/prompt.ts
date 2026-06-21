@@ -20,7 +20,7 @@ no code fences. The schema is:
   "steps": [
     {
       "name": "<short imperative title>",
-      "role": "<scout|planner|implementer|reviewer|tester|investigator|product|architect|explorer|other>",
+      "role": "<scout|planner|implementer|reviewer|tester|investigator|product|architect|explorer|custom>",
       "promptPrefix": "<system-style instructions for the step's agent>",
       "expectedOutput": "<one sentence describing what the step should produce>"
     },
@@ -34,11 +34,12 @@ Rules:
 - A step's promptPrefix should make sense without seeing the user's original description;
   the description will be appended automatically as the user message.
 - expectedOutput tells the post-step summarizer what to extract; be specific.
-- Pick roles from the canonical list above. Use "other" only if none fit.
+- Pick roles from the canonical list above. Use "custom" only if none fit.
+- The role value MUST be one of the canonical English keywords above. Never translate or rename it, even when every other field is written in another language.
 - Names should be short (1-3 words), in title case.
 - Do not include preamble, apologies, or explanations outside the JSON object.
-- The user may write in any language. Always respond with JSON regardless of input language.
-  All JSON field values (workflowName, names, reasoning, promptPrefix, expectedOutput) must be in English.`;
+- The user may write in any language. Always respond with the JSON object regardless of input language.
+  Match the language of the user's process description for all JSON field values (workflowName, names, reasoning, promptPrefix, expectedOutput): if the process is written in Italian, write those values in Italian; same for any other language. Keep the JSON structure and role values unchanged.`;
 
 export const buildPlannerUserPrompt = (input: PlannerInput): string => {
   const parts = ['Process:', input.process];
