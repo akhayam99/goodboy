@@ -68,10 +68,12 @@ export const DeleteSessionDialog = ({ session, open, onClose }: Props) => {
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="secondary" onClick={() => void onArchiveInstead()} disabled={busy}>
-            <Archive size={13} aria-hidden className="mr-1.5" />
-            {busy ? 'Working…' : 'Archive'}
-          </Button>
+          {!session.archivedAt && (
+            <Button variant="secondary" onClick={() => void onArchiveInstead()} disabled={busy}>
+              <Archive size={13} aria-hidden className="mr-1.5" />
+              {busy ? 'Working…' : 'Archive'}
+            </Button>
+          )}
           <Button variant="danger" onClick={() => void onConfirmDelete()} disabled={busy}>
             {busy ? 'Deleting…' : 'Delete'}
           </Button>
