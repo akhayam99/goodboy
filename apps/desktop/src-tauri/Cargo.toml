@@ -34,7 +34,10 @@ tauri-plugin-process = "2"
 libc = "0.2"
 portable-pty = "0.9"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
+snow = "0.9"
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+rand = "0.8"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

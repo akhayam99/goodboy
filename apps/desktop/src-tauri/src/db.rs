@@ -68,7 +68,7 @@ pub fn open() -> Result<Db, DbError> {
 ///   3. Release builds (the shipped app) -> `data.db`, the production file.
 /// Splitting on `debug_assertions` keeps local experiments off the prod DB
 /// automatically, with no env setup required.
-fn resolve_db_path() -> Result<PathBuf, DbError> {
+pub fn resolve_db_path() -> Result<PathBuf, DbError> {
     let home = dirs::home_dir().ok_or(DbError::NoHomeDir)?;
     let dir = home.join(APP_DIR);
 
@@ -182,7 +182,7 @@ pub fn db_select(
     Ok(out)
 }
 
-fn value_to_json(value: ValueRef<'_>) -> serde_json::Value {
+pub fn value_to_json(value: ValueRef<'_>) -> serde_json::Value {
     match value {
         ValueRef::Null => serde_json::Value::Null,
         ValueRef::Integer(n) => serde_json::Value::Number(Number::from(n)),
