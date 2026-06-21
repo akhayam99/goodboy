@@ -130,12 +130,10 @@ export const fanOutClusters = async (
   }
 };
 
-function findClustersPlan(
-  get: GetFn,
-  sessionId: SessionId,
-  workflowRunId: WorkflowRunId | undefined,
-) {
-  const plans = get().sessionPlans[sessionId] ?? [];
+export const selectClustersPlan = (
+  plans: ReadonlyArray<PlanWithCount>,
+  workflowRunId?: WorkflowRunId | undefined,
+): PlanWithCount | null => {
   const target = workflowRunId ?? undefined;
   for (let i = plans.length - 1; i >= 0; i--) {
     const p = plans[i];
@@ -148,6 +146,14 @@ function findClustersPlan(
     return p;
   }
   return null;
+};
+
+function findClustersPlan(
+  get: GetFn,
+  sessionId: SessionId,
+  workflowRunId: WorkflowRunId | undefined,
+) {
+  return selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
 }
 
 export const selectFanOutPlan = (
