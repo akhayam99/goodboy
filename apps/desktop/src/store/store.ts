@@ -18,6 +18,8 @@ import type {
   ContextSlotHistoryEntry,
   DiffComment,
   AttachmentInput,
+  GoalAttachment,
+  GoalAttachmentOwner,
   GlobalSettings,
   IsoDateTime,
   Message,
@@ -91,6 +93,7 @@ import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createDiffCommentsSlice } from './slices/diff-comments';
+import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import { createGitlabMrSlice } from './slices/gitlab-mr';
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
@@ -257,6 +260,8 @@ export type AppState = UpdaterState & {
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
+  readonly sessionAttachments: Readonly<Record<SessionId, ReadonlyArray<GoalAttachment>>>;
+  readonly workflowRunAttachments: Readonly<Record<WorkflowRunId, ReadonlyArray<GoalAttachment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
@@ -627,6 +632,12 @@ export type AppActions = {
   ): Promise<void>;
   reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
+  loadGoalAttachments(owner: GoalAttachmentOwner): Promise<void>;
+  addGoalAttachments(
+    owner: GoalAttachmentOwner,
+    inputs: ReadonlyArray<AttachmentInput>,
+  ): Promise<void>;
+  removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   loadNotifications(): Promise<void>;
   emitNotification(
     kind: NotificationKind,
@@ -754,6 +765,8 @@ export const initialState: AppState = {
   workflowDrafts: {},
   agentAttachments: {},
   diffComments: {},
+  sessionAttachments: {},
+  workflowRunAttachments: {},
   notifications: [],
   sessionPlans: {},
   sessionNudges: {},
@@ -784,6 +797,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),
+  ...createAttachmentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),
   ...createIntegrationsSlice(set, get),

@@ -72,6 +72,7 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import {
   applyHeuristicTitle,
+  buildGoalAttachmentsBlock,
   capturePlanFromTurn,
   emitTurnNudges,
   enqueueSummarizer,
@@ -514,6 +515,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
+    }
+
+    const isKickoff =
+      agentRowEarly?.providerSessionId === undefined &&
+      (get().transcripts[activeAgentId] ?? []).length === 0;
+    const goalAttachments = [
+      ...(get().sessionAttachments[sessionId] ?? []),
+      ...(agentRowEarly?.workflowRunId
+        ? (get().workflowRunAttachments[agentRowEarly.workflowRunId] ?? [])
+        : []),
+    ];
+    const goalAttachmentsBlock = buildGoalAttachmentsBlock(earlyAgentKind, goalAttachments, {
+      isKickoff,
+    });
+    if (goalAttachmentsBlock.length > 0) {
+      resolvedPrompt = `${goalAttachmentsBlock}\n\n${resolvedPrompt}`;
     }
 
     const needsTextHistory = provider === 'cursor' || provider === 'codex' || provider === 'gemini';

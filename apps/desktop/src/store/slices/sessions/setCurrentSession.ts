@@ -135,6 +135,8 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         });
     }
 
+    void get().loadGoalAttachments({ type: 'session', id });
+
     void listOpenQuestionsForSession(tauriDatabase, id, 'open')
       .then((qs) => {
         set((state) => ({

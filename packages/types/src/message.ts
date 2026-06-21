@@ -18,6 +18,24 @@ export type AttachmentInput = Readonly<{
   dataBase64: string;
 }>;
 
+export type GoalAttachmentOwnerType = 'session' | 'workflow_run';
+
+export type GoalAttachmentOwner = Readonly<{
+  type: GoalAttachmentOwnerType;
+  id: string;
+}>;
+
+export type GoalAttachment = Readonly<{
+  id: string;
+  ownerType: GoalAttachmentOwnerType;
+  ownerId: string;
+  relPath: string;
+  kind: 'image' | 'file';
+  fileName: string;
+  mimeType: string;
+  createdAt: IsoDateTime;
+}>;
+
 export type Message = Readonly<{
   id: MessageId;
   sessionId: SessionId;

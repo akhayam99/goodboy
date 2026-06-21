@@ -9,6 +9,7 @@ import {
   useSlotHistory,
   useSummarizerStatus,
 } from '../../../../../store';
+import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { PaneShell } from './PaneShell';
 
 type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
@@ -168,6 +169,10 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
             {value}
           </button>
         )}
+
+        {slotKey === 'goal' ? (
+          <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
+        ) : null}
 
         <SlotHistoryDialog
           label={SLOT_TITLE[slotKey]}

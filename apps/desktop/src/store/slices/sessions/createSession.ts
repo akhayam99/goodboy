@@ -1,5 +1,6 @@
 import type {
   Agent,
+  AttachmentInput,
   IsoDateTime,
   Session,
   SessionId,
@@ -63,6 +64,7 @@ type Input = {
     url: string;
     title: string;
   };
+  attachmentInputs?: ReadonlyArray<AttachmentInput>;
 };
 
 export const createSession = (set: SetFn, get: GetFn) => {
@@ -78,6 +80,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     firstAgentKind,
     firstAgentModel: requestedModel,
     externalTask,
+    attachmentInputs,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) {
@@ -331,6 +334,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
       agentKindOverride: { ...get().agentKindOverride, ...agentKindOverrides },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
+
+    if (attachmentInputs && attachmentInputs.length > 0) {
+      await get().addGoalAttachments({ type: 'session', id: session.id }, attachmentInputs);
+    }
 
     if (workflowId) {
       void get().reprocessGoalForWorkflow(session.id);

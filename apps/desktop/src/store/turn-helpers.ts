@@ -27,6 +27,7 @@ import {
 import type {
   AgentId,
   ContextSlot,
+  GoalAttachment,
   IsoDateTime,
   MessageAttachment,
   PlanId,
@@ -38,6 +39,8 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../shared/lib/db';
+import type { AgentKind } from '../features/session/agent-kind';
+import { kindReadsAttachment } from '../features/providers/attachment-routing';
 import { invokeBudgetRuleList } from '../features/budget/budget';
 import {
   listPlansForSession as invokeListPlansForSession,
@@ -57,6 +60,27 @@ export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment
     'Inspect each path below before answering. Images and PDFs render with your Read tool; for spreadsheets or other binary formats, read or parse the file with the appropriate tool:',
     list,
     '[/attached-files]',
+  ].join('\n');
+};
+
+export const buildGoalAttachmentsBlock = (
+  kind: AgentKind,
+  attachments: ReadonlyArray<GoalAttachment>,
+  { isKickoff }: { isKickoff: boolean },
+): string => {
+  if (!isKickoff) {
+    return '';
+  }
+  const relevant = attachments.filter((att) => kindReadsAttachment(att, kind));
+  if (relevant.length === 0) {
+    return '';
+  }
+  const list = relevant.map((a) => `- ${a.relPath}`).join('\n');
+  return [
+    '## attachments',
+    `The user attached ${relevant.length} file${relevant.length === 1 ? '' : 's'} to the goal of this session.`,
+    'Read only those relevant to your role; ignore the rest. Inspect each path below with your Read tool before relying on it:',
+    list,
   ].join('\n');
 };
 

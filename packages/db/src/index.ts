@@ -59,6 +59,12 @@ export {
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
+  insertGoalAttachment,
+  listGoalAttachmentsForSession,
+  listGoalAttachmentsForRun,
+  deleteGoalAttachment,
+} from './queries/attachment';
+export {
   insertTurnEvent,
   insertTurnEventsBatch,
   listTurnEventsForAgent,

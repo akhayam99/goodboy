@@ -36,6 +36,7 @@ import {
 } from '../../../../../store';
 import { pickNextWorkflowStep } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
+import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format';
 import {
   AGENT_KIND_DEFAULTS,
@@ -753,6 +754,11 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               No agents yet for this workflow.
             </p>
           )
+        ) : null}
+        {expanded ? (
+          <div className="pb-1 pl-3">
+            <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+          </div>
         ) : null}
       </div>
     );
