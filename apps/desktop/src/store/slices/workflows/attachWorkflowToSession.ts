@@ -1,5 +1,6 @@
 import type {
   Agent,
+  AttachmentInput,
   IsoDateTime,
   SessionId,
   WorkflowId,
@@ -23,6 +24,7 @@ type Options = {
   goal?: string;
   triggerMode?: WorkflowTriggerMode;
   chainAfterId?: WorkflowRunId;
+  attachmentInputs?: ReadonlyArray<AttachmentInput>;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -144,6 +146,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       agentModelOverride: { ...state.agentModelOverride, ...agentModelOverrides },
       agentKindOverride: { ...state.agentKindOverride, ...agentKindOverrides },
     }));
+
+    const attachmentInputs = options?.attachmentInputs;
+    if (attachmentInputs && attachmentInputs.length > 0) {
+      await get().addGoalAttachments({ type: 'workflow_run', id: workflowRunId }, attachmentInputs);
+    }
 
     void get().reprocessGoalForWorkflow(sessionId);
 

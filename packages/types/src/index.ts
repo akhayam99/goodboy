@@ -44,7 +44,15 @@ export type {
   WorkspaceIntegrationProvider,
   WorkspaceScript,
 } from './workspace';
-export type { AttachmentInput, Message, MessageAttachment, MessageRole } from './message';
+export type {
+  AttachmentInput,
+  GoalAttachment,
+  GoalAttachmentOwner,
+  GoalAttachmentOwnerType,
+  Message,
+  MessageAttachment,
+  MessageRole,
+} from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export type {
   DetectResult,

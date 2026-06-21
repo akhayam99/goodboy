@@ -1,9 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Loader2, Plus, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, GitBranch, Loader2, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CURSOR_AUTO_MODEL } from '@goodboy/core';
+import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
+import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
+import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
+import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -214,6 +218,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     }
   });
 
+  const {
+    attachments,
+    isDragging,
+    composerRef,
+    fileInputRef,
+    onFileInputChange,
+    removeAttachment,
+  } = usePendingAttachments({ showToast });
+
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
   );
@@ -336,6 +349,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
               },
             }
           : {}),
+        ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
       });
       showToast('success', `session created: ${session.goal}`);
       onClose();
@@ -438,6 +452,54 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
               autoFocus
               disabled={busy}
             />
+          </Section>
+
+          <Section
+            icon={<Paperclip size={14} aria-hidden className="text-primary" />}
+            tone="primary"
+            title="Attachments"
+            subtitle="Images and files the agents can read on demand. Routed to the agents that benefit from each type."
+          >
+            <div
+              ref={composerRef}
+              className={cn(
+                'flex flex-col gap-2.5 rounded-lg border border-dashed px-3 py-3 transition-colors',
+                isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
+              )}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ATTACHMENT_ACCEPT}
+                multiple
+                hidden
+                onChange={onFileInputChange}
+              />
+              {attachments.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((a) => (
+                    <AttachmentChip
+                      key={a.id}
+                      attachment={a}
+                      onRemove={() => removeAttachment(a.id)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy}
+                className={cn(
+                  'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
+                  busy
+                    ? 'cursor-not-allowed text-muted-foreground/40'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <Paperclip size={13} aria-hidden /> Add files
+              </button>
+            </div>
           </Section>
 
           <Section

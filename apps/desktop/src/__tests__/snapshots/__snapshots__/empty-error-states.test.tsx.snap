@@ -582,6 +582,84 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
           class="flex items-start gap-2.5"
         >
           <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-paperclip text-primary"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
+              />
+            </svg>
+          </span>
+          <div
+            class="flex flex-col gap-0.5"
+          >
+            <h3
+              class="text-sm font-semibold text-foreground"
+            >
+              Attachments
+            </h3>
+            <p
+              class="text-2xs leading-relaxed text-muted-foreground"
+            >
+              Images and files the agents can read on demand. Routed to the agents that benefit from each type.
+            </p>
+          </div>
+        </header>
+        <div>
+          <div
+            class="flex flex-col gap-2.5 rounded-lg border border-dashed px-3 py-3 transition-colors border-border-soft"
+          >
+            <input
+              accept="image/*,.pdf,.csv,.tsv,.txt,.log,.md,.markdown,.json,.xml,.yaml,.yml,.docx,.xlsx"
+              hidden=""
+              multiple=""
+              type="file"
+            />
+            <button
+              class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-paperclip"
+                fill="none"
+                height="13"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="13"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
+                />
+              </svg>
+               Add files
+            </button>
+          </div>
+        </div>
+      </section>
+      <section
+        class="flex flex-col gap-2.5"
+      >
+        <header
+          class="flex items-start gap-2.5"
+        >
+          <span
             class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-success/10"
           >
             <svg
@@ -1653,6 +1731,84 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
             placeholder="Refactor auth domain to extract token validation into a shared module…"
             style="overflow-y: hidden;"
           />
+        </div>
+      </section>
+      <section
+        class="flex flex-col gap-2.5"
+      >
+        <header
+          class="flex items-start gap-2.5"
+        >
+          <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-paperclip text-primary"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
+              />
+            </svg>
+          </span>
+          <div
+            class="flex flex-col gap-0.5"
+          >
+            <h3
+              class="text-sm font-semibold text-foreground"
+            >
+              Attachments
+            </h3>
+            <p
+              class="text-2xs leading-relaxed text-muted-foreground"
+            >
+              Images and files the agents can read on demand. Routed to the agents that benefit from each type.
+            </p>
+          </div>
+        </header>
+        <div>
+          <div
+            class="flex flex-col gap-2.5 rounded-lg border border-dashed px-3 py-3 transition-colors border-border-soft"
+          >
+            <input
+              accept="image/*,.pdf,.csv,.tsv,.txt,.log,.md,.markdown,.json,.xml,.yaml,.yml,.docx,.xlsx"
+              hidden=""
+              multiple=""
+              type="file"
+            />
+            <button
+              class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-paperclip"
+                fill="none"
+                height="13"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="13"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
+                />
+              </svg>
+               Add files
+            </button>
+          </div>
         </div>
       </section>
       <section

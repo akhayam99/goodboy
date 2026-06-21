@@ -9,6 +9,7 @@ import {
   Link2,
   ListChecks,
   Loader2,
+  Paperclip,
   Play,
   RotateCcw,
   Sparkles,
@@ -68,6 +69,10 @@ import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
 import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
+import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
+import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
+import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
+import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 
 type Props = {
   readonly session: Session;
@@ -116,6 +121,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
   const { showToast } = useToast();
+
+  const {
+    attachments,
+    isDragging,
+    composerRef,
+    fileInputRef,
+    onFileInputChange,
+    removeAttachment,
+  } = usePendingAttachments({ showToast });
 
   const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
 
@@ -301,6 +315,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ...(goal.length > 0 && { goal }),
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
+      ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
     };
   };
 
@@ -498,6 +513,56 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
               />
               <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
                 Every step of the workflow works toward this goal.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
+                <Paperclip size={11} aria-hidden /> Attachments
+              </span>
+              <div
+                ref={composerRef}
+                className={cn(
+                  'flex flex-col gap-2.5 rounded-lg border border-dashed px-3 py-3 transition-colors',
+                  isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
+                )}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ATTACHMENT_ACCEPT}
+                  multiple
+                  hidden
+                  onChange={onFileInputChange}
+                />
+                {attachments.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {attachments.map((a) => (
+                      <AttachmentChip
+                        key={a.id}
+                        attachment={a}
+                        onRemove={() => removeAttachment(a.id)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={blocked}
+                  className={cn(
+                    'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
+                    blocked
+                      ? 'cursor-not-allowed text-muted-foreground/40'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <Paperclip size={13} aria-hidden /> Add files
+                </button>
+              </div>
+              <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
+                Routed to the agents that benefit from each type, on top of the session goal
+                attachments.
               </p>
             </div>
 
