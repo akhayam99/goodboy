@@ -4,7 +4,6 @@ import { setSessionSort } from './setSessionSort';
 import {
   lensGo,
   setActiveLens,
-  setFocusedAgentId,
   setFocusedPlanId,
   setSessionStudio,
   toggleWorkflowExpand,
@@ -23,7 +22,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     sessionViewPrefs: {},
     activeLens: {},
     lensHistory: {},
-    focusedAgentId: {},
     focusedPlanId: {},
     sessionStudio: {},
     workflowExpand: {},
@@ -33,7 +31,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setActiveLens: setActiveLens(set),
     lensGo: lensGo(set, get),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
-    setFocusedAgentId: setFocusedAgentId(set),
     setFocusedPlanId: setFocusedPlanId(set),
     setSessionStudio: setSessionStudio(set),
   };

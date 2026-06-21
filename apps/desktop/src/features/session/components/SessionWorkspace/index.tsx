@@ -19,6 +19,7 @@ import { SlotPane } from './parts/SlotPane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
+import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -48,7 +49,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
-  const deselectAgent = useAppStore((s) => s.deselectAgent);
+  const agentHome = useSelectedAgentHome(sessionId);
   const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
@@ -78,13 +79,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   const lens: LensKind | null = activeLens ?? null;
   const onSelectLens = (next: LensKind) => {
-    deselectAgent(sessionId);
     setActiveLens(sessionId, next);
   };
   const onSelectOverview = () => {
-    deselectAgent(sessionId);
     setActiveLens(sessionId, null);
   };
+  const showStudio = studio != null;
+  const showAgentOverlay = selectedAgentId != null && !showStudio;
+  const showLens = selectedAgentId == null && !showStudio;
+  const overlayHome = agentHome ?? 'agents';
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -101,81 +104,83 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         </div>
         <Divider orientation="vertical" />
         <div className="relative min-w-0 flex-1">
-          {lens === null ? (
-            <SessionOverviewPane
-              session={session}
-              filesTouched={filesTouched}
-              onSelectLens={onSelectLens}
-            />
-          ) : null}
-          {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-          {lens === 'plans' ? (
-            <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
-          ) : null}
-          {lens === 'workflows' ? (
-            <PaneShell
-              title="Workflows"
-              description="Sequences of agents that drive this session toward its goal."
-              width="3xl"
-            >
-              <AgentsSection task={session} only="workflows" />
-            </PaneShell>
-          ) : null}
-          {lens === 'resolve' ? (
-            <PaneShell
-              title="Resolve"
-              description="Resolver agents spawned from pull request comments and diff selections."
-              width="3xl"
-            >
-              <AgentsSection task={session} only="resolve" />
-            </PaneShell>
-          ) : null}
-          {lens === 'scripts' ? (
-            <PaneShell title="Scripts" width="3xl">
-              <ScriptsPanel
-                workspaceId={session.workspaceId}
-                sessionId={sessionId}
-                worktreePath={workingDir}
-              />
-            </PaneShell>
-          ) : null}
-          {lens === 'goal' || lens === 'decisions' || lens === 'last_output_summary' ? (
-            <SlotPane session={session} slotKey={lens} />
-          ) : null}
-          {lens === 'pr' ? <PrPane session={session} /> : null}
-          {lens === 'files' ? (
-            <FilesPane sessionId={sessionId} workingDir={workingDir} onClose={onSelectOverview} />
+          {showLens ? (
+            <div className="absolute inset-0 z-0">
+              {lens === null ? (
+                <SessionOverviewPane
+                  session={session}
+                  filesTouched={filesTouched}
+                  onSelectLens={onSelectLens}
+                />
+              ) : null}
+              {lens === 'questions' ? <QuestionsPane session={session} /> : null}
+              {lens === 'plans' ? (
+                <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
+              ) : null}
+              {lens === 'workflows' ? (
+                <PaneShell
+                  title="Workflows"
+                  description="Sequences of agents that drive this session toward its goal."
+                  width="3xl"
+                >
+                  <AgentsSection task={session} only="workflows" />
+                </PaneShell>
+              ) : null}
+              {lens === 'resolve' ? (
+                <PaneShell
+                  title="Resolve"
+                  description="Resolver agents spawned from pull request comments and diff selections."
+                  width="3xl"
+                >
+                  <AgentsSection task={session} only="resolve" />
+                </PaneShell>
+              ) : null}
+              {lens === 'scripts' ? (
+                <PaneShell title="Scripts" width="3xl">
+                  <ScriptsPanel
+                    workspaceId={session.workspaceId}
+                    sessionId={sessionId}
+                    worktreePath={workingDir}
+                  />
+                </PaneShell>
+              ) : null}
+              {lens === 'goal' || lens === 'decisions' || lens === 'last_output_summary' ? (
+                <SlotPane session={session} slotKey={lens} />
+              ) : null}
+              {lens === 'pr' ? <PrPane session={session} /> : null}
+              {lens === 'files' ? (
+                <FilesPane
+                  sessionId={sessionId}
+                  workingDir={workingDir}
+                  onClose={onSelectOverview}
+                />
+              ) : null}
+              <Pane visible={lens === 'agents'}>
+                <PaneShell
+                  title="Agents"
+                  description="Agents you spawn by hand to work this session."
+                  width="3xl"
+                >
+                  <AgentsSection task={session} only="agents" />
+                </PaneShell>
+              </Pane>
+            </div>
           ) : null}
 
-          <Pane visible={lens === 'agents'}>
-            <PaneShell
-              title="Agents"
-              description="Agents you spawn by hand to work this session."
-              width="3xl"
-            >
-              <AgentsSection task={session} only="agents" />
-            </PaneShell>
-          </Pane>
-
-          {selectedAgentId != null ? (
-            <div className="absolute inset-0 flex bg-background">
+          {showAgentOverlay ? (
+            <div className="absolute inset-0 z-20 flex bg-background">
               <div className="flex w-72 shrink-0 flex-col bg-background">
                 <button
                   type="button"
-                  onClick={() => deselectAgent(sessionId)}
+                  onClick={() => setActiveLens(sessionId, overlayHome)}
                   className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground"
                 >
                   <ArrowLeft size={14} aria-hidden className="shrink-0" />
-                  <span className="truncate">{lens ? LENS_LABEL[lens] : 'Overview'}</span>
+                  <span className="truncate">{LENS_LABEL[overlayHome]}</span>
                 </button>
                 <Divider />
                 <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-                  <AgentsSection
-                    task={session}
-                    only={
-                      lens === 'agents' ? 'agents' : lens === 'resolve' ? 'resolve' : 'workflows'
-                    }
-                  />
+                  <AgentsSection task={session} only={overlayHome} />
                 </div>
               </div>
               <Divider orientation="vertical" />
@@ -187,23 +192,25 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
           <div
             className={cn(
-              'absolute inset-0 flex flex-col',
-              lens !== 'terminal' && 'invisible pointer-events-none',
+              'absolute inset-0 z-10 flex flex-col',
+              !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
             )}
           >
             <TerminalDock
               sessionId={sessionId}
-              isActive={isActive && lens === 'terminal'}
+              isActive={isActive && lens === 'terminal' && showLens}
               cwd={workingDir}
             />
           </div>
 
-          {studio && selectedAgentId == null ? (
-            <SessionStudioLayer
-              session={session}
-              studio={studio}
-              onClose={() => setSessionStudio(sessionId, null)}
-            />
+          {studio != null ? (
+            <div className="absolute inset-0 z-30">
+              <SessionStudioLayer
+                session={session}
+                studio={studio}
+                onClose={() => setSessionStudio(sessionId, null)}
+              />
+            </div>
           ) : null}
         </div>
       </div>

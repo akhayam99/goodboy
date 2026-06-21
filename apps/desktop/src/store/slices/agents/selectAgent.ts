@@ -21,6 +21,8 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
       runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
 
+    set((state) => ({ sessionStudio: { ...state.sessionStudio, [sessionId]: null } }));
+
     const cached = get().transcripts[agentId];
     if (cached) {
       // eslint-disable-next-line no-console

@@ -1,5 +1,4 @@
 import type {
-  AgentId,
   PlanId,
   Session,
   SessionGroupKey,
@@ -78,7 +77,6 @@ type SessionViewSliceState = {
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
-  readonly focusedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
@@ -91,7 +89,6 @@ type SessionViewSliceActions = {
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
-  setFocusedAgentId(sessionId: SessionId, agentId: AgentId | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
 };
