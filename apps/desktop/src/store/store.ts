@@ -273,7 +273,6 @@ export type AppState = UpdaterState & {
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
-  readonly focusedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
@@ -670,7 +669,6 @@ export type AppActions = {
   lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
-  setFocusedAgentId(sessionId: SessionId, agentId: AgentId | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
@@ -769,7 +767,6 @@ export const initialState: AppState = {
   lensHistory: {},
   workflowExpand: {},
   sessionStudio: {},
-  focusedAgentId: {},
   focusedPlanId: {},
   terminalSessions: {},
   terminalTabs: {},

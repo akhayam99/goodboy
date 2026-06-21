@@ -142,6 +142,90 @@ describe('full-page overlay mutual exclusion', () => {
   });
 });
 
+type SessionForeground = {
+  activeLens: string | null;
+  selectedAgentId: string | null;
+  sessionStudio: SessionStudioKind | null;
+};
+
+function emptyForeground(): SessionForeground {
+  return { activeLens: null, selectedAgentId: null, sessionStudio: null };
+}
+
+function setActiveLens(s: SessionForeground, lens: string | null): SessionForeground {
+  return { ...s, activeLens: lens, selectedAgentId: null, sessionStudio: null };
+}
+
+function selectAgent(s: SessionForeground, agentId: string): SessionForeground {
+  return { ...s, selectedAgentId: agentId, sessionStudio: null };
+}
+
+function setSessionStudio(s: SessionForeground, kind: SessionStudioKind | null): SessionForeground {
+  return kind != null
+    ? { ...s, sessionStudio: kind, selectedAgentId: null }
+    : { ...s, sessionStudio: null };
+}
+
+function foregroundLayer(s: SessionForeground): 'studio' | 'agent' | 'lens' {
+  if (s.sessionStudio !== null) return 'studio';
+  if (s.selectedAgentId !== null) return 'agent';
+  return 'lens';
+}
+
+describe('work-surface foreground triad mutual exclusion', () => {
+  const transitions = [
+    (s: SessionForeground) => setActiveLens(s, 'agents'),
+    (s: SessionForeground) => setActiveLens(s, 'plans'),
+    (s: SessionForeground) => setActiveLens(s, null),
+    (s: SessionForeground) => selectAgent(s, 'agent-1'),
+    (s: SessionForeground) => selectAgent(s, 'agent-2'),
+    (s: SessionForeground) => setSessionStudio(s, 'workflow'),
+    (s: SessionForeground) => setSessionStudio(s, 'github'),
+    (s: SessionForeground) => setSessionStudio(s, null),
+  ];
+
+  it('never shows an agent overlay and a studio at once', () => {
+    for (const first of transitions) {
+      for (const second of transitions) {
+        let s = emptyForeground();
+        s = first(s);
+        s = second(s);
+        const bothExclusive = s.selectedAgentId !== null && s.sessionStudio !== null;
+        expect(bothExclusive).toBe(false);
+        expect(['studio', 'agent', 'lens']).toContain(foregroundLayer(s));
+      }
+    }
+  });
+
+  it('setActiveLens drops both agent overlay and studio', () => {
+    let s = selectAgent(emptyForeground(), 'agent-1');
+    s = setSessionStudio(s, 'workflow');
+    s = setActiveLens(s, 'agents');
+    expect(s.selectedAgentId).toBeNull();
+    expect(s.sessionStudio).toBeNull();
+    expect(s.activeLens).toBe('agents');
+    expect(foregroundLayer(s)).toBe('lens');
+  });
+
+  it('selecting an agent keeps the lens (back-target) but drops the studio', () => {
+    let s = setActiveLens(emptyForeground(), 'agents');
+    s = setSessionStudio(s, 'workflow');
+    s = selectAgent(s, 'agent-1');
+    expect(s.selectedAgentId).toBe('agent-1');
+    expect(s.sessionStudio).toBeNull();
+    expect(s.activeLens).toBe('agents');
+    expect(foregroundLayer(s)).toBe('agent');
+  });
+
+  it('opening a studio drops the agent overlay', () => {
+    let s = selectAgent(emptyForeground(), 'agent-1');
+    s = setSessionStudio(s, 'workflow');
+    expect(s.sessionStudio).toBe('workflow');
+    expect(s.selectedAgentId).toBeNull();
+    expect(foregroundLayer(s)).toBe('studio');
+  });
+});
+
 describe('session studio event dispatch contracts', () => {
   it('goodboy:open-plan-studio event carries sessionId and optional planId', () => {
     let received: CustomEvent | null = null;

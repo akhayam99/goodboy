@@ -1,7 +1,19 @@
 import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from '@goodboy/core';
-import type { AgentRole } from '@goodboy/types';
+import type { Agent, AgentRole } from '@goodboy/types';
 
 export type AgentKind = AgentKindLabel;
+
+export type AgentHomeLens = 'agents' | 'resolve' | 'workflows';
+
+export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
+  if (agent.workflowRunId != null && agent.stepId != null) {
+    return 'workflows';
+  }
+  if (kind === 'resolver') {
+    return 'resolve';
+  }
+  return 'agents';
+};
 
 export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'planner',

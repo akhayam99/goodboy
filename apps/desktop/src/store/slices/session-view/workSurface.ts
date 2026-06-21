@@ -1,4 +1,4 @@
-import type { AgentId, PlanId, SessionId } from '@goodboy/types';
+import type { PlanId, SessionId } from '@goodboy/types';
 import type { GetFn, LensKind, SessionStudio, SetFn } from './types';
 import { writePersistedLens } from './workSurfaceStorage';
 
@@ -13,6 +13,7 @@ export const setActiveLens = (set: SetFn) => {
       return {
         activeLens: { ...s.activeLens, [sessionId]: lens },
         sessionStudio: { ...s.sessionStudio, [sessionId]: null },
+        selectedAgentId: { ...s.selectedAgentId, [sessionId]: null },
         lensHistory: {
           ...s.lensHistory,
           [sessionId]: { entries, index: entries.length - 1 },
@@ -57,12 +58,6 @@ export const toggleWorkflowExpand = (set: SetFn) => {
   };
 };
 
-export const setFocusedAgentId = (set: SetFn) => {
-  return (sessionId: SessionId, agentId: AgentId | null): void => {
-    set((s) => ({ focusedAgentId: { ...s.focusedAgentId, [sessionId]: agentId } }));
-  };
-};
-
 export const setFocusedPlanId = (set: SetFn) => {
   return (sessionId: SessionId, planId: PlanId | null): void => {
     set((s) => ({ focusedPlanId: { ...s.focusedPlanId, [sessionId]: planId } }));
@@ -71,6 +66,13 @@ export const setFocusedPlanId = (set: SetFn) => {
 
 export const setSessionStudio = (set: SetFn) => {
   return (sessionId: SessionId, studio: SessionStudio | null): void => {
-    set((s) => ({ sessionStudio: { ...s.sessionStudio, [sessionId]: studio } }));
+    set((s) =>
+      studio != null
+        ? {
+            sessionStudio: { ...s.sessionStudio, [sessionId]: studio },
+            selectedAgentId: { ...s.selectedAgentId, [sessionId]: null },
+          }
+        : { sessionStudio: { ...s.sessionStudio, [sessionId]: studio } },
+    );
   };
 };
