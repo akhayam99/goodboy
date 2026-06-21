@@ -1,5 +1,5 @@
 import type { ProviderRunId, SessionId } from '@goodboy/types';
-import { deleteSession as deleteSessionFromDb } from '@goodboy/db';
+import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeWorktree } from '../../../features/worktree/worktree';
@@ -22,9 +22,18 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       );
     }
     const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
+    let paths = worktreePaths;
+    if (paths.length === 0) {
+      try {
+        const rows = await listWorktreesForSession(tauriDatabase, sessionId);
+        paths = rows.map((r) => r.worktreePath);
+      } catch {
+        paths = [];
+      }
+    }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     if (workspace) {
-      for (const worktreePath of worktreePaths) {
+      for (const worktreePath of paths) {
         try {
           await removeWorktree(workspace.rootPath, worktreePath);
         } catch {
