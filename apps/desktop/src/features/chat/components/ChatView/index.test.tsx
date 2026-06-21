@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(() => ({
@@ -14,6 +14,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     selectAgent: vi.fn(async () => undefined),
     markAgentViewed: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     authResults: {} as Record<string, unknown>,
     refreshProviders: vi.fn(async () => undefined),
@@ -204,5 +205,99 @@ describe('ChatView', () => {
 
     const clusters = screen.getAllByTestId('cluster');
     expect(clusters.map((c) => c.textContent)).toEqual(['q-turn0', 'q-turn1']);
+  });
+});
+
+const clusterRuns = [
+  { id: 'container', ordinal: 0, kind: 'implementer', status: 'running', name: 'container' },
+  {
+    id: 'child0',
+    parentAgentId: 'container',
+    ordinal: 1,
+    kind: 'implementer',
+    status: 'completed',
+    name: 'cluster A',
+  },
+  {
+    id: 'child1',
+    parentAgentId: 'container',
+    ordinal: 2,
+    kind: 'implementer',
+    status: 'pending',
+    name: 'cluster B',
+  },
+];
+
+const clusterPlan = {
+  id: 'p1',
+  sessionId: 'sess-1',
+  agentId: 'a',
+  title: 'goal',
+  bodyMd: '',
+  status: 'active',
+  consumptionCount: 0,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  clusters: [
+    { title: 'cluster A', instructions: 'do A' },
+    { title: 'cluster B', instructions: 'do B' },
+  ],
+};
+
+describe('ChatView cluster dashboard', () => {
+  it('renders the cluster progress dashboard in place of the empty state', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
+    state.sessionPlans = { 'sess-1': [clusterPlan] };
+
+    render(<ChatView session={session} />);
+
+    expect(screen.getByTestId('cluster-progress-dashboard')).toBeTruthy();
+    expect(screen.getByText('cluster progress 1/2')).toBeTruthy();
+    expect(screen.getByText('cluster A')).toBeTruthy();
+    expect(screen.getByText('cluster B')).toBeTruthy();
+  });
+
+  it('folds running turn-state onto a pending cluster child', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
+    state.sessionPlans = { 'sess-1': [clusterPlan] };
+    state.agentTurnState = { child1: { kind: 'running' } };
+
+    render(<ChatView session={session} />);
+
+    expect(screen.getByText('running…')).toBeTruthy();
+  });
+
+  it('selects the agent when a cluster card is clicked', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
+    state.sessionPlans = { 'sess-1': [clusterPlan] };
+
+    render(<ChatView session={session} />);
+
+    fireEvent.click(screen.getByText('cluster B'));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'child1');
+  });
+
+  it('shows the empty state when no cluster plan matches', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
+    state.sessionPlans = { 'sess-1': [] };
+
+    render(<ChatView session={session} />);
+
+    expect(screen.queryByTestId('cluster-progress-dashboard')).toBeNull();
+  });
+
+  it('prefers the disconnected callout over the dashboard', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
+    state.sessionPlans = { 'sess-1': [clusterPlan] };
+    state.authResults = { anthropic: { state: 'disconnected' } };
+
+    render(<ChatView session={session} />);
+
+    expect(screen.queryByTestId('cluster-progress-dashboard')).toBeNull();
   });
 });

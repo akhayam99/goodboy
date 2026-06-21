@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
 import { cn, Divider } from '@goodboy/ui';
@@ -29,6 +30,8 @@ import { DiffViewerDialog } from '../../../../features/permissions/components/Di
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { ChatEmptyState } from './ChatEmptyState';
+import { ClusterProgressDashboard } from './ClusterProgressDashboard';
+import { selectClusterDashboard } from './clusterDashboard';
 import { ParallelColumn } from './ParallelColumn';
 import { useScrollPin } from './useScrollPin';
 import { dayKey, formatDayLabel } from './lib';
@@ -130,7 +133,22 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   );
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const sessionPlans = useAppStore((s) => s.sessionPlans[session.id] ?? EMPTY_ARRAY);
+  const agentTurnState = useAppStore(useShallow((s) => s.agentTurnState));
   const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
+
+  const clusterDashboard = useMemo(() => {
+    const base = selectClusterDashboard(phaseRuns, selectedAgentId ?? undefined, sessionPlans);
+    if (!base) {
+      return null;
+    }
+    const items = base.items.map((item) =>
+      agentTurnState[item.agent.id]?.kind === 'running' && item.agent.status !== 'running'
+        ? { ...item, agent: { ...item.agent, status: 'running' as const } }
+        : item,
+    );
+    return { ...base, items };
+  }, [phaseRuns, selectedAgentId, sessionPlans, agentTurnState]);
   const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
   const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
@@ -386,6 +404,15 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                   />
                 </div>
               </div>
+            ) : clusterDashboard ? (
+              <ClusterProgressDashboard
+                sessionId={session.id}
+                items={clusterDashboard.items}
+                completed={clusterDashboard.completed}
+                total={clusterDashboard.total}
+                selectedAgentId={selectedAgentId ?? undefined}
+                onSelect={(id) => void selectAgent(session.id, id)}
+              />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <ChatEmptyState
