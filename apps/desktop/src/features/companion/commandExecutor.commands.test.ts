@@ -40,7 +40,7 @@ const core = vi.hoisted(() => {
     isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
     PROVIDER_CAPABILITIES,
     getDefaultTurnModel: (id: string) => {
-      const caps = PROVIDER_CAPABILITIES[id];
+      const caps = PROVIDER_CAPABILITIES[id]!;
       return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
     },
     // Real implementation from packages/core/src/workflows/sequencer.ts.
@@ -81,7 +81,7 @@ function cmd(kind: string, data: unknown, origin: 'desktop' | 'mobile' = 'mobile
   return { id: 'c1', kind, origin, data };
 }
 
-const lastCall = (spy: ReturnType<typeof vi.fn>) => spy.mock.calls[spy.mock.calls.length - 1];
+const lastCall = (spy: ReturnType<typeof vi.fn>) => spy.mock.calls[spy.mock.calls.length - 1]!;
 
 beforeEach(() => {
   vi.clearAllMocks();

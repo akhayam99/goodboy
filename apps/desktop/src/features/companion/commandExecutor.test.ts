@@ -6,10 +6,10 @@ import type { BridgeCommand } from './commandExecutor';
 // helper and the tauri event/core bridges at module load. The guard logic we
 // test here touches none of that machinery directly, so stub it all out.
 const h = vi.hoisted(() => ({
-  sendTurn: vi.fn(() => Promise.resolve()),
-  spawnAgent: vi.fn(() => Promise.resolve()),
-  activateWorkflowAgent: vi.fn(() => Promise.resolve()),
-  activateNextResolver: vi.fn(() => Promise.resolve()),
+  sendTurn: vi.fn((..._args: unknown[]) => Promise.resolve()),
+  spawnAgent: vi.fn((..._args: unknown[]) => Promise.resolve()),
+  activateWorkflowAgent: vi.fn((..._args: unknown[]) => Promise.resolve()),
+  activateNextResolver: vi.fn((..._args: unknown[]) => Promise.resolve()),
   state: { value: null as unknown },
 }));
 
@@ -110,7 +110,7 @@ describe('send', () => {
         ],
       }),
     );
-    const arg = h.sendTurn.mock.calls[0][0] as { attachments?: unknown[] };
+    const arg = h.sendTurn.mock.calls[0]![0] as { attachments?: unknown[] };
     expect(arg.attachments).toHaveLength(1);
   });
 });
@@ -130,7 +130,7 @@ describe('spawnAgent kind allow-list', () => {
   it('drops a kind that is not on the allow-list (no override → safe default)', async () => {
     const res = await executeBridgeCommand(cmd('spawnAgent', { sessionId: 's1', kind: 'root' }));
     expect(res.ok).toBe(true);
-    const opts = h.spawnAgent.mock.calls[0][1] as Record<string, unknown>;
+    const opts = h.spawnAgent.mock.calls[0]![1] as Record<string, unknown>;
     expect(opts.kindOverride).toBeUndefined();
   });
 });
