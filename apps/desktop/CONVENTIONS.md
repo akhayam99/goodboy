@@ -112,14 +112,10 @@ src/
 
 ## Code rules
 
-Full TypeScript style in root [docs/typescript.md](../../docs/typescript.md).
+The full code rules live in the hub [AGENTS.md](../../AGENTS.md) and the
+[docs/typescript/](../../docs/typescript/) cluster (index at
+[docs/typescript.md](../../docs/typescript.md)). Do not copy them here.
 
-- No `any`. `unknown` + type guards.
-- No default exports, and no `export function`. Named `export const` arrows only.
-- `type` never `interface`. Extend via intersection (`&`).
-- Every function we declare takes one named, destructured object param.
-- Guard clauses, no `if/else`, no inline `if` body. Compare explicitly, never coerce.
-- No prop spreading without explicit type.
-- Discriminated unions for state machines and command results.
-- `satisfies` over `as` for const validation.
-- Zero comments. Tooling directives (`/// <reference />`) excepted.
+Desktop-specific addition:
+
+- Discriminated unions cover command results, not only state machines.

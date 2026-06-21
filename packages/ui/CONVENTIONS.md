@@ -28,11 +28,11 @@ Shared React 19 component library. **Presentational only.** No business logic, n
 
 ## Component patterns
 
-- Function components only. Named exports.
+- Function components only, named `export const` arrows (hub forbids `export function`).
   ```ts
-  export function Button(props: ButtonProps) { ... }
+  export const Button = (props: ButtonProps) => { ... }
   ```
-- Props typed as `interface` or `type`. Never inline.
+- Props typed as `type`, never `interface` (hub rule). Never inline.
 - Extend native props with `React.ComponentProps<'button'>` (or the relevant element). Avoid `React.HTMLAttributes` unless intentional.
 - Discriminated unions for variants:
   ```ts

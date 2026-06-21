@@ -15,7 +15,7 @@ AI workspace orchestrator. Manage macro sessions, route agents across providers,
 
 ## Claude-specific notes
 
-- When editing the store, prefer the slice package convention (see AGENTS.md → "Store slices"). Adding a new domain → new slice folder, never extend the monolith.
+- When editing the store, prefer the slice package convention (see [docs/file-system.md](./docs/file-system.md) → Store slices). Adding a new domain → new slice folder, never extend the monolith.
 - When extracting a hook, default to the folder convention (`useFoo/index.ts`); add an `index.test.ts` if behavior is non-trivial.
 - Skill files (`.claude/skills/*.md`) and worktrees (`.claude/worktrees/`) are local-only: never commit them.
 - `REFACTOR_PLAN.md` and similar planning docs at repo root are gitignored. Keep them out of commits.
