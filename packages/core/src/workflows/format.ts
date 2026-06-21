@@ -19,6 +19,7 @@ const WORKFLOW_FORMAT_SYSTEM_PROMPT = `You design multi-step AI coding workflows
 You receive a plain-language description of a desired workflow, plus the current draft steps (if any). Produce a clean, ordered set of steps.
 
 Rules:
+- Match the language of the DESIRED WORKFLOW description for all text fields (name, description, goal, step names, promptPrefix, expectedOutput, suggestions). If the description is written in Italian, write every field in Italian; same for any other language. Keep role values from the canonical list unchanged.
 - 2 to 6 steps. Each step has a single clear responsibility; do not bundle "plan and implement" into one step.
 - name: a short verb or noun (e.g. "Scout", "Plan", "Implement", "Review"). Title case, no numbering.
 - role: one of scout, planner, implementer, reviewer, investigator, product, architect, tester, explorer, custom. Pick the closest fit; use custom only when none apply.
