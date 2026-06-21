@@ -58,6 +58,10 @@ import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
+  clampMobilePermissionMode,
+  isSessionMobileShared,
+} from '../../../features/companion/mobileConfinement';
+import {
   AGENT_KIND_DEFAULTS,
   inferAgentKindFromName,
   type AgentKind,
@@ -451,6 +455,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const providerInfo = get().providers.find((p) => p.id === provider);
 
+    // Mobile-driven sessions run gated: never more permissive than `default`,
+    // so phone-initiated edits/Bash outside desktop allow-rules need approval.
+    const effectivePermissionMode = isSessionMobileShared(sessionId)
+      ? clampMobilePermissionMode(session.permissionMode)
+      : session.permissionMode;
+
     let claudeFlags: Partial<ClaudeFlagSet> = {};
     let effectiveRules: ReadonlyArray<PermissionRule> = [];
     if (provider === 'anthropic') {
@@ -464,7 +474,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const flags = buildClaudeFlags({
           rules: effectiveRules,
           scope: { workspaceId: session.workspaceId, sessionId },
-          permissionMode: session.permissionMode,
+          permissionMode: effectivePermissionMode,
         });
         claudeFlags = {
           allowedTools: flags.allowedTools,
@@ -479,7 +489,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         claudeFlags = {
           allowedTools: [],
           disallowedTools: [],
-          permissionMode: session.permissionMode,
+          permissionMode: effectivePermissionMode,
         };
       }
     }

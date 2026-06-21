@@ -33,6 +33,8 @@ import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
+import { CompanionStudio } from './features/companion/CompanionStudio';
+import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { markStepComplete } from './features/onboarding/onboarding-store';
 import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
@@ -63,6 +65,7 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const [companionOpen, setCompanionOpen] = useState(false);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
   const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
@@ -372,6 +375,22 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    void listenBridgeCommands().then((fn) => {
+      if (cancelled) {
+        fn();
+        return;
+      }
+      off = fn;
+    });
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
+
+  useEffect(() => {
     const handler = () => setSwitcherOpen(true);
     window.addEventListener('goodboy:open-workspace-switcher', handler);
     return () => window.removeEventListener('goodboy:open-workspace-switcher', handler);
@@ -564,6 +583,16 @@ export const App = () => {
   useKeyboardShortcut('cmd+7', () => selectWorkspaceByIndex(6), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false });
+  // Hidden pairing surface — undocumented on purpose, no menu/help entry.
+  useKeyboardShortcut('cmd+ctrl+shift+m', () => setCompanionOpen((v) => !v), {
+    ignoreInInputs: false,
+  });
+
+  useEffect(() => {
+    const handler = () => setCompanionOpen(true);
+    window.addEventListener('goodboy:open-pair-device', handler);
+    return () => window.removeEventListener('goodboy:open-pair-device', handler);
+  }, []);
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
@@ -799,6 +828,8 @@ export const App = () => {
         <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
       ) : null}
       {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
+
+      {companionOpen ? <CompanionStudio onClose={() => setCompanionOpen(false)} /> : null}
 
       <OnboardingWizard />
     </ToastProvider>

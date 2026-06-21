@@ -1,4 +1,5 @@
 mod attachment;
+mod bridge;
 mod budget;
 mod config_export;
 mod db;
@@ -50,6 +51,7 @@ pub fn run() {
     #[cfg(target_os = "macos")]
     suppress_webkit_media_remote();
   let database = db::open().expect("failed to open Goodboy database");
+  let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
   let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
@@ -66,6 +68,7 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_process::init())
     .manage(database)
+    .manage(bridge_state)
     .manage(provider_state)
     .manage(cursor_state)
     .manage(codex_state)
@@ -104,6 +107,11 @@ pub fn run() {
       db::db_execute,
       db::db_select,
       db::db_wipe,
+      bridge::bridge_start,
+      bridge::bridge_stop,
+      bridge::bridge_status,
+      bridge::bridge_command_result,
+      bridge::bridge_revoke,
       worktree::worktree_create,
       worktree::worktree_remove,
       worktree::worktree_list,
