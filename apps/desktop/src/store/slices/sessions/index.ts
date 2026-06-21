@@ -1,5 +1,7 @@
 import { archiveTask } from './archiveTask';
 import { autoTitleSession } from './autoTitleSession';
+import { bulkDeleteTask } from './bulkDeleteTask';
+import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
 import { deleteTask } from './deleteTask';
 import { renameTask } from './renameTask';
@@ -22,8 +24,10 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     setSessionAutoRun: setSessionAutoRun(set, get),
     setAgentVerbosity: setAgentVerbosity(set),
     deleteTask: deleteTask(set, get),
+    bulkDeleteTask: bulkDeleteTask(set, get),
     archiveTask: archiveTask(set, get),
     unarchiveTask: unarchiveTask(set, get),
+    bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),
     setCurrentSession: setCurrentSession(set, get),
   };

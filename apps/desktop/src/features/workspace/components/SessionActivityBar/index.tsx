@@ -1,5 +1,5 @@
-import { Fragment, memo, useMemo, useState } from 'react';
-import { Archive, ChevronRight, Plus } from 'lucide-react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Archive, Check, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { Button, cn, ScrollArea } from '@goodboy/ui';
 import type {
   Session,
@@ -22,6 +22,7 @@ import {
   PullRequestChip,
   pullRequestMeta,
 } from '../../../../features/github/components/PullRequestChip';
+import { BulkDeleteSessionsDialog } from '../../../session/components/BulkDeleteSessionsDialog';
 import { SessionViewMenu } from './SessionViewMenu';
 
 type ActivityTab = 'active' | 'archived';
@@ -70,6 +71,9 @@ export const SessionActivityBar = ({
   const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
     new Map(),
   );
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<SessionId>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const bulkUnarchiveTask = useAppStore((s) => s.bulkUnarchiveTask);
 
   const prefs = useSessionViewPrefs(workspaceId);
 
@@ -80,6 +84,34 @@ export const SessionActivityBar = ({
   const isGrouped = prefs.group !== 'none';
   const isArchivedView = tab === 'archived';
   const totalVisible = displayGroups.reduce((n, g) => n + g.sessions.length, 0);
+
+  const selectedSessions = useMemo(
+    () => archivedSessions.filter((s) => selectedIds.has(s.id as SessionId)),
+    [archivedSessions, selectedIds],
+  );
+
+  const onToggleSelect = useCallback((id: SessionId) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const onBulkRestore = async () => {
+    await bulkUnarchiveTask(selectedSessions.map((s) => s.id as SessionId));
+    setSelectedIds(new Set());
+  };
+
+  useEffect(() => {
+    if (tab !== 'archived') {
+      setSelectedIds(new Set());
+    }
+  }, [tab]);
 
   const isCollapsed = (key: string): boolean =>
     expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key);
@@ -160,6 +192,9 @@ export const SessionActivityBar = ({
                       session={session}
                       isActive={session.id === currentSessionId}
                       dimmed={isArchivedView}
+                      selectable={isArchivedView}
+                      selected={selectedIds.has(session.id as SessionId)}
+                      onToggleSelect={onToggleSelect}
                       onClick={() => onSelectSession(session.id as SessionId)}
                     />
                   ))}
@@ -181,6 +216,42 @@ export const SessionActivityBar = ({
       </ScrollArea>
 
       <div className="shrink-0 p-2">
+        {isArchivedView && selectedSessions.length > 0 && (
+          <div className="mb-2 flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5">
+            <span className="mr-auto text-xs font-medium text-foreground">
+              {selectedSessions.length} selected
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void onBulkRestore()}
+              title="restore selected sessions"
+              className="gap-1 px-2 text-xs"
+            >
+              <RotateCcw size={11} aria-hidden />
+              Restore ({selectedSessions.length})
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              title="delete selected sessions"
+              className="gap-1 px-2 text-xs"
+            >
+              <Trash2 size={11} aria-hidden />
+              Delete ({selectedSessions.length})
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+              title="clear selection"
+              className="px-2 text-xs"
+            >
+              Clear
+            </Button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -203,6 +274,15 @@ export const SessionActivityBar = ({
           <span>Archived</span>
         </button>
       </div>
+
+      {bulkDeleteOpen && (
+        <BulkDeleteSessionsDialog
+          sessions={selectedSessions}
+          open
+          onClose={() => setBulkDeleteOpen(false)}
+          onConfirmed={() => setSelectedIds(new Set())}
+        />
+      )}
     </div>
   );
 };
@@ -211,6 +291,9 @@ type SessionActivityItemProps = {
   session: Session;
   isActive: boolean;
   dimmed?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: SessionId) => void;
   onClick: () => void;
 };
 
@@ -218,6 +301,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
   session,
   isActive,
   dimmed,
+  selectable,
+  selected,
+  onToggleSelect,
   onClick,
 }: SessionActivityItemProps) {
   const { stage, reason } = useSessionStageInfo(session);
@@ -243,7 +329,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
     return sum;
   }, [telemetry]);
 
-  return (
+  const body = (
     <button
       type="button"
       onClick={onClick}
@@ -292,5 +378,30 @@ const SessionActivityItem = memo(function SessionActivityItem({
         )}
       </span>
     </button>
+  );
+
+  if (!selectable) {
+    return body;
+  }
+
+  return (
+    <div className="flex w-full items-center gap-1.5">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={selected}
+        onClick={() => onToggleSelect?.(session.id as SessionId)}
+        title={selected ? 'deselect session' : 'select session'}
+        className={cn(
+          'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+          selected
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border-soft hover:border-primary/50',
+        )}
+      >
+        {selected && <Check size={11} aria-hidden />}
+      </button>
+      <span className="min-w-0 flex-1">{body}</span>
+    </div>
   );
 });

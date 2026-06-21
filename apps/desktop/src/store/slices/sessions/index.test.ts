@@ -621,6 +621,155 @@ describe('store contract', () => {
       expect(s.archivedSessions[WS_ID]).toEqual([]);
       expect(s.currentSessionId).toBeNull();
     });
+
+    describe('bulk archived ops', () => {
+      function buildArchived(id: SessionId, goal: string): Session {
+        return {
+          ...buildSession({ id, goal }),
+          archivedAt: NOW,
+        } as Session;
+      }
+
+      it('bulkUnarchiveTask restores every selected session into the active list', async () => {
+        const store = await getStore();
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
+          },
+        });
+        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2]);
+        const s = store.getState();
+        expect(s.sessions.map((x) => x.id).sort()).toEqual([SESSION_ID, SESSION_ID_2].sort());
+        expect(s.archivedSessions[WS_ID]).toEqual([]);
+      });
+
+      it('bulkUnarchiveTask keeps restoring after one session fails and reports the failure', async () => {
+        const store = await getStore();
+        const { unarchiveSession } = await import('@goodboy/db');
+        (unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+          new Error('db down'),
+        );
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'bad'), buildArchived(SESSION_ID_2, 'good')],
+          },
+        });
+        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2]);
+        const s = store.getState();
+        expect(s.sessions.map((x) => x.id)).toEqual([SESSION_ID_2]);
+        expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID]);
+        expect(insertNotificationSpy).toHaveBeenCalled();
+      });
+
+      it('bulkDeleteTask removes every selected session from the archived cache', async () => {
+        const store = await getStore();
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
+          },
+        });
+        await store.getState().bulkDeleteTask([SESSION_ID, SESSION_ID_2]);
+        expect(store.getState().archivedSessions[WS_ID]).toEqual([]);
+      });
+
+      it('bulkDeleteTask keeps deleting after one session throws', async () => {
+        const store = await getStore();
+        const MISSING = 'session-missing' as SessionId;
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
+          },
+        });
+        await store.getState().bulkDeleteTask([MISSING, SESSION_ID, SESSION_ID_2]);
+        expect(store.getState().archivedSessions[WS_ID]).toEqual([]);
+      });
+
+      it('bulkDeleteTask reports the exact failed-of-total count when a delete throws', async () => {
+        const store = await getStore();
+        const MISSING = 'session-missing' as SessionId;
+        const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined);
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
+          },
+          emitNotification: emitSpy as never,
+        });
+        await store.getState().bulkDeleteTask([MISSING, SESSION_ID]);
+        expect(store.getState().archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2]);
+        const summary = emitSpy.mock.calls.find((c) =>
+          String((c as unknown[])[2]).startsWith('failed to delete'),
+        );
+        expect(summary?.[2]).toBe('failed to delete 1 of 2 sessions');
+      });
+
+      it('bulkDeleteTask deletes sequentially in the given id order', async () => {
+        const store = await getStore();
+        const { deleteSession } = await import('@goodboy/db');
+        const spy = deleteSession as unknown as ReturnType<typeof vi.fn>;
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
+          },
+        });
+        await store.getState().bulkDeleteTask([SESSION_ID_2, SESSION_ID]);
+        expect(spy.mock.calls.map((c) => c[1])).toEqual([SESSION_ID_2, SESSION_ID]);
+      });
+
+      it('bulkDeleteTask is a no-op and emits no notification for an empty selection', async () => {
+        const store = await getStore();
+        const { deleteSession } = await import('@goodboy/db');
+        await store.getState().bulkDeleteTask([]);
+        expect(deleteSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+        expect(insertNotificationSpy).not.toHaveBeenCalled();
+      });
+
+      it('bulkUnarchiveTask is a no-op and emits no notification for an empty selection', async () => {
+        const store = await getStore();
+        const { unarchiveSession } = await import('@goodboy/db');
+        await store.getState().bulkUnarchiveTask([]);
+        expect(unarchiveSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+        expect(insertNotificationSpy).not.toHaveBeenCalled();
+      });
+
+      it('bulkUnarchiveTask reports failed-of-total when every restore fails', async () => {
+        const store = await getStore();
+        const { unarchiveSession } = await import('@goodboy/db');
+        (unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+          new Error('db down'),
+        );
+        const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined);
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          archivedSessions: {
+            [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
+          },
+          emitNotification: emitSpy as never,
+        });
+        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2]);
+        const s = store.getState();
+        expect(s.sessions).toEqual([]);
+        expect(s.archivedSessions[WS_ID]?.map((x) => x.id).sort()).toEqual(
+          [SESSION_ID, SESSION_ID_2].sort(),
+        );
+        const summary = emitSpy.mock.calls.find((c) =>
+          String((c as unknown[])[2]).startsWith('failed to restore'),
+        );
+        expect(summary?.[2]).toBe('failed to restore 2 of 2 sessions');
+      });
+    });
   });
 
   describe('createSession external task', () => {
