@@ -1,4 +1,4 @@
-# Conventions — Root
+# Conventions: Root
 
 Foundational rules for the Goodboy monorepo. Each workspace has its own `CONVENTIONS.md` for stack-specific rules.
 
@@ -37,8 +37,8 @@ goodboy/
 - Build with `tsc -b` (incremental, cached). Never plain `tsc` in CI.
 - `noEmit: true` in app packages, `emitDeclarationOnly: true` for libraries that ship types only.
 - `skipLibCheck: true` everywhere. `strict: true` everywhere. `noUncheckedIndexedAccess: true`.
-- `verbatimModuleSyntax: true` — explicit `import type` for type-only imports.
-- Path aliases: per-package only. No global `@/` aliases that span workspaces — use package names.
+- `verbatimModuleSyntax: true`: explicit `import type` for type-only imports.
+- Path aliases: per-package only. No global `@/` aliases that span workspaces (use package names).
 
 ## Turborepo
 
@@ -64,7 +64,7 @@ Format: `type(scope): subject`
 - **scopes**: `desktop`, `ui`, `core`, `db`, `types`, `repo` (for root config), `ci`.
 - Subject: imperative, lowercase, no period. Max 72 chars.
 - Body: optional, explain WHY. Max 80 char wrap.
-- Footer: reference issues — `Closes #12`, `Refs #34`.
+- Footer: reference issues, `Closes #12`, `Refs #34`.
 
 Examples:
 
@@ -96,33 +96,11 @@ Every PR closes at least one issue.
 
 ## Dependency policy
 
-(Detailed in [CLAUDE.md](./CLAUDE.md). Summary below.)
+Single source of truth: [docs/dependencies.md](./docs/dependencies.md). Internal workspace deps are governed by [pnpm](#pnpm) above.
 
-- Min 100k weekly downloads OR known maintainer.
-- License: MIT, Apache 2.0, BSD, ISC. Nothing else.
-- `pnpm audit` clean. No unpatched CVEs.
-- Manual review of `pnpm-lock.yaml` diff in every PR.
-- Approved core deps: `react`, `react-dom`, `typescript`, `vite`, `tailwindcss`, `@tauri-apps/*`, `zustand`. Anything else needs justification.
-- No utility libraries (lodash, ramda, date-fns, etc.). Use native APIs.
-- No HTTP clients. Use `fetch`.
-- No CSS-in-JS runtimes. Tailwind only.
+## Code rules
 
-## Code rules (apply to all packages)
-
-Full TypeScript style with examples in [docs/typescript.md](./docs/typescript.md).
-
-- No `any`. Use `unknown` + type guards.
-- No default exports, and no `export function`. Named `export const` arrows only (React class components excepted).
-- `type` never `interface`. Extend via intersection (`&`).
-- Every function we declare takes one named, destructured object param. Callbacks with an imposed signature stay positional.
-- Guard clauses with early return. No `if/else`, no inline `if` body. Compare explicitly, never coerce.
-- Zero comments. Tooling directives (`/// <reference />`) excepted.
-- No dead code. Remove, don't comment out.
-- No prop spreading without explicit type.
-- Discriminated unions for state machines.
-- Branded types for IDs (`type WorkspaceId = string & { __brand: 'WorkspaceId' }`).
-- `satisfies` over `as` for const validation.
-- Exhaustiveness with `never` in switch defaults.
+Code rules and the forbidden-patterns checklist live in the code hub [AGENTS.md](./AGENTS.md). Full TypeScript style with examples in the [docs/typescript/](./docs/typescript/) cluster (index at [docs/typescript.md](./docs/typescript.md)).
 
 ## Pre-commit hooks (Lefthook)
 
@@ -145,13 +123,7 @@ All must pass. No green-on-warning.
 
 ## Naming conventions
 
-- **Files**: camelCase (`providerAdapter.ts`) for non-component modules, PascalCase (`ProviderAdapter.tsx`) for React components. File name matches the primary export.
-- **Folders**: lowercase for boundaries (`features/`, `shared/`); PascalCase for a component's own folder, matching the component (see [AGENTS.md](./AGENTS.md)).
-- **Components**: PascalCase. One component per file. File name matches component.
-- **Hooks**: `use<Name>` camelCase. File / folder named `useName` (see [AGENTS.md](./AGENTS.md)).
-- **Constants**: `SCREAMING_SNAKE_CASE`.
-- **Types**: PascalCase, `type` never `interface`. No `I` prefix.
-- **Booleans**: `is`, `has`, `can`, `should` prefixes.
+Naming (files, folders, components, hooks, constants, types, booleans) is owned by the code hub [AGENTS.md](./AGENTS.md) → Naming.
 
 ## Workspace conventions
 
