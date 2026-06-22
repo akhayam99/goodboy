@@ -15,6 +15,7 @@ const PR_FIELDS = [
   'statusCheckRollup',
   'updatedAt',
   'body',
+  'autoMergeRequest',
 ] as const;
 
 type RawPullRequest = {
@@ -33,6 +34,7 @@ type RawPullRequest = {
   }> | null;
   updatedAt: string;
   body: string | null;
+  autoMergeRequest: Record<string, unknown> | null;
 };
 
 type ClosingIssueRef = {
@@ -50,6 +52,9 @@ function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
   }
   if (raw.isDraft) {
     return 'draft';
+  }
+  if (raw.autoMergeRequest != null) {
+    return 'queued';
   }
   if (raw.reviewDecision === 'APPROVED') {
     return 'approved';
@@ -109,6 +114,7 @@ function toPullRequestState(raw: RawPullRequest): PullRequestState {
     reviewDecision: raw.reviewDecision ? (reviewMap[raw.reviewDecision] ?? null) : null,
     body: raw.body ?? '',
     updatedAt: raw.updatedAt,
+    mergeQueue: raw.autoMergeRequest != null ? { position: null } : null,
   };
 }
 

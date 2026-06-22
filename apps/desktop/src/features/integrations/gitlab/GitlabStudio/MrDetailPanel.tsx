@@ -17,6 +17,7 @@ import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
+import { humanizeMergeStatus, type GitlabMergeStatusTone } from '../client';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -28,6 +29,12 @@ const STATE_STYLE: Record<string, string> = {
   merged: 'bg-info/15 text-info',
   closed: 'bg-danger/15 text-danger',
   locked: 'bg-muted text-muted-foreground',
+};
+
+const MERGE_STATUS_STYLE: Record<GitlabMergeStatusTone, string> = {
+  success: 'bg-success/15 text-success',
+  danger: 'bg-danger/15 text-danger',
+  muted: 'bg-muted text-muted-foreground',
 };
 
 export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
@@ -208,11 +215,19 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
 
               {mr.state === 'opened' ? (
                 <div className="flex items-center gap-3">
-                  {mr.mergeStatus ? (
-                    <span className="text-2xs text-muted-foreground">
-                      merge status: {mr.mergeStatus}
-                    </span>
-                  ) : null}
+                  {(() => {
+                    const status = humanizeMergeStatus(mr.mergeStatus);
+                    return status ? (
+                      <span
+                        className={cn(
+                          'rounded px-1.5 py-0.5 text-2xs font-medium',
+                          MERGE_STATUS_STYLE[status.tone],
+                        )}
+                      >
+                        {status.label}
+                      </span>
+                    ) : null;
+                  })()}
                   <span className="flex-1" />
                   <Button
                     onClick={() => void onMerge()}

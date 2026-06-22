@@ -11,7 +11,7 @@ export type GhTokenStatus = {
   scoped?: boolean;
 };
 
-export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'merged' | 'closed';
+export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
 
 export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;
 
@@ -28,6 +28,7 @@ export type PullRequestState = {
   reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
   body: string;
   updatedAt: string;
+  mergeQueue?: { position: number | null } | null;
 };
 
 export type LinkedIssue = {

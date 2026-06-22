@@ -20,4 +20,11 @@ export type SessionStageInfo = Readonly<{
   reason: string;
 }>;
 
-export type SessionPrGroup = 'not-open' | 'draft' | 'reviewable' | 'reviewed' | 'closed' | 'merged';
+export type SessionPrGroup =
+  | 'not-open'
+  | 'draft'
+  | 'reviewable'
+  | 'reviewed'
+  | 'queued'
+  | 'closed'
+  | 'merged';

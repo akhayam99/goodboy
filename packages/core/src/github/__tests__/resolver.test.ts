@@ -23,6 +23,7 @@ const BASE_RAW = {
   statusCheckRollup: null as null,
   updatedAt: '2024-01-01T00:00:00Z',
   body: null as null,
+  autoMergeRequest: null as Record<string, unknown> | null,
 };
 
 describe('resolvePrForBranch', () => {
@@ -127,6 +128,67 @@ describe('resolvePrForBranch', () => {
     const runner = makeJsonRunner([pr]);
     const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
     expect(result?.state).toBe('merged');
+  });
+
+  it('maps OPEN + autoMergeRequest object → queued (with mergeQueue)', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      autoMergeRequest: { enabledAt: '2024-01-01T00:00:00Z' },
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('queued');
+    expect(result?.mergeQueue).toEqual({ position: null });
+  });
+
+  it('queued beats approved when autoMergeRequest present', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      reviewDecision: 'APPROVED' as const,
+      autoMergeRequest: {},
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('queued');
+  });
+
+  it('OPEN + autoMergeRequest null → unchanged (mergeQueue null)', async () => {
+    const pr = { ...BASE_RAW, number: 1, state: 'OPEN' as const };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('open');
+    expect(result?.mergeQueue).toBeNull();
+  });
+
+  it('draft + autoMergeRequest → still draft', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      isDraft: true,
+      autoMergeRequest: {},
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('draft');
+  });
+
+  it('MERGED + autoMergeRequest → merged (terminal wins)', async () => {
+    const pr = { ...BASE_RAW, number: 1, state: 'MERGED' as const, autoMergeRequest: {} };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('merged');
+  });
+
+  it('CLOSED + autoMergeRequest → closed (terminal wins)', async () => {
+    const pr = { ...BASE_RAW, number: 1, state: 'CLOSED' as const, autoMergeRequest: {} };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('closed');
   });
 
   it('CONFLICTING → mergeable: false', async () => {

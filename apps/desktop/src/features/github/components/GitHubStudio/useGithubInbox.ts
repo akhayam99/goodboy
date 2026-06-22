@@ -24,6 +24,9 @@ function bucketOf(pr: PullRequestState | null): SessionPrGroup {
   if (pr.state === 'merged') {
     return 'merged';
   }
+  if (pr.state === 'queued') {
+    return 'queued';
+  }
   if (pr.isDraft) {
     return 'draft';
   }
@@ -45,6 +48,7 @@ const GROUP_ORDER: ReadonlyArray<SessionPrGroup> = [
   'draft',
   'reviewable',
   'reviewed',
+  'queued',
   'closed',
   'merged',
 ];
@@ -54,6 +58,7 @@ const GROUP_LABEL: Record<SessionPrGroup, string> = {
   draft: 'Draft',
   reviewable: 'In review',
   reviewed: 'Approved',
+  queued: 'In queue',
   closed: 'Closed',
   merged: 'Merged',
 };

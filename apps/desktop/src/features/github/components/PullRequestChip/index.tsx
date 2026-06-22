@@ -4,6 +4,7 @@ import {
   GitPullRequest,
   GitPullRequestClosed,
   GitPullRequestDraft,
+  ListChecks,
 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { PullRequestStateKind } from '@goodboy/types';
@@ -33,6 +34,12 @@ const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
     label: 'Approved',
     textClass: 'text-success',
     bgClass: 'bg-success/18',
+  },
+  queued: {
+    icon: ListChecks,
+    label: 'Queued',
+    textClass: 'text-primary',
+    bgClass: 'bg-primary/12',
   },
   merged: {
     icon: GitMerge,
