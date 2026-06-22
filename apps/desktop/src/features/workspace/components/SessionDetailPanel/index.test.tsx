@@ -78,4 +78,27 @@ describe('SessionDetailPanel', () => {
     render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
     expect(screen.getByRole('button', { name: /open in editor/i })).toBeDefined();
   });
+
+  it('does not render an external task chip when none is mapped', () => {
+    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /studio/i })).toBeNull();
+  });
+
+  it('renders the external task chip (full variant) when a task is mapped', () => {
+    state.sessionExternalTasks = {
+      'sess-1': {
+        sessionId: 'sess-1',
+        provider: 'linear',
+        externalId: 'ext-1',
+        identifier: 'GB-9',
+        url: 'https://linear.app/x',
+        title: 'wire metadata',
+        createdAt: '2026-06-22T00:00:00.000Z',
+      },
+    };
+    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /open GB-9 in Linear studio/i })).toBeDefined();
+    expect(screen.getByText('GB-9')).toBeDefined();
+    expect(screen.getByText('wire metadata')).toBeDefined();
+  });
 });

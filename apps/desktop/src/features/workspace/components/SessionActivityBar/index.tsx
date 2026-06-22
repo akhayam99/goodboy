@@ -22,6 +22,7 @@ import {
   PullRequestChip,
   pullRequestMeta,
 } from '../../../../features/github/components/PullRequestChip';
+import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
 import { BulkDeleteSessionsDialog } from '../../../session/components/BulkDeleteSessionsDialog';
 import { SessionViewMenu } from './SessionViewMenu';
 
@@ -312,6 +313,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
   const prMeta = prState ? pullRequestMeta(prState) : null;
+  const externalTask = useAppStore(
+    (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
+  );
 
   const telemetry = useAppStore(
     (s) =>
@@ -333,7 +337,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
     <button
       type="button"
       onClick={onClick}
-      title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}`}
+      title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTask ? ` · ${externalTask.identifier}` : ''}`}
       className={cn(
         'flex w-full flex-col items-start gap-1.5 rounded-lg border px-2.5 py-2.5 text-left transition-colors',
         isActive
@@ -363,6 +367,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
         <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
           {session.goal}
         </span>
+        {externalTask && <ExternalTaskChip task={externalTask} variant="icon" />}
         {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
       </span>
       <span className="flex w-full items-center gap-1.5 pl-[14px]">

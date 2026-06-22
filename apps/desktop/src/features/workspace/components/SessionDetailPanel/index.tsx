@@ -16,6 +16,7 @@ import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
+import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { SummarizerBadge } from './SummarizerBadge';
 
 type SessionDetailPanelProps = {
@@ -141,35 +142,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
             </span>
           )}
         </div>
-        {externalTask ? (
-          <button
-            type="button"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent(
-                  externalTask.provider === 'sentry'
-                    ? 'goodboy:open-sentry-studio'
-                    : externalTask.provider === 'gitlab'
-                      ? 'goodboy:open-gitlab-studio'
-                      : 'goodboy:open-linear-studio',
-                  { detail: { issueExternalId: externalTask.externalId } },
-                ),
-              )
-            }
-            title={`${externalTask.identifier}: ${externalTask.title}`}
-            className={cn(
-              'shrink-0 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
-              externalTask.provider === 'sentry'
-                ? 'border-provider-sentry/30 bg-provider-sentry/5 text-provider-sentry hover:border-provider-sentry/60 hover:bg-provider-sentry/10'
-                : externalTask.provider === 'gitlab'
-                  ? 'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10'
-                  : 'border-provider-linear/30 bg-provider-linear/5 text-provider-linear hover:border-provider-linear/60 hover:bg-provider-linear/10',
-            )}
-            aria-label={`open ${externalTask.identifier} in ${externalTask.provider} studio`}
-          >
-            <span className="font-mono">{externalTask.identifier}</span>
-          </button>
-        ) : null}
+        {externalTask ? <ExternalTaskChip task={externalTask} variant="full" /> : null}
         <button
           type="button"
           onClick={onOpenSessionSettings}
