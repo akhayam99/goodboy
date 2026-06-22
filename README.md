@@ -12,7 +12,7 @@ then hands them to whichever agent you want to run next. Same brief, same
 memory, different model. Conversation, plans, decisions and PR state stay in
 a local SQLite on your machine. Your keys, your data, your bandwidth.
 
-<img width="3972" height="2234" alt="CleanShot 2026-06-10 at 10 38 18@2x" src="https://github.com/user-attachments/assets/0d9d8bf4-df65-4b48-97af-ca97f5f56109" />
+<img width="3972" height="2234" alt="CleanShot 2026-06-23 at 00 28 57@2x" src="https://github.com/user-attachments/assets/4708c589-a8e6-4f6c-a80a-222b32cc237e" />
 
 ## Why it exists
 
