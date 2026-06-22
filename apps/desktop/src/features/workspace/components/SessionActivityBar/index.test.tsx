@@ -8,6 +8,7 @@ const { state } = vi.hoisted(() => ({
   state: {
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionExternalTasks: {} as Record<string, unknown>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
   },
@@ -89,6 +90,7 @@ function clickCheckbox(index: number): HTMLElement {
 beforeEach(() => {
   state.bulkUnarchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
+  state.sessionExternalTasks = {};
 });
 
 afterEach(cleanup);
@@ -236,5 +238,47 @@ describe('SessionActivityBar, bulk selection', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /^Delete \(1\)$/ }));
     await waitFor(() => expect(state.bulkDeleteTask).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText(/selected/)).toBeNull());
+  });
+});
+
+describe('SessionActivityBar, external task chip', () => {
+  it('renders no external task chip when the session has no mapped task', () => {
+    renderBar([], [makeSession('a-1', 'plain session')]);
+    expect(screen.queryByRole('button', { name: /studio/i })).toBeNull();
+  });
+
+  it('renders the icon-variant chip and appends the identifier to the item title', () => {
+    state.sessionExternalTasks = {
+      'a-1': {
+        sessionId: 'a-1',
+        provider: 'linear',
+        externalId: 'ext-1',
+        identifier: 'GB-7',
+        url: 'https://linear.app/x',
+        title: 'mapped task',
+        createdAt: '2026-06-22T00:00:00.000Z',
+      },
+    };
+    renderBar([], [makeSession('a-1', 'active one')]);
+    expect(screen.getByLabelText(/GB-7 from Linear/i)).toBeDefined();
+    expect(screen.getByText('L')).toBeDefined();
+    expect(screen.getByTitle(/active one · idle · GB-7/)).toBeDefined();
+  });
+
+  it('renders the matching glyph for a non-linear provider', () => {
+    state.sessionExternalTasks = {
+      'a-1': {
+        sessionId: 'a-1',
+        provider: 'sentry',
+        externalId: 'ext-2',
+        identifier: 'SENTRY-9',
+        url: 'https://sentry.io/x',
+        title: 'crash',
+        createdAt: '2026-06-22T00:00:00.000Z',
+      },
+    };
+    renderBar([], [makeSession('a-1', 'crashy')]);
+    expect(screen.getByText('S')).toBeDefined();
+    expect(screen.getByLabelText(/SENTRY-9 from Sentry/i)).toBeDefined();
   });
 });
