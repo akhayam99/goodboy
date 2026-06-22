@@ -176,6 +176,7 @@ export const fanOutScouts = async (
       name: clamped[i]!.area,
       status: 'pending',
       kind: 'scout',
+      ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
     });
     childIds.push(inserted.id);
   }

@@ -6,7 +6,7 @@ export type AgentKind = AgentKindLabel;
 export type AgentHomeLens = 'agents' | 'resolve' | 'workflows';
 
 export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
-  if (agent.workflowRunId != null && agent.stepId != null) {
+  if (agent.workflowRunId != null) {
     return 'workflows';
   }
   if (kind === 'resolver') {

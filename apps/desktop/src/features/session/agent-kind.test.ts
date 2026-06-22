@@ -1,15 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkflowLibraryStep } from '@goodboy/core';
+import type { Agent, AgentId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   AGENT_KIND_PALETTE,
   type AgentKind,
+  agentHomeLens,
   inferAgentKindFromName,
   inferAgentKindFromStep,
   kindConsumesPlan,
   resolveAgentKind,
 } from './agent-kind';
+
+const agentOf = (over: Partial<Agent> = {}): Agent => ({
+  id: 'a1' as AgentId,
+  sessionId: 'sess-1' as SessionId,
+  ordinal: 0,
+  name: 'agent',
+  status: 'pending',
+  ...over,
+});
+
+const WF = 'wf-1' as WorkflowRunId;
+const STEP = 'step-1' as StepId;
 
 const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'scout',
@@ -26,6 +40,42 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
 function makeStep(role: string, name = role): WorkflowLibraryStep {
   return { name, role, promptPrefix: '', expectedOutput: '' };
 }
+
+describe('agentHomeLens', () => {
+  it('routes a full workflow step agent (workflowRunId + stepId) to workflows', () => {
+    expect(agentHomeLens(agentOf({ workflowRunId: WF, stepId: STEP }), 'implementer')).toBe(
+      'workflows',
+    );
+  });
+
+  it('routes a cluster child (workflowRunId, no stepId) to workflows', () => {
+    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'implementer')).toBe('workflows');
+  });
+
+  it('routes a scout sub-agent (workflowRunId propagated, no stepId) to workflows', () => {
+    expect(
+      agentHomeLens(agentOf({ workflowRunId: WF, parentAgentId: 'p1' as AgentId }), 'scout'),
+    ).toBe('workflows');
+  });
+
+  it('workflowRunId wins over resolver kind', () => {
+    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'resolver')).toBe('workflows');
+  });
+
+  it('routes a resolver with no workflowRunId to resolve', () => {
+    expect(agentHomeLens(agentOf({}), 'resolver')).toBe('resolve');
+  });
+
+  it('routes a hand-spawned agent (no workflowRunId, non-resolver) to agents', () => {
+    expect(agentHomeLens(agentOf({}), 'generic')).toBe('agents');
+    expect(agentHomeLens(agentOf({}), 'scout')).toBe('agents');
+  });
+
+  it('does not route to workflows on stepId alone when workflowRunId is absent', () => {
+    expect(agentHomeLens(agentOf({ stepId: STEP }), 'generic')).toBe('agents');
+    expect(agentHomeLens(agentOf({ stepId: STEP }), 'resolver')).toBe('resolve');
+  });
+});
 
 describe('AGENT_KIND_PALETTE', () => {
   it('has an entry for every AgentKind', () => {
