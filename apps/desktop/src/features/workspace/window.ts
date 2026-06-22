@@ -18,6 +18,8 @@ function inTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+const brandTitle = (name: string): string => (name ? `Goodboy | ${name}` : 'Goodboy');
+
 export const currentWindowLabel = (): string => {
   if (!inTauri()) {
     return MAIN_WINDOW_LABEL;
@@ -61,7 +63,7 @@ export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Prom
   }
   const win = new WebviewWindow(freshWindowLabel(), {
     url: `index.html#${WORKSPACE_HASH_KEY}=${id}`,
-    title,
+    title: brandTitle(title),
     width: 1280,
     height: 860,
     minWidth: 1024,
@@ -78,7 +80,7 @@ export const setWindowTitle = async (title: string): Promise<void> => {
     return;
   }
   await getCurrentWindow()
-    .setTitle(`${title} · Goodboy`)
+    .setTitle(brandTitle(title))
     .catch(() => undefined);
 };
 

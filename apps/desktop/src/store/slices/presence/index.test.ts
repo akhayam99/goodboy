@@ -10,6 +10,7 @@ const { focusWindow, spawnWorkspaceWindow } = vi.hoisted(() => ({
 vi.mock('../../../features/workspace/window', () => ({
   currentWindowLabel: () => 'main',
   focusWindow,
+  setWindowTitle: vi.fn(async () => undefined),
   spawnWorkspaceWindow,
 }));
 

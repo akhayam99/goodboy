@@ -2,6 +2,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import {
   currentWindowLabel,
   focusWindow,
+  setWindowTitle,
   spawnWorkspaceWindow,
 } from '../../../features/workspace/window';
 import type { GetFn } from './types';
@@ -22,6 +23,7 @@ export const openWorkspace = (get: GetFn) => {
     }
     if (get().currentWorkspaceId === null) {
       await get().setCurrentWorkspace(id);
+      void setWindowTitle(title);
       return;
     }
     await spawnWorkspaceWindow(id, title);
