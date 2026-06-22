@@ -1,10 +1,7 @@
 import { Divider } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../../../store';
-import {
-  SessionDetailPanel,
-  SessionMetaFooter,
-} from '../../../../workspace/components/SessionDetailPanel';
+import { SessionDetailPanel } from '../../../../workspace/components/SessionDetailPanel';
 
 type SessionTopBarProps = {
   readonly session: Session;
@@ -28,7 +25,6 @@ export const SessionTopBar = ({ session }: SessionTopBarProps) => {
             {reason}
           </span>
         ) : null}
-        <SessionMetaFooter session={session} />
       </div>
       <Divider />
     </>
