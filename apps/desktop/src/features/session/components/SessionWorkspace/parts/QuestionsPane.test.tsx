@@ -107,7 +107,7 @@ const BASE_SESSION: Session = {
   createdAt: NOW,
   state: { kind: 'idle' },
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
-} as Session;
+} as unknown as Session;
 
 function mkStep(workflowId: WorkflowId, ordinal: number): Step {
   return {
