@@ -89,6 +89,17 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showLens = selectedAgentId == null && !showStudio;
   const overlayHome = agentHome ?? 'agents';
 
+  useEffect(() => {
+    if (!showAgentOverlay) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      setActiveLens(sessionId, overlayHome);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showAgentOverlay, sessionId, overlayHome, setActiveLens]);
+
   return (
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
