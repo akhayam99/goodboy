@@ -226,7 +226,7 @@ export const SessionActivityBar = ({
               size="sm"
               onClick={() => void onBulkRestore()}
               title="restore selected sessions"
-              className="gap-1 px-2 text-xs"
+              className="shrink-0 gap-1 px-2 text-xs"
             >
               <RotateCcw size={11} aria-hidden />
               Restore ({selectedSessions.length})
@@ -236,7 +236,7 @@ export const SessionActivityBar = ({
               size="sm"
               onClick={() => setBulkDeleteOpen(true)}
               title="delete selected sessions"
-              className="gap-1 px-2 text-xs"
+              className="shrink-0 gap-1 px-2 text-xs"
             >
               <Trash2 size={11} aria-hidden />
               Delete ({selectedSessions.length})
@@ -246,7 +246,7 @@ export const SessionActivityBar = ({
               size="sm"
               onClick={() => setSelectedIds(new Set())}
               title="clear selection"
-              className="px-2 text-xs"
+              className="shrink-0 px-2 text-xs"
             >
               Clear
             </Button>

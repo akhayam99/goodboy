@@ -43,7 +43,7 @@ exports[`snapshot, empty states > AppEmptyState: workspace with no sessions, cre
       </p>
     </div>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-sm px-6 py-2.5"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-sm px-6 py-2.5"
       type="button"
     >
       <svg
@@ -396,7 +396,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     </span>
   </div>
   <button
-    class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-7 px-2.5 text-xs"
+    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-7 px-2.5 text-xs"
     type="button"
   >
     <svg
@@ -833,13 +833,13 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
       class="h-5 w-px bg-border-soft"
     />
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
       type="button"
     >
       Cancel
     </button>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
       disabled=""
       type="button"
     >
@@ -916,13 +916,13 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       class="flex items-center gap-2"
     >
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
         type="button"
       >
         Rescan
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
         type="button"
       >
         New skill
@@ -1544,13 +1544,13 @@ exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
       class="flex shrink-0 items-center justify-end gap-2 px-6 py-3"
     >
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
       >
         Cancel
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted text-foreground hover:bg-muted/70 border-border h-8 px-3 text-sm"
         type="button"
       >
         <svg
@@ -1583,7 +1583,7 @@ exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
         Archive
       </button>
       <button
-        class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-danger text-danger-foreground hover:bg-danger/90 h-8 px-3 text-sm"
         type="button"
       >
         Delete
@@ -1991,13 +1991,13 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
       class="h-5 w-px bg-border-soft"
     />
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground hover:bg-muted h-8 px-3 text-sm"
       type="button"
     >
       Cancel
     </button>
     <button
-      class="inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
       disabled=""
       type="button"
     >
