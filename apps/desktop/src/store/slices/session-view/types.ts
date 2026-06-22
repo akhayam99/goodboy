@@ -64,8 +64,9 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   draft: 1,
   reviewable: 2,
   reviewed: 3,
-  closed: 4,
-  merged: 5,
+  queued: 4,
+  closed: 5,
+  merged: 6,
 };
 
 export type LensHistory = {

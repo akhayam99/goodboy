@@ -45,6 +45,9 @@ function prBucket(github: SessionGithubState | undefined): SessionPrGroup {
   if (pr.state === 'merged') {
     return 'merged';
   }
+  if (pr.state === 'queued') {
+    return 'queued';
+  }
   if (pr.isDraft) {
     return 'draft';
   }

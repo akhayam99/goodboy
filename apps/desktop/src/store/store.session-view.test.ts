@@ -42,7 +42,7 @@ function makeSession(
 
 function makePr(
   overrides: Partial<{
-    state: 'draft' | 'open' | 'approved' | 'merged' | 'closed';
+    state: 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
     isDraft: boolean;
     reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
   }> = {},
@@ -352,6 +352,16 @@ describe('sortAndGroupSessions, pr grouping', () => {
     expect(keys(result)).toEqual(['merged']);
   });
 
+  it('pr.state=queued → queued bucket', () => {
+    const s = makeSession(sid(1));
+    const result = sortAndGroupSessions(
+      [s],
+      prefs,
+      githubWith([{ id: sid(1), pr: makePr({ state: 'queued' }) }]),
+    );
+    expect(keys(result)).toEqual(['queued']);
+  });
+
   it('pr.isDraft=true → draft bucket (before reviewDecision check)', () => {
     const s = makeSession(sid(1));
     const result = sortAndGroupSessions(
@@ -387,15 +397,18 @@ describe('sortAndGroupSessions, pr grouping', () => {
     expect(keys(result)).toEqual(['reviewable']);
   });
 
-  it('all 6 pr buckets present → correct order', () => {
-    const sessions = [sid(1), sid(2), sid(3), sid(4), sid(5), sid(6)].map((id) => makeSession(id));
+  it('all 7 pr buckets present → correct order', () => {
+    const sessions = [sid(1), sid(2), sid(3), sid(4), sid(5), sid(6), sid(7)].map((id) =>
+      makeSession(id),
+    );
     const github = githubWith([
       { id: sid(1), pr: null },
       { id: sid(2), pr: makePr({ isDraft: true }) },
       { id: sid(3), pr: makePr({ isDraft: false, reviewDecision: 'review_required' }) },
       { id: sid(4), pr: makePr({ isDraft: false, reviewDecision: 'approved' }) },
-      { id: sid(5), pr: makePr({ state: 'closed' }) },
-      { id: sid(6), pr: makePr({ state: 'merged' }) },
+      { id: sid(5), pr: makePr({ state: 'queued' }) },
+      { id: sid(6), pr: makePr({ state: 'closed' }) },
+      { id: sid(7), pr: makePr({ state: 'merged' }) },
     ]);
     const result = sortAndGroupSessions(sessions, prefs, github);
     expect(keys(result)).toEqual([
@@ -403,6 +416,7 @@ describe('sortAndGroupSessions, pr grouping', () => {
       'draft',
       'reviewable',
       'reviewed',
+      'queued',
       'closed',
       'merged',
     ]);

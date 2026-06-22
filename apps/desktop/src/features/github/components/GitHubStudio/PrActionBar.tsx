@@ -70,6 +70,7 @@ export const PrActionBar = ({
 }: Props) => {
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
+  const isQueued = pr.state === 'queued';
   const isDraft = pr.isDraft;
   const spin = (k: ActionBusy) => busy === k;
 
@@ -165,7 +166,18 @@ export const PrActionBar = ({
           <RefreshCw size={14} aria-hidden className={cn(detailLoading && 'animate-spin')} />
         </button>
 
-        {!isTerminal && (
+        {!isTerminal && isQueued && (
+          <>
+            <Divider orientation="vertical" className="mx-0.5 h-5" />
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+              <GitMerge size={13} aria-hidden />
+              In merge queue
+              {pr.mergeQueue?.position != null && <span>#{pr.mergeQueue.position}</span>}
+            </span>
+          </>
+        )}
+
+        {!isTerminal && !isQueued && (
           <>
             <Divider orientation="vertical" className="mx-0.5 h-5" />
             {mergeConfirm ? (
