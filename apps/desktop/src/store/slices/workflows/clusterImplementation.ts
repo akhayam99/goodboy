@@ -63,7 +63,7 @@ function composeContinuePrompt(
   ].join('\n');
 }
 
-function activateChild(
+function startChild(
   set: SetFn,
   get: GetFn,
   sessionId: SessionId,
@@ -71,7 +71,6 @@ function activateChild(
   content: string,
 ): void {
   set((s) => ({
-    selectedAgentId: { ...s.selectedAgentId, [sessionId]: childId },
     agentTurnState: {
       ...s.agentTurnState,
       [childId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
@@ -126,7 +125,7 @@ export const fanOutClusters = async (
 
   const first = childIds[0];
   if (first) {
-    activateChild(set, get, sessionId, first, composeClusterKickoff(first, goalTitle, clusters, 0));
+    startChild(set, get, sessionId, first, composeClusterKickoff(first, goalTitle, clusters, 0));
   }
 };
 
@@ -190,7 +189,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       const attempts = continueAttempts.get(childAgentId) ?? 0;
       if (attempts < MAX_CONTINUE) {
         continueAttempts.set(childAgentId, attempts + 1);
-        activateChild(
+        startChild(
           set,
           get,
           sessionId,
@@ -241,7 +240,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
 
     const next = children[completedCount];
     if (next) {
-      activateChild(
+      startChild(
         set,
         get,
         sessionId,
