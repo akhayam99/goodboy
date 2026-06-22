@@ -1,23 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Archive,
-  ArchiveRestore,
-  Check,
-  FolderOpen,
-  GitBranch,
-  Settings2,
-  Trash2,
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Archive, ArchiveRestore, FolderOpen, Settings2, Trash2 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { Session, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { SessionStageBadge } from '../../../session/components/SessionStageBadge';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { SummarizerBadge } from './SummarizerBadge';
 
 type SessionDetailPanelProps = {
   session: Session;
@@ -32,7 +23,9 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   );
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
+  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
   const { showToast } = useToast();
+  const archived = Boolean(session.archivedAt);
 
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
@@ -53,6 +46,16 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
     } catch (err) {
       showToast('error', `couldn't open editor: ${formatError(err)}`);
     }
+  };
+
+  const onToggleArchive = () => {
+    if (archived) {
+      unarchiveTask(session.id as SessionId).catch((err: unknown) => {
+        showToast('error', `couldn't unarchive: ${formatError(err)}`);
+      });
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
   };
 
   const actionItems = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
@@ -81,9 +84,29 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
       }
     }
 
+    items.push({ kind: 'separator', key: 'session-sep' });
+    items.push({ kind: 'header', key: 'session-header', label: 'Session' });
+    items.push({
+      kind: 'item',
+      key: 'archive',
+      label: archived ? 'Unarchive' : 'Archive',
+      icon: archived ? ArchiveRestore : Archive,
+      onClick: onToggleArchive,
+      hint: archived ? undefined : '⌘⇧A',
+    });
+    items.push({
+      kind: 'item',
+      key: 'delete',
+      label: 'Delete',
+      icon: Trash2,
+      destructive: true,
+      hint: '⌘.',
+      onClick: () => window.dispatchEvent(new CustomEvent('goodboy:delete-session')),
+    });
+
     return items;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detectedEditors, worktreePath]);
+  }, [detectedEditors, worktreePath, archived]);
 
   const startRename = () => {
     setRenameDraft(session.goal);
@@ -152,210 +175,8 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         >
           <Settings2 size={13} aria-hidden />
         </button>
-        <OverflowMenu
-          items={actionItems}
-          label="open in editor"
-          trigger={<FolderOpen size={13} aria-hidden />}
-        />
+        <OverflowMenu items={actionItems} label="session actions" />
       </div>
-    </div>
-  );
-};
-
-function BranchChip({ branch }: { branch: string }) {
-  const { showToast } = useToast();
-  const [copied, setCopied] = useState(false);
-
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(branch);
-      setCopied(true);
-      showToast('success', 'branch copied');
-      setTimeout(() => setCopied(false), 1200);
-    } catch (err) {
-      showToast('error', `copy failed: ${formatError(err)}`);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={() => void onCopy()}
-      title="click to copy branch name"
-      className={cn(
-        'group inline-flex min-w-0 max-w-full shrink items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-2xs transition-colors',
-        copied
-          ? 'border-success/30 bg-success/10 text-success'
-          : 'border-border-soft bg-muted/30 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground',
-      )}
-    >
-      {copied ? (
-        <Check size={10} aria-hidden className="shrink-0" />
-      ) : (
-        <GitBranch
-          size={10}
-          aria-hidden
-          className="shrink-0 text-muted-foreground group-hover:text-foreground"
-        />
-      )}
-      <span className="truncate">{branch}</span>
-    </button>
-  );
-}
-
-function SessionCostChip({ sessionId }: { sessionId: SessionId }) {
-  const telemetry = useAppStore(
-    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
-  const sessionCost = useMemo(() => {
-    let sum = 0;
-    for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') {
-        continue;
-      }
-      sum += rec.estimatedCostUsd;
-    }
-    return sum;
-  }, [telemetry]);
-  const finalLabel = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
-
-  const [displayLabel, setDisplayLabel] = useState(finalLabel);
-  const [animating, setAnimating] = useState(false);
-  const prevCostRef = useRef(sessionCost);
-  const prevSessionIdRef = useRef(sessionId);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (prevSessionIdRef.current !== sessionId) {
-      prevSessionIdRef.current = sessionId;
-      prevCostRef.current = sessionCost;
-      setDisplayLabel(finalLabel);
-      setAnimating(false);
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      return;
-    }
-    if (prevCostRef.current === sessionCost) {
-      setDisplayLabel(finalLabel);
-      return;
-    }
-    const fromCost = prevCostRef.current;
-    const toCost = sessionCost;
-    prevCostRef.current = toCost;
-
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    ) {
-      setDisplayLabel(finalLabel);
-      setAnimating(false);
-      return;
-    }
-
-    setAnimating(true);
-    const duration = 1100;
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const t = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const current = fromCost + (toCost - fromCost) * eased;
-      setDisplayLabel(current === 0 ? '$0' : `$${current.toFixed(2)}`);
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else {
-        rafRef.current = null;
-        setDisplayLabel(finalLabel);
-        setAnimating(false);
-      }
-    };
-    rafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
-  }, [sessionCost, sessionId, finalLabel]);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() =>
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-budget-studio', {
-              detail: { scope: { kind: 'session', sessionId } },
-            }),
-          )
-        }
-        title={`Estimated cost for this session: ${finalLabel} (excluding summarizer), click for budget studio`}
-        className={cn(
-          'inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15',
-          animating && 'cost-chip-pulse',
-        )}
-      >
-        {displayLabel}
-      </button>
-    </>
-  );
-}
-
-type SessionMetaFooterProps = {
-  session: Session;
-};
-
-export const SessionMetaFooter = ({ session }: SessionMetaFooterProps) => {
-  const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
-  const { showToast } = useToast();
-  const archived = Boolean(session.archivedAt);
-
-  const onToggleArchive = () => {
-    if (archived) {
-      unarchiveTask(session.id as SessionId).catch((err: unknown) => {
-        showToast('error', `couldn't unarchive: ${formatError(err)}`);
-      });
-      return;
-    }
-    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
-  };
-
-  return (
-    <div className="flex shrink-0 items-center gap-2 px-2 pb-2.5 pt-2">
-      {branch ? (
-        <div className="min-w-0 flex-1">
-          <BranchChip branch={branch} />
-        </div>
-      ) : (
-        <div className="flex-1" />
-      )}
-      <SummarizerBadge sessionId={session.id as SessionId} />
-      <SessionCostChip sessionId={session.id as SessionId} />
-      <button
-        type="button"
-        onClick={onToggleArchive}
-        title={archived ? 'Unarchive session' : 'Archive session (⌘⇧A)'}
-        aria-label={archived ? 'unarchive session' : 'archive session'}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border-soft bg-muted/30 px-2 py-1 text-2xs font-medium text-foreground/80 transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
-      >
-        {archived ? <ArchiveRestore size={12} aria-hidden /> : <Archive size={12} aria-hidden />}
-        {archived ? 'Unarchive' : 'Archive'}
-      </button>
-      <button
-        type="button"
-        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:delete-session'))}
-        title="Delete session (⌘.)"
-        aria-label="delete session"
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-danger/30 bg-danger/10 px-2 py-1 text-2xs font-medium text-danger transition-colors hover:border-danger/50 hover:bg-danger/15"
-      >
-        <Trash2 size={12} aria-hidden />
-        Delete
-      </button>
     </div>
   );
 };

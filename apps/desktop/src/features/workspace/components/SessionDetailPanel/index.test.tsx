@@ -9,16 +9,14 @@ const { state, toastMock } = vi.hoisted(() => ({
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     renameTask: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
+    unarchiveTask: vi.fn(async () => undefined),
     sessionExternalTasks: {} as Record<string, unknown>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
-    sessionBranches: {} as Record<string, string | null>,
-    sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
   },
   toastMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
@@ -55,8 +53,6 @@ beforeEach(() => {
   state.sessionWorktrees = {};
   state.sessionExternalTasks = {};
   state.detectedEditors = [];
-  state.sessionBranches = {};
-  state.sessionTelemetry = {};
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -74,9 +70,9 @@ describe('SessionDetailPanel', () => {
     expect(onOpenSessionSettings).toHaveBeenCalledOnce();
   });
 
-  it('renders the editor menu trigger', () => {
+  it('renders the session actions menu trigger', () => {
     render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /open in editor/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /session actions/i })).toBeDefined();
   });
 
   it('does not render an external task chip when none is mapped', () => {

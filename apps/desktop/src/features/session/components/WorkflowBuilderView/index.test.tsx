@@ -44,7 +44,8 @@ vi.mock('../../../../store', () => {
     { getState },
   );
   const useSessionSlots = () => [{ key: 'goal', value: 'do a thing' }];
-  return { EMPTY_ARRAY: Object.freeze([]), useAppStore, useSessionSlots };
+  const useCurrentWorkspace = () => ({ name: 'Test workspace' });
+  return { EMPTY_ARRAY: Object.freeze([]), useAppStore, useCurrentWorkspace, useSessionSlots };
 });
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -141,6 +142,14 @@ async function draftPlan() {
   fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
   await waitFor(() => screen.getByText('Workflow ready'));
 }
+
+describe('WorkflowBuilderView (studio chrome)', () => {
+  it('renders the studio header with the title and workspace name', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: /start a workflow/i })).toBeDefined();
+    expect(screen.getByText('Test workspace')).toBeDefined();
+  });
+});
 
 describe('WorkflowBuilderView (custom mode, no presets)', () => {
   it('enables start only after a plan is drafted', async () => {
@@ -248,7 +257,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
-    expect(screen.getByText(/pick the preset/i)).toBeDefined();
+    expect(screen.getByText(/pick a preset\./i)).toBeDefined();
     const start = screen.getByRole('button', { name: /start workflow/i }) as HTMLButtonElement;
     expect(start.disabled).toBe(true);
 

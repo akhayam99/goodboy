@@ -46,7 +46,9 @@ export const StudioShell = ({
           beta
           onClose={requestClose}
           closeLabel={closeLabel}
-        />
+        >
+          {headerAccessory}
+        </OverlayHeader>
       ) : (
         <header className="flex shrink-0 items-center gap-3 px-6 py-3">
           {glyph ??
