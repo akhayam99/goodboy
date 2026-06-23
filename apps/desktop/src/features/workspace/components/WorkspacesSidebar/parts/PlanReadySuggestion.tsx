@@ -93,11 +93,15 @@ export const PlanReadySuggestion = ({ task }: Props) => {
       <span
         className={cn(
           'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary',
-          spawning && 'animate-pulse',
+          spawning && 'motion-safe:animate-pulse',
         )}
         aria-hidden
       >
-        {spawning ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+        {spawning ? (
+          <Loader2 size={11} className="motion-safe:animate-spin" />
+        ) : (
+          <Sparkles size={11} />
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
@@ -114,7 +118,7 @@ export const PlanReadySuggestion = ({ task }: Props) => {
       <ArrowRight
         size={12}
         aria-hidden
-        className="mt-0.5 shrink-0 text-primary/70 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+        className="mt-0.5 shrink-0 text-primary/70 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
       />
     </button>
   );

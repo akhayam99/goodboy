@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Divider } from '@goodboy/ui';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { ProviderStudioIcon } from '../brand-icons';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -56,9 +56,9 @@ export const ProviderStudio = ({ workspaceName, initialFocus, initialAction, onC
     >
       {() => (
         <>
-          <div className="w-72 shrink-0 overflow-y-auto">
+          <ScrollFade className="w-72 shrink-0" fadeFrom="background">
             <ProvidersRail providers={ordered} focusedId={focused} onSelect={onSelect} />
-          </div>
+          </ScrollFade>
           <Divider orientation="vertical" />
           <div className="min-h-0 flex-1">
             {selected && connectAction ? (

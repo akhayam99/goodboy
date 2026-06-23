@@ -123,7 +123,10 @@ export const TreeNodeView = ({
         <ChevronRight
           size={10}
           aria-hidden
-          className={cn('shrink-0 transition-transform duration-150', expanded && 'rotate-90')}
+          className={cn(
+            'shrink-0 motion-safe:transition-transform duration-150',
+            expanded && 'rotate-90',
+          )}
         />
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
         {!expanded && (node.additions > 0 || node.deletions > 0) ? (

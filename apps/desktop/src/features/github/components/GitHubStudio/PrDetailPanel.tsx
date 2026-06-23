@@ -448,7 +448,7 @@ function SectionBody({
         </div>
       ) : detailLoading && !detail ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 size={13} aria-hidden className="animate-spin" />
+          <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
           loading
         </div>
       ) : (

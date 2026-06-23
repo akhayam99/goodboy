@@ -249,7 +249,7 @@ function ReviewerPicker({
           </div>
           {loading ? (
             <span className="flex items-center gap-1.5 px-1.5 py-1 text-2xs text-muted-foreground">
-              <Loader2 size={11} aria-hidden className="animate-spin" />
+              <Loader2 size={11} aria-hidden className="motion-safe:animate-spin" />
               loading
             </span>
           ) : candidates.length === 0 ? (

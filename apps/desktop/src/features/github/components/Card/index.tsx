@@ -106,7 +106,11 @@ export const GithubCard = ({
             aria-label="refresh GitHub data"
             className={cn(TAB_ICON_BTN, 'disabled:opacity-40')}
           >
-            <RefreshCw size={10} className={cn(detailLoading && 'animate-spin')} aria-hidden />
+            <RefreshCw
+              size={10}
+              className={cn(detailLoading && 'motion-safe:animate-spin')}
+              aria-hidden
+            />
           </button>
         </div>
       </div>

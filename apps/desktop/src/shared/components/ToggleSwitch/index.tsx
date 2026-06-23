@@ -30,7 +30,7 @@ export const ToggleSwitch = ({ label, checked, disabled, beta, onChange }: Toggl
     >
       <span
         className={cn(
-          'absolute top-0.5 size-3 rounded-full bg-background shadow-sm transition-all',
+          'absolute top-0.5 size-3 rounded-full bg-background shadow-sm motion-safe:transition-all',
           checked ? 'left-3.5' : 'left-0.5',
         )}
       />

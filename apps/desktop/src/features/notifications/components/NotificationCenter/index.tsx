@@ -68,6 +68,21 @@ export const NotificationCenter = () => {
     void loadNotifications();
   }, [loadNotifications]);
 
+  useEffect(() => {
+    const handleOpenRequest = () => {
+      setOpen((prev) => {
+        if (!prev) {
+          void markNotificationsRead();
+        }
+        return true;
+      });
+    };
+    window.addEventListener('goodboy:open-notifications', handleOpenRequest);
+    return () => {
+      window.removeEventListener('goodboy:open-notifications', handleOpenRequest);
+    };
+  }, [markNotificationsRead]);
+
   useLayoutEffect(() => {
     if (!open) {
       return;

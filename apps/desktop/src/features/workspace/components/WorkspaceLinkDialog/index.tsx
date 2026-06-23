@@ -233,7 +233,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
             aria-busy={busy}
           >
             {busy ? (
-              <Loader2 size={14} className="animate-spin" />
+              <Loader2 size={14} className="motion-safe:animate-spin" />
             ) : mode === 'single' ? (
               'Add workspace'
             ) : (
@@ -307,7 +307,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
               </div>
               {validating ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Loader2 size={11} className="animate-spin" aria-hidden />
+                  <Loader2 size={11} className="motion-safe:animate-spin" aria-hidden />
                   checking…
                 </span>
               ) : validPath ? (

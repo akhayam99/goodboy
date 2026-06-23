@@ -84,7 +84,7 @@ export const PrActionBar = ({
           className={cn(BTN, TONE.success)}
         >
           {spin('ready') ? (
-            <Loader2 size={13} aria-hidden className="animate-spin" />
+            <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
           ) : (
             <Send size={13} aria-hidden />
           )}
@@ -98,7 +98,7 @@ export const PrActionBar = ({
           className={cn(BTN, TONE.warning)}
         >
           {spin('undraft') ? (
-            <Loader2 size={13} aria-hidden className="animate-spin" />
+            <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
           ) : (
             <GitPullRequestDraft size={13} aria-hidden />
           )}
@@ -114,7 +114,7 @@ export const PrActionBar = ({
           className={cn(BTN, TONE.danger)}
         >
           {spin('close') ? (
-            <Loader2 size={13} aria-hidden className="animate-spin" />
+            <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
           ) : (
             <XCircle size={13} aria-hidden />
           )}
@@ -131,7 +131,7 @@ export const PrActionBar = ({
             className={cn(BTN, TONE.success)}
           >
             {spin('reopen') ? (
-              <Loader2 size={13} aria-hidden className="animate-spin" />
+              <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
             ) : (
               <RotateCcw size={13} aria-hidden />
             )}
@@ -163,7 +163,11 @@ export const PrActionBar = ({
           aria-label="refresh"
           className={ICON_BTN}
         >
-          <RefreshCw size={14} aria-hidden className={cn(detailLoading && 'animate-spin')} />
+          <RefreshCw
+            size={14}
+            aria-hidden
+            className={cn(detailLoading && 'motion-safe:animate-spin')}
+          />
         </button>
 
         {!isTerminal && isQueued && (

@@ -20,7 +20,7 @@ export const NotesFooter = ({ openCount, spawning, onPropose }: Props) => {
         title="spawn a reviewer agent that proposes fixes without touching code"
       >
         {spawning ? (
-          <Loader2 size={11} className="animate-spin" aria-hidden />
+          <Loader2 size={11} className="motion-safe:animate-spin" aria-hidden />
         ) : (
           <Sparkles size={11} aria-hidden />
         )}

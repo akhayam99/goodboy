@@ -182,7 +182,8 @@ export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
           <Button onClick={() => void onConnect()} disabled={busy || token.trim().length === 0}>
             {busy ? (
               <>
-                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden /> Verifying…
+                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />{' '}
+                Verifying…
               </>
             ) : (
               'Connect'

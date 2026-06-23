@@ -316,7 +316,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                       >
                         {busy ? (
                           <>
-                            <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                            <Loader2
+                              size={13}
+                              className="mr-1.5 motion-safe:animate-spin"
+                              aria-hidden
+                            />
                             Working…
                           </>
                         ) : (
@@ -330,7 +334,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                       <Button onClick={() => void onLaunch()} disabled={!canLaunch}>
                         {busy ? (
                           <>
-                            <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                            <Loader2
+                              size={13}
+                              className="mr-1.5 motion-safe:animate-spin"
+                              aria-hidden
+                            />
                             Launching…
                           </>
                         ) : (
