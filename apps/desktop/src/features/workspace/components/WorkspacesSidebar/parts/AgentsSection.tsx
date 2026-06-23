@@ -243,6 +243,24 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
       ),
     [sorted],
   );
+  const countUnread = useCallback(
+    (agentsList: ReadonlyArray<Agent>): number => {
+      let n = 0;
+      const visit = (a: Agent) => {
+        if (agentHasUnread(a, a.id === selectedAgentId && isTaskActive)) {
+          n += 1;
+        }
+        for (const c of childrenByParentId.get(a.id) ?? EMPTY_ARRAY) {
+          visit(c);
+        }
+      };
+      for (const a of agentsList) {
+        visit(a);
+      }
+      return n;
+    },
+    [childrenByParentId, selectedAgentId, isTaskActive],
+  );
   const actionableStepIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
     for (const { run, workflow } of attachedRuns) {
@@ -510,6 +528,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               childrenByParentId={childrenByParentId}
               aggregatesByAgentId={aggregatesByAgentId}
               selectedAgentId={selectedAgentId}
+              isTaskActive={isTaskActive}
               expandState={clusterExpand}
               onToggle={toggleClusterExpand}
               onSelect={onPickAgent}
@@ -535,9 +554,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     const isCompleted = !isDiscarded && total > 0 && done >= total;
-    const unreadCount = wfAgents.filter((a) =>
-      agentHasUnread(a, a.id === selectedAgentId && isTaskActive),
-    ).length;
+    const unreadCount = countUnread(wfAgents);
     const expanded =
       workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0));
     const hasStarted = wfAgents.length > 0;
@@ -677,6 +694,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                   AGENT_KIND_DEFAULTS[kind].model;
                 const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
                 const clustersExpanded = clusterExpand.get(run.id) ?? false;
+                const clusterUnread = countUnread(clusterChildren);
                 return (
                   <Fragment key={run.id}>
                     <WorkflowStepRow
@@ -706,6 +724,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                         childrenByParentId={childrenByParentId}
                         aggregatesByAgentId={aggregatesByAgentId}
                         selectedAgentId={selectedAgentId}
+                        isTaskActive={isTaskActive}
                         expandState={clusterExpand}
                         onToggle={toggleClusterExpand}
                         onSelect={onPickAgent}
@@ -729,6 +748,15 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                             {clusterChildren.filter((c) => c.status === 'completed').length}/
                             {clusterChildren.length}
                           </span>
+                          {!clustersExpanded && clusterUnread > 0 ? (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+                              title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
+                            >
+                              <span aria-hidden className="size-1 rounded-full bg-warning" />
+                              {clusterUnread}
+                            </span>
+                          ) : null}
                         </button>
                         {clustersExpanded
                           ? clusterChildren.map((child, ci) => (
@@ -739,6 +767,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                                 total={clusterChildren.length}
                                 costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
                                 isSelected={child.id === selectedAgentId}
+                                isTaskActive={isTaskActive}
                                 onSelect={() => onPickAgent(child.id)}
                               />
                             ))

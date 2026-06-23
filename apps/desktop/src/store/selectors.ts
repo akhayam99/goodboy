@@ -310,6 +310,9 @@ export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolea
   if (isCurrentlyViewed) {
     return false;
   }
+  if (agent.status === 'skipped') {
+    return false;
+  }
   if (!agent.lastFinishedAt) {
     return false;
   }

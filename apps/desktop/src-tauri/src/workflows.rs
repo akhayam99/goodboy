@@ -1090,6 +1090,7 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
          FROM agents a
          JOIN sessions t ON a.session_id = t.id
          WHERE a.last_finished_at IS NOT NULL
+           AND a.status != 'skipped'
            AND (a.last_viewed_at IS NULL OR a.last_finished_at > a.last_viewed_at)
            AND t.archived_at IS NULL
            AND t.deleted_at IS NULL",

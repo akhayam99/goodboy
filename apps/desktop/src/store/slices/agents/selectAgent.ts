@@ -14,9 +14,30 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
       stampAgents.add(prevAgentId);
     }
 
-    for (const id of stampAgents) {
-      void invokeAgentMarkViewed(id, stampedAt).catch(() => undefined);
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const childrenByParentId = new Map<AgentId, AgentId[]>();
+    for (const run of runs) {
+      if (run.parentAgentId) {
+        const list = childrenByParentId.get(run.parentAgentId) ?? [];
+        list.push(run.id);
+        childrenByParentId.set(run.parentAgentId, list);
+      }
     }
+    const queue: AgentId[] = [agentId];
+    while (queue.length > 0) {
+      const current = queue.shift() as AgentId;
+      for (const childId of childrenByParentId.get(current) ?? []) {
+        if (!stampAgents.has(childId)) {
+          stampAgents.add(childId);
+          queue.push(childId);
+        }
+      }
+    }
+
+    const markViewed = (): Promise<void> =>
+      Promise.all(
+        [...stampAgents].map((id) => invokeAgentMarkViewed(id, stampedAt).catch(() => undefined)),
+      ).then(() => undefined);
 
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
       runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
@@ -41,6 +62,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
           },
         };
       });
+      await markViewed();
       void get().refreshUnreadWorkspaces();
       return;
     }
@@ -80,6 +102,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
           },
         };
       });
+      await markViewed();
       void get().refreshUnreadWorkspaces();
       if (events.length === INITIAL_LIMIT) {
         const tFull = performance.now();

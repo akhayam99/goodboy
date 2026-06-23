@@ -1,6 +1,7 @@
 import { cn } from '@goodboy/ui';
 import { Check, Clock, Loader2 } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
+import { agentHasUnread } from '../../../../../store';
 
 type ClusterChildRowProps = {
   readonly child: Agent;
@@ -8,6 +9,7 @@ type ClusterChildRowProps = {
   readonly total: number;
   readonly costUsd: number;
   readonly isSelected: boolean;
+  readonly isTaskActive: boolean;
   readonly onSelect: () => void;
 };
 
@@ -17,8 +19,10 @@ export function ClusterChildRow({
   total,
   costUsd,
   isSelected,
+  isTaskActive,
   onSelect,
 }: ClusterChildRowProps) {
+  const hasUnread = agentHasUnread(child, isSelected && isTaskActive);
   const icon =
     child.status === 'running' ? (
       <Loader2 size={10} className="motion-safe:animate-spin text-info" aria-hidden />
@@ -36,7 +40,8 @@ export function ClusterChildRow({
       type="button"
       onClick={onSelect}
       className={cn(
-        'flex w-full items-center gap-2 rounded px-2 py-1 text-2xs font-medium transition-colors',
+        'flex w-full items-center gap-2 rounded border-l-2 border-transparent px-2 py-1 text-2xs font-medium transition-colors',
+        hasUnread && !isSelected && 'border-warning/70 bg-warning/5',
         isSelected
           ? 'bg-elevated text-foreground'
           : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground',
