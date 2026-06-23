@@ -53,6 +53,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('cluster progress 1/3')).toBeTruthy();
@@ -70,6 +71,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('done')).toBeTruthy();
@@ -86,6 +88,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('built thing 0')).toBeTruthy();
@@ -102,6 +105,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={undefined}
         onSelect={onSelect}
+        onAdvance={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByText('child1'));
@@ -117,6 +121,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={'child1' as AgentId}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     const selected = screen.getByText('child1').closest('button');
@@ -132,6 +137,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={'child1' as AgentId}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     const other = screen.getByText('child0').closest('button');
@@ -147,6 +153,7 @@ describe('ClusterProgressDashboard', () => {
         total={1}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('stalled')).toBeTruthy();
@@ -161,6 +168,7 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('1/3')).toBeTruthy();
@@ -179,6 +187,7 @@ describe('ClusterProgressDashboard', () => {
         total={1}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('fallback body')).toBeTruthy();
@@ -199,6 +208,7 @@ describe('ClusterProgressDashboard', () => {
         total={1}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     const card = screen.getByText('lonely').closest('button');
@@ -214,6 +224,7 @@ describe('ClusterProgressDashboard', () => {
         total={0}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByText('cluster progress 0/0')).toBeTruthy();
@@ -229,11 +240,63 @@ describe('ClusterProgressDashboard', () => {
         total={3}
         selectedAgentId={undefined}
         onSelect={vi.fn()}
+        onAdvance={vi.fn()}
       />,
     );
     expect(screen.getByTestId('cluster-progress-dashboard').getAttribute('data-session-id')).toBe(
       's1',
     );
+  });
+
+  it('shows the advance button while a cluster is still unfinished', () => {
+    render(
+      <ClusterProgressDashboard
+        sessionId={'s1' as SessionId}
+        items={items}
+        completed={1}
+        total={3}
+        selectedAgentId={undefined}
+        onSelect={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('cluster-advance-button')).toBeTruthy();
+  });
+
+  it('hides the advance button once every cluster is completed', () => {
+    render(
+      <ClusterProgressDashboard
+        sessionId={'s1' as SessionId}
+        items={[item({ id: 'only', index: 0, status: 'completed', outputSummary: 'done' })]}
+        completed={1}
+        total={1}
+        selectedAgentId={undefined}
+        onSelect={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('cluster-advance-button')).toBeNull();
+  });
+
+  it('requires a confirming second click before advancing the first unfinished cluster', () => {
+    const onAdvance = vi.fn();
+    render(
+      <ClusterProgressDashboard
+        sessionId={'s1' as SessionId}
+        items={items}
+        completed={1}
+        total={3}
+        selectedAgentId={undefined}
+        onSelect={vi.fn()}
+        onAdvance={onAdvance}
+      />,
+    );
+    const button = screen.getByTestId('cluster-advance-button');
+    fireEvent.click(button);
+    expect(onAdvance).not.toHaveBeenCalled();
+    expect(screen.getByText('advance without marker?')).toBeTruthy();
+    fireEvent.click(button);
+    expect(onAdvance).toHaveBeenCalledWith('child1');
   });
 });
 

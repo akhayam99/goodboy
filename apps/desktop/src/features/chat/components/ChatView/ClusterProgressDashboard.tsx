@@ -1,6 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
-import { Layers } from 'lucide-react';
+import { ChevronRight, Layers } from 'lucide-react';
+import { useState } from 'react';
 import { MARKER_ACCENT } from '../marker-accents';
 import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
 import type { ClusterDashboardItem } from './clusterDashboard';
@@ -12,6 +13,7 @@ type Props = {
   readonly total: number;
   readonly selectedAgentId: AgentId | undefined;
   readonly onSelect: (agentId: AgentId) => void;
+  readonly onAdvance: (childAgentId: AgentId) => void;
 };
 
 const accent = MARKER_ACCENT.clusters;
@@ -23,7 +25,10 @@ export const ClusterProgressDashboard = ({
   total,
   selectedAgentId,
   onSelect,
+  onAdvance,
 }: Props) => {
+  const [confirming, setConfirming] = useState(false);
+  const current = items.find((item) => item.agent.status !== 'completed');
   const listItems: ReadonlyArray<SpawnedAgentItem> = items.map(
     ({ agent, index, instructions }) => ({
       key: agent.id,
@@ -53,6 +58,30 @@ export const ClusterProgressDashboard = ({
         onSelect={onSelect}
         variant="dashboard"
       />
+      {current ? (
+        <button
+          type="button"
+          data-testid="cluster-advance-button"
+          onClick={() => {
+            if (!confirming) {
+              setConfirming(true);
+              return;
+            }
+            setConfirming(false);
+            onAdvance(current.agent.id);
+          }}
+          onBlur={() => setConfirming(false)}
+          className={cn(
+            'mt-1 flex items-center justify-center gap-1.5 self-end rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+            confirming
+              ? cn(accent.border, accent.bg, accent.text)
+              : 'border-border text-muted-foreground hover:border-merged/40 hover:bg-merged/5',
+          )}
+        >
+          {confirming ? 'advance without marker?' : 'advance to next cluster'}
+          <ChevronRight size={13} aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 };
