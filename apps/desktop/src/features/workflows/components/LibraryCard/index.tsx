@@ -26,13 +26,13 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
         onStartDrag(def, e);
       }}
       className={cn(
-        'group relative flex touch-none select-none items-start gap-2.5 rounded-md px-1.5 py-2.5 transition-colors hover:bg-muted/30',
+        'group relative flex touch-none select-none items-start gap-2.5 rounded-md px-1.5 py-2.5 motion-safe:transition-colors hover:bg-muted/30',
         dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
       )}
     >
       <GripVertical
         size={13}
-        className="mt-0.5 shrink-0 text-muted-foreground/25 transition-colors group-hover:text-muted-foreground/60"
+        className="shrink-0 text-muted-foreground/25 motion-safe:transition-colors group-hover:text-muted-foreground/60"
         aria-hidden
       />
       <AgentAvatar kind={kind} size="sm" />
@@ -52,7 +52,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
         {isGlobal ? (
-          <span className="px-1 text-[9px] uppercase tracking-[0.08em] text-muted-foreground/40 group-hover:hidden">
+          <span className="px-1 text-2xs uppercase tracking-eyebrow text-muted-foreground/40 group-focus-within:hidden group-hover:hidden">
             global
           </span>
         ) : null}
@@ -70,7 +70,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
               }}
               title="confirm delete"
               aria-label={`confirm delete ${def.name}`}
-              className="rounded p-0.5 text-danger transition-colors hover:bg-danger/10"
+              className="rounded p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
             >
               <Check size={12} aria-hidden />
             </button>
@@ -79,20 +79,20 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
               onClick={() => setConfirming(false)}
               title="cancel"
               aria-label="cancel delete"
-              className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              className="rounded p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <X size={12} aria-hidden />
             </button>
           </div>
         ) : (
-          <div className="hidden items-center gap-0.5 group-hover:flex">
+          <div className="hidden items-center gap-0.5 group-focus-within:flex group-hover:flex">
             <button
               type="button"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={onEdit}
               title={isGlobal ? 'edit (creates a workspace copy)' : 'edit step'}
               aria-label={`edit ${def.name}`}
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Pencil size={12} aria-hidden />
             </button>
@@ -103,7 +103,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
                 onClick={() => setConfirming(true)}
                 title="delete step"
                 aria-label={`delete ${def.name}`}
-                className="rounded p-1 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+                className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
               >
                 <Trash2 size={12} aria-hidden />
               </button>

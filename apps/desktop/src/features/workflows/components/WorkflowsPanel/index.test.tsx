@@ -102,7 +102,7 @@ describe('WorkflowsPanel', () => {
     expect(screen.queryByText('Deleted workflow')).toBeNull();
   });
 
-  it('hides draft workflows (isPreset=false) from the preset list', () => {
+  it('lists draft workflows (isPreset=false) alongside approved ones', () => {
     state.phaseTemplates = {
       'ws-1': [
         makeWorkflow({ name: 'Approved preset' }),
@@ -111,14 +111,15 @@ describe('WorkflowsPanel', () => {
     };
     renderPanel();
     expect(screen.getByText('Approved preset')).toBeDefined();
-    expect(screen.queryByText('Draft workflow')).toBeNull();
+    // drafts now appear with a status pill rather than being hidden
+    expect(screen.getByText('Draft workflow')).toBeDefined();
   });
 
-  it('shows empty state when all templates are deleted or drafts', () => {
+  it('shows empty state when every template is soft-deleted', () => {
     state.phaseTemplates = {
       'ws-1': [
         makeWorkflow({ id: 'wf-d', name: 'Gone', deletedAt: '2024-01-01T00:00:00.000Z' }),
-        makeWorkflow({ id: 'wf-draft', name: 'Draft', isPreset: false }),
+        makeWorkflow({ id: 'wf-d2', name: 'Also gone', deletedAt: '2024-01-02T00:00:00.000Z' }),
       ],
     };
     renderPanel();

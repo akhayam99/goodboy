@@ -1,6 +1,6 @@
-import { Fragment, useState } from 'react';
-import { Button, Divider, FieldRow, Input, SectionHeader, Textarea } from '@goodboy/ui';
-import { Plus, Sparkles } from 'lucide-react';
+import { Fragment } from 'react';
+import { Button, Divider, FieldRow, Input, SectionHeader, cn } from '@goodboy/ui';
+import { Check, Plus, Sparkles, X } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade } from '../../../../../shared/components/ScrollFade';
 import type { StepDefUpsertArgs } from '../../../workflows';
@@ -14,7 +14,8 @@ import { EmptyGuide } from '../EmptyGuide';
 type Props = {
   readonly open: boolean;
   readonly isNew: boolean;
-  readonly isApproved: boolean;
+  readonly approved: boolean;
+  readonly onToggleApproved: (next: boolean) => void;
   readonly hasPresets: boolean;
   readonly form: TemplateForm;
   readonly workspaceId: WorkspaceId;
@@ -25,7 +26,7 @@ type Props = {
   readonly error: string | null;
   readonly formatting: boolean;
   readonly canFormat: boolean;
-  readonly onFormat: (description: string) => void;
+  readonly onOpenFormat: () => void;
   readonly dragging: boolean;
   readonly dropIndex: number | null;
   readonly onNew: () => void;
@@ -42,14 +43,14 @@ type Props = {
   readonly onStartStepDrag: (fromIndex: number, label: string, e: React.PointerEvent) => void;
   readonly onSaveDef: (args: StepDefUpsertArgs) => void;
   readonly onDeleteDef: (id: StepDefId) => void;
-  readonly onSave: (isPreset: boolean) => void;
-  readonly onCancel: () => void;
+  readonly onClose: () => void;
 };
 
 export const WorkflowComposer = ({
   open,
   isNew,
-  isApproved,
+  approved,
+  onToggleApproved,
   hasPresets,
   form,
   workspaceId,
@@ -60,7 +61,7 @@ export const WorkflowComposer = ({
   error,
   formatting,
   canFormat,
-  onFormat,
+  onOpenFormat,
   dragging,
   dropIndex,
   onNew,
@@ -75,12 +76,8 @@ export const WorkflowComposer = ({
   onStartStepDrag,
   onSaveDef,
   onDeleteDef,
-  onSave,
-  onCancel,
+  onClose,
 }: Props) => {
-  const [magicOpen, setMagicOpen] = useState(false);
-  const [magicText, setMagicText] = useState('');
-
   if (!open) {
     return (
       <section className="flex min-w-0 flex-1 flex-col">
@@ -99,192 +96,168 @@ export const WorkflowComposer = ({
       ? form.steps[expandedIdx]
       : null;
 
+  const savedHint = saving ? 'Saving…' : 'Saved';
+
   return (
-    <section className="flex min-w-0 flex-1 flex-col">
-      <div className="mx-auto flex w-full max-w-4xl shrink-0 items-center gap-3 px-8 py-4">
-        <div className="flex min-w-0 flex-col">
-          <span className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
-            {title}
-            {!isApproved ? (
-              <span className="shrink-0 rounded bg-warning/15 px-1.5 py-px text-[10px] font-semibold uppercase leading-none tracking-wide text-warning">
-                draft
+    <div className="flex min-h-0 min-w-0 flex-1">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="mx-auto flex w-full max-w-4xl shrink-0 items-center gap-4 px-8 py-4">
+          <div className="flex min-w-0 flex-col">
+            <span className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
+              {title}
+              <span
+                className={cn(
+                  'shrink-0 rounded px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow',
+                  approved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
+                )}
+              >
+                {approved ? 'approved' : 'draft'}
               </span>
-            ) : null}
-          </span>
-          <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
-        </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          {error ? <span className="text-2xs font-medium text-danger">{error}</span> : null}
-          {canFormat ? (
-            <>
+            </span>
+            <span className="truncate text-2xs text-muted-foreground">
+              {error ? <span className="font-medium text-danger">{error}</span> : subtitle}
+            </span>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <span
+              className="text-2xs text-muted-foreground/60 tabular-nums"
+              aria-live="polite"
+              role="status"
+            >
+              {savedHint}
+            </span>
+            {canFormat ? (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setMagicOpen((v) => !v)}
+                onClick={onOpenFormat}
                 disabled={saving || formatting}
               >
-                <Sparkles size={13} aria-hidden className="mr-1" />
+                <Sparkles size={13} aria-hidden />
                 {formatting ? 'Formatting…' : 'Format with AI'}
               </Button>
-              <span className="h-4 w-px bg-border-soft" aria-hidden />
-            </>
-          ) : null}
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
-            Cancel
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => onSave(false)} disabled={saving}>
-            {saving ? 'Saving…' : 'Save as draft'}
-          </Button>
-          <Button size="sm" onClick={() => onSave(true)} disabled={saving}>
-            {saving ? 'Saving…' : 'Approve & save'}
-          </Button>
-        </div>
-      </div>
-
-      <Divider />
-
-      <div className="flex shrink-0 flex-col gap-6 py-6">
-        <div className="mx-auto w-full max-w-4xl divide-y divide-border-soft/50 px-8">
-          <FieldRow label="Name">
-            <Input
-              value={form.name}
-              onChange={(e) => onChangeMeta({ name: e.target.value })}
-              placeholder="e.g. plan-implement-review"
-              className="sm:w-80"
-            />
-          </FieldRow>
-          <FieldRow label="Description" help="What this workflow is for.">
-            <Input
-              value={form.description}
-              onChange={(e) => onChangeMeta({ description: e.target.value })}
-              placeholder="short summary"
-              className="sm:w-80"
-            />
-          </FieldRow>
+            ) : null}
+            <Button
+              variant={approved ? 'ghost' : 'secondary'}
+              size="sm"
+              onClick={() => onToggleApproved(!approved)}
+              disabled={saving}
+            >
+              <Check size={13} aria-hidden />
+              {approved ? 'Move to draft' : 'Approve'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onClose} aria-label="close workflow editor">
+              <X size={13} aria-hidden />
+              Close
+            </Button>
+          </div>
         </div>
 
-        {magicOpen && canFormat ? (
-          <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-4">
-              <label className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-                describe the workflow
-              </label>
-              <Textarea
-                value={magicText}
-                onChange={(e) => setMagicText(e.target.value)}
-                rows={3}
-                placeholder="e.g. plan the change, implement it carefully, then run tests and review the diff"
-                disabled={formatting}
-              />
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMagicOpen(false)}
-                  disabled={formatting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    onFormat(magicText);
-                    setMagicText('');
-                    setMagicOpen(false);
-                  }}
-                  disabled={formatting || magicText.trim().length === 0}
-                >
-                  <Sparkles size={13} aria-hidden className="mr-1" />
-                  {formatting ? 'Formatting…' : 'Format'}
-                </Button>
-              </div>
+        <Divider />
+
+        <div className="flex shrink-0 flex-col gap-4 py-6">
+          <div className="mx-auto w-full max-w-3xl px-8">
+            <div className="flex flex-col gap-4">
+              <FieldRow label="Name">
+                <Input
+                  value={form.name}
+                  onChange={(e) => onChangeMeta({ name: e.target.value })}
+                  placeholder="e.g. plan-implement-review"
+                  className="sm:w-80"
+                />
+              </FieldRow>
+              <Divider />
+              <FieldRow label="Description" help="What this workflow is for.">
+                <Input
+                  value={form.description}
+                  onChange={(e) => onChangeMeta({ description: e.target.value })}
+                  placeholder="short summary"
+                  className="sm:w-80"
+                />
+              </FieldRow>
             </div>
           </div>
-        ) : null}
 
-        <div className="mx-auto w-full max-w-4xl px-8">
-          <SectionHeader
-            label={`Steps (${stepCount})`}
-            hint={
-              dragging
-                ? 'Drop the step between two cards.'
-                : 'Runs left to right. Add a blank step or drag one up from the library.'
-            }
-            action={
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
-                onClick={onAddBlank}
-              >
-                <Plus size={11} aria-hidden /> blank step
-              </button>
-            }
-          />
+          <div className="mx-auto w-full max-w-3xl px-8">
+            <SectionHeader
+              label={`Steps (${stepCount})`}
+              hint={
+                dragging
+                  ? 'Drop the step between two cards.'
+                  : 'Runs top to bottom, in order. Add a blank step or drag one in from the library.'
+              }
+              action={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+                  onClick={onAddBlank}
+                >
+                  <Plus size={11} aria-hidden /> blank step
+                </button>
+              }
+            />
+          </div>
         </div>
 
-        <ScrollFade orientation="horizontal" className="mx-auto w-full max-w-4xl pb-2">
-          <div className="flex w-max items-stretch px-8 py-1">
-            {form.steps.map((def, idx) => (
-              <Fragment key={idx}>
-                <StepFlowConnector
-                  index={idx}
-                  interior={idx > 0}
-                  dragging={dragging}
-                  active={dropIndex === idx}
-                />
-                <StepFlowCard
-                  def={def}
-                  ordinal={idx}
-                  total={stepCount}
-                  selected={expandedIdx === idx}
-                  isDragging={draggingStepIdx === idx}
-                  onSelect={() => onToggleExpand(idx)}
-                  onStartDrag={(e) => onStartStepDrag(idx, def.name || 'untitled step', e)}
-                  onRemove={() => onRemoveStep(idx)}
-                  onMoveLeft={() => onMoveStep(idx, -1)}
-                  onMoveRight={() => onMoveStep(idx, 1)}
-                />
-              </Fragment>
-            ))}
-            <StepFlowConnector
-              index={stepCount}
-              interior={false}
-              dragging={dragging}
-              active={dropIndex === stepCount}
-            />
-          </div>
+        <div className="min-h-0 flex-1">
+          <ScrollFade className="mx-auto h-full w-full max-w-3xl px-8 pb-6">
+            <div className="flex flex-col">
+              {form.steps.map((def, idx) => (
+                <Fragment key={def.uid}>
+                  <StepFlowConnector
+                    index={idx}
+                    interior={idx > 0}
+                    dragging={dragging}
+                    active={dropIndex === idx}
+                  />
+                  <StepFlowCard
+                    def={def}
+                    ordinal={idx}
+                    total={stepCount}
+                    selected={expandedIdx === idx}
+                    isDragging={draggingStepIdx === idx}
+                    onSelect={() => onToggleExpand(idx)}
+                    onStartDrag={(e) => onStartStepDrag(idx, def.name || 'untitled step', e)}
+                    onRemove={() => onRemoveStep(idx)}
+                    onMoveLeft={() => onMoveStep(idx, -1)}
+                    onMoveRight={() => onMoveStep(idx, 1)}
+                    editor={
+                      expandedIdx === idx && selectedStep ? (
+                        <StepEditor
+                          def={selectedStep}
+                          connectedProviders={connectedProviders}
+                          onUpdate={(patch) => onUpdateStep(idx, patch)}
+                        />
+                      ) : null
+                    }
+                  />
+                </Fragment>
+              ))}
+              <StepFlowConnector
+                index={stepCount}
+                interior={false}
+                dragging={dragging}
+                active={dropIndex === stepCount}
+              />
+            </div>
+          </ScrollFade>
+        </div>
+      </section>
+
+      <Divider orientation="vertical" />
+
+      <aside className="flex w-64 shrink-0 flex-col">
+        <ScrollFade className="min-h-0 flex-1 px-3 py-4">
+          <StepLibraryPalette
+            library={library}
+            workspaceId={workspaceId}
+            connectedProviders={connectedProviders}
+            onStartDrag={onStartDrag}
+            onSaveDef={onSaveDef}
+            onDeleteDef={onDeleteDef}
+          />
         </ScrollFade>
-      </div>
-
-      <Divider />
-
-      <div className="min-h-0 flex-1">
-        <ScrollFade className="mx-auto h-full max-w-4xl px-8 py-6">
-          <div className="flex flex-col gap-6">
-            {selectedStep ? (
-              <>
-                <StepEditor
-                  def={selectedStep}
-                  ordinal={expandedIdx as number}
-                  connectedProviders={connectedProviders}
-                  onUpdate={(patch) => onUpdateStep(expandedIdx as number, patch)}
-                  onClose={() => onToggleExpand(expandedIdx as number)}
-                />
-                <Divider />
-              </>
-            ) : null}
-
-            <StepLibraryPalette
-              library={library}
-              workspaceId={workspaceId}
-              connectedProviders={connectedProviders}
-              onStartDrag={onStartDrag}
-              onSaveDef={onSaveDef}
-              onDeleteDef={onDeleteDef}
-            />
-          </div>
-        </ScrollFade>
-      </div>
-    </section>
+      </aside>
+    </div>
   );
 };
