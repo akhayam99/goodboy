@@ -13,6 +13,11 @@ const h = vi.hoisted(() => ({
   activateWorkflowAgent: vi.fn(() => Promise.resolve()),
   activateNextResolver: vi.fn(() => Promise.resolve()),
   upsertSessionSlot: vi.fn(() => Promise.resolve()),
+  mergePr: vi.fn(() => Promise.resolve()),
+  createSession: vi.fn(
+    async (input: { workspaceId: string; goal: string }) =>
+      ({ session: { id: 'new-session-1', goal: input.goal }, worktree: {} }) as unknown,
+  ),
   state: { value: null as unknown },
 }));
 
@@ -58,21 +63,99 @@ vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
+// Integration clients + goal derivation: the executor fetches issues + resolves
+// them through these. Stub with faithful shapes so queryIssues normalization and
+// createSessionFromIssue resolution are exercised without any real network.
+const integ = vi.hoisted(() => ({
+  linearFetch: vi.fn(
+    async () =>
+      [
+        {
+          id: 'lin-uuid-1',
+          identifier: 'ENG-1',
+          title: 'Fix the thing',
+          description: 'desc',
+          url: 'https://linear.app/x/issue/ENG-1',
+          state: { name: 'In Progress', type: 'started' },
+          team: { key: 'ENG' },
+          updatedAt: '2026-06-22T00:00:00Z',
+        },
+      ] as unknown[],
+  ),
+  gitlabFetch: vi.fn(async () => [] as unknown[]),
+  sentryFetch: vi.fn(async () => ({ issues: [], next_cursor: null })),
+}));
+
+vi.mock('../integrations/linear/client', () => ({
+  linearFetchAssignedIssues: integ.linearFetch,
+}));
+vi.mock('../integrations/linear/goal-from-issue', () => ({
+  goalFromIssue: (i: { identifier: string; title: string }) => `[${i.identifier}] ${i.title}`,
+}));
+vi.mock('../integrations/sentry/client', () => ({
+  sentryFetchIssues: integ.sentryFetch,
+  sentryFetchIssueDetail: vi.fn(async () => null),
+}));
+vi.mock('../integrations/sentry/goal-from-sentry', () => ({
+  goalFromSentry: (i: { title: string }) => i.title,
+}));
+vi.mock('../integrations/gitlab/client', () => ({
+  gitlabFetchAssignedIssues: integ.gitlabFetch,
+  issueIdentifier: (i: { references?: { full?: string }; iid: number }) =>
+    i.references?.full ?? `#${i.iid}`,
+}));
+vi.mock('../integrations/gitlab/goal-from-issue', () => ({
+  goalFromIssue: (i: { title: string }) => i.title,
+}));
+
 import { executeBridgeCommand } from './commandExecutor';
-import { clearMobileSharedSessions, isSessionMobileShared } from './mobileConfinement';
+import { invoke } from '@tauri-apps/api/core';
+import {
+  clearMobileCreateRateState,
+  clearMobileSharedSessions,
+  isSessionMobileShared,
+} from './mobileConfinement';
 import type { SessionId } from '@goodboy/types';
+
+const invokeMock = vi.mocked(invoke);
 
 function makeStore(over: Record<string, unknown> = {}) {
   return {
     sessions: [{ id: 's1', workspaceId: 'w1', workflowRuns: [] }],
+    workspaces: [{ id: 'w1' }, { id: 'w2' }],
+    workspaceIntegrations: {
+      w1: [{ provider: 'linear', config: { host: 'gitlab.com' } }],
+    },
     providers: [],
     phaseTemplates: {},
     sessionPhaseRuns: {},
+    sessionGithub: {},
     sendTurn: h.sendTurn,
     spawnAgent: h.spawnAgent,
     activateWorkflowAgent: h.activateWorkflowAgent,
     activateNextResolver: h.activateNextResolver,
     upsertSessionSlot: h.upsertSessionSlot,
+    mergePr: h.mergePr,
+    createSession: h.createSession,
+    ...over,
+  };
+}
+
+// A fully-eligible PR for the session under test (approved + green + open).
+function eligiblePr(over: Record<string, unknown> = {}) {
+  return {
+    number: 7,
+    title: 't',
+    url: 'https://github.com/x/y/pull/7',
+    state: 'approved',
+    mergeable: true,
+    checks: 'success',
+    baseBranch: 'main',
+    headBranch: 'feat/x',
+    isDraft: false,
+    reviewDecision: 'approved',
+    body: '',
+    updatedAt: '2026-06-22T00:00:00Z',
     ...over,
   };
 }
@@ -86,6 +169,13 @@ const lastCall = (spy: ReturnType<typeof vi.fn>) => spy.mock.calls[spy.mock.call
 beforeEach(() => {
   vi.clearAllMocks();
   clearMobileSharedSessions();
+  clearMobileCreateRateState();
+  // clearAllMocks resets call data but NOT implementations; restore the default
+  // resolving createSession so a sibling test's custom impl doesn't leak.
+  h.createSession.mockImplementation(
+    async (input: { workspaceId: string; goal: string }) =>
+      ({ session: { id: 'new-session-1', goal: input.goal }, worktree: {} }) as unknown,
+  );
   h.state.value = makeStore();
 });
 
@@ -366,5 +456,489 @@ describe('resolveComment thread metadata', () => {
       's1',
       expect.objectContaining({ kindOverride: 'resolver', sourceThreadId: 'T42' }),
     );
+  });
+});
+
+describe('mergePr (write path, security-gated)', () => {
+  it('merges with the server-known PR number when the PR is eligible', async () => {
+    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
+    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+    expect(res.ok).toBe(true);
+    // The server PR number (7) is used, not anything the phone supplied.
+    expect(h.mergePr).toHaveBeenCalledWith('s1', 7, 'squash');
+    expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
+  });
+
+  it('passes the merge|rebase method through to the store', async () => {
+    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
+    await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'rebase' }));
+    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'rebase']);
+  });
+
+  it('defaults to squash when the phone omits a method', async () => {
+    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
+    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1' }));
+    expect(res.ok).toBe(true);
+    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'squash']);
+  });
+
+  it('re-validates server-side: refuses when the PR is not approved', async () => {
+    h.state.value = makeStore({
+      sessionGithub: { s1: { pr: eligiblePr({ reviewDecision: 'changes_requested' }) } },
+    });
+    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/merge refused/i);
+    expect(h.mergePr).not.toHaveBeenCalled();
+  });
+
+  it('refuses when CI checks are not green even if the phone claims otherwise', async () => {
+    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr({ checks: 'failure' }) } } });
+    // Phone-supplied fields are ignored; only the server PR state decides.
+    const res = await executeBridgeCommand(
+      cmd('mergePr', { sessionId: 's1', method: 'squash', approved: true, checks: 'success' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(h.mergePr).not.toHaveBeenCalled();
+  });
+
+  it('refuses when the session has no PR', async () => {
+    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+    expect(res.ok).toBe(false);
+    expect(h.mergePr).not.toHaveBeenCalled();
+  });
+
+  it('refuses an unsupported merge method on an otherwise-eligible PR', async () => {
+    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
+    const res = await executeBridgeCommand(
+      cmd('mergePr', { sessionId: 's1', method: 'fast-forward' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(h.mergePr).not.toHaveBeenCalled();
+  });
+
+  it('refuses a merge for an unknown session before touching the PR gate', async () => {
+    const res = await executeBridgeCommand(
+      cmd('mergePr', { sessionId: 'ghost', method: 'squash' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unknown session/i);
+    expect(h.mergePr).not.toHaveBeenCalled();
+  });
+});
+
+// The single sanitization boundary in executeBridgeCommand: BridgeSafeError
+// messages (our own friendly validation) cross the bridge verbatim; ANY other
+// error (raw `gh pr merge` stderr re-thrown by store.mergePr, an internal
+// store Error.message from an await'd action) is logged desktop-side and
+// replaced with a fixed per-kind generic before it reaches the phone.
+describe('bridge error sanitization gate', () => {
+  it('masks a raw `gh pr merge` stderr (with a secret) to a generic phone message, logging the real error', async () => {
+    // A realistic raw stderr from `gh pr merge` carrying a token + remote URL.
+    const rawStderr =
+      'failed to run git: remote: https://x-access-token:ghp_LIVESECRET123@github.com/acme/private.git\n' +
+      'fatal: Authentication failed for internal-host:9418';
+    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
+    h.mergePr.mockRejectedValueOnce(new Error(rawStderr));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+
+    expect(res.ok).toBe(false);
+    // Phone sees only the fixed per-kind generic — no stderr body at all.
+    expect(res.error).toBe('merge failed');
+    // No secret / remote URL / internal host leaks in the ACK-error.
+    expect(JSON.stringify(res)).not.toMatch(/ghp_|LIVESECRET|x-access-token|internal-host/i);
+    // The real stderr IS logged desktop-side for debugging (with kind + sessionId).
+    expect(errSpy).toHaveBeenCalled();
+    const logged = errSpy.mock.calls.map((c) => c.map(String).join(' ')).join('\n');
+    expect(logged).toMatch(/LIVESECRET/);
+    expect(logged).toMatch(/kind=mergePr/);
+    expect(logged).toMatch(/sessionId=s1/);
+    errSpy.mockRestore();
+  });
+
+  it("masks a raw internal error from an await'd store action (setContextSlot)", async () => {
+    const rawInternal = 'TypeError: cannot read /Users/ak/.config/secret.json: ENOENT';
+    h.upsertSessionSlot.mockRejectedValueOnce(new Error(rawInternal));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await executeBridgeCommand(
+      cmd('setContextSlot', { sessionId: 's1', key: 'goal', value: 'x' }),
+    );
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('could not update context');
+    expect(JSON.stringify(res)).not.toMatch(/ENOENT|Users\/ak|secret\.json/i);
+    expect(errSpy).toHaveBeenCalled();
+    expect(errSpy.mock.calls.map((c) => c.map(String).join(' ')).join('\n')).toMatch(/ENOENT/);
+    errSpy.mockRestore();
+  });
+
+  it('masks a raw internal error from spawnAgent', async () => {
+    const rawInternal = 'Error: provider key invalid: sk-ant-INTERNAL-LEAK';
+    h.spawnAgent.mockRejectedValueOnce(new Error(rawInternal));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await executeBridgeCommand(cmd('spawnAgent', { sessionId: 's1', kind: 'scout' }));
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('could not spawn agent');
+    expect(JSON.stringify(res)).not.toMatch(/sk-ant|INTERNAL-LEAK/i);
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it('lets a friendly validation throw (unknown session) reach the phone verbatim', async () => {
+    // BridgeSafeError must pass the gate unchanged — this is our own safe message.
+    const res = await executeBridgeCommand(
+      cmd('mergePr', { sessionId: 'ghost', method: 'squash' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unknown session: ghost/);
+    // It is NOT the generic mask.
+    expect(res.error).not.toBe('merge failed');
+    expect(h.mergePr).not.toHaveBeenCalled();
+  });
+
+  it('lets the friendly "merge refused" precondition reach the phone verbatim', async () => {
+    h.state.value = makeStore({
+      sessionGithub: { s1: { pr: eligiblePr({ reviewDecision: 'changes_requested' }) } },
+    });
+    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/merge refused/i);
+    expect(res.error).not.toBe('merge failed');
+  });
+});
+
+describe('queryIssues (read-only issue inbox RPC)', () => {
+  it('returns normalized issues for connected workspaces — no tokens, provider object flattened', async () => {
+    const res = await executeBridgeCommand(cmd('queryIssues', {}));
+    expect(res.ok).toBe(true);
+    const issues = (res.data as { issues: Array<Record<string, unknown>> }).issues;
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toEqual({
+      provider: 'linear',
+      identifier: 'ENG-1',
+      title: 'Fix the thing',
+      url: 'https://linear.app/x/issue/ENG-1',
+      state: 'In Progress', // flattened from { name, type }
+      description: 'desc',
+    });
+    // Only the workspace with a connected provider was fetched (w1, not w2).
+    expect(integ.linearFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('honors an optional provider filter (skips unconnected providers entirely)', async () => {
+    const res = await executeBridgeCommand(cmd('queryIssues', { provider: 'sentry' }));
+    expect(res.ok).toBe(true);
+    // No workspace has sentry connected, so no fetch happens and the list is empty.
+    expect((res.data as { issues: unknown[] }).issues).toEqual([]);
+    expect(integ.sentryFetch).not.toHaveBeenCalled();
+    expect(integ.linearFetch).not.toHaveBeenCalled();
+  });
+
+  it('does not need a session and never leaks a provider token', async () => {
+    const res = await executeBridgeCommand(cmd('queryIssues', {}));
+    expect(JSON.stringify(res)).not.toMatch(/token|credential|secret/i);
+  });
+
+  // FINDING 1 (don't leak across queryIssues): a provider fetch that throws a raw
+  // remote body must be swallowed per-integration (logged desktop-side), never
+  // surfaced to the phone — the inbox just omits that provider's issues.
+  it('swallows a raw provider fetch error without leaking the body to the phone', async () => {
+    const secret = 'HTTP 500 {"token":"sk-live-LEAK","detail":"/srv/internal"}';
+    integ.linearFetch.mockRejectedValueOnce(new Error(secret));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await executeBridgeCommand(cmd('queryIssues', {}));
+
+    expect(res.ok).toBe(true); // one bad integration never blanks/errors the inbox
+    expect((res.data as { issues: unknown[] }).issues).toEqual([]);
+    expect(JSON.stringify(res)).not.toMatch(/sk-live|LEAK|internal|token/i);
+    expect(errSpy).toHaveBeenCalled(); // real error logged desktop-side
+    errSpy.mockRestore();
+  });
+});
+
+describe('queryFileDiff (read-only single-file diff RPC)', () => {
+  it('returns the unified diff text for one file in the session worktree', async () => {
+    h.state.value = makeStore({ sessionWorktrees: { s1: ['/wt/s1'] } });
+    invokeMock.mockResolvedValueOnce('diff --git a/x.ts b/x.ts\n+added');
+
+    const res = await executeBridgeCommand(cmd('queryFileDiff', { sessionId: 's1', path: 'x.ts' }));
+
+    expect(res.ok).toBe(true);
+    expect(res.data).toEqual({ diff: 'diff --git a/x.ts b/x.ts\n+added' });
+    // Path traversal is enforced server-side: the worktree path comes from the
+    // store (never the phone) and only the file name is forwarded.
+    expect(invokeMock).toHaveBeenCalledWith('worktree_diff_file', {
+      worktreePath: '/wt/s1',
+      base: null,
+      path: 'x.ts',
+    });
+  });
+
+  it('rejects an unknown session', async () => {
+    const res = await executeBridgeCommand(
+      cmd('queryFileDiff', { sessionId: 'nope', path: 'x.ts' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unknown session/i);
+  });
+
+  it('requires a path', async () => {
+    h.state.value = makeStore({ sessionWorktrees: { s1: ['/wt/s1'] } });
+    const res = await executeBridgeCommand(cmd('queryFileDiff', { sessionId: 's1' }));
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/path/i);
+  });
+
+  it('masks a raw worktree error before it reaches the phone', async () => {
+    h.state.value = makeStore({ sessionWorktrees: { s1: ['/wt/s1'] } });
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    invokeMock.mockRejectedValueOnce({
+      kind: 'git',
+      message: 'git diff failed: /srv/internal/path leaked',
+    });
+
+    const res = await executeBridgeCommand(cmd('queryFileDiff', { sessionId: 's1', path: 'x.ts' }));
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('could not load file diff');
+    expect(JSON.stringify(res)).not.toMatch(/srv|internal|leaked/i);
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+});
+
+describe('createSessionFromIssue (security-gated write)', () => {
+  it('resolves the issue server-side, creates the session, and confines it', async () => {
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+        setupWorkflow: false,
+      }),
+    );
+    expect(res.ok).toBe(true);
+    expect(res.data).toEqual({ sessionId: 'new-session-1' });
+    // Goal + externalTask are derived from the resolved issue, not the phone.
+    expect(h.createSession).toHaveBeenCalledWith({
+      workspaceId: 'w1',
+      goal: '[ENG-1] Fix the thing',
+      externalTask: {
+        provider: 'linear',
+        externalId: 'lin-uuid-1',
+        identifier: 'ENG-1',
+        url: 'https://linear.app/x/issue/ENG-1',
+        title: 'Fix the thing',
+      },
+      // Origin marker: confines the new session before any kickoff turn.
+      mobileShared: true,
+    });
+    // The new session is mobile-shared so its turns clamp at sendTurn.
+    expect(isSessionMobileShared('new-session-1' as SessionId)).toBe(true);
+  });
+
+  // FINDING 2 (ordering): the executor MUST pass mobileShared so createSession
+  // registers the confinement synchronously before its own kickoff turn can
+  // dispatch. (The mark-before-kickoff ordering itself is proven against the real
+  // createSession slice in store.workflow-stepper.test.ts.)
+  it('passes mobileShared:true so createSession confines before any kickoff turn', async () => {
+    await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(h.createSession).toHaveBeenCalledWith(expect.objectContaining({ mobileShared: true }));
+  });
+
+  // FINDING 1 (info disclosure): a raw provider/client failure while resolving
+  // the issue must NOT cross the bridge verbatim — its body can carry tokens/PII/
+  // internal detail. The phone gets a generic "could not resolve issue <id>"
+  // reason; the real error is logged desktop-side only.
+  it('masks a raw provider error when resolving the issue (no body leaks to phone)', async () => {
+    const secret = 'HTTP 401 {"token":"sk-live-DEADBEEF","trace":"/Users/ak/secret"}';
+    integ.linearFetch.mockRejectedValueOnce(new Error(secret));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('could not resolve issue ENG-1');
+    // The raw body never reaches the phone.
+    expect(res.error).not.toMatch(/token|sk-live|trace|401|Users/i);
+    expect(JSON.stringify(res)).not.toMatch(/sk-live|DEADBEEF|secret/i);
+    // But the real error IS logged desktop-side for diagnosis.
+    expect(errSpy).toHaveBeenCalled();
+    const logged = errSpy.mock.calls.map((c) => c.map(String).join(' ')).join('\n');
+    expect(logged).toMatch(/DEADBEEF/);
+    // A masked resolve failure must not burn a rate slot or create a session.
+    expect(h.createSession).not.toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  // The friendly issue-not-found message (our own validation, no remote body) is
+  // SAFE and must still reach the phone unchanged — only raw remote/client bodies
+  // are masked.
+  it('preserves the friendly issue-not-found message (safe validation reason)', async () => {
+    integ.linearFetch.mockResolvedValueOnce([]); // no matching issue
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-404',
+      }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/linear issue not found: ENG-404/);
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing issueIdentifier', async () => {
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', { workspaceId: 'w1', provider: 'linear' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/issueIdentifier/i);
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  // ADVERSARIAL: forge a workspaceId the desktop doesn't have. Must be refused
+  // BEFORE any issue fetch or session create.
+  it('refuses a forged/disallowed workspaceId and never touches createSession', async () => {
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w-evil',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unknown workspace/i);
+    expect(integ.linearFetch).not.toHaveBeenCalled();
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  // ADVERSARIAL: target a real workspace but a provider that isn't connected
+  // there — refused before resolving, so no credential is ever used.
+  it('refuses a disconnected provider for the target workspace', async () => {
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1', // only linear connected on w1
+        provider: 'sentry',
+        issueIdentifier: 'SENTRY-1',
+      }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/not connected/i);
+    expect(integ.sentryFetch).not.toHaveBeenCalled();
+    expect(h.createSession).not.toHaveBeenCalled();
+  });
+
+  // SECURITY (TOCTOU): a pipelined burst of concurrent createSessionFromIssue
+  // commands — arriving before any create resolves — must NOT all pass the rate
+  // gate. The gate reserves a slot synchronously, so even with createSession held
+  // open the cap (5/window) holds end-to-end. Without the reservation fix every
+  // command would pass the empty window and spin up a worktree.
+  it('does not let a concurrent burst bypass the create rate cap (TOCTOU)', async () => {
+    // Make createSession a long, controllable op so all gates run before any
+    // create resolves — the exact race the fix closes.
+    let released = 0;
+    const release: Array<() => void> = [];
+    h.createSession.mockImplementation(
+      (input: { workspaceId: string; goal: string }) =>
+        new Promise((resolve) => {
+          const n = released;
+          released += 1;
+          release.push(() =>
+            resolve({ session: { id: `burst-${n}`, goal: input.goal }, worktree: {} }),
+          );
+        }),
+    );
+
+    // Fire 8 concurrent commands (cap is 5). None resolve yet.
+    const inflight = Array.from({ length: 8 }, () =>
+      executeBridgeCommand(
+        cmd('createSessionFromIssue', {
+          workspaceId: 'w1',
+          provider: 'linear',
+          issueIdentifier: 'ENG-1',
+        }),
+      ),
+    );
+    // Let the synchronous gate decisions + the awaited resolveIssueForSession
+    // microtasks settle so every command has reached (and reserved or been
+    // refused at) the gate before any createSession resolves. Flush several
+    // microtask ticks (the masked-resolve wrapper adds a tick) — none of the
+    // controllable createSession promises resolve during this loop, so this only
+    // drains the resolve chain, never the held creates.
+    for (let i = 0; i < 8; i += 1) {
+      await Promise.resolve();
+    }
+
+    // At most 5 should have reached createSession; the rest are gate-refused.
+    expect(h.createSession.mock.calls.length).toBeLessThanOrEqual(5);
+
+    // Release the in-flight creates so the promises settle.
+    for (const r of release) r();
+    const results = await Promise.all(inflight);
+    const ok = results.filter((r) => r.ok).length;
+    const refused = results.filter((r) => !r.ok).length;
+    expect(ok).toBe(5);
+    expect(refused).toBe(3);
+    for (const r of results) {
+      if (!r.ok) expect(r.error).toMatch(/too many|slow down/i);
+    }
+  });
+
+  // A failed create must RELEASE its reserved slot, not burn it: the window
+  // should still admit a full subsequent burst.
+  it('releases the reserved rate slot when createSession throws', async () => {
+    // Restore the default resolving impl (a sibling test installs a controllable
+    // never-resolving one; clearAllMocks resets calls, not implementations).
+    h.createSession.mockImplementation(
+      async (input: { workspaceId: string; goal: string }) =>
+        ({ session: { id: 'new-session-1', goal: input.goal }, worktree: {} }) as unknown,
+    );
+    h.createSession.mockRejectedValueOnce(new Error('worktree boom'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failed = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'linear',
+        issueIdentifier: 'ENG-1',
+      }),
+    );
+    expect(failed.ok).toBe(false);
+    // An internal store error (not a BridgeSafeError) is masked at the gate; the
+    // raw message never crosses the bridge, but the slot must still be released.
+    expect(failed.error).toBe('could not create session');
+    expect(failed.error).not.toMatch(/worktree boom/i);
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+
+    // The failed attempt freed its slot: five fresh creates still succeed.
+    for (let i = 0; i < 5; i += 1) {
+      const res = await executeBridgeCommand(
+        cmd('createSessionFromIssue', {
+          workspaceId: 'w1',
+          provider: 'linear',
+          issueIdentifier: 'ENG-1',
+        }),
+      );
+      expect(res.ok).toBe(true);
+    }
   });
 });

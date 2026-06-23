@@ -62,6 +62,7 @@ import type {
   WorkspaceScriptId,
   GhTokenStatus,
   PullRequestState,
+  PrMergeMethod,
   LinkedIssue,
   PrDetail,
   PendingResolution,
@@ -385,6 +386,7 @@ export type AppActions = {
       url: string;
       title: string;
     };
+    mobileShared?: boolean;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   changeSessionBranch(
     sessionId: SessionId,
@@ -588,7 +590,7 @@ export type AppActions = {
   ): Promise<void>;
   markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
-  mergePr(sessionId: SessionId, prNumber?: number): Promise<void>;
+  mergePr(sessionId: SessionId, prNumber?: number, method?: PrMergeMethod): Promise<void>;
   refreshSessionMr(
     sessionId: SessionId,
     opts?: { force?: boolean; silent?: boolean },

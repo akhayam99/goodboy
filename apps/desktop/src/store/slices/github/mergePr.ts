@@ -1,9 +1,17 @@
-import type { SessionId } from '@goodboy/types';
+import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import type { GetFn, SetFn } from './types';
 
+// `gh pr merge` takes exactly one strategy flag. Squash is the desktop default
+// (unchanged from before the method param existed).
+const MERGE_FLAG: Record<PrMergeMethod, string> = {
+  squash: '--squash',
+  merge: '--merge',
+  rebase: '--rebase',
+};
+
 export const mergePr = (_set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, prNumber?: number) => {
+  return async (sessionId: SessionId, prNumber?: number, method: PrMergeMethod = 'squash') => {
     const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number;
     const session = get().sessions.find((s) => s.id === sessionId);
     if (num == null || !session) {
@@ -13,7 +21,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     if (!workspace) {
       return;
     }
-    const res = await tauriGhRunner.run(['pr', 'merge', String(num), '--squash'], {
+    const res = await tauriGhRunner.run(['pr', 'merge', String(num), MERGE_FLAG[method]], {
       cwd: workspace.rootPath,
       workspaceId: session.workspaceId,
     });
