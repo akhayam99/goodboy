@@ -1,75 +1,23 @@
-import { useCallback, useMemo } from 'react';
-import { Sparkles, Workflow } from 'lucide-react';
-import { Button, cn } from '@goodboy/ui';
+import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react';
+import { Workflow } from 'lucide-react';
+import { Button } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import agentDebugger from '../../../../assets/agents/debugger.png';
-import agentDocs from '../../../../assets/agents/docs.png';
-import agentGoodboy from '../../../../assets/agents/goodboy.png';
-import agentImplementer from '../../../../assets/agents/implementer.png';
-import agentPlanner from '../../../../assets/agents/planner.png';
-import agentReviewer from '../../../../assets/agents/reviewer.png';
-import agentScout from '../../../../assets/agents/scout.png';
-import agentTester from '../../../../assets/agents/tester.png';
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind as AgentKindLabel,
 } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
-import { MaskedDog } from './parts/MaskedDog';
+import { getAgentVisual } from '../../../../shared/components/AgentAvatar';
 
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
-
-type KindVisual = {
-  image: string | null;
-  tint: string;
-};
-
-const KIND_ICON: Record<AgentKindLabel, KindVisual> = {
-  generic: {
-    image: agentGoodboy,
-    tint: 'bg-rose-400',
-  },
-  scout: {
-    image: agentScout,
-    tint: 'bg-sky-400',
-  },
-  planner: {
-    image: agentPlanner,
-    tint: 'bg-violet-400',
-  },
-  implementer: {
-    image: agentImplementer,
-    tint: 'bg-emerald-400',
-  },
-  debugger: {
-    image: agentDebugger,
-    tint: 'bg-amber-400',
-  },
-  tester: {
-    image: agentTester,
-    tint: 'bg-teal-400',
-  },
-  reviewer: {
-    image: agentReviewer,
-    tint: 'bg-cyan-400',
-  },
-  docs: {
-    image: agentDocs,
-    tint: 'bg-orange-400',
-  },
-  resolver: {
-    image: null,
-    tint: 'bg-lime-400',
-  },
-};
 
 type EmptyCopy = {
   eyebrow: string;
   title: string;
   body: string;
-  hints: ReadonlyArray<string>;
+  hints: ReadonlyArray<ReactNode>;
 };
 
 type Props = {
@@ -109,52 +57,73 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     switch (scenario) {
       case 'agent_focus': {
         const meta = AGENT_KIND_META[selectedKind as AgentKindLabel];
+        const example =
+          selectedKind === 'scout'
+            ? 'find where X is defined'
+            : selectedKind === 'planner'
+              ? 'plan how to add X to Y'
+              : selectedKind === 'implementer'
+                ? 'implement step 2 of the plan'
+                : selectedKind === 'debugger'
+                  ? 'reproduce: <stack trace>'
+                  : selectedKind === 'tester'
+                    ? 'write tests for X'
+                    : selectedKind === 'reviewer'
+                      ? 'review the current diff'
+                      : selectedKind === 'resolver'
+                        ? 'spawned by the resolve flow'
+                        : null;
         return {
-          eyebrow: `${meta.label} agent · fresh transcript`,
-          title: `You're talking to a ${meta.label} agent`,
-          body: 'It already knows the session brief on the right, so just say what you want next.',
+          eyebrow: `${meta.label.toLowerCase()} agent`,
+          title: `${meta.label} agent ready`,
+          body: 'Shares the session brief. Say what to do next.',
           hints: [
-            selectedKind === 'scout' ? 'Try: "find where X is defined"' : null,
-            selectedKind === 'planner' ? 'Try: "plan how to add X to Y"' : null,
-            selectedKind === 'implementer' ? 'Try: "implement step 2 of the plan"' : null,
-            selectedKind === 'debugger' ? 'Try: "reproduce: <stack trace>"' : null,
-            selectedKind === 'tester' ? 'Try: "write tests for X"' : null,
-            selectedKind === 'reviewer' ? 'Try: "review the current diff"' : null,
-            selectedKind === 'resolver' ? 'Spawned automatically by the resolve UI.' : null,
-            '⌘↵ to send',
-          ].filter((x): x is string => Boolean(x)),
+            example ? <span key="example">{example}</span> : null,
+            <span key="send" className="inline-flex items-center gap-1">
+              <Kbd>⌘</Kbd>
+              <Kbd>↵</Kbd>
+              to send
+            </span>,
+          ].filter((x): x is ReactElement => x !== null),
         };
       }
       case 'pick_agent':
         return {
-          eyebrow: `${phaseRuns.length === 1 ? 'agent' : 'agents'} in this session`,
-          title: 'Pick an agent on the left',
-          body: 'Agents share the session context, so pick one to keep talking or spawn a new one.',
-          hints: ['Select an agent to see its transcript', 'Spawn fresh, context travels with it'],
+          eyebrow: `${phaseRuns.length === 1 ? 'agent' : 'agents'} in session`,
+          title: 'Pick an agent',
+          body: 'Agents share the session context. Pick one or spawn another.',
+          hints: [
+            <span key="select">select to open its transcript</span>,
+            <span key="spawn">context travels to new agents</span>,
+          ],
         };
       case 'workflow_no_agent':
         return {
-          eyebrow: 'Workflow ready · No agents yet',
+          eyebrow: 'workflow ready',
           title: 'Start the first step',
-          body: 'Type your goal below to shape the shared brief before the first agent runs.',
-          hints: ['Describe the goal in 1-2 lines', 'Lands in the shared context'],
+          body: 'Type the goal below to shape the shared brief before the first agent runs.',
+          hints: [
+            <span key="goal">goal in 1-2 lines</span>,
+            <span key="brief">lands in the shared brief</span>,
+          ],
         };
       case 'fresh':
       default:
         return {
-          eyebrow: 'Fresh session · No context yet',
-          title: "Let's populate the context",
-          body: 'What you type below becomes the shared brief every agent you spawn starts from.',
+          eyebrow: 'fresh session',
+          title: 'Populate the context',
+          body: 'What you type becomes the shared brief every spawned agent starts from.',
           hints: [
-            'What are we building',
-            'Any constraints or non-goals',
-            'Who should the first agent be',
+            <span key="what">what to build</span>,
+            <span key="limits">constraints and non-goals</span>,
+            <span key="first">the first agent</span>,
           ],
         };
     }
   }, [scenario, selectedKind, phaseRuns.length]);
 
-  const agentVisual = scenario === 'agent_focus' && selectedKind ? KIND_ICON[selectedKind] : null;
+  const agentVisual =
+    scenario === 'agent_focus' && selectedKind ? getAgentVisual(selectedKind) : null;
 
   const showWorkflowCta = scenario === 'fresh' || scenario === 'workflow_no_agent';
   const openWorkflowBuilder = useCallback(() => {
@@ -167,7 +136,21 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
       <div className="flex items-center justify-center">
         {agentVisual?.image ? (
-          <MaskedDog image={agentVisual.image} className={cn('size-32', agentVisual.tint)} />
+          <span
+            aria-hidden
+            className="size-32 shrink-0"
+            style={{
+              backgroundColor: agentVisual.color,
+              maskImage: `url(${agentVisual.image})`,
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              maskSize: 'contain',
+              WebkitMaskImage: `url(${agentVisual.image})`,
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              WebkitMaskSize: 'contain',
+            }}
+          />
         ) : scenario === 'pick_agent' ? (
           <span className="text-7xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
             {phaseRuns.length}
@@ -183,17 +166,16 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         <h2 className="text-base font-semibold text-foreground">{copy.title}</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-muted-foreground/70">
-        {copy.hints.map((hint) => (
-          <span
-            key={hint}
+      <ul className="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-muted-foreground/70">
+        {copy.hints.map((hint, i) => (
+          <li
+            key={i}
             className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
           >
-            <Sparkles size={10} aria-hidden />
             {hint}
-          </span>
+          </li>
         ))}
-      </div>
+      </ul>
       {showWorkflowCta ? (
         <Button variant="secondary" size="sm" onClick={openWorkflowBuilder}>
           <Workflow size={13} aria-hidden />
@@ -203,3 +185,11 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     </div>
   );
 };
+
+function Kbd({ children }: { children: ReactNode }) {
+  return (
+    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-border-soft bg-muted px-1 font-mono text-[10px] leading-none text-muted-foreground">
+      {children}
+    </kbd>
+  );
+}

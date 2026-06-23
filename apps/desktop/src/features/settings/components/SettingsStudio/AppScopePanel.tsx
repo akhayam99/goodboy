@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { DollarSign, Loader2, Sparkles } from 'lucide-react';
-import { Button, FieldRow, KbdPill, Select } from '@goodboy/ui';
+import { DollarSign, Loader2, RotateCcw } from 'lucide-react';
+import { Button, FieldRow, KbdPill, ScrollFade, Select } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -11,12 +11,13 @@ import {
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { formatError } from '../../../../shared/lib/errors';
-import type { SaveState } from '../../../../shared/types/saveState';
+import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly initialSection?: string;
   readonly requestClose: () => void;
+  readonly registerScrollTo?: (fn: (id: string) => void) => void;
 };
 
 const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly label: string }> = [
@@ -38,7 +39,7 @@ const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly lab
   { combo: ['Esc'], label: 'close dialog or cancel' },
 ];
 
-export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
+export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
@@ -46,6 +47,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const wipeLocalDatabase = useAppStore((s) => s.wipeLocalDatabase);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const detectedEditors = useAppStore((s) => s.detectedEditors);
+  const { showToast } = useToast();
 
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
 
@@ -54,8 +56,6 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
       void loadDetectedEditors();
     }
   }, []);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
-  const [error, setError] = useState<string | null>(null);
   const [exportState, setExportState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importResult, setImportResult] = useState<ConfigBundleImportResult | null>(null);
@@ -80,6 +80,12 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
     anchorsRef.current[initialSection]?.scrollIntoView({ block: 'start' });
   }, [initialSection]);
 
+  useEffect(() => {
+    registerScrollTo?.((id) =>
+      anchorsRef.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
+  }, [registerScrollTo]);
+
   const onExport = async () => {
     setExportState('busy');
     try {
@@ -87,7 +93,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
       setExportState(path ? 'done' : 'idle');
     } catch (err) {
       setExportState('error');
-      setError(formatError(err));
+      showToast('error', formatError(err));
     }
   };
 
@@ -109,15 +115,11 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
   const onChangeEditor = async (binary: string) => {
     setEditorBinary(binary);
-    setSaveState('saving');
-    setError(null);
     try {
       await saveSetting(SETTING_EDITOR_BINARY, binary || DEFAULT_EDITOR_BINARY);
-      setSaveState('saved');
-      window.setTimeout(() => setSaveState('idle'), 1500);
+      showToast('success', 'default editor saved');
     } catch (err) {
-      setSaveState('error');
-      setError(formatError(err));
+      showToast('error', formatError(err));
     }
   };
 
@@ -142,13 +144,11 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-8 py-6">
+    <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col divide-y divide-border-soft/50">
-          <FieldRow label="Default editor" help="Opens session worktrees.">
-            <span className="flex items-center gap-2">
-              {saveState === 'saved' && <span className="text-2xs text-success">Saved</span>}
-              {error ? <span className="text-2xs text-danger">{error}</span> : null}
+          <div ref={anchor('editor')} className="py-4 first:pt-0 last:pb-0">
+            <FieldRow label="Default editor" help="Opens session worktrees.">
               <Select
                 size="sm"
                 value={editorBinary}
@@ -161,21 +161,21 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   </option>
                 ))}
               </Select>
-            </span>
-          </FieldRow>
+            </FieldRow>
 
-          <FieldRow label="Setup guide" help="Replay the first-run walkthrough.">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                requestClose();
-                reopenWizard();
-              }}
-            >
-              <Sparkles size={14} aria-hidden /> Run setup again
-            </Button>
-          </FieldRow>
+            <FieldRow label="Setup guide" help="Replay the first-run walkthrough.">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  requestClose();
+                  reopenWizard();
+                }}
+              >
+                <RotateCcw size={14} aria-hidden /> Run setup again
+              </Button>
+            </FieldRow>
+          </div>
 
           {SESSION_FEATURES.budget ? (
             <div ref={anchor('budget')} className="py-4 first:pt-0 last:pb-0">
@@ -232,7 +232,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   {exportState === 'busy'
                     ? 'Exporting…'
                     : exportState === 'done'
-                      ? 'Exported ✓'
+                      ? 'Exported'
                       : 'Export'}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => void onImport()}>
@@ -268,7 +268,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                     className="text-danger"
                   >
                     {wipeState === 'wiping' ? (
-                      <Loader2 size={13} aria-hidden className="animate-spin" />
+                      <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
                     ) : null}
                     Confirm
                   </Button>
@@ -295,6 +295,6 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
         error={importError}
         onClose={() => setImportDialogOpen(false)}
       />
-    </div>
+    </ScrollFade>
   );
 };

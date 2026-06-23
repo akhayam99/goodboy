@@ -95,45 +95,44 @@ export const ChatBreadcrumb = ({ session }: Props) => {
 
   return (
     <>
-      <div
-        className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3 text-2xs text-muted-foreground"
-        role="navigation"
+      <nav
+        className="flex h-[var(--chat-header-h)] shrink-0 items-center justify-between gap-2 px-3 text-2xs text-muted-foreground"
         aria-label="chat breadcrumb"
       >
-        {workspace ? (
-          <span className="truncate font-medium" title={`workspace: ${workspace.name}`}>
-            {workspace.name}
-          </span>
-        ) : (
-          <span className="truncate text-muted-foreground/50">no workspace</span>
-        )}
-
-        <Separator />
-
-        <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
-          {sessionLabel}
-        </span>
-
-        {workflowProgress ? (
-          <>
-            <Separator />
-            <span
-              className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
-              title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
-            >
-              <GitBranch size={9} aria-hidden />
-              <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
-              <span aria-hidden className="opacity-60">
-                ·
-              </span>
-              <span className="font-mono tabular-nums">
-                {workflowProgress.currentOrdinal}/{workflowProgress.total}
-              </span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {workspace ? (
+            <span className="truncate font-medium" title={`workspace: ${workspace.name}`}>
+              {workspace.name}
             </span>
-          </>
-        ) : null}
+          ) : (
+            <span className="truncate text-muted-foreground/50">no workspace</span>
+          )}
 
-        <div className="flex-1" />
+          <Separator />
+
+          <span className="min-w-0 truncate font-medium text-foreground/90" title={sessionLabel}>
+            {sessionLabel}
+          </span>
+
+          {workflowProgress ? (
+            <>
+              <Separator />
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
+              >
+                <GitBranch size={9} aria-hidden />
+                <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
+                <span aria-hidden className="opacity-60">
+                  ·
+                </span>
+                <span className="font-mono tabular-nums">
+                  {workflowProgress.currentOrdinal}/{workflowProgress.total}
+                </span>
+              </span>
+            </>
+          ) : null}
+        </div>
 
         {selectedAgent && agentKind ? (
           <AgentAvatar
@@ -142,7 +141,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
             title={`${selectedAgent.name} (${AGENT_KIND_META[agentKind].label})`}
           />
         ) : null}
-      </div>
+      </nav>
       <Divider className="shrink-0" />
     </>
   );

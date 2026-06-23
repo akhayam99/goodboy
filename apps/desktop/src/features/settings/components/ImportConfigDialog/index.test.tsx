@@ -28,6 +28,20 @@ describe('ImportConfigDialog', () => {
     } as unknown as ConfigBundleImportResult;
     render(<ImportConfigDialog open result={result} error={null} onClose={vi.fn()} />);
     expect(screen.getByText(/import complete/i)).toBeDefined();
-    expect(screen.getByText(/workspaces: 2/i)).toBeDefined();
+    const term = screen.getByText(/^workspaces:$/i);
+    expect(term).toBeDefined();
+    const row = term.closest('div');
+    expect(row?.textContent).toMatch(/workspaces:\s*2/i);
+  });
+
+  it('renders validation errors keyed by field with messages', () => {
+    const result: ConfigBundleImportResult = {
+      ok: false,
+      errors: [{ field: 'workspaces[0].name', message: 'is required' }],
+      stats: {} as never,
+    } as unknown as ConfigBundleImportResult;
+    render(<ImportConfigDialog open result={result} error={null} onClose={vi.fn()} />);
+    expect(screen.getByText('workspaces[0].name')).toBeDefined();
+    expect(screen.getByText(/is required/i)).toBeDefined();
   });
 });

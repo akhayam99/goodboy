@@ -136,7 +136,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
             title="push and resolve this one now"
             className="inline-flex items-center gap-1 rounded-full bg-info px-2 py-0.5 text-[10px] font-semibold text-info-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {busy ? <Loader2 size={9} aria-hidden className="animate-spin" /> : null}
+            {busy ? <Loader2 size={9} aria-hidden className="motion-safe:animate-spin" /> : null}
             Push now
           </button>
           <button
@@ -185,7 +185,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           className="inline-flex items-center gap-1 rounded-full border border-info/40 px-2 py-0.5 text-[10px] font-semibold text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? (
-            <Loader2 size={9} aria-hidden className="animate-spin" />
+            <Loader2 size={9} aria-hidden className="motion-safe:animate-spin" />
           ) : (
             <Upload size={9} aria-hidden />
           )}

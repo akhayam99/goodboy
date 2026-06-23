@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import {
   VERBOSITY_LEVELS,
@@ -248,7 +248,7 @@ export const ModelPicker = ({
               })}
             </div>
           </PickerSection>
-          <PickerDivider />
+          <Divider />
 
           {[...groupedModels.entries()].map(([fam, subMap]) => {
             const subKeys = [...subMap.keys()];
@@ -297,7 +297,7 @@ export const ModelPicker = ({
               </PickerSection>
             );
           })}
-          <PickerDivider />
+          <Divider />
 
           <PickerSection label="Effort" hint="How hard the model thinks before answering">
             {showEffort && effortLevels ? (
@@ -324,7 +324,7 @@ export const ModelPicker = ({
               </p>
             )}
           </PickerSection>
-          <PickerDivider />
+          <Divider />
 
           <PickerSection label="Verbosity" hint="How detailed the replies should be">
             <div className={CHIP_ROW}>
@@ -373,10 +373,6 @@ function PickerSection({
       {children}
     </div>
   );
-}
-
-function PickerDivider() {
-  return <div className="my-1 h-px bg-border-soft" aria-hidden />;
 }
 
 function SubfamilyVariantRow({

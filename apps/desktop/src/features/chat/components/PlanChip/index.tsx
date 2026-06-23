@@ -31,16 +31,14 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
   };
 
   return (
-    <div className="mt-2">
-      <button
-        type="button"
-        onClick={onClick}
-        data-testid="plan-chip"
-        className={`inline-flex items-center gap-1.5 rounded-full border ${accent.border} ${accent.bg} px-2.5 py-1 text-[11px] font-medium ${accent.text} hover:opacity-80`}
-      >
-        <FileText size={11} aria-hidden />
-        <span>{plan.title}</span>
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid="plan-chip"
+      className={`inline-flex w-fit items-center gap-1.5 rounded-full border ${accent.border} ${accent.bg} px-2.5 py-1 text-[11px] font-medium ${accent.text} hover:opacity-80`}
+    >
+      <FileText size={11} aria-hidden />
+      <span>{plan.title}</span>
+    </button>
   );
 };

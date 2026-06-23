@@ -11,7 +11,7 @@ import type {
   WorkspaceIntegration,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import { Button, FieldRow, cn } from '@goodboy/ui';
+import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui';
 import { Check, GitBranch, Loader2, Unplug } from 'lucide-react';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 import { ProviderChip } from '../../../../features/providers/components/ProviderChip';
@@ -156,7 +156,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-8 py-6">
+    <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col divide-y divide-border-soft/50">
           <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
@@ -204,9 +204,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   }
                   trailing={
                     connectedProviderIds.includes(id) ? null : (
-                      <span className="text-[9px] uppercase tracking-wide text-warning">
-                        offline
-                      </span>
+                      <span className="text-2xs uppercase tracking-wide text-warning">offline</span>
                     )
                   }
                 />
@@ -286,7 +284,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   onClick={() => setConfirmDisconnect(true)}
                   disabled={disconnecting}
                 >
-                  <Unplug size={13} aria-hidden className="mr-1.5" />
+                  <Unplug size={13} aria-hidden />
                   Disconnect
                 </Button>
               ) : (
@@ -307,12 +305,12 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   >
                     {disconnecting ? (
                       <>
-                        <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
+                        <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
                         Disconnecting…
                       </>
                     ) : (
                       <>
-                        <Check size={12} aria-hidden className="mr-1.5" />
+                        <Check size={12} aria-hidden />
                         Confirm
                       </>
                     )}
@@ -325,7 +323,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
         {error ? <p className="pt-4 text-xs text-danger">{error}</p> : null}
       </div>
-    </div>
+    </ScrollFade>
   );
 };
 

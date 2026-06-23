@@ -8,9 +8,9 @@ type Props = {
 };
 
 const BADGE_CLASSES: Record<AgentStatus, string> = {
-  running: 'bg-blue-500 motion-safe:animate-pulse',
-  completed: 'bg-green-500',
-  failed: 'bg-red-500',
+  running: 'bg-info motion-safe:animate-pulse',
+  completed: 'bg-success',
+  failed: 'bg-danger',
   skipped: 'bg-muted-foreground/40',
   pending: 'bg-muted-foreground/25',
 };
