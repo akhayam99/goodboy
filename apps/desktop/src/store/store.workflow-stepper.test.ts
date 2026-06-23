@@ -641,14 +641,13 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
   });
 });
 
-// FINDING 2 (ordering): a mobile-launched session must be confined from its FIRST
-// turn. createSession fires a kickoff turn DURING creation (the workflow's first
-// step promptPrefix → sendTurn), so the confinement must be registered
-// synchronously before that kickoff dispatches — never after createSession
-// resolves. We verify by inspecting the permissionMode that reaches runTurn on
-// that kickoff: a mobile-shared session is clamped (bypassPermissions → default)
-// the instant it runs; a desktop session keeps full bypassPermissions.
-describe('createSession mobile confinement is ordered (#A2 finding 2)', () => {
+// FINDING 2 (ordering): a mobile-launched session must be tagged mobile-origin
+// from its FIRST turn. createSession fires a kickoff turn DURING creation (the
+// workflow's first step promptPrefix sendTurn), so the mark must be registered
+// synchronously before that kickoff dispatches, never after createSession
+// resolves. The permission-mode clamp was removed, so both mobile and desktop
+// reach runTurn at bypassPermissions; only the mobile-origin mark differs.
+describe('createSession mobile-origin marking is ordered (#A2 finding 2)', () => {
   beforeEach(async () => {
     wirePhaseSpies();
     runTurnSpy.mockReset();
@@ -669,7 +668,7 @@ describe('createSession mobile confinement is ordered (#A2 finding 2)', () => {
     clearMobileSharedSessions();
   });
 
-  it('clamps the FIRST kickoff turn of a mobile-launched session (mark precedes kickoff)', async () => {
+  it('marks a mobile-launched session before its FIRST kickoff turn, at full bypass', async () => {
     const { useAppStore } = await import('./store');
     const { isSessionMobileShared } = await import('../features/companion/mobileConfinement');
     useAppStore.setState({
@@ -687,16 +686,15 @@ describe('createSession mobile confinement is ordered (#A2 finding 2)', () => {
       mobileShared: true,
     });
 
-    // The kickoff turn must have already run, and at the moment it reached runTurn
-    // the permission mode was clamped — proving the mark landed before kickoff.
+    // The kickoff turn must have already run; the mark landed before it (origin
+    // tag) and, with the clamp removed, runTurn sees full bypassPermissions.
     await new Promise<void>((r) => setTimeout(r, 50));
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
     const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(callArgs['permissionMode']).toBe('default'); // clamped, not bypassPermissions
+    expect(callArgs['permissionMode']).toBe('bypassPermissions');
     expect(isSessionMobileShared(session.id)).toBe(true);
-    // And the stored mode is clamped intrinsically, not left at bypass.
     expect(useAppStore.getState().sessions.find((s) => s.id === session.id)?.permissionMode).toBe(
-      'default',
+      'bypassPermissions',
     );
   });
 

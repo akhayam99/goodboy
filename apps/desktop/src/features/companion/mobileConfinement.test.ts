@@ -1,13 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type {
-  ClaudePermissionMode,
-  PullRequestState,
-  SessionId,
-  WorkflowId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { PullRequestState, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 import {
-  clampMobilePermissionMode,
   clearMobileCreateRateState,
   clearMobileSharedSessions,
   evaluateMobileCreateSession,
@@ -39,37 +32,6 @@ const eligiblePr = (over: Partial<PullRequestState> = {}): PullRequestState => (
 });
 
 afterEach(() => clearMobileSharedSessions());
-
-describe('clampMobilePermissionMode', () => {
-  it('preserves read-only plan mode', () => {
-    expect(clampMobilePermissionMode('plan')).toBe('plan');
-  });
-
-  it('caps every writable mode at default so the phone cannot auto-approve writes', () => {
-    const writable: ClaudePermissionMode[] = [
-      'default',
-      'acceptEdits',
-      'bypassPermissions',
-      'dontAsk',
-    ];
-    for (const mode of writable) {
-      expect(clampMobilePermissionMode(mode)).toBe('default');
-    }
-  });
-
-  it('never yields a mode more permissive than default', () => {
-    const all: ClaudePermissionMode[] = [
-      'plan',
-      'default',
-      'acceptEdits',
-      'bypassPermissions',
-      'dontAsk',
-    ];
-    for (const mode of all) {
-      expect(['plan', 'default']).toContain(clampMobilePermissionMode(mode));
-    }
-  });
-});
 
 describe('mobile shared-session registry', () => {
   it('starts empty and marks a session shared', () => {
