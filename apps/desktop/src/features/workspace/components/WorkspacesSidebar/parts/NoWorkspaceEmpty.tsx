@@ -8,7 +8,7 @@ export const NoWorkspaceEmpty = ({ onAddWorkspace }: Props) => {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
       <div className="relative">
-        <div className="absolute inset-0 animate-pulse rounded-full bg-info/10 blur-xl" />
+        <div className="absolute inset-0 motion-safe:animate-pulse rounded-full bg-info/10 blur-xl" />
         <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
           <FolderPlus size={26} className="text-info" aria-hidden />
         </div>

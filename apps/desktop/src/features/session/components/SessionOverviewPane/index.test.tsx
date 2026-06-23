@@ -123,7 +123,7 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
     expect(screen.getByTestId('branch-chip').textContent).toBe('ak/feat-thing');
     expect(screen.getByTestId('cost-chip')).toBeDefined();
     expect(screen.getByTestId('summarizer-badge')).toBeDefined();
-    expect(screen.getByText(/old$/)).toBeDefined();
+    expect(screen.getByText(/ago$/)).toBeDefined();
   });
 
   it('omits the branch chip when no branch is known', () => {
@@ -210,7 +210,7 @@ describe('SessionOverviewPane nudges', () => {
 
   it('shows the calm fallback when nothing needs the user', () => {
     renderPane();
-    expect(screen.getByText(/nothing needs you right now/i)).toBeDefined();
+    expect(screen.getByText(/nothing needs you/i)).toBeDefined();
   });
 
   it('raises an attention nudge for a pull request', () => {

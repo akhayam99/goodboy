@@ -99,7 +99,11 @@ export const DiffToolbar = ({
             aria-label="refresh git state"
             className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
           >
-            <RefreshCw size={12} className={refreshing ? 'animate-spin' : undefined} aria-hidden />
+            <RefreshCw
+              size={12}
+              className={refreshing ? 'motion-safe:animate-spin' : undefined}
+              aria-hidden
+            />
           </button>
         ) : null}
         {showClose ? (

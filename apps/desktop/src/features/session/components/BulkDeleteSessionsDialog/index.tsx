@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dialog } from '@goodboy/ui';
+import { Button, Dialog, ScrollFade } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -64,13 +64,17 @@ export const BulkDeleteSessionsDialog = ({ sessions, open, onClose, onConfirmed 
       }
     >
       <div className="flex flex-col gap-3">
-        <div className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-md border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground">
+        <ScrollFade
+          fadeFrom="subtle"
+          className="max-h-48 rounded-md border border-border-soft bg-subtle text-xs text-muted-foreground"
+          viewportClassName="flex flex-col gap-1 px-3 py-2"
+        >
           {sessions.map((session) => (
             <span key={session.id} className="font-mono text-foreground">
               {session.goal}
             </span>
           ))}
-        </div>
+        </ScrollFade>
         <p className="text-xs font-medium text-danger">This cannot be undone.</p>
       </div>
     </Dialog>

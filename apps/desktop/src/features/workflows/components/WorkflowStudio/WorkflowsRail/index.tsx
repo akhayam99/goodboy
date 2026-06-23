@@ -66,6 +66,7 @@ export const WorkflowsRail = ({
                 key={t.id}
                 template={t}
                 active={t.id === activeId}
+                approved={t.isPreset !== false}
                 onSelect={() => onSelect(t)}
                 onDelete={() => onDelete(t)}
               />

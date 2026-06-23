@@ -361,7 +361,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
           className={cn(
             'mt-[5px] size-1.5 shrink-0 rounded-full',
             isAutoMode ? 'bg-danger' : stageMeta.dotClassName,
-            stage === 'running' && 'animate-pulse',
+            stage === 'running' && 'motion-safe:animate-pulse',
           )}
         />
         <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">

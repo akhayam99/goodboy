@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import { ChatView } from '../../../chat/components/ChatView';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { PlanStudio } from '../../../plans/components/PlanStudio';
@@ -179,20 +179,22 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           ) : null}
 
           {showAgentOverlay ? (
-            <div className="absolute inset-0 z-20 flex bg-background">
+            <div className="absolute inset-0 z-20 flex bg-background motion-safe:animate-studio-in">
               <div className="flex w-72 shrink-0 flex-col bg-background">
                 <button
                   type="button"
                   onClick={() => setActiveLens(sessionId, overlayHome)}
-                  className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground"
+                  className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                 >
                   <ArrowLeft size={14} aria-hidden className="shrink-0" />
                   <span className="truncate">{LENS_LABEL[overlayHome]}</span>
                 </button>
                 <Divider />
-                <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-                  <AgentsSection task={session} only={overlayHome} />
-                </div>
+                <ScrollFade className="min-h-0 flex-1">
+                  <div className="px-2 py-2">
+                    <AgentsSection task={session} only={overlayHome} />
+                  </div>
+                </ScrollFade>
               </div>
               <Divider orientation="vertical" />
               <div className="min-h-0 min-w-0 flex-1">

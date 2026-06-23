@@ -12,12 +12,13 @@ export const SessionStageBadge = ({ session }: Props) => {
   const meta = SESSION_STAGE_META[stage];
   return (
     <span
+      role="status"
       title={reason ?? meta.label}
       aria-label={meta.label}
       className={cn(
         'inline-block size-2 shrink-0 rounded-full',
         meta.dotClassName,
-        stage === 'running' && 'animate-pulse',
+        stage === 'running' && 'motion-safe:animate-pulse',
       )}
     />
   );

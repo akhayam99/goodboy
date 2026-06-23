@@ -31,7 +31,7 @@ export const Select = ({
         className={cn(
           'appearance-none rounded-md border border-border bg-background text-foreground',
           'cursor-pointer transition-colors hover:border-foreground/30',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
           'disabled:cursor-not-allowed disabled:opacity-50',
           SIZE[size],
           block && 'w-full',

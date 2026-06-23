@@ -37,6 +37,11 @@ pub enum MobileAction {
     ResolveComment,
     SetContextSlot,
     QueryProviders,
+    MergePr,
+    QueryIssues,
+    CreateSessionFromIssue,
+    SpawnWorkflow,
+    QueryFileDiff,
 }
 
 impl MobileAction {
@@ -48,6 +53,11 @@ impl MobileAction {
             0x86 => Some(Self::ResolveComment),
             0x87 => Some(Self::QueryProviders),
             0x88 => Some(Self::SetContextSlot),
+            0x8A => Some(Self::MergePr),
+            0x8B => Some(Self::QueryIssues),
+            0x8C => Some(Self::CreateSessionFromIssue),
+            0x8D => Some(Self::SpawnWorkflow),
+            0x8E => Some(Self::QueryFileDiff),
             _ => None,
         }
     }
@@ -61,13 +71,21 @@ impl MobileAction {
             Self::ResolveComment => "resolveComment",
             Self::SetContextSlot => "setContextSlot",
             Self::QueryProviders => "queryProviders",
+            Self::MergePr => "mergePr",
+            Self::QueryIssues => "queryIssues",
+            Self::CreateSessionFromIssue => "createSessionFromIssue",
+            Self::SpawnWorkflow => "spawnWorkflow",
+            Self::QueryFileDiff => "queryFileDiff",
         }
     }
 
     /// Read-only queries get their result frame (OP_QUERY_RESULT) instead of a
     /// write ACK; the phone routes the response to a data continuation.
     pub fn is_query(self) -> bool {
-        matches!(self, Self::QueryProviders)
+        matches!(
+            self,
+            Self::QueryProviders | Self::QueryIssues | Self::QueryFileDiff
+        )
     }
 }
 
@@ -122,13 +140,27 @@ mod tests {
         assert!(matches!(MobileAction::from_opcode(0x86), Some(MobileAction::ResolveComment)));
         assert!(matches!(MobileAction::from_opcode(0x87), Some(MobileAction::QueryProviders)));
         assert!(matches!(MobileAction::from_opcode(0x88), Some(MobileAction::SetContextSlot)));
+        assert!(matches!(MobileAction::from_opcode(0x8A), Some(MobileAction::MergePr)));
+        assert!(matches!(MobileAction::from_opcode(0x8B), Some(MobileAction::QueryIssues)));
+        assert!(matches!(
+            MobileAction::from_opcode(0x8C),
+            Some(MobileAction::CreateSessionFromIssue)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x8D),
+            Some(MobileAction::SpawnWorkflow)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x8E),
+            Some(MobileAction::QueryFileDiff)
+        ));
     }
 
     #[test]
     fn rejects_read_server_and_unknown_opcodes() {
         // Server->client (0x01-0x09) and client read opcodes (0x80-0x82) are not
         // mobile actions and must never resolve to one.
-        for op in [0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0xFF] {
+        for op in [0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xFF] {
             assert!(
                 MobileAction::from_opcode(op).is_none(),
                 "opcode {op:#x} must not map to a mobile action",
@@ -145,12 +177,24 @@ mod tests {
         assert_eq!(MobileAction::ResolveComment.kind(), "resolveComment");
         assert_eq!(MobileAction::SetContextSlot.kind(), "setContextSlot");
         assert_eq!(MobileAction::QueryProviders.kind(), "queryProviders");
+        assert_eq!(MobileAction::MergePr.kind(), "mergePr");
+        assert_eq!(MobileAction::QueryIssues.kind(), "queryIssues");
+        assert_eq!(
+            MobileAction::CreateSessionFromIssue.kind(),
+            "createSessionFromIssue"
+        );
+        assert_eq!(MobileAction::SpawnWorkflow.kind(), "spawnWorkflow");
+        assert_eq!(MobileAction::QueryFileDiff.kind(), "queryFileDiff");
     }
 
     #[test]
     fn only_query_actions_report_as_queries() {
+        // Read-only queries return data frames; everything else is a write ACK.
         assert!(MobileAction::QueryProviders.is_query());
-        for op in [0x83u8, 0x84, 0x85, 0x86, 0x88] {
+        assert!(MobileAction::QueryIssues.is_query());
+        assert!(MobileAction::QueryFileDiff.is_query());
+        // createSessionFromIssue (0x8C) and spawnWorkflow (0x8D) are WRITEs — they ACK.
+        for op in [0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D] {
             let action = MobileAction::from_opcode(op).expect("opcode is a write command");
             assert!(!action.is_query(), "{} must be a write, not a query", action.kind());
             assert!(!action.kind().is_empty());

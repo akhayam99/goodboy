@@ -123,7 +123,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
               Cancel
             </Button>
             <Button size="sm" onClick={() => void onSave()} disabled={busy || !apiKey.trim()}>
-              {busy ? <Loader2 size={13} className="animate-spin" aria-hidden /> : null}
+              {busy ? <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden /> : null}
               {busy ? 'Validating' : 'Save key'}
             </Button>
           </div>

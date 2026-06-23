@@ -852,14 +852,14 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                   >
                     {[0, 1].map((i) => (
                       <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
-                        <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
-                        <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                        <span className="h-3 w-3 motion-safe:animate-pulse rounded-full bg-muted" />
+                        <span className="h-3 flex-1 motion-safe:animate-pulse rounded bg-muted" />
                       </li>
                     ))}
                   </ul>
                 ) : resolverAgents.length === 0 ? (
                   forceExpanded ? (
-                    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+                    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
                       <span
                         aria-hidden
                         className="flex size-12 items-center justify-center rounded-full bg-success/10"
@@ -917,7 +917,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
             {forceExpanded ? null : (
               <SectionHeader
                 className="mt-6 pb-1.5"
-                icon={<CheckCheck size={11} aria-hidden className="text-lime-500" />}
+                icon={<CheckCheck size={11} aria-hidden className="text-success" />}
                 label="Resolve"
               />
             )}
@@ -937,12 +937,12 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
             />
           </>
         ) : forceExpanded ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
             <span
               aria-hidden
-              className="flex size-12 items-center justify-center rounded-full bg-lime-500/10"
+              className="flex size-12 items-center justify-center rounded-full bg-success/10"
             >
-              <CheckCheck size={24} className="text-lime-500" aria-hidden />
+              <CheckCheck size={24} className="text-success" aria-hidden />
             </span>
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium text-foreground">Nothing to resolve</p>

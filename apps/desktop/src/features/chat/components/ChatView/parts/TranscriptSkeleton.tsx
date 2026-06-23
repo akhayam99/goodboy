@@ -1,4 +1,4 @@
-import { Skeleton } from '@goodboy/ui';
+import { Skeleton, SkeletonText } from '@goodboy/ui';
 
 export const TranscriptSkeleton = () => {
   return (
@@ -7,12 +7,16 @@ export const TranscriptSkeleton = () => {
       aria-label="loading transcript"
       className="mx-auto flex w-full max-w-[880px] flex-col gap-6"
     >
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="flex flex-col gap-2">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-5/6" />
-          <Skeleton className="h-3 w-3/4" />
+      {[0, 1].map((i) => (
+        <div key={i} className="flex flex-col gap-2.5">
+          {/* user turn: short bubble pinned right */}
+          <Skeleton className="ml-auto h-9 w-2/5 rounded-md" />
+          {/* operations chip line */}
+          <Skeleton className="h-5 w-32 rounded-md" />
+          {/* assistant reply */}
+          <div className="rounded-md bg-subtle/40 px-3 py-2">
+            <SkeletonText lines={3} />
+          </div>
         </div>
       ))}
     </div>

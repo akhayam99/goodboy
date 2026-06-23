@@ -70,9 +70,11 @@ describe('SessionDetailPanel', () => {
     expect(onOpenSessionSettings).toHaveBeenCalledOnce();
   });
 
-  it('renders the session actions menu trigger', () => {
+  it('renders the open-worktree folder trigger plus archive and delete actions', () => {
     render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /session actions/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open worktree/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /archive session/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
   });
 
   it('does not render an external task chip when none is mapped', () => {

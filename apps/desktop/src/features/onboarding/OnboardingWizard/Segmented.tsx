@@ -24,7 +24,7 @@ export const Segmented = <T extends string>({ options, value, onChange, ariaLabe
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="grid w-full gap-1.5 rounded-xl border border-border-soft/60 bg-subtle/30 p-1.5"
+      className="grid w-full gap-1.5 rounded-lg border border-border-soft/60 bg-subtle/30 p-1.5"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((opt) => {

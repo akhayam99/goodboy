@@ -21,7 +21,7 @@ export function ClusterChildRow({
 }: ClusterChildRowProps) {
   const icon =
     child.status === 'running' ? (
-      <Loader2 size={10} className="animate-spin text-info" aria-hidden />
+      <Loader2 size={10} className="motion-safe:animate-spin text-info" aria-hidden />
     ) : child.status === 'completed' ? (
       <span className="flex size-3 items-center justify-center rounded-full bg-success/15">
         <Check size={8} className="text-success" aria-hidden />

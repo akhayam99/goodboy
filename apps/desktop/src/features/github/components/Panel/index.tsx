@@ -80,7 +80,11 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
           aria-label="refresh GitHub status"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw size={13} aria-hidden className={checking ? 'animate-spin' : undefined} />
+          <RefreshCw
+            size={13}
+            aria-hidden
+            className={checking ? 'motion-safe:animate-spin' : undefined}
+          />
         </button>
       </div>
 
@@ -171,7 +175,9 @@ function Absent({
           onClick={onConnect}
           disabled={save === 'saving' || token.trim().length === 0}
         >
-          {save === 'saving' && <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />}
+          {save === 'saving' && (
+            <Loader2 size={12} className="mr-1 motion-safe:animate-spin" aria-hidden />
+          )}
           Connect
         </Button>
       </div>
@@ -258,7 +264,9 @@ function Connected({
               onClick={onConnect}
               disabled={save === 'saving' || token.trim().length === 0}
             >
-              {save === 'saving' && <Loader2 size={12} className="mr-1 animate-spin" aria-hidden />}
+              {save === 'saving' && (
+                <Loader2 size={12} className="mr-1 motion-safe:animate-spin" aria-hidden />
+              )}
               Use a token
             </Button>
           </div>

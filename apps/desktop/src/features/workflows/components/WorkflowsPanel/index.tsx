@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Divider } from '@goodboy/ui';
 import { formatWorkflowFromNL, type FormattedWorkflow } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
@@ -46,6 +46,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   );
 
   const [editing, setEditing] = useState<Workflow | null | 'new'>(null);
+  const [approved, setApproved] = useState(false);
   const [form, setForm] = useState<TemplateForm>(emptyForm());
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -53,17 +54,74 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [formatting, setFormatting] = useState(false);
+  const [formatOpen, setFormatOpen] = useState(false);
   const [preview, setPreview] = useState<FormattedWorkflow | null>(null);
 
-  const presets = templates.filter((t) => t.isPreset !== false && !t.deletedAt);
+  // Both approved presets and drafts are listed; the card carries a status pill.
+  // Autosave means every in-progress workflow is a real (often draft) record.
+  const presets = templates.filter((t) => !t.deletedAt);
+
+  // autosave plumbing: latest form/state captured in refs so a debounced timer
+  // always flushes the newest snapshot without re-arming on every keystroke.
+  const editingIdRef = useRef<WorkflowId | null>(null);
+  const approvedRef = useRef(approved);
+  approvedRef.current = approved;
+  const formRef = useRef(form);
+  formRef.current = form;
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // guards against overlapping saves (debounced flush + explicit flush racing
+  // before the first INSERT resolves an id) producing a duplicate workflow.
+  const isSavingRef = useRef(false);
+  // skip the autosave that the open/load setForm would otherwise trigger
+  const skipNextAutosave = useRef(true);
+  const flushSaveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
 
   useEffect(() => {
     void loadPhaseTemplates(workspaceId);
     void loadStepLibrary(workspaceId);
   }, [loadPhaseTemplates, loadStepLibrary, workspaceId]);
 
+  useEffect(
+    () => () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+      }
+    },
+    [],
+  );
+
+  // Debounced autosave: any form edit while the composer is open flushes after a
+  // short idle. The open/load setForm is skipped so it never re-saves on entry.
+  useEffect(() => {
+    if (editing === null) {
+      return;
+    }
+    if (skipNextAutosave.current) {
+      skipNextAutosave.current = false;
+      return;
+    }
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    // Don't autosave a half-built form: a blank step name is a normal mid-edit
+    // state (e.g. just-added blank step), not an error to surface. The hard
+    // validation still fires on explicit approve/save. Re-arms once named.
+    if (form.steps.some((d) => !d.name.trim())) {
+      return;
+    }
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      void flushSaveRef.current();
+    }, 700);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, editing]);
+
   const openNew = () => {
     setEditing('new');
+    setApproved(false);
+    editingIdRef.current = null;
+    skipNextAutosave.current = true;
     setForm(emptyForm());
     setExpandedIdx(0);
     setFormError(null);
@@ -71,13 +129,21 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   const openEdit = (t: Workflow) => {
     setEditing(t);
+    setApproved(t.isPreset !== false);
+    editingIdRef.current = t.id;
+    skipNextAutosave.current = true;
     setForm(templateToForm(t));
     setExpandedIdx(null);
     setFormError(null);
   };
 
-  const cancelEdit = () => {
+  const closeEdit = () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
     setEditing(null);
+    editingIdRef.current = null;
     setFormError(null);
   };
 
@@ -132,21 +198,34 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     }));
     setExpandedIdx(null);
     setPreview(null);
+    setFormatOpen(false);
+    showToast('success', 'workflow formatted');
   };
 
-  const rejectPreview = () => setPreview(null);
+  const closeFormat = () => {
+    setFormatOpen(false);
+    setPreview(null);
+  };
 
-  const onSave = async (isPreset: boolean) => {
-    if (!form.name.trim()) {
+  // Flush the current form to disk. Returns false (and surfaces an error) when
+  // the form is not yet saveable, so callers can decide whether to retry.
+  const flushSave = async (): Promise<boolean> => {
+    // In-flight guard: never let a second save start before the first resolves
+    // its id, or both run with id=null and double-INSERT the same workflow.
+    if (isSavingRef.current) {
+      return false;
+    }
+    const snapshot = formRef.current;
+    if (!snapshot.name.trim()) {
       setFormError('name is required');
-      return;
+      return false;
     }
-    if (form.steps.some((d) => !d.name.trim())) {
+    if (snapshot.steps.some((d) => !d.name.trim())) {
       setFormError('all steps need a name');
-      return;
+      return false;
     }
 
-    const defs: WorkflowStepUpsertArgs[] = form.steps.map((d, i) => ({
+    const defs: WorkflowStepUpsertArgs[] = snapshot.steps.map((d, i) => ({
       ...(d.id !== undefined ? { id: d.id } : {}),
       ...(d.libraryStepId !== undefined ? { libraryStepId: d.libraryStepId } : {}),
       role: d.role,
@@ -160,31 +239,47 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     }));
 
     const args: WorkflowUpsertArgs = {
-      ...(editing !== 'new' && editing ? { id: editing.id as WorkflowId } : {}),
+      ...(editingIdRef.current ? { id: editingIdRef.current } : {}),
       workspaceId,
-      name: form.name.trim(),
-      description: form.description.trim(),
-      ...(form.goal.trim() ? { goal: form.goal.trim() } : {}),
+      name: snapshot.name.trim(),
+      description: snapshot.description.trim(),
+      ...(snapshot.goal.trim() ? { goal: snapshot.goal.trim() } : {}),
       steps: defs,
-      isPreset,
+      isPreset: approvedRef.current,
     };
 
+    isSavingRef.current = true;
     setSaving(true);
     setFormError(null);
     try {
       const saved = await savePhaseTemplate(args);
-      if (isPreset) {
-        setEditing(null);
-        showToast('success', `workflow approved: ${saved.name}`);
-      } else {
-        setEditing(saved);
-        showToast('info', `saved as draft: ${saved.name}`);
+      // savePhaseTemplate may resolve undefined under test mocks; guard the id read.
+      const savedId = (saved as Workflow | undefined)?.id ?? null;
+      if (savedId) {
+        editingIdRef.current = savedId;
+        setEditing((cur) => (cur && cur !== 'new' ? (saved as Workflow) : cur));
       }
+      return true;
     } catch (err) {
       setFormError(formatError(err));
+      return false;
     } finally {
       setSaving(false);
+      isSavingRef.current = false;
     }
+  };
+  flushSaveRef.current = flushSave;
+
+  const setApprovedAndSave = (next: boolean) => {
+    // Cancel any pending debounced autosave so the immediate flush is the only
+    // save — otherwise both can run with id=null and double-INSERT (mirror closeEdit).
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    setApproved(next);
+    approvedRef.current = next;
+    void flushSave();
   };
 
   const onDelete = async (t: Workflow) => {
@@ -305,7 +400,8 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       <WorkflowComposer
         open={editing !== null}
         isNew={editing === 'new'}
-        isApproved={editing !== null && editing !== 'new' ? editing.isPreset !== false : false}
+        approved={approved}
+        onToggleApproved={setApprovedAndSave}
         hasPresets={presets.length > 0}
         form={form}
         workspaceId={workspaceId}
@@ -316,7 +412,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         error={formError}
         formatting={formatting}
         canFormat={connectedProviders.length > 0}
-        onFormat={(description) => void onFormat(description)}
+        onOpenFormat={() => setFormatOpen(true)}
         dragging={drag !== null}
         dropIndex={dropIndex}
         onNew={openNew}
@@ -334,18 +430,19 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         onStartStepDrag={startStepDrag}
         onSaveDef={(args) => void saveStepDef(args, workspaceId)}
         onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}
-        onSave={(isPreset) => void onSave(isPreset)}
-        onCancel={cancelEdit}
+        onClose={closeEdit}
       />
 
       <DragGhost ghost={ghost} />
 
       <WorkflowFormatPreview
-        open={preview !== null}
+        open={formatOpen}
+        formatting={formatting}
         proposal={preview}
         currentStepNames={form.steps.map((s) => s.name)}
-        onAccept={applyPreview}
-        onReject={rejectPreview}
+        onFormat={(description) => void onFormat(description)}
+        onApply={applyPreview}
+        onClose={closeFormat}
       />
     </div>
   );

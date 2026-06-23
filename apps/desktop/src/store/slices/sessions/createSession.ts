@@ -36,6 +36,10 @@ import {
   SETTING_LAST_SESSION_ID,
   DEFAULT_BRANCH_PREFIX,
 } from '../../../features/settings/settings';
+import {
+  clampMobilePermissionMode,
+  markSessionMobileShared,
+} from '../../../features/companion/mobileConfinement';
 import type { GetFn, SetFn } from './types';
 
 const slugifyDir = (raw: string): string =>
@@ -65,6 +69,13 @@ type Input = {
     title: string;
   };
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
+  // Origin marker. When true, this session was launched by a paired phone: it is
+  // registered mobile-shared SYNCHRONOUSLY (before any kickoff turn is
+  // dispatched) and its stored permission mode is clamped at creation, so the
+  // confinement is intrinsic and order-independent — a kickoff turn fired during
+  // creation can never run before the mark lands. Default false → desktop
+  // behavior is unchanged (full `bypassPermissions`, no mark).
+  mobileShared?: boolean;
 };
 
 export const createSession = (set: SetFn, get: GetFn) => {
@@ -81,6 +92,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     firstAgentModel: requestedModel,
     externalTask,
     attachmentInputs,
+    mobileShared = false,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
     if (!workspace) {
@@ -92,6 +104,16 @@ export const createSession = (set: SetFn, get: GetFn) => {
       branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
     const trimmedExisting = existingBranch?.trim();
     const sessionId = crypto.randomUUID() as SessionId;
+    // SECURITY (ordering): register the confinement BEFORE anything async that
+    // could dispatch a turn for this session (worktree setup, workflow prespawn,
+    // the kickoff sendTurn at the end of this fn). markSessionMobileShared is
+    // synchronous and module-scoped, so once this line runs every sendTurn for
+    // sessionId — including a kickoff fired during creation — clamps at the
+    // sendTurn choke point. Doing it here (not after createSession resolves in
+    // the executor) closes the race where a kickoff could outrun the mark.
+    if (mobileShared) {
+      markSessionMobileShared(sessionId);
+    }
     const isComposite = workspace.kind === 'composite';
     const members = isComposite ? (workspace.members ?? []) : [];
     if (isComposite && members.length < 2) {
@@ -150,7 +172,12 @@ export const createSession = (set: SetFn, get: GetFn) => {
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,
-      permissionMode: 'bypassPermissions',
+      // Desktop sessions run at full power; a mobile-launched session stores a
+      // clamped mode so the ceiling is intrinsic to the session (not only
+      // applied at sendTurn). Belt-and-suspenders with the sendTurn clamp.
+      permissionMode: mobileShared
+        ? clampMobilePermissionMode('bypassPermissions')
+        : 'bypassPermissions',
       workflowRuns:
         workflowId !== undefined && workflowRunId !== undefined
           ? [

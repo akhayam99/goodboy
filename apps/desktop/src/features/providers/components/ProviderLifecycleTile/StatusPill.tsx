@@ -18,19 +18,19 @@ function specFor(phase: ProviderLifecyclePhase, connection: ProviderConnectionSt
     case 'installing':
       return {
         label: 'Installing',
-        dotClass: 'bg-primary animate-pulse',
+        dotClass: 'bg-primary motion-safe:animate-pulse',
         labelClass: 'text-primary',
       };
     case 'connecting':
       return {
         label: 'Signing in',
-        dotClass: 'bg-primary animate-pulse',
+        dotClass: 'bg-primary motion-safe:animate-pulse',
         labelClass: 'text-primary',
       };
     case 'disconnecting':
       return {
         label: 'Signing out',
-        dotClass: 'bg-muted-foreground animate-pulse',
+        dotClass: 'bg-muted-foreground motion-safe:animate-pulse',
         labelClass: 'text-muted-foreground',
       };
     case 'installed':

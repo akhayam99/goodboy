@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Input, Textarea } from '@goodboy/ui';
+import { Input, Textarea } from '@goodboy/ui';
+import { X } from 'lucide-react';
 import { getDefaultTurnModel } from '@goodboy/core';
 import type {
   AgentEffort,
@@ -22,8 +23,10 @@ type Props = {
   readonly def: StepDef | null;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onSave: (args: StepDefUpsertArgs) => void;
-  readonly onCancel: () => void;
+  // Commit the current values without closing the editor (blur-driven autosave).
+  readonly onCommit: (args: StepDefUpsertArgs) => void;
+  // Close the editor; for an unsaved new step this discards it.
+  readonly onClose: () => void;
 };
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
@@ -33,8 +36,8 @@ export const LibraryStepForm = ({
   def,
   workspaceId,
   connectedProviders,
-  onSave,
-  onCancel,
+  onCommit,
+  onClose,
 }: Props) => {
   const isGlobal = def?.workspaceId === null;
   const [name, setName] = useState(def?.name ?? '');
@@ -54,28 +57,48 @@ export const LibraryStepForm = ({
   const effProvider: ProviderId = providerOverride || connectedProviders[0] || 'anthropic';
   const modelValue = modelOverride || getDefaultTurnModel(effProvider);
 
-  const canSave = name.trim().length > 0;
+  type FormState = {
+    name: string;
+    role: AgentRole;
+    promptPrefix: string;
+    providerOverride: ProviderId | '';
+    modelOverride: string;
+    effort: EffortLevel;
+    verbosity: VerbosityLevel;
+  };
 
-  const submit = () => {
-    if (!canSave) {
+  // Build args from a partial override so a freshly-changed select commits its new
+  // value immediately rather than the stale state captured in this render.
+  const commit = (over: Partial<FormState> = {}) => {
+    const next: FormState = {
+      name,
+      role,
+      promptPrefix,
+      providerOverride,
+      modelOverride,
+      effort,
+      verbosity,
+      ...over,
+    };
+    if (next.name.trim().length === 0) {
       return;
     }
     const base: StepDefUpsertArgs = {
       workspaceId,
-      role,
-      name: name.trim(),
-      promptPrefix,
-      ...(providerOverride ? { providerDefault: providerOverride } : {}),
-      ...(modelOverride.trim() ? { modelDefault: modelOverride.trim() } : {}),
-      effortDefault: effort as AgentEffort,
-      verbosityDefault: verbosity,
+      role: next.role,
+      name: next.name.trim(),
+      promptPrefix: next.promptPrefix,
+      ...(next.providerOverride ? { providerDefault: next.providerOverride } : {}),
+      ...(next.modelOverride.trim() ? { modelDefault: next.modelOverride.trim() } : {}),
+      effortDefault: next.effort as AgentEffort,
+      verbosityDefault: next.verbosity,
     };
     if (def && !isGlobal) {
-      onSave({ ...base, id: def.id });
+      onCommit({ ...base, id: def.id });
     } else if (def && isGlobal) {
-      onSave({ ...base, baseStepId: def.id });
+      onCommit({ ...base, baseStepId: def.id });
     } else {
-      onSave(base);
+      onCommit(base);
     }
   };
 
@@ -85,12 +108,29 @@ export const LibraryStepForm = ({
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onBlur={() => commit()}
           placeholder="step name"
           className="h-7 flex-1 text-xs font-medium"
         />
         <div className="w-36 shrink-0">
-          <RoleSelect value={role} onChange={setRole} disabled={false} />
+          <RoleSelect
+            value={role}
+            onChange={(r) => {
+              setRole(r);
+              commit({ role: r });
+            }}
+            disabled={false}
+          />
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          title="close"
+          aria-label="close step editor"
+          className="shrink-0 rounded p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+        >
+          <X size={13} aria-hidden />
+        </button>
       </div>
 
       {isGlobal ? (
@@ -102,6 +142,7 @@ export const LibraryStepForm = ({
       <Textarea
         value={promptPrefix}
         onChange={(e) => setPromptPrefix(e.target.value)}
+        onBlur={() => commit()}
         placeholder="default role instructions…"
         rows={3}
         autoGrow
@@ -115,7 +156,10 @@ export const LibraryStepForm = ({
           <ProviderSelect
             value={providerOverride}
             providers={connectedProviders}
-            onChange={setProviderOverride}
+            onChange={(p) => {
+              setProviderOverride(p);
+              commit({ providerOverride: p });
+            }}
             disabled={false}
           />
         </InlineField>
@@ -126,28 +170,37 @@ export const LibraryStepForm = ({
             onChange={(m) => {
               const levels = modelEffortLevels(m);
               setModelOverride(m);
+              const over: Partial<FormState> = { modelOverride: m };
               if (levels && !levels.includes(effort)) {
                 setEffort(levels[0]!);
+                over.effort = levels[0]!;
               }
+              commit(over);
             }}
             disabled={false}
           />
         </InlineField>
         <InlineField label="Effort">
-          <EffortSelect model={modelValue} value={effort} onChange={setEffort} disabled={false} />
+          <EffortSelect
+            model={modelValue}
+            value={effort}
+            onChange={(eff) => {
+              setEffort(eff);
+              commit({ effort: eff });
+            }}
+            disabled={false}
+          />
         </InlineField>
         <InlineField label="Verbosity">
-          <VerbositySelect value={verbosity} onChange={setVerbosity} disabled={false} />
+          <VerbositySelect
+            value={verbosity}
+            onChange={(v) => {
+              setVerbosity(v);
+              commit({ verbosity: v });
+            }}
+            disabled={false}
+          />
         </InlineField>
-      </div>
-
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button size="sm" onClick={submit} disabled={!canSave}>
-          Save
-        </Button>
       </div>
     </div>
   );

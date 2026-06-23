@@ -43,7 +43,7 @@ export const ClusterProgressDashboard = ({
     >
       <div className={cn('flex items-center gap-1.5 text-sm font-medium', accent.text)}>
         <Layers size={14} aria-hidden />
-        <span>
+        <span className="tabular-nums">
           cluster progress {completed}/{total}
         </span>
       </div>

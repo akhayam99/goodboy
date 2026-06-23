@@ -158,7 +158,7 @@ export const BootSplash = ({
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-lg font-bold tracking-tight">Goodboy</span>
-          <span className="text-[11px] uppercase tracking-widest text-muted-foreground/60">
+          <span className="text-xs tracking-tight text-muted-foreground/60">
             workspace orchestrator for coding agents
           </span>
         </div>

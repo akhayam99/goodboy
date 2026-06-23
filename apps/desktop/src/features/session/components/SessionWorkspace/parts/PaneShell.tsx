@@ -22,8 +22,8 @@ export const PaneShell = ({
   width = '2xl',
   children,
 }: PaneShellProps) => (
-  <ScrollFade className="h-full px-8 py-7">
-    <div className={cn('animate-fade-in mx-auto flex flex-col gap-5', WIDTH[width])}>
+  <ScrollFade className="h-full px-6 py-5">
+    <div className={cn('mx-auto flex flex-col gap-5 motion-safe:animate-studio-in', WIDTH[width])}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold leading-snug text-foreground">{title}</h1>

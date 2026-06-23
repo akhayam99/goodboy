@@ -1,4 +1,4 @@
-import { Button, Divider } from '@goodboy/ui';
+import { Button, Divider, ScrollFade } from '@goodboy/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -90,9 +90,13 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
           {command ? <EscapeHatch command={command} /> : null}
         </div>
         <Divider orientation="vertical" />
-        <div className="w-72 shrink-0 overflow-y-auto bg-subtle/30 px-5 py-5">
+        <ScrollFade
+          className="w-72 shrink-0"
+          viewportClassName="bg-subtle/30 px-5 py-5"
+          fadeFrom="subtle"
+        >
           <GuidePanel guide={guide} />
-        </div>
+        </ScrollFade>
       </div>
     </div>
   );

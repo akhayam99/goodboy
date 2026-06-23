@@ -61,7 +61,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
 
       {loading && groups.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground/60">
-          <Loader2 size={16} className="animate-spin" aria-hidden />
+          <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />
         </div>
       ) : error ? (
         <div className="px-3 pb-3">

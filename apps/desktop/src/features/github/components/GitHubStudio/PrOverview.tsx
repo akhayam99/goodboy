@@ -211,7 +211,7 @@ function SaveCancel({
         )}
       >
         {busy ? (
-          <Loader2 size={14} aria-hidden className="animate-spin" />
+          <Loader2 size={14} aria-hidden className="motion-safe:animate-spin" />
         ) : (
           <Check size={14} aria-hidden />
         )}

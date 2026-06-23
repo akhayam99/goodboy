@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import type {
   ProviderId,
   RoutingDecision,
@@ -44,10 +45,15 @@ export const RoutingIndicator = ({
 
   if (decision.reason === 'all-exceeded') {
     return (
-      <div className="flex items-center gap-2 text-xs text-danger">
-        <span>all provider budgets exceeded</span>
+      <div className="flex items-center gap-2 rounded-md border border-danger/30 bg-danger/5 px-2.5 py-1.5 text-xs text-danger">
+        <AlertTriangle size={13} aria-hidden className="shrink-0" />
+        <span className="flex-1">all provider budgets exceeded</span>
         {onSendAnyway ? (
-          <button type="button" onClick={onSendAnyway} className="underline hover:no-underline">
+          <button
+            type="button"
+            onClick={onSendAnyway}
+            className="shrink-0 rounded border border-danger/30 px-2 py-0.5 font-medium text-danger transition-colors hover:bg-danger/10"
+          >
             send anyway
           </button>
         ) : null}
@@ -69,9 +75,10 @@ export const RoutingIndicator = ({
       : `${fromLabel} disconnected`;
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className="text-warning">
-        ⚠ fallback: {label} / {decision.selectedModel} ({cause})
+    <div className="flex w-fit items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-xs text-warning">
+      <AlertTriangle size={13} aria-hidden className="shrink-0" />
+      <span>
+        fallback: {label} / {decision.selectedModel} ({cause})
       </span>
     </div>
   );

@@ -323,7 +323,7 @@ function TokensSection() {
   return (
     <div className="flex flex-col gap-7">
       <DialogSectionHeader
-        icon={<Coins size={14} aria-hidden className="text-amber-400" />}
+        icon={<Coins size={14} aria-hidden className="text-warning" />}
         title="Tokens & cost"
         description="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token ≈ ¾ of an English word."
         tone="warning"
@@ -474,7 +474,7 @@ function TipsSection() {
   return (
     <div className="flex flex-col gap-7">
       <DialogSectionHeader
-        icon={<Lightbulb size={14} aria-hidden className="text-amber-400" />}
+        icon={<Lightbulb size={14} aria-hidden className="text-warning" />}
         title="Tips"
         description="Patterns that compound across sessions."
         tone="warning"
@@ -483,10 +483,10 @@ function TipsSection() {
         {tips.map((t, i) => (
           <div
             key={t.title}
-            className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle/40 p-4 transition-colors hover:border-border hover:bg-subtle/60"
+            className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle/40 p-4 motion-safe:transition-colors hover:border-border hover:bg-subtle/60"
           >
             <div className="flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/15 font-mono text-[10px] font-semibold text-amber-400">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warning/15 font-mono text-2xs font-semibold text-warning">
                 {i + 1}
               </span>
               <span className="text-sm font-semibold text-foreground">{t.title}</span>
@@ -588,8 +588,12 @@ function LegendSection() {
           rows={[
             { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely, no prompts' },
             { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
-            { dot: 'bg-blue-500', label: 'default', desc: 'writes and runs ask for approval' },
-            { dot: 'bg-slate-400', label: 'plan', desc: 'no tool calls executed, read-only' },
+            { dot: 'bg-info', label: 'default', desc: 'writes and runs ask for approval' },
+            {
+              dot: 'bg-muted-foreground/40',
+              label: 'plan',
+              desc: 'no tool calls executed, read-only',
+            },
           ]}
         />
       </LegendBlock>
@@ -598,7 +602,7 @@ function LegendSection() {
         <LegendaGrid
           rows={[
             {
-              dot: 'bg-amber-400',
+              dot: 'bg-warning',
               label: 'AUTO',
               desc: 'autorun mode: next action fires without user confirmation',
             },
@@ -696,7 +700,7 @@ function ConceptCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col items-start gap-2 rounded-lg border border-border-soft bg-background p-4 text-left transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-sm"
+      className="group flex flex-col items-start gap-2 rounded-lg border border-border-soft bg-background p-4 text-left motion-safe:transition-all motion-safe:hover:-translate-y-0.5 hover:border-border hover:shadow-sm"
     >
       <span
         className={cn(

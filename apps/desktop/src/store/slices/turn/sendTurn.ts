@@ -19,6 +19,7 @@ import {
   updateProviderRunStatus,
   updateSessionState,
   updateSessionWorkflowStep,
+  upsertContextSlot,
 } from '@goodboy/db';
 import type {
   Agent,
@@ -49,6 +50,7 @@ import {
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
+import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
@@ -97,6 +99,12 @@ type Input = {
   override?: TurnProviderOverride;
   onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
 };
+
+// Machine-derived context slot carrying `git diff --numstat` lines for the
+// session's changed files (vs the same merge-base as the desktop file-changes
+// view). Deliberately NOT a SLOT_KEY: it's desktop state mirrored to mobile
+// through the snapshot, not an agent-visible or user-editable slot.
+const FILES_TOUCHED_NUMSTAT_SLOT = 'files_touched_numstat';
 
 const EFFORT_FLAG: Readonly<Record<string, string>> = {
   minimal: 'minimal',
@@ -838,6 +846,30 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
         if (result.openQuestionsChanged) {
           await get().loadSessionOpenQuestions(sessionId);
+        }
+        // Mirror the session's git file-change numstat into a context slot so the
+        // mobile client gets BOTH the changed-file list and per-file +/- counts
+        // from one value, computed against the SAME merge-base as the desktop's
+        // own file-changes view (worktree_changed_files). This is desktop-machine
+        // state (not in SLOT_KEYS / the desktop context UI), written directly so
+        // it mirrors generically through the snapshot's context_slots projection.
+        // The existing `files_touched` slot is left untouched (mobile falls back
+        // to it, paths-only, when this slot is absent). Best-effort: a git failure
+        // must not fail the turn.
+        try {
+          const changed = await worktreeChangedFiles(workingDir);
+          await upsertContextSlot(
+            tauriDatabase,
+            sessionId,
+            { key: FILES_TOUCHED_NUMSTAT_SLOT, value: changed.numstat, enabled: true },
+            'summarizer',
+          );
+          const refreshedSlots = await listContextSlotsForSession(tauriDatabase, sessionId);
+          set((state) => ({
+            sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
+          }));
+        } catch (e) {
+          console.error('files_touched_numstat slot write failed', e);
         }
       } catch (e) {
         console.error('autoPopulateContext failed', e);

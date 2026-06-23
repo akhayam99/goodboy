@@ -171,7 +171,11 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
           aria-label="refresh merge request"
           className="flex size-7 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw size={12} aria-hidden className={loading ? 'animate-spin' : undefined} />
+          <RefreshCw
+            size={12}
+            aria-hidden
+            className={loading ? 'motion-safe:animate-spin' : undefined}
+          />
         </button>
         {mr ? (
           <a
@@ -235,7 +239,11 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                   >
                     {busy === 'merge' ? (
                       <>
-                        <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                        <Loader2
+                          size={13}
+                          className="mr-1.5 motion-safe:animate-spin"
+                          aria-hidden
+                        />
                         Merging…
                       </>
                     ) : (
@@ -307,7 +315,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                     title="hand it to an agent: it drafts the title and description, then opens the MR"
                   >
                     {busy === 'ai' ? (
-                      <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                      <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
                     ) : (
                       <Sparkles size={13} className="mr-1.5" aria-hidden />
                     )}
@@ -319,7 +327,11 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                   >
                     {busy === 'create' ? (
                       <>
-                        <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                        <Loader2
+                          size={13}
+                          className="mr-1.5 motion-safe:animate-spin"
+                          aria-hidden
+                        />
                         Creating…
                       </>
                     ) : (

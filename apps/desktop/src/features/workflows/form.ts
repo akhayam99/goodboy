@@ -10,6 +10,7 @@ import { inferAgentKindFromName, KIND_TO_ROLE } from '../session/agent-kind';
 import { type EffortLevel } from '../chat/utils/chat-constants';
 
 export type DefinitionForm = {
+  uid: string;
   id?: StepId;
   libraryStepId?: StepDefId;
   role: AgentRole;
@@ -31,7 +32,14 @@ export type TemplateForm = {
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
+let uidSeq = 0;
+const nextUid = (): string => {
+  uidSeq += 1;
+  return `step-${Date.now().toString(36)}-${uidSeq.toString(36)}`;
+};
+
 export const emptyDefinition = (): DefinitionForm => ({
+  uid: nextUid(),
   role: 'custom',
   name: '',
   promptPrefix: '',
@@ -57,6 +65,7 @@ export const templateToForm = (t: Workflow): TemplateForm => {
       .slice()
       .sort((a, b) => a.ordinal - b.ordinal)
       .map((d) => ({
+        uid: nextUid(),
         id: d.id,
         ...(d.libraryStepId !== undefined ? { libraryStepId: d.libraryStepId } : {}),
         role: d.role ?? KIND_TO_ROLE[inferAgentKindFromName(d.name)],
@@ -72,6 +81,7 @@ export const templateToForm = (t: Workflow): TemplateForm => {
 
 export const defFromLibraryStep = (s: StepDef): DefinitionForm => {
   return {
+    uid: nextUid(),
     libraryStepId: s.id,
     role: s.role,
     name: s.name,

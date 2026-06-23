@@ -87,7 +87,7 @@ function OnboardingScreen({ onAddWorkspace }: { onAddWorkspace: () => void }) {
         <button
           type="button"
           onClick={onAddWorkspace}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
         >
           Add workspace
         </button>

@@ -1,9 +1,7 @@
-import { Input, Textarea, cn } from '@goodboy/ui';
-import { X } from 'lucide-react';
+import { Input, Textarea } from '@goodboy/ui';
 import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import type { DefinitionForm } from '../../form';
-import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { modelEffortLevels } from '../../../chat/utils/chat-constants';
 import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
@@ -14,14 +12,11 @@ import { ProviderSelect } from '../../../session/components/ProviderSelect';
 
 type Props = {
   readonly def: DefinitionForm;
-  readonly ordinal: number;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onUpdate: (patch: Partial<DefinitionForm>) => void;
-  readonly onClose: () => void;
 };
 
-export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose }: Props) => {
-  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
+export const StepEditor = ({ def, connectedProviders, onUpdate }: Props) => {
   const effProvider: ProviderId =
     (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
   const autoModel = autoModelForRole(def.role, connectedProviders)?.model;
@@ -37,28 +32,7 @@ export const StepEditor = ({ def, ordinal, connectedProviders, onUpdate, onClose
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-muted/20 p-4">
-      <div className="flex items-center gap-2">
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted/60 text-2xs font-mono font-semibold text-muted-foreground">
-          {ordinal + 1}
-        </span>
-        <span className="text-xs font-semibold text-foreground">
-          {def.name.trim() || 'Untitled step'}
-        </span>
-        <span className={cn('text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
-          {ROLE_LABEL[def.role]}
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          title="collapse"
-          aria-label="collapse step editor"
-          className="ml-auto rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-        >
-          <X size={13} aria-hidden />
-        </button>
-      </div>
-
+    <div className="flex flex-col gap-3 rounded-md bg-muted/20 p-3">
       <div className="flex items-center gap-2">
         <Input
           value={def.name}

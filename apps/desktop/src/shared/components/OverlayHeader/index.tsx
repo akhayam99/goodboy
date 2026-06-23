@@ -42,6 +42,7 @@ export const OverlayHeader = ({
       className={cn(
         'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',
         'hover:bg-muted/50 hover:text-foreground',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         closeDisabled && 'cursor-not-allowed opacity-50',
       )}
     >

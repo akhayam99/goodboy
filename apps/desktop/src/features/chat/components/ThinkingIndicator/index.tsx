@@ -8,15 +8,15 @@ type Props = {
 };
 
 const PHRASES: Record<ThinkingContext, readonly string[]> = {
-  think: ['sniffing it out', 'on the scent', 'nose down', 'chewing it over', 'tracking it down'],
-  search: ['sniffing through files', 'following the trail', 'nose to the ground', 'nosing around'],
-  edit: ['leaving its mark', 'shaping it up', 'tidying the yard'],
-  run: ['digging in', 'off to fetch', 'fetching results'],
+  think: ['reasoning', 'planning', 'weighing options'],
+  search: ['searching', 'reading files', 'tracing references'],
+  edit: ['writing', 'editing', 'applying changes'],
+  run: ['running', 'executing', 'collecting output'],
 };
 
 const ROTATE_MS = 2600;
 const SETTLE_AFTER_TICKS = 8;
-const SETTLED_PHRASE = 'still on the trail';
+const SETTLED_PHRASE = 'still working';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -42,8 +42,8 @@ export const ThinkingIndicator = ({ context }: Props) => {
   return (
     <div
       role="status"
-      aria-label="goodboy is working"
-      className="flex w-fit items-center gap-1.5 px-1 py-0.5 text-2xs italic"
+      aria-label="agent working"
+      className="flex w-fit items-center gap-1.5 px-1 py-0.5 text-2xs"
     >
       <DogMascot size={12} className="text-muted-foreground/70 motion-safe:animate-soft-pulse" />
       <span aria-hidden className={reduced ? 'text-muted-foreground/80' : 'text-shimmer'}>

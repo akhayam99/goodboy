@@ -41,7 +41,7 @@ export function ScoutSubtree({
         onClick={() => onToggle(containerId)}
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} scouts`}
-        className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-sky-400/70 transition-colors hover:text-sky-400"
+        className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-info/70 transition-colors hover:text-info"
       >
         {expanded ? (
           <ChevronDown size={10} aria-hidden className="shrink-0" />

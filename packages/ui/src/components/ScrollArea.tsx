@@ -1,16 +1,21 @@
 import type { ComponentProps } from 'react';
-import { cn } from '../cn';
+import { ScrollFade } from './ScrollFade';
 
-export type ScrollAreaProps = ComponentProps<'div'>;
+export type ScrollAreaProps = ComponentProps<'div'> & {
+  /** class applied to the inner scrolling viewport (where overflow lives) */
+  viewportClassName?: string;
+};
 
-export const ScrollArea = ({ className, ...rest }: ScrollAreaProps) => {
+/**
+ * Thin alias over {@link ScrollFade}: same import name + props, but the raw
+ * `overflow-auto` surface is replaced by a faded-edge scroll region. The
+ * outer `className` controls layout/sizing; pass `viewportClassName` to style
+ * the scrolling viewport (e.g. to opt into horizontal overflow).
+ */
+export const ScrollArea = ({ className, viewportClassName, children }: ScrollAreaProps) => {
   return (
-    <div
-      className={cn(
-        'overflow-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin]',
-        className,
-      )}
-      {...rest}
-    />
+    <ScrollFade className={className} viewportClassName={viewportClassName}>
+      {children}
+    </ScrollFade>
   );
 };

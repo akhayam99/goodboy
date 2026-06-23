@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -327,7 +328,7 @@ export const CommandPalette = ({
         }
       }}
     >
-      <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-2xl">
+      <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-2xl motion-safe:animate-studio-in">
         <input
           ref={inputRef}
           type="text"
@@ -336,82 +337,89 @@ export const CommandPalette = ({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="command palette search"
-          className="w-full border-b border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
+        <Divider />
 
         {parsed.prefix === null && query.length === 0 && (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border-soft bg-subtle/30 px-3 py-1.5 text-[10px] text-muted-foreground">
-            {PREFIXES.map((p) => (
-              <button
-                key={p.symbol}
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setQuery(p.symbol);
-                  inputRef.current?.focus();
-                }}
-                className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/5 hover:text-foreground"
-                title={p.hint}
-              >
-                <kbd className="font-mono text-foreground/80">{p.symbol}</kbd>
-                <span>{p.hint}</span>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-[10px] text-muted-foreground">
+              {PREFIXES.map((p) => (
+                <button
+                  key={p.symbol}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setQuery(p.symbol);
+                    inputRef.current?.focus();
+                  }}
+                  aria-label={`filter by ${p.hint}`}
+                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  title={p.hint}
+                >
+                  <kbd className="font-mono text-foreground/80">{p.symbol}</kbd>
+                  <span>{p.hint}</span>
+                </button>
+              ))}
+            </div>
+            <Divider />
+          </>
         )}
 
-        <ul ref={listRef} className="max-h-80 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <li className="px-4 py-6 text-center text-sm text-muted-foreground">no results</li>
-          ) : (
-            GROUP_ORDER.flatMap((group) => {
-              const itemsInGroup = filtered.filter((it) => it.group === group);
-              if (itemsInGroup.length === 0) {
-                return [];
-              }
-              return [
-                <li
-                  key={`group:${group}`}
-                  className="bg-subtle/20 px-4 py-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80"
-                >
-                  {GROUP_LABELS[group]}
-                </li>,
-                ...itemsInGroup.map((item) => {
-                  const idx = filtered.indexOf(item);
-                  return (
-                    <li
-                      key={item.id}
-                      className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm ${
-                        idx === selectedIndex ? 'bg-muted' : 'hover:bg-muted/50'
-                      }`}
-                      onMouseEnter={() => setSelectedIndex(idx)}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        item.onSelect();
-                        onClose();
-                      }}
-                    >
-                      {item.accent ? (
-                        <span
-                          aria-hidden
-                          className={`size-1.5 shrink-0 rounded-full ${item.accent}`}
-                        />
-                      ) : null}
-                      <div className="min-w-0 flex-1">
-                        <span className="block truncate">{item.label}</span>
-                        {item.sublabel ? (
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {item.sublabel}
-                          </span>
+        <ScrollFade className="max-h-80">
+          <ul ref={listRef}>
+            {filtered.length === 0 ? (
+              <li className="px-4 py-6 text-center text-sm text-muted-foreground">no results</li>
+            ) : (
+              GROUP_ORDER.flatMap((group) => {
+                const itemsInGroup = filtered.filter((it) => it.group === group);
+                if (itemsInGroup.length === 0) {
+                  return [];
+                }
+                return [
+                  <li
+                    key={`group:${group}`}
+                    className="bg-subtle px-4 py-1 text-2xs font-medium tracking-wide text-muted-foreground/80"
+                  >
+                    {GROUP_LABELS[group]}
+                  </li>,
+                  ...itemsInGroup.map((item) => {
+                    const idx = filtered.indexOf(item);
+                    return (
+                      <li
+                        key={item.id}
+                        className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm ${
+                          idx === selectedIndex ? 'bg-muted' : 'hover:bg-muted/50'
+                        }`}
+                        onMouseEnter={() => setSelectedIndex(idx)}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          item.onSelect();
+                          onClose();
+                        }}
+                      >
+                        {item.accent ? (
+                          <span
+                            aria-hidden
+                            className={`size-1.5 shrink-0 rounded-full ${item.accent}`}
+                          />
                         ) : null}
-                      </div>
-                    </li>
-                  );
-                }),
-              ];
-            })
-          )}
-        </ul>
+                        <div className="min-w-0 flex-1">
+                          <span className="block truncate">{item.label}</span>
+                          {item.sublabel ? (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {item.sublabel}
+                            </span>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  }),
+                ];
+              })
+            )}
+          </ul>
+        </ScrollFade>
       </div>
     </div>
   );
