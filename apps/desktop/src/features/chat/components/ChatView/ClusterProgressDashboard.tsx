@@ -17,7 +17,7 @@ const accent = MARKER_ACCENT.clusters;
 
 const statusIcon = (status: ClusterDashboardItem['agent']['status']) =>
   status === 'running' ? (
-    <Loader2 size={14} className="animate-spin text-info" aria-hidden />
+    <Loader2 size={14} className="motion-safe:animate-spin text-info" aria-hidden />
   ) : status === 'completed' ? (
     <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
       <Check size={10} className="text-success" aria-hidden />
@@ -52,7 +52,7 @@ export const ClusterProgressDashboard = ({
   >
     <div className={cn('flex items-center gap-1.5 text-sm font-medium', accent.text)}>
       <Layers size={14} aria-hidden />
-      <span>
+      <span className="tabular-nums">
         cluster progress {completed}/{total}
       </span>
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, FieldRow, Input, cn } from '@goodboy/ui';
+import { Button, FieldRow, Input, ScrollFade, cn } from '@goodboy/ui';
 import { AlertTriangle, ChevronDown, ChevronUp, GitBranch, Loader2 } from 'lucide-react';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
@@ -75,7 +75,11 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
   const spent = isActiveSession ? (sessionSummary?.estimatedCostUsd ?? 0) : 0;
   const currentProvider = session.providerPreference.defaultProvider;
 
-  const onSaveCap = async () => {
+  const commitCap = async () => {
+    const savedCap = budget?.softCapUsd != null ? String(budget.softCapUsd) : '';
+    if (capDraft.trim() === savedCap) {
+      return;
+    }
     const parsed = parseCap(capDraft);
     if (parsed === null) {
       setError('Cap must be a positive number.');
@@ -85,7 +89,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
     setError(null);
     try {
       await setSessionBudget(sessionId, parsed);
-      showToast('success', 'budget updated');
+      showToast('success', 'budget cap saved');
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -175,7 +179,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-8 py-6">
+    <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col divide-y divide-border-soft/50">
           <FieldRow label="Branch" help="Worktree branch this session runs on." layout="stacked">
@@ -189,8 +193,10 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                   type="button"
                   onClick={() => setBranchEditOpen(!branchEditOpen)}
                   disabled={busy || !workspace}
+                  aria-expanded={branchEditOpen}
+                  aria-controls="session-branch-editor"
                   className={cn(
-                    'inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground',
+                    'inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground',
                     (busy || !workspace) && 'cursor-not-allowed opacity-50',
                   )}
                 >
@@ -204,7 +210,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
               </div>
 
               {branchEditOpen ? (
-                <div className="flex flex-col gap-3">
+                <div id="session-branch-editor" className="flex flex-col gap-3">
                   <div
                     role="tablist"
                     aria-label="branch source"
@@ -296,7 +302,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                     >
                       {busy ? (
                         <>
-                          <Loader2 size={12} className="mr-1.5 animate-spin" aria-hidden />
+                          <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
                           Switching…
                         </>
                       ) : targetNeedsConfirm && confirmReuse ? (
@@ -322,9 +328,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                   onClick={() => void onChangeProvider(id)}
                   trailing={
                     connectedProviderIds.includes(id) ? null : (
-                      <span className="text-[9px] uppercase tracking-wide text-warning">
-                        offline
-                      </span>
+                      <span className="text-2xs uppercase tracking-wide text-warning">offline</span>
                     )
                   }
                 />
@@ -355,7 +359,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                       title={isDefault ? 'default provider is always enabled' : undefined}
                       trailing={
                         isDefault ? (
-                          <span className="text-[9px] uppercase tracking-wide text-muted-foreground/70">
+                          <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
                             default
                           </span>
                         ) : null
@@ -373,21 +377,22 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
               help="Optional ceiling in USD. Warns at 80%, errors at 100%."
               layout="stacked"
             >
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={capDraft}
-                  onChange={(e) => setCapDraft(e.target.value)}
-                  placeholder="2.50"
-                  className="flex-1"
-                  disabled={busy}
-                />
-                <Button variant="secondary" onClick={() => void onSaveCap()} disabled={busy}>
-                  Save
-                </Button>
-              </div>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={capDraft}
+                onChange={(e) => setCapDraft(e.target.value)}
+                onBlur={() => void commitCap()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    void commitCap();
+                  }
+                }}
+                placeholder="2.50"
+                disabled={busy}
+                aria-label="budget cap in USD"
+              />
               {budget?.softCapUsd != null && budget.softCapUsd > 0 ? (
                 <CapProgress spent={spent} softCapUsd={budget.softCapUsd} />
               ) : null}
@@ -397,7 +402,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
 
         {error ? <p className="pt-4 text-xs text-danger">{error}</p> : null}
       </div>
-    </div>
+    </ScrollFade>
   );
 };
 
@@ -413,21 +418,21 @@ function CapProgress({ spent, softCapUsd }: { spent: number; softCapUsd: number 
   const barTone =
     pct >= 1 ? 'bg-danger' : pct >= 0.8 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
   return (
-    <div className="mt-3 flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">Spent this session</span>
-        <span className="font-mono text-foreground">
+        <span className="font-mono tabular-nums text-foreground">
           ${spent.toFixed(2)} / ${softCapUsd.toFixed(2)}
         </span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
         <div
-          className={cn('h-full rounded-full transition-all', barTone)}
+          className={cn('h-full rounded-full motion-safe:transition-all', barTone)}
           style={{ width: `${pct * 100}%` }}
         />
       </div>
       <div className="flex items-center justify-between text-2xs text-muted-foreground/70">
-        <span>{Math.round(pct * 100)}% used</span>
+        <span className="tabular-nums">{Math.round(pct * 100)}% used</span>
         {pct >= 0.8 ? (
           <span className={pct >= 1 ? 'text-danger' : 'text-warning'}>
             {pct >= 1 ? 'cap exceeded' : 'approaching cap'}

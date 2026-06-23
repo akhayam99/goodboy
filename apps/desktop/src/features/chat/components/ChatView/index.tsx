@@ -1,8 +1,16 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
-import { cn, Divider } from '@goodboy/ui';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -105,7 +113,8 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
-  const { scrollerRef, pinned, atTop, onScroll } = useScrollPin([deferredItems], selectedAgentId);
+  const { scrollerRef, pinned, onScroll } = useScrollPin([deferredItems], selectedAgentId);
+  const fadeHostRef = useRef<HTMLDivElement>(null);
 
   const provider = session.providerPreference.defaultProvider;
   const providerAuthState = authResults?.[provider]?.state ?? null;
@@ -163,6 +172,19 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   }, [parallelRunIds, phaseRuns]);
 
   const isSplitView = flagOn && parallelRunIds.length > 1;
+
+  useLayoutEffect(() => {
+    if (isSplitView) {
+      return;
+    }
+    const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto');
+    if (!viewport) {
+      return;
+    }
+    scrollerRef.current = viewport;
+    viewport.addEventListener('scroll', onScroll, { passive: true });
+    return () => viewport.removeEventListener('scroll', onScroll);
+  }, [scrollerRef, onScroll, isSplitView]);
 
   const onSelectRun = (runId: ProviderRunId) => {
     document
@@ -372,24 +394,11 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   return (
     <div className="flex h-full flex-col">
       <ChatBreadcrumb session={session} />
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div
-          className={cn(
-            'pointer-events-none absolute inset-x-0 top-0 z-10 h-12 bg-gradient-to-b from-background to-transparent transition-opacity duration-200',
-            atTop ? 'opacity-0' : 'opacity-100',
-          )}
-        />
-        <div
-          className={cn(
-            'pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-background to-transparent transition-opacity duration-200',
-            pinned ? 'opacity-0' : 'opacity-100',
-          )}
-        />
-        <div
-          ref={scrollerRef}
-          onScroll={onScroll}
-          className="flex-1 overflow-y-auto px-6 pb-4 pt-6"
-          style={{ scrollbarGutter: 'stable' }}
+      <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
+        <ScrollFade
+          className="flex-1"
+          fadeSize="h-12"
+          viewportClassName="px-6 pb-4 pt-6 [scrollbar-gutter:stable]"
         >
           {transcriptStale || deferredItems.length === 0 ? (
             loading.transcript || transcriptStale ? (
@@ -425,7 +434,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
             )
           ) : (
             <ul
-              className="mx-auto flex w-full max-w-[880px] flex-col"
+              className="mx-auto flex w-full max-w-[880px] flex-col gap-2.5"
               aria-live="polite"
               aria-relevant="additions"
             >
@@ -440,14 +449,13 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                     return;
                   }
                   out.push(
-                    <li key={`oq-${ordinal}`} className="mt-2.5">
+                    <li key={`oq-${ordinal}`}>
                       <OpenQuestionCluster questions={cards} sessionId={session.id} />
                     </li>,
                   );
                 };
 
                 rows.forEach((row, idx) => {
-                  let isTurnBreak = false;
                   if (row.kind === 'item' && row.item.kind === 'user_text') {
                     flushOrdinal(userTurnOrdinal);
                     userTurnOrdinal += 1;
@@ -455,16 +463,15 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                     const day = dayKey(at);
                     const dayChanged = day !== lastDay;
                     if (idx > 0 && !dayChanged) {
-                      isTurnBreak = true;
                       out.push(
-                        <li key={`turn-${row.key}`} className="my-2.5">
+                        <li key={`turn-${row.key}`}>
                           <Divider />
                         </li>,
                       );
                     }
                     if (dayChanged) {
                       out.push(
-                        <li key={`day-${day}-${idx}`} className="my-2.5 flex justify-center">
+                        <li key={`day-${day}-${idx}`} className="flex justify-center">
                           <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
                             {formatDayLabel(at)}
                           </span>
@@ -473,14 +480,10 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                       lastDay = day;
                     }
                   }
-                  const itemSpacing = idx === 0 || isTurnBreak ? '' : 'mt-2.5';
                   out.push(
                     <li
                       key={row.key}
-                      className={cn(
-                        itemSpacing,
-                        '[content-visibility:auto] [contain-intrinsic-size:auto_80px]',
-                      )}
+                      className="[content-visibility:auto] [contain-intrinsic-size:auto_80px]"
                     >
                       {row.kind === 'operations' ? (
                         <OperationsCluster
@@ -509,13 +512,13 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                 return out;
               })()}
               {isThinking ? (
-                <li className="mt-2.5">
+                <li>
                   <ThinkingIndicator context={thinkingContext} />
                 </li>
               ) : null}
             </ul>
           )}
-        </div>
+        </ScrollFade>
         {!pinned && (
           <button
             type="button"

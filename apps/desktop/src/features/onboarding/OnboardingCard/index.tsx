@@ -40,15 +40,13 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-foreground">
-          Goodboy setup
-        </span>
+        <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy setup</span>
         <button
           type="button"
           onClick={() => collapse()}
           title="hide, reopen from the sidebar"
           aria-label="hide onboarding checklist"
-          className="rounded-sm p-0.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-sm p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
         </button>
@@ -99,7 +97,7 @@ function CompletedBody() {
           onClick={() => finish()}
           title="dismiss"
           aria-label="dismiss onboarding"
-          className="rounded-sm p-0.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-sm p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
         </button>
@@ -123,7 +121,7 @@ function StepRow({ title, why, done }: StepRowProps) {
     <li
       title={why}
       className={cn(
-        'flex items-center gap-2 rounded-md px-1.5 py-1 text-2xs transition-colors',
+        'flex items-center gap-2 rounded-md px-1.5 py-1 text-2xs motion-safe:transition-colors',
         done ? 'text-muted-foreground/60' : 'text-foreground',
       )}
     >
@@ -153,14 +151,14 @@ export const OnboardingChip = () => {
       onClick={() => reopen()}
       title={`Setup, ${progress.completedCount} of ${progress.totalCount} done`}
       aria-label="open onboarding checklist"
-      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 transition-colors hover:border-border"
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border"
     >
       {ONBOARDING_STEPS.map((step, i) => (
         <span
           key={step.id}
           aria-hidden
           className={cn(
-            'size-1.5 rounded-full transition-colors',
+            'size-1.5 rounded-full motion-safe:transition-colors',
             i < progress.completedCount ? 'bg-primary' : 'bg-border',
           )}
         />

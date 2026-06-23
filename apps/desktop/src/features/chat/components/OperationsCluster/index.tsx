@@ -99,9 +99,9 @@ export const OperationsCluster = ({
             </span>
             <span className="truncate font-mono">{running.toolName}</span>
             <span className="flex shrink-0 gap-0.5">
-              <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
-              <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
-              <span className="h-1 w-1 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
+              <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
+              <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
+              <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
             </span>
           </span>
         ) : showError ? (

@@ -71,15 +71,7 @@ function TranscriptCardImpl({
         />
       );
     case 'usage':
-      return (
-        <p className="text-xs text-muted-foreground/70">
-          {formatTokens(item.usage.inputTokens)} in / {formatTokens(item.usage.outputTokens)} out
-          {item.usage.cachedInputTokens > 0
-            ? ` · ${formatTokens(item.usage.cachedInputTokens)} cached`
-            : ''}
-          {item.usage.estimatedCostUsd > 0 ? ` · ~${formatUsd(item.usage.estimatedCostUsd)}` : ''}
-        </p>
-      );
+      return <UsageRow usage={item.usage} />;
     case 'error':
       return (
         <div className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
@@ -191,6 +183,45 @@ function formatTokens(n: number): string {
   return `${Math.round(n / 1000)}k`;
 }
 
+function UsageStat({ value, label }: { value: string; label: string }) {
+  return (
+    <span className="inline-flex items-baseline gap-1">
+      <span className="tabular-nums text-foreground/70">{value}</span>
+      <span className="text-2xs uppercase tracking-wide text-muted-foreground/50">{label}</span>
+    </span>
+  );
+}
+
+function UsageRow({ usage }: { usage: Extract<TranscriptItem, { kind: 'usage' }>['usage'] }) {
+  return (
+    <div className="flex w-fit flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md bg-subtle/40 px-2 py-1 text-xs text-muted-foreground">
+      <UsageStat value={formatTokens(usage.inputTokens)} label="in" />
+      <span aria-hidden className="text-muted-foreground/30">
+        ·
+      </span>
+      <UsageStat value={formatTokens(usage.outputTokens)} label="out" />
+      {usage.cachedInputTokens > 0 ? (
+        <>
+          <span aria-hidden className="text-muted-foreground/30">
+            ·
+          </span>
+          <UsageStat value={formatTokens(usage.cachedInputTokens)} label="cached" />
+        </>
+      ) : null}
+      {usage.estimatedCostUsd > 0 ? (
+        <>
+          <span aria-hidden className="text-muted-foreground/30">
+            ·
+          </span>
+          <span className="tabular-nums text-foreground/70">
+            ~{formatUsd(usage.estimatedCostUsd)}
+          </span>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
   const displayText = stripControlMarkers(text);
   const resolvedMarker = extractCommentResolved(text);
@@ -205,13 +236,13 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
       )}
       {displayText.length > 0 ? <Markdown text={displayText} /> : null}
       {sessionId ? (
-        <>
+        <div className="flex flex-col items-start gap-2 empty:hidden [&:not(:empty)]:mt-2">
           <PlanChip assistantText={text} sessionId={sessionId} />
           <ClustersCard assistantText={text} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} />
           <CommentWontfixChip assistantText={text} sessionId={sessionId} />
-        </>
+        </div>
       ) : null}
     </div>
   );
@@ -234,15 +265,7 @@ function InlineCopyButton({ value }: { value: string }) {
     try {
       await navigator.clipboard.writeText(value);
     } catch {
-      const ta = document.createElement('textarea');
-      ta.value = value;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      return;
     }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);
@@ -321,7 +344,7 @@ function AttachmentImage({
   }
 
   if (src === null) {
-    return <div className="h-28 w-28 animate-pulse rounded-lg bg-foreground/10" />;
+    return <div className="h-28 w-28 motion-safe:animate-pulse rounded-lg bg-foreground/10" />;
   }
 
   return (

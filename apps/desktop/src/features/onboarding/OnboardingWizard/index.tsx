@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, cn, type ButtonVariant } from '@goodboy/ui';
+import { Button, ScrollFade, cn, type ButtonVariant } from '@goodboy/ui';
 import { finishWizard } from '../onboarding-store';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
@@ -148,7 +148,7 @@ export const OnboardingWizard = () => {
         </div>
       </header>
 
-      <main className="relative min-h-0 flex-1 overflow-y-auto">
+      <ScrollFade className="min-h-0 flex-1">
         <div className="flex min-h-full items-center justify-center px-6 py-10">
           <div className="flex w-full max-w-xl flex-col gap-8">
             <div key={step} className="motion-safe:animate-fade-in">
@@ -171,7 +171,7 @@ export const OnboardingWizard = () => {
             </div>
           </div>
         </div>
-      </main>
+      </ScrollFade>
     </div>
   );
 };
