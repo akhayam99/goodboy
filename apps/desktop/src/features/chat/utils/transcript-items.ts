@@ -7,6 +7,7 @@ import type {
   ProviderUsage,
   TurnEvent,
 } from '@goodboy/types';
+import { isOpenQuestionAnswerText } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
 
 export type TranscriptItem =
@@ -114,6 +115,9 @@ export const reduceTranscript = (
 
     switch (event.kind) {
       case 'user_text':
+        if (isOpenQuestionAnswerText(event.text)) {
+          break;
+        }
         items.push({
           kind: 'user_text',
           key: `user-${i}`,

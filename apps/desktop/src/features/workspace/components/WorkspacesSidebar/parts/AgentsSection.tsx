@@ -158,6 +158,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     }),
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
@@ -441,6 +442,18 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
+  const onResolveFirstForRun = (run: WorkflowRun) => {
+    const q = openQuestions.find(
+      (oq) => oq.status === 'open' && (!oq.workflowRunId || oq.workflowRunId === run.id),
+    );
+    if (!q || !q.createdByAgentId) {
+      return;
+    }
+    void selectAgent(task.id, q.createdByAgentId);
+    requestOpenQuestionScroll({ agentId: q.createdByAgentId, questionId: q.id });
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+  };
+
   const onStartStepAgent = async (agent: Agent, model?: string) => {
     setSpawnError(null);
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
@@ -525,6 +538,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     { run, workflow }: { run: WorkflowRun; workflow: Workflow },
     idx: number,
   ) => {
+    const workflowRun = run;
     const isDiscarded = run.discardedAt != null;
     const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
     const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
@@ -698,6 +712,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                       onRenameStart={() => setEditingId(run.id)}
                       onRenameCommit={(name) => void onRenameCommit(run.id, name)}
                       onRenameCancel={() => setEditingId(null)}
+                      onResolveFirst={() => onResolveFirstForRun(workflowRun)}
                     />
                     {clusterChildren.length === 0 ? null : kind === 'scout' ? (
                       <ScoutSubtree

@@ -207,7 +207,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
       {sessionId ? (
         <>
           <PlanChip assistantText={text} sessionId={sessionId} />
-          <ClustersCard assistantText={text} />
+          <ClustersCard assistantText={text} sessionId={sessionId} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} />
           <CommentWontfixChip assistantText={text} sessionId={sessionId} />

@@ -1,6 +1,6 @@
 import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswered } from '@goodboy/db';
-import { removeQuestionsFromSlot } from '@goodboy/core';
+import { removeQuestionsFromSlot, wrapOpenQuestionAnswers } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn } from './types';
 
@@ -44,7 +44,7 @@ export const answerOpenQuestions = (get: GetFn) => {
 
     await get().sendTurn({
       sessionId,
-      content: buildBatchPrompt(valid),
+      content: wrapOpenQuestionAnswers(buildBatchPrompt(valid)),
       agentId: targetAgentId ?? undefined,
     });
   };

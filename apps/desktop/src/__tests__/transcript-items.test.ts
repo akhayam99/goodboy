@@ -127,3 +127,22 @@ describe('reduceTranscript, request + decision pair', () => {
     expect(items[1]!.kind).toBe('permission_decision');
   });
 });
+
+function userTextEvent(text: string): TurnEvent {
+  return { kind: 'user_text', runId: RUN, text, at: AT };
+}
+
+describe('reduceTranscript, open-question answer suppression', () => {
+  it('drops a user_text turn wrapped in the oq-answers marker', () => {
+    const items = reduceTranscript([
+      userTextEvent('<<oq-answers>>\nAnswers to open questions:\n- Q: a\n  A: b\n<</oq-answers>>'),
+    ]);
+    expect(items).toHaveLength(0);
+  });
+
+  it('keeps ordinary user_text turns', () => {
+    const items = reduceTranscript([userTextEvent('a normal message')]);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.kind).toBe('user_text');
+  });
+});
