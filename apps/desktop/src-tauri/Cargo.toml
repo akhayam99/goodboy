@@ -37,7 +37,7 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
 snow = "0.9"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
-rand = "0.8"
+rand = "0.9"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
