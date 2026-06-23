@@ -1,9 +1,5 @@
-import type { AgentId, AgentStatus, ProviderRunId } from '@goodboy/types';
-import { SpawnTree } from '../../../orchestration/components/SpawnTree';
-import {
-  statusToNodeStatus,
-  type SpawnNode,
-} from '../../../orchestration/components/SpawnTree/lib';
+import { cn } from '@goodboy/ui';
+import type { AgentStatus, ProviderRunId } from '@goodboy/types';
 
 type Props = {
   parallelRunIds: ReadonlyArray<ProviderRunId>;
@@ -11,27 +7,37 @@ type Props = {
   onSelectRun: (runId: ProviderRunId) => void;
 };
 
+const BADGE_CLASSES: Record<AgentStatus, string> = {
+  running: 'bg-info motion-safe:animate-pulse',
+  completed: 'bg-success',
+  failed: 'bg-danger',
+  skipped: 'bg-muted-foreground/40',
+  pending: 'bg-muted-foreground/25',
+};
+
 export const ParallelProgressPill = ({ parallelRunIds, runStatuses, onSelectRun }: Props) => {
   if (parallelRunIds.length === 0) {
     return null;
   }
 
-  const nodes: ReadonlyArray<SpawnNode> = parallelRunIds.map((runId, i) => ({
-    id: runId as unknown as AgentId,
-    name: `p${i + 1}`,
-    kind: 'generic',
-    status: statusToNodeStatus(runStatuses[runId] ?? 'pending'),
-    costUsd: 0,
-    outputSummary: null,
-    children: [],
-    isSelected: false,
-  }));
-
   return (
-    <SpawnTree
-      variant="rail"
-      nodes={nodes}
-      onSelect={(id) => onSelectRun(id as unknown as ProviderRunId)}
-    />
+    <div className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-subtle px-2 py-0.5">
+      {parallelRunIds.map((runId, i) => {
+        const status: AgentStatus = runStatuses[runId] ?? 'pending';
+        return (
+          <button
+            key={runId}
+            type="button"
+            aria-label={`run p${i + 1}: ${status}`}
+            title={`run p${i + 1}: ${status}`}
+            onClick={() => onSelectRun(runId)}
+            className={cn(
+              'inline-block h-2 w-2 rounded-full motion-safe:transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              BADGE_CLASSES[status],
+            )}
+          />
+        );
+      })}
+    </div>
   );
 };

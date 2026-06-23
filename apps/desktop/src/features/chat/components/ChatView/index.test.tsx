@@ -266,7 +266,7 @@ describe('ChatView cluster dashboard', () => {
 
     render(<ChatView session={session} />);
 
-    expect(screen.getByText('running')).toBeTruthy();
+    expect(screen.getByText('running…')).toBeTruthy();
   });
 
   it('selects the agent when a cluster card is clicked', () => {

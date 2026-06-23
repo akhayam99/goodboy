@@ -172,6 +172,7 @@ const GuideContent = ({ onJump, onVisible, registerScrollTo }: GuideContentProps
   const anchor = (id: Section) => (el: HTMLDivElement | null) => {
     if (el) {
       el.dataset.guideSection = id;
+      el.style.scrollMarginTop = '2.5rem';
     }
     anchorsRef.current[id] = el;
   };

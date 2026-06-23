@@ -30,13 +30,8 @@ import {
 } from '../../../../store';
 import type { FilesTouched, LensKind } from '../../../../store';
 import { STAGE_TONE } from '../../session-stage';
-import { AGENT_KIND_PALETTE } from '../../agent-kind';
-import {
-  outcomeTone,
-  outcomeWord,
-  type SpawnNodeStatus,
-} from '../../../orchestration/components/SpawnTree/lib';
-import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
+import { outcomeTone, type SpawnNodeStatus } from '../../../orchestration/components/SpawnTree/lib';
+import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
@@ -95,77 +90,47 @@ const CONTEXT_LINKS: ReadonlyArray<{
 const isGhostStep = (status: SpawnNodeStatus): boolean =>
   status === 'planned' || status === 'queued';
 
-const StepRow = ({ step }: { readonly step: StepModel }) => {
-  const palette = AGENT_KIND_PALETTE[step.kind];
-  const ghost = isGhostStep(step.status);
-  const running = step.status === 'running';
-
-  return (
-    <div className="flex items-center gap-2">
-      {running ? (
-        <StatusDot tone="info" size="sm" pulsing />
-      ) : (
-        <StatusDot
-          tone={outcomeTone(step.status)}
-          size="sm"
-          className={ghost ? 'opacity-50' : undefined}
-        />
-      )}
-      <span
-        className={cn(
-          'w-16 shrink-0 text-2xs font-semibold uppercase tracking-wide',
-          palette.fg,
-          ghost && 'opacity-60',
-        )}
-      >
-        {palette.label}
-      </span>
-      <span className="min-w-0 flex-1 truncate text-xs text-foreground/70">
-        {step.name || palette.label}
-      </span>
-      {step.children.length > 0 ? (
-        <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/50">
-          {step.children.length}
-        </span>
-      ) : null}
-      <span className="w-14 shrink-0 text-right text-2xs text-muted-foreground/60">
-        {ghost ? 'planned' : outcomeWord(step.status)}
-      </span>
-    </div>
-  );
-};
-
 const PipelineLane = ({
   lane,
   onOpen,
 }: {
   readonly lane: RunLaneModel;
   readonly onOpen: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onOpen}
-    className="group flex w-full flex-col gap-2.5 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
-  >
-    <div className="flex items-center gap-2">
+}) => {
+  const done = lane.steps.filter((s) => s.status === 'done').length;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex w-full items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border"
+    >
       <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
         {lane.workflowName}
       </span>
       {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
+      <span className="flex shrink-0 items-center gap-1">
+        {lane.steps.map((step) => (
+          <StatusDot
+            key={step.stepId}
+            tone={step.status === 'running' ? 'info' : outcomeTone(step.status)}
+            size="sm"
+            pulsing={step.status === 'running'}
+            className={isGhostStep(step.status) ? 'opacity-40' : undefined}
+          />
+        ))}
+      </span>
+      <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
+        {done}/{lane.steps.length}
+      </span>
       <ArrowRight
         size={14}
         aria-hidden
         className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
       />
-    </div>
-    <div className="flex flex-col gap-1.5">
-      {lane.steps.map((step) => (
-        <StepRow key={step.stepId} step={step} />
-      ))}
-    </div>
-  </button>
-);
+    </button>
+  );
+};
 
 const SummaryRow = ({
   icon: Icon,

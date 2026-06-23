@@ -101,7 +101,7 @@ describe('ClustersCard', () => {
     window.addEventListener('goodboy:reveal-chat', reveal);
     render2();
     expect(screen.getByText('agent-a')).toBeTruthy();
-    expect(screen.getByText('running')).toBeTruthy();
+    expect(screen.getByText('running…')).toBeTruthy();
     expect(screen.getByText('done')).toBeTruthy();
     fireEvent.click(screen.getByText('agent-a'));
     expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-a');
