@@ -68,7 +68,7 @@ export const ScrollFade = ({
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b to-transparent transition-opacity duration-200',
+          'pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b to-transparent motion-safe:transition-opacity duration-200',
           fadeSize,
           from,
           edges.top ? 'opacity-100' : 'opacity-0',
@@ -77,7 +77,7 @@ export const ScrollFade = ({
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t to-transparent transition-opacity duration-200',
+          'pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t to-transparent motion-safe:transition-opacity duration-200',
           fadeSize,
           from,
           edges.bottom ? 'opacity-100' : 'opacity-0',

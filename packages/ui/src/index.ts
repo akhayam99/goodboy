@@ -36,7 +36,7 @@ export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
 export { Select } from './components/Select';
 export type { SelectProps, SelectSize } from './components/Select';
-export { Skeleton } from './components/Skeleton';
+export { Skeleton, SkeletonRow, SkeletonCard, SkeletonText } from './components/Skeleton';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
 export { Tooltip } from './components/Tooltip';

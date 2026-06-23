@@ -44,7 +44,7 @@ export const DialogSectionHeader = ({
         </span>
         <h3 className={cn('text-base font-semibold', TITLE_FG[tone])}>{title}</h3>
         {beta ? (
-          <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
+          <span className="rounded bg-warning/20 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-eyebrow text-warning">
             beta
           </span>
         ) : null}
