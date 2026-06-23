@@ -195,7 +195,7 @@ async function migrateAgentConfig(): Promise<void> {
     if (!agent) {
       continue;
     }
-    const update: { effort?: Effort; modelOverride?: string; providerOverride?: string } = {};
+    const update: { effort?: Effort; modelOverride?: string; providerOverride?: ProviderLite } = {};
     if (fields.effort && !agent.effort) {
       update.effort = fields.effort;
     }
