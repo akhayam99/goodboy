@@ -1,9 +1,9 @@
 import { getModelDescriptor } from '@goodboy/core';
 
 export const MODEL_COST_DOT: Record<string, string> = {
-  cheap: 'bg-emerald-400',
-  mid: 'bg-amber-400',
-  premium: 'bg-rose-400',
+  cheap: 'bg-success',
+  mid: 'bg-warning',
+  premium: 'bg-danger',
 };
 
 export const modelCostTier = (modelId: string): 'cheap' | 'mid' | 'premium' => {

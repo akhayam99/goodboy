@@ -49,7 +49,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   if (status === 'running') {
     return (
       <span className="flex items-center gap-1">
-        <Loader2 size={10} aria-hidden className="animate-spin text-info" />
+        <Loader2 size={10} aria-hidden className="motion-safe:animate-spin text-info" />
         {costPill}
       </span>
     );
@@ -79,7 +79,11 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
         >
           <AlertTriangle size={10} aria-hidden />
           Cannot summarize
-          <RotateCw size={10} aria-hidden className={cn('shrink-0', retrying && 'animate-spin')} />
+          <RotateCw
+            size={10}
+            aria-hidden
+            className={cn('shrink-0', retrying && 'motion-safe:animate-spin')}
+          />
         </button>
       </span>
     );

@@ -80,7 +80,7 @@ const ClusterSection = ({
           onClick={() => onSubmit(pendingPairs, cluster.ownerAgentId)}
           className={cn(
             'group flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold',
-            'bg-primary text-primary-foreground shadow-sm transition-all duration-150',
+            'bg-primary text-primary-foreground shadow-sm motion-safe:transition-all duration-150',
             'hover:brightness-105 active:scale-[0.99]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
           )}
@@ -91,7 +91,7 @@ const ClusterSection = ({
           <ArrowRight
             size={13}
             aria-hidden
-            className="transition-transform group-hover:translate-x-0.5"
+            className="motion-safe:transition-transform group-hover:translate-x-0.5"
           />
         </button>
       ) : null}
@@ -133,10 +133,10 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   if (open.length === 0) {
     return (
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-12 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-8 text-center">
           <span
             aria-hidden
-            className="flex size-12 items-center justify-center rounded-full bg-success/10"
+            className="flex size-12 items-center justify-center rounded-md bg-success/10"
           >
             <CircleCheck size={24} aria-hidden className="text-success" />
           </span>

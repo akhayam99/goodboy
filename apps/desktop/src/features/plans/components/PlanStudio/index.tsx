@@ -16,6 +16,7 @@ import { Divider, Markdown, Textarea, cn } from '@goodboy/ui';
 import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { useToast } from '../../../../app/components/Toast';
 
 const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   active: 'bg-warning/10 text-warning',
@@ -25,10 +26,10 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
 };
 
 const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
-  active: 'Active',
-  consumed: 'Consumed',
-  superseded: 'Superseded',
-  discarded: 'Discarded',
+  active: 'active',
+  consumed: 'consumed',
+  superseded: 'superseded',
+  discarded: 'discarded',
 };
 
 interface Props {
@@ -48,6 +49,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
   const restorePlan = useAppStore((s) => s.restorePlan);
   const runPlan = useAppStore((s) => s.runPlan);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const { showToast } = useToast();
 
   const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
@@ -164,7 +166,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold leading-snug text-foreground">Plans</h1>
           <p className="text-sm text-muted-foreground">
-            Plans agents drafted for this session. Edit, then run one to spawn an executor.
+            Plans agents drafted for this session. Run one to spawn an executor.
           </p>
         </div>
       </div>
@@ -174,7 +176,12 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
           <ScrollFade className="w-72 shrink-0">
             <ul className="flex w-full flex-col gap-1 px-3 py-4">
               {plans.length === 0 ? (
-                <li className="py-2 text-xs text-muted-foreground">No plans yet</li>
+                <li className="flex flex-col gap-1 rounded-lg border border-border-soft bg-subtle p-4 text-xs">
+                  <span className="font-medium text-foreground">No plans yet</span>
+                  <span className="leading-relaxed text-muted-foreground">
+                    Plans appear here once an agent drafts one. Run a planning agent to get started.
+                  </span>
+                </li>
               ) : (
                 plans.map((plan, idx) => {
                   const isSel = plan.id === selectedId;
@@ -191,12 +198,12 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                         )}
                       >
                         <div className="flex w-full items-center justify-between gap-1.5">
-                          <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-                            Plan {idx + 1}
+                          <span className="shrink-0 text-2xs lowercase tracking-wide text-muted-foreground">
+                            plan {idx + 1}
                           </span>
                           <span
                             className={cn(
-                              'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide',
+                              'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] lowercase tracking-wide',
                               PLAN_STATUS_STYLE[plan.status],
                             )}
                           >
@@ -228,8 +235,9 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                           type="button"
                           onClick={() => {
                             if (creatorDeleted) {
-                              window.alert(
-                                `Agent "${selectedAgentName}" has been deleted and can no longer be opened.`,
+                              showToast(
+                                'info',
+                                `agent "${selectedAgentName}" was deleted and can no longer be opened`,
                               );
                               return;
                             }
@@ -269,8 +277,9 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                               type="button"
                               onClick={() => {
                                 if (isDeleted) {
-                                  window.alert(
-                                    `Agent "${displayName}" has been deleted and can no longer be opened.`,
+                                  showToast(
+                                    'info',
+                                    `agent "${displayName}" was deleted and can no longer be opened`,
                                   );
                                   return;
                                 }
@@ -355,9 +364,9 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                           onClick={() => void handleTrigger()}
                           disabled={spawning}
                           className={cn(
-                            'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm transition',
+                            'inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm transition-colors',
                             retriggerArmed
-                              ? 'animate-pulse bg-danger text-danger-foreground hover:bg-danger/90'
+                              ? 'w-36 bg-warning/15 text-warning hover:bg-warning/20'
                               : 'bg-primary text-primary-foreground hover:bg-primary/90',
                             spawning && 'cursor-not-allowed opacity-60',
                           )}
@@ -370,7 +379,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                           }
                         >
                           {spawning ? (
-                            <Loader2 size={12} aria-hidden className="animate-spin" />
+                            <Loader2 size={12} aria-hidden className="motion-safe:animate-spin" />
                           ) : retriggerArmed ? (
                             <AlertTriangle size={12} aria-hidden />
                           ) : selected.status === 'active' ? (
@@ -379,7 +388,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                             <RotateCw size={12} aria-hidden />
                           )}
                           {retriggerArmed
-                            ? 'Already consumed, click again to confirm'
+                            ? 'Confirm replay'
                             : selected.status === 'active'
                               ? 'Start'
                               : 'Replay'}
@@ -438,8 +447,13 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                   </ScrollFade>
                 </>
               ) : (
-                <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-                  No plan selected
+                <div className="flex flex-1 items-center justify-center">
+                  <div className="flex max-w-sm flex-col gap-1 rounded-lg border border-border-soft bg-subtle p-5 text-center">
+                    <span className="text-sm font-medium text-foreground">No plan selected</span>
+                    <span className="text-xs leading-relaxed text-muted-foreground">
+                      Pick a plan from the list to preview, edit, or run it.
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

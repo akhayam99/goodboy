@@ -23,6 +23,7 @@ import { goalFromIssue } from '../../../../features/integrations/linear/goal-fro
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
+import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 
@@ -351,17 +352,14 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           : {}),
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
       });
-      showToast('success', `session created: ${session.goal}`);
-      onClose();
       if (setupWorkflow) {
-        setTimeout(() => {
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-workflow-builder', {
-              detail: { sessionId: session.id },
-            }),
-          );
-        }, 0);
+        window.dispatchEvent(
+          new CustomEvent('goodboy:open-workflow-builder', {
+            detail: { sessionId: session.id },
+          }),
+        );
       }
+      onClose();
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -390,11 +388,14 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       />
       <Divider />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">
-        <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-7">
+      <ScrollFade className="min-h-0 flex-1 px-6 py-5">
+        <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-8">
           {noProviderConnected ? (
-            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs">
-              <span className="mt-0.5 text-warning">⚠</span>
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs"
+            >
+              <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
               <div className="flex-1 leading-relaxed text-foreground">
                 No provider is connected. A session needs at least one of{' '}
                 {PROVIDER_ORDER.map((id, i) => (
@@ -463,7 +464,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             <div
               ref={composerRef}
               className={cn(
-                'flex flex-col gap-2.5 rounded-lg border border-dashed px-3 py-3 transition-colors',
+                'flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors',
                 isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
               )}
             >
@@ -508,7 +509,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             title="Branch"
             subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
           >
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2">
               <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
               {branchMode === 'new' ? (
                 <div className="flex items-center gap-1.5">
@@ -516,7 +517,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                     {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
                   </span>
                   {slugGenerating ? (
-                    <span className="flex h-8 flex-1 animate-pulse items-center rounded border border-border bg-subtle px-2">
+                    <span className="flex h-8 flex-1 motion-safe:animate-pulse items-center rounded border border-border bg-subtle px-2">
                       <span className="h-2 w-full rounded bg-muted-foreground/20" />
                     </span>
                   ) : (
@@ -580,7 +581,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             </div>
           </Section>
         </div>
-      </div>
+      </ScrollFade>
 
       {error && isMissingBaseRefError(error) ? (
         <div className="px-6 pb-2">
@@ -605,7 +606,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           onChange={onToggleSetupWorkflow}
           disabled={busy}
         />
-        <span className="h-5 w-px bg-border-soft" aria-hidden />
+        <Divider orientation="vertical" className="h-5 self-center" />
         <Button variant="ghost" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
@@ -621,7 +622,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           >
             {busy ? (
               <>
-                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
                 Working…
               </>
             ) : (
@@ -632,7 +633,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           <Button onClick={() => void onCreate()} disabled={!canCreate}>
             {busy ? (
               <>
-                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
                 Creating…
               </>
             ) : (
@@ -666,8 +667,8 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-2.5">
-      <header className="flex items-start gap-2.5">
+    <section className="flex flex-col gap-2">
+      <header className="flex items-start gap-2">
         <span
           className={cn(
             'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
@@ -681,7 +682,7 @@ function Section({
           <p className="text-2xs leading-relaxed text-muted-foreground">{subtitle}</p>
         </div>
       </header>
-      <div>{children}</div>
+      {children}
     </section>
   );
 }
