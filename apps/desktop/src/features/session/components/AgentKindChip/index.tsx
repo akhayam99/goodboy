@@ -14,7 +14,7 @@ export const AgentKindChip = ({ kind, muted, title, className }: Props) => {
     <span
       className={cn(
         'inline-flex w-[3.25rem] shrink-0 items-center justify-center rounded py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
-        muted ? 'bg-muted-foreground/20 text-muted-foreground/60' : [palette.bg, 'text-zinc-950'],
+        muted ? 'bg-muted-foreground/20 text-muted-foreground/60' : [palette.bg, 'text-background'],
         className,
       )}
       title={title}

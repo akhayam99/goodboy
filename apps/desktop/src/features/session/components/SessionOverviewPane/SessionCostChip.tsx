@@ -94,7 +94,7 @@ export const SessionCostChip = ({ sessionId }: { sessionId: SessionId }) => {
       }
       title={`Estimated cost for this session: ${finalLabel} (excluding summarizer), click for budget studio`}
       className={cn(
-        'inline-flex shrink-0 items-center rounded-md border border-success/20 bg-success/10 px-2 py-1 font-mono text-2xs text-success transition-colors hover:border-success/40 hover:bg-success/15',
+        'inline-flex shrink-0 items-center rounded-md border border-border-soft bg-muted px-2 py-1 font-mono text-2xs text-muted-foreground transition-colors hover:border-border hover:text-foreground',
         animating && 'cost-chip-pulse',
       )}
     >

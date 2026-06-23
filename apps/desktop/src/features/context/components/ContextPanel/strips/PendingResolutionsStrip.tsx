@@ -32,7 +32,7 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
       onClick={() => void onPush()}
       disabled={busy}
       title="push the branch once, then reply and resolve every queued review comment"
-      className="flex w-full items-center justify-between gap-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-accent ring-1 ring-accent/20 transition-colors hover:bg-accent/10 disabled:cursor-default disabled:opacity-60"
+      className="flex w-full items-center justify-between gap-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-accent ring-1 ring-accent/20 motion-safe:transition-colors hover:bg-accent/10 disabled:cursor-default disabled:opacity-60"
     >
       <span className="inline-flex min-w-0 items-center gap-1.5">
         <Upload size={12} aria-hidden />
@@ -41,7 +41,7 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
         </span>
       </span>
       {busy ? (
-        <Loader2 size={12} aria-hidden className="shrink-0 animate-spin" />
+        <Loader2 size={12} aria-hidden className="shrink-0 motion-safe:animate-spin" />
       ) : (
         <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
       )}

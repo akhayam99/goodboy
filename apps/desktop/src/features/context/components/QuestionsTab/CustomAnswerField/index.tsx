@@ -36,7 +36,7 @@ export const CustomAnswerField = ({
   }
 
   return (
-    <div className="mt-1 flex w-full flex-col gap-1 motion-safe:animate-fade-in">
+    <div className="flex w-full flex-col gap-2 motion-safe:animate-fade-in">
       <span className="px-0.5 text-2xs font-medium text-muted-foreground">your answer</span>
       <Textarea
         autoFocus

@@ -15,18 +15,11 @@ type Props = {
   readonly aggregate: AgentAggregate | null;
   readonly turns: number;
   readonly turnsLoading: boolean;
-  readonly variant: 'workflow' | 'adhoc';
+  /** Accepted for caller compatibility; the block renders identically either way. */
+  readonly variant?: 'workflow' | 'adhoc';
 };
 
-export const AgentMetricsBlock = ({
-  run,
-  telemetry,
-  aggregate,
-  turns,
-  turnsLoading,
-  variant,
-}: Props) => {
-  void variant;
+export const AgentMetricsBlock = ({ run, telemetry, aggregate, turns, turnsLoading }: Props) => {
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/85">
       <span
@@ -61,7 +54,7 @@ export const AgentMetricsBlock = ({
       {turnsLoading ? (
         <span
           aria-label="loading turn count"
-          className="inline-block h-2.5 w-4 animate-pulse rounded bg-muted"
+          className="inline-block h-2.5 w-4 motion-safe:animate-pulse rounded bg-muted"
         />
       ) : (
         <span className="tabular-nums" title={`${turns} turn${turns === 1 ? '' : 's'}`}>
