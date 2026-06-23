@@ -201,6 +201,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         await invokeAgentUpdateStatus(childAgentId, { status: 'failed', completedAt: nowIso() });
         const stalled = await invokeAgentList(sessionId);
         set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: stalled } }));
+        void get().refreshUnreadWorkspaces();
         void get().emitNotification(
           'error',
           'warning',
@@ -238,6 +239,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
+    void get().refreshUnreadWorkspaces();
     const next = children[completedCount];
     if (next) {
       startChild(

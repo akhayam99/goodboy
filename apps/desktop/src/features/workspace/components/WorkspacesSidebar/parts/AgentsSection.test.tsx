@@ -31,6 +31,12 @@ vi.mock('../../../../../store', () => ({
   useSessionOpenQuestions: () => [],
   useSessionPlans: () => [],
   EMPTY_ARRAY: [] as never[],
+  agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean): boolean => {
+    if (isCurrentlyViewed || agent.status === 'skipped' || !agent.lastFinishedAt) {
+      return false;
+    }
+    return !agent.lastViewedAt || agent.lastFinishedAt > agent.lastViewedAt;
+  },
 }));
 
 vi.mock('@goodboy/ui', () => ({
@@ -84,6 +90,10 @@ vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 vi.mock('../../../../scripts/components/ScriptsSection', () => ({
   ScriptsSection: () => <div data-testid="scripts" />,
 }));
+vi.mock(
+  '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip',
+  () => ({ GoalAttachmentsStrip: () => null }),
+);
 vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
 
 vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
@@ -224,6 +234,145 @@ describe('AgentsSection collapse defaults', () => {
 
     expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
     expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
+  });
+
+  it('workflow unread badge counts step agents and their cluster children', () => {
+    const RUN_ID = 'run-1' as WorkflowRunId;
+    const workflow = {
+      id: 'wf-def-1',
+      workspaceId: WS_ID,
+      name: 'review',
+      steps: [{ id: 'step-1' as StepId, name: 'implement' }],
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    h.state.sessionWorkflows = { [SESSION_ID]: [workflow] };
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({
+          id: 'wf-1' as AgentId,
+          workflowRunId: RUN_ID,
+          stepId: 'step-1' as StepId,
+          status: 'completed',
+          lastFinishedAt: NOW,
+        }),
+        buildAgent({
+          id: 'child-1' as AgentId,
+          parentAgentId: 'wf-1' as AgentId,
+          status: 'completed',
+          lastFinishedAt: NOW,
+        }),
+      ],
+    };
+    render(
+      <AgentsSection
+        task={buildSession({
+          workflowRuns: [
+            {
+              id: RUN_ID,
+              workflowId: 'wf-def-1',
+              ordinal: 0,
+              triggerMode: 'manual',
+              autoRun: false,
+            } as never,
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByTitle('2 agent replies to review').textContent).toContain('2');
+  });
+
+  function renderWorkflowWith(children: ReadonlyArray<Agent>) {
+    const RUN_ID = 'run-1' as WorkflowRunId;
+    h.state.sessionWorkflows = {
+      [SESSION_ID]: [
+        {
+          id: 'wf-def-1',
+          workspaceId: WS_ID,
+          name: 'review',
+          steps: [{ id: 'step-1' as StepId, name: 'implement' }],
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+    };
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({
+          id: 'wf-1' as AgentId,
+          workflowRunId: RUN_ID,
+          stepId: 'step-1' as StepId,
+          status: 'completed',
+          lastFinishedAt: NOW,
+        }),
+        ...children,
+      ],
+    };
+    render(
+      <AgentsSection
+        task={buildSession({
+          workflowRuns: [
+            {
+              id: RUN_ID,
+              workflowId: 'wf-def-1',
+              ordinal: 0,
+              triggerMode: 'manual',
+              autoRun: false,
+            } as never,
+          ],
+        })}
+      />,
+    );
+  }
+
+  it('workflow unread badge excludes skipped children', () => {
+    renderWorkflowWith([
+      buildAgent({
+        id: 'child-1' as AgentId,
+        parentAgentId: 'wf-1' as AgentId,
+        status: 'skipped',
+        lastFinishedAt: NOW,
+      }),
+    ]);
+
+    expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull();
+    expect(screen.queryByTitle('2 agent replies to review')).toBeNull();
+  });
+
+  it('workflow unread badge excludes the currently-viewed selected child', () => {
+    h.state.currentSessionId = SESSION_ID;
+    h.state.selectedAgentId = { [SESSION_ID]: 'child-1' as AgentId };
+    renderWorkflowWith([
+      buildAgent({
+        id: 'child-1' as AgentId,
+        parentAgentId: 'wf-1' as AgentId,
+        status: 'completed',
+        lastFinishedAt: NOW,
+      }),
+    ]);
+
+    expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull();
+    expect(screen.queryByTitle('2 agent replies to review')).toBeNull();
+  });
+
+  it('workflow unread badge counts nested grandchildren', () => {
+    renderWorkflowWith([
+      buildAgent({
+        id: 'child-1' as AgentId,
+        parentAgentId: 'wf-1' as AgentId,
+        status: 'completed',
+        lastFinishedAt: NOW,
+      }),
+      buildAgent({
+        id: 'grandchild-1' as AgentId,
+        parentAgentId: 'child-1' as AgentId,
+        status: 'completed',
+        lastFinishedAt: NOW,
+      }),
+    ]);
+
+    expect(screen.getByTitle('3 agent replies to review').textContent).toContain('3');
   });
 
   it('picking an agent selects it and reveals the chat (full-width swap trigger)', () => {
