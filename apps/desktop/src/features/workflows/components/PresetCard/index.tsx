@@ -1,21 +1,19 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@goodboy/ui';
 import { Check, Trash2, X } from 'lucide-react';
 import type { Workflow } from '@goodboy/types';
-import {
-  AGENT_KIND_PALETTE,
-  inferAgentKindFromName,
-  ROLE_TO_KIND,
-} from '../../../session/agent-kind';
+import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 
 type Props = {
   readonly template: Workflow;
   readonly active: boolean;
+  readonly approved: boolean;
   readonly onSelect: () => void;
   readonly onDelete: () => void;
 };
 
-export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
+export const PresetCard = ({ template, active, approved, onSelect, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
   const description = template.description?.trim();
@@ -25,31 +23,29 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
         type="button"
         onClick={onSelect}
         className={cn(
-          'flex w-full flex-col gap-0.5 rounded-md px-2.5 py-2 text-left transition-colors',
-          active ? 'bg-primary/10' : 'hover:bg-muted/40',
+          'flex w-full flex-col gap-1.5 rounded-md py-2 pl-2.5 pr-2.5 text-left motion-safe:transition-colors',
+          active ? 'border-l-2 border-primary bg-primary/10 pl-2' : 'hover:bg-muted/40',
         )}
       >
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
-          <span className="ml-auto shrink-0 text-2xs tabular-nums text-muted-foreground/50 group-hover:opacity-0">
-            {steps.length}
+          {!approved ? (
+            <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow text-warning">
+              draft
+            </span>
+          ) : null}
+          <span className="ml-auto shrink-0 text-2xs tabular-nums text-muted-foreground/50">
+            {steps.length} {steps.length === 1 ? 'step' : 'steps'}
           </span>
         </div>
         {description ? (
           <span className="line-clamp-1 text-2xs text-muted-foreground/70">{description}</span>
         ) : null}
         {steps.length > 0 ? (
-          <span className="truncate text-2xs">
-            {steps.map((step, i) => {
+          <span className="flex flex-wrap items-center gap-2 pr-8">
+            {steps.map((step) => {
               const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-              return (
-                <Fragment key={step.id}>
-                  {i > 0 ? <span className="text-muted-foreground/40"> · </span> : null}
-                  <span className={cn('font-medium', AGENT_KIND_PALETTE[kind].fg)}>
-                    {step.name}
-                  </span>
-                </Fragment>
-              );
+              return <AgentAvatar key={step.id} kind={kind} size="xs" title={step.name} />;
             })}
           </span>
         ) : null}
@@ -66,7 +62,7 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
             }}
             title="confirm delete"
             aria-label={`confirm delete ${template.name}`}
-            className="rounded p-0.5 text-danger transition-colors hover:bg-danger/10"
+            className="rounded p-0.5 text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10"
           >
             <Check size={12} aria-hidden />
           </button>
@@ -78,7 +74,7 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
             }}
             title="cancel"
             aria-label="cancel delete"
-            className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <X size={12} aria-hidden />
           </button>
@@ -92,7 +88,7 @@ export const PresetCard = ({ template, active, onSelect, onDelete }: Props) => {
           }}
           title="delete workflow"
           aria-label={`delete ${template.name}`}
-          className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground/0 transition-colors hover:bg-danger/10 group-hover:text-muted-foreground hover:!text-danger"
+          className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground/0 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 group-focus-within:text-muted-foreground group-hover:text-muted-foreground hover:!text-danger"
         >
           <Trash2 size={12} aria-hidden />
         </button>

@@ -417,6 +417,15 @@ const CONTROL_SELF_STRIP_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s[^>]*?>>`, 
 const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
 const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*(?:\s[^>]*)?$/;
 
+const OQ_ANSWER_OPEN = '<<oq-answers>>';
+const OQ_ANSWER_CLOSE = '<</oq-answers>>';
+
+export const wrapOpenQuestionAnswers = (body: string): string =>
+  `${OQ_ANSWER_OPEN}\n${body}\n${OQ_ANSWER_CLOSE}`;
+
+export const isOpenQuestionAnswerText = (text: string): boolean =>
+  text.trimStart().startsWith(OQ_ANSWER_OPEN);
+
 export const stripControlMarkers = (text: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
   CONTROL_SELF_STRIP_RE.lastIndex = 0;

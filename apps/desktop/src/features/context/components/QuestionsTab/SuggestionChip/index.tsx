@@ -31,7 +31,7 @@ export const SuggestionChip = ({ label, selected, recommended = false, onToggle 
       <span
         aria-hidden
         className={cn(
-          'grid shrink-0 place-items-center overflow-hidden transition-all duration-150',
+          'grid shrink-0 place-items-center overflow-hidden motion-safe:transition-all duration-150',
           selected ? 'mr-1 w-3.5 opacity-100' : 'w-0 opacity-0',
         )}
       >

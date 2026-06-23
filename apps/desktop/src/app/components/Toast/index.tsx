@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
@@ -26,6 +26,7 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const AUTO_DISMISS_MS = 5000;
+const MAX_PERSISTED_ERRORS = 3;
 
 type ToastProviderProps = {
   children: React.ReactNode;
@@ -76,21 +77,54 @@ type ToastStackProps = {
   onDismiss: (id: string) => void;
 };
 
+const isAssertive = (t: ToastItem): boolean => t.kind === 'error' || t.kind === 'warning';
+const isPersistedError = (t: ToastItem): boolean => t.kind === 'error' && Boolean(t.persist);
+
 function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   if (toasts.length === 0) {
     return null;
   }
 
+  // Cap persisted-error toasts so a failing agent can't bury the viewport.
+  // The newest survive; the overflow collapses into a single chip that
+  // points to the notification center where the full history lives.
+  const persistedErrors = toasts.filter(isPersistedError);
+  const overflowCount = Math.max(0, persistedErrors.length - MAX_PERSISTED_ERRORS);
+  const suppressed = new Set(persistedErrors.slice(0, overflowCount).map((t) => t.id));
+
+  const visible = toasts.filter((t) => !suppressed.has(t.id));
+  const assertive = visible.filter(isAssertive);
+  const polite = visible.filter((t) => !isAssertive(t));
+
   return (
-    <div
-      className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2"
-      role="region"
-      aria-label="notifications"
-    >
-      {toasts.map((t) => (
-        <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
-      ))}
+    <div className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2">
+      {/* Errors and warnings interrupt; screen readers announce immediately. */}
+      <div role="alert" aria-live="assertive" className="flex flex-col items-center gap-2">
+        {overflowCount > 0 ? <ErrorOverflowChip count={overflowCount} /> : null}
+        {assertive.map((t) => (
+          <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
+        ))}
+      </div>
+      {/* Info and success wait their turn. */}
+      <div role="status" aria-live="polite" className="flex flex-col items-center gap-2">
+        {polite.map((t) => (
+          <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
+        ))}
+      </div>
     </div>
+  );
+}
+
+function ErrorOverflowChip({ count }: { count: number }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-notifications'))}
+      className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-danger/25 bg-elevated px-3 py-1 text-2xs font-medium text-danger shadow-lg motion-safe:transition-colors hover:bg-danger/10"
+    >
+      <Bell size={11} aria-hidden />
+      <span className="tabular-nums">+{count} more errors</span>
+    </button>
   );
 }
 
@@ -153,7 +187,6 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
   const { card, strip, icon } = KIND_CLASSES[toast.kind];
   const Icon = KIND_ICON[toast.kind];
   const hasTitle = Boolean(toast.title);
-  const assertive = toast.kind === 'error' || toast.kind === 'warning';
 
   return (
     <div
@@ -162,7 +195,6 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         card,
         visible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0',
       )}
-      role={assertive ? 'alert' : 'status'}
     >
       <div className={cn('w-1 shrink-0', strip)} />
       <div className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3">

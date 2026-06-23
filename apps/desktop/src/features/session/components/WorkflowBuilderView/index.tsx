@@ -254,6 +254,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   };
   const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
+  // Right column is always populated: fall back to the first/recommended preset for the
+  // live preview when nothing is explicitly picked. Start gating still requires selectedPreset.
+  const previewPreset = selectedPreset ?? presets[0] ?? null;
   const workspaceName = useCurrentWorkspace()?.name ?? '';
 
   const replaceGoal = (next: string) => {
@@ -428,14 +431,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
             type="button"
             onClick={resetDraft}
             disabled={blocked}
+            title="Clear the whole draft — goal, approach, steps and start settings (keeps this panel open)"
             className={cn(
-              'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors',
+              'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground motion-safe:transition-colors',
               'hover:bg-muted/50 hover:text-foreground',
               blocked && 'cursor-not-allowed opacity-50',
             )}
             aria-label="reset workflow draft"
           >
-            <RotateCcw size={11} aria-hidden /> Reset
+            <RotateCcw size={11} aria-hidden /> Reset draft
           </button>
         ) : null
       }
@@ -443,10 +447,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       {() => (
         <div className="flex min-h-0 w-full flex-1 flex-col">
           <div className="flex min-h-0 flex-1">
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-6 py-6">
-              <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+            <div className="flex min-h-0 min-w-0 flex-[5] flex-col overflow-y-auto p-4">
+              <div className="flex w-full flex-col gap-6">
                 <section className="flex flex-col gap-2">
                   <SectionHeader icon={Target} label="Goal" htmlFor="workflow-goal">
+                    {sessionGoal.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={onUseSessionGoal}
+                        disabled={blocked || polishing || goalText === sessionGoal}
+                        className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Target size={10} aria-hidden /> Use session goal
+                      </button>
+                    ) : null}
                     {goalHistory.length > 0 ? (
                       <button
                         type="button"
@@ -466,22 +480,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {polishing ? (
-                        <Loader2 size={10} className="animate-spin" aria-hidden />
+                        <Loader2 size={10} className="motion-safe:animate-spin" aria-hidden />
                       ) : (
                         <Wand2 size={10} aria-hidden />
                       )}
                       Polish
                     </button>
-                    {sessionGoal.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={onUseSessionGoal}
-                        disabled={blocked || polishing || goalText === sessionGoal}
-                        className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Use session goal
-                      </button>
-                    ) : null}
                   </SectionHeader>
                   <Textarea
                     id="workflow-goal"
@@ -489,7 +493,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     onChange={(e) => setGoalText(e.target.value)}
                     placeholder="what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…"
                     autoGrow
-                    minRows={2}
+                    minRows={3}
                     maxRows={4}
                     disabled={busy || polishing}
                     className="resize-none rounded-lg bg-subtle/80 px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
@@ -501,93 +505,42 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
                 <Divider />
 
-                <section className="flex flex-col gap-2">
-                  <SectionHeader icon={Paperclip} label="Attachments" />
-                  <div
-                    ref={composerRef}
-                    className={cn(
-                      'flex flex-col gap-2.5 rounded-lg border border-dashed px-3 py-3 transition-colors',
-                      isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
-                    )}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept={ATTACHMENT_ACCEPT}
-                      multiple
-                      hidden
-                      onChange={onFileInputChange}
-                    />
-                    {attachments.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {attachments.map((a) => (
-                          <AttachmentChip
-                            key={a.id}
-                            attachment={a}
-                            onRemove={() => removeAttachment(a.id)}
-                          />
-                        ))}
-                      </div>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={blocked}
-                      className={cn(
-                        'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
-                        blocked
-                          ? 'cursor-not-allowed text-muted-foreground/40'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                      )}
-                    >
-                      <Paperclip size={13} aria-hidden /> Add files
-                    </button>
-                  </div>
-                  <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                    Routed to the agents that need them.
-                  </p>
-                </section>
-
-                <Divider />
-
                 <section className="flex flex-col gap-3">
-                  <SectionHeader icon={Layers} label="Approach" />
-                  <div className="flex w-fit items-center gap-0.5 rounded-lg bg-subtle/80 p-0.5 ring-1 ring-border-soft">
-                    <button
-                      type="button"
-                      onClick={() => setMode('preset')}
-                      disabled={blocked}
-                      aria-pressed={mode === 'preset'}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors',
-                        mode === 'preset'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <ListChecks size={12} aria-hidden /> Preset
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMode('custom')}
-                      disabled={blocked}
-                      aria-pressed={mode === 'custom'}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors',
-                        mode === 'custom'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <Sparkles size={12} aria-hidden /> Custom
-                    </button>
-                  </div>
+                  <SectionHeader icon={Layers} label="Approach">
+                    <div className="flex items-center gap-0.5 rounded-md bg-subtle/80 p-0.5 ring-1 ring-border-soft">
+                      <button
+                        type="button"
+                        onClick={() => setMode('preset')}
+                        disabled={blocked}
+                        aria-pressed={mode === 'preset'}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded px-2.5 py-0.5 text-2xs font-medium transition-colors',
+                          mode === 'preset'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <ListChecks size={11} aria-hidden /> Preset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMode('custom')}
+                        disabled={blocked}
+                        aria-pressed={mode === 'custom'}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded px-2.5 py-0.5 text-2xs font-medium transition-colors',
+                          mode === 'custom'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Sparkles size={11} aria-hidden /> Custom
+                      </button>
+                    </div>
+                  </SectionHeader>
 
                   {mode === 'preset' ? (
                     <div className="flex flex-col gap-2">
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        Pick a preset. Its steps show on the right.
-                      </p>
                       {presets.length === 0 ? (
                         <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-border-soft px-4 py-5">
                           <p className="text-xs text-muted-foreground">
@@ -602,31 +555,61 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-2" role="radiogroup" aria-label="presets">
-                          {presets.map((t) => {
-                            const steps = sortedSteps(t);
-                            const kinds = steps.map(templateStepKind);
-                            const shown = kinds.slice(0, 5);
-                            const selected = t.id === selectedPresetId;
-                            return (
-                              <button
-                                key={t.id}
-                                type="button"
-                                role="radio"
-                                aria-checked={selected}
-                                onClick={() => setSelectedPresetId(t.id)}
-                                disabled={busy}
-                                className={cn(
-                                  'flex flex-col gap-1.5 rounded-lg border px-3 py-2.5 text-left transition-colors',
-                                  selected
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border-soft hover:border-border hover:bg-muted/40',
-                                  busy && 'cursor-not-allowed opacity-60',
-                                )}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-                                    {t.name}
+                        <>
+                          <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
+                            Pick a preset. Its ordered steps show on the right.
+                          </p>
+                          <div
+                            className="flex flex-col gap-1.5"
+                            role="radiogroup"
+                            aria-label="presets"
+                          >
+                            {presets.map((t) => {
+                              const steps = sortedSteps(t);
+                              const kinds = steps.map(templateStepKind);
+                              const shown = kinds.slice(0, 5);
+                              const selected = t.id === selectedPresetId;
+                              const desc = t.description || t.goal;
+                              return (
+                                <button
+                                  key={t.id}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={selected}
+                                  onClick={() => setSelectedPresetId(t.id)}
+                                  disabled={busy}
+                                  className={cn(
+                                    'flex items-center gap-2.5 rounded-lg border border-l-2 px-3 py-2 text-left transition-colors',
+                                    selected
+                                      ? 'border-l-primary border-border-soft bg-subtle'
+                                      : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
+                                    busy && 'cursor-not-allowed opacity-60',
+                                  )}
+                                >
+                                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                                        {t.name}
+                                      </span>
+                                      <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] tabular-nums text-muted-foreground">
+                                        {steps.length}
+                                      </span>
+                                    </span>
+                                    {desc ? (
+                                      <span className="truncate text-[10px] leading-snug text-muted-foreground/70">
+                                        {desc}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                  <span className="flex shrink-0 items-center gap-1">
+                                    {shown.map((k, i) => (
+                                      <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
+                                    ))}
+                                    {kinds.length > shown.length ? (
+                                      <span className="text-[10px] text-muted-foreground/40">
+                                        +{kinds.length - shown.length}
+                                      </span>
+                                    ) : null}
                                   </span>
                                   {selected ? (
                                     <Check
@@ -634,38 +617,19 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       className="shrink-0 text-primary"
                                       aria-hidden
                                     />
-                                  ) : (
-                                    <span className="shrink-0 text-[10px] text-muted-foreground/50">
-                                      {steps.length} step{steps.length === 1 ? '' : 's'}
-                                    </span>
-                                  )}
-                                </span>
-                                {t.description || t.goal ? (
-                                  <span className="truncate text-[10px] leading-snug text-muted-foreground/70">
-                                    {t.description || t.goal}
-                                  </span>
-                                ) : null}
-                                <span className="flex items-center gap-1">
-                                  {shown.map((k, i) => (
-                                    <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
-                                  ))}
-                                  {kinds.length > shown.length ? (
-                                    <span className="text-[10px] text-muted-foreground/40">
-                                      +{kinds.length - shown.length}
-                                    </span>
                                   ) : null}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
                       )}
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        Describe the flow. The planner drafts ordered steps you can tune before
-                        starting.
+                      <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
+                        Describe the flow. The planner drafts ordered steps you tune on the right
+                        before starting.
                       </p>
                       <div
                         ref={promptRef}
@@ -677,9 +641,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             onChange={(e) => setProcessText(e.target.value)}
                             placeholder="describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…"
                             autoGrow
-                            minRows={5}
-                            maxRows={10}
-                            className="min-h-24 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
+                            minRows={4}
+                            maxRows={9}
+                            className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
                           />
                           <div className="absolute bottom-2.5 right-2.5">
                             <Button
@@ -689,7 +653,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               className="min-w-[6.5rem]"
                             >
                               {planning ? (
-                                <Loader2 size={15} className="animate-spin" aria-label="planning" />
+                                <Loader2
+                                  size={15}
+                                  className="motion-safe:animate-spin"
+                                  aria-label="planning"
+                                />
                               ) : plan ? (
                                 'Re-plan'
                               ) : (
@@ -706,6 +674,58 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       </div>
                     </div>
                   )}
+                </section>
+
+                <Divider />
+
+                <section className="flex flex-col gap-2">
+                  <SectionHeader icon={Paperclip} label="Attachments" />
+                  <div
+                    ref={composerRef}
+                    className={cn(
+                      'flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
+                      isDragging
+                        ? 'border-dashed border-primary bg-primary/5'
+                        : 'border-border-soft',
+                    )}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={ATTACHMENT_ACCEPT}
+                      multiple
+                      hidden
+                      onChange={onFileInputChange}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={blocked}
+                      className={cn(
+                        'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
+                        blocked
+                          ? 'cursor-not-allowed text-muted-foreground/40'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      <Paperclip size={13} aria-hidden /> Add files
+                    </button>
+                    {attachments.length > 0 ? (
+                      <>
+                        {attachments.map((a) => (
+                          <AttachmentChip
+                            key={a.id}
+                            attachment={a}
+                            onRemove={() => removeAttachment(a.id)}
+                          />
+                        ))}
+                      </>
+                    ) : (
+                      <span className="text-2xs text-muted-foreground/60">
+                        Drop or add files — routed to the agents that need them.
+                      </span>
+                    )}
+                  </div>
                 </section>
 
                 <Divider />
@@ -762,120 +782,151 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             'the selected workflow'
                           } completes.`}
                   </p>
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border-soft bg-subtle/40 px-3 py-1.5">
+                    <p className="text-2xs leading-relaxed text-muted-foreground/60">
+                      Auto-run: each step runs as soon as the previous finishes — no manual
+                      hand-off.
+                    </p>
+                    <ToggleSwitch
+                      label="Auto-run"
+                      beta
+                      checked={autoRun}
+                      onChange={setAutoRun}
+                      disabled={busy}
+                    />
+                  </div>
                 </section>
               </div>
             </div>
 
-            <div className="hidden w-96 shrink-0 flex-col overflow-y-auto border-l border-border-soft bg-subtle/40 px-4 py-6 lg:flex">
-              {mode === 'preset' ? (
-                selectedPreset ? (
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
-                        <Check size={10} className="text-success" aria-hidden />
-                      </span>
-                      <span className="text-xs font-medium text-foreground">Preset ready</span>
-                      <span className="text-2xs text-muted-foreground/60">
-                        {selectedPreset.steps.length} step
-                        {selectedPreset.steps.length === 1 ? '' : 's'}
-                      </span>
+            <div className="hidden min-w-0 flex-[4] shrink-0 flex-col overflow-hidden border-l border-border-soft bg-subtle/40 lg:flex">
+              <div className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-2">
+                <span className={SECTION_LABEL_CLS}>
+                  <ListChecks size={11} aria-hidden /> Step preview
+                </span>
+                {(mode === 'preset' ? previewPreset : plan) ? (
+                  <span className="text-2xs tabular-nums text-muted-foreground/60">
+                    {mode === 'preset' ? previewPreset!.steps.length : plan!.steps.length} step
+                    {(mode === 'preset' ? previewPreset!.steps.length : plan!.steps.length) === 1
+                      ? ''
+                      : 's'}
+                  </span>
+                ) : null}
+                {mode === 'custom' && plan ? (
+                  <button
+                    type="button"
+                    onClick={onRedesign}
+                    disabled={blocked}
+                    className="ml-auto inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Sparkles size={10} aria-hidden /> Re-design
+                  </button>
+                ) : null}
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+                {mode === 'preset' ? (
+                  previewPreset ? (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-xs font-semibold text-foreground">
+                          {previewPreset.name}
+                        </span>
+                        {selectedPreset ? (
+                          <span className="inline-flex items-center gap-1 text-2xs text-success">
+                            <Check size={10} aria-hidden /> Selected
+                          </span>
+                        ) : (
+                          <span className="text-2xs text-muted-foreground/50">Recommended</span>
+                        )}
+                      </div>
+                      <ol className="flex flex-col divide-y divide-border-soft/50">
+                        {sortedSteps(previewPreset).map((s, i) => (
+                          <ReadOnlyStepCard
+                            key={s.id}
+                            ordinal={i}
+                            kind={templateStepKind(s)}
+                            name={s.name}
+                            role={s.role ?? 'custom'}
+                            model={s.modelOverride}
+                            effort={s.effort}
+                            promptPrefix={s.promptPrefix}
+                          />
+                        ))}
+                      </ol>
+                      <p className="px-1 pt-1 text-2xs leading-relaxed text-muted-foreground/50">
+                        Each step is one agent; its output feeds the next.
+                      </p>
                     </div>
-                    <div className="truncate text-xs font-semibold text-foreground">
-                      {selectedPreset.name}
+                  ) : (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+                      <Layers size={22} className="text-muted-foreground/30" aria-hidden />
+                      <p className="text-xs font-medium text-foreground">No preset selected</p>
+                      <p className="max-w-[15rem] text-2xs leading-relaxed text-muted-foreground">
+                        Pick a preset and its ordered steps show here.
+                      </p>
+                    </div>
+                  )
+                ) : plan ? (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-xs font-semibold text-foreground">
+                        {plan.workflowName}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-2xs text-success">
+                        <Check size={10} aria-hidden /> Workflow ready
+                      </span>
                     </div>
                     <ol className="flex flex-col divide-y divide-border-soft/50">
-                      {sortedSteps(selectedPreset).map((s, i) => (
-                        <ReadOnlyStepCard
-                          key={s.id}
-                          ordinal={i}
-                          kind={templateStepKind(s)}
-                          name={s.name}
-                          role={s.role ?? 'custom'}
-                          model={s.modelOverride}
-                          effort={s.effort}
-                          promptPrefix={s.promptPrefix}
-                        />
-                      ))}
+                      {plan.steps.map((s, i) => {
+                        const role = s.role as AgentRole;
+                        const edit = stepEdits[i];
+                        return (
+                          <EditableStepCard
+                            key={`${i}-${s.name}`}
+                            ordinal={i}
+                            kind={planStepKind(s)}
+                            provider={providerId}
+                            name={edit?.name ?? s.name}
+                            promptPrefix={edit?.promptPrefix ?? s.promptPrefix}
+                            model={edit?.model ?? ''}
+                            effort={(edit?.effort ?? defaultsForRole(role).effort) as EffortLevel}
+                            effortModel={effortModelFor(i, role)}
+                            disabled={busy}
+                            onName={(v) => patchStep(i, { name: v })}
+                            onPrompt={(v) => patchStep(i, { promptPrefix: v })}
+                            onModel={(v) => patchStep(i, { model: v })}
+                            onEffort={(v) => patchStep(i, { effort: v })}
+                          />
+                        );
+                      })}
                     </ol>
+                    <p className="px-1 pt-1 text-2xs leading-relaxed text-muted-foreground/50">
+                      Each step is one agent; its output feeds the next.
+                    </p>
+                  </div>
+                ) : planning ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+                    <Loader2
+                      size={22}
+                      className="motion-safe:animate-spin text-muted-foreground/40"
+                      aria-hidden
+                    />
+                    <p className="text-xs font-medium text-foreground">Drafting plan</p>
+                    <p className="max-w-[15rem] text-2xs leading-relaxed text-muted-foreground">
+                      The planner is breaking your process into ordered steps.
+                    </p>
                   </div>
                 ) : (
                   <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
                     <Layers size={22} className="text-muted-foreground/30" aria-hidden />
-                    <p className="text-xs font-medium text-foreground">Step preview</p>
+                    <p className="text-xs font-medium text-foreground">No plan yet</p>
                     <p className="max-w-[15rem] text-2xs leading-relaxed text-muted-foreground">
-                      Pick a preset and its ordered steps show here.
+                      Describe your flow and the planner drafts ordered steps here, each with its
+                      own model pick.
                     </p>
                   </div>
-                )
-              ) : plan ? (
-                <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
-                      <Check size={10} className="text-success" aria-hidden />
-                    </span>
-                    <span className="text-xs font-medium text-foreground">Workflow ready</span>
-                    <span className="text-2xs text-muted-foreground/60">
-                      {plan.steps.length} step{plan.steps.length === 1 ? '' : 's'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={onRedesign}
-                      disabled={blocked}
-                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Sparkles size={10} aria-hidden /> Re-design
-                    </button>
-                  </div>
-                  <div className="truncate text-xs font-semibold text-foreground">
-                    {plan.workflowName}
-                  </div>
-                  <ol className="flex flex-col divide-y divide-border-soft/50">
-                    {plan.steps.map((s, i) => {
-                      const role = s.role as AgentRole;
-                      const edit = stepEdits[i];
-                      return (
-                        <EditableStepCard
-                          key={`${i}-${s.name}`}
-                          ordinal={i}
-                          kind={planStepKind(s)}
-                          provider={providerId}
-                          name={edit?.name ?? s.name}
-                          promptPrefix={edit?.promptPrefix ?? s.promptPrefix}
-                          model={edit?.model ?? ''}
-                          effort={(edit?.effort ?? defaultsForRole(role).effort) as EffortLevel}
-                          effortModel={effortModelFor(i, role)}
-                          disabled={busy}
-                          onName={(v) => patchStep(i, { name: v })}
-                          onPrompt={(v) => patchStep(i, { promptPrefix: v })}
-                          onModel={(v) => patchStep(i, { model: v })}
-                          onEffort={(v) => patchStep(i, { effort: v })}
-                        />
-                      );
-                    })}
-                  </ol>
-                </div>
-              ) : planning ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-                  <Loader2
-                    size={22}
-                    className="animate-spin text-muted-foreground/40"
-                    aria-hidden
-                  />
-                  <p className="text-xs font-medium text-foreground">Drafting plan</p>
-                  <p className="max-w-[15rem] text-2xs leading-relaxed text-muted-foreground">
-                    The planner is breaking your process into ordered steps.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-                  <Layers size={22} className="text-muted-foreground/30" aria-hidden />
-                  <p className="text-xs font-medium text-foreground">Step preview</p>
-                  <p className="max-w-[15rem] text-2xs leading-relaxed text-muted-foreground">
-                    Once the planner drafts a workflow, the ordered steps show here with a model
-                    pick per step.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
@@ -891,27 +942,22 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
               ) : null}
             </div>
             {mode === 'custom' ? (
-              <ToggleSwitch
-                label="Save as preset"
-                checked={saveAsPreset}
-                onChange={setSaveAsPreset}
-                disabled={busy}
-              />
+              <>
+                <ToggleSwitch
+                  label="Save as preset"
+                  checked={saveAsPreset}
+                  onChange={setSaveAsPreset}
+                  disabled={busy}
+                />
+                <span className="h-5 w-px bg-border-soft" aria-hidden />
+              </>
             ) : null}
-            <ToggleSwitch
-              label="Auto-run"
-              beta
-              checked={autoRun}
-              onChange={setAutoRun}
-              disabled={busy}
-            />
-            <span className="h-5 w-px bg-border-soft" aria-hidden />
             <Button variant="ghost" onClick={handleClose} disabled={busy}>
               Cancel
             </Button>
             <Button onClick={() => void onStart()} disabled={startDisabled}>
               {busy ? (
-                <Loader2 size={15} className="animate-spin" aria-label="starting" />
+                <Loader2 size={15} className="motion-safe:animate-spin" aria-label="starting" />
               ) : (
                 'Start workflow'
               )}

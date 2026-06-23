@@ -128,14 +128,125 @@ export const App = () => {
   useZoomShortcuts();
   useEscapeToCloseDialog();
 
+  // Stateless overlay-open listeners (all with empty deps) registered under one hook:
+  // each handler only touches stable setters or reads fresh state via useAppStore.getState().
+  // Moved verbatim — no open/close behavior changed.
   useEffect(() => {
-    const handler = (event: Event) => {
+    const onOpenSettings = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
-    window.addEventListener('goodboy:open-settings', handler);
-    return () => window.removeEventListener('goodboy:open-settings', handler);
+    const onOpenGithubStudio = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
+      ).detail;
+      setGithubStudioSession(detail?.sessionId ?? null);
+      setGithubStudioPrNumber(detail?.prNumber ?? null);
+      setGithubStudioThreadId(detail?.threadId ?? null);
+      setGithubStudioOpen(true);
+    };
+    const onOpenPlanStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId; planId?: PlanId }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      const state = useAppStore.getState();
+      state.setFocusedPlanId(detail.sessionId, detail.planId ?? null);
+      state.setActiveLens(detail.sessionId, 'plans');
+    };
+    const onOpenDiffViewer = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      useAppStore.getState().setActiveLens(detail.sessionId, 'files');
+    };
+    const onOpenProviderStudio = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
+      ).detail;
+      setProviderStudioFocus(detail?.providerId ?? null);
+      setProviderStudioAction(detail?.action ?? null);
+      setProviderStudioOpen(true);
+    };
+    const onOpenBudgetStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
+      setBudgetStudioScope(detail?.scope);
+      setBudgetStudioOpen(true);
+    };
+    const onOpenLinearStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setLinearStudioFocus(detail?.issueExternalId ?? null);
+      setLinearStudioOpen(true);
+    };
+    const onOpenSentryStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setSentryStudioFocus(detail?.issueExternalId ?? null);
+      setSentryStudioOpen(true);
+    };
+    const onOpenGitlabStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setGitlabStudioFocus(detail?.issueExternalId ?? null);
+      setGitlabStudioOpen(true);
+    };
+    const onRevealChat = () => {
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      const state = useAppStore.getState();
+      const sid = state.currentSessionId;
+      if (sid) {
+        state.setSessionStudio(sid, null);
+        if (!state.selectedAgentId[sid]) {
+          const first = (state.sessionPhaseRuns[sid] ?? [])[0];
+          if (first) {
+            void state.selectAgent(sid, first.id);
+          }
+        }
+      }
+    };
+    const onAddWorkspace = () => setAddWorkspaceOpen(true);
+    const onOpenSwitcher = () => setSwitcherOpen(true);
+    const onPairDevice = () => setCompanionOpen(true);
+
+    window.addEventListener('goodboy:open-settings', onOpenSettings);
+    window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
+    window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
+    window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
+    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
+    window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
+    window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
+    window.addEventListener('goodboy:reveal-chat', onRevealChat);
+    window.addEventListener('goodboy:add-workspace', onAddWorkspace);
+    window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
+    window.addEventListener('goodboy:open-pair-device', onPairDevice);
+    return () => {
+      window.removeEventListener('goodboy:open-settings', onOpenSettings);
+      window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
+      window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
+      window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
+      window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+      window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+      window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
+      window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
+      window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
+      window.removeEventListener('goodboy:reveal-chat', onRevealChat);
+      window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
+      window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
+      window.removeEventListener('goodboy:open-pair-device', onPairDevice);
+    };
   }, []);
 
   useEffect(() => {
@@ -177,59 +288,6 @@ export const App = () => {
       const detail = (
         event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
       ).detail;
-      setGithubStudioSession(detail?.sessionId ?? null);
-      setGithubStudioPrNumber(detail?.prNumber ?? null);
-      setGithubStudioThreadId(detail?.threadId ?? null);
-      setGithubStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-github-studio', handler);
-    return () => window.removeEventListener('goodboy:open-github-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{
-          sessionId?: SessionId;
-          planId?: PlanId;
-        }>
-      ).detail;
-      if (!detail?.sessionId) {
-        return;
-      }
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      const state = useAppStore.getState();
-      state.setFocusedPlanId(detail.sessionId, detail.planId ?? null);
-      state.setActiveLens(detail.sessionId, 'plans');
-    };
-    window.addEventListener('goodboy:open-plan-studio', handler);
-    return () => window.removeEventListener('goodboy:open-plan-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail;
-      if (!detail?.sessionId) {
-        return;
-      }
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      useAppStore.getState().setActiveLens(detail.sessionId, 'files');
-    };
-    window.addEventListener('goodboy:open-diff-viewer', handler);
-    return () => window.removeEventListener('goodboy:open-diff-viewer', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
-      ).detail;
       if (!detail?.sessionId) {
         return;
       }
@@ -265,59 +323,6 @@ export const App = () => {
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
-      ).detail;
-      setProviderStudioFocus(detail?.providerId ?? null);
-      setProviderStudioAction(detail?.action ?? null);
-      setProviderStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-provider-studio', handler);
-    return () => window.removeEventListener('goodboy:open-provider-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
-      setBudgetStudioScope(detail?.scope);
-      setBudgetStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-budget-studio', handler);
-    return () => window.removeEventListener('goodboy:open-budget-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setLinearStudioFocus(detail?.issueExternalId ?? null);
-      setLinearStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-linear-studio', handler);
-    return () => window.removeEventListener('goodboy:open-linear-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setSentryStudioFocus(detail?.issueExternalId ?? null);
-      setSentryStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-sentry-studio', handler);
-    return () => window.removeEventListener('goodboy:open-sentry-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setGitlabStudioFocus(detail?.issueExternalId ?? null);
-      setGitlabStudioOpen(true);
-    };
-    window.addEventListener('goodboy:open-gitlab-studio', handler);
-    return () => window.removeEventListener('goodboy:open-gitlab-studio', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
       if (detail?.sessionId) {
         setWorkspaceSettingsOpen(false);
@@ -347,34 +352,6 @@ export const App = () => {
   }, [currentWorkspace, clearSessionStudio]);
 
   useEffect(() => {
-    const handler = () => {
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      const state = useAppStore.getState();
-      const sid = state.currentSessionId;
-      if (sid) {
-        state.setSessionStudio(sid, null);
-        if (!state.selectedAgentId[sid]) {
-          const first = (state.sessionPhaseRuns[sid] ?? [])[0];
-          if (first) {
-            void state.selectAgent(sid, first.id);
-          }
-        }
-      }
-    };
-    window.addEventListener('goodboy:reveal-chat', handler);
-    return () => window.removeEventListener('goodboy:reveal-chat', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = () => setAddWorkspaceOpen(true);
-    window.addEventListener('goodboy:add-workspace', handler);
-    return () => window.removeEventListener('goodboy:add-workspace', handler);
-  }, []);
-
-  useEffect(() => {
     let off: (() => void) | undefined;
     let cancelled = false;
     void listenBridgeCommands().then((fn) => {
@@ -388,12 +365,6 @@ export const App = () => {
       cancelled = true;
       off?.();
     };
-  }, []);
-
-  useEffect(() => {
-    const handler = () => setSwitcherOpen(true);
-    window.addEventListener('goodboy:open-workspace-switcher', handler);
-    return () => window.removeEventListener('goodboy:open-workspace-switcher', handler);
   }, []);
 
   useEffect(() => {
@@ -476,6 +447,31 @@ export const App = () => {
       }
       return next;
     });
+  }, []);
+
+  // The NotificationCenter (the only listener for goodboy:open-notifications) lives
+  // in the expanded sidebar footer; when the sidebar is collapsed it isn't mounted,
+  // so the Toast overflow chip's event would be a silent no-op. Force-expand here,
+  // then re-fire on the next frame once NotificationCenter has mounted. When already
+  // expanded, do nothing — NotificationCenter handles the original event itself.
+  useEffect(() => {
+    const handler = () => {
+      let wasCollapsed = false;
+      setLeftCollapsed((v) => {
+        wasCollapsed = v;
+        if (v && typeof localStorage !== 'undefined') {
+          localStorage.setItem('goodboy:left-sidebar-collapsed', '0');
+        }
+        return false;
+      });
+      if (wasCollapsed) {
+        requestAnimationFrame(() => {
+          window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
+        });
+      }
+    };
+    window.addEventListener('goodboy:open-notifications', handler);
+    return () => window.removeEventListener('goodboy:open-notifications', handler);
   }, []);
 
   const openWorkspace = useAppStore((s) => s.openWorkspace);
@@ -587,12 +583,6 @@ export const App = () => {
   useKeyboardShortcut('cmd+ctrl+shift+m', () => setCompanionOpen((v) => !v), {
     ignoreInInputs: false,
   });
-
-  useEffect(() => {
-    const handler = () => setCompanionOpen(true);
-    window.addEventListener('goodboy:open-pair-device', handler);
-    return () => window.removeEventListener('goodboy:open-pair-device', handler);
-  }, []);
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;

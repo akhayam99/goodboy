@@ -30,7 +30,7 @@ export function GoalAttachmentsStrip({ owner }: { readonly owner: GoalAttachment
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+      <div className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
         <Paperclip size={11} aria-hidden />
         <span>Attachments</span>
       </div>
@@ -136,7 +136,7 @@ function ImageThumb({
   }
 
   if (src === null) {
-    return <div className="h-full w-full animate-pulse bg-foreground/10" />;
+    return <div className="h-full w-full motion-safe:animate-pulse bg-foreground/10" />;
   }
 
   return (

@@ -16,7 +16,7 @@ export const BaseBranchGuide = () => {
   return (
     <div
       role="alert"
-      className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/5 p-4"
     >
       <div className="flex items-start gap-3">
         <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning">

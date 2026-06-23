@@ -224,7 +224,6 @@ async function maybeSynthesizeParent(
   const child = runs.find((r) => r.id === childId);
   const parentId = child?.parentAgentId;
   if (!parentId) {
-    void get().refreshUnreadWorkspaces();
     return;
   }
 
@@ -265,6 +264,7 @@ async function settleScout(
   });
   const refreshed = await invokeAgentList(sessionId);
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+  void get().refreshUnreadWorkspaces();
   await maybeSynthesizeParent(set, get, sessionId, agentId);
 }
 

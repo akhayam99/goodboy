@@ -23,6 +23,10 @@ vi.mock('../../../../store', () => ({
   useSessionPlans: () => state.plans,
 }));
 
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}));
+
 beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.planConsumptions = {};

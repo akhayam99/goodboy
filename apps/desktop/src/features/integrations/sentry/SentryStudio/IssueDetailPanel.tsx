@@ -258,7 +258,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               />
               {detailLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-                  <Loader2 size={13} className="animate-spin" aria-hidden /> Loading latest event…
+                  <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden /> Loading
+                  latest event…
                 </div>
               ) : detailError ? (
                 <p className="text-sm text-danger">{detailError}</p>
@@ -356,7 +357,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                     <Button onClick={() => void onLaunch()} disabled={!canLaunch}>
                       {busy ? (
                         <>
-                          <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                          <Loader2
+                            size={13}
+                            className="mr-1.5 motion-safe:animate-spin"
+                            aria-hidden
+                          />
                           Launching…
                         </>
                       ) : (

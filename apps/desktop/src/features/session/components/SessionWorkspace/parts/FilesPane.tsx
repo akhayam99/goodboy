@@ -16,10 +16,10 @@ export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) =>
   if (!workingDir) {
     return (
       <PaneShell title="Diff" description="Changes across this session's working tree.">
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-12 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-8 text-center">
           <span
             aria-hidden
-            className="flex size-12 items-center justify-center rounded-full bg-muted/50"
+            className="flex size-12 items-center justify-center rounded-md bg-muted/50"
           >
             <FileDiff size={24} className="text-muted-foreground" />
           </span>

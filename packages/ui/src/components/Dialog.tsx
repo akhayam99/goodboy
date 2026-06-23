@@ -1,6 +1,7 @@
 import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { Divider } from './Divider';
+import { ScrollFade } from './ScrollFade';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -138,7 +139,7 @@ export const Dialog = ({
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(
-        'overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-xl',
+        'overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-lg',
         fullScreenOnSmall &&
           'max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none',
       )}
@@ -196,24 +197,20 @@ export const Dialog = ({
               {panel}
             </div>
             <Divider orientation="vertical" />
-            <div
-              className={cn(
-                'flex min-w-0 flex-1 flex-col overflow-y-auto text-sm',
-                bodyClassName ?? 'gap-4 px-6 py-5',
-              )}
+            <ScrollFade
+              className="min-w-0 flex-1 text-sm"
+              viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
             >
               {children}
-            </div>
+            </ScrollFade>
           </div>
         ) : (
-          <div
-            className={cn(
-              'flex min-h-0 flex-1 flex-col overflow-y-auto text-sm',
-              bodyClassName ?? 'gap-4 px-6 py-5',
-            )}
+          <ScrollFade
+            className="min-h-0 flex-1 text-sm"
+            viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
           >
             {children}
-          </div>
+          </ScrollFade>
         )}
         {footer ? (
           <>

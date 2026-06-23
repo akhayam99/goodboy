@@ -327,7 +327,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
             <span
               key={nextKey()}
               className={cn(
-                'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
+                'mx-0.5 inline-flex items-center gap-2 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
                 style.chipClass,
               )}
             >
@@ -356,7 +356,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
             <span
               key={nextKey()}
               className={cn(
-                'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
+                'mx-0.5 inline-flex items-center gap-2 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
                 style.chipClass,
               )}
             >
@@ -503,7 +503,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
       };
       const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
       return (
-        <Tag key={key} className={cn('mt-2', sizes[block.level])}>
+        <Tag key={key} className={sizes[block.level]}>
           {renderInline(block.content, key)}
         </Tag>
       );
@@ -635,7 +635,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
 export const Markdown = ({ text, className }: MarkdownProps) => {
   const blocks = parseBlocks(text);
   return (
-    <div className={cn('flex flex-col gap-2 text-base text-foreground/85', className)}>
+    <div className={cn('flex flex-col gap-2 text-sm text-foreground/85', className)}>
       {blocks.map(renderBlock)}
     </div>
   );

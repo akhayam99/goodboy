@@ -39,17 +39,15 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
     });
   };
   return (
-    <div className="mt-2">
-      <button
-        type="button"
-        onClick={onClick}
-        data-testid="handoff-chip"
-        className="inline-flex items-center gap-1.5 rounded-full border border-info/40 bg-info/10 px-2.5 py-1 text-[11px] font-medium text-info hover:bg-info/20"
-      >
-        <ArrowRight size={11} aria-hidden />
-        <span>spawn {meta.label.toLowerCase()}</span>
-        {handoff.reason ? <span className="text-muted-foreground">· {handoff.reason}</span> : null}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid="handoff-chip"
+      className="inline-flex w-fit items-center gap-1.5 rounded-full border border-info/40 bg-info/10 px-2.5 py-1 text-[11px] font-medium text-info hover:bg-info/20"
+    >
+      <ArrowRight size={11} aria-hidden />
+      <span>spawn {meta.label.toLowerCase()}</span>
+      {handoff.reason ? <span className="text-muted-foreground">· {handoff.reason}</span> : null}
+    </button>
   );
 };

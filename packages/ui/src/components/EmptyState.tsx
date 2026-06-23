@@ -36,7 +36,7 @@ export const EmptyState = ({
           <span className="max-w-xs text-2xs text-muted-foreground">{description}</span>
         ) : null}
       </div>
-      {action ? <div className="mt-1">{action}</div> : null}
+      {action ?? null}
     </div>
   );
 };

@@ -2,7 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { agentHasUnread } from './selectors';
 
-const markViewedSpy = vi.fn();
+const callOrder: string[] = [];
+const markViewedSpy = vi.fn((id: string) => {
+  callOrder.push(`mark:${id}`);
+});
+const unreadSpy = vi.fn(async () => {
+  callOrder.push('refresh');
+  return [] as string[];
+});
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -109,8 +116,9 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-  invokeAgentMarkViewed: (...args: unknown[]) => Promise.resolve(markViewedSpy(...args)),
-  invokeWorkspacesWithUnread: vi.fn(async () => []),
+  invokeAgentMarkViewed: (...args: unknown[]) =>
+    Promise.resolve(markViewedSpy(...(args as [string]))),
+  invokeWorkspacesWithUnread: (...args: unknown[]) => unreadSpy(...(args as [])),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
@@ -236,6 +244,129 @@ describe('markAgentViewed', () => {
     const updated = runs.find((r) => r.id === AGENT_ID);
     expect(updated?.lastViewedAt).toBeUndefined();
     expect(markViewedSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('agentHasUnread skipped guard', () => {
+  it('returns false for a skipped agent even when finished and never viewed', () => {
+    const agent = buildAgent({ status: 'skipped', lastFinishedAt: T2 });
+    expect(agentHasUnread(agent, false)).toBe(false);
+  });
+});
+
+describe('selectAgent cascades lastViewedAt to descendants', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    callOrder.length = 0;
+  });
+
+  it('stamps the selected parent and every descendant in its parentAgentId subtree', async () => {
+    const PARENT = 'agent-parent' as AgentId;
+    const CHILD = 'agent-child' as AgentId;
+    const GRANDCHILD = 'agent-grandchild' as AgentId;
+    const useAppStore = await importStore();
+
+    const parent = buildAgent({ id: PARENT, lastFinishedAt: T2 });
+    const child = buildAgent({ id: CHILD, parentAgentId: PARENT, lastFinishedAt: T2 });
+    const grandchild = buildAgent({ id: GRANDCHILD, parentAgentId: CHILD, lastFinishedAt: T2 });
+
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: { [SESSION_ID]: [parent, child, grandchild] },
+      selectedAgentId: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+
+    const runs = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
+    for (const id of [PARENT, CHILD, GRANDCHILD]) {
+      expect(runs.find((r) => r.id === id)?.lastViewedAt).toBeDefined();
+    }
+    const stamped = markViewedSpy.mock.calls.map((c) => c[0]);
+    expect(stamped).toContain(PARENT);
+    expect(stamped).toContain(CHILD);
+    expect(stamped).toContain(GRANDCHILD);
+  });
+
+  it('awaits every mark-viewed write before refreshing unread workspaces', async () => {
+    const PARENT = 'agent-parent' as AgentId;
+    const CHILD = 'agent-child' as AgentId;
+    const useAppStore = await importStore();
+
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ id: PARENT, lastFinishedAt: T2 }),
+          buildAgent({ id: CHILD, parentAgentId: PARENT, lastFinishedAt: T2 }),
+        ],
+      },
+      selectedAgentId: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+    await Promise.resolve();
+
+    const refreshIndex = callOrder.indexOf('refresh');
+    expect(refreshIndex).toBeGreaterThan(-1);
+    const marksBeforeRefresh = callOrder
+      .slice(0, refreshIndex)
+      .filter((c) => c.startsWith('mark:'));
+    expect(marksBeforeRefresh).toEqual(expect.arrayContaining([`mark:${PARENT}`, `mark:${CHILD}`]));
+  });
+
+  it('does not loop forever on a parentAgentId cycle', async () => {
+    const A = 'agent-a' as AgentId;
+    const B = 'agent-b' as AgentId;
+    const useAppStore = await importStore();
+
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ id: A, parentAgentId: B, lastFinishedAt: T2 }),
+          buildAgent({ id: B, parentAgentId: A, lastFinishedAt: T2 }),
+        ],
+      },
+      selectedAgentId: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, A);
+
+    const stamped = markViewedSpy.mock.calls.map((c) => c[0]);
+    expect(stamped).toContain(A);
+    expect(stamped).toContain(B);
+    expect(stamped.length).toBe(2);
+  });
+
+  it('does not stamp sibling subtrees outside the selected parent', async () => {
+    const PARENT = 'agent-parent' as AgentId;
+    const CHILD = 'agent-child' as AgentId;
+    const SIBLING = 'agent-sibling' as AgentId;
+    const SIBLING_CHILD = 'agent-sibling-child' as AgentId;
+    const useAppStore = await importStore();
+
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ id: PARENT, lastFinishedAt: T2 }),
+          buildAgent({ id: CHILD, parentAgentId: PARENT, lastFinishedAt: T2 }),
+          buildAgent({ id: SIBLING, lastFinishedAt: T2 }),
+          buildAgent({ id: SIBLING_CHILD, parentAgentId: SIBLING, lastFinishedAt: T2 }),
+        ],
+      },
+      selectedAgentId: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+
+    const runs = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
+    expect(runs.find((r) => r.id === SIBLING)?.lastViewedAt).toBeUndefined();
+    expect(runs.find((r) => r.id === SIBLING_CHILD)?.lastViewedAt).toBeUndefined();
+    const stamped = markViewedSpy.mock.calls.map((c) => c[0]);
+    expect(stamped).not.toContain(SIBLING);
+    expect(stamped).not.toContain(SIBLING_CHILD);
   });
 });
 

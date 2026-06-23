@@ -49,7 +49,7 @@ export const AutoRunToggle = ({ session }: Props) => {
       <span
         aria-hidden
         className={cn(
-          'overflow-hidden whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide',
+          'overflow-hidden whitespace-nowrap text-[10px] font-semibold tracking-wide',
           'transition-[max-width,opacity,margin] duration-200 ease-out',
           on ? 'mr-1 max-w-[2.5rem] opacity-100' : 'mr-0 max-w-0 opacity-0',
         )}

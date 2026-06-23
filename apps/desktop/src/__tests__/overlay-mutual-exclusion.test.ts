@@ -101,6 +101,20 @@ describe('full-page overlay mutual exclusion', () => {
     expect(s.sessionStudio).toBe('mr');
   });
 
+  it('every studio variant supersedes every other — never two studios at once', () => {
+    const variants: ReadonlyArray<SessionStudioKind> = ['workflow', 'github', 'mr'];
+    for (const first of variants) {
+      for (const second of variants) {
+        const s = openSessionStudio(openSessionStudio(emptyState(), first), second);
+        // The slot is a single value, so only the latest variant survives — by
+        // construction there is no way to hold two studio kinds simultaneously.
+        expect(s.sessionStudio).toBe(second);
+        expect(variants.filter((v) => v === s.sessionStudio)).toHaveLength(1);
+        expect(activeFullPageOverlay(s)).toBeNull();
+      }
+    }
+  });
+
   it('newSession takes priority over workspaceSettings and sessionSettings', () => {
     const s: AppOverlayState = {
       newSessionOpen: true,

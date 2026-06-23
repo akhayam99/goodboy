@@ -25,7 +25,7 @@ export const Popover = ({
       aria-label={ariaLabel}
       style={style}
       className={cn(
-        'overflow-hidden rounded-md border border-border bg-muted text-xs shadow-lg',
+        'overflow-hidden rounded-md border border-border bg-elevated text-xs shadow-lg',
         className,
       )}
     >

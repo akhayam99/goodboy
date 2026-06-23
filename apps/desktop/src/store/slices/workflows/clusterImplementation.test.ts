@@ -358,13 +358,14 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalled();
+    expect(store.refreshUnreadWorkspaces).toHaveBeenCalled();
   });
 
   it('marks the child completed and starts the next child on a done marker', async () => {
     const c0 = childAgent({ id: 'k0', ordinal: 0 });
     const c1 = childAgent({ id: 'k1', ordinal: 1 });
     const p = plan({});
-    const { get, set, sendTurn, state } = makeStore({
+    const { get, set, sendTurn, state, refreshUnreadWorkspaces } = makeStore({
       sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
       sessionPlans: { [SID]: [p] },
     });
@@ -385,6 +386,7 @@ describe('advanceClusterImplementation', () => {
     expect(call.agentId).toBe('k1');
     expect(call.content).toContain('2/2');
     expect(state.selectedAgentId).toBe(PARENT);
+    expect(refreshUnreadWorkspaces).toHaveBeenCalled();
   });
 
   it('force-advances past a missing marker: completes the child and starts the next', async () => {

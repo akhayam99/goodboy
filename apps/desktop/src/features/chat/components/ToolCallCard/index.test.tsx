@@ -39,7 +39,7 @@ describe('ToolCallCard', () => {
 
   it('shows pulse dots when running', () => {
     const { container } = render(<ToolCallCard item={tool({ ended: false, output: null })} />);
-    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[class*="animate-pulse"]').length).toBeGreaterThan(0);
   });
 
   it('shows error badge when isError', () => {

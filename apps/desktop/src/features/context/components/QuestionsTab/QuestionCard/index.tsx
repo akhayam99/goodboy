@@ -76,7 +76,7 @@ export const QuestionCard = ({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-lg border border-warning/30 bg-warning/[0.06] py-2.5 pl-3 pr-2.5 shadow-sm',
+        'group relative flex flex-col gap-2 overflow-hidden rounded-lg border border-warning/30 bg-warning/[0.06] py-2.5 pl-3 pr-2.5 shadow-sm',
         'transition-[border-color,background-color,box-shadow,transform] duration-200',
         !hasPendingAnswer && 'hover:border-warning/50',
         animate
@@ -116,7 +116,7 @@ export const QuestionCard = ({
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-[21px]">
+      <div className="flex flex-wrap items-center gap-1.5 pl-[21px]">
         {suggestions.map((suggestion) => (
           <SuggestionChip
             key={suggestion}
@@ -134,14 +134,18 @@ export const QuestionCard = ({
         />
       </div>
 
-      <div className="mt-2 flex items-center gap-2 pl-[21px] text-2xs text-muted-foreground">
+      <div className="flex items-center gap-2 pl-[21px] text-2xs text-muted-foreground">
         <span>{relativeAge(question.createdAt)}</span>
         {question.ownedByStepOrdinal != null && (
           <span className="rounded bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">
             step {question.ownedByStepOrdinal}
           </span>
         )}
-        {question.workflowId && question.ownedByStepOrdinal != null && <span>delegated</span>}
+        {question.workflowId && question.ownedByStepOrdinal != null && (
+          <span className="rounded bg-muted px-1 py-0.5 text-2xs text-muted-foreground">
+            workflow
+          </span>
+        )}
       </div>
     </div>
   );

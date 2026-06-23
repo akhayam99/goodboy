@@ -108,13 +108,13 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   if (!pr) {
     return (
-      <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-2xl border border-border-soft bg-elevated px-8 py-10 text-center">
+      <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-lg border border-border-soft bg-elevated px-8 py-8 text-center">
         <div className="absolute right-3 top-3">
           <RefreshButton onClick={refresh} loading={loading} error={error} />
         </div>
         <span
           aria-hidden
-          className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/15"
+          className="flex size-14 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/15"
         >
           <GitPullRequest size={26} className="text-primary" />
         </span>
@@ -139,7 +139,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {busy === 'ai' ? (
-              <Loader2 size={14} aria-hidden className="shrink-0 animate-spin" />
+              <Loader2 size={14} aria-hidden className="shrink-0 motion-safe:animate-spin" />
             ) : (
               <Sparkles size={14} aria-hidden className="shrink-0" />
             )}
@@ -152,7 +152,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground/[0.04] px-4 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08] disabled:opacity-50"
           >
             {busy === 'draft' ? (
-              <Loader2 size={14} aria-hidden className="shrink-0 animate-spin" />
+              <Loader2 size={14} aria-hidden className="shrink-0 motion-safe:animate-spin" />
             ) : (
               <GitPullRequest size={14} aria-hidden className="shrink-0 opacity-70" />
             )}
@@ -182,7 +182,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
   ).length;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border-soft bg-elevated px-4 py-3.5">
+    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ const RefreshButton = ({
     aria-label="refresh PR status"
     className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
   >
-    <RefreshCw size={12} aria-hidden className={loading ? 'animate-spin' : undefined} />
+    <RefreshCw size={12} aria-hidden className={loading ? 'motion-safe:animate-spin' : undefined} />
   </button>
 );
 

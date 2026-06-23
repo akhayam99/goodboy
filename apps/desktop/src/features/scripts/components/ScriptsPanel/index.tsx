@@ -281,7 +281,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
         : status === 'cancelled'
           ? 'bg-muted-foreground/50'
           : status === 'pending'
-            ? 'animate-pulse bg-info'
+            ? 'motion-safe:animate-pulse bg-info'
             : 'bg-border';
   return <span aria-hidden className={cn('size-2 shrink-0 rounded-full', tone)} />;
 }

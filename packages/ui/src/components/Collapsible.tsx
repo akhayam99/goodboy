@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { cn } from '../cn';
 
 export type CollapsibleProps = {
@@ -16,11 +16,13 @@ export const Collapsible = ({
   children,
   className,
 }: CollapsibleProps) => {
+  const panelId = useId();
   return (
     <div className={className}>
       <button
         type="button"
         aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => onOpenChange(!open)}
         className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
       >
@@ -35,7 +37,11 @@ export const Collapsible = ({
           ›
         </span>
       </button>
-      {open ? <div className="px-2 py-1">{children}</div> : null}
+      {open ? (
+        <div id={panelId} className="px-2 py-1">
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 };

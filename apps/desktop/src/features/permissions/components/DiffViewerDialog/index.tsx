@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { CheckCircle2, FileEdit, Loader2 } from 'lucide-react';
-import { Dialog } from '@goodboy/ui';
+import { Dialog, ScrollFade } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -489,6 +489,10 @@ const DiffViewerContent = ({
     if (typeof IntersectionObserver === 'undefined' || files.length === 0) {
       return;
     }
+    // ScrollFade wraps the scroller in a positioned shell; the scroll viewport
+    // is the descendant that actually overflows, and is the IO root.
+    const viewport =
+      scrollRef.current?.querySelector<HTMLElement>('.overflow-y-auto') ?? scrollRef.current;
     const obs = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -500,7 +504,7 @@ const DiffViewerContent = ({
           }
         }
       },
-      { root: scrollRef.current, rootMargin: '0px 0px -70% 0px', threshold: 0 },
+      { root: viewport, rootMargin: '0px 0px -70% 0px', threshold: 0 },
     );
     for (const el of fileRefs.current.values()) {
       obs.observe(el);
@@ -651,7 +655,7 @@ const DiffViewerContent = ({
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {loading ? (
           <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 size={14} className="animate-spin" aria-hidden />
+            <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden />
             loading diff…
           </div>
         ) : error ? (
@@ -691,27 +695,31 @@ const DiffViewerContent = ({
                 commentCounts={openCommentsByFile}
               />
             )}
-            <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-              {files.map((file) => (
-                <FileDiffCard
-                  key={file.path}
-                  file={file}
-                  registerRef={registerFileRef(file.path)}
-                  reviewState={reviewStateByPath.get(file.path) ?? 'none'}
-                  onToggleReviewed={(next) => toggleReviewed(file, next)}
-                  canOpenEditor={Boolean(workingDir)}
-                  onOpenInEditor={() => void handleOpenInEditor(file.path)}
-                  comments={commentsByFile.get(file.path) ?? []}
-                  canComment={Boolean(sessionId)}
-                  onAddComment={(anchor, body) => void handleAddComment(file.path, anchor, body)}
-                  onAddFileLevelComment={(body) => void handleAddFileLevelComment(file.path, body)}
-                  onResolve={(id) => sessionId && void resolveDiffComment(sessionId, id)}
-                  onReopen={(id) => sessionId && void reopenDiffComment(sessionId, id)}
-                  onDelete={(id) => sessionId && void deleteDiffComment(sessionId, id)}
-                  onViewAgent={(id) => void handleViewAgent(id)}
-                  getAgentName={(id) => agentNameById.get(id)}
-                />
-              ))}
+            <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
+              <ScrollFade className="min-h-0 flex-1">
+                {files.map((file) => (
+                  <FileDiffCard
+                    key={file.path}
+                    file={file}
+                    registerRef={registerFileRef(file.path)}
+                    reviewState={reviewStateByPath.get(file.path) ?? 'none'}
+                    onToggleReviewed={(next) => toggleReviewed(file, next)}
+                    canOpenEditor={Boolean(workingDir)}
+                    onOpenInEditor={() => void handleOpenInEditor(file.path)}
+                    comments={commentsByFile.get(file.path) ?? []}
+                    canComment={Boolean(sessionId)}
+                    onAddComment={(anchor, body) => void handleAddComment(file.path, anchor, body)}
+                    onAddFileLevelComment={(body) =>
+                      void handleAddFileLevelComment(file.path, body)
+                    }
+                    onResolve={(id) => sessionId && void resolveDiffComment(sessionId, id)}
+                    onReopen={(id) => sessionId && void reopenDiffComment(sessionId, id)}
+                    onDelete={(id) => sessionId && void deleteDiffComment(sessionId, id)}
+                    onViewAgent={(id) => void handleViewAgent(id)}
+                    getAgentName={(id) => agentNameById.get(id)}
+                  />
+                ))}
+              </ScrollFade>
             </div>
           </>
         )}

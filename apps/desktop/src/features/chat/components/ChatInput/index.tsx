@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { ClipboardCheck, Paperclip, Send, Square, Telescope } from 'lucide-react';
-import { Divider, Textarea } from '@goodboy/ui';
+import { Divider, Textarea, cn } from '@goodboy/ui';
 import type { IsoDateTime, ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core';
 import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
@@ -761,9 +761,10 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         />
         <div
           ref={composerRef}
-          className={`relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-primary/40 dark:bg-muted/40 ${
-            isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft'
-          }`}
+          className={cn(
+            'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-primary/40',
+            isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft',
+          )}
         >
           <div
             className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md bg-primary/5 transition-opacity duration-150 ${

@@ -10,6 +10,7 @@ type MockState = {
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   agentKindOverride: Record<string, string>;
+  selectAgent: ReturnType<typeof vi.fn>;
 };
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
@@ -19,6 +20,7 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
     sessionPhaseRuns: {},
     sessionWorkflows: {},
     agentKindOverride: {},
+    selectAgent: vi.fn(async () => undefined),
   },
 }));
 
@@ -35,8 +37,17 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.sessionWorkflows = {};
   state.agentKindOverride = {};
+  state.selectAgent = vi.fn(async () => undefined);
 });
 afterEach(cleanup);
+
+const childRun = {
+  id: 'child-1',
+  name: 'implementer-1',
+  parentAgentId: 'parent-1',
+  status: 'running',
+};
+const parentRun = { id: 'parent-1', name: 'orchestrator', parentAgentId: null, status: 'running' };
 
 const session = {
   id: 'sess-1',
@@ -72,5 +83,46 @@ describe('ChatBreadcrumb', () => {
     fireEvent.click(screen.getByText('goodboy'));
     expect(spy).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-workspace-settings', spy);
+  });
+});
+
+describe('ChatBreadcrumb, parent navigation', () => {
+  it('shows a parent crumb when the selected agent was spawned by another agent', () => {
+    state.selectedAgentId = { 'sess-1': 'child-1' };
+    state.sessionPhaseRuns = { 'sess-1': [parentRun, childRun] };
+    render(<ChatBreadcrumb session={session} />);
+    expect(screen.getByRole('button', { name: /orchestrator/ })).toBeTruthy();
+  });
+
+  it('navigates to the parent agent and reveals the chat on click', () => {
+    state.selectedAgentId = { 'sess-1': 'child-1' };
+    state.sessionPhaseRuns = { 'sess-1': [parentRun, childRun] };
+    const reveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', reveal);
+    render(<ChatBreadcrumb session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: /orchestrator/ }));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'parent-1');
+    expect(reveal).toHaveBeenCalled();
+    window.removeEventListener('goodboy:reveal-chat', reveal);
+  });
+
+  it('shows no parent crumb when the selected agent is a top-level run', () => {
+    state.selectedAgentId = { 'sess-1': 'parent-1' };
+    state.sessionPhaseRuns = { 'sess-1': [parentRun, childRun] };
+    render(<ChatBreadcrumb session={session} />);
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('shows no parent crumb when nothing is selected', () => {
+    state.sessionPhaseRuns = { 'sess-1': [parentRun, childRun] };
+    render(<ChatBreadcrumb session={session} />);
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('shows no parent crumb when the parent run is absent from phaseRuns', () => {
+    state.selectedAgentId = { 'sess-1': 'child-1' };
+    state.sessionPhaseRuns = { 'sess-1': [childRun] };
+    render(<ChatBreadcrumb session={session} />);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });

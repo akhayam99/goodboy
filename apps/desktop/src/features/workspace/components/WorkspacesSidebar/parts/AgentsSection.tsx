@@ -158,6 +158,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     }),
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
@@ -242,6 +243,24 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
         (r) => r.parentAgentId == null && !(r.workflowRunId != null && r.stepId != null),
       ),
     [sorted],
+  );
+  const countUnread = useCallback(
+    (agentsList: ReadonlyArray<Agent>): number => {
+      let n = 0;
+      const visit = (a: Agent) => {
+        if (agentHasUnread(a, a.id === selectedAgentId && isTaskActive)) {
+          n += 1;
+        }
+        for (const c of childrenByParentId.get(a.id) ?? EMPTY_ARRAY) {
+          visit(c);
+        }
+      };
+      for (const a of agentsList) {
+        visit(a);
+      }
+      return n;
+    },
+    [childrenByParentId, selectedAgentId, isTaskActive],
   );
   const actionableStepIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -441,6 +460,18 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
+  const onResolveFirstForRun = (run: WorkflowRun) => {
+    const q = openQuestions.find(
+      (oq) => oq.status === 'open' && (!oq.workflowRunId || oq.workflowRunId === run.id),
+    );
+    if (!q || !q.createdByAgentId) {
+      return;
+    }
+    void selectAgent(task.id, q.createdByAgentId);
+    requestOpenQuestionScroll({ agentId: q.createdByAgentId, questionId: q.id });
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+  };
+
   const onStartStepAgent = async (agent: Agent, model?: string) => {
     setSpawnError(null);
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
@@ -510,6 +541,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               childrenByParentId={childrenByParentId}
               aggregatesByAgentId={aggregatesByAgentId}
               selectedAgentId={selectedAgentId}
+              isTaskActive={isTaskActive}
               expandState={clusterExpand}
               onToggle={toggleClusterExpand}
               onSelect={onPickAgent}
@@ -525,6 +557,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     { run, workflow }: { run: WorkflowRun; workflow: Workflow },
     idx: number,
   ) => {
+    const workflowRun = run;
     const isDiscarded = run.discardedAt != null;
     const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
     const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
@@ -535,9 +568,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     const total = workflow.steps.length;
     const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
     const isCompleted = !isDiscarded && total > 0 && done >= total;
-    const unreadCount = wfAgents.filter((a) =>
-      agentHasUnread(a, a.id === selectedAgentId && isTaskActive),
-    ).length;
+    const unreadCount = countUnread(wfAgents);
     const expanded =
       workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0));
     const hasStarted = wfAgents.length > 0;
@@ -677,6 +708,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                   AGENT_KIND_DEFAULTS[kind].model;
                 const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
                 const clustersExpanded = clusterExpand.get(run.id) ?? false;
+                const clusterUnread = countUnread(clusterChildren);
                 return (
                   <Fragment key={run.id}>
                     <WorkflowStepRow
@@ -698,6 +730,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                       onRenameStart={() => setEditingId(run.id)}
                       onRenameCommit={(name) => void onRenameCommit(run.id, name)}
                       onRenameCancel={() => setEditingId(null)}
+                      onResolveFirst={() => onResolveFirstForRun(workflowRun)}
                     />
                     {clusterChildren.length === 0 ? null : kind === 'scout' ? (
                       <ScoutSubtree
@@ -706,6 +739,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                         childrenByParentId={childrenByParentId}
                         aggregatesByAgentId={aggregatesByAgentId}
                         selectedAgentId={selectedAgentId}
+                        isTaskActive={isTaskActive}
                         expandState={clusterExpand}
                         onToggle={toggleClusterExpand}
                         onSelect={onPickAgent}
@@ -729,6 +763,15 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                             {clusterChildren.filter((c) => c.status === 'completed').length}/
                             {clusterChildren.length}
                           </span>
+                          {!clustersExpanded && clusterUnread > 0 ? (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+                              title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
+                            >
+                              <span aria-hidden className="size-1 rounded-full bg-warning" />
+                              {clusterUnread}
+                            </span>
+                          ) : null}
                         </button>
                         {clustersExpanded
                           ? clusterChildren.map((child, ci) => (
@@ -739,6 +782,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                                 total={clusterChildren.length}
                                 costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
                                 isSelected={child.id === selectedAgentId}
+                                isTaskActive={isTaskActive}
                                 onSelect={() => onPickAgent(child.id)}
                               />
                             ))
@@ -837,14 +881,14 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                   >
                     {[0, 1].map((i) => (
                       <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
-                        <span className="h-3 w-3 animate-pulse rounded-full bg-muted" />
-                        <span className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                        <span className="h-3 w-3 motion-safe:animate-pulse rounded-full bg-muted" />
+                        <span className="h-3 flex-1 motion-safe:animate-pulse rounded bg-muted" />
                       </li>
                     ))}
                   </ul>
                 ) : resolverAgents.length === 0 ? (
                   forceExpanded ? (
-                    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+                    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
                       <span
                         aria-hidden
                         className="flex size-12 items-center justify-center rounded-full bg-success/10"
@@ -902,7 +946,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
             {forceExpanded ? null : (
               <SectionHeader
                 className="mt-6 pb-1.5"
-                icon={<CheckCheck size={11} aria-hidden className="text-lime-500" />}
+                icon={<CheckCheck size={11} aria-hidden className="text-success" />}
                 label="Resolve"
               />
             )}
@@ -922,12 +966,12 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
             />
           </>
         ) : forceExpanded ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
             <span
               aria-hidden
-              className="flex size-12 items-center justify-center rounded-full bg-lime-500/10"
+              className="flex size-12 items-center justify-center rounded-full bg-success/10"
             >
-              <CheckCheck size={24} className="text-lime-500" aria-hidden />
+              <CheckCheck size={24} className="text-success" aria-hidden />
             </span>
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium text-foreground">Nothing to resolve</p>

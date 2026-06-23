@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Terminal, type ITheme } from '@xterm/xterm';
+import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
 import { useThemeStore } from '../../lib/theme';
+import { resolveTerminalTheme } from './terminal-theme';
 
 export type TerminalDriver = {
   write(data: string): void;
@@ -18,52 +19,6 @@ const outputCache = new Map<string, Uint8Array[]>();
 
 export const clearTerminalCache = (terminalId: string): void => {
   outputCache.delete(terminalId);
-};
-
-const LIGHT_THEME: ITheme = {
-  background: '#f8f8f8',
-  foreground: '#1a1a2e',
-  cursor: '#4078f2',
-  selectionBackground: '#4078f230',
-  black: '#383a42',
-  red: '#e45649',
-  green: '#50a14f',
-  yellow: '#c18401',
-  blue: '#4078f2',
-  magenta: '#a626a4',
-  cyan: '#0184bc',
-  white: '#fafafa',
-  brightBlack: '#696c77',
-  brightRed: '#e45649',
-  brightGreen: '#50a14f',
-  brightYellow: '#986801',
-  brightBlue: '#4078f2',
-  brightMagenta: '#a626a4',
-  brightCyan: '#0184bc',
-  brightWhite: '#ffffff',
-};
-
-const DARK_THEME: ITheme = {
-  background: '#1a1a1f',
-  foreground: '#e6e6e6',
-  cursor: '#8ab4f8',
-  selectionBackground: '#8ab4f840',
-  black: '#3c3c3c',
-  red: '#ff7b72',
-  green: '#7ee787',
-  yellow: '#f0c674',
-  blue: '#8ab4f8',
-  magenta: '#d2a8ff',
-  cyan: '#79c0ff',
-  white: '#d0d0d0',
-  brightBlack: '#6e7681',
-  brightRed: '#ffa198',
-  brightGreen: '#7ee787',
-  brightYellow: '#ffd66e',
-  brightBlue: '#8ab4f8',
-  brightMagenta: '#d2a8ff',
-  brightCyan: '#79c0ff',
-  brightWhite: '#ffffff',
 };
 
 type Props = {
@@ -105,7 +60,7 @@ export const GenericTerminalPanel = ({
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       fontSize: 12,
       lineHeight: 1.4,
-      theme: theme === 'dark' ? DARK_THEME : LIGHT_THEME,
+      theme: resolveTerminalTheme(theme),
       disableStdin: readOnly,
       screenReaderMode: true,
     });
@@ -209,7 +164,7 @@ export const GenericTerminalPanel = ({
     if (!term) {
       return;
     }
-    term.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+    term.options.theme = resolveTerminalTheme(theme);
   }, [theme]);
 
   useEffect(() => {

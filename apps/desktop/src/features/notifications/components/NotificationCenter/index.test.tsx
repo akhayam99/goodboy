@@ -42,6 +42,16 @@ describe('NotificationCenter', () => {
     expect(screen.getByText(/no notifications/i)).toBeDefined();
   });
 
+  it('opens the popover when the goodboy:open-notifications event is dispatched', async () => {
+    render(<NotificationCenter />);
+    expect(screen.queryByText(/no notifications/i)).toBeNull();
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
+    });
+    expect(screen.getByText(/no notifications/i)).toBeDefined();
+    expect(state.markNotificationsRead).toHaveBeenCalled();
+  });
+
   it('shows the unread badge when there are unread notifications', () => {
     state.notifications = [
       {

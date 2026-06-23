@@ -216,7 +216,10 @@ export const FileDiffCard = ({
             <ChevronRight
               size={13}
               aria-hidden
-              className={cn('transition-transform duration-150', !collapsed && 'rotate-90')}
+              className={cn(
+                'motion-safe:transition-transform duration-150',
+                !collapsed && 'rotate-90',
+              )}
             />
           </button>
           <span
@@ -314,7 +317,10 @@ export const FileDiffCard = ({
                 <ChevronRight
                   size={10}
                   aria-hidden
-                  className={cn('transition-transform duration-150', showResolved && 'rotate-90')}
+                  className={cn(
+                    'motion-safe:transition-transform duration-150',
+                    showResolved && 'rotate-90',
+                  )}
                 />
                 {showResolved ? 'hide' : 'show'} {resolvedCount} resolved{' '}
                 {resolvedCount === 1 ? 'comment' : 'comments'}

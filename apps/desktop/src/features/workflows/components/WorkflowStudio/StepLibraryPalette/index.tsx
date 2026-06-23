@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { EmptyState, SectionHeader } from '@goodboy/ui';
+import { Fragment, useState } from 'react';
+import { Divider, EmptyState, SectionHeader } from '@goodboy/ui';
 import { Layers, Plus } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
@@ -29,12 +29,12 @@ export const StepLibraryPalette = ({
     <div className="flex flex-col gap-3">
       <SectionHeader
         label="Step library"
-        hint="Reusable steps. Drag one up into the workflow."
+        hint="Reusable steps. Drag one into the workflow."
         action={
           <button
             type="button"
             onClick={() => setEditing('new')}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
           >
             <Plus size={11} aria-hidden /> new step
           </button>
@@ -46,11 +46,13 @@ export const StepLibraryPalette = ({
           def={null}
           workspaceId={workspaceId}
           connectedProviders={connectedProviders}
-          onSave={(args) => {
+          onCommit={(args) => {
             onSaveDef(args);
+            // A new step persists on its first valid commit; close so repeated
+            // blurs don't insert duplicates. It reappears in the list to re-edit.
             setEditing(null);
           }}
-          onCancel={() => setEditing(null)}
+          onClose={() => setEditing(null)}
         />
       )}
 
@@ -63,30 +65,32 @@ export const StepLibraryPalette = ({
         />
       )}
 
-      <ul className="flex flex-col divide-y divide-border-soft/50">
-        {library.map((def) =>
+      <ul className="flex flex-col">
+        {library.map((def, i) =>
           editing === def.id ? (
-            <li key={def.id} className="py-2">
-              <LibraryStepForm
-                def={def}
-                workspaceId={workspaceId}
-                connectedProviders={connectedProviders}
-                onSave={(args) => {
-                  onSaveDef(args);
-                  setEditing(null);
-                }}
-                onCancel={() => setEditing(null)}
-              />
-            </li>
+            <Fragment key={def.id}>
+              {i > 0 ? <Divider /> : null}
+              <li className="py-2">
+                <LibraryStepForm
+                  def={def}
+                  workspaceId={workspaceId}
+                  connectedProviders={connectedProviders}
+                  onCommit={onSaveDef}
+                  onClose={() => setEditing(null)}
+                />
+              </li>
+            </Fragment>
           ) : (
-            <LibraryCard
-              key={def.id}
-              def={def}
-              dragDisabled={false}
-              onStartDrag={onStartDrag}
-              onEdit={() => setEditing(def.id)}
-              onDelete={() => onDeleteDef(def.id)}
-            />
+            <Fragment key={def.id}>
+              {i > 0 ? <Divider /> : null}
+              <LibraryCard
+                def={def}
+                dragDisabled={false}
+                onStartDrag={onStartDrag}
+                onEdit={() => setEditing(def.id)}
+                onDelete={() => onDeleteDef(def.id)}
+              />
+            </Fragment>
           ),
         )}
       </ul>

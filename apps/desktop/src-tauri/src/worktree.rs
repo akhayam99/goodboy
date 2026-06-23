@@ -369,11 +369,106 @@ pub fn worktree_diff(
     Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
 }
 
+/// Unified diff for a SINGLE file `rel_path` inside the worktree, against the
+/// same merge-base `worktree_diff` uses. The path is taken as worktree-relative
+/// and confined to the worktree: any `..` traversal or path that resolves
+/// outside the worktree root is refused. Untracked files fall back to the same
+/// synthetic new-file diff `worktree_diff` emits.
+#[tauri::command]
+pub fn worktree_diff_file(
+    worktree_path: String,
+    base: Option<String>,
+    path: String,
+) -> Result<String, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let rel = confine_rel_path(p, &path)?;
+    let user_base = base.unwrap_or_else(|| "main".to_string());
+    // Same merge-base resolution as `worktree_diff` so the single-file diff lines
+    // up with the whole-worktree diff and the numstat slot.
+    let candidates = [format!("origin/{user_base}"), user_base.clone()];
+    let resolved = candidates
+        .iter()
+        .find_map(|cand| git(p, &["merge-base", "HEAD", cand]).ok())
+        .map(|s| s.trim().to_string())
+        .ok_or_else(|| WorktreeError::Git {
+            message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
+        })?;
+    // `-- <path>` scopes the diff to the one file. Pathspec is anchored at the
+    // worktree root (already confined above), so no traversal is possible.
+    let tracked = git(p, &["diff", &resolved, "--", &rel])?;
+    if !tracked.is_empty() {
+        return Ok(tracked);
+    }
+    // No tracked diff: the file may be untracked (new). Emit the synthetic
+    // new-file diff for just this path, mirroring `untracked_new_file_diffs`.
+    Ok(untracked_new_file_diff_for(p, &rel))
+}
+
+/// Resolve `path` as a worktree-relative path and verify it stays inside the
+/// worktree root. Returns the normalized relative path (forward-slashed) for use
+/// as a git pathspec. Refuses absolute paths and any `..` escape.
+fn confine_rel_path(worktree: &Path, path: &str) -> Result<String, WorktreeError> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "diff path is empty".to_string(),
+        });
+    }
+    let candidate = Path::new(trimmed);
+    let abs = if candidate.is_absolute() {
+        candidate.to_path_buf()
+    } else {
+        worktree.join(candidate)
+    };
+    // Reject any `..` component up front (cheap, no fs access) so we never even
+    // canonicalize a traversal attempt.
+    if abs
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(WorktreeError::Git {
+            message: "diff path escapes the worktree".to_string(),
+        });
+    }
+    let root = worktree
+        .canonicalize()
+        .unwrap_or_else(|_| worktree.to_path_buf());
+    // Canonicalize when the file exists (resolves symlinks); fall back to the
+    // lexical join for not-yet-existing (e.g. untracked-but-deleted) paths.
+    let resolved = abs.canonicalize().unwrap_or(abs);
+    if !resolved.starts_with(&root) {
+        return Err(WorktreeError::Git {
+            message: "diff path escapes the worktree".to_string(),
+        });
+    }
+    let rel = resolved
+        .strip_prefix(&root)
+        .unwrap_or(&resolved)
+        .to_string_lossy()
+        .replace('\\', "/");
+    if rel.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "diff path resolves to the worktree root".to_string(),
+        });
+    }
+    Ok(rel)
+}
+
 #[derive(Debug, Serialize)]
 pub struct ChangedFilesSummary {
     pub paths: Vec<String>,
     pub additions: u32,
     pub deletions: u32,
+    /// Raw per-file numstat lines for the SAME change set as `paths` —
+    /// "<adds>\t<dels>\t<path>" (binary files: "-\t-\t<path>"), one per line,
+    /// INCLUDING untracked files (counted as additions, deletions 0). This is the
+    /// source of truth mirrored to the mobile `files_touched_numstat` context
+    /// slot, so the phone gets both the file list and the +/- counts from one
+    /// value computed against the same merge-base the desktop's own view uses.
+    pub numstat: String,
 }
 
 /// Distinct file paths that differ between the worktree (including uncommitted
@@ -411,11 +506,14 @@ pub fn worktree_changed_files(
         .ok_or_else(|| WorktreeError::Git {
             message: format!("cannot resolve merge-base against origin/{user_base} or {user_base}"),
         })?;
-    let numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
+    let tracked_numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
     let mut additions: u32 = 0;
     let mut deletions: u32 = 0;
     let mut set: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    for line in numstat.lines() {
+    // Collect the per-file numstat lines so we can mirror them verbatim into the
+    // `files_touched_numstat` context slot (same merge-base as above).
+    let mut numstat_lines: Vec<String> = Vec::new();
+    for line in tracked_numstat.lines() {
         // numstat format: "<adds>\t<dels>\t<path>" — binary files show "-\t-\t<path>"
         let mut parts = line.splitn(3, '\t');
         let add_s = parts.next().unwrap_or("");
@@ -431,8 +529,12 @@ pub fn worktree_changed_files(
             deletions = deletions.saturating_add(d);
         }
         set.insert(path.to_string());
+        // Preserve git's exact line (including "-\t-\t" for binary).
+        numstat_lines.push(format!("{add_s}\t{del_s}\t{path}"));
     }
-    // Untracked files: contribute their content as additions.
+    // Untracked files: contribute their content as additions. `git diff` doesn't
+    // see them, so synthesize a numstat line ("<lines>\t0\t<path>") to keep the
+    // slot's file list complete and the +/- counts consistent with `additions`.
     let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
     for line in untracked.lines() {
         let rel = line.trim();
@@ -440,14 +542,26 @@ pub fn worktree_changed_files(
             continue;
         }
         set.insert(rel.to_string());
-        if let Ok(content) = std::fs::read_to_string(p.join(rel)) {
-            additions = additions.saturating_add(content.lines().count() as u32);
+        match std::fs::read(p.join(rel)) {
+            Ok(bytes) if bytes.contains(&0) => {
+                // Binary untracked file — mirror git's "-\t-\t<path>" form.
+                numstat_lines.push(format!("-\t-\t{rel}"));
+            }
+            Ok(bytes) => {
+                let n = String::from_utf8_lossy(&bytes).lines().count() as u32;
+                additions = additions.saturating_add(n);
+                numstat_lines.push(format!("{n}\t0\t{rel}"));
+            }
+            Err(_) => {
+                numstat_lines.push(format!("0\t0\t{rel}"));
+            }
         }
     }
     Ok(ChangedFilesSummary {
         paths: set.into_iter().collect(),
         additions,
         deletions,
+        numstat: numstat_lines.join("\n"),
     })
 }
 
@@ -788,45 +902,61 @@ fn untracked_new_file_diffs(p: &Path) -> String {
         if rel.is_empty() {
             continue;
         }
-        out.push_str(&format!("diff --git a/{rel} b/{rel}\n"));
-        out.push_str("new file mode 100644\n");
-        let bytes = match std::fs::read(p.join(rel)) {
-            Ok(b) => b,
-            Err(_) => {
-                out.push_str("--- /dev/null\n");
-                out.push_str(&format!("+++ b/{rel}\n"));
-                continue;
-            }
-        };
-        if bytes.contains(&0) {
+        out.push_str(&untracked_new_file_diff_for(p, rel));
+    }
+    out
+}
+
+/// Synthetic new-file unified diff for a single untracked `rel` path. Returns an
+/// empty string when the file isn't actually untracked (git lists nothing), so a
+/// caller can treat "" as "no diff for this path".
+fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
+    // Only emit if git agrees this path is untracked — keeps the single-file
+    // diff honest (a tracked-but-unchanged file produces nothing).
+    let listed = git(p, &["ls-files", "--others", "--exclude-standard", "--", rel])
+        .unwrap_or_default();
+    if listed.lines().map(str::trim).all(|l| l != rel) {
+        return String::new();
+    }
+    let mut out = String::new();
+    out.push_str(&format!("diff --git a/{rel} b/{rel}\n"));
+    out.push_str("new file mode 100644\n");
+    let bytes = match std::fs::read(p.join(rel)) {
+        Ok(b) => b,
+        Err(_) => {
+            out.push_str("--- /dev/null\n");
+            out.push_str(&format!("+++ b/{rel}\n"));
+            return out;
+        }
+    };
+    if bytes.contains(&0) {
+        out.push_str(&format!("Binary files /dev/null and b/{rel} differ\n"));
+        return out;
+    }
+    let content = match String::from_utf8(bytes) {
+        Ok(s) => s,
+        Err(_) => {
             out.push_str(&format!("Binary files /dev/null and b/{rel} differ\n"));
-            continue;
+            return out;
         }
-        let content = match String::from_utf8(bytes) {
-            Ok(s) => s,
-            Err(_) => {
-                out.push_str(&format!("Binary files /dev/null and b/{rel} differ\n"));
-                continue;
-            }
-        };
-        out.push_str("--- /dev/null\n");
-        out.push_str(&format!("+++ b/{rel}\n"));
-        if content.is_empty() {
-            continue;
-        }
-        let ends_with_nl = content.ends_with('\n');
-        let lines: Vec<&str> = if ends_with_nl {
-            content.split_terminator('\n').collect()
-        } else {
-            content.split('\n').collect()
-        };
-        let n = lines.len();
-        out.push_str(&format!("@@ -0,0 +1,{n} @@\n"));
-        for (i, l) in lines.iter().enumerate() {
-            out.push_str(&format!("+{l}\n"));
-            if !ends_with_nl && i == n - 1 {
-                out.push_str("\\ No newline at end of file\n");
-            }
+    };
+    out.push_str("--- /dev/null\n");
+    out.push_str(&format!("+++ b/{rel}\n"));
+    if content.is_empty() {
+        return out;
+    }
+    let ends_with_nl = content.ends_with('\n');
+    let lines: Vec<&str> = if ends_with_nl {
+        content.split_terminator('\n').collect()
+    } else {
+        content.split('\n').collect()
+    };
+    let n = lines.len();
+    out.push_str(&format!("@@ -0,0 +1,{n} @@\n"));
+    for (i, l) in lines.iter().enumerate() {
+        out.push_str(&format!("+{l}\n"));
+        if !ends_with_nl && i == n - 1 {
+            out.push_str("\\ No newline at end of file\n");
         }
     }
     out

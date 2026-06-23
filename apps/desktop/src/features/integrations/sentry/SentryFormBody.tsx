@@ -145,7 +145,8 @@ export const SentryFormBody = ({ workspaceId, onConnected }: Props) => {
           <Button onClick={() => void onConnect()} disabled={busy || !canConnect}>
             {busy ? (
               <>
-                <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden /> Verifying…
+                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />{' '}
+                Verifying…
               </>
             ) : (
               'Connect'

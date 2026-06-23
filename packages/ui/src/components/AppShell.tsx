@@ -220,7 +220,7 @@ export const AppShell = ({
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
         className={cn(
-          'grid min-h-0 w-full flex-1 overflow-hidden text-foreground transition-[grid-template-columns] duration-200 ease-out',
+          'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-out',
           className,
         )}
         style={gridStyle}

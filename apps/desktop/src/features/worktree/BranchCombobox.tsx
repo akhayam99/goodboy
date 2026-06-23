@@ -167,7 +167,7 @@ export const BranchCombobox = ({
           <ChevronDown
             size={13}
             aria-hidden
-            className={cn('transition-transform', open && 'rotate-180')}
+            className={cn('motion-safe:transition-transform', open && 'rotate-180')}
           />
         </button>
       </div>

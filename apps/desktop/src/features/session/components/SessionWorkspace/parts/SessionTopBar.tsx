@@ -1,6 +1,5 @@
 import { Divider } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useSessionStageInfo } from '../../../../../store';
 import { SessionDetailPanel } from '../../../../workspace/components/SessionDetailPanel';
 
 type SessionTopBarProps = {
@@ -8,7 +7,6 @@ type SessionTopBarProps = {
 };
 
 export const SessionTopBar = ({ session }: SessionTopBarProps) => {
-  const { reason } = useSessionStageInfo(session);
   return (
     <>
       <div className="flex w-full items-center gap-3 bg-background pr-3">
@@ -20,11 +18,6 @@ export const SessionTopBar = ({ session }: SessionTopBarProps) => {
             }
           />
         </div>
-        {reason ? (
-          <span className="hidden shrink truncate text-2xs text-muted-foreground lg:block">
-            {reason}
-          </span>
-        ) : null}
       </div>
       <Divider />
     </>

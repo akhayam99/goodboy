@@ -13,7 +13,7 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
   secondary: 'bg-muted text-foreground hover:bg-muted/70 border-border',
-  ghost: 'text-foreground hover:bg-muted',
+  ghost: 'border-0 text-foreground hover:bg-muted',
   danger: 'bg-danger text-danger-foreground hover:bg-danger/90',
   warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
 };
@@ -34,7 +34,7 @@ export const Button = ({
     <button
       type={type}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        'inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         variantClasses[variant],
         sizeClasses[size],
         className,

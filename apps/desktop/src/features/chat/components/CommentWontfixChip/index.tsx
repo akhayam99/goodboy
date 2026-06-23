@@ -76,7 +76,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
           className="inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? (
-            <Loader2 size={9} aria-hidden className="animate-spin" />
+            <Loader2 size={9} aria-hidden className="motion-safe:animate-spin" />
           ) : (
             <MessageSquareReply size={9} aria-hidden />
           )}

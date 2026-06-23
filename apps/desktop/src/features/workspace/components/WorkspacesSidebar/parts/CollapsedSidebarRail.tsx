@@ -30,7 +30,7 @@ export const CollapsedSidebarRail = ({ onExpand }: Props) => {
           onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'))}
           title={`switch workspace (${currentWorkspace.name})`}
           aria-label="switch or open a workspace"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white shadow-sm transition-transform hover:scale-105"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-bold text-primary-foreground shadow-sm motion-safe:transition-transform motion-safe:hover:scale-105"
           style={{ backgroundColor: accent }}
         >
           {initialOf(currentWorkspace.name)}

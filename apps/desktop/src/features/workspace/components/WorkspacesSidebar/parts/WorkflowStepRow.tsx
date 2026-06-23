@@ -33,6 +33,7 @@ type WorkflowStepRowProps = {
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
+  readonly onResolveFirst?: () => void;
 };
 
 export function WorkflowStepRow({
@@ -54,6 +55,7 @@ export function WorkflowStepRow({
   onRenameStart,
   onRenameCommit,
   onRenameCancel,
+  onResolveFirst,
 }: WorkflowStepRowProps) {
   const isBlocked = blockReason !== null;
   const isPendingFuture = run.status === 'pending' && !isActionable;
@@ -114,7 +116,7 @@ export function WorkflowStepRow({
       return (
         <span className="relative inline-flex size-3.5">
           <span
-            className="absolute inset-0 animate-ping rounded-full bg-primary/30 opacity-75"
+            className="absolute inset-0 motion-safe:animate-ping rounded-full bg-primary/30 opacity-75"
             aria-hidden
           />
           <span className="relative flex size-3.5 items-center justify-center rounded-full bg-primary/15">
@@ -127,7 +129,7 @@ export function WorkflowStepRow({
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (run.status === 'running') {
-      return <Loader2 size={11} className="animate-spin text-info" aria-hidden />;
+      return <Loader2 size={11} className="motion-safe:animate-spin text-info" aria-hidden />;
     }
     if (run.status === 'completed') {
       return (
@@ -270,6 +272,9 @@ export function WorkflowStepRow({
             onClick={(e) => {
               e.stopPropagation();
               setPendingConfirm(false);
+              if (blockReason !== 'summarizer') {
+                onResolveFirst?.();
+              }
             }}
             className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >

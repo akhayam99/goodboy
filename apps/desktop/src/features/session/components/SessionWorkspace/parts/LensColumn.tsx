@@ -14,7 +14,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { type AgentKind, inferAgentKindFromName } from '../../../../session/agent-kind';
 import {
@@ -191,92 +191,98 @@ export const LensColumn = ({
   const overviewActive = activeLens === null;
 
   return (
-    <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 py-3">
-      <button
-        type="button"
-        onClick={onSelectOverview}
-        aria-current={overviewActive ? 'page' : undefined}
-        className={cn(
-          'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-          overviewActive
-            ? 'bg-foreground/[0.06] text-foreground'
-            : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
-        )}
-      >
-        <span
-          aria-hidden
+    <ScrollFade className="min-h-0 flex-1">
+      <nav className="flex flex-col gap-4 px-2 py-3">
+        <button
+          type="button"
+          onClick={onSelectOverview}
+          aria-current={overviewActive ? 'page' : undefined}
           className={cn(
-            'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
-            TONE.neutral.chip,
+            'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            overviewActive
+              ? 'bg-foreground/[0.06] text-foreground'
+              : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
           )}
         >
-          <LayoutDashboard size={12} aria-hidden className={TONE.neutral.icon} />
-        </span>
-        <span
-          className={cn('min-w-0 flex-1 truncate text-[13px]', overviewActive && 'font-medium')}
-        >
-          Overview
-        </span>
-      </button>
-      {groups.map((group) => (
-        <div key={group.label} className="flex flex-col gap-0.5">
-          <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
-            {group.label}
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
+              TONE.neutral.chip,
+            )}
+          >
+            <LayoutDashboard size={12} aria-hidden className={TONE.neutral.icon} />
           </span>
-          {group.rows.map((row) => {
-            const active = activeLens === row.kind;
-            return (
-              <button
-                key={row.kind}
-                type="button"
-                onClick={() => onSelect(row.kind)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-                  active
-                    ? 'bg-foreground/[0.06] text-foreground'
-                    : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
-                )}
-              >
-                <span
-                  aria-hidden
+          <span
+            className={cn('min-w-0 flex-1 truncate text-[13px]', overviewActive && 'font-medium')}
+          >
+            Overview
+          </span>
+        </button>
+        {groups.map((group) => (
+          <div key={group.label} className="flex flex-col gap-0.5">
+            <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+              {group.label}
+            </span>
+            {group.rows.map((row) => {
+              const active = activeLens === row.kind;
+              return (
+                <button
+                  key={row.kind}
+                  type="button"
+                  onClick={() => onSelect(row.kind)}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
-                    TONE[row.tone].chip,
+                    'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                    active
+                      ? 'bg-foreground/[0.06] text-foreground'
+                      : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
                   )}
                 >
-                  <row.icon size={12} aria-hidden className={TONE[row.tone].icon} />
-                </span>
-                <span
-                  className={cn('min-w-0 flex-1 truncate text-[13px]', active && 'font-medium')}
-                >
-                  {row.label}
-                </span>
-                {row.count != null && row.count > 0 ? (
-                  <span
-                    className={cn(
-                      'shrink-0 rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                      row.dot === 'attention'
-                        ? 'bg-warning/15 text-warning'
-                        : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    {row.count}
-                  </span>
-                ) : row.dot ? (
                   <span
                     aria-hidden
                     className={cn(
-                      'size-1.5 shrink-0 rounded-full',
-                      row.dot === 'attention' ? 'bg-warning' : 'animate-pulse bg-info',
+                      'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
+                      TONE[row.tone].chip,
                     )}
-                  />
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      ))}
-    </nav>
+                  >
+                    <row.icon size={12} aria-hidden className={TONE[row.tone].icon} />
+                  </span>
+                  <span
+                    className={cn('min-w-0 flex-1 truncate text-[13px]', active && 'font-medium')}
+                  >
+                    {row.label}
+                  </span>
+                  {row.count != null && row.count > 0 ? (
+                    <span
+                      className={cn(
+                        'shrink-0 rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
+                        row.dot === 'attention'
+                          ? 'bg-warning/15 text-warning'
+                          : 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {row.count}
+                    </span>
+                  ) : row.dot ? (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'size-1.5 shrink-0 rounded-full',
+                        row.dot === 'attention'
+                          ? 'bg-warning'
+                          : 'motion-safe:animate-pulse bg-info',
+                      )}
+                    />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+    </ScrollFade>
   );
 };

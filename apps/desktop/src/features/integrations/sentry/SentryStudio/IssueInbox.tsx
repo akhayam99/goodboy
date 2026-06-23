@@ -70,7 +70,7 @@ export const IssueInbox = ({
 
       {loading && rows.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground/60">
-          <Loader2 size={16} className="animate-spin" aria-hidden />
+          <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />
         </div>
       ) : error ? (
         <div className="px-3 pb-3">
@@ -162,7 +162,11 @@ export const IssueInbox = ({
                   'hover:border-border hover:bg-muted/40 hover:text-foreground disabled:opacity-50',
                 )}
               >
-                {loading ? <Loader2 size={12} className="animate-spin" aria-hidden /> : 'Load more'}
+                {loading ? (
+                  <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
+                ) : (
+                  'Load more'
+                )}
               </button>
             </div>
           ) : null}
