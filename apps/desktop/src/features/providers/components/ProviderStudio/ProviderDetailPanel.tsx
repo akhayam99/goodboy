@@ -3,7 +3,6 @@ import { cn, Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
-  Loader2,
   LogIn,
   RotateCw,
   Sparkles,
@@ -87,11 +86,7 @@ function Detail({
           onClick={() => void onRefresh()}
           className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
-          <RotateCw
-            size={14}
-            className={refreshing ? 'motion-safe:animate-spin' : undefined}
-            aria-hidden
-          />
+          <RotateCw size={14} aria-hidden />
         </button>
       </div>
       <Divider />
@@ -254,9 +249,8 @@ function InFlightCard({ label, onView }: { readonly label: string; readonly onVi
     <button
       type="button"
       onClick={onView}
-      className="flex w-full items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-left text-primary transition-colors hover:bg-primary/10"
+      className="animate-border-pulse flex w-full items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-left text-primary transition-colors hover:bg-primary/10"
     >
-      <Loader2 size={14} aria-hidden className="motion-safe:animate-spin" />
       <span className="flex-1 text-sm font-medium capitalize">{label}</span>
       <span className="inline-flex items-center gap-1 text-xs">
         View progress <ArrowRight size={12} aria-hidden />
@@ -290,12 +284,7 @@ function ErrorCard({
           'text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50',
         )}
       >
-        <RotateCw
-          size={12}
-          className={retrying ? 'motion-safe:animate-spin' : undefined}
-          aria-hidden
-        />{' '}
-        Retry
+        <RotateCw size={12} aria-hidden /> Retry
       </button>
     </div>
   );

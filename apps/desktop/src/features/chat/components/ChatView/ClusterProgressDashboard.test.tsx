@@ -75,11 +75,11 @@ describe('ClusterProgressDashboard', () => {
       />,
     );
     expect(screen.getByText('done')).toBeTruthy();
-    expect(screen.getByText('running…')).toBeTruthy();
+    expect(screen.getByText('running')).toBeTruthy();
     expect(screen.getByText('queued')).toBeTruthy();
   });
 
-  it('shows outputSummary for completed and instructions otherwise', () => {
+  it('reveals outputSummary for completed and instructions otherwise behind disclosure', () => {
     render(
       <ClusterProgressDashboard
         sessionId={'s1' as SessionId}
@@ -91,6 +91,8 @@ describe('ClusterProgressDashboard', () => {
         onAdvance={vi.fn()}
       />,
     );
+    const disclosures = screen.getAllByText('summary');
+    disclosures.forEach((d) => fireEvent.click(d));
     expect(screen.getByText('built thing 0')).toBeTruthy();
     expect(screen.getByText('do 1')).toBeTruthy();
   });
@@ -125,7 +127,7 @@ describe('ClusterProgressDashboard', () => {
       />,
     );
     const selected = screen.getByText('child1').closest('button');
-    expect(selected?.className).toContain(MARKER_ACCENT_BG);
+    expect(selected?.className).toContain(SELECTED_BG);
   });
 
   it('does not highlight cards that are not selected', () => {
@@ -141,7 +143,7 @@ describe('ClusterProgressDashboard', () => {
       />,
     );
     const other = screen.getByText('child0').closest('button');
-    expect(other?.className).not.toContain(MARKER_ACCENT_BG);
+    expect(other?.className).not.toContain(SELECTED_BG);
   });
 
   it('labels a failed cluster as stalled', () => {
@@ -159,7 +161,7 @@ describe('ClusterProgressDashboard', () => {
     expect(screen.getByText('stalled')).toBeTruthy();
   });
 
-  it('renders the ordinal badge as index+1 over total per card', () => {
+  it('renders one selectable row per cluster child', () => {
     render(
       <ClusterProgressDashboard
         sessionId={'s1' as SessionId}
@@ -171,9 +173,9 @@ describe('ClusterProgressDashboard', () => {
         onAdvance={vi.fn()}
       />,
     );
-    expect(screen.getByText('1/3')).toBeTruthy();
-    expect(screen.getByText('2/3')).toBeTruthy();
-    expect(screen.getByText('3/3')).toBeTruthy();
+    expect(screen.getByText('child0').closest('button')).toBeTruthy();
+    expect(screen.getByText('child1').closest('button')).toBeTruthy();
+    expect(screen.getByText('child2').closest('button')).toBeTruthy();
   });
 
   it('falls back to instructions when a completed cluster has no outputSummary', () => {
@@ -190,10 +192,11 @@ describe('ClusterProgressDashboard', () => {
         onAdvance={vi.fn()}
       />,
     );
+    fireEvent.click(screen.getByText('summary'));
     expect(screen.getByText('fallback body')).toBeTruthy();
   });
 
-  it('renders no body text when there is neither summary nor instructions', () => {
+  it('renders no disclosure when there is neither summary nor instructions', () => {
     const bodyless: ClusterDashboardItem = {
       agent: agent({ id: 'lonely', status: 'pending' }),
       index: 0,
@@ -211,8 +214,8 @@ describe('ClusterProgressDashboard', () => {
         onAdvance={vi.fn()}
       />,
     );
-    const card = screen.getByText('lonely').closest('button');
-    expect(card?.querySelector('.line-clamp-2')).toBeNull();
+    expect(screen.getByText('lonely').closest('button')).toBeTruthy();
+    expect(screen.queryByText('summary')).toBeNull();
   });
 
   it('renders only the header when there are no items', () => {
@@ -300,4 +303,4 @@ describe('ClusterProgressDashboard', () => {
   });
 });
 
-const MARKER_ACCENT_BG = 'bg-merged/10';
+const SELECTED_BG = 'bg-elevated';

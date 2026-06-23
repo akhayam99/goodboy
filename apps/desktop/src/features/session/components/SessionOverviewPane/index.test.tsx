@@ -40,9 +40,13 @@ vi.mock('../../../../store', () => ({
   useSessionStageInfo: () => hooks.stage,
 }));
 
-vi.mock('../../../../shared/components/ScrollFade', () => ({
-  ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
+vi.mock('@goodboy/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  return {
+    ...actual,
+    ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  };
+});
 
 vi.mock('../../../workspace/components/SessionDetailPanel/SummarizerBadge', () => ({
   SummarizerBadge: () => <span data-testid="summarizer-badge" />,

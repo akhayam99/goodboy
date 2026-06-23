@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState, SectionHeader } from '@goodboy/ui';
-import { GitPullRequest, Inbox, Loader2, MessagesSquare, Search } from 'lucide-react';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
+import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
 import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues';
 
@@ -58,8 +57,14 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
       </div>
 
       {loading && groups.length === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground/60">
-          <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />
+        <div role="status" aria-label="Loading issues" className="flex flex-col gap-1 px-3 pb-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2.5 px-2.5 py-2">
+              <Skeleton className="size-1.5 shrink-0 rounded-full" />
+              <Skeleton className="h-3 w-12 shrink-0 rounded" />
+              <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="px-3 pb-3">
@@ -78,7 +83,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
           />
         </div>
       ) : (
-        <ScrollFade className="min-h-0 flex-1">
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
           <div className="flex flex-col gap-3 px-3 pb-3">
             {filtered.map((group) => (
               <div key={group.key} className="flex flex-col gap-1">

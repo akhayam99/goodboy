@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { StatusDot, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   Ban,
@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Clock,
   GitCommit,
-  Loader2,
   MessageSquareReply,
   Play,
 } from 'lucide-react';
@@ -138,7 +137,7 @@ function ResolveClusterRow({
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const icon =
     status === 'running' ? (
-      <Loader2 size={10} className="motion-safe:animate-spin text-info" aria-hidden />
+      <StatusDot tone="info" size="sm" pulsing />
     ) : status === 'failed' ? (
       <span className="size-1.5 rounded-full bg-danger" aria-hidden />
     ) : status === 'pending' ? (
@@ -173,12 +172,12 @@ function ResolveClusterRow({
   return (
     <div
       className={cn(
-        'flex w-full items-center gap-2 rounded border px-2 py-1 text-2xs font-medium transition-colors',
+        'relative flex w-full items-center gap-2 rounded border px-2 py-1 text-2xs font-medium transition-colors',
         isSelected
           ? 'bg-elevated text-foreground border-border'
           : 'text-foreground/70 hover:bg-muted/60',
         status === 'running'
-          ? 'border-info/60'
+          ? 'spin-border spin-border-info border-info/60'
           : status === 'awaiting' || hasUnread
             ? 'border-warning/70'
             : 'border-transparent',

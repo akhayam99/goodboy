@@ -5,7 +5,8 @@ import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
-import { EmptyState } from './app/components/AppEmptyState';
+import { NoWorkspaceScreen } from './app/components/AppEmptyState';
+import { StageBoard } from './features/workspace/components/StageBoard';
 import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
 import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
 import { SettingsStudio } from './features/settings/components/SettingsStudio';
@@ -20,6 +21,7 @@ import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLaun
 import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
+import { RunsStudio } from './features/orchestration/components/RunsStudio';
 import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
@@ -80,6 +82,8 @@ export const App = () => {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
+  const [runsStudioOpen, setRunsStudioOpen] = useState(false);
+  const [runsStudioSession, setRunsStudioSession] = useState<SessionId | null>(null);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
   const [sentryStudioOpen, setSentryStudioOpen] = useState(false);
@@ -198,6 +202,20 @@ export const App = () => {
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
+    const onOpenRunsStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionSettingsOpen(false);
+      const state = useAppStore.getState();
+      const sid = state.currentSessionId;
+      if (sid) {
+        state.setSessionStudio(sid, null);
+      }
+      setRunsStudioSession(detail?.sessionId ?? null);
+      setRunsStudioOpen(true);
+    };
     const onRevealChat = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
@@ -207,12 +225,6 @@ export const App = () => {
       const sid = state.currentSessionId;
       if (sid) {
         state.setSessionStudio(sid, null);
-        if (!state.selectedAgentId[sid]) {
-          const first = (state.sessionPhaseRuns[sid] ?? [])[0];
-          if (first) {
-            void state.selectAgent(sid, first.id);
-          }
-        }
       }
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
@@ -228,6 +240,7 @@ export const App = () => {
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
+    window.addEventListener('goodboy:open-runs-studio', onOpenRunsStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
     window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
@@ -242,6 +255,7 @@ export const App = () => {
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
+      window.removeEventListener('goodboy:open-runs-studio', onOpenRunsStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
@@ -676,13 +690,14 @@ export const App = () => {
                   />
                 ))}
               </div>
-            ) : (
-              <EmptyState
-                hasWorkspace={Boolean(currentWorkspace)}
-                hasSessions={currentWorkspaceSessions.length > 0}
-                onAddWorkspace={() => setAddWorkspaceOpen(true)}
+            ) : currentWorkspace ? (
+              <StageBoard
+                workspaceId={currentWorkspace.id}
+                sessions={currentWorkspaceSessions}
                 onCreateSession={openNewSession}
               />
+            ) : (
+              <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
             )}
 
             <OnboardingCard />
@@ -750,6 +765,15 @@ export const App = () => {
           workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
           onClose={() => setWorkflowStudioOpen(false)}
+        />
+      ) : null}
+      {runsStudioOpen && currentWorkspace ? (
+        <RunsStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          sessions={currentWorkspaceSessions}
+          focusSessionId={runsStudioSession}
+          onClose={() => setRunsStudioOpen(false)}
         />
       ) : null}
       {githubStudioOpen && currentWorkspace ? (

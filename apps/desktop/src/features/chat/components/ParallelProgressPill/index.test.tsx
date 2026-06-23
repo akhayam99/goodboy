@@ -12,6 +12,8 @@ const runIds: ReadonlyArray<ProviderRunId> = [rid('r1'), rid('r2'), rid('r3'), r
 
 const statusList: ReadonlyArray<AgentStatus> = ['running', 'completed', 'failed', 'skipped'];
 
+const labelList: ReadonlyArray<string> = ['running', 'done', 'stalled', 'planned'];
+
 const statuses = Object.fromEntries(runIds.map((r, i) => [r, statusList[i]])) as Readonly<
   Record<ProviderRunId, AgentStatus>
 >;
@@ -41,10 +43,10 @@ describe('ParallelProgressPill', () => {
         onSelectRun={onSelectRun}
       />,
     );
-    expect(screen.getByRole('button', { name: 'run p1: running' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'run p2: completed' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'run p3: failed' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'run p4: skipped' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'p1: running' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'p2: done' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'p3: stalled' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'p4: planned' })).toBeDefined();
   });
 
   it('click on badge calls onSelectRun with correct runId', () => {
@@ -56,7 +58,7 @@ describe('ParallelProgressPill', () => {
         onSelectRun={onSelectRun}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'run p2: completed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'p2: done' }));
     expect(onSelectRun).toHaveBeenCalledOnce();
     expect(onSelectRun).toHaveBeenCalledWith(rid('r2'));
   });
@@ -71,7 +73,7 @@ describe('ParallelProgressPill', () => {
       />,
     );
     runIds.forEach((runId, i) => {
-      fireEvent.click(screen.getByRole('button', { name: `run p${i + 1}: ${statusList[i]}` }));
+      fireEvent.click(screen.getByRole('button', { name: `p${i + 1}: ${labelList[i]}` }));
       expect(onSelectRun).toHaveBeenNthCalledWith(i + 1, runId);
     });
     expect(onSelectRun).toHaveBeenCalledTimes(4);
@@ -98,6 +100,6 @@ describe('ParallelProgressPill', () => {
         onSelectRun={onSelectRun}
       />,
     );
-    expect(screen.getByRole('button', { name: 'run p1: pending' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'p1: queued' })).toBeDefined();
   });
 });

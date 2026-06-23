@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { Divider, cn } from '@goodboy/ui';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { Divider, ScrollFade, cn } from '@goodboy/ui';
 
 type Props = {
   readonly icon?: ReactNode;
@@ -33,7 +32,11 @@ export const PanelShell = ({
       </div>
       <Divider />
       <div className="min-h-0 flex-1">
-        <ScrollFade className={cn('mx-auto h-full px-10 py-8', maxWidthClass)}>
+        <ScrollFade
+          className={cn('mx-auto h-full', maxWidthClass)}
+          viewportClassName="px-10 py-8"
+          fadeSize={24}
+        >
           <div className="flex flex-col gap-8">{children}</div>
         </ScrollFade>
       </div>

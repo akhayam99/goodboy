@@ -69,6 +69,9 @@
   --density-comfortable-text: var(--text-sm);
   --density-comfortable-gap: 0.875rem; /* 14px */
   --density-comfortable-pad: 1rem; /* 16px */
+  --density-scan-text: var(--text-2xs);
+  --density-scan-gap: 0.25rem;
+  --density-scan-pad: 0.375rem;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -89,9 +92,9 @@
     }
   }
 
-  /* Border-only pulse, anima il border-color, lascia il contenuto stabile.
-     Usato sulle session card in pending: il bordo respira giallo per
-     attirare l'occhio, ma il testo resta leggibile a opacità piena. */
+  /* Border-only pulse: animates border-color, leaves the content stable.
+     Used on pending session cards so the border breathes the warning color
+     to draw attention while the text stays fully legible. */
   @keyframes border-pulse {
     0%,
     100% {

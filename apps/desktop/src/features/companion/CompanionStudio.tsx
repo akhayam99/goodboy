@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlaskConical, Loader2, RefreshCw, Smartphone, Unplug } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react';
+import { Skeleton, cn } from '@goodboy/ui';
 import { StudioShell } from '../../shared/components/StudioShell';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
 import { clearMobileSharedSessions } from './mobileConfinement';
@@ -116,12 +116,16 @@ export const CompanionStudio = ({ onClose }: Props) => {
             </div>
 
             {loading && !info ? (
-              <div className="grid size-[300px] place-items-center">
-                <Loader2
-                  size={28}
-                  aria-hidden
-                  className="motion-safe:animate-spin text-muted-foreground"
-                />
+              <div
+                className="flex flex-col items-center gap-3.5"
+                role="status"
+                aria-label="Generating pairing code"
+              >
+                <Skeleton className="size-[244px] rounded-lg" />
+                <div className="flex w-[244px] flex-col items-center gap-1.5">
+                  <Skeleton className="h-1.5 w-full rounded-full" />
+                  <Skeleton className="h-3 w-24 rounded" />
+                </div>
               </div>
             ) : error ? (
               <div className="flex size-[300px] flex-col items-center justify-center gap-3">

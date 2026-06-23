@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, cn } from '@goodboy/ui';
+import { Button, Dialog, Input, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
-import { Boxes, Check, FolderGit2, FolderPlus, Loader2 } from 'lucide-react';
+import { Boxes, Check, FolderGit2, FolderPlus } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
@@ -231,14 +231,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
             onClick={() => void (mode === 'single' ? onSubmitSingle() : onSubmitMulti())}
             disabled={primaryDisabled}
             aria-busy={busy}
+            className={busy ? 'animate-border-pulse' : undefined}
           >
-            {busy ? (
-              <Loader2 size={14} className="motion-safe:animate-spin" />
-            ) : mode === 'single' ? (
-              'Add workspace'
-            ) : (
-              'Link projects'
-            )}
+            {mode === 'single' ? 'Add workspace' : 'Link projects'}
           </Button>
         </>
       }
@@ -307,7 +302,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
               </div>
               {validating ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Loader2 size={11} className="motion-safe:animate-spin" aria-hidden />
+                  <StatusDot tone="info" size="sm" pulsing />
                   checking…
                 </span>
               ) : validPath ? (

@@ -1,9 +1,10 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { ChevronRight, Layers } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MARKER_ACCENT } from '../marker-accents';
-import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
+import { SpawnTree } from '../../../orchestration/components/SpawnTree';
+import { dashboardItemsToNodes } from '../../../orchestration/hooks/useSpawnTree';
 import type { ClusterDashboardItem } from './clusterDashboard';
 
 type Props = {
@@ -29,16 +30,9 @@ export const ClusterProgressDashboard = ({
 }: Props) => {
   const [confirming, setConfirming] = useState(false);
   const current = items.find((item) => item.agent.status !== 'completed');
-  const listItems: ReadonlyArray<SpawnedAgentItem> = items.map(
-    ({ agent, index, instructions }) => ({
-      key: agent.id,
-      index,
-      total,
-      name: agent.name,
-      body: agent.status === 'completed' ? (agent.outputSummary ?? instructions) : instructions,
-      status: agent.status,
-      agentId: agent.id,
-    }),
+  const nodes = useMemo(
+    () => dashboardItemsToNodes(items, selectedAgentId ?? null),
+    [items, selectedAgentId],
   );
   return (
     <div
@@ -52,12 +46,7 @@ export const ClusterProgressDashboard = ({
           cluster progress {completed}/{total}
         </span>
       </div>
-      <SpawnedAgentList
-        items={listItems}
-        selectedAgentId={selectedAgentId}
-        onSelect={onSelect}
-        variant="dashboard"
-      />
+      <SpawnTree variant="dashboard" nodes={nodes} onSelect={onSelect} />
       {current ? (
         <button
           type="button"

@@ -5,24 +5,31 @@ import {
   CheckCircle2,
   ClipboardList,
   Eye,
-  Loader2,
   Pencil,
   Play,
   RotateCw,
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { Divider, Markdown, Textarea, cn } from '@goodboy/ui';
+import { Divider, Markdown, ScrollFade, Textarea, cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { useToast } from '../../../../app/components/Toast';
 
-const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
-  active: 'bg-warning/10 text-warning',
-  consumed: 'bg-info/10 text-info',
-  superseded: 'bg-muted text-muted-foreground',
+const PLAN_STATUS_TONE: Record<PlanStatus, Tone> = {
+  active: 'warning',
+  consumed: 'info',
+  superseded: 'neutral',
+  discarded: 'neutral',
+};
+
+const PLAN_STATUS_OVERRIDE: Partial<Record<PlanStatus, string>> = {
   discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
+};
+
+const planStatusStyle = (status: PlanStatus): string => {
+  const tint = tintClasses(PLAN_STATUS_TONE[status]);
+  return PLAN_STATUS_OVERRIDE[status] ?? cn(tint.bg, tint.text);
 };
 
 const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
@@ -204,7 +211,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                           <span
                             className={cn(
                               'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] lowercase tracking-wide',
-                              PLAN_STATUS_STYLE[plan.status],
+                              planStatusStyle(plan.status),
                             )}
                           >
                             {PLAN_STATUS_LABEL[plan.status]}
@@ -364,11 +371,11 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                           onClick={() => void handleTrigger()}
                           disabled={spawning}
                           className={cn(
-                            'inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm transition-colors',
+                            'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-xs font-medium shadow-sm transition-colors',
                             retriggerArmed
                               ? 'w-36 bg-warning/15 text-warning hover:bg-warning/20'
                               : 'bg-primary text-primary-foreground hover:bg-primary/90',
-                            spawning && 'cursor-not-allowed opacity-60',
+                            spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
                           )}
                           title={
                             retriggerArmed
@@ -378,9 +385,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                                 : 'Spawn new agent to execute this plan'
                           }
                         >
-                          {spawning ? (
-                            <Loader2 size={12} aria-hidden className="motion-safe:animate-spin" />
-                          ) : retriggerArmed ? (
+                          {retriggerArmed ? (
                             <AlertTriangle size={12} aria-hidden />
                           ) : selected.status === 'active' ? (
                             <Play size={12} aria-hidden className="fill-current" />

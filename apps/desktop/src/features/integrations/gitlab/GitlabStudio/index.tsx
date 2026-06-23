@@ -76,11 +76,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
             'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
           )}
         >
-          <RefreshCw
-            size={13}
-            aria-hidden
-            className={loading ? 'motion-safe:animate-spin' : undefined}
-          />
+          <RefreshCw size={13} aria-hidden />
         </button>
       }
       onClose={onClose}

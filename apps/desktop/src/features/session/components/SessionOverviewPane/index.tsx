@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -28,7 +29,7 @@ import {
   useSessionStageInfo,
 } from '../../../../store';
 import type { FilesTouched, LensKind } from '../../../../store';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { STAGE_TONE } from '../../session-stage';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
@@ -52,25 +53,6 @@ const STAGE_LABEL: Record<SessionStage, string> = {
   review: 'In review',
   building: 'Building',
   done: 'Done',
-};
-
-const STAGE_DOT: Record<SessionStage, string> = {
-  attention: 'bg-warning',
-  running: 'bg-info motion-safe:animate-pulse',
-  review: 'bg-primary',
-  building: 'bg-muted-foreground',
-  done: 'bg-success',
-};
-
-type Tone = 'primary' | 'success' | 'info' | 'warning' | 'accent' | 'neutral';
-
-const TONE: Record<Tone, { readonly icon: string; readonly chip: string }> = {
-  primary: { icon: 'text-primary', chip: 'bg-primary/10 ring-primary/20' },
-  success: { icon: 'text-success', chip: 'bg-success/10 ring-success/20' },
-  info: { icon: 'text-info', chip: 'bg-info/10 ring-info/20' },
-  warning: { icon: 'text-warning', chip: 'bg-warning/10 ring-warning/20' },
-  accent: { icon: 'text-accent', chip: 'bg-accent/10 ring-accent/20' },
-  neutral: { icon: 'text-muted-foreground', chip: 'bg-muted ring-border-soft' },
 };
 
 type Nudge = {
@@ -227,17 +209,12 @@ export const SessionOverviewPane = ({
   ];
 
   return (
-    <ScrollFade className="h-full px-8 py-7">
+    <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
       <div className="animate-fade-in mx-auto flex max-w-2xl flex-col gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className={cn('size-2 shrink-0 rounded-full', STAGE_DOT[stage.stage])}
-            />
-            <span className="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
-              {STAGE_LABEL[stage.stage]}
-            </span>
+            <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
+            <Eyebrow label={STAGE_LABEL[stage.stage]} />
           </div>
           <div className="group/goal flex items-start gap-2">
             <h1 className="text-balance text-xl font-semibold leading-snug text-foreground">
@@ -279,9 +256,7 @@ export const SessionOverviewPane = ({
 
         {nudges.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-              Needs you
-            </span>
+            <Eyebrow label="Needs you" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-1.5">
               {nudges.map((nudge) => (
                 <button
@@ -319,9 +294,7 @@ export const SessionOverviewPane = ({
 
         {isFresh ? (
           <div className="flex flex-col gap-2">
-            <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-              Get started
-            </span>
+            <Eyebrow label="Get started" muted className="px-0.5 font-medium" />
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -332,10 +305,11 @@ export const SessionOverviewPane = ({
                   aria-hidden
                   className={cn(
                     'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                    TONE.accent.chip,
+                    tintClasses('accent').bg,
+                    tintClasses('accent').ring,
                   )}
                 >
-                  <Workflow size={16} aria-hidden className={TONE.accent.icon} />
+                  <Workflow size={16} aria-hidden className={tintClasses('accent').icon} />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="text-sm font-semibold leading-tight text-foreground">
@@ -362,10 +336,11 @@ export const SessionOverviewPane = ({
                   aria-hidden
                   className={cn(
                     'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                    TONE.primary.chip,
+                    tintClasses('primary').bg,
+                    tintClasses('primary').ring,
                   )}
                 >
-                  <Bot size={16} aria-hidden className={TONE.primary.icon} />
+                  <Bot size={16} aria-hidden className={tintClasses('primary').icon} />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="text-sm font-semibold leading-tight text-foreground">
@@ -385,9 +360,7 @@ export const SessionOverviewPane = ({
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-              At a glance
-            </span>
+            <Eyebrow label="At a glance" muted className="px-0.5 font-medium" />
             <div className="grid grid-cols-2 gap-2">
               {stats.map((stat) => (
                 <button
@@ -405,10 +378,11 @@ export const SessionOverviewPane = ({
                     aria-hidden
                     className={cn(
                       'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                      TONE[stat.tone].chip,
+                      tintClasses(stat.tone).bg,
+                      tintClasses(stat.tone).ring,
                     )}
                   >
-                    <stat.icon size={16} aria-hidden className={TONE[stat.tone].icon} />
+                    <stat.icon size={16} aria-hidden className={tintClasses(stat.tone).icon} />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="text-lg font-semibold leading-none text-foreground tabular-nums">
@@ -428,9 +402,7 @@ export const SessionOverviewPane = ({
         )}
 
         <div className="flex flex-col gap-2">
-          <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-            Jump to
-          </span>
+          <Eyebrow label="Jump to" muted className="px-0.5 font-medium" />
           <div className="flex flex-wrap gap-1.5">
             {CONTEXT_LINKS.map((link) => (
               <button
@@ -439,7 +411,7 @@ export const SessionOverviewPane = ({
                 onClick={() => onSelectLens(link.kind)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft bg-background px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-foreground/[0.03] hover:text-foreground"
               >
-                <link.icon size={13} aria-hidden className={TONE[link.tone].icon} />
+                <link.icon size={13} aria-hidden className={tintClasses(link.tone).icon} />
                 {link.label}
               </button>
             ))}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { Button, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Loader2, Unplug } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
 
@@ -142,15 +142,12 @@ export const SentryFormBody = ({ workspaceId, onConnected }: Props) => {
 
       {sentry ? null : (
         <div className="flex justify-end">
-          <Button onClick={() => void onConnect()} disabled={busy || !canConnect}>
-            {busy ? (
-              <>
-                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />{' '}
-                Verifying…
-              </>
-            ) : (
-              'Connect'
-            )}
+          <Button
+            onClick={() => void onConnect()}
+            disabled={busy || !canConnect}
+            className={busy ? 'animate-border-pulse' : undefined}
+          >
+            {busy ? 'Verifying…' : 'Connect'}
           </Button>
         </div>
       )}

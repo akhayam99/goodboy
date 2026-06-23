@@ -1,7 +1,7 @@
 import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
 import { cn, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
-import { Check, ImagePlus, Loader2, Pencil, X } from 'lucide-react';
+import { Check, ImagePlus, Pencil, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 
@@ -208,13 +208,10 @@ function SaveCancel({
         aria-label="save"
         className={cn(
           'inline-flex items-center justify-center rounded-md bg-primary p-1.5 text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
+          busy && 'animate-border-pulse',
         )}
       >
-        {busy ? (
-          <Loader2 size={14} aria-hidden className="motion-safe:animate-spin" />
-        ) : (
-          <Check size={14} aria-hidden />
-        )}
+        <Check size={14} aria-hidden />
       </button>
       <button
         type="button"

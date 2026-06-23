@@ -192,13 +192,8 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
               ))}
             </div>
             <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-muted-foreground">
-              <Sparkles
-                size={12}
-                aria-hidden
-                className="mt-0.5 shrink-0"
-                style={{ color: 'var(--color-provider-anthropic)' }}
-              />
-              Goodboy runs best on Claude today. The other providers work and are catching up fast.
+              <Sparkles size={12} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+              Goodboy routes work across the providers you connect, by priority and budget.
             </p>
           </div>
         </FieldRow>

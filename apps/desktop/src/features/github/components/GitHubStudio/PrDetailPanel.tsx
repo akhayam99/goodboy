@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
-import { Divider, EmptyState } from '@goodboy/ui';
-import { AlertCircle, Inbox, Loader2, RefreshCw } from 'lucide-react';
+import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
 import {
   buildCommentAgentArgs,
   type CommentAgentArgs,
   type ResolveModelChoice,
 } from '../../../chat/spawn-from-comment';
 import { openUrl } from '../../../../shared/lib/editor';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
@@ -371,7 +370,7 @@ export const PrDetailPanel = ({
             onStudioClose={onClose}
           />
         ) : (
-          <ScrollFade className="min-h-0 flex-1">
+          <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
             {section === 'overview' ? (
               <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
             ) : (
@@ -447,9 +446,14 @@ function SectionBody({
           </button>
         </div>
       ) : detailLoading && !detail ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
-          loading
+        <div className="flex flex-col gap-2" role="status" aria-label="loading pr data">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Skeleton className="size-4 shrink-0 rounded-full" />
+              <Skeleton className="h-3 flex-1" />
+              <Skeleton className="h-3 w-12 shrink-0" />
+            </div>
+          ))}
         </div>
       ) : (
         children

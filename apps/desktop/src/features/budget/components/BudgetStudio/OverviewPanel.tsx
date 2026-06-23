@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetAlert, TelemetrySummary } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
 import { brandColor } from '../../../providers/components/provider-brand';
@@ -9,7 +9,6 @@ import { PanelShell } from './PanelShell';
 import { ProviderIcon } from './ProviderIcon';
 import { SpendBar } from './SpendBar';
 import { Sparkline } from './Sparkline';
-import { StatCard } from './StatCard';
 import { TurnsTable } from './TurnsTable';
 import { Widget } from './Widget';
 import {

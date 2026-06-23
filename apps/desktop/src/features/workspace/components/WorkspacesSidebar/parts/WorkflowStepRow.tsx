@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, Check, Clock, Loader2, Play } from 'lucide-react';
+import { StatusDot, cn } from '@goodboy/ui';
+import { AlertTriangle, ArrowRight, Check, Clock, Play } from 'lucide-react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
@@ -95,7 +95,7 @@ export function WorkflowStepRow({
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const containerClass = isRunning
     ? cn(
-        `${ROW_BASE} border-info/60 transition-colors cursor-pointer`,
+        `${ROW_BASE} relative spin-border spin-border-info border-info/60 transition-colors cursor-pointer`,
         isSelected ? 'bg-elevated text-foreground' : 'bg-muted/40 text-foreground/80',
       )
     : isStartable
@@ -116,14 +116,8 @@ export function WorkflowStepRow({
   const renderStatusIcon = () => {
     if (isStartable) {
       return (
-        <span className="relative inline-flex size-3.5">
-          <span
-            className="absolute inset-0 motion-safe:animate-ping rounded-full bg-primary/30 opacity-75"
-            aria-hidden
-          />
-          <span className="relative flex size-3.5 items-center justify-center rounded-full bg-primary/15">
-            <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
-          </span>
+        <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+          <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
         </span>
       );
     }
@@ -131,7 +125,7 @@ export function WorkflowStepRow({
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (run.status === 'running') {
-      return <Loader2 size={11} className="motion-safe:animate-spin text-info" aria-hidden />;
+      return <StatusDot tone="info" size="md" pulsing />;
     }
     if (run.status === 'completed') {
       return (

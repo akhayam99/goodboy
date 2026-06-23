@@ -4,7 +4,8 @@ import { extractClustersFromMarker } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { MARKER_ACCENT } from '../marker-accents';
-import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
+import { SpawnTree } from '../../../orchestration/components/SpawnTree';
+import { clusterLinksToNodes } from '../../../orchestration/hooks/useSpawnTree';
 import { selectInlineClusterRuns } from '../ChatView/clusterDashboard';
 
 type Props = {
@@ -27,23 +28,14 @@ export const ClustersCard = ({ assistantText, sessionId }: Props) => {
     [clusters, phaseRuns, selectedAgentId],
   );
 
+  const nodes = useMemo(
+    () => clusterLinksToNodes(links, selectedAgentId),
+    [links, selectedAgentId],
+  );
+
   if (!clusters || clusters.length === 0) {
     return null;
   }
-
-  const total = links.length;
-  const items: ReadonlyArray<SpawnedAgentItem> = links.map((link, i) => ({
-    key: link.agent?.id ?? `cluster-${i}`,
-    index: i,
-    total,
-    name: link.agent?.name ?? link.title,
-    body:
-      link.agent && link.agent.status === 'completed'
-        ? (link.agent.outputSummary ?? link.instructions)
-        : link.instructions,
-    status: link.agent ? link.agent.status : 'planned',
-    agentId: link.agent?.id ?? null,
-  }));
 
   const onSelect = (id: AgentId) => {
     void selectAgent(sessionId, id);
@@ -61,12 +53,7 @@ export const ClustersCard = ({ assistantText, sessionId }: Props) => {
           {clusters.length} cluster{clusters.length !== 1 ? 's' : ''}
         </span>
       </div>
-      <SpawnedAgentList
-        items={items}
-        selectedAgentId={selectedAgentId ?? undefined}
-        onSelect={onSelect}
-        variant="inline"
-      />
+      <SpawnTree variant="inline" nodes={nodes} onSelect={onSelect} />
     </div>
   );
 };

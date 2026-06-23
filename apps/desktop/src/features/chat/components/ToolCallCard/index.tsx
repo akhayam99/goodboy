@@ -27,8 +27,9 @@ export const ToolCallCard = ({ item }: Props) => {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
+          'relative flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
           item.isError && 'text-danger',
+          running && 'animate-border-pulse',
         )}
       >
         <ChevronRight
@@ -41,13 +42,7 @@ export const ToolCallCard = ({ item }: Props) => {
         />
         <Wrench size={11} aria-hidden className={cn('shrink-0', iconColor)} />
         <span className="font-mono text-muted-foreground">{item.toolName}</span>
-        {running ? (
-          <span className="flex shrink-0 gap-0.5">
-            <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
-            <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
-            <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
-          </span>
-        ) : item.isError ? (
+        {running ? null : item.isError ? (
           <span className="text-2xs uppercase tracking-wide text-danger">error</span>
         ) : null}
       </button>

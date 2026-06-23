@@ -75,13 +75,10 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
             'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
             'text-muted-foreground transition-colors',
             'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
+            loading && 'animate-border-pulse',
           )}
         >
-          <RefreshCw
-            size={13}
-            aria-hidden
-            className={loading ? 'motion-safe:animate-spin' : undefined}
-          />
+          <RefreshCw size={13} aria-hidden />
         </button>
         <button
           type="button"

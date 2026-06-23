@@ -158,7 +158,7 @@ function mockStore(partial: Partial<AppStore>): void {
     selector({ providerLifecycle: DEFAULT_LIFECYCLE_MAP, ...partial } as AppStore),
   );
 }
-import { EmptyState } from '../../app/components/AppEmptyState';
+import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
@@ -237,24 +237,9 @@ describe('snapshot, empty states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('AppEmptyState: workspace with no sessions, create-first CTA', () => {
-    const { container, getByRole } = render(
-      <EmptyState
-        hasWorkspace
-        hasSessions={false}
-        onAddWorkspace={vi.fn()}
-        onCreateSession={vi.fn()}
-      />,
-    );
-    expect(getByRole('button', { name: /new session/i })).toBeTruthy();
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('AppEmptyState: workspace with sessions, pick up where you left off', () => {
-    const { container, queryByRole } = render(
-      <EmptyState hasWorkspace hasSessions onAddWorkspace={vi.fn()} onCreateSession={vi.fn()} />,
-    );
-    expect(queryByRole('button', { name: /new session/i })).toBeNull();
+  it('NoWorkspaceScreen: no workspace, add-workspace CTA', () => {
+    const { container, getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />);
+    expect(getByRole('button', { name: /add workspace/i })).toBeTruthy();
     expect(container.firstChild).toMatchSnapshot();
   });
 

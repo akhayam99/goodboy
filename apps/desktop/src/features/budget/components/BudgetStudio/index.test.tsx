@@ -22,10 +22,18 @@ const { state } = vi.hoisted(() => ({
       pct: number;
     }>,
     budgetAlerts: [] as ReadonlyArray<unknown>,
+    budgetRules: [] as ReadonlyArray<unknown>,
+    sessionBudgets: {} as Record<string, { softCapUsd: number }>,
+    currentWorkspaceId: 'workspace-1',
     loadBudgetRules: vi.fn(),
     loadBudgetAlerts: vi.fn(),
     loadSessionTelemetry: vi.fn(),
+    loadSessionBudget: vi.fn(),
     dismissBudgetAlert: vi.fn(),
+    saveBudgetRule: vi.fn(),
+    deleteBudgetRule: vi.fn(),
+    setSessionBudget: vi.fn(),
+    refreshProviderSpendBreakdown: vi.fn(),
   },
 }));
 
@@ -81,5 +89,95 @@ describe('BudgetStudio', () => {
     );
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/session cost/i)).toBeDefined();
+  });
+
+  it('authors a new provider cap via saveBudgetRule', () => {
+    state.budgetRules = [];
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'anthropic' }}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
+    expect(state.saveBudgetRule).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      period: 'monthly',
+      capUsd: 50,
+      alertThresholdPct: 80,
+      extraTokensBudget: null,
+    });
+    expect(state.deleteBudgetRule).not.toHaveBeenCalled();
+  });
+
+  it('edits an existing provider cap as delete then save', async () => {
+    state.budgetRules = [
+      {
+        id: 'rule-1',
+        provider: 'anthropic',
+        period: 'monthly',
+        capUsd: 10,
+        alertThresholdPct: 90,
+        extraTokensBudget: 5,
+        createdAt: '2026-06-01T00:00:00.000Z',
+      },
+    ];
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'anthropic' }}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: /update cap/i }));
+    await Promise.resolve();
+    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
+    expect(state.saveBudgetRule).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      period: 'monthly',
+      capUsd: 25,
+      alertThresholdPct: 90,
+      extraTokensBudget: 5,
+    });
+  });
+
+  it('removes a provider cap via deleteBudgetRule', () => {
+    state.budgetRules = [
+      {
+        id: 'rule-1',
+        provider: 'anthropic',
+        period: 'monthly',
+        capUsd: 10,
+        alertThresholdPct: 80,
+        extraTokensBudget: null,
+        createdAt: '2026-06-01T00:00:00.000Z',
+      },
+    ];
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'anthropic' }}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
+  });
+
+  it('sets a session soft cap via setSessionBudget', () => {
+    state.sessionBudgets = {};
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } });
+    fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
+    expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5);
   });
 });

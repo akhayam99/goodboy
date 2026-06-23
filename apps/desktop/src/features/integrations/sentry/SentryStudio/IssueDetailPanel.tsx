@@ -1,17 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Divider, EmptyState, Input, SectionHeader, Textarea, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  EmptyState,
+  Input,
+  SectionHeader,
+  Skeleton,
+  Textarea,
+  cn,
+} from '@goodboy/ui';
 import {
   ArrowRight,
   ExternalLink,
   GitBranch,
   Layers,
-  Loader2,
   MessagesSquare,
   MousePointerClick,
   Target,
 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { ScrollFade } from '@goodboy/ui';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -249,7 +257,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       <Divider />
 
       <div className="min-h-0 flex-1">
-        <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-8">
+        <ScrollFade
+          className="mx-auto h-full max-w-3xl"
+          viewportClassName="px-10 py-8"
+          fadeSize={24}
+        >
           <div className="flex flex-col gap-8">
             <section className="flex flex-col gap-3">
               <SectionHeader
@@ -257,9 +269,14 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                 icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
               />
               {detailLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-                  <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden /> Loading
-                  latest event…
+                <div
+                  role="status"
+                  aria-label="Loading latest event"
+                  className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3"
+                >
+                  {['w-3/4', 'w-1/2', 'w-2/3', 'w-5/6', 'w-2/5', 'w-3/5'].map((w, i) => (
+                    <Skeleton key={i} className={cn('h-2.5 rounded', w)} />
+                  ))}
                 </div>
               ) : detailError ? (
                 <p className="text-sm text-danger">{detailError}</p>
@@ -354,16 +371,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                     {error && !missingBase ? (
                       <span className="text-xs text-danger">{error}</span>
                     ) : null}
-                    <Button onClick={() => void onLaunch()} disabled={!canLaunch}>
+                    <Button
+                      onClick={() => void onLaunch()}
+                      disabled={!canLaunch}
+                      className={busy ? 'animate-border-pulse' : undefined}
+                    >
                       {busy ? (
-                        <>
-                          <Loader2
-                            size={13}
-                            className="mr-1.5 motion-safe:animate-spin"
-                            aria-hidden
-                          />
-                          Launching…
-                        </>
+                        'Launching…'
                       ) : (
                         <>
                           Launch session

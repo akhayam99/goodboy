@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, Input, SectionHeader } from '@goodboy/ui';
-import { KeyRound, Loader2, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -122,8 +122,12 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             <Button variant="ghost" size="sm" onClick={reset} disabled={busy}>
               Cancel
             </Button>
-            <Button size="sm" onClick={() => void onSave()} disabled={busy || !apiKey.trim()}>
-              {busy ? <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden /> : null}
+            <Button
+              size="sm"
+              onClick={() => void onSave()}
+              disabled={busy || !apiKey.trim()}
+              className={busy ? 'animate-border-pulse' : undefined}
+            >
               {busy ? 'Validating' : 'Save key'}
             </Button>
           </div>

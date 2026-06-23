@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
 import { Button, Divider, FieldRow, Input, SectionHeader, cn } from '@goodboy/ui';
 import { Check, Plus, Sparkles, X } from 'lucide-react';
+import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '../../../../../shared/components/ScrollFade';
 import type { StepDefUpsertArgs } from '../../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../../form';
 import { StepFlowCard } from '../StepFlowCard';
@@ -200,7 +200,11 @@ export const WorkflowComposer = ({
         </div>
 
         <div className="min-h-0 flex-1">
-          <ScrollFade className="mx-auto h-full w-full max-w-3xl px-8 pb-6">
+          <ScrollFade
+            className="mx-auto h-full w-full max-w-3xl"
+            viewportClassName="px-8 pb-6"
+            fadeSize={24}
+          >
             <div className="flex flex-col">
               {form.steps.map((def, idx) => (
                 <Fragment key={def.uid}>
@@ -247,7 +251,7 @@ export const WorkflowComposer = ({
       <Divider orientation="vertical" />
 
       <aside className="flex w-64 shrink-0 flex-col">
-        <ScrollFade className="min-h-0 flex-1 px-3 py-4">
+        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-4" fadeSize={24}>
           <StepLibraryPalette
             library={library}
             workspaceId={workspaceId}

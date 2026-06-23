@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowUpCircle, Loader2 } from 'lucide-react';
+import { ArrowUpCircle } from 'lucide-react';
 import { Button, Dialog, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
@@ -24,8 +24,6 @@ export const UpdateIndicator = ({ variant }: Props) => {
   const title = downloading
     ? 'Downloading update. Goodboy restarts when it finishes'
     : `Update available${version ? ` (${version})` : ''}`;
-  const Icon = downloading ? Loader2 : ArrowUpCircle;
-
   const confirm = () => {
     setConfirmOpen(false);
     void installUpdate();
@@ -38,9 +36,12 @@ export const UpdateIndicator = ({ variant }: Props) => {
         onClick={() => setConfirmOpen(true)}
         disabled={downloading}
         title={title}
-        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
+        className={cn(
+          'relative inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-60',
+          downloading && 'animate-border-pulse',
+        )}
       >
-        <Icon size={11} className={cn(downloading && 'motion-safe:animate-spin')} aria-hidden />
+        <ArrowUpCircle size={11} aria-hidden />
         <span>{downloading ? 'updating…' : 'update'}</span>
       </button>
     ) : (
@@ -49,9 +50,12 @@ export const UpdateIndicator = ({ variant }: Props) => {
         onClick={() => setConfirmOpen(true)}
         disabled={downloading}
         title={title}
-        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
+        className={cn(
+          'relative inline-flex items-center gap-1 rounded-md border border-transparent px-1.5 py-0.5 text-primary transition-colors hover:bg-primary/10 disabled:opacity-60',
+          downloading && 'animate-border-pulse',
+        )}
       >
-        <Icon size={11} className={cn(downloading && 'motion-safe:animate-spin')} aria-hidden />
+        <ArrowUpCircle size={11} aria-hidden />
         <span>{downloading ? 'Updating…' : 'Update'}</span>
       </button>
     );

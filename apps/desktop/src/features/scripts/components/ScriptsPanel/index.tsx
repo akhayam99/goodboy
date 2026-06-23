@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Button, Input, Textarea, cn } from '@goodboy/ui';
+import { Button, Input, StatusDot, Textarea, cn, type StatusDotProps } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
 import { Check, Copy, Pencil, Play, Plus, ScrollText, Square, Trash2 } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
@@ -150,7 +150,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
               className="overflow-hidden rounded-md border border-border-soft bg-background"
             >
               <div className="flex items-center gap-2 px-3 py-2">
-                {runnable ? <StatusDot status={status} /> : null}
+                {runnable ? <RunStatusDot status={status} /> : null}
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {script.name}
                 </span>
@@ -272,18 +272,16 @@ function RowAction({
   );
 }
 
-function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
-  const tone =
+function RunStatusDot({ status }: { readonly status: ScriptRunStatus }) {
+  const tone: StatusDotProps['tone'] =
     status === 'ok'
-      ? 'bg-success'
+      ? 'success'
       : status === 'error'
-        ? 'bg-danger'
-        : status === 'cancelled'
-          ? 'bg-muted-foreground/50'
-          : status === 'pending'
-            ? 'motion-safe:animate-pulse bg-info'
-            : 'bg-border';
-  return <span aria-hidden className={cn('size-2 shrink-0 rounded-full', tone)} />;
+        ? 'danger'
+        : status === 'pending'
+          ? 'info'
+          : 'neutral';
+  return <StatusDot tone={tone} pulsing={status === 'pending'} />;
 }
 
 function ScriptEditor({

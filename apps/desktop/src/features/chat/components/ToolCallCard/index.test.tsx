@@ -37,9 +37,9 @@ describe('ToolCallCard', () => {
     expect(screen.getByText('file content')).toBeTruthy();
   });
 
-  it('shows pulse dots when running', () => {
+  it('shows a running border when running', () => {
     const { container } = render(<ToolCallCard item={tool({ ended: false, output: null })} />);
-    expect(container.querySelectorAll('[class*="animate-pulse"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[class*="animate-border-pulse"]').length).toBeGreaterThan(0);
   });
 
   it('shows error badge when isError', () => {

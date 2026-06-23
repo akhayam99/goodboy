@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Divider } from '@goodboy/ui';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import { Wallet } from 'lucide-react';
-import type { TelemetryRecord } from '@goodboy/types';
+import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { OverviewPanel } from './OverviewPanel';
 import { ProviderPanel } from './ProviderPanel';
 import { ScopeRail } from './ScopeRail';
@@ -24,15 +23,23 @@ const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
 export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) => {
   const sessions = useSessions();
   const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const telemetryMap = useAppStore((s) => s.sessionTelemetry);
   const workspaceSummary = useAppStore((s) => s.workspaceSummary);
   const providers = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
   const budgetAlerts = useAppStore((s) => s.budgetAlerts);
+  const budgetRules = useAppStore((s) => s.budgetRules);
+  const sessionBudgets = useAppStore((s) => s.sessionBudgets);
 
   const loadBudgetRules = useAppStore((s) => s.loadBudgetRules);
   const loadBudgetAlerts = useAppStore((s) => s.loadBudgetAlerts);
   const loadSessionTelemetry = useAppStore((s) => s.loadSessionTelemetry);
+  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
   const dismissBudgetAlert = useAppStore((s) => s.dismissBudgetAlert);
+  const saveBudgetRule = useAppStore((s) => s.saveBudgetRule);
+  const deleteBudgetRule = useAppStore((s) => s.deleteBudgetRule);
+  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
+  const refreshProviderSpendBreakdown = useAppStore((s) => s.refreshProviderSpendBreakdown);
 
   const [scope, setScope] = useState<BudgetScope>(initialScope ?? { kind: 'overview' });
 
@@ -42,8 +49,54 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
   }, [loadBudgetRules, loadBudgetAlerts]);
 
   useEffect(() => {
-    for (const s of sessions) void loadSessionTelemetry(s.id);
-  }, [sessions, loadSessionTelemetry]);
+    for (const s of sessions) {
+      void loadSessionTelemetry(s.id);
+      void loadSessionBudget(s.id);
+    }
+  }, [sessions, loadSessionTelemetry, loadSessionBudget]);
+
+  const refreshBreakdown = useCallback(async () => {
+    if (currentWorkspaceId) {
+      await refreshProviderSpendBreakdown(currentWorkspaceId);
+    }
+  }, [currentWorkspaceId, refreshProviderSpendBreakdown]);
+
+  const saveProviderCap = useCallback(
+    async (provider: ProviderName, capUsd: number) => {
+      const existing = budgetRules.find((r) => r.provider === provider) ?? null;
+      if (existing) {
+        await deleteBudgetRule(existing.id);
+      }
+      const next: Omit<BudgetRule, 'id' | 'createdAt'> = {
+        provider,
+        period: existing?.period ?? 'monthly',
+        capUsd,
+        alertThresholdPct: existing?.alertThresholdPct ?? 80,
+        extraTokensBudget: existing?.extraTokensBudget ?? null,
+      };
+      await saveBudgetRule(next);
+      await refreshBreakdown();
+    },
+    [budgetRules, deleteBudgetRule, saveBudgetRule, refreshBreakdown],
+  );
+
+  const removeProviderCap = useCallback(
+    async (provider: ProviderName) => {
+      const existing = budgetRules.find((r) => r.provider === provider) ?? null;
+      if (existing) {
+        await deleteBudgetRule(existing.id);
+      }
+      await refreshBreakdown();
+    },
+    [budgetRules, deleteBudgetRule, refreshBreakdown],
+  );
+
+  const saveSessionCap = useCallback(
+    async (sessionId: SessionId, capUsd: number) => {
+      await setSessionBudget(sessionId, capUsd);
+    },
+    [setSessionBudget],
+  );
 
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
@@ -93,7 +146,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
     >
       {(requestClose) => (
         <>
-          <ScrollFade className="w-72 shrink-0">
+          <ScrollFade className="w-72 shrink-0" fadeSize={24}>
             <ScopeRail
               scope={scope}
               onSelect={setScope}
@@ -118,6 +171,9 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
                 provider={scope.provider}
                 entry={providers.find((p) => p.provider === scope.provider) ?? null}
                 turns={turns}
+                rule={budgetRules.find((r) => r.provider === scope.provider) ?? null}
+                onSaveCap={(capUsd) => saveProviderCap(scope.provider, capUsd)}
+                onRemoveCap={() => removeProviderCap(scope.provider)}
               />
             ) : selectedSession ? (
               <SessionPanel
@@ -125,6 +181,8 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
                 goal={selectedSession.goal}
                 isCurrent={selectedSession.id === currentSessionId}
                 turns={turns.filter((t) => t.sessionId === selectedSession.id)}
+                softCapUsd={sessionBudgets[selectedSession.id]?.softCapUsd ?? null}
+                onSaveCap={(capUsd) => saveSessionCap(selectedSession.id, capUsd)}
                 onOpened={requestClose}
               />
             ) : null}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Loader2, Upload } from 'lucide-react';
+import { ArrowUpRight, Upload } from 'lucide-react';
+import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 
@@ -32,7 +33,10 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
       onClick={() => void onPush()}
       disabled={busy}
       title="push the branch once, then reply and resolve every queued review comment"
-      className="flex w-full items-center justify-between gap-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-accent ring-1 ring-accent/20 motion-safe:transition-colors hover:bg-accent/10 disabled:cursor-default disabled:opacity-60"
+      className={cn(
+        'relative flex w-full items-center justify-between gap-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-accent ring-1 ring-accent/20 motion-safe:transition-colors hover:bg-accent/10 disabled:cursor-default disabled:opacity-60',
+        busy && 'animate-border-pulse',
+      )}
     >
       <span className="inline-flex min-w-0 items-center gap-1.5">
         <Upload size={12} aria-hidden />
@@ -40,11 +44,7 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
           Push &amp; resolve {count} comment{count === 1 ? '' : 's'}
         </span>
       </span>
-      {busy ? (
-        <Loader2 size={12} aria-hidden className="shrink-0 motion-safe:animate-spin" />
-      ) : (
-        <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
-      )}
+      <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
     </button>
   );
 }

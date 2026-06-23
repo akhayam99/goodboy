@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { Skeleton } from '@goodboy/ui';
 import type { BootPhase } from '../../../store';
 import { openUrl } from '../../../shared/lib/editor';
 import { DogMascot } from '../../../shared/components/DogMascot';
@@ -14,88 +15,6 @@ type BootSplashProps = {
   onFinished?: () => void;
 };
 
-type BootStep = {
-  threshold: number;
-  label: string;
-};
-
-const STEPS: ReadonlyArray<BootStep> = [
-  { threshold: 33, label: 'Loading your workspaces' },
-  { threshold: 66, label: 'Restoring last session' },
-  { threshold: 99, label: 'Almost there' },
-];
-
-const LAST_STEP: BootStep = STEPS[STEPS.length - 1] ?? {
-  threshold: 100,
-  label: 'Almost there',
-};
-
-function targetForPhase(phase: BootPhase): number {
-  switch (phase) {
-    case 'pending':
-    case 'migrating':
-      return 30;
-    case 'loading-settings':
-      return 45;
-    case 'detecting-cli':
-      return 60;
-    case 'loading-workspaces':
-      return 78;
-    case 'restoring-session':
-      return 92;
-    case 'ready':
-      return 100;
-    case 'error':
-      return 0;
-  }
-}
-
-const RATE_PER_MS = 0.06;
-
-function useSmoothProgress(phase: BootPhase, hasError: boolean): number {
-  const [pct, setPct] = useState(0);
-  const targetRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (hasError) {
-      return;
-    }
-    targetRef.current = targetForPhase(phase);
-  }, [phase, hasError]);
-
-  useEffect(() => {
-    if (hasError) {
-      return undefined;
-    }
-    let last = performance.now();
-    const tick = (now: number) => {
-      const dt = now - last;
-      last = now;
-      setPct((curr) => {
-        const target = targetRef.current;
-        if (curr >= target) {
-          return curr;
-        }
-        return Math.min(target, curr + dt * RATE_PER_MS);
-      });
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [hasError]);
-
-  return pct;
-}
-
-function stepForProgress(pct: number): BootStep {
-  return STEPS.find((s) => pct < s.threshold) ?? LAST_STEP;
-}
-
 export const BootSplash = ({
   phase,
   error,
@@ -104,107 +23,85 @@ export const BootSplash = ({
   onFinished,
 }: BootSplashProps) => {
   const hasError = error != null;
-  const pct = useSmoothProgress(phase, hasError);
-  const step = stepForProgress(pct);
   const finishedRef = useRef(false);
 
   useEffect(() => {
     if (finishedRef.current || hasError) {
       return;
     }
-    if (pct >= 100 && phase === 'ready') {
+    if (phase === 'ready') {
       finishedRef.current = true;
       onFinished?.();
     }
-  }, [pct, phase, hasError, onFinished]);
+  }, [phase, hasError, onFinished]);
 
-  return (
-    <div className="relative flex h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-background text-foreground">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle, oklch(from var(--color-foreground) l c h / 0.06) 1px, transparent 1px)',
-          backgroundSize: '18px 18px',
-        }}
-      />
-
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 40% at 50% 45%, transparent 0%, oklch(from var(--color-background) l c h / 0.9) 70%)',
-        }}
-      />
-
-      <div className="flex flex-col items-center gap-5">
-        <div className="relative flex h-24 w-24 items-center justify-center text-primary">
-          <span
-            aria-hidden
-            className="absolute inset-0 rounded-full motion-safe:animate-ping"
-            style={{
-              background: 'oklch(from var(--color-primary) l c h / 0.18)',
-              animationDuration: '2.2s',
-            }}
-          />
-          <div
-            className="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
-            style={{ boxShadow: '0 0 50px oklch(from var(--color-primary) l c h / 0.25)' }}
-          >
-            <DogMascot size={52} className="text-primary motion-safe:animate-pulse" />
-          </div>
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-lg font-bold tracking-tight">Goodboy</span>
-          <span className="text-xs tracking-tight text-muted-foreground/60">
-            workspace orchestrator for coding agents
-          </span>
-        </div>
-      </div>
-
-      {hasError ? null : (
-        <div className="flex w-72 flex-col gap-3">
-          <div className="flex h-5 items-center justify-center">
-            <span
-              key={step.label}
-              className="text-xs text-muted-foreground motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300"
-            >
-              {step.label}
-              <BlinkCursor />
-            </span>
-          </div>
-          <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-muted/30">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-primary"
-              style={{
-                width: `${pct}%`,
-                transition: 'width 120ms linear',
-                boxShadow: '0 0 8px oklch(from var(--color-primary) l c h / 0.7)',
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {hasError ? (
+  if (hasError) {
+    return (
+      <div className="relative flex h-screen flex-col items-center justify-center gap-10 bg-background text-foreground">
+        <BootBrand />
         <BootErrorRecovery
           error={error}
           phase={phase}
           onRetry={onRetry}
           onSkipProviderDetection={onSkipProviderDetection}
         />
-      ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex h-screen flex-col bg-background text-foreground"
+      role="status"
+      aria-label="Loading Goodboy"
+    >
+      <div className="flex h-9 shrink-0 items-center justify-between px-3">
+        <div className="flex items-center gap-1.5">
+          <DogMascot size={15} className="shrink-0 text-foreground" />
+          <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
+        </div>
+        <Skeleton className="h-4 w-16 rounded-full" />
+      </div>
+      <div className="flex min-h-0 flex-1">
+        <div className="flex w-64 shrink-0 flex-col gap-3 p-3">
+          <Skeleton className="h-7 w-full rounded-md" />
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full rounded-md" />
+            ))}
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+          <Skeleton className="h-6 w-1/3 rounded-md" />
+          <div className="flex flex-1 flex-col gap-2.5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-function BlinkCursor() {
+function BootBrand() {
   return (
-    <span aria-hidden className="ml-0.5 inline-block w-[5px] motion-safe:animate-pulse">
-      _
-    </span>
+    <div className="flex flex-col items-center gap-5">
+      <div className="relative flex h-24 w-24 items-center justify-center text-primary">
+        <div
+          className="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
+          style={{ boxShadow: '0 0 50px oklch(from var(--color-primary) l c h / 0.25)' }}
+        >
+          <DogMascot size={52} className="text-primary" />
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-lg font-bold tracking-tight">Goodboy</span>
+        <span className="text-xs tracking-tight text-muted-foreground/60">
+          workspace orchestrator for coding agents
+        </span>
+      </div>
+    </div>
   );
 }
 

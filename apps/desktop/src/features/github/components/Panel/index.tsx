@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GitFork as GithubIcon, Check, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { GitFork as GithubIcon, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button, Input, cn } from '@goodboy/ui';
 import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
@@ -80,11 +80,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
           aria-label="refresh GitHub status"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw
-            size={13}
-            aria-hidden
-            className={checking ? 'motion-safe:animate-spin' : undefined}
-          />
+          <RefreshCw size={13} aria-hidden />
         </button>
       </div>
 
@@ -174,10 +170,8 @@ function Absent({
           size="sm"
           onClick={onConnect}
           disabled={save === 'saving' || token.trim().length === 0}
+          className={cn(save === 'saving' && 'animate-border-pulse')}
         >
-          {save === 'saving' && (
-            <Loader2 size={12} className="mr-1 motion-safe:animate-spin" aria-hidden />
-          )}
           Connect
         </Button>
       </div>
@@ -263,10 +257,8 @@ function Connected({
               size="sm"
               onClick={onConnect}
               disabled={save === 'saving' || token.trim().length === 0}
+              className={cn(save === 'saving' && 'animate-border-pulse')}
             >
-              {save === 'saving' && (
-                <Loader2 size={12} className="mr-1 motion-safe:animate-spin" aria-hidden />
-              )}
               Use a token
             </Button>
           </div>

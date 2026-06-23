@@ -17,6 +17,8 @@ export {
   useSlotHistory,
   useSessions,
   useSortedGroupedSessions,
+  useStageGroupedSessions,
+  useWorkspaceRollup,
   useSummarizerStatus,
   useSessionHasUnread,
   useWorkspaceHasUnread,

@@ -1,3 +1,4 @@
+import { Eyebrow } from '@goodboy/ui';
 import { spendStrokeColor } from './lib';
 
 type Props = {
@@ -40,11 +41,7 @@ export const CostRing = ({ pct, centerLabel, subLabel, size = 132 }: Props) => {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
         <span className="font-mono text-lg tabular-nums text-foreground">{centerLabel}</span>
-        {subLabel ? (
-          <span className="text-2xs uppercase tracking-[0.08em] text-muted-foreground">
-            {subLabel}
-          </span>
-        ) : null}
+        {subLabel ? <Eyebrow label={subLabel} /> : null}
       </div>
     </div>
   );

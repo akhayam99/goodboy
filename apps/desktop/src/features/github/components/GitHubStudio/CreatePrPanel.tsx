@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { Button, Input, SectionHeader, Textarea } from '@goodboy/ui';
-import { ArrowRight, GitBranch, Loader2, Sparkles } from 'lucide-react';
+import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
+import { ArrowRight, GitBranch, Sparkles } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -116,7 +115,7 @@ export const CreatePrPanel = ({
 
   return (
     <div className="min-h-0 flex-1">
-      <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-8">
+      <ScrollFade className="mx-auto h-full max-w-3xl" viewportClassName="px-10 py-8" fadeSize={24}>
         <section className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <SectionHeader label="open a pull request" />
@@ -194,21 +193,16 @@ export const CreatePrPanel = ({
                 onClick={() => void onCreateWithAi()}
                 disabled={busy !== null}
                 title="hand it to an agent: it drafts the title and description, then opens the PR"
+                className={cn(busy === 'ai' && 'animate-border-pulse')}
               >
-                {busy === 'ai' ? (
-                  <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
-                ) : (
-                  <Sparkles size={13} className="mr-1.5" aria-hidden />
-                )}
+                <Sparkles size={13} className="mr-1.5" aria-hidden />
                 Draft with an agent
               </Button>
               <Button
                 onClick={() => void onCreate()}
                 disabled={busy !== null || title.trim().length === 0}
+                className={cn(busy === 'create' && 'animate-border-pulse')}
               >
-                {busy === 'create' ? (
-                  <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
-                ) : null}
                 Create PR
                 <ArrowRight size={13} className="ml-1.5" aria-hidden />
               </Button>

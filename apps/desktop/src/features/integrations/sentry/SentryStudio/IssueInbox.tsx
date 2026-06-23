@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState } from '@goodboy/ui';
-import { Inbox, Loader2, MessagesSquare, Search, Users } from 'lucide-react';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { Inbox, MessagesSquare, Search, Users } from 'lucide-react';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssue } from '../client';
 import type { SentryIssueRow } from './useSentryIssues';
@@ -69,8 +68,17 @@ export const IssueInbox = ({
       </div>
 
       {loading && rows.length === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground/60">
-          <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />
+        <div role="status" aria-label="Loading issues" className="flex flex-col gap-0.5 px-3 pb-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-1 px-2.5 py-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-3 w-10 shrink-0 rounded" />
+                <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+              </div>
+              <Skeleton className="h-2.5 w-2/3 rounded" />
+              <Skeleton className="h-2.5 w-1/3 rounded" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="px-3 pb-3">
@@ -91,7 +99,7 @@ export const IssueInbox = ({
           />
         </div>
       ) : (
-        <ScrollFade className="min-h-0 flex-1">
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
           <ul className="flex flex-col gap-0.5 px-3 pb-3">
             {filtered.map((row) => {
               const active = row.issue.id === focusedIssueId;
@@ -160,13 +168,10 @@ export const IssueInbox = ({
                   'flex w-full items-center justify-center gap-1.5 rounded-md border border-border-soft py-2',
                   'text-2xs font-medium text-muted-foreground transition-colors',
                   'hover:border-border hover:bg-muted/40 hover:text-foreground disabled:opacity-50',
+                  loading && 'animate-border-pulse',
                 )}
               >
-                {loading ? (
-                  <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
-                ) : (
-                  'Load more'
-                )}
+                {loading ? 'Loading…' : 'Load more'}
               </button>
             </div>
           ) : null}

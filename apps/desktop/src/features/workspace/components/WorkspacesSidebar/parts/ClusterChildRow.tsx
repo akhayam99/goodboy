@@ -1,5 +1,5 @@
-import { cn } from '@goodboy/ui';
-import { Check, Clock, Loader2 } from 'lucide-react';
+import { StatusDot, cn } from '@goodboy/ui';
+import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 
@@ -25,7 +25,7 @@ export function ClusterChildRow({
   const hasUnread = agentHasUnread(child, isSelected && isTaskActive);
   const icon =
     child.status === 'running' ? (
-      <Loader2 size={10} className="motion-safe:animate-spin text-info" aria-hidden />
+      <StatusDot tone="info" size="sm" pulsing />
     ) : child.status === 'completed' ? (
       <span className="flex size-3 items-center justify-center rounded-full bg-success/15">
         <Check size={8} className="text-success" aria-hidden />

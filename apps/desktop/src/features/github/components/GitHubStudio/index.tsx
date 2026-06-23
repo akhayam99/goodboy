@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Divider } from '@goodboy/ui';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { InboxList } from './InboxList';
 import { PrDetailPanel } from './PrDetailPanel';
 import { useGithubInbox } from './useGithubInbox';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
 type Props = {
   readonly workspaceName: string;
@@ -48,7 +47,7 @@ export const GitHubStudio = ({
     >
       {(requestClose) => (
         <>
-          <ScrollFade className="w-72 shrink-0">
+          <ScrollFade className="w-72 shrink-0" fadeSize={24}>
             <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
           </ScrollFade>
           <Divider orientation="vertical" />

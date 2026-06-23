@@ -6,6 +6,7 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 
 vi.mock('@goodboy/ui', () => ({
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
+  StatusDot: () => null,
 }));
 
 vi.mock('../../../../../store', () => ({

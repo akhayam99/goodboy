@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrDetail, PrReview, PrReviewState, PullRequestState } from '@goodboy/types';
-import { cn, Divider, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
 import {
   AlertCircle,
   Check,
@@ -8,7 +8,6 @@ import {
   CircleDashed,
   FileText,
   ListChecks,
-  Loader2,
   MessageSquare,
   MinusCircle,
   Plus,
@@ -19,7 +18,6 @@ import { PullRequestChip } from '../PullRequestChip';
 import { computeTabStatus, TabBadge } from '../Card';
 import { ghRepoCollaborators } from '../../github';
 import { useCurrentWorkspace } from '../../../../store';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { PrSwitcher } from './PrSwitcher';
 
 export type PrSection = 'overview' | 'comments' | 'resolve' | 'ci';
@@ -134,7 +132,7 @@ export const PrSidebar = ({
 
       <Divider />
 
-      <ScrollFade className="min-h-0 flex-1">
+      <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
         <div className="flex flex-col gap-1.5 px-3 py-3">
           <SectionHeader
             label="Reviewers"
@@ -248,10 +246,14 @@ function ReviewerPicker({
             />
           </div>
           {loading ? (
-            <span className="flex items-center gap-1.5 px-1.5 py-1 text-2xs text-muted-foreground">
-              <Loader2 size={11} aria-hidden className="motion-safe:animate-spin" />
-              loading
-            </span>
+            <div className="flex flex-col gap-1 px-1.5 py-1" role="status" aria-label="Loading">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Skeleton className="size-4 shrink-0 rounded-full" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              ))}
+            </div>
           ) : candidates.length === 0 ? (
             <span className="px-1.5 py-1 text-2xs text-muted-foreground/60">No matches.</span>
           ) : (

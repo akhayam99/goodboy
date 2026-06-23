@@ -69,8 +69,9 @@ export const OperationsCluster = ({
         aria-label={ariaLabel}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
+          'relative flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
           showError && 'border border-danger/20 bg-danger/5',
+          running != null && 'animate-border-pulse',
         )}
       >
         <ChevronRight
@@ -98,11 +99,6 @@ export const OperationsCluster = ({
               ·
             </span>
             <span className="truncate font-mono">{running.toolName}</span>
-            <span className="flex shrink-0 gap-0.5">
-              <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
-              <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
-              <span className="h-1 w-1 motion-safe:animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
-            </span>
           </span>
         ) : showError ? (
           <span className="flex shrink-0 items-center gap-1.5 text-2xs tabular-nums">

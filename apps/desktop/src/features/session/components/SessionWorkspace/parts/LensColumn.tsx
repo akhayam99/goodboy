@@ -10,11 +10,13 @@ import {
   LayoutDashboard,
   Layers,
   MessageSquareReply,
+  Network,
   SquareTerminal,
   Target,
   Terminal,
 } from 'lucide-react';
-import { ScrollFade, cn } from '@goodboy/ui';
+import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { type AgentKind, inferAgentKindFromName } from '../../../../session/agent-kind';
 import {
@@ -42,24 +44,14 @@ type LensColumnProps = {
   readonly filesCount: number;
 };
 
-type LensTone = 'primary' | 'success' | 'info' | 'warning' | 'accent' | 'neutral';
-
-const TONE: Record<LensTone, { readonly icon: string; readonly chip: string }> = {
-  primary: { icon: 'text-primary', chip: 'bg-primary/10 ring-primary/20' },
-  success: { icon: 'text-success', chip: 'bg-success/10 ring-success/20' },
-  info: { icon: 'text-info', chip: 'bg-info/10 ring-info/20' },
-  warning: { icon: 'text-warning', chip: 'bg-warning/10 ring-warning/20' },
-  accent: { icon: 'text-accent', chip: 'bg-accent/10 ring-accent/20' },
-  neutral: { icon: 'text-muted-foreground', chip: 'bg-muted ring-border-soft' },
-};
-
 type LensRow = {
-  readonly kind: LensKind;
+  readonly kind: LensKind | 'runs';
   readonly label: string;
   readonly icon: LucideIcon;
-  readonly tone: LensTone;
+  readonly tone: Tone;
   readonly count?: number;
   readonly dot?: 'attention' | 'running';
+  readonly action?: () => void;
 };
 
 type LensGroup = {
@@ -160,6 +152,16 @@ export const LensColumn = ({
           tone: 'success',
           count: openResolvers,
         },
+        {
+          kind: 'runs',
+          label: 'Runs',
+          icon: Network,
+          tone: 'accent',
+          action: () =>
+            window.dispatchEvent(
+              new CustomEvent('goodboy:open-runs-studio', { detail: { sessionId } }),
+            ),
+        },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],
     },
@@ -209,10 +211,11 @@ export const LensColumn = ({
             aria-hidden
             className={cn(
               'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
-              TONE.neutral.chip,
+              tintClasses('neutral').bg,
+              tintClasses('neutral').ring,
             )}
           >
-            <LayoutDashboard size={12} aria-hidden className={TONE.neutral.icon} />
+            <LayoutDashboard size={12} aria-hidden className={tintClasses('neutral').icon} />
           </span>
           <span
             className={cn('min-w-0 flex-1 truncate text-[13px]', overviewActive && 'font-medium')}
@@ -226,12 +229,12 @@ export const LensColumn = ({
               {group.label}
             </span>
             {group.rows.map((row) => {
-              const active = activeLens === row.kind;
+              const active = row.action == null && activeLens === row.kind;
               return (
                 <button
                   key={row.kind}
                   type="button"
-                  onClick={() => onSelect(row.kind)}
+                  onClick={() => (row.action ? row.action() : onSelect(row.kind as LensKind))}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
                     'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
@@ -245,10 +248,11 @@ export const LensColumn = ({
                     aria-hidden
                     className={cn(
                       'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
-                      TONE[row.tone].chip,
+                      tintClasses(row.tone).bg,
+                      tintClasses(row.tone).ring,
                     )}
                   >
-                    <row.icon size={12} aria-hidden className={TONE[row.tone].icon} />
+                    <row.icon size={12} aria-hidden className={tintClasses(row.tone).icon} />
                   </span>
                   <span
                     className={cn('min-w-0 flex-1 truncate text-[13px]', active && 'font-medium')}
@@ -267,14 +271,10 @@ export const LensColumn = ({
                       {row.count}
                     </span>
                   ) : row.dot ? (
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'size-1.5 shrink-0 rounded-full',
-                        row.dot === 'attention'
-                          ? 'bg-warning'
-                          : 'motion-safe:animate-pulse bg-info',
-                      )}
+                    <StatusDot
+                      tone={row.dot === 'attention' ? 'warning' : 'info'}
+                      size="sm"
+                      pulsing={row.dot === 'running'}
                     />
                   ) : null}
                 </button>
