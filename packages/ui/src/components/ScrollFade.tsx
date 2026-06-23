@@ -12,7 +12,8 @@ export type ScrollFadeProps = {
   readonly className?: string;
   readonly viewportClassName?: string;
   readonly fadeFrom?: keyof typeof FADE_FROM;
-  readonly fadeSize?: string;
+  readonly fadeSize?: number | string;
+  readonly orientation?: 'vertical' | 'horizontal';
 };
 
 export const ScrollFade = ({
@@ -21,19 +22,23 @@ export const ScrollFade = ({
   viewportClassName,
   fadeFrom = 'background',
   fadeSize = 'h-8',
+  orientation = 'vertical',
 }: ScrollFadeProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [edges, setEdges] = useState({ top: false, bottom: false });
+  const [edges, setEdges] = useState({ start: false, end: false });
+  const horizontal = orientation === 'horizontal';
 
   const sync = useCallback(() => {
     const el = ref.current;
     if (!el) {
       return;
     }
-    const top = el.scrollTop > 1;
-    const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-    setEdges((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
-  }, []);
+    const start = horizontal ? el.scrollLeft > 1 : el.scrollTop > 1;
+    const end = horizontal
+      ? el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+      : el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+    setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
+  }, [horizontal]);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -52,6 +57,12 @@ export const ScrollFade = ({
   }, [sync]);
 
   const from = FADE_FROM[fadeFrom];
+  const sizeClass =
+    typeof fadeSize === 'number'
+      ? horizontal
+        ? `w-[${fadeSize}px]`
+        : `h-[${fadeSize}px]`
+      : fadeSize;
 
   return (
     <div className={cn('relative min-h-0', className)}>
@@ -59,7 +70,9 @@ export const ScrollFade = ({
         ref={ref}
         onScroll={sync}
         className={cn(
-          'h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          horizontal
+            ? 'h-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           viewportClassName,
         )}
       >
@@ -68,19 +81,21 @@ export const ScrollFade = ({
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b to-transparent motion-safe:transition-opacity duration-200',
-          fadeSize,
+          'pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200',
+          horizontal ? 'inset-y-0 left-0 bg-gradient-to-r' : 'inset-x-0 top-0 bg-gradient-to-b',
+          sizeClass,
           from,
-          edges.top ? 'opacity-100' : 'opacity-0',
+          edges.start ? 'opacity-100' : 'opacity-0',
         )}
       />
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t to-transparent motion-safe:transition-opacity duration-200',
-          fadeSize,
+          'pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200',
+          horizontal ? 'inset-y-0 right-0 bg-gradient-to-l' : 'inset-x-0 bottom-0 bg-gradient-to-t',
+          sizeClass,
           from,
-          edges.bottom ? 'opacity-100' : 'opacity-0',
+          edges.end ? 'opacity-100' : 'opacity-0',
         )}
       />
     </div>
