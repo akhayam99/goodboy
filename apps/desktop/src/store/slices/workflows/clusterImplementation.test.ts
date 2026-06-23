@@ -30,6 +30,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 
 import {
   advanceClusterImplementation,
+  composeClusterBoundary,
   fanOutClusters,
   selectClustersPlan,
   selectFanOutPlan,
@@ -139,6 +140,15 @@ describe('selectFanOutPlan', () => {
 
   it('returns null when neither an explicit nor a stored plan qualifies', () => {
     expect(selectFanOutPlan(fakeGet([]), sessionId, {})).toBeNull();
+  });
+});
+
+describe('composeClusterBoundary', () => {
+  it('states the single-cluster boundary and embeds the child-scoped done marker', () => {
+    const text = composeClusterBoundary('child-7' as AgentId);
+    expect(text).toContain('Execute ONLY this cluster');
+    expect(text).toContain('Do not start later clusters');
+    expect(text).toContain('<<cluster-done id="child-7">>');
   });
 });
 
@@ -321,6 +331,8 @@ describe('advanceClusterImplementation', () => {
     const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
     expect(call.agentId).toBe('cont-a');
     expect(call.content).toContain('stopped before finishing');
+    expect(call.content).toContain('Do not start later clusters');
+    expect(call.content).toContain('<<cluster-done id="cont-a">>');
     expect(state.selectedAgentId).toBe(PARENT);
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
   });
@@ -371,6 +383,35 @@ describe('advanceClusterImplementation', () => {
     expect(sendTurn).toHaveBeenCalledTimes(1);
     const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
     expect(call.agentId).toBe('k1');
+    expect(call.content).toContain('2/2');
+    expect(state.selectedAgentId).toBe(PARENT);
+  });
+
+  it('force-advances past a missing marker: completes the child and starts the next', async () => {
+    const c0 = childAgent({ id: 'f0', ordinal: 0, status: 'running' });
+    const c1 = childAgent({ id: 'f1', ordinal: 1 });
+    const p = plan({});
+    const { get, set, sendTurn, state } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [p] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'f0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'f0' as AgentId, 'no marker here', {
+      force: true,
+    });
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'f0',
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
+    expect(call.agentId).toBe('f1');
     expect(call.content).toContain('2/2');
     expect(state.selectedAgentId).toBe(PARENT);
   });

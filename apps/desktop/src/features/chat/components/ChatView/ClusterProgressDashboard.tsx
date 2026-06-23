@@ -1,6 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
-import { Check, Clock, Layers, Loader2 } from 'lucide-react';
+import { Check, ChevronRight, Clock, Layers, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { MARKER_ACCENT } from '../marker-accents';
 import type { ClusterDashboardItem } from './clusterDashboard';
 
@@ -11,6 +12,7 @@ type Props = {
   readonly total: number;
   readonly selectedAgentId: AgentId | undefined;
   readonly onSelect: (agentId: AgentId) => void;
+  readonly onAdvance: (childAgentId: AgentId) => void;
 };
 
 const accent = MARKER_ACCENT.clusters;
@@ -44,53 +46,83 @@ export const ClusterProgressDashboard = ({
   total,
   selectedAgentId,
   onSelect,
-}: Props) => (
-  <div
-    className="mx-auto flex w-full max-w-[640px] flex-col gap-3 py-10"
-    data-session-id={sessionId}
-    data-testid="cluster-progress-dashboard"
-  >
-    <div className={cn('flex items-center gap-1.5 text-sm font-medium', accent.text)}>
-      <Layers size={14} aria-hidden />
-      <span>
-        cluster progress {completed}/{total}
-      </span>
-    </div>
-    {items.map(({ agent, index, instructions }) => {
-      const isSelected = agent.id === selectedAgentId;
-      const body =
-        agent.status === 'completed' ? (agent.outputSummary ?? instructions) : instructions;
-      return (
+  onAdvance,
+}: Props) => {
+  const [confirming, setConfirming] = useState(false);
+  const current = items.find((item) => item.agent.status !== 'completed');
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[640px] flex-col gap-3 py-10"
+      data-session-id={sessionId}
+      data-testid="cluster-progress-dashboard"
+    >
+      <div className={cn('flex items-center gap-1.5 text-sm font-medium', accent.text)}>
+        <Layers size={14} aria-hidden />
+        <span>
+          cluster progress {completed}/{total}
+        </span>
+      </div>
+      {items.map(({ agent, index, instructions }) => {
+        const isSelected = agent.id === selectedAgentId;
+        const body =
+          agent.status === 'completed' ? (agent.outputSummary ?? instructions) : instructions;
+        return (
+          <button
+            key={agent.id}
+            type="button"
+            onClick={() => onSelect(agent.id)}
+            className={cn(
+              'flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors',
+              isSelected
+                ? cn(accent.border, accent.bg)
+                : 'border-border hover:border-merged/40 hover:bg-merged/5',
+            )}
+          >
+            <span className="mt-0.5 shrink-0 tabular-nums text-xs text-muted-foreground/60">
+              {index + 1}/{total}
+            </span>
+            <span className="mt-0.5 shrink-0">{statusIcon(agent.status)}</span>
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate text-sm font-medium text-foreground">
+                  {agent.name}
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground/70">
+                  {statusLabel(agent.status)}
+                </span>
+              </span>
+              {body ? (
+                <span className="line-clamp-2 text-xs text-muted-foreground">{body}</span>
+              ) : null}
+            </span>
+          </button>
+        );
+      })}
+      {current ? (
         <button
-          key={agent.id}
           type="button"
-          onClick={() => onSelect(agent.id)}
+          data-testid="cluster-advance-button"
+          onClick={() => {
+            if (!confirming) {
+              setConfirming(true);
+              return;
+            }
+            setConfirming(false);
+            onAdvance(current.agent.id);
+          }}
+          onBlur={() => setConfirming(false)}
           className={cn(
-            'flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors',
-            isSelected
-              ? cn(accent.border, accent.bg)
-              : 'border-border hover:border-merged/40 hover:bg-merged/5',
+            'mt-1 flex items-center justify-center gap-1.5 self-end rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+            confirming
+              ? cn(accent.border, accent.bg, accent.text)
+              : 'border-border text-muted-foreground hover:border-merged/40 hover:bg-merged/5',
           )}
         >
-          <span className="mt-0.5 shrink-0 tabular-nums text-xs text-muted-foreground/60">
-            {index + 1}/{total}
-          </span>
-          <span className="mt-0.5 shrink-0">{statusIcon(agent.status)}</span>
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="flex items-center justify-between gap-2">
-              <span className="min-w-0 truncate text-sm font-medium text-foreground">
-                {agent.name}
-              </span>
-              <span className="shrink-0 text-xs text-muted-foreground/70">
-                {statusLabel(agent.status)}
-              </span>
-            </span>
-            {body ? (
-              <span className="line-clamp-2 text-xs text-muted-foreground">{body}</span>
-            ) : null}
-          </span>
+          {confirming ? 'advance without marker?' : 'advance to next cluster'}
+          <ChevronRight size={13} aria-hidden />
         </button>
-      );
-    })}
-  </div>
-);
+      ) : null}
+    </div>
+  );
+};

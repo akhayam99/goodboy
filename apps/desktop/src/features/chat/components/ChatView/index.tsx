@@ -63,6 +63,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const advanceClusterImplementation = useAppStore((s) => s.advanceClusterImplementation);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
   const selectedAgentLastFinishedAt = useAppStore((s) =>
     selectedAgentId
@@ -412,6 +413,9 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                 total={clusterDashboard.total}
                 selectedAgentId={selectedAgentId ?? undefined}
                 onSelect={(id) => void selectAgent(session.id, id)}
+                onAdvance={(id) =>
+                  void advanceClusterImplementation(session.id, id, '', { force: true })
+                }
               />
             ) : (
               <div className="flex h-full items-center justify-center">

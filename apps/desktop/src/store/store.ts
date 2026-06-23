@@ -423,6 +423,7 @@ export type AppActions = {
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
+    opts?: { readonly force?: boolean },
   ): Promise<void>;
   advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;

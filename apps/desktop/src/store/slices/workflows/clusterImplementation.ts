@@ -25,6 +25,17 @@ function childrenOf(runs: ReadonlyArray<Agent>, containerId: AgentId): ReadonlyA
   return runs.filter((r) => r.parentAgentId === containerId).sort((a, b) => a.ordinal - b.ordinal);
 }
 
+export const composeClusterBoundary = (childId: AgentId): string =>
+  [
+    'Execute ONLY this cluster. Do not start later clusters or work on their scope.',
+    'When every item in this cluster is fully complete, emit on its own line exactly:',
+    `<<cluster-done id="${childId}">>`,
+    'Do not emit that marker until the cluster is truly done.',
+  ].join('\n');
+
+export const clusterBoundaryMarker = (childId: AgentId): string =>
+  `<<cluster-done id="${childId}">>`;
+
 function composeClusterKickoff(
   childId: AgentId,
   goalTitle: string,
@@ -46,9 +57,7 @@ function composeClusterKickoff(
     '',
     cluster?.instructions ?? '',
     '',
-    'Execute ONLY this cluster. Do not start later clusters. When every item in this cluster is fully complete, emit on its own line exactly:',
-    `<<cluster-done id="${childId}">>`,
-    'Do not emit that marker until the cluster is truly done.',
+    composeClusterBoundary(childId),
   ].join('\n');
 }
 
@@ -58,8 +67,8 @@ function composeContinuePrompt(
 ): string {
   return [
     `You stopped before finishing this cluster${cluster ? ` (${cluster.title})` : ''}.`,
-    'Continue with the remaining items now. When every item is complete, emit on its own line exactly:',
-    `<<cluster-done id="${childId}">>`,
+    'Continue with the remaining items now.',
+    composeClusterBoundary(childId),
   ].join('\n');
 }
 
@@ -170,7 +179,12 @@ export const selectFanOutPlan = (
 };
 
 export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, childAgentId: AgentId, assistantText: string) => {
+  return async (
+    sessionId: SessionId,
+    childAgentId: AgentId,
+    assistantText: string,
+    opts?: { readonly force?: boolean },
+  ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const child = runs.find((r) => r.id === childAgentId);
     if (!child || !child.parentAgentId) {
@@ -185,7 +199,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId),
     );
 
-    if (!extractClusterDone(assistantText)) {
+    if (!opts?.force && !extractClusterDone(assistantText)) {
       const attempts = continueAttempts.get(childAgentId) ?? 0;
       if (attempts < MAX_CONTINUE) {
         continueAttempts.set(childAgentId, attempts + 1);
@@ -213,9 +227,11 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     }
 
     continueAttempts.delete(childAgentId);
+    const outputSummary =
+      assistantText.length > 0 ? assistantText.slice(0, 2000) : 'advanced to next cluster manually';
     await invokeAgentUpdateStatus(childAgentId, {
       status: 'completed',
-      outputSummary: assistantText.slice(0, 2000),
+      outputSummary,
       completedAt: nowIso(),
     });
     let refreshed = await invokeAgentList(sessionId);

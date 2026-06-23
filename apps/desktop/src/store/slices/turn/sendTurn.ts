@@ -82,6 +82,7 @@ import {
   enqueueSummarizer,
   toRelPath,
 } from '../../turn-helpers';
+import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
 import { dispatchParallelTurn } from './dispatchParallelTurn';
@@ -525,6 +526,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
+    }
+
+    const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
+    if (isClusterChild && !resolvedPrompt.includes(clusterBoundaryMarker(activeAgentId))) {
+      resolvedPrompt = `${composeClusterBoundary(activeAgentId)}\n\n${resolvedPrompt}`;
     }
 
     const isKickoff =
