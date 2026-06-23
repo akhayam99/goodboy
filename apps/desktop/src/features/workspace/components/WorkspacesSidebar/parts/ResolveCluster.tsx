@@ -71,7 +71,7 @@ export function ResolveCluster({
           onClick={onToggle}
           aria-expanded={expanded}
           aria-label={`${expanded ? 'collapse' : 'expand'} resolve cluster`}
-          className="flex min-w-0 flex-1 items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-lime-500/80 transition-colors hover:text-lime-500"
+          className="flex min-w-0 flex-1 items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-success/80 transition-colors hover:text-success"
         >
           {expanded ? (
             <ChevronDown size={10} aria-hidden className="shrink-0" />
@@ -138,7 +138,7 @@ function ResolveClusterRow({
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const icon =
     status === 'running' ? (
-      <Loader2 size={10} className="animate-spin text-info" aria-hidden />
+      <Loader2 size={10} className="motion-safe:animate-spin text-info" aria-hidden />
     ) : status === 'failed' ? (
       <span className="size-1.5 rounded-full bg-danger" aria-hidden />
     ) : status === 'pending' ? (

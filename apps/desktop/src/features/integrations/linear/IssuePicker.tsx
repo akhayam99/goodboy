@@ -189,12 +189,12 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           {loading ? (
-            <Loader2 size={13} className="animate-spin" aria-hidden />
+            <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden />
           ) : (
             <ChevronDown
               size={13}
               aria-hidden
-              className={cn('transition-transform', open && 'rotate-180')}
+              className={cn('motion-safe:transition-transform', open && 'rotate-180')}
             />
           )}
         </button>

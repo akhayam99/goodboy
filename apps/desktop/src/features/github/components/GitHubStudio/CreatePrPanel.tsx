@@ -196,7 +196,7 @@ export const CreatePrPanel = ({
                 title="hand it to an agent: it drafts the title and description, then opens the PR"
               >
                 {busy === 'ai' ? (
-                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                  <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
                 ) : (
                   <Sparkles size={13} className="mr-1.5" aria-hidden />
                 )}
@@ -207,7 +207,7 @@ export const CreatePrPanel = ({
                 disabled={busy !== null || title.trim().length === 0}
               >
                 {busy === 'create' ? (
-                  <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden />
+                  <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
                 ) : null}
                 Create PR
                 <ArrowRight size={13} className="ml-1.5" aria-hidden />

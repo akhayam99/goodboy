@@ -72,9 +72,10 @@ export const StudioShell = ({
             type="button"
             onClick={requestClose}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5',
-              'text-xs font-semibold text-danger transition-colors',
-              'hover:border-danger/60 hover:bg-danger/15',
+              'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5',
+              'text-xs font-semibold text-muted-foreground transition-colors',
+              'hover:bg-muted hover:text-foreground',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}
             aria-label={closeLabel}
           >

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, Loader2, RefreshCw, Smartphone, Unplug } from 'lucide-react';
+import { cn } from '@goodboy/ui';
 import { StudioShell } from '../../shared/components/StudioShell';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
 import { clearMobileSharedSessions } from './mobileConfinement';
@@ -8,11 +9,11 @@ type Props = {
   readonly onClose: () => void;
 };
 
-function barColor(remaining: number, total: number): string {
+function barColorClass(remaining: number, total: number): string {
   const ratio = total > 0 ? remaining / total : 0;
-  if (ratio <= 0.15) return 'var(--color-danger, #ef4444)';
-  if (ratio <= 0.35) return 'var(--color-warning, #f59e0b)';
-  return 'var(--color-success, #22c55e)';
+  if (ratio <= 0.15) return 'bg-danger';
+  if (ratio <= 0.35) return 'bg-warning';
+  return 'bg-success';
 }
 
 /**
@@ -116,7 +117,11 @@ export const CompanionStudio = ({ onClose }: Props) => {
 
             {loading && !info ? (
               <div className="grid size-[300px] place-items-center">
-                <Loader2 size={28} aria-hidden className="animate-spin text-muted-foreground" />
+                <Loader2
+                  size={28}
+                  aria-hidden
+                  className="motion-safe:animate-spin text-muted-foreground"
+                />
               </div>
             ) : error ? (
               <div className="flex size-[300px] flex-col items-center justify-center gap-3">
@@ -133,7 +138,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
               <>
                 <div className="flex flex-col items-center gap-3.5">
                   <div
-                    className="size-[244px] rounded-2xl border border-border-soft bg-white p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] [&>svg]:h-full [&>svg]:w-full"
+                    className="size-[244px] rounded-lg border border-border-soft bg-white p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] [&>svg]:h-full [&>svg]:w-full"
                     // QR SVG is generated server-side from a value we control (the
                     // pairing payload), never from untrusted input.
                     dangerouslySetInnerHTML={{ __html: info.svg }}
@@ -147,12 +152,11 @@ export const CompanionStudio = ({ onClose }: Props) => {
                       aria-valuemax={total}
                     >
                       <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${(Math.min(remaining, total) / total) * 100}%`,
-                          backgroundColor: barColor(remaining, total),
-                          transition: 'width 1s linear, background-color 0.4s ease',
-                        }}
+                        className={cn(
+                          'h-full rounded-full motion-safe:transition-[width,background-color] motion-safe:duration-300 motion-safe:ease-linear',
+                          barColorClass(remaining, total),
+                        )}
+                        style={{ width: `${(Math.min(remaining, total) / total) * 100}%` }}
                       />
                     </div>
                     <span className="text-2xs font-semibold tabular-nums text-muted-foreground">

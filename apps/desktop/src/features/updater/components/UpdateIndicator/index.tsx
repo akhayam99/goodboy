@@ -40,7 +40,7 @@ export const UpdateIndicator = ({ variant }: Props) => {
         title={title}
         className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
       >
-        <Icon size={11} className={cn(downloading && 'animate-spin')} aria-hidden />
+        <Icon size={11} className={cn(downloading && 'motion-safe:animate-spin')} aria-hidden />
         <span>{downloading ? 'updating…' : 'update'}</span>
       </button>
     ) : (
@@ -51,7 +51,7 @@ export const UpdateIndicator = ({ variant }: Props) => {
         title={title}
         className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
       >
-        <Icon size={11} className={cn(downloading && 'animate-spin')} aria-hidden />
+        <Icon size={11} className={cn(downloading && 'motion-safe:animate-spin')} aria-hidden />
         <span>{downloading ? 'Updating…' : 'Update'}</span>
       </button>
     );

@@ -60,17 +60,17 @@ function PairDeviceCta() {
       onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device'))}
       title={label}
       aria-label={label}
-      className="group/pair relative inline-flex shrink-0 items-center gap-1 rounded-full border border-border-soft/70 bg-gradient-to-b from-muted/40 to-muted/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:from-primary/15 hover:to-primary/5 hover:text-primary hover:shadow-md"
+      className="group/pair relative inline-flex shrink-0 items-center gap-1 rounded-full border border-border-soft/70 bg-gradient-to-b from-muted/40 to-muted/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm motion-safe:transition-all hover:border-primary/40 hover:from-primary/15 hover:to-primary/5 hover:text-primary hover:shadow-md"
     >
       <Smartphone
         size={11}
         aria-hidden
-        className="transition-transform duration-200 group-hover/pair:-rotate-6 group-hover/pair:scale-110"
+        className="motion-safe:transition-transform motion-safe:duration-200 group-hover/pair:-rotate-6 group-hover/pair:scale-110"
       />
       <span>Pair</span>
       {linked ? (
         <span aria-hidden className="relative ml-0.5 flex size-1.5">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-75" />
+          <span className="absolute inline-flex size-full rounded-full bg-success opacity-75 motion-safe:animate-ping" />
           <span className="relative inline-flex size-1.5 rounded-full bg-success" />
         </span>
       ) : null}

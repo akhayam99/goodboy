@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, ScrollFade } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 
 type Props = {
@@ -277,7 +277,7 @@ export const DiffViewSelector = ({
               aria-label="filter commits"
             />
           </div>
-          <div className="max-h-[400px] overflow-y-auto py-1">
+          <ScrollFade className="max-h-[400px] py-1">
             {rows.map((row, i) => {
               if (row.kind === 'header') {
                 return (
@@ -348,7 +348,7 @@ export const DiffViewSelector = ({
                 </button>
               );
             })}
-          </div>
+          </ScrollFade>
         </div>
       ) : null}
     </div>

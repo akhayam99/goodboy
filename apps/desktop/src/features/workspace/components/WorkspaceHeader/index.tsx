@@ -29,7 +29,7 @@ export const WorkspaceHeader = () => {
       >
         <span
           aria-hidden
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white shadow-sm"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-bold text-primary-foreground shadow-sm"
           style={{ backgroundColor: accent }}
         >
           {initialOf(currentWorkspace.name)}
