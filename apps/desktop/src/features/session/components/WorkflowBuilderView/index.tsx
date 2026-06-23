@@ -118,6 +118,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const sessionPhaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   );
+  const providers = useAppStore((s) => s.providers);
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
@@ -239,7 +240,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     onClose();
   };
 
-  const providerId: ProviderId = session.providerPreference.defaultProvider;
+  const providerId =
+    providers.find((p) => p.id === session.providerOverride)?.id ??
+    session.providerPreference.defaultProvider;
   const blocked = busy || planning;
 
   const patchStep = (i: number, patch: Partial<StepEdit>) =>

@@ -4,6 +4,7 @@ import type {
   AgentStatus,
   IsoDateTime,
   ModelEffort,
+  ProviderId,
   ProviderRunId,
   SessionId,
   StepId,
@@ -181,7 +182,7 @@ export type AgentConfigUpdate = {
   verbosity?: 'brief' | 'normal' | 'verbose' | null;
   effort?: ModelEffort | null;
   modelOverride?: string | null;
-  providerOverride?: string | null;
+  providerOverride?: ProviderId | null;
   kind?: string | null;
 };
 
