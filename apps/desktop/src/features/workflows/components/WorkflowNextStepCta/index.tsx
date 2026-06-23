@@ -8,6 +8,7 @@ import {
   AGENT_KIND_PALETTE,
   inferAgentKindFromName,
 } from '../../../../features/session/agent-kind';
+import { shortModel } from '../../../../features/session/agent-row-format';
 
 export type Props = {
   readonly workflow: Workflow;
@@ -98,21 +99,20 @@ export const WorkflowNextStepCta = ({
         disabled={busy}
         data-testid="workflow-next-step-cta"
         title={`model: ${defaults.model} · effort: ${defaults.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`}
-        className="group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+        className="group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
         aria-label={`Start ${next.name} (${defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
       >
         <span className="flex items-center gap-1.5">
           <ArrowRight
             size={13}
             aria-hidden
-            className="shrink-0 transition-transform group-hover:translate-x-0.5"
+            className="shrink-0 motion-safe:transition-transform group-hover:translate-x-0.5"
           />
           <span className="font-semibold">{next.name}</span>
           <span
             className={cn(
-              'rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide',
+              'rounded px-1 py-0.5 text-2xs font-semibold uppercase leading-none tracking-eyebrow text-background',
               palette.bg,
-              'text-zinc-950',
             )}
             aria-hidden
           >
@@ -120,7 +120,7 @@ export const WorkflowNextStepCta = ({
           </span>
           {consumesActivePlan ? (
             <span
-              className="inline-flex items-center gap-0.5 rounded bg-primary/15 px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide text-primary"
+              className="inline-flex items-center gap-0.5 rounded bg-primary/15 px-1 py-0.5 text-2xs font-semibold uppercase leading-none tracking-eyebrow text-primary"
               title="advancing will consume the active plan"
             >
               <ClipboardList size={9} aria-hidden />
@@ -128,27 +128,27 @@ export const WorkflowNextStepCta = ({
             </span>
           ) : null}
         </span>
-        <span className="text-[10px] font-normal opacity-60">
-          {defaults.model.split('-').slice(1, 3).join('-')}
+        <span className="text-2xs font-normal tabular-nums opacity-60">
+          {shortModel(defaults.model)}
         </span>
       </button>
       {pendingConfirm ? (
-        <div className="rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-[11px]">
-          <p className="mb-2 font-medium text-foreground">
+        <div className="flex flex-col gap-2 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-2xs">
+          <p className="font-medium text-foreground">
             Answer the open questions before you start the next agent.
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setPendingConfirm(false)}
-              className="rounded bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground hover:opacity-90"
+              className="rounded bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground motion-safe:transition-opacity hover:opacity-90"
             >
               answer first
             </button>
             <button
               type="button"
               onClick={() => void doAdvance()}
-              className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
+              className="rounded border border-border px-2 py-0.5 text-2xs font-semibold text-foreground motion-safe:transition-colors hover:bg-muted"
             >
               start anyway
             </button>
