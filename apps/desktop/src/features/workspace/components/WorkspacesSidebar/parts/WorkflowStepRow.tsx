@@ -11,7 +11,7 @@ import {
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
 import { ProviderGlyph } from './ProviderGlyph';
-import { ContextWindowBar } from './ContextWindowBar';
+import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import type { WorkflowBlockReason } from '../lib';
 
 type WorkflowStepRowProps = {
@@ -26,6 +26,7 @@ type WorkflowStepRowProps = {
   readonly isEditing: boolean;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
+  readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly onStart: () => void;
@@ -48,6 +49,7 @@ export function WorkflowStepRow({
   isEditing,
   telemetry,
   aggregate,
+  contextUsage,
   turns,
   turnsLoading,
   onStart,
@@ -256,7 +258,7 @@ export function WorkflowStepRow({
                 turnsLoading={turnsLoading}
                 variant="workflow"
               />
-              <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
+              <ContextWindowBar usage={contextUsage} />
             </div>
           </div>
         </div>
