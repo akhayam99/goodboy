@@ -41,6 +41,14 @@ export const worktreeDiff = async (worktreePath: string, base?: string): Promise
   return invoke<string>('worktree_diff', { worktreePath, base: base ?? null });
 };
 
+export const worktreeDiffFile = async (
+  worktreePath: string,
+  path: string,
+  base?: string,
+): Promise<string> => {
+  return invoke<string>('worktree_diff_file', { worktreePath, base: base ?? null, path });
+};
+
 export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null> => {
   return invoke<string | null>('worktree_remote_url', { repoPath });
 };
@@ -49,6 +57,10 @@ export type ChangedFilesSummary = {
   readonly paths: ReadonlyArray<string>;
   readonly additions: number;
   readonly deletions: number;
+  // Raw per-file numstat lines ("<adds>\t<dels>\t<path>", binary: "-\t-\t<path>")
+  // for the same change set, including untracked files. Mirrored to the
+  // `files_touched_numstat` context slot.
+  readonly numstat: string;
 };
 
 export const worktreeChangedFiles = async (

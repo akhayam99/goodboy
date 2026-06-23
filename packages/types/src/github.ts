@@ -15,6 +15,9 @@ export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'queued' | 'm
 
 export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;
 
+/** How a PR is integrated when merged. Maps to `gh pr merge --{method}`. */
+export type PrMergeMethod = 'squash' | 'merge' | 'rebase';
+
 export type PullRequestState = {
   number: number;
   title: string;

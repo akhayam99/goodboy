@@ -640,3 +640,89 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
     expect(insertArgs['kind']).toBe('scout');
   });
 });
+
+// FINDING 2 (ordering): a mobile-launched session must be confined from its FIRST
+// turn. createSession fires a kickoff turn DURING creation (the workflow's first
+// step promptPrefix → sendTurn), so the confinement must be registered
+// synchronously before that kickoff dispatches — never after createSession
+// resolves. We verify by inspecting the permissionMode that reaches runTurn on
+// that kickoff: a mobile-shared session is clamped (bypassPermissions → default)
+// the instant it runs; a desktop session keeps full bypassPermissions.
+describe('createSession mobile confinement is ordered (#A2 finding 2)', () => {
+  beforeEach(async () => {
+    wirePhaseSpies();
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+    const { clearMobileSharedSessions } = await import('../features/companion/mobileConfinement');
+    clearMobileSharedSessions();
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-opus-4-5',
+      reason: 'preference',
+    });
+  });
+
+  afterEach(async () => {
+    vi.clearAllMocks();
+    const { clearMobileSharedSessions } = await import('../features/companion/mobileConfinement');
+    clearMobileSharedSessions();
+  });
+
+  it('clamps the FIRST kickoff turn of a mobile-launched session (mark precedes kickoff)', async () => {
+    const { useAppStore } = await import('./store');
+    const { isSessionMobileShared } = await import('../features/companion/mobileConfinement');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      // Prefixed steps → createSession fires the first-step kickoff turn DURING
+      // creation, which is exactly the moment that could outrun the mark.
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'mobile launch',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+      mobileShared: true,
+    });
+
+    // The kickoff turn must have already run, and at the moment it reached runTurn
+    // the permission mode was clamped — proving the mark landed before kickoff.
+    await new Promise<void>((r) => setTimeout(r, 50));
+    expect(runTurnSpy).toHaveBeenCalledTimes(1);
+    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(callArgs['permissionMode']).toBe('default'); // clamped, not bypassPermissions
+    expect(isSessionMobileShared(session.id)).toBe(true);
+    // And the stored mode is clamped intrinsically, not left at bypass.
+    expect(useAppStore.getState().sessions.find((s) => s.id === session.id)?.permissionMode).toBe(
+      'default',
+    );
+  });
+
+  it('leaves a desktop (non-mobile) session at full bypassPermissions on its first turn', async () => {
+    const { useAppStore } = await import('./store');
+    const { isSessionMobileShared } = await import('../features/companion/mobileConfinement');
+    useAppStore.setState({
+      currentWorkspaceId: WS_ID,
+      phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
+    });
+
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'desktop launch',
+      branchPrefix: 'kay',
+      workflowId: WORKFLOW_ID,
+      // mobileShared omitted → default false → desktop behavior unchanged.
+    });
+
+    await new Promise<void>((r) => setTimeout(r, 50));
+    expect(runTurnSpy).toHaveBeenCalledTimes(1);
+    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(callArgs['permissionMode']).toBe('bypassPermissions'); // unclamped
+    expect(isSessionMobileShared(session.id)).toBe(false);
+    expect(useAppStore.getState().sessions.find((s) => s.id === session.id)?.permissionMode).toBe(
+      'bypassPermissions',
+    );
+  });
+});

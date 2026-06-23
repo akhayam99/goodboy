@@ -118,6 +118,7 @@ pub fn run() {
       worktree::worktree_remote_url,
       worktree::worktree_exists,
       worktree::worktree_diff,
+      worktree::worktree_diff_file,
       worktree::worktree_changed_files,
       worktree::worktree_commits,
       worktree::worktree_diff_commit,

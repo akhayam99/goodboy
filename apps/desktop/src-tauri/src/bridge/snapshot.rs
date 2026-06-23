@@ -229,6 +229,15 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         )?,
         "pr_json",
     );
+    // External provider task linked to a session (Linear/Sentry/GitLab issue).
+    // Read-only mirror of session_external_tasks (m044, widened to sentry/gitlab
+    // by m064/m065). The phone renders an external-task chip that opens `url`.
+    // The desktop table has no per-issue state column, so `state` is omitted here
+    // and decodes to nil on the phone.
+    let session_external_tasks = rows(
+        &conn,
+        "SELECT session_id, provider, identifier, title, url FROM session_external_tasks",
+    )?;
     // Per-session budget rollup for the mobile CostRing: aggregate spend from
     // telemetry_records and the optional soft cap from session_budgets. Read-only
     // mirror; the desktop owns budget enforcement. cap_usd is NULL when no budget
@@ -269,6 +278,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
             "session_worktrees": session_worktrees,
             "github_pr_cache": github_pr_cache,
             "session_costs": session_costs,
+            "session_external_tasks": session_external_tasks,
         }
     });
 

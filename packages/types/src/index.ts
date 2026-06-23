@@ -184,6 +184,7 @@ export type {
   PrCheckRun,
   PrComment,
   PrDetail,
+  PrMergeMethod,
   PrReview,
   PrReviewRequest,
   PrReviewState,
