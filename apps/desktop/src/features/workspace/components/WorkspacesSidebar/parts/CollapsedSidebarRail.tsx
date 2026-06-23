@@ -15,15 +15,6 @@ export const CollapsedSidebarRail = ({ onExpand }: Props) => {
 
   return (
     <div className="flex h-full w-full flex-col items-center gap-2 py-3">
-      <button
-        type="button"
-        onClick={onExpand}
-        title="expand sidebar (⌘B)"
-        aria-label="expand sidebar"
-        className={FOOTER_ICON_BTN}
-      >
-        <PanelLeftOpen size={16} aria-hidden />
-      </button>
       {currentWorkspace && accent ? (
         <button
           type="button"
@@ -44,6 +35,16 @@ export const CollapsedSidebarRail = ({ onExpand }: Props) => {
         className={FOOTER_ICON_BTN}
       >
         <Plus size={16} aria-hidden />
+      </button>
+      <div className="flex-1" />
+      <button
+        type="button"
+        onClick={onExpand}
+        title="expand sidebar (⌘B)"
+        aria-label="expand sidebar"
+        className={FOOTER_ICON_BTN}
+      >
+        <PanelLeftOpen size={16} aria-hidden />
       </button>
     </div>
   );

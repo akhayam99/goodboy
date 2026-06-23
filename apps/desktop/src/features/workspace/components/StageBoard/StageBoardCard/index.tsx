@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Code, GitCompare, MessagesSquare, Network, SquareTerminal } from 'lucide-react';
+import { Code, GitCompare, MessagesSquare, SquareTerminal } from 'lucide-react';
 import { Button, Chip, cn, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
 import {
@@ -56,7 +56,9 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
       className={cn(
         'group flex flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
-          ? cn('spin-border', isAutoMode ? 'spin-border-danger' : 'spin-border-info')
+          ? isAutoMode
+            ? 'border-danger/50'
+            : 'border-info/50'
           : stage === 'attention'
             ? 'border-warning/50'
             : 'border-transparent',
@@ -118,11 +120,6 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
           label="open in editor"
           onClick={() => nav.openIDE(session)}
           disabled={!worktreePath}
-        />
-        <CardAction
-          icon={<Network size={14} aria-hidden />}
-          label="view runs"
-          onClick={() => nav.openRuns(session)}
         />
       </span>
     </button>

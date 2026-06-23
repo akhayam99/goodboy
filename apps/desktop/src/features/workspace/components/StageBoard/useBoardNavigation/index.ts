@@ -10,7 +10,6 @@ export type BoardNavigation = {
   readonly openDiff: (session: Session) => void;
   readonly openTerminal: (session: Session) => void;
   readonly openIDE: (session: Session) => void;
-  readonly openRuns: (session: Session) => void;
 };
 
 export const useBoardNavigation = (): BoardNavigation => {
@@ -61,12 +60,6 @@ export const useBoardNavigation = (): BoardNavigation => {
       }
     };
 
-    const openRuns = (session: Session): void => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-runs-studio', { detail: { sessionId: session.id } }),
-      );
-    };
-
-    return { selectCard, openAgent, openDiff, openTerminal, openIDE, openRuns };
+    return { selectCard, openAgent, openDiff, openTerminal, openIDE };
   }, [setCurrentSession, setActiveLens, selectAgent]);
 };

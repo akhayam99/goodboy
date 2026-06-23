@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Divider } from '@goodboy/ui';
 import { DollarSign, HelpCircle, Moon, PanelLeftClose, Settings, Sun } from 'lucide-react';
-import { GuideDialog } from '../../../settings/components/GuideDialog';
 import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { OnboardingChip } from '../../../onboarding/OnboardingCard';
@@ -75,7 +74,6 @@ export const WorkspacesSidebar = ({
     [setCurrentSession],
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
 
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -172,7 +170,7 @@ export const WorkspacesSidebar = ({
         <NotificationCenter />
         <button
           type="button"
-          onClick={() => setGuideOpen(true)}
+          onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-guide'))}
           title="getting started"
           aria-label="open getting started guide"
           className={FOOTER_ICON_BTN}
@@ -195,7 +193,6 @@ export const WorkspacesSidebar = ({
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
       ) : null}
-      {guideOpen ? <GuideDialog open onClose={() => setGuideOpen(false)} /> : null}
     </div>
   );
 };

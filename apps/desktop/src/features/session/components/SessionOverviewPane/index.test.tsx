@@ -14,7 +14,13 @@ type Store = {
   sessionGitlabMr: Record<string, { mr?: unknown }>;
 };
 
-const { store, hooks } = vi.hoisted(() => ({
+type Runs = {
+  lanes: ReadonlyArray<unknown>;
+  freeAgents: ReadonlyArray<unknown>;
+  resolveQueue: ReadonlyArray<unknown>;
+};
+
+const { store, hooks, runs, openAgentFromRunMock } = vi.hoisted(() => ({
   store: {
     sessionBranches: {} as Record<string, string>,
     spawnAgent: vi.fn(async () => undefined),
@@ -24,11 +30,13 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
   } as Store,
   hooks: {
-    workspace: { name: 'My workspace' } as Workspace | null,
+    workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,
     openQuestions: [] as ReadonlyArray<OpenQuestion>,
     plans: [] as ReadonlyArray<{ status: string }>,
     stage: { stage: 'building', reason: '' } as SessionStageInfo,
   },
+  runs: { lanes: [], freeAgents: [], resolveQueue: [] } as Runs,
+  openAgentFromRunMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -38,6 +46,14 @@ vi.mock('../../../../store', () => ({
   useSessionOpenQuestions: () => hooks.openQuestions,
   useSessionPlans: () => hooks.plans,
   useSessionStageInfo: () => hooks.stage,
+}));
+
+vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({
+  useWorkspaceRuns: () => runs,
+}));
+
+vi.mock('../../../orchestration/hooks/useRunsNavigation', () => ({
+  useRunsNavigation: () => ({ openAgentFromRun: openAgentFromRunMock, jumpToComment: vi.fn() }),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -99,10 +115,14 @@ beforeEach(() => {
   store.scriptRuns = {};
   store.sessionGithub = {};
   store.sessionGitlabMr = {};
-  hooks.workspace = { name: 'My workspace' } as Workspace;
+  hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
   hooks.openQuestions = [];
   hooks.plans = [];
   hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
+  runs.lanes = [];
+  runs.freeAgents = [];
+  runs.resolveQueue = [];
+  openAgentFromRunMock.mockReset();
 });
 afterEach(cleanup);
 
@@ -137,7 +157,7 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
 });
 
 describe('SessionOverviewPane guided empty-state (cluster B)', () => {
-  it('shows the get-started CTAs and hides the stats grid when fresh', () => {
+  it('shows the get-started CTAs and hides the metrics strip when fresh', () => {
     renderPane();
     expect(screen.getByText('Get started')).toBeDefined();
     expect(screen.getByRole('button', { name: /create a workflow/i })).toBeDefined();
@@ -171,12 +191,12 @@ describe('SessionOverviewPane guided empty-state (cluster B)', () => {
   });
 });
 
-describe('SessionOverviewPane stats grid', () => {
+describe('SessionOverviewPane at-a-glance strip', () => {
   beforeEach(() => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
   });
 
-  it('renders the at-a-glance grid and hides the get-started CTAs once work exists', () => {
+  it('renders the metrics strip and hides the get-started CTAs once work exists', () => {
     renderPane();
     expect(screen.getByText('At a glance')).toBeDefined();
     expect(screen.queryByText('Get started')).toBeNull();
@@ -185,18 +205,18 @@ describe('SessionOverviewPane stats grid', () => {
   it('reports running agents as a ratio', () => {
     renderPane();
     expect(screen.getByText('1/1')).toBeDefined();
-    expect(screen.getByText('agents running')).toBeDefined();
+    expect(screen.getByText('running')).toBeDefined();
   });
 
   it('uses the singular files label for a single change', () => {
     renderPane(baseSession(), vi.fn(), { count: 1 } as unknown as FilesTouched);
-    expect(screen.getByText('file changed')).toBeDefined();
+    expect(screen.getByText('file')).toBeDefined();
   });
 
-  it('selects the lens when a stat card is clicked', () => {
+  it('selects the lens when a metric is clicked', () => {
     const onSelectLens = renderPane();
-    fireEvent.click(screen.getByText('active workflows'));
-    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+    fireEvent.click(screen.getByText('files'));
+    expect(onSelectLens).toHaveBeenCalledWith('files');
   });
 });
 
@@ -212,9 +232,9 @@ describe('SessionOverviewPane nudges', () => {
     expect(onSelectLens).toHaveBeenCalledWith('questions');
   });
 
-  it('shows the calm fallback when nothing needs the user', () => {
+  it('omits the needs-you section when nothing needs the user', () => {
     renderPane();
-    expect(screen.getByText(/nothing needs you/i)).toBeDefined();
+    expect(screen.queryByText('Needs you')).toBeNull();
   });
 
   it('raises an attention nudge for a pull request', () => {

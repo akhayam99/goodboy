@@ -95,7 +95,7 @@ export function WorkflowStepRow({
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const containerClass = isRunning
     ? cn(
-        `${ROW_BASE} relative spin-border spin-border-info border-info/60 transition-colors cursor-pointer`,
+        `${ROW_BASE} border-info/60 transition-colors cursor-pointer`,
         isSelected ? 'bg-elevated text-foreground' : 'bg-muted/40 text-foreground/80',
       )
     : isStartable

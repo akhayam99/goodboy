@@ -177,7 +177,7 @@ function ResolveClusterRow({
           ? 'bg-elevated text-foreground border-border'
           : 'text-foreground/70 hover:bg-muted/60',
         status === 'running'
-          ? 'spin-border spin-border-info border-info/60'
+          ? 'border-info/60'
           : status === 'awaiting' || hasUnread
             ? 'border-warning/70'
             : 'border-transparent',

@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Layers,
   MessageSquareReply,
-  Network,
   SquareTerminal,
   Target,
   Terminal,
@@ -45,13 +44,12 @@ type LensColumnProps = {
 };
 
 type LensRow = {
-  readonly kind: LensKind | 'runs';
+  readonly kind: LensKind;
   readonly label: string;
   readonly icon: LucideIcon;
   readonly tone: Tone;
   readonly count?: number;
   readonly dot?: 'attention' | 'running';
-  readonly action?: () => void;
 };
 
 type LensGroup = {
@@ -152,16 +150,6 @@ export const LensColumn = ({
           tone: 'success',
           count: openResolvers,
         },
-        {
-          kind: 'runs',
-          label: 'Runs',
-          icon: Network,
-          tone: 'accent',
-          action: () =>
-            window.dispatchEvent(
-              new CustomEvent('goodboy:open-runs-studio', { detail: { sessionId } }),
-            ),
-        },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],
     },
@@ -229,12 +217,12 @@ export const LensColumn = ({
               {group.label}
             </span>
             {group.rows.map((row) => {
-              const active = row.action == null && activeLens === row.kind;
+              const active = activeLens === row.kind;
               return (
                 <button
                   key={row.kind}
                   type="button"
-                  onClick={() => (row.action ? row.action() : onSelect(row.kind as LensKind))}
+                  onClick={() => onSelect(row.kind)}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
                     'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',

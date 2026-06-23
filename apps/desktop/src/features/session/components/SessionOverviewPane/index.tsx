@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -8,18 +9,17 @@ import {
   FileText,
   GitPullRequest,
   Layers,
-  ListChecks,
+  MessageSquareReply,
   Pencil,
   SquareTerminal,
   Target,
-  Terminal,
   Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { cn, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
+import { Chip, cn, Divider, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Session, SessionId, SessionStage } from '@goodboy/types';
+import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -30,6 +30,14 @@ import {
 } from '../../../../store';
 import type { FilesTouched, LensKind } from '../../../../store';
 import { STAGE_TONE } from '../../session-stage';
+import { AGENT_KIND_PALETTE } from '../../agent-kind';
+import {
+  outcomeTone,
+  outcomeWord,
+  type SpawnNodeStatus,
+} from '../../../orchestration/components/SpawnTree/lib';
+import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
+import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
@@ -62,12 +70,13 @@ type Nudge = {
   readonly lens: LensKind;
 };
 
-type Stat = {
+type Metric = {
   readonly kind: LensKind;
   readonly icon: LucideIcon;
   readonly tone: Tone;
   readonly value: string;
   readonly label: string;
+  readonly active: boolean;
   readonly alert?: boolean;
 };
 
@@ -82,6 +91,149 @@ const CONTEXT_LINKS: ReadonlyArray<{
   { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Last output' },
   { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
 ];
+
+const isGhostStep = (status: SpawnNodeStatus): boolean =>
+  status === 'planned' || status === 'queued';
+
+const StepRow = ({ step }: { readonly step: StepModel }) => {
+  const palette = AGENT_KIND_PALETTE[step.kind];
+  const ghost = isGhostStep(step.status);
+  const running = step.status === 'running';
+
+  return (
+    <div className="flex items-center gap-2">
+      {running ? (
+        <StatusDot tone="info" size="sm" pulsing />
+      ) : (
+        <StatusDot
+          tone={outcomeTone(step.status)}
+          size="sm"
+          className={ghost ? 'opacity-50' : undefined}
+        />
+      )}
+      <span
+        className={cn(
+          'w-16 shrink-0 text-2xs font-semibold uppercase tracking-wide',
+          palette.fg,
+          ghost && 'opacity-60',
+        )}
+      >
+        {palette.label}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-xs text-foreground/70">
+        {step.name || palette.label}
+      </span>
+      {step.children.length > 0 ? (
+        <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/50">
+          {step.children.length}
+        </span>
+      ) : null}
+      <span className="w-14 shrink-0 text-right text-2xs text-muted-foreground/60">
+        {ghost ? 'planned' : outcomeWord(step.status)}
+      </span>
+    </div>
+  );
+};
+
+const PipelineLane = ({
+  lane,
+  onOpen,
+}: {
+  readonly lane: RunLaneModel;
+  readonly onOpen: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onOpen}
+    className="group flex w-full flex-col gap-2.5 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
+  >
+    <div className="flex items-center gap-2">
+      <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+        {lane.workflowName}
+      </span>
+      {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
+      <ArrowRight
+        size={14}
+        aria-hidden
+        className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+      />
+    </div>
+    <div className="flex flex-col gap-1.5">
+      {lane.steps.map((step) => (
+        <StepRow key={step.stepId} step={step} />
+      ))}
+    </div>
+  </button>
+);
+
+const SummaryRow = ({
+  icon: Icon,
+  tone,
+  label,
+  onClick,
+}: {
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+  readonly onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border"
+  >
+    <Icon size={14} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
+    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
+    <ArrowRight
+      size={14}
+      aria-hidden
+      className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+    />
+  </button>
+);
+
+type PipelineSectionProps = {
+  readonly session: Session;
+  readonly workspaceId: WorkspaceId;
+  readonly onSelectLens: (lens: LensKind) => void;
+};
+
+const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSectionProps) => {
+  const sessionList = useMemo(() => [session], [session]);
+  const { lanes, freeAgents, resolveQueue } = useWorkspaceRuns(workspaceId, sessionList);
+
+  if (lanes.length === 0 && freeAgents.length === 0 && resolveQueue.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
+      <div className="flex flex-col gap-2">
+        {lanes.map((lane) => (
+          <PipelineLane key={lane.runId} lane={lane} onOpen={() => onSelectLens('workflows')} />
+        ))}
+        {freeAgents.length > 0 ? (
+          <SummaryRow
+            icon={Bot}
+            tone="primary"
+            label={`${freeAgents.length} ${freeAgents.length === 1 ? 'agent' : 'agents'}`}
+            onClick={() => onSelectLens('agents')}
+          />
+        ) : null}
+        {resolveQueue.length > 0 ? (
+          <SummaryRow
+            icon={MessageSquareReply}
+            tone="success"
+            label={`${resolveQueue.length} in resolve queue`}
+            onClick={() => onSelectLens('resolve')}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 export const SessionOverviewPane = ({
   session,
@@ -99,13 +251,6 @@ export const SessionOverviewPane = ({
   );
   const runningAgents = agents.filter((a) => a.status === 'running').length;
   const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
-  const runningScripts = useAppStore((s) => {
-    const runs = s.scriptRuns[session.id];
-    if (!runs) {
-      return 0;
-    }
-    return Object.values(runs).filter((r) => r.status === 'pending').length;
-  });
   const hasPr = useAppStore(
     (s) => s.sessionGithub[session.id]?.pr != null || s.sessionGitlabMr[session.id]?.mr != null,
   );
@@ -113,6 +258,7 @@ export const SessionOverviewPane = ({
   const openCount = openQuestions.length;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && agents.length === 0;
+  const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -149,68 +295,54 @@ export const SessionOverviewPane = ({
     });
   }
 
-  const stats: Stat[] = [
-    {
-      kind: 'workflows',
-      icon: Layers,
-      tone: 'accent',
-      value: String(activeWorkflows),
-      label: 'active workflows',
-    },
-    {
-      kind: 'agents',
-      icon: Bot,
-      tone: 'primary',
-      value:
-        agents.length === 0
-          ? 'None'
-          : runningAgents > 0
-            ? `${runningAgents}/${agents.length}`
-            : String(agents.length),
-      label: runningAgents > 0 ? 'agents running' : 'agents',
-      alert: attention.active,
-    },
+  const metrics: Metric[] = [
     {
       kind: 'files',
       icon: FileDiff,
       tone: 'info',
       value: String(filesTouched.count),
-      label: filesTouched.count === 1 ? 'file changed' : 'files changed',
+      label: filesTouched.count === 1 ? 'file' : 'files',
+      active: filesTouched.count > 0,
+    },
+    {
+      kind: 'agents',
+      icon: Bot,
+      tone: 'primary',
+      value: runningAgents > 0 ? `${runningAgents}/${agents.length}` : String(agents.length),
+      label: runningAgents > 0 ? 'running' : 'agents',
+      active: agents.length > 0,
+      alert: attention.active,
     },
     {
       kind: 'plans',
       icon: FileText,
       tone: 'success',
       value: String(activePlans),
-      label: 'active plans',
-    },
-    {
-      kind: 'scripts',
-      icon: Terminal,
-      tone: 'info',
-      value: runningScripts > 0 ? String(runningScripts) : '0',
-      label: runningScripts > 0 ? 'scripts running' : 'scripts',
-    },
-    {
-      kind: 'pr',
-      icon: GitPullRequest,
-      tone: 'accent',
-      value: hasPr ? 'Open' : '—',
-      label: 'pull request',
+      label: activePlans === 1 ? 'plan' : 'plans',
+      active: activePlans > 0,
     },
     {
       kind: 'questions',
       icon: CircleHelp,
       tone: 'warning',
       value: String(openCount),
-      label: 'open questions',
+      label: openCount === 1 ? 'question' : 'questions',
+      active: openCount > 0,
       alert: openCount > 0,
+    },
+    {
+      kind: 'pr',
+      icon: GitPullRequest,
+      tone: 'accent',
+      value: hasPr ? 'Open' : 'None',
+      label: 'pull request',
+      active: hasPr,
     },
   ];
 
   return (
     <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
-      <div className="animate-fade-in mx-auto flex max-w-2xl flex-col gap-6">
+      <div className="animate-fade-in mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
@@ -285,12 +417,7 @@ export const SessionOverviewPane = ({
               ))}
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-sm text-muted-foreground shadow-sm">
-            <ListChecks size={15} aria-hidden className="shrink-0 text-success" />
-            <span>Nothing needs you. Pick a lens to dig in.</span>
-          </div>
-        )}
+        ) : null}
 
         {isFresh ? (
           <div className="flex flex-col gap-2">
@@ -358,48 +485,53 @@ export const SessionOverviewPane = ({
               </button>
             </div>
           </div>
-        ) : (
+        ) : workspace ? (
+          <PipelineSection
+            session={session}
+            workspaceId={workspace.id}
+            onSelectLens={onSelectLens}
+          />
+        ) : null}
+
+        {!isFresh && nudges.length === 0 && !isRunning ? (
+          <span className="px-0.5 text-2xs text-muted-foreground/70">
+            All clear, nothing running.
+          </span>
+        ) : null}
+
+        {!isFresh ? (
           <div className="flex flex-col gap-2">
             <Eyebrow label="At a glance" muted className="px-0.5 font-medium" />
-            <div className="grid grid-cols-2 gap-2">
-              {stats.map((stat) => (
+            <div className="flex flex-wrap items-stretch gap-1.5">
+              {metrics.map((metric) => (
                 <button
-                  key={stat.kind}
+                  key={metric.kind}
                   type="button"
-                  onClick={() => onSelectLens(stat.kind)}
+                  onClick={() => onSelectLens(metric.kind)}
                   className={cn(
-                    'group flex items-center gap-3 rounded-lg border bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors',
-                    stat.alert
+                    'group inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-left transition-colors',
+                    metric.alert
                       ? 'border-warning/40 hover:border-warning/60'
-                      : 'border-border-soft hover:border-border',
+                      : 'border-border-soft hover:border-border hover:bg-foreground/[0.02]',
+                    !metric.active && 'opacity-55',
                   )}
                 >
-                  <span
+                  <metric.icon
+                    size={13}
                     aria-hidden
-                    className={cn(
-                      'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                      tintClasses(stat.tone).bg,
-                      tintClasses(stat.tone).ring,
-                    )}
-                  >
-                    <stat.icon size={16} aria-hidden className={tintClasses(stat.tone).icon} />
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-lg font-semibold leading-none text-foreground tabular-nums">
-                      {stat.value}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">{stat.label}</span>
-                  </span>
-                  <ArrowRight
-                    size={14}
-                    aria-hidden
-                    className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+                    className={cn('shrink-0', tintClasses(metric.tone).icon)}
                   />
+                  <span className="text-sm font-semibold leading-none text-foreground tabular-nums">
+                    {metric.value}
+                  </span>
+                  <span className="text-2xs text-muted-foreground">{metric.label}</span>
                 </button>
               ))}
             </div>
           </div>
-        )}
+        ) : null}
+
+        <Divider />
 
         <div className="flex flex-col gap-2">
           <Eyebrow label="Jump to" muted className="px-0.5 font-medium" />

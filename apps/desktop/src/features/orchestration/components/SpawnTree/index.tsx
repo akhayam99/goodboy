@@ -42,13 +42,9 @@ const SpawnNodeRow = ({ node, variant, onSelect, onJumpToComment }: SpawnNodeRow
   const running = node.status === 'running';
   const dense = variant === 'inline';
   const rowClass = cn(
-    'group relative flex w-full items-center gap-2 rounded-lg text-left motion-safe:transition-colors',
+    'group relative flex w-full items-center gap-2 rounded-lg border border-transparent text-left motion-safe:transition-colors',
     dense ? 'px-2 py-1' : 'px-2.5 py-1.5',
-    running &&
-      cn(
-        'spin-border',
-        DESTRUCTIVE_KINDS.has(node.kind) ? 'spin-border-danger' : 'spin-border-info',
-      ),
+    running && (DESTRUCTIVE_KINDS.has(node.kind) ? 'border-danger/50' : 'border-info/50'),
     node.isSelected
       ? 'bg-elevated text-foreground'
       : 'text-foreground/80 hover:bg-muted/60 hover:text-foreground',

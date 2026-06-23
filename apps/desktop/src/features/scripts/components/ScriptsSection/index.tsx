@@ -181,7 +181,7 @@ function ScriptRow({
       className={cn(
         'group flex items-center gap-2 rounded border border-transparent px-2 py-1.5 transition-colors',
         !isPending && 'hover:bg-muted/60',
-        isPending && 'spin-border spin-border-info',
+        isPending && 'border-info/50',
       )}
     >
       <StatusDot status={status} />

@@ -10,6 +10,7 @@ import { StageBoard } from './features/workspace/components/StageBoard';
 import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
 import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
 import { SettingsStudio } from './features/settings/components/SettingsStudio';
+import { GuideStudio } from './features/settings/components/GuideStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
 import { SessionSettingsPane } from './features/session/components/SessionSettingsPane';
 import { ToastProvider } from './app/components/Toast';
@@ -21,7 +22,6 @@ import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLaun
 import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
-import { RunsStudio } from './features/orchestration/components/RunsStudio';
 import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
@@ -70,6 +70,7 @@ export const App = () => {
   const [companionOpen, setCompanionOpen] = useState(false);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
+  const [guideStudioOpen, setGuideStudioOpen] = useState(false);
   const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
   const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
     undefined,
@@ -82,8 +83,6 @@ export const App = () => {
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
-  const [runsStudioOpen, setRunsStudioOpen] = useState(false);
-  const [runsStudioSession, setRunsStudioSession] = useState<SessionId | null>(null);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
   const [sentryStudioOpen, setSentryStudioOpen] = useState(false);
@@ -141,6 +140,7 @@ export const App = () => {
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
+    const onOpenGuide = () => setGuideStudioOpen(true);
     const onOpenGithubStudio = (event: Event) => {
       const detail = (
         event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
@@ -202,20 +202,6 @@ export const App = () => {
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
-    const onOpenRunsStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      const state = useAppStore.getState();
-      const sid = state.currentSessionId;
-      if (sid) {
-        state.setSessionStudio(sid, null);
-      }
-      setRunsStudioSession(detail?.sessionId ?? null);
-      setRunsStudioOpen(true);
-    };
     const onRevealChat = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
@@ -232,6 +218,7 @@ export const App = () => {
     const onPairDevice = () => setCompanionOpen(true);
 
     window.addEventListener('goodboy:open-settings', onOpenSettings);
+    window.addEventListener('goodboy:open-guide', onOpenGuide);
     window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -240,13 +227,13 @@ export const App = () => {
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-    window.addEventListener('goodboy:open-runs-studio', onOpenRunsStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
     window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
     return () => {
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
+      window.removeEventListener('goodboy:open-guide', onOpenGuide);
       window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -255,7 +242,6 @@ export const App = () => {
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-      window.removeEventListener('goodboy:open-runs-studio', onOpenRunsStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
@@ -742,6 +728,7 @@ export const App = () => {
           }}
         />
       ) : null}
+      {guideStudioOpen ? <GuideStudio onClose={() => setGuideStudioOpen(false)} /> : null}
       {paletteOpen ? (
         <CommandPalette
           initialQuery={palettePrefix}
@@ -765,15 +752,6 @@ export const App = () => {
           workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
           onClose={() => setWorkflowStudioOpen(false)}
-        />
-      ) : null}
-      {runsStudioOpen && currentWorkspace ? (
-        <RunsStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          sessions={currentWorkspaceSessions}
-          focusSessionId={runsStudioSession}
-          onClose={() => setRunsStudioOpen(false)}
         />
       ) : null}
       {githubStudioOpen && currentWorkspace ? (
