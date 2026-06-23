@@ -20,6 +20,7 @@ import { DogMascot } from '../../../../../shared/components/DogMascot';
 import type {
   Agent,
   AgentId,
+  ProviderName,
   ProviderRunId,
   Session,
   TelemetryRecord,
@@ -27,6 +28,7 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { ProviderContextUsage } from './ContextWindowBar';
 import {
   EMPTY_ARRAY,
   agentHasUnread,
@@ -446,6 +448,102 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);
 
+  const providerUsageByAgentId = useMemo(() => {
+    type Entry = {
+      provider: ProviderName;
+      model: string;
+      recordedAt: string;
+      inputTokens: number;
+      outputTokens: number;
+    };
+    const merge = (target: Map<ProviderName, Entry>, rec: Entry) => {
+      const e = target.get(rec.provider);
+      if (!e) {
+        target.set(rec.provider, { ...rec });
+        return;
+      }
+      e.inputTokens += rec.inputTokens;
+      e.outputTokens += rec.outputTokens;
+      if (e.recordedAt < rec.recordedAt) {
+        e.recordedAt = rec.recordedAt;
+        e.model = rec.model;
+      }
+    };
+    const telemetryByRun = new Map<string, TelemetryRecord>();
+    for (const rec of telemetry) {
+      if (rec.kind !== 'turn') {
+        continue;
+      }
+      const existing = telemetryByRun.get(rec.runId);
+      if (!existing || existing.recordedAt < rec.recordedAt) {
+        telemetryByRun.set(rec.runId, rec);
+      }
+    }
+    const map = new Map<string, Map<ProviderName, Entry>>();
+    for (const run of phaseRuns) {
+      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
+      const byProvider = new Map<ProviderName, Entry>();
+      for (const rid of runIds) {
+        const rec = telemetryByRun.get(rid);
+        if (!rec) {
+          continue;
+        }
+        merge(byProvider, {
+          provider: rec.provider,
+          model: rec.model,
+          recordedAt: rec.recordedAt,
+          inputTokens: rec.inputTokens,
+          outputTokens: rec.outputTokens,
+        });
+      }
+      map.set(run.id, byProvider);
+    }
+    const childIds = new Map<string, string[]>();
+    for (const run of phaseRuns) {
+      if (run.parentAgentId == null) {
+        continue;
+      }
+      const bucket = childIds.get(run.parentAgentId) ?? [];
+      bucket.push(run.id);
+      childIds.set(run.parentAgentId, bucket);
+    }
+    const rolled = new Set<string>();
+    const rollup = (id: string) => {
+      if (rolled.has(id)) {
+        return;
+      }
+      rolled.add(id);
+      const self = map.get(id);
+      if (!self) {
+        return;
+      }
+      for (const cid of childIds.get(id) ?? []) {
+        rollup(cid);
+        const child = map.get(cid);
+        if (!child) {
+          continue;
+        }
+        for (const ce of child.values()) {
+          merge(self, ce);
+        }
+      }
+    };
+    for (const run of phaseRuns) rollup(run.id);
+    const result = new Map<string, ReadonlyArray<ProviderContextUsage>>();
+    for (const [id, byProvider] of map) {
+      const list = [...byProvider.values()]
+        .map((e) => ({
+          provider: e.provider,
+          model: e.model,
+          inputTokens: e.inputTokens,
+          outputTokens: e.outputTokens,
+        }))
+        .sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens));
+      result.set(id, list);
+    }
+    return result;
+  }, [telemetry, phaseRuns, agentRunHistory]);
+
   const latestTelemetryByAgentId = useMemo(
     () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
     [telemetryByRunId, phaseRuns, agentRunHistory],
@@ -522,6 +620,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           index={index}
           telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
           aggregate={aggregatesByAgentId.get(run.id) ?? null}
+          contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
           turns={turnsByAgentId.get(run.id) ?? 0}
           turnsLoading={run.id === selectedAgentId && loading.transcript}
           isSelected={run.id === selectedAgentId}
@@ -723,6 +822,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                       isEditing={editingId === run.id}
                       telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
                       aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                      contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
                       turns={turnsByAgentId.get(run.id) ?? 0}
                       turnsLoading={run.id === selectedAgentId && loading.transcript}
                       onStart={() => void onStartStepAgent(run)}

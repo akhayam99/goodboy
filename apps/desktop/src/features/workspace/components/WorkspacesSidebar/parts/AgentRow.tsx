@@ -11,7 +11,7 @@ import {
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
 import { ProviderGlyph } from './ProviderGlyph';
-import { ContextWindowBar } from './ContextWindowBar';
+import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { AgentLifetime } from './AgentLifetime';
 
 type AgentRowProps = {
@@ -20,6 +20,7 @@ type AgentRowProps = {
   readonly index: number;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
+  readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly isSelected: boolean;
@@ -38,6 +39,7 @@ export function AgentRow({
   index,
   telemetry,
   aggregate,
+  contextUsage,
   turns,
   turnsLoading,
   isSelected,
@@ -205,7 +207,7 @@ export function AgentRow({
               turnsLoading={turnsLoading}
               variant="adhoc"
             />
-            <ContextWindowBar telemetry={telemetry} aggregate={aggregate} />
+            <ContextWindowBar usage={contextUsage} />
           </div>
         </div>
       </div>
