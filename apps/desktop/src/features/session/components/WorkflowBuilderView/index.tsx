@@ -118,7 +118,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const sessionPhaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   );
-  const providers = useAppStore((s) => s.providers);
+  const providers = useAppStore((s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>));
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
