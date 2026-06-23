@@ -11,6 +11,8 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
     if (!prevAgent) {
       return;
     }
+    const prevModelOverride = get().agentModelOverride;
+    const prevProviderOverride = get().agentProviderOverride;
     const applyFields = (a: Agent): Agent => {
       const { verbosity, effort, modelOverride, providerOverride, ...rest } = a;
       const nextVerbosity = fields.verbosity !== undefined ? fields.verbosity : (verbosity ?? null);
@@ -31,11 +33,29 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
     };
     set((state) => {
       const runs = state.sessionPhaseRuns[sessionId] ?? [];
+      const nextModelOverride = { ...state.agentModelOverride };
+      const nextProviderOverride = { ...state.agentProviderOverride };
+      if (fields.modelOverride !== undefined) {
+        if (fields.modelOverride != null) {
+          nextModelOverride[agentId] = fields.modelOverride;
+        } else {
+          delete nextModelOverride[agentId];
+        }
+      }
+      if (fields.providerOverride !== undefined) {
+        if (fields.providerOverride != null) {
+          nextProviderOverride[agentId] = fields.providerOverride;
+        } else {
+          delete nextProviderOverride[agentId];
+        }
+      }
       return {
         sessionPhaseRuns: {
           ...state.sessionPhaseRuns,
           [sessionId]: runs.map((r) => (r.id === agentId ? applyFields(r) : r)),
         },
+        agentModelOverride: nextModelOverride,
+        agentProviderOverride: nextProviderOverride,
       };
     });
     try {
@@ -46,6 +66,8 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
           ...state.sessionPhaseRuns,
           [sessionId]: prevRuns,
         },
+        agentModelOverride: prevModelOverride,
+        agentProviderOverride: prevProviderOverride,
       }));
       throw err;
     }

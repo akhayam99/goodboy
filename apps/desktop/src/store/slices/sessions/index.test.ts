@@ -494,6 +494,7 @@ describe('store contract', () => {
         sessionGithub: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
+        agentProviderOverride: {},
         agentKindOverride: {},
         agentDraft: {},
         diffComments: {},
@@ -845,6 +846,24 @@ describe('store contract', () => {
       await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { verbosity: 'normal' });
       const updated = store.getState().sessionPhaseRuns[SESSION_ID]?.find((r) => r.id === AGENT_ID);
       expect(updated?.verbosity).toBe('normal');
+    });
+
+    it('setAgentConfig syncs provider and model pins used by turn routing', async () => {
+      const store = await getStore();
+      const agent = buildAgent({ id: AGENT_ID });
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, {
+        providerOverride: 'cursor',
+        modelOverride: 'cursor-auto',
+      });
+      expect(store.getState().agentProviderOverride[AGENT_ID]).toBe('cursor');
+      expect(store.getState().agentModelOverride[AGENT_ID]).toBe('cursor-auto');
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, {
+        providerOverride: null,
+        modelOverride: null,
+      });
+      expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
+      expect(store.getState().agentModelOverride[AGENT_ID]).toBeUndefined();
     });
   });
 });
