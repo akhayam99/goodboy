@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCheck, Clock, GitCommit, Upload, X } from 'lucide-react';
+import { ArrowUpRight, CheckCheck, Clock, GitCommit, Upload, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
@@ -45,6 +45,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
   const dequeueResolution = useAppStore((s) => s.dequeueResolution);
   const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
 
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
   const resolvedOnGithub = useAppStore((s) =>
@@ -126,10 +127,17 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           <GitCommit size={9} aria-hidden />
           {shaShort}
         </span>
-        <span className="text-muted-foreground/80">
-          publish from "Push &amp; resolve" in context
-        </span>
+        <span className="text-muted-foreground/80">publish from the Resolve lens</span>
         <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveLens(sessionId, 'resolve')}
+            title="open the Resolve lens to publish queued comments"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            Go to Resolve
+            <ArrowUpRight size={10} aria-hidden />
+          </button>
           <button
             type="button"
             onClick={() => void pushNow()}

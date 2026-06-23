@@ -15,7 +15,6 @@ import { cn } from '@goodboy/ui';
 import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
-import { PendingResolutionsStrip } from '../../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { AGENT_KIND_DEFAULTS } from '../../../agent-kind';
 import { useAppStore } from '../../../../../store';
@@ -29,17 +28,13 @@ export const PrPane = ({ session }: PrPaneProps) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind(session.workspaceId);
   return (
-    <PaneShell
-      title="Pull request"
-      description="Review status and queued comment resolutions for this session."
-    >
+    <PaneShell title="Pull request" description="Review status for this session.">
       <div className="flex flex-col gap-3">
         {remoteKind === 'gitlab' ? (
           <GitlabMrStrip sessionId={sessionId} />
         ) : (
           <GithubPrCard session={session} />
         )}
-        <PendingResolutionsStrip sessionId={sessionId} />
       </div>
     </PaneShell>
   );

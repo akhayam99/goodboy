@@ -2,6 +2,7 @@ import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SectionHeader, cn } from '@goodboy/ui';
 import {
+  ArrowUpRight,
   Ban,
   Check,
   CheckCheck,
@@ -20,6 +21,8 @@ import { DogMascot } from '../../../../../shared/components/DogMascot';
 import type {
   Agent,
   AgentId,
+  DiffComment,
+  PrComment,
   ProviderName,
   ProviderRunId,
   Session,
@@ -39,6 +42,7 @@ import {
 import { pickNextWorkflowStep } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
+import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format';
 import {
   AGENT_KIND_DEFAULTS,
@@ -159,9 +163,17 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
       return out;
     }),
   );
+  const prComments = useAppStore(
+    (s) => s.sessionGithub[task.id]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
+  );
+  const diffComments = useAppStore(
+    (s) => s.diffComments[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<DiffComment>),
+  );
   const selectAgent = useAppStore((s) => s.selectAgent);
   const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
+  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
+  const dequeueResolution = useAppStore((s) => s.dequeueResolution);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const renameAgent = useAppStore((s) => s.renameAgent);
@@ -372,6 +384,36 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     [sorted, firstUserTextByAgentId, agentKindOverride],
   );
   const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
+  const commentByThreadId = useMemo(() => {
+    const map = new Map<string, PrComment>();
+    for (const c of prComments) {
+      if (c.threadId == null || c.inReplyToId != null) {
+        continue;
+      }
+      if (!map.has(c.threadId)) {
+        map.set(c.threadId, c);
+      }
+    }
+    return map;
+  }, [prComments]);
+  const diffCommentByAgentId = useMemo(() => {
+    const map = new Map<AgentId, DiffComment>();
+    for (const c of diffComments) {
+      if (c.consumedByAgentId != null) {
+        map.set(c.consumedByAgentId, c);
+      }
+    }
+    return map;
+  }, [diffComments]);
+  const onResolveThread = useCallback(
+    async (threadId: string) => {
+      const ok = await resolveGithubThread(task.id, threadId);
+      if (ok) {
+        await dequeueResolution(task.id, threadId);
+      }
+    },
+    [resolveGithubThread, dequeueResolution, task.id],
+  );
   const standaloneAgentCount = useMemo(
     () => adHocAgents.filter((r) => !resolverIds.has(r.id)).length,
     [adHocAgents, resolverIds],
@@ -1050,6 +1092,9 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                 label="Resolve"
               />
             )}
+            <div className="px-2 pb-1">
+              <PendingResolutionsStrip sessionId={task.id} />
+            </div>
             <ResolveCluster
               agents={resolverAgents}
               sessionId={task.id}
@@ -1058,27 +1103,47 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               resolvedThreadIds={resolvedThreadIds}
               pendingThreadIds={pendingThreadIds}
               resolverState={resolverState}
+              commentByThreadId={commentByThreadId}
+              diffCommentByAgentId={diffCommentByAgentId}
               selectedAgentId={selectedAgentId}
               expanded={forceExpanded || resolveExpanded}
               onToggle={() => setResolveExpanded((v) => !v)}
               onSelect={onPickAgent}
               onForceNext={() => void activateNextResolver(task.id)}
+              onResolveThread={onResolveThread}
             />
           </>
         ) : forceExpanded ? (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
-            <span
-              aria-hidden
-              className="flex size-12 items-center justify-center rounded-full bg-success/10"
-            >
-              <CheckCheck size={24} className="text-success" aria-hidden />
-            </span>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-foreground">Nothing to resolve</p>
-              <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-                Spawn a resolver from a pull request comment or a diff selection and it will show up
-                here.
-              </p>
+          <div className="flex flex-col gap-3">
+            <PendingResolutionsStrip sessionId={task.id} />
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
+              <span
+                aria-hidden
+                className="flex size-12 items-center justify-center rounded-full bg-success/10"
+              >
+                <CheckCheck size={24} className="text-success" aria-hidden />
+              </span>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium text-foreground">Nothing to resolve</p>
+                <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+                  Spawn a resolver from a pull request comment or a diff selection and it will show
+                  up here.
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent('goodboy:open-github-session', {
+                        detail: { sessionId: task.id },
+                      }),
+                    )
+                  }
+                  className="mt-1 inline-flex items-center justify-center gap-1 self-center rounded-lg bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
+                >
+                  Resolve PR comments
+                  <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
+                </button>
+              </div>
             </div>
           </div>
         ) : null

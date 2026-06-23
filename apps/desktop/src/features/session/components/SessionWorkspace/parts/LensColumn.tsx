@@ -50,6 +50,7 @@ type LensRow = {
   readonly tone: Tone;
   readonly count?: number;
   readonly dot?: 'attention' | 'running';
+  readonly secondaryDot?: boolean;
 };
 
 type LensGroup = {
@@ -103,6 +104,9 @@ export const LensColumn = ({
       0,
     );
   });
+  const hasPendingBatch = useAppStore(
+    (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
+  );
 
   const contextRows: ReadonlyArray<LensRow> = [
     { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
@@ -149,6 +153,7 @@ export const LensColumn = ({
           icon: MessageSquareReply,
           tone: 'success',
           count: openResolvers,
+          secondaryDot: hasPendingBatch,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],
@@ -248,15 +253,18 @@ export const LensColumn = ({
                     {row.label}
                   </span>
                   {row.count != null && row.count > 0 ? (
-                    <span
-                      className={cn(
-                        'shrink-0 rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                        row.dot === 'attention'
-                          ? 'bg-warning/15 text-warning'
-                          : 'bg-muted text-muted-foreground',
-                      )}
-                    >
-                      {row.count}
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                      <span
+                        className={cn(
+                          'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
+                          row.dot === 'attention'
+                            ? 'bg-warning/15 text-warning'
+                            : 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        {row.count}
+                      </span>
                     </span>
                   ) : row.dot ? (
                     <StatusDot
@@ -264,6 +272,8 @@ export const LensColumn = ({
                       size="sm"
                       pulsing={row.dot === 'running'}
                     />
+                  ) : row.secondaryDot ? (
+                    <StatusDot tone="accent" size="sm" />
                   ) : null}
                 </button>
               );
