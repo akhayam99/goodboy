@@ -1,5 +1,4 @@
 import type {
-  ClaudePermissionMode,
   PrMergeMethod,
   PullRequestState,
   SessionId,
@@ -11,16 +10,11 @@ import type {
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 
-// Sessions a paired phone is currently driving. Every turn a mobile command
-// triggers — kickoffs, fan-out children, scout/resolver chains — funnels
-// through `sendTurn`, which consults this set and clamps the permission mode.
-// Tracking it here (module scope, not React state) makes the choke point
-// impossible to bypass: any present or future internal `sendTurn` caller is
-// covered without having to thread a flag through every path.
-//
-// Sticky by design: a session stays confined until the desktop revokes mobile
-// access (bridge stop / device revoke). The human, not the phone, decides when
-// full power returns — so a mobile client can never quietly lift the ceiling.
+// TODO (@ak): mobile-origin session registry. The permission-mode clamp that
+// read this set was removed (desktop + mobile both run bypassPermissions).
+// Retained as the origin signal for the pending sandbox-exec confinement of
+// mobile-origin spawns; sticky until the desktop revokes via
+// clearMobileSharedSessions.
 const mobileSharedSessions = new Set<SessionId>();
 
 export const markSessionMobileShared = (sessionId: SessionId): void => {
@@ -33,20 +27,6 @@ export const isSessionMobileShared = (sessionId: SessionId): boolean =>
 export const clearMobileSharedSessions = (): void => {
   mobileSharedSessions.clear();
 };
-
-// A mobile-driven turn may never run more permissively than `default`: every
-// edit/Bash that isn't covered by a desktop-set allow-rule then requires
-// explicit desktop approval, so the phone cannot auto-approve writes that
-// escape the worktree. `plan` (read-only) is preserved when already in effect.
-//
-// TODO (@ak): the clamp gates tool *approval*, not the process. A desktop
-// allow-rule that broadly permits Bash would still let a mobile-initiated agent
-// run absolute-path commands outside the worktree (cwd doesn't constrain Bash).
-// Hard confinement needs an OS sandbox (sandbox-exec/seccomp) on mobile-origin
-// spawns — tracked as a follow-up; the clamp + worktree-scope prompt are the
-// interim guard.
-export const clampMobilePermissionMode = (mode: ClaudePermissionMode): ClaudePermissionMode =>
-  mode === 'plan' ? 'plan' : 'default';
 
 // ---------------------------------------------------------------------------
 // Mobile merge-PR gate (write path).
@@ -124,9 +104,6 @@ export const evaluateMobileMerge = (
 //      can't point at a workspace where the integration isn't wired up);
 //   3. a basic rate/abuse guard — session creation spins up a worktree + agents,
 //      so an unbounded mobile loop could exhaust disk/compute. We cap the rate.
-// The new session's permission mode is clamped exactly like sendTurn (the same
-// `clampMobilePermissionMode` choke point), so a mobile-launched session can
-// never auto-approve escaping writes.
 // ---------------------------------------------------------------------------
 
 /** Providers a phone may launch a session from. The closed set the bridge accepts. */
