@@ -2,38 +2,63 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { Agent, AgentId } from '@goodboy/types';
 
-const { extractClustersMock } = vi.hoisted(() => ({
+const { extractClustersMock, state } = vi.hoisted(() => ({
   extractClustersMock: vi.fn<(text: string) => unknown>(() => null),
+  state: {
+    selectedAgentId: {} as Record<string, AgentId>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
+    selectAgent: vi.fn(async () => undefined),
+  },
 }));
 
 vi.mock('@goodboy/core', () => ({ extractClustersFromMarker: extractClustersMock }));
-vi.mock('@goodboy/ui', () => ({
-  Markdown: ({ text }: { text: string }) => <span data-testid="md">{text}</span>,
-  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: [],
+  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
 import { ClustersCard } from './index';
 
-beforeEach(() => extractClustersMock.mockReset());
+const child = (id: string, ordinal: number, over: Partial<Agent> = {}): Agent =>
+  ({
+    id: id as AgentId,
+    sessionId: 'sess-1',
+    name: id,
+    status: 'pending',
+    kind: 'implementer',
+    parentAgentId: 'container' as AgentId,
+    ordinal,
+    ...over,
+  }) as Agent;
+
+const render2 = () => render(<ClustersCard assistantText="x" sessionId={'sess-1' as never} />);
+
+beforeEach(() => {
+  extractClustersMock.mockReset();
+  state.selectedAgentId = {};
+  state.sessionPhaseRuns = {};
+  state.selectAgent = vi.fn(async () => undefined);
+});
 afterEach(cleanup);
 
 describe('ClustersCard', () => {
   it('renders nothing when no clusters detected', () => {
     extractClustersMock.mockReturnValue(null);
-    const { container } = render(<ClustersCard assistantText="x" />);
+    const { container } = render2();
     expect(container.firstChild).toBeNull();
   });
 
   it('renders nothing for empty clusters array', () => {
     extractClustersMock.mockReturnValue([]);
-    const { container } = render(<ClustersCard assistantText="x" />);
+    const { container } = render2();
     expect(container.firstChild).toBeNull();
   });
 
   it('renders card with cluster count (singular)', () => {
     extractClustersMock.mockReturnValue([{ title: 'Auth refactor', instructions: 'move files' }]);
-    render(<ClustersCard assistantText="x" />);
+    render2();
     expect(screen.getByTestId('clusters-card')).toBeTruthy();
     expect(screen.getByText('1 cluster')).toBeTruthy();
   });
@@ -44,50 +69,43 @@ describe('ClustersCard', () => {
       { title: 'B', instructions: 'y' },
       { title: 'C', instructions: 'z' },
     ]);
-    render(<ClustersCard assistantText="x" />);
+    render2();
     expect(screen.getByText('3 clusters')).toBeTruthy();
   });
 
-  it('renders numbered cluster titles', () => {
+  it('falls back to a static, non-clickable list pre-spawn', () => {
     extractClustersMock.mockReturnValue([
       { title: 'First', instructions: 'do first' },
       { title: 'Second', instructions: 'do second' },
     ]);
-    render(<ClustersCard assistantText="x" />);
-    expect(screen.getByText('1.')).toBeTruthy();
+    render2();
     expect(screen.getByText('First')).toBeTruthy();
-    expect(screen.getByText('2.')).toBeTruthy();
     expect(screen.getByText('Second')).toBeTruthy();
+    expect(screen.getAllByText('planned')).toHaveLength(2);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('instructions hidden by default, shown on click', () => {
-    extractClustersMock.mockReturnValue([{ title: 'Setup', instructions: 'run pnpm install' }]);
-    render(<ClustersCard assistantText="x" />);
-    expect(screen.queryByTestId('md')).toBeNull();
-    fireEvent.click(screen.getByText('Setup'));
-    expect(screen.getByTestId('md').textContent).toBe('run pnpm install');
-  });
-
-  it('toggles instructions off on second click', () => {
-    extractClustersMock.mockReturnValue([{ title: 'Setup', instructions: 'run pnpm install' }]);
-    render(<ClustersCard assistantText="x" />);
-    fireEvent.click(screen.getByText('Setup'));
-    expect(screen.getByTestId('md')).toBeTruthy();
-    fireEvent.click(screen.getByText('Setup'));
-    expect(screen.queryByTestId('md')).toBeNull();
-  });
-
-  it('each cluster row toggles independently', () => {
+  it('renders live spawned agents and navigates on click', () => {
     extractClustersMock.mockReturnValue([
-      { title: 'A', instructions: 'inst-a' },
-      { title: 'B', instructions: 'inst-b' },
+      { title: 'First', instructions: 'do first' },
+      { title: 'Second', instructions: 'do second' },
     ]);
-    render(<ClustersCard assistantText="x" />);
-    fireEvent.click(screen.getByText('A'));
-    expect(screen.getByText('inst-a')).toBeTruthy();
-    expect(screen.queryByText('inst-b')).toBeNull();
-    fireEvent.click(screen.getByText('B'));
-    expect(screen.getByText('inst-a')).toBeTruthy();
-    expect(screen.getByText('inst-b')).toBeTruthy();
+    state.selectedAgentId = { 'sess-1': 'container' as AgentId };
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        child('agent-a', 1, { status: 'running' }),
+        child('agent-b', 2, { status: 'completed' }),
+      ],
+    };
+    const reveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', reveal);
+    render2();
+    expect(screen.getByText('agent-a')).toBeTruthy();
+    expect(screen.getByText('running…')).toBeTruthy();
+    expect(screen.getByText('done')).toBeTruthy();
+    fireEvent.click(screen.getByText('agent-a'));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-a');
+    expect(reveal).toHaveBeenCalled();
+    window.removeEventListener('goodboy:reveal-chat', reveal);
   });
 });

@@ -7,7 +7,10 @@ const { markOpenQuestionAnswered, removeQuestionsFromSlot } = vi.hoisted(() => (
 }));
 
 vi.mock('@goodboy/db', () => ({ markOpenQuestionAnswered }));
-vi.mock('@goodboy/core', () => ({ removeQuestionsFromSlot }));
+vi.mock('@goodboy/core', () => ({
+  removeQuestionsFromSlot,
+  wrapOpenQuestionAnswers: (body: string) => `<<oq-answers>>\n${body}\n<</oq-answers>>`,
+}));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { answerOpenQuestions } from './answerOpenQuestions';
@@ -108,6 +111,18 @@ describe('answerOpenQuestions', () => {
     removeQuestionsFromSlot.mockResolvedValue(false);
     await run(sessionId, [{ id: 'oq-1' as never, text: 'Q1?', answer: 'A1' }], null);
     expect(deps.loadSessionSlots).not.toHaveBeenCalled();
+  });
+
+  it('wraps the batch prompt in an oq-answers marker so the chat bubble is suppressed', async () => {
+    await run(
+      sessionId,
+      [{ id: 'oq-1' as never, text: 'Q1?', answer: 'A1' }],
+      'agent-1' as AgentId,
+    );
+    const turn = deps.sendTurn.mock.calls[0]![0] as { content: string };
+    expect(turn.content.startsWith('<<oq-answers>>')).toBe(true);
+    expect(turn.content).toContain('Q: Q1?');
+    expect(turn.content).toContain('A: A1');
   });
 
   it('passes agentId undefined when no target agent is given', async () => {

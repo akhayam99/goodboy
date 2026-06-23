@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronRight, GitBranch } from 'lucide-react';
+import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
 import { Divider } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -34,6 +34,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
   );
   const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_WORKFLOWS);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const selectAgent = useAppStore((s) => s.selectAgent);
 
   const workflowProgress: WorkflowProgress | null = useMemo(() => {
     if (session.workflowRuns.length === 0) {
@@ -79,6 +80,21 @@ export const ChatBreadcrumb = ({ session }: Props) => {
     }
     return phaseRuns.find((a) => a.id === selectedAgentId) ?? null;
   }, [selectedAgentId, phaseRuns]);
+
+  const parentAgent: Agent | null = useMemo(() => {
+    if (!selectedAgent?.parentAgentId) {
+      return null;
+    }
+    return phaseRuns.find((a) => a.id === selectedAgent.parentAgentId) ?? null;
+  }, [selectedAgent, phaseRuns]);
+
+  const onPickParent = () => {
+    if (!parentAgent) {
+      return;
+    }
+    void selectAgent(session.id, parentAgent.id);
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+  };
 
   const agentKind: AgentKind | null = useMemo(() => {
     if (!selectedAgent) {
@@ -133,6 +149,18 @@ export const ChatBreadcrumb = ({ session }: Props) => {
             </>
           ) : null}
         </div>
+
+        {parentAgent ? (
+          <button
+            type="button"
+            onClick={onPickParent}
+            title={`spawned by ${parentAgent.name}. go to parent`}
+            className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <CornerLeftUp size={10} aria-hidden />
+            <span className="max-w-[8rem] truncate">{parentAgent.name}</span>
+          </button>
+        ) : null}
 
         {selectedAgent && agentKind ? (
           <AgentAvatar

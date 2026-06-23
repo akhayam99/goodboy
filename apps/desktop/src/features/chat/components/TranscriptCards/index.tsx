@@ -238,7 +238,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
       {sessionId ? (
         <div className="flex flex-col items-start gap-2 empty:hidden [&:not(:empty)]:mt-2">
           <PlanChip assistantText={text} sessionId={sessionId} />
-          <ClustersCard assistantText={text} />
+          <ClustersCard assistantText={text} sessionId={sessionId} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} />
           <CommentWontfixChip assistantText={text} sessionId={sessionId} />

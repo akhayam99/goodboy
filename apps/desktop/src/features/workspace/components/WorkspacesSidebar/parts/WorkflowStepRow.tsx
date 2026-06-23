@@ -33,6 +33,7 @@ type WorkflowStepRowProps = {
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
+  readonly onResolveFirst?: () => void;
 };
 
 export function WorkflowStepRow({
@@ -54,6 +55,7 @@ export function WorkflowStepRow({
   onRenameStart,
   onRenameCommit,
   onRenameCancel,
+  onResolveFirst,
 }: WorkflowStepRowProps) {
   const isBlocked = blockReason !== null;
   const isPendingFuture = run.status === 'pending' && !isActionable;
@@ -270,6 +272,9 @@ export function WorkflowStepRow({
             onClick={(e) => {
               e.stopPropagation();
               setPendingConfirm(false);
+              if (blockReason !== 'summarizer') {
+                onResolveFirst?.();
+              }
             }}
             className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >

@@ -11,9 +11,11 @@ import {
   extractMarkers,
   extractPlanFromMarker,
   extractScoutSplit,
+  isOpenQuestionAnswerText,
   isReviewThreadId,
   mergeIntoSlot,
   stripControlMarkers,
+  wrapOpenQuestionAnswers,
 } from './extractors';
 
 function fileEdit(path: string): TurnEvent {
@@ -552,5 +554,22 @@ world`;
     expect(stripControlMarkers('che serve?<')).toBe('che serve?');
     expect(stripControlMarkers('che serve?</')).toBe('che serve?');
     expect(stripControlMarkers('che serve?</ctx')).toBe('che serve?');
+  });
+});
+
+describe('open-question answer markers', () => {
+  it('wraps a body between oq-answers markers', () => {
+    const wrapped = wrapOpenQuestionAnswers('Q1: yes\nQ2: no');
+    expect(wrapped).toBe('<<oq-answers>>\nQ1: yes\nQ2: no\n<</oq-answers>>');
+  });
+
+  it('detects wrapped answer text including leading whitespace', () => {
+    expect(isOpenQuestionAnswerText(wrapOpenQuestionAnswers('a'))).toBe(true);
+    expect(isOpenQuestionAnswerText('  \n<<oq-answers>>\nx\n<</oq-answers>>')).toBe(true);
+  });
+
+  it('returns false for ordinary text', () => {
+    expect(isOpenQuestionAnswerText('just a normal answer')).toBe(false);
+    expect(isOpenQuestionAnswerText('mentions <<oq-answers>> mid sentence')).toBe(false);
   });
 });
