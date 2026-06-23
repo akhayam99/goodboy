@@ -54,7 +54,7 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
       onClick={() => nav.selectCard(session)}
       title={`${session.goal}${reason ? ` · ${reason}` : ''}`}
       className={cn(
-        'group flex flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 transition-colors hover:bg-muted/60 hover:text-foreground',
+        'group flex flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
           ? isAutoMode
             ? 'border-danger/50'
@@ -99,7 +99,7 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
         </span>
       )}
 
-      <span className="flex items-center gap-1">
+      <span className="-mb-1 -ml-1 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
         <CardAction
           icon={<MessagesSquare size={14} aria-hidden />}
           label="open agent"
