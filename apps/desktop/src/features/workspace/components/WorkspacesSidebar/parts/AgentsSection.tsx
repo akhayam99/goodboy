@@ -13,6 +13,7 @@ import {
   Link2,
   Pause,
   Play,
+  Workflow as WorkflowIcon,
   Zap,
   ZapOff,
 } from 'lucide-react';
@@ -719,7 +720,15 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
       ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
       : 'previous';
     return (
-      <div key={run.id} className={cn('flex flex-col', isDiscarded && 'opacity-70')}>
+      <div
+        key={run.id}
+        className={cn(
+          'flex flex-col',
+          isDiscarded && 'opacity-70',
+          forceExpanded &&
+            'gap-1 rounded-lg border border-border-soft bg-elevated px-2 py-1.5 shadow-sm',
+        )}
+      >
         <div className="flex items-center gap-0.5">
           <button
             type="button"
@@ -734,6 +743,9 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
             ) : (
               <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
             )}
+            {forceExpanded ? (
+              <WorkflowIcon size={13} aria-hidden className="shrink-0 text-accent" />
+            ) : null}
             <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
               {name}
             </span>
@@ -976,7 +988,9 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               <WorkflowStartButton sessionId={task.id} variant="empty" />
             ) : (
               <>
-                <div className="flex flex-col gap-0.5">{attachedRuns.map(renderWorkflowRow)}</div>
+                <div className={cn('flex flex-col', forceExpanded ? 'gap-2' : 'gap-0.5')}>
+                  {attachedRuns.map(renderWorkflowRow)}
+                </div>
                 <WorkflowStartButton sessionId={task.id} variant="attach" />
               </>
             )
