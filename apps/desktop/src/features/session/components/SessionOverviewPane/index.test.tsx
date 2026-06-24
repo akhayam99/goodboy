@@ -80,6 +80,18 @@ const standaloneAgent = (status = 'running') => ({
   status,
 });
 
+const spawnNode = (over: Record<string, unknown> = {}) => ({
+  id: 'node-1',
+  name: 'explore the codebase',
+  kind: 'generic',
+  status: 'running',
+  costUsd: 0,
+  outputSummary: null,
+  children: [],
+  isSelected: false,
+  ...over,
+});
+
 const baseSession = (over: Partial<Session> = {}): Session =>
   ({
     id: 'sess-1',
@@ -250,6 +262,53 @@ describe('SessionOverviewPane nudges', () => {
     hooks.stage = { stage: 'attention', reason: 'PR needs review' } as SessionStageInfo;
     renderPane();
     expect(screen.getByText(/pull request needs you/i)).toBeDefined();
+  });
+});
+
+describe('SessionOverviewPane pipeline agent cards', () => {
+  it('renders one card per free agent with its name', () => {
+    runs.freeAgents = [
+      spawnNode({ id: 'a', name: 'scout the repo' }),
+      spawnNode({ id: 'b', name: 'implement feature' }),
+    ];
+    renderPane();
+    expect(screen.getByText('scout the repo')).toBeDefined();
+    expect(screen.getByText('implement feature')).toBeDefined();
+  });
+
+  it('shows the output summary line when present', () => {
+    runs.freeAgents = [spawnNode({ outputSummary: 'found the bug in auth' })];
+    renderPane();
+    expect(screen.getByText('found the bug in auth')).toBeDefined();
+  });
+
+  it('omits the summary line when outputSummary is null', () => {
+    runs.freeAgents = [spawnNode({ name: 'lonely agent', outputSummary: null })];
+    renderPane();
+    expect(screen.getByText('lonely agent')).toBeDefined();
+    expect(screen.queryByText('found the bug in auth')).toBeNull();
+  });
+
+  it('routes an agent card click to the agents lens', () => {
+    runs.freeAgents = [spawnNode({ name: 'clickable agent' })];
+    const onSelectLens = renderPane();
+    fireEvent.click(screen.getByText('clickable agent'));
+    expect(onSelectLens).toHaveBeenCalledWith('agents');
+  });
+
+  it('renders the resolve-queue summary separately from agent cards', () => {
+    runs.freeAgents = [spawnNode({ name: 'free agent' })];
+    runs.resolveQueue = [spawnNode({ id: 'r', name: 'resolver' })];
+    const onSelectLens = renderPane();
+    expect(screen.getByText('free agent')).toBeDefined();
+    expect(screen.getByText('1 in resolve queue')).toBeDefined();
+    fireEvent.click(screen.getByText('1 in resolve queue'));
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
+  });
+
+  it('hides the activity section entirely when no lanes, agents or resolvers', () => {
+    renderPane();
+    expect(screen.queryByText('Activity')).toBeNull();
   });
 });
 

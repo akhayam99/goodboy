@@ -64,6 +64,11 @@ function sessionHasUnreadIn(state: AppState, sessionId: SessionId): boolean {
   return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected));
 }
 
+function sessionHasRunningAgentIn(state: AppState, sessionId: SessionId): boolean {
+  const runs = state.sessionPhaseRuns[sessionId];
+  return runs ? runs.some((r) => r.status === 'running') : false;
+}
+
 function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
   const sessionId = session.id as SessionId;
   return deriveSessionStage({
@@ -71,6 +76,7 @@ function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
     pr: state.sessionGithub[sessionId]?.pr ?? null,
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
+    hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
   });
 }
 

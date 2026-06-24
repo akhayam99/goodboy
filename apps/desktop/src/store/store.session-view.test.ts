@@ -321,6 +321,63 @@ describe('deriveSessionStage', () => {
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
     expect(info).toEqual({ stage: 'done', reason: 'PR #1 merged' });
   });
+
+  it('idle state + running standalone agent → running', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      ...signals,
+      hasRunningAgent: true,
+    });
+    expect(info.stage).toBe('running');
+  });
+
+  it('error state + running agent → stays attention (error wins)', () => {
+    const session: Session = {
+      ...base(1),
+      state: { kind: 'error', message: 'boom', failedAt: '2024-01-01T00:00:00.000Z' as never },
+    };
+    const info = deriveSessionStage({ session, pr: null, ...signals, hasRunningAgent: true });
+    expect(info.stage).toBe('attention');
+    expect(info.reason).toBe('agent errored');
+  });
+
+  it('running agent + CI failure on live PR → running (agent outranks CI attention)', () => {
+    const pr = { ...makePr(), checks: 'failure' as const };
+    const info = deriveSessionStage({ session: base(1), pr, ...signals, hasRunningAgent: true });
+    expect(info.stage).toBe('running');
+  });
+
+  it('starting state → running', () => {
+    const session: Session = {
+      ...base(1),
+      state: { kind: 'starting', startedAt: '2024-01-01T00:00:00.000Z' as never },
+    };
+    const info = deriveSessionStage({ session, pr: null, ...signals });
+    expect(info).toEqual({ stage: 'running', reason: 'agent running' });
+  });
+
+  it('running agent outranks open questions', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      hasUnread: false,
+      openQuestionCount: 4,
+      hasRunningAgent: true,
+    });
+    expect(info.stage).toBe('running');
+  });
+
+  it('running agent on a merged PR → running, not done', () => {
+    const pr = makePr({ state: 'merged' });
+    const info = deriveSessionStage({ session: base(1), pr, ...signals, hasRunningAgent: true });
+    expect(info.stage).toBe('running');
+  });
+
+  it('hasRunningAgent omitted → defaults to false (no running promotion)', () => {
+    const info = deriveSessionStage({ session: base(1), pr: null, ...signals });
+    expect(info.stage).toBe('building');
+  });
 });
 
 describe('sortAndGroupSessions, pr grouping', () => {

@@ -5,6 +5,7 @@ type Params = {
   pr: PullRequestState | null;
   hasUnread: boolean;
   openQuestionCount: number;
+  hasRunningAgent?: boolean;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
@@ -18,11 +19,15 @@ export const deriveSessionStage = ({
   pr,
   hasUnread,
   openQuestionCount,
+  hasRunningAgent = false,
 }: Params): SessionStageInfo => {
   if (session.state.kind === 'error') {
     return { stage: 'attention', reason: 'agent errored' };
   }
   if (session.state.kind === 'running' || session.state.kind === 'starting') {
+    return { stage: 'running', reason: 'agent running' };
+  }
+  if (hasRunningAgent) {
     return { stage: 'running', reason: 'agent running' };
   }
   if (isPrLive(pr) && pr.checks === 'failure') {
