@@ -9,6 +9,7 @@ import {
 } from './slices/session-view';
 import type { SessionViewPrefs } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../shared/lib/storage-keys';
+import { STAGE_ORDER } from './slices/session-view/types';
 
 function sid(n: number): SessionId {
   return `session-${n}` as SessionId;
@@ -178,7 +179,7 @@ describe('sortAndGroupSessions, createdAt sort', () => {
 describe('sortAndGroupSessions, stage grouping', () => {
   const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 
-  it('produces groups in attention→running→review→building→done order', () => {
+  it('produces groups in building→running→attention→review→done order', () => {
     const sessions = [sid(1), sid(2), sid(3), sid(4), sid(5)].map((id) => makeSession(id));
     const result = sortAndGroupSessions(
       sessions,
@@ -192,7 +193,7 @@ describe('sortAndGroupSessions, stage grouping', () => {
         [sid(5)]: 'attention',
       },
     );
-    expect(keys(result)).toEqual(['attention', 'running', 'review', 'building', 'done']);
+    expect(keys(result)).toEqual(['building', 'running', 'attention', 'review', 'done']);
   });
 
   it('omits empty buckets', () => {
@@ -781,5 +782,24 @@ describe('sortAndGroupSessions, performance', () => {
     const elapsed = performance.now() - start;
 
     expect(elapsed).toBeLessThan(3000);
+  });
+});
+
+describe('STAGE_ORDER', () => {
+  it('defines building(0) → running(1) → attention(2) → review(3) → done(4)', () => {
+    expect(STAGE_ORDER).toEqual({
+      building: 0,
+      running: 1,
+      attention: 2,
+      review: 3,
+      done: 4,
+    });
+  });
+
+  it('sorted keys produce the expected column sequence', () => {
+    const sorted = (Object.entries(STAGE_ORDER) as Array<[string, number]>)
+      .sort((a, b) => a[1] - b[1])
+      .map(([k]) => k);
+    expect(sorted).toEqual(['building', 'running', 'attention', 'review', 'done']);
   });
 });

@@ -1,5 +1,14 @@
 import { memo, useMemo } from 'react';
-import { Bot, Code, FileDiff, SquareTerminal, type LucideIcon } from 'lucide-react';
+import {
+  Archive,
+  Bot,
+  Code,
+  FileDiff,
+  RotateCcw,
+  SquareTerminal,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
 import {
@@ -17,9 +26,20 @@ import type { BoardNavigation } from '../useBoardNavigation';
 type StageBoardCardProps = {
   readonly session: Session;
   readonly nav: BoardNavigation;
+  readonly archived?: boolean;
+  readonly onArchive?: (session: Session) => void;
+  readonly onDelete?: (session: Session) => void;
+  readonly onRestore?: (session: Session) => void;
 };
 
-export const StageBoardCard = memo(function StageBoardCard({ session, nav }: StageBoardCardProps) {
+export const StageBoardCard = memo(function StageBoardCard({
+  session,
+  nav,
+  archived,
+  onArchive,
+  onDelete,
+  onRestore,
+}: StageBoardCardProps) {
   const id = session.id as SessionId;
   const { stage, reason } = useSessionStageInfo(session);
   const isAutoMode =
@@ -51,9 +71,10 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
   return (
     <button
       type="button"
+      data-archived={archived || undefined}
       onClick={() => nav.selectCard(session)}
       className={cn(
-        'group flex flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
+        'group flex min-h-[7.25rem] flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
           ? isAutoMode
             ? 'border-danger/50'
@@ -100,31 +121,54 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
         </span>
       )}
 
-      <span className="-mb-1 -ml-1 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
+      <span className="-mb-1 -ml-1 mt-auto flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
+        {archived ? (
+          <CardAction
+            icon={RotateCcw}
+            color="text-primary"
+            label="restore"
+            onClick={() => onRestore?.(session)}
+          />
+        ) : (
+          <>
+            <CardAction
+              icon={Bot}
+              color="text-primary"
+              label="open agent"
+              onClick={() => nav.openAgent(session)}
+            />
+            <CardAction
+              icon={FileDiff}
+              color="text-info"
+              label="open diff"
+              onClick={() => nav.openDiff(session)}
+            />
+            <CardAction
+              icon={SquareTerminal}
+              color="text-muted-foreground"
+              label="open terminal"
+              onClick={() => nav.openTerminal(session)}
+            />
+            <CardAction
+              icon={Code}
+              color="text-muted-foreground"
+              label="open in editor"
+              onClick={() => nav.openIDE(session)}
+              disabled={!worktreePath}
+            />
+            <CardAction
+              icon={Archive}
+              color="text-muted-foreground"
+              label="archive"
+              onClick={() => onArchive?.(session)}
+            />
+          </>
+        )}
         <CardAction
-          icon={Bot}
-          color="text-primary"
-          label="open agent"
-          onClick={() => nav.openAgent(session)}
-        />
-        <CardAction
-          icon={FileDiff}
-          color="text-info"
-          label="open diff"
-          onClick={() => nav.openDiff(session)}
-        />
-        <CardAction
-          icon={SquareTerminal}
-          color="text-muted-foreground"
-          label="open terminal"
-          onClick={() => nav.openTerminal(session)}
-        />
-        <CardAction
-          icon={Code}
-          color="text-muted-foreground"
-          label="open in editor"
-          onClick={() => nav.openIDE(session)}
-          disabled={!worktreePath}
+          icon={Trash2}
+          color="text-danger"
+          label="delete"
+          onClick={() => onDelete?.(session)}
         />
       </span>
     </button>

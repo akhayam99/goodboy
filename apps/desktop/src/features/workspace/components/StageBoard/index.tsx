@@ -1,12 +1,16 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, Divider, Eyebrow } from '@goodboy/ui';
 import type { Session, SessionStage, WorkspaceId } from '@goodboy/types';
-import { EMPTY_ARRAY, useStageGroupedSessions } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { ArchiveSessionDialog } from '../../../session/components/ArchiveSessionDialog';
+import { DeleteSessionDialog } from '../../../session/components/DeleteSessionDialog';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
+
+type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
 
 const STAGES: ReadonlyArray<SessionStage> = (
   Object.entries(STAGE_ORDER) as Array<[SessionStage, number]>
@@ -23,6 +27,16 @@ type StageBoardProps = {
 export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoardProps) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
+  const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
+  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
+
+  const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), []);
+  const onDelete = useCallback((session: Session) => setConfirm({ kind: 'delete', session }), []);
+
+  useEffect(() => {
+    void loadArchivedSessions(workspaceId);
+  }, [loadArchivedSessions, workspaceId]);
 
   const byStage = useMemo(() => {
     const map = new Map<string, ReadonlyArray<Session>>();
@@ -74,10 +88,34 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
         <div className="flex min-h-0 flex-1 gap-4">
           {STAGES.map((stage) => (
             <div key={stage} className="flex min-w-0 flex-1">
-              <StageColumn stage={stage} sessions={byStage.get(stage) ?? EMPTY_ARRAY} nav={nav} />
+              <StageColumn
+                spec={{ kind: 'stage', stage }}
+                sessions={byStage.get(stage) ?? EMPTY_ARRAY}
+                nav={nav}
+                onArchive={onArchive}
+                onDelete={onDelete}
+                onRestore={nav.restore}
+              />
             </div>
           ))}
+          <div key="archived" className="flex min-w-0 flex-1">
+            <StageColumn
+              spec={{ kind: 'archived' }}
+              sessions={archived}
+              nav={nav}
+              onArchive={onArchive}
+              onDelete={onDelete}
+              onRestore={nav.restore}
+            />
+          </div>
         </div>
+      )}
+
+      {confirm?.kind === 'archive' && (
+        <ArchiveSessionDialog session={confirm.session} open onClose={() => setConfirm(null)} />
+      )}
+      {confirm?.kind === 'delete' && (
+        <DeleteSessionDialog session={confirm.session} open onClose={() => setConfirm(null)} />
       )}
     </div>
   );

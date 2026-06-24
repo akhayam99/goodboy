@@ -52,10 +52,10 @@ export const VALID_SORTS = new Set<SessionSortKey>(['updatedAt', 'goal', 'create
 export const VALID_GROUPS = new Set<SessionGroupKey>(['none', 'stage', 'pr']);
 
 export const STAGE_ORDER: Record<SessionStage, number> = {
-  attention: 0,
+  building: 0,
   running: 1,
-  review: 2,
-  building: 3,
+  attention: 2,
+  review: 3,
   done: 4,
 };
 
