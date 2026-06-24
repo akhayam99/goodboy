@@ -44,6 +44,7 @@ export type TranscriptItem =
       carryForwardContext: string;
       at: string;
     }
+  | { kind: 'oq_answer'; key: string }
   | { kind: 'done'; key: string }
   | {
       kind: 'permission_request';
@@ -116,6 +117,7 @@ export const reduceTranscript = (
     switch (event.kind) {
       case 'user_text':
         if (isOpenQuestionAnswerText(event.text)) {
+          items.push({ kind: 'oq_answer', key: `oq-answer-${i}` });
           break;
         }
         items.push({

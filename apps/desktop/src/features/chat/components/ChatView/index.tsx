@@ -460,6 +460,11 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                 };
 
                 rows.forEach((row, idx) => {
+                  if (row.kind === 'item' && row.item.kind === 'oq_answer') {
+                    flushOrdinal(userTurnOrdinal);
+                    userTurnOrdinal += 1;
+                    return;
+                  }
                   if (row.kind === 'item' && row.item.kind === 'user_text') {
                     flushOrdinal(userTurnOrdinal);
                     userTurnOrdinal += 1;

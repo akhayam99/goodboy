@@ -206,6 +206,133 @@ describe('ChatView', () => {
     const clusters = screen.getAllByTestId('cluster');
     expect(clusters.map((c) => c.textContent)).toEqual(['q-turn0', 'q-turn1']);
   });
+
+  it('positions OQ cluster before oq_answer boundary (temporal ordering)', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'assistant_text', key: 'a0', text: 'response' },
+      { kind: 'oq_answer', key: 'oq-a-1' },
+      { kind: 'assistant_text', key: 'a1', text: 'follow-up' },
+    ];
+    answeredQuestions.current = [
+      {
+        id: 'q-answered',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 1,
+        status: 'answered',
+        userAnswer: 'yes',
+        createdAt: '2026-06-13T00:00:01.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+
+    const clusters = screen.getAllByTestId('cluster');
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0]?.textContent).toBe('q-answered');
+  });
+
+  it('renders OQs after answer cycle at correct ordinal (no desync)', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'assistant_text', key: 'a0', text: 'asking first q' },
+      { kind: 'oq_answer', key: 'oq-a-1' },
+      { kind: 'assistant_text', key: 'a1', text: 'asking second q' },
+    ];
+    answeredQuestions.current = [
+      {
+        id: 'q1',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 1,
+        status: 'answered',
+        createdAt: '2026-06-13T00:00:01.000Z',
+      },
+    ];
+    openQuestions.current = [
+      {
+        id: 'q2',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 2,
+        status: 'open',
+        createdAt: '2026-06-13T00:00:02.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+
+    const clusters = screen.getAllByTestId('cluster');
+    expect(clusters).toHaveLength(2);
+    expect(clusters.map((c) => c.textContent)).toEqual(['q1', 'q2']);
+  });
+
+  it('stays aligned across multiple answer cycles (no cumulative drift)', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'assistant_text', key: 'a0', text: 'q1' },
+      { kind: 'oq_answer', key: 'oq-a-1' },
+      { kind: 'assistant_text', key: 'a1', text: 'q2' },
+      { kind: 'oq_answer', key: 'oq-a-2' },
+      { kind: 'assistant_text', key: 'a2', text: 'q3' },
+    ];
+    answeredQuestions.current = [
+      {
+        id: 'q1',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 1,
+        status: 'answered',
+        createdAt: '2026-06-13T00:00:01.000Z',
+      },
+      {
+        id: 'q2',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 2,
+        status: 'answered',
+        createdAt: '2026-06-13T00:00:02.000Z',
+      },
+    ];
+    openQuestions.current = [
+      {
+        id: 'q3',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 3,
+        status: 'open',
+        createdAt: '2026-06-13T00:00:03.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+
+    const clusters = screen.getAllByTestId('cluster');
+    expect(clusters.map((c) => c.textContent)).toEqual(['q1', 'q2', 'q3']);
+  });
+
+  it('advances the ordinal on an oq_answer with no matching question bucket', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'assistant_text', key: 'a0', text: 'something' },
+      { kind: 'oq_answer', key: 'oq-orphan' },
+      { kind: 'assistant_text', key: 'a1', text: 'later question' },
+    ];
+    openQuestions.current = [
+      {
+        id: 'q-after-orphan',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 2,
+        status: 'open',
+        createdAt: '2026-06-13T00:00:02.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+
+    const clusters = screen.getAllByTestId('cluster');
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0]?.textContent).toBe('q-after-orphan');
+  });
 });
 
 const clusterRuns = [
