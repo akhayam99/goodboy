@@ -24,6 +24,7 @@ import {
 import { CommentItem } from './comments/CommentItem';
 import { InlineComposer } from './comments/InlineComposer';
 import { ShowMoreBar } from './ShowMoreBar';
+import { SYNTAX_CLASS, highlightLine, languageForPath } from './highlight';
 
 type Props = {
   file: FileDiff;
@@ -180,6 +181,8 @@ export const FileDiffCard = ({
   }, [file]);
 
   const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
+
+  const lang = useMemo(() => languageForPath(file.path), [file.path]);
 
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 
@@ -486,7 +489,17 @@ export const FileDiffCard = ({
                             >
                               {linePrefix}
                             </span>
-                            {line.text}
+                            {lang
+                              ? highlightLine(line.text, lang).map((tok, ti) =>
+                                  tok.kind === 'plain' ? (
+                                    <Fragment key={ti}>{tok.text}</Fragment>
+                                  ) : (
+                                    <span key={ti} className={SYNTAX_CLASS[tok.kind]}>
+                                      {tok.text}
+                                    </span>
+                                  ),
+                                )
+                              : line.text}
                           </td>
                         </tr>
                         {lineComments.length > 0 && (
