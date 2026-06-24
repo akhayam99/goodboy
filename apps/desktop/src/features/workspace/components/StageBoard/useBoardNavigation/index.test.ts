@@ -6,6 +6,7 @@ type StoreState = {
   setCurrentSession: ReturnType<typeof vi.fn>;
   setActiveLens: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
+  unarchiveTask: ReturnType<typeof vi.fn>;
   sessionPhaseRuns: Record<string, ReadonlyArray<{ id: string }>>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
 };
@@ -14,6 +15,7 @@ const {
   setCurrentSessionMock,
   setActiveLensMock,
   selectAgentMock,
+  unarchiveTaskMock,
   openInEditorMock,
   markStepMock,
   store,
@@ -21,11 +23,13 @@ const {
   const setCurrentSessionMock = vi.fn(async () => undefined);
   const setActiveLensMock = vi.fn();
   const selectAgentMock = vi.fn(async () => undefined);
+  const unarchiveTaskMock = vi.fn(async () => undefined);
   const store: { state: StoreState } = {
     state: {
       setCurrentSession: setCurrentSessionMock,
       setActiveLens: setActiveLensMock,
       selectAgent: selectAgentMock,
+      unarchiveTask: unarchiveTaskMock,
       sessionPhaseRuns: {},
       sessionWorktrees: {},
     },
@@ -34,6 +38,7 @@ const {
     setCurrentSessionMock,
     setActiveLensMock,
     selectAgentMock,
+    unarchiveTaskMock,
     openInEditorMock: vi.fn(),
     markStepMock: vi.fn(),
     store,
@@ -64,16 +69,19 @@ function reset() {
     setCurrentSession: setCurrentSessionMock,
     setActiveLens: setActiveLensMock,
     selectAgent: selectAgentMock,
+    unarchiveTask: unarchiveTaskMock,
     sessionPhaseRuns: {},
     sessionWorktrees: {},
   };
   setCurrentSessionMock.mockClear();
   setActiveLensMock.mockClear();
   selectAgentMock.mockClear();
+  unarchiveTaskMock.mockClear();
   openInEditorMock.mockClear();
   markStepMock.mockClear();
   setCurrentSessionMock.mockResolvedValue(undefined);
   selectAgentMock.mockResolvedValue(undefined);
+  unarchiveTaskMock.mockResolvedValue(undefined);
 }
 
 describe('useBoardNavigation', () => {
@@ -112,5 +120,45 @@ describe('useBoardNavigation', () => {
     const revealed = dispatch.mock.calls.some((c) => c[0].type === 'goodboy:reveal-chat');
     expect(revealed).toBe(true);
     dispatch.mockRestore();
+  });
+
+  it('openAgent with no agents still reveals chat', async () => {
+    store.state.sessionPhaseRuns = {};
+    const dispatch = vi.spyOn(window, 'dispatchEvent');
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openAgent(session);
+    await Promise.resolve();
+    expect(selectAgentMock).not.toHaveBeenCalled();
+    const revealed = dispatch.mock.calls.some((c) => c[0].type === 'goodboy:reveal-chat');
+    expect(revealed).toBe(true);
+    dispatch.mockRestore();
+  });
+
+  it('openTerminal sets lens to terminal', async () => {
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openTerminal(session);
+    await Promise.resolve();
+    expect(setCurrentSessionMock).toHaveBeenCalledWith(SESSION_ID);
+    expect(setActiveLensMock).toHaveBeenCalledWith(SESSION_ID, 'terminal');
+  });
+
+  it('openIDE calls openInEditor with the first worktree path', () => {
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openIDE(session);
+    expect(openInEditorMock).toHaveBeenCalledWith('/tmp/wt');
+  });
+
+  it('openIDE does nothing when no worktree exists', () => {
+    store.state.sessionWorktrees = {};
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openIDE(session);
+    expect(openInEditorMock).not.toHaveBeenCalled();
+  });
+
+  it('restore unarchives the session', () => {
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.restore(session);
+    expect(unarchiveTaskMock).toHaveBeenCalledWith(SESSION_ID);
   });
 });

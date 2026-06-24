@@ -104,18 +104,24 @@ export const WorkspacesSidebar = ({
       ) : null}
 
       <div className="flex min-h-0 flex-1">
-        {currentWorkspace ? (
+        {!currentWorkspace ? (
+          <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+        ) : currentSession ? (
           <SessionActivityBar
             workspaceId={currentWorkspace.id}
             sessions={activeSessions}
             archivedSessions={archivedSessions}
-            currentSessionId={currentSession?.id ?? null}
+            currentSessionId={currentSession.id}
             onSelectSession={onSelectSession}
             onNewSession={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
             onArchivedTabOpen={onArchivedTabOpen}
           />
         ) : (
-          <NoWorkspaceEmpty onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+          <div className="flex flex-1 items-center justify-center px-6 text-center">
+            <p className="text-xs text-muted-foreground">
+              select a session from the board to see its activity
+            </p>
+          </div>
         )}
       </div>
 
