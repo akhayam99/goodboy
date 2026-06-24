@@ -132,17 +132,72 @@ function userTextEvent(text: string): TurnEvent {
   return { kind: 'user_text', runId: RUN, text, at: AT };
 }
 
-describe('reduceTranscript, open-question answer suppression', () => {
-  it('drops a user_text turn wrapped in the oq-answers marker', () => {
+function assistantTextEvent(delta: string): TurnEvent {
+  return { kind: 'assistant_text', runId: RUN, delta, at: AT };
+}
+
+describe('reduceTranscript, open-question answer boundary', () => {
+  it('emits an oq_answer marker for a user_text wrapped in oq-answers', () => {
     const items = reduceTranscript([
       userTextEvent('<<oq-answers>>\nAnswers to open questions:\n- Q: a\n  A: b\n<</oq-answers>>'),
     ]);
-    expect(items).toHaveLength(0);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.kind).toBe('oq_answer');
   });
 
   it('keeps ordinary user_text turns', () => {
     const items = reduceTranscript([userTextEvent('a normal message')]);
     expect(items).toHaveLength(1);
     expect(items[0]!.kind).toBe('user_text');
+  });
+
+  it('detects the oq-answers wrapper despite leading whitespace', () => {
+    const items = reduceTranscript([
+      userTextEvent('\n\n   <<oq-answers>>\nAnswers:\n- Q: a\n  A: b\n<</oq-answers>>'),
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.kind).toBe('oq_answer');
+  });
+
+  it('does not treat an inline mention of the marker as an answer', () => {
+    const items = reduceTranscript([userTextEvent('here is text then <<oq-answers>> later')]);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.kind).toBe('user_text');
+  });
+
+  it('carries no answer text on the oq_answer marker (pure boundary)', () => {
+    const items = reduceTranscript([
+      userTextEvent('<<oq-answers>>\nsecret answer\n<</oq-answers>>'),
+    ]);
+    const item = items[0]!;
+    expect(item.kind).toBe('oq_answer');
+    expect(Object.keys(item)).toEqual(['kind', 'key']);
+  });
+
+  it('assigns distinct keys to consecutive oq_answer markers', () => {
+    const items = reduceTranscript([
+      userTextEvent('<<oq-answers>>\na\n<</oq-answers>>'),
+      userTextEvent('<<oq-answers>>\nb\n<</oq-answers>>'),
+    ]);
+    expect(items).toHaveLength(2);
+    expect(items[0]!.kind).toBe('oq_answer');
+    expect(items[1]!.kind).toBe('oq_answer');
+    expect(items[0]!.key).not.toBe(items[1]!.key);
+  });
+
+  it('flushes buffered assistant_text before emitting the oq_answer marker', () => {
+    const events: TurnEvent[] = [
+      userTextEvent('ask me something'),
+      assistantTextEvent('here is my question'),
+      userTextEvent('<<oq-answers>>\nresolved\n<</oq-answers>>'),
+      assistantTextEvent('thanks, continuing'),
+    ];
+    const items = reduceTranscript(events);
+    expect(items.map((i) => i.kind)).toEqual([
+      'user_text',
+      'assistant_text',
+      'oq_answer',
+      'assistant_text',
+    ]);
   });
 });

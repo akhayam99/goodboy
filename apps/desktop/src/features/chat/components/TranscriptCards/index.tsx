@@ -90,6 +90,8 @@ function TranscriptCardImpl({
       return <SkillInvocationCard item={item} />;
     case 'step_transition':
       return <PhaseTransitionCard item={item} />;
+    case 'oq_answer':
+      return null;
     case 'done':
       return <Divider />;
     case 'permission_request':
