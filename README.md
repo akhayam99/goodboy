@@ -75,22 +75,21 @@ debug.
 **Cost meter that taps your shoulder.** Every session shows what it's costing
 as it runs. Goodboy nudges you before you burn Opus on a one-liner.
 
-## On the workbench
+## The board
 
-The biggest change in flight moves the home screen from a chat window to a
-board. None of it is in a release yet; it's a sizeable rewrite, landing in
-pieces.
+Home is a board, not a chat window. Open a workspace and every session is in
+front of you at once, grouped by where it stands: needs you, running, in
+review, building, done. Each card carries the goal, the live cost, the PR
+state and the agents on it, one click from the chat, the diff, the terminal or
+your editor.
 
-The shape of it: open a workspace and every session is in front of you at
-once, grouped by where it stands (needs you, running, in review, building,
-done). Each card carries the goal, the live cost, the PR state and the agent
-on it, with one click through to the chat, the diff, the terminal or your
-editor.
-
-Orchestration gets its own register too. Runs lay out as lanes across
-sessions, and subagent fan-out (a scout splitting into parallel scouts, a
-reviewer working through a batch of comments) reads as a tree instead of
-scrollback. The top bar rolls up what needs you, what's running and today's
+Open a session and an overview leads: what needs you, the workflow activity,
+the artifacts and a glance at files, agents, plans and the pull request. Chat,
+the diff, the studios and the terminal are lenses you navigate to, not a wall
+of scrollback. Click a workflow in the activity and it opens focused with the
+rest collapsed, or advance its next step without leaving the overview. The
+diff reads like an editor: syntax-highlighted for the common languages, neutral
+for the rest. The top bar rolls up what needs you, what's running and today's
 spend.
 
 ## Providers
