@@ -7,7 +7,6 @@ import {
   FileDiff,
   FileText,
   GitPullRequest,
-  LayoutDashboard,
   Layers,
   MessageSquareReply,
   SquareTerminal,
@@ -39,7 +38,6 @@ type LensColumnProps = {
   readonly session: Session;
   readonly activeLens: LensKind | null;
   readonly onSelect: (lens: LensKind) => void;
-  readonly onSelectOverview: () => void;
   readonly filesCount: number;
 };
 
@@ -58,13 +56,7 @@ type LensGroup = {
   readonly rows: ReadonlyArray<LensRow>;
 };
 
-export const LensColumn = ({
-  session,
-  activeLens,
-  onSelect,
-  onSelectOverview,
-  filesCount,
-}: LensColumnProps) => {
+export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const hasStandaloneAgent = useAppStore((s) =>
@@ -183,39 +175,9 @@ export const LensColumn = ({
     },
   ];
 
-  const overviewActive = activeLens === null;
-
   return (
     <ScrollFade className="min-h-0 flex-1">
       <nav className="flex flex-col gap-4 px-2 py-3">
-        <button
-          type="button"
-          onClick={onSelectOverview}
-          aria-current={overviewActive ? 'page' : undefined}
-          className={cn(
-            'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-            overviewActive
-              ? 'bg-foreground/[0.06] text-foreground'
-              : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
-          )}
-        >
-          <span
-            aria-hidden
-            className={cn(
-              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
-              tintClasses('neutral').bg,
-              tintClasses('neutral').ring,
-            )}
-          >
-            <LayoutDashboard size={12} aria-hidden className={tintClasses('neutral').icon} />
-          </span>
-          <span
-            className={cn('min-w-0 flex-1 truncate text-[13px]', overviewActive && 'font-medium')}
-          >
-            Overview
-          </span>
-        </button>
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
