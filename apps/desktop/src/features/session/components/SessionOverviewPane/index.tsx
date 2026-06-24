@@ -371,6 +371,7 @@ export const SessionOverviewPane = ({
   const stage = useSessionStageInfo(session);
   const workspace = useCurrentWorkspace();
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
+  const spawnAgent = useAppStore((s) => s.spawnAgent);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
   const agents = selectStandaloneAgents(
@@ -386,6 +387,17 @@ export const SessionOverviewPane = ({
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && agents.length === 0;
   const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
+
+  const openWorkflowBuilder = () => {
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-workflow-builder', {
+        detail: { sessionId: session.id as SessionId },
+      }),
+    );
+  };
+  const startAgent = () => {
+    void spawnAgent(session.id as SessionId, {});
+  };
 
   const nudges: Nudge[] = [];
   if (openCount > 0) {
@@ -512,14 +524,9 @@ export const SessionOverviewPane = ({
               icon={Workflow}
               tone="accent"
               label="New workflow"
-              onClick={() => onSelectLens('workflows')}
+              onClick={openWorkflowBuilder}
             />
-            <StartCard
-              icon={Bot}
-              tone="primary"
-              label="New agent"
-              onClick={() => onSelectLens('agents')}
-            />
+            <StartCard icon={Bot} tone="primary" label="New agent" onClick={startAgent} />
             <StartCard
               icon={MessageSquareReply}
               tone="success"

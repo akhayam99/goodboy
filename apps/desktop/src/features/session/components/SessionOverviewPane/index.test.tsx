@@ -160,12 +160,24 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     expect(screen.queryByText('At a glance')).toBeNull();
   });
 
-  it('routes each start card to its lens', () => {
-    const onSelectLens = renderPane();
+  it('opens the workflow builder directly from the new-workflow card', () => {
+    const handler = vi.fn();
+    window.addEventListener('goodboy:open-workflow-builder', handler);
+    renderPane();
     fireEvent.click(screen.getByRole('button', { name: 'New workflow' }));
-    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+    expect(handler).toHaveBeenCalledOnce();
+    expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({ sessionId: 'sess-1' });
+    window.removeEventListener('goodboy:open-workflow-builder', handler);
+  });
+
+  it('spawns an agent directly from the new-agent card', () => {
+    renderPane();
     fireEvent.click(screen.getByRole('button', { name: 'New agent' }));
-    expect(onSelectLens).toHaveBeenCalledWith('agents');
+    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', {});
+  });
+
+  it('routes the resolve card to the resolve lens', () => {
+    const onSelectLens = renderPane();
     fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
     expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
