@@ -8,7 +8,7 @@ import {
   MessageSquare,
   Sparkles,
 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { PrReview, PrReviewRequest, PullRequestState } from '@goodboy/types';
 import { isBot } from '../../../comment-threads';
 import { formatRelative, latestTerminalReviewsByAuthor } from '../lib';
@@ -25,7 +25,7 @@ type Props = {
 
 type ReviewSummary = {
   readonly label: string;
-  readonly tone: string;
+  readonly tone: Tone;
   readonly icon: ReactNode;
 };
 
@@ -48,7 +48,7 @@ const summarizeReview = (
   if (changes.length > 0) {
     return {
       label: `Changes requested by ${changes.map((r) => r.author).join(', ')}`,
-      tone: 'bg-danger/10 text-danger',
+      tone: 'danger',
       icon: <AlertCircle size={10} aria-hidden />,
     };
   }
@@ -56,27 +56,27 @@ const summarizeReview = (
     const who = approvals.length > 0 ? approvals.map((r) => r.author).join(', ') : 'reviewer';
     return {
       label: `Approved by ${who}`,
-      tone: 'bg-success/10 text-success',
+      tone: 'success',
       icon: <CheckCheck size={10} aria-hidden />,
     };
   }
   if (requests.length > 0) {
     return {
       label: 'Awaiting review',
-      tone: 'bg-info/10 text-info',
+      tone: 'info',
       icon: <CircleDashed size={10} aria-hidden />,
     };
   }
   if (reviews.some((r) => r.state === 'commented')) {
     return {
       label: 'Reviewer commented',
-      tone: 'bg-muted text-muted-foreground',
+      tone: 'neutral',
       icon: <MessageSquare size={10} aria-hidden />,
     };
   }
   return {
     label: 'No reviewer assigned',
-    tone: 'bg-muted text-muted-foreground',
+    tone: 'neutral',
     icon: <CircleSlash size={10} aria-hidden />,
   };
 };
@@ -89,13 +89,15 @@ export const ReviewPane = ({
   onSpawnFromReviewChanges,
 }: Props) => {
   const summary = summarizeReview(pr, reviews, requests);
+  const summaryTint = tintClasses(summary.tone);
   const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews]);
   return (
     <div className="flex flex-col gap-1.5">
       <div
         className={cn(
           'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
-          summary.tone,
+          summaryTint.bg,
+          summaryTint.text,
         )}
       >
         {summary.icon}

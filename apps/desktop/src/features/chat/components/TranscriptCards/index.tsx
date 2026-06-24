@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { ArrowUpRight, Check, Copy, FileEdit, ImageOff } from 'lucide-react';
-import { CopyButton, Divider, Markdown, cn, formatUsd } from '@goodboy/ui';
+import { CopyButton, Divider, Markdown, Skeleton, cn, formatUsd } from '@goodboy/ui';
 import type { AgentId, MessageAttachment, ProviderId, SessionId } from '@goodboy/types';
 import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -344,7 +344,7 @@ function AttachmentImage({
   }
 
   if (src === null) {
-    return <div className="h-28 w-28 motion-safe:animate-pulse rounded-lg bg-foreground/10" />;
+    return <Skeleton className="h-28 w-28 rounded-lg" />;
   }
 
   return (

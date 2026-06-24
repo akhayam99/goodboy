@@ -1,15 +1,19 @@
+import { useMemo } from 'react';
 import {
   Activity,
   ArrowRight,
   Bot,
+  Check,
   CheckCheck,
   CircleHelp,
+  Clock,
   FileDiff,
   FileText,
   GitPullRequest,
   Layers,
-  ListChecks,
+  MessageSquareReply,
   Pencil,
+  Play,
   SquareTerminal,
   Target,
   Terminal,
@@ -17,8 +21,17 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { Session, SessionId, SessionStage } from '@goodboy/types';
+import { Chip, cn, Divider, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
+import type {
+  Agent,
+  Session,
+  SessionId,
+  SessionStage,
+  Step,
+  Workflow as WorkflowModel,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -28,7 +41,13 @@ import {
   useSessionStageInfo,
 } from '../../../../store';
 import type { FilesTouched, LensKind } from '../../../../store';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { STAGE_TONE } from '../../session-stage';
+import { outcomeWord, type SpawnNodeStatus } from '../../../orchestration/components/SpawnTree/lib';
+import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
+import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
+import { pickNextWorkflowStep } from '../../../workflows/components/WorkflowNextStepCta';
+import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
+import { AgentKindChip } from '../AgentKindChip';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
@@ -54,25 +73,6 @@ const STAGE_LABEL: Record<SessionStage, string> = {
   done: 'Done',
 };
 
-const STAGE_DOT: Record<SessionStage, string> = {
-  attention: 'bg-warning',
-  running: 'bg-info motion-safe:animate-pulse',
-  review: 'bg-primary',
-  building: 'bg-muted-foreground',
-  done: 'bg-success',
-};
-
-type Tone = 'primary' | 'success' | 'info' | 'warning' | 'accent' | 'neutral';
-
-const TONE: Record<Tone, { readonly icon: string; readonly chip: string }> = {
-  primary: { icon: 'text-primary', chip: 'bg-primary/10 ring-primary/20' },
-  success: { icon: 'text-success', chip: 'bg-success/10 ring-success/20' },
-  info: { icon: 'text-info', chip: 'bg-info/10 ring-info/20' },
-  warning: { icon: 'text-warning', chip: 'bg-warning/10 ring-warning/20' },
-  accent: { icon: 'text-accent', chip: 'bg-accent/10 ring-accent/20' },
-  neutral: { icon: 'text-muted-foreground', chip: 'bg-muted ring-border-soft' },
-};
-
 type Nudge = {
   readonly icon: LucideIcon;
   readonly label: string;
@@ -80,12 +80,13 @@ type Nudge = {
   readonly lens: LensKind;
 };
 
-type Stat = {
+type Metric = {
   readonly kind: LensKind;
   readonly icon: LucideIcon;
   readonly tone: Tone;
   readonly value: string;
   readonly label: string;
+  readonly active: boolean;
   readonly alert?: boolean;
 };
 
@@ -98,8 +99,269 @@ const CONTEXT_LINKS: ReadonlyArray<{
   { kind: 'goal', icon: Target, tone: 'primary', label: 'Goal' },
   { kind: 'decisions', icon: CheckCheck, tone: 'success', label: 'Decisions' },
   { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Last output' },
+  { kind: 'scripts', icon: Terminal, tone: 'info', label: 'Scripts' },
   { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
 ];
+
+const isGhostStep = (status: SpawnNodeStatus): boolean =>
+  status === 'planned' || status === 'queued';
+
+const StepBadge = ({
+  step,
+  onAdvance,
+}: {
+  readonly step: StepModel;
+  readonly onAdvance?: () => void;
+}) => {
+  const ghost = isGhostStep(step.status);
+  const statusIcon = onAdvance ? (
+    <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+      <Play size={8} aria-hidden className="text-primary" fill="currentColor" />
+    </span>
+  ) : step.status === 'running' ? (
+    <StatusDot tone="info" size="md" pulsing />
+  ) : step.status === 'done' ? (
+    <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
+      <Check size={9} aria-hidden className="text-success" />
+    </span>
+  ) : step.status === 'stalled' ? (
+    <span className="size-1.5 rounded-full bg-danger" aria-hidden />
+  ) : (
+    <Clock size={11} aria-hidden className="text-muted-foreground/60" />
+  );
+  const inner = (
+    <>
+      <span className="flex size-3.5 shrink-0 items-center justify-center">{statusIcon}</span>
+      <AgentKindChip
+        kind={step.kind}
+        muted={ghost && onAdvance == null}
+        title={`${step.name || ''} ${ghost ? 'pending' : outcomeWord(step.status)}`.trim()}
+      />
+    </>
+  );
+  if (onAdvance) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onAdvance();
+        }}
+        title={`start ${step.name || 'this step'}`}
+        className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-primary/40 transition-colors hover:bg-primary/10"
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <span className="inline-flex shrink-0 items-center gap-1">{inner}</span>;
+};
+
+type LaneAdvance = {
+  readonly workflow: WorkflowModel;
+  readonly runs: ReadonlyArray<Agent>;
+  readonly hasOpenQuestions: boolean;
+  readonly onAdvance: (step: Step) => void | Promise<void>;
+};
+
+const PipelineLane = ({
+  lane,
+  onOpen,
+  advance,
+}: {
+  readonly lane: RunLaneModel;
+  readonly onOpen: () => void;
+  readonly advance?: LaneAdvance;
+}) => {
+  const done = lane.steps.filter((s) => s.status === 'done').length;
+  const nextStep = advance
+    ? pickNextWorkflowStep(advance.workflow, advance.runs, {
+        hasOpenQuestions: advance.hasOpenQuestions,
+      })
+    : null;
+  return (
+    <div className="group flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 shadow-sm transition-colors hover:border-border">
+      <button type="button" onClick={onOpen} className="flex w-full items-center gap-2 text-left">
+        <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          {lane.workflowName}
+        </span>
+        {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
+        <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
+          {done}/{lane.steps.length}
+        </span>
+        <ArrowRight
+          size={14}
+          aria-hidden
+          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+        />
+      </button>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        {lane.steps.map((step) => (
+          <StepBadge
+            key={step.stepId}
+            step={step}
+            onAdvance={
+              nextStep && advance && step.stepId === nextStep.id
+                ? () => void advance.onAdvance(nextStep)
+                : undefined
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const SummaryRow = ({
+  icon: Icon,
+  tone,
+  label,
+  onClick,
+}: {
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+  readonly onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border"
+  >
+    <Icon size={14} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
+    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
+    <ArrowRight
+      size={14}
+      aria-hidden
+      className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+    />
+  </button>
+);
+
+const StartCard = ({
+  icon: Icon,
+  tone,
+  label,
+  onClick,
+}: {
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+  readonly onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors hover:border-border"
+  >
+    <span
+      aria-hidden
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
+        tintClasses(tone).bg,
+        tintClasses(tone).ring,
+      )}
+    >
+      <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
+    </span>
+    <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
+  </button>
+);
+
+type PipelineSectionProps = {
+  readonly session: Session;
+  readonly workspaceId: WorkspaceId;
+  readonly onSelectLens: (lens: LensKind) => void;
+};
+
+const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSectionProps) => {
+  const sessionList = useMemo(() => [session], [session]);
+  const { lanes, freeAgents, resolveQueue } = useWorkspaceRuns(workspaceId, sessionList);
+  const sessionId = session.id as SessionId;
+  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
+  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
+  const phaseRuns = useAppStore(
+    (s) => s.sessionPhaseRuns?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
+  );
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates?.[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
+  );
+  const sessionWorkflows = useAppStore(
+    (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
+  );
+  const openQuestions = useSessionOpenQuestions(sessionId);
+
+  const workflowById = useMemo(() => {
+    const m = new Map<string, WorkflowModel>();
+    for (const w of phaseTemplates) m.set(w.id, w);
+    for (const w of sessionWorkflows) m.set(w.id, w);
+    return m;
+  }, [phaseTemplates, sessionWorkflows]);
+
+  if (lanes.length === 0 && freeAgents.length === 0 && resolveQueue.length === 0) {
+    return null;
+  }
+
+  const open = (runId: string) => {
+    setFocusedWorkflowRun(sessionId, runId);
+    onSelectLens('workflows');
+  };
+
+  const advanceFor = (runId: string): LaneAdvance | undefined => {
+    const run = session.workflowRuns.find((r) => r.id === runId);
+    const workflow = run ? workflowById.get(run.workflowId) : undefined;
+    if (!run || !workflow) {
+      return undefined;
+    }
+    const runs = phaseRuns.filter(
+      (r) => r.workflowRunId === runId && r.stepId != null && r.parentAgentId == null,
+    );
+    return {
+      workflow,
+      runs,
+      hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+      onAdvance: async (step) => {
+        const agent = runs.find((r) => r.stepId === step.id);
+        if (agent?.status === 'pending') {
+          await activateWorkflowAgent(sessionId, agent.id);
+        }
+      },
+    };
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
+      <div className="flex flex-col gap-2">
+        {lanes.map((lane) => (
+          <PipelineLane
+            key={lane.runId}
+            lane={lane}
+            onOpen={() => open(lane.runId)}
+            advance={advanceFor(lane.runId)}
+          />
+        ))}
+        {freeAgents.length > 0 ? (
+          <SummaryRow
+            icon={Bot}
+            tone="primary"
+            label={`${freeAgents.length} ${freeAgents.length === 1 ? 'agent' : 'agents'}`}
+            onClick={() => onSelectLens('agents')}
+          />
+        ) : null}
+        {resolveQueue.length > 0 ? (
+          <SummaryRow
+            icon={MessageSquareReply}
+            tone="success"
+            label={`${resolveQueue.length} in resolve queue`}
+            onClick={() => onSelectLens('resolve')}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 export const SessionOverviewPane = ({
   session,
@@ -117,13 +379,6 @@ export const SessionOverviewPane = ({
   );
   const runningAgents = agents.filter((a) => a.status === 'running').length;
   const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
-  const runningScripts = useAppStore((s) => {
-    const runs = s.scriptRuns[session.id];
-    if (!runs) {
-      return 0;
-    }
-    return Object.values(runs).filter((r) => r.status === 'pending').length;
-  });
   const hasPr = useAppStore(
     (s) => s.sessionGithub[session.id]?.pr != null || s.sessionGitlabMr[session.id]?.mr != null,
   );
@@ -131,6 +386,7 @@ export const SessionOverviewPane = ({
   const openCount = openQuestions.length;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && agents.length === 0;
+  const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -138,6 +394,9 @@ export const SessionOverviewPane = ({
         detail: { sessionId: session.id as SessionId },
       }),
     );
+  };
+  const startAgent = () => {
+    void spawnAgent(session.id as SessionId, {});
   };
 
   const nudges: Nudge[] = [];
@@ -167,77 +426,58 @@ export const SessionOverviewPane = ({
     });
   }
 
-  const stats: Stat[] = [
-    {
-      kind: 'workflows',
-      icon: Layers,
-      tone: 'accent',
-      value: String(activeWorkflows),
-      label: 'active workflows',
-    },
-    {
-      kind: 'agents',
-      icon: Bot,
-      tone: 'primary',
-      value:
-        agents.length === 0
-          ? 'None'
-          : runningAgents > 0
-            ? `${runningAgents}/${agents.length}`
-            : String(agents.length),
-      label: runningAgents > 0 ? 'agents running' : 'agents',
-      alert: attention.active,
-    },
+  const metrics: Metric[] = [
     {
       kind: 'files',
       icon: FileDiff,
       tone: 'info',
       value: String(filesTouched.count),
-      label: filesTouched.count === 1 ? 'file changed' : 'files changed',
+      label: filesTouched.count === 1 ? 'file' : 'files',
+      active: filesTouched.count > 0,
+    },
+    {
+      kind: 'agents',
+      icon: Bot,
+      tone: 'primary',
+      value: runningAgents > 0 ? `${runningAgents}/${agents.length}` : String(agents.length),
+      label: runningAgents > 0 ? 'running' : 'agents',
+      active: agents.length > 0,
+      alert: attention.active,
     },
     {
       kind: 'plans',
       icon: FileText,
       tone: 'success',
       value: String(activePlans),
-      label: 'active plans',
-    },
-    {
-      kind: 'scripts',
-      icon: Terminal,
-      tone: 'info',
-      value: runningScripts > 0 ? String(runningScripts) : '0',
-      label: runningScripts > 0 ? 'scripts running' : 'scripts',
-    },
-    {
-      kind: 'pr',
-      icon: GitPullRequest,
-      tone: 'accent',
-      value: hasPr ? 'Open' : '—',
-      label: 'pull request',
+      label: activePlans === 1 ? 'plan' : 'plans',
+      active: activePlans > 0,
     },
     {
       kind: 'questions',
       icon: CircleHelp,
       tone: 'warning',
       value: String(openCount),
-      label: 'open questions',
+      label: openCount === 1 ? 'question' : 'questions',
+      active: openCount > 0,
       alert: openCount > 0,
+    },
+    {
+      kind: 'pr',
+      icon: GitPullRequest,
+      tone: 'accent',
+      value: hasPr ? 'Open' : 'None',
+      label: 'pull request',
+      active: hasPr,
     },
   ];
 
   return (
-    <ScrollFade className="h-full px-8 py-7">
-      <div className="animate-fade-in mx-auto flex max-w-2xl flex-col gap-6">
+    <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
+      <div className="animate-fade-in mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className={cn('size-2 shrink-0 rounded-full', STAGE_DOT[stage.stage])}
-            />
-            <span className="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
-              {STAGE_LABEL[stage.stage]}
-            </span>
+            <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
+            <Eyebrow label={STAGE_LABEL[stage.stage]} />
           </div>
           <div className="group/goal flex items-start gap-2">
             <h1 className="text-balance text-xl font-semibold leading-snug text-foreground">
@@ -277,11 +517,28 @@ export const SessionOverviewPane = ({
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <Eyebrow label="Start" muted className="px-0.5 font-medium" />
+          <div className="grid grid-cols-3 gap-2">
+            <StartCard
+              icon={Workflow}
+              tone="accent"
+              label="New workflow"
+              onClick={openWorkflowBuilder}
+            />
+            <StartCard icon={Bot} tone="primary" label="New agent" onClick={startAgent} />
+            <StartCard
+              icon={MessageSquareReply}
+              tone="success"
+              label="Resolve"
+              onClick={() => onSelectLens('resolve')}
+            />
+          </div>
+        </div>
+
         {nudges.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-              Needs you
-            </span>
+            <Eyebrow label="Needs you" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-1.5">
               {nudges.map((nudge) => (
                 <button
@@ -310,127 +567,58 @@ export const SessionOverviewPane = ({
               ))}
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-sm text-muted-foreground shadow-sm">
-            <ListChecks size={15} aria-hidden className="shrink-0 text-success" />
-            <span>Nothing needs you. Pick a lens to dig in.</span>
-          </div>
-        )}
+        ) : null}
 
-        {isFresh ? (
+        {workspace ? (
+          <PipelineSection
+            session={session}
+            workspaceId={workspace.id}
+            onSelectLens={onSelectLens}
+          />
+        ) : null}
+
+        {!isFresh && nudges.length === 0 && !isRunning ? (
+          <span className="px-0.5 text-2xs text-muted-foreground/70">
+            All clear, nothing running.
+          </span>
+        ) : null}
+
+        {!isFresh ? (
           <div className="flex flex-col gap-2">
-            <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-              Get started
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={openWorkflowBuilder}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                    TONE.accent.chip,
-                  )}
-                >
-                  <Workflow size={16} aria-hidden className={TONE.accent.icon} />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-semibold leading-tight text-foreground">
-                    Create a workflow
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Chain agents into steps
-                  </span>
-                </span>
-                <ArrowRight
-                  size={14}
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-                />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  void spawnAgent(session.id as SessionId, {});
-                }}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                    TONE.primary.chip,
-                  )}
-                >
-                  <Bot size={16} aria-hidden className={TONE.primary.icon} />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-semibold leading-tight text-foreground">
-                    Spawn an agent
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Start a one-off session
-                  </span>
-                </span>
-                <ArrowRight
-                  size={14}
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-                />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-              At a glance
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              {stats.map((stat) => (
+            <Eyebrow label="At a glance" muted className="px-0.5 font-medium" />
+            <div className="flex flex-wrap items-stretch gap-1.5">
+              {metrics.map((metric) => (
                 <button
-                  key={stat.kind}
+                  key={metric.kind}
                   type="button"
-                  onClick={() => onSelectLens(stat.kind)}
+                  onClick={() => onSelectLens(metric.kind)}
                   className={cn(
-                    'group flex items-center gap-3 rounded-lg border bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors',
-                    stat.alert
+                    'group inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-left transition-colors',
+                    metric.alert
                       ? 'border-warning/40 hover:border-warning/60'
-                      : 'border-border-soft hover:border-border',
+                      : 'border-border-soft hover:border-border hover:bg-foreground/[0.02]',
+                    !metric.active && 'opacity-55',
                   )}
                 >
-                  <span
+                  <metric.icon
+                    size={13}
                     aria-hidden
-                    className={cn(
-                      'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                      TONE[stat.tone].chip,
-                    )}
-                  >
-                    <stat.icon size={16} aria-hidden className={TONE[stat.tone].icon} />
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-lg font-semibold leading-none text-foreground tabular-nums">
-                      {stat.value}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">{stat.label}</span>
-                  </span>
-                  <ArrowRight
-                    size={14}
-                    aria-hidden
-                    className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+                    className={cn('shrink-0', tintClasses(metric.tone).icon)}
                   />
+                  <span className="text-sm font-semibold leading-none text-foreground tabular-nums">
+                    {metric.value}
+                  </span>
+                  <span className="text-2xs text-muted-foreground">{metric.label}</span>
                 </button>
               ))}
             </div>
           </div>
-        )}
+        ) : null}
+
+        <Divider />
 
         <div className="flex flex-col gap-2">
-          <span className="px-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-            Jump to
-          </span>
+          <Eyebrow label="Jump to" muted className="px-0.5 font-medium" />
           <div className="flex flex-wrap gap-1.5">
             {CONTEXT_LINKS.map((link) => (
               <button
@@ -439,7 +627,7 @@ export const SessionOverviewPane = ({
                 onClick={() => onSelectLens(link.kind)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft bg-background px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-foreground/[0.03] hover:text-foreground"
               >
-                <link.icon size={13} aria-hidden className={TONE[link.tone].icon} />
+                <link.icon size={13} aria-hidden className={tintClasses(link.tone).icon} />
                 {link.label}
               </button>
             ))}

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState, SectionHeader } from '@goodboy/ui';
-import { Inbox, Loader2, MessagesSquare, Search } from 'lucide-react';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
+import { Inbox, MessagesSquare, Search } from 'lucide-react';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import type { GitlabIssueGroup } from './useGitlabIssues';
 
@@ -60,8 +59,19 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
       </div>
 
       {loading && groups.length === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground/60">
-          <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />
+        <div
+          className="flex min-h-0 flex-1 flex-col gap-0.5 px-3 pb-3"
+          role="status"
+          aria-label="Loading issues"
+        >
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2.5 px-2.5 py-2">
+              <Skeleton className="size-1.5 shrink-0 rounded-full" />
+              <Skeleton className="h-3 w-8 shrink-0 rounded" />
+              <Skeleton className="h-3 flex-1 rounded" />
+              <Skeleton className="h-3 w-7 shrink-0 rounded" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="px-3 pb-3">
@@ -80,7 +90,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
           />
         </div>
       ) : (
-        <ScrollFade className="min-h-0 flex-1">
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
           <div className="flex flex-col gap-3 px-3 pb-3">
             {filtered.map((group) => (
               <div key={group.key} className="flex flex-col gap-1">

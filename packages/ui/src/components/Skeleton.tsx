@@ -1,14 +1,18 @@
+import type { CSSProperties } from 'react';
 import { cn } from '../cn';
 
 type SkeletonProps = {
   className?: string;
+  style?: CSSProperties;
 };
 
-export const Skeleton = ({ className }: SkeletonProps) => {
-  // Bare placeholder bar: decorative. A status live region belongs on the
-  // composite wrapper, not on every bar, or clusters announce "Loading" N times.
+export const Skeleton = ({ className, style }: SkeletonProps) => {
   return (
-    <div className={cn('motion-safe:animate-pulse rounded bg-muted', className)} aria-hidden />
+    <div
+      className={cn('motion-safe:animate-pulse rounded bg-muted', className)}
+      style={style}
+      aria-hidden
+    />
   );
 };
 

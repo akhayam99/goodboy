@@ -14,7 +14,13 @@ type Store = {
   sessionGitlabMr: Record<string, { mr?: unknown }>;
 };
 
-const { store, hooks } = vi.hoisted(() => ({
+type Runs = {
+  lanes: ReadonlyArray<unknown>;
+  freeAgents: ReadonlyArray<unknown>;
+  resolveQueue: ReadonlyArray<unknown>;
+};
+
+const { store, hooks, runs } = vi.hoisted(() => ({
   store: {
     sessionBranches: {} as Record<string, string>,
     spawnAgent: vi.fn(async () => undefined),
@@ -24,11 +30,12 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
   } as Store,
   hooks: {
-    workspace: { name: 'My workspace' } as Workspace | null,
+    workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,
     openQuestions: [] as ReadonlyArray<OpenQuestion>,
     plans: [] as ReadonlyArray<{ status: string }>,
     stage: { stage: 'building', reason: '' } as SessionStageInfo,
   },
+  runs: { lanes: [], freeAgents: [], resolveQueue: [] } as Runs,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -40,9 +47,17 @@ vi.mock('../../../../store', () => ({
   useSessionStageInfo: () => hooks.stage,
 }));
 
-vi.mock('../../../../shared/components/ScrollFade', () => ({
-  ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({
+  useWorkspaceRuns: () => runs,
 }));
+
+vi.mock('@goodboy/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  return {
+    ...actual,
+    ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  };
+});
 
 vi.mock('../../../workspace/components/SessionDetailPanel/SummarizerBadge', () => ({
   SummarizerBadge: () => <span data-testid="summarizer-badge" />,
@@ -95,10 +110,13 @@ beforeEach(() => {
   store.scriptRuns = {};
   store.sessionGithub = {};
   store.sessionGitlabMr = {};
-  hooks.workspace = { name: 'My workspace' } as Workspace;
+  hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
   hooks.openQuestions = [];
   hooks.plans = [];
   hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
+  runs.lanes = [];
+  runs.freeAgents = [];
+  runs.resolveQueue = [];
 });
 afterEach(cleanup);
 
@@ -132,29 +150,43 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
   });
 });
 
-describe('SessionOverviewPane guided empty-state (cluster B)', () => {
-  it('shows the get-started CTAs and hides the stats grid when fresh', () => {
+describe('SessionOverviewPane start row (cluster B)', () => {
+  it('always shows the start entry cards and hides the metrics strip when fresh', () => {
     renderPane();
-    expect(screen.getByText('Get started')).toBeDefined();
-    expect(screen.getByRole('button', { name: /create a workflow/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /spawn an agent/i })).toBeDefined();
+    expect(screen.getByText('Start')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
 
-  it('dispatches the workflow-builder event scoped to the session', () => {
+  it('opens the workflow builder directly from the new-workflow card', () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-workflow-builder', handler);
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /create a workflow/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'New workflow' }));
     expect(handler).toHaveBeenCalledOnce();
     expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({ sessionId: 'sess-1' });
     window.removeEventListener('goodboy:open-workflow-builder', handler);
   });
 
-  it('spawns an agent for the session from the second CTA', () => {
+  it('spawns an agent directly from the new-agent card', () => {
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /spawn an agent/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'New agent' }));
     expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', {});
+  });
+
+  it('routes the resolve card to the resolve lens', () => {
+    const onSelectLens = renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
+  });
+
+  it('keeps the start cards once work exists', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+    renderPane();
+    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
   });
 
   it('treats discarded workflow runs as not active for freshness', () => {
@@ -163,16 +195,16 @@ describe('SessionOverviewPane guided empty-state (cluster B)', () => {
         workflowRuns: [{ discardedAt: '2026-06-22T11:00:00.000Z' }],
       } as unknown as Partial<Session>),
     );
-    expect(screen.getByText('Get started')).toBeDefined();
+    expect(screen.queryByText('At a glance')).toBeNull();
   });
 });
 
-describe('SessionOverviewPane stats grid', () => {
+describe('SessionOverviewPane at-a-glance strip', () => {
   beforeEach(() => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
   });
 
-  it('renders the at-a-glance grid and hides the get-started CTAs once work exists', () => {
+  it('renders the metrics strip and hides the get-started CTAs once work exists', () => {
     renderPane();
     expect(screen.getByText('At a glance')).toBeDefined();
     expect(screen.queryByText('Get started')).toBeNull();
@@ -181,18 +213,18 @@ describe('SessionOverviewPane stats grid', () => {
   it('reports running agents as a ratio', () => {
     renderPane();
     expect(screen.getByText('1/1')).toBeDefined();
-    expect(screen.getByText('agents running')).toBeDefined();
+    expect(screen.getByText('running')).toBeDefined();
   });
 
   it('uses the singular files label for a single change', () => {
     renderPane(baseSession(), vi.fn(), { count: 1 } as unknown as FilesTouched);
-    expect(screen.getByText('file changed')).toBeDefined();
+    expect(screen.getByText('file')).toBeDefined();
   });
 
-  it('selects the lens when a stat card is clicked', () => {
+  it('selects the lens when a metric is clicked', () => {
     const onSelectLens = renderPane();
-    fireEvent.click(screen.getByText('active workflows'));
-    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+    fireEvent.click(screen.getByText('files'));
+    expect(onSelectLens).toHaveBeenCalledWith('files');
   });
 });
 
@@ -208,9 +240,9 @@ describe('SessionOverviewPane nudges', () => {
     expect(onSelectLens).toHaveBeenCalledWith('questions');
   });
 
-  it('shows the calm fallback when nothing needs the user', () => {
+  it('omits the needs-you section when nothing needs the user', () => {
     renderPane();
-    expect(screen.getByText(/nothing needs you/i)).toBeDefined();
+    expect(screen.queryByText('Needs you')).toBeNull();
   });
 
   it('raises an attention nudge for a pull request', () => {

@@ -1,5 +1,5 @@
 import { CheckCheck, ExternalLink, Sparkles } from 'lucide-react';
-import { cn, Markdown } from '@goodboy/ui';
+import { cn, Markdown, StatusDot } from '@goodboy/ui';
 import { type CommentThread, isBot } from '../../../comment-threads';
 import { formatRelative, TAB_ICON_BTN } from '../lib';
 import { Avatar } from '../parts/Avatar';
@@ -33,9 +33,9 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
         {status === 'resolved' ? (
           <CheckCheck size={11} className="text-success" aria-hidden />
         ) : status === 'open' ? (
-          <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+          <StatusDot tone="warning" size="sm" />
         ) : (
-          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+          <StatusDot tone="neutral" size="sm" />
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

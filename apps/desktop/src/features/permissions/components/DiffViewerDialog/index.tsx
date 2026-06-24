@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { CheckCircle2, FileEdit, Loader2 } from 'lucide-react';
-import { Dialog, ScrollFade } from '@goodboy/ui';
+import { CheckCircle2, FileEdit } from 'lucide-react';
+import { Dialog, Divider, ScrollFade, Skeleton } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -62,6 +62,11 @@ type DiffViewerPaneProps = DiffViewerContentProps & {
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
+
+const DIFF_SKELETON_CARDS: ReadonlyArray<ReadonlyArray<string>> = [
+  ['72%', '54%', '88%', '40%', '66%', '30%'],
+  ['60%', '82%', '46%', '70%'],
+];
 
 const viewStorageKey = (sessionId: SessionId | undefined): string | null =>
   sessionId ? `${STORAGE_PREFIXES.diffView}${sessionId}` : null;
@@ -304,6 +309,7 @@ const DiffViewerContent = ({
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const sendTurn = useAppStore((s) => s.sendTurn);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
 
   useEffect(() => {
@@ -578,6 +584,7 @@ const DiffViewerContent = ({
     if (!sessionId) {
       return;
     }
+    setActiveLens(sessionId, 'resolve');
     await selectAgent(sessionId, agentId);
     onClose();
   };
@@ -654,9 +661,28 @@ const DiffViewerContent = ({
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {loading ? (
-          <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden />
-            loading diff…
+          <div className="flex min-h-0 flex-1 flex-col gap-4 p-4" aria-label="Loading diff">
+            {DIFF_SKELETON_CARDS.map((lines, ci) => (
+              <div
+                key={ci}
+                className="flex flex-col overflow-hidden rounded-md border border-border-soft"
+              >
+                <div className="flex items-center gap-2 px-3 py-1.5">
+                  <Skeleton className="h-3 w-40 rounded" />
+                  <div className="flex-1" />
+                  <Skeleton className="h-3 w-10 rounded" />
+                </div>
+                <Divider />
+                <div className="flex flex-col gap-1.5 p-3">
+                  {lines.map((w, li) => (
+                    <div key={li} className="flex items-center gap-3">
+                      <Skeleton className="h-3 w-8 shrink-0 rounded" />
+                      <Skeleton className="h-3 rounded" style={{ width: w }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCheck, Clock, GitCommit, Loader2, Upload, X } from 'lucide-react';
+import { ArrowUpRight, CheckCheck, Clock, GitCommit, Upload, X } from 'lucide-react';
+import { cn } from '@goodboy/ui';
 import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -44,6 +45,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
   const dequeueResolution = useAppStore((s) => s.dequeueResolution);
   const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
 
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
   const resolvedOnGithub = useAppStore((s) =>
@@ -125,19 +127,28 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           <GitCommit size={9} aria-hidden />
           {shaShort}
         </span>
-        <span className="text-muted-foreground/80">
-          publish from "Push &amp; resolve" in context
-        </span>
+        <span className="text-muted-foreground/80">publish from the Resolve lens</span>
         <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveLens(sessionId, 'resolve')}
+            title="open the Resolve lens to publish queued comments"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            Go to Resolve
+            <ArrowUpRight size={10} aria-hidden />
+          </button>
           <button
             type="button"
             onClick={() => void pushNow()}
             disabled={busy}
             title="push and resolve this one now"
-            className="inline-flex items-center gap-1 rounded-full bg-info px-2 py-0.5 text-[10px] font-semibold text-info-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className={cn(
+              'relative inline-flex items-center gap-1 rounded-full bg-info px-2 py-0.5 text-[10px] font-semibold text-info-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
+              busy && 'animate-border-pulse',
+            )}
           >
-            {busy ? <Loader2 size={9} aria-hidden className="motion-safe:animate-spin" /> : null}
-            Push now
+            {busy ? 'Pushing…' : 'Push now'}
           </button>
           <button
             type="button"
@@ -182,14 +193,13 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           data-testid="comment-resolved-confirm"
           aria-label="push and mark as solved now"
           title="push and resolve this thread immediately"
-          className="inline-flex items-center gap-1 rounded-full border border-info/40 px-2 py-0.5 text-[10px] font-semibold text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? (
-            <Loader2 size={9} aria-hidden className="motion-safe:animate-spin" />
-          ) : (
-            <Upload size={9} aria-hidden />
+          className={cn(
+            'relative inline-flex items-center gap-1 rounded-full border border-info/40 px-2 py-0.5 text-[10px] font-semibold text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:opacity-60',
+            busy && 'animate-border-pulse',
           )}
-          Push &amp; mark now
+        >
+          <Upload size={9} aria-hidden />
+          {busy ? 'Pushing…' : 'Push & mark now'}
         </button>
         <button
           type="button"

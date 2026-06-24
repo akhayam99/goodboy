@@ -1,8 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ProviderId } from '@goodboy/types';
+import type { AgentId, ProviderId } from '@goodboy/types';
 import { cn, EmptyState } from '@goodboy/ui';
-import { ChevronDown, ExternalLink, Sliders, Sparkles } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ChevronDown,
+  ExternalLink,
+  RotateCcw,
+  Sliders,
+  Sparkles,
+} from 'lucide-react';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
@@ -15,20 +22,37 @@ import { ModelSelect } from '../../../../session/components/ModelSelect';
 import { EffortSelect } from '../../../../session/components/EffortSelect';
 import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
+import {
+  ResolverStateBadge,
+  resolverBadgeState,
+} from '../../../../session/components/ResolverStateBadge';
+import type { ResolverLink } from '../../../../session/resolver-linkage';
 import { useAppStore } from '../../../../../store';
 import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
 
 type Props = {
   readonly threads: ReadonlyArray<CommentThread>;
+  readonly resolverFor?: (thread: CommentThread) => ResolverLink | undefined;
   readonly onSpawnOne: (thread: CommentThread, choice: ResolveModelChoice) => void;
   readonly onSpawnBatch: (
     threads: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => void;
+  readonly onOpenResolver?: (agentId: AgentId) => void;
   readonly onOpenThread: (threadId: string) => void;
 };
 
-export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }: Props) => {
+const isClaimed = (link: ResolverLink | undefined): boolean =>
+  link != null && link.status !== 'failed';
+
+export const ResolveBoard = ({
+  threads,
+  resolverFor,
+  onSpawnOne,
+  onSpawnBatch,
+  onOpenResolver,
+  onOpenThread,
+}: Props) => {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
@@ -42,11 +66,15 @@ export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
   const applyToAll = (next: CardConfig) =>
     setConfigById(() => Object.fromEntries(threads.map((t) => [t.head.id, next])));
 
-  const selected = useMemo(
-    () => threads.filter((t) => !deselected.has(t.head.id)),
-    [threads, deselected],
+  const selectable = useMemo(
+    () => threads.filter((t) => !isClaimed(resolverFor?.(t))),
+    [threads, resolverFor],
   );
-  const allSelected = selected.length === threads.length;
+  const selected = useMemo(
+    () => selectable.filter((t) => !deselected.has(t.head.id)),
+    [selectable, deselected],
+  );
+  const allSelected = selectable.length > 0 && selected.length === selectable.length;
   const aggregate = aggregateConfig(threads.map((t) => getConfig(t.head.id)));
 
   if (threads.length === 0) {
@@ -71,7 +99,7 @@ export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
       return next;
     });
   const toggleAll = () =>
-    setDeselected(allSelected ? new Set(threads.map((t) => t.head.id)) : new Set());
+    setDeselected(allSelected ? new Set(selectable.map((t) => t.head.id)) : new Set());
 
   const choiceById: Record<string, ResolveModelChoice> = Object.fromEntries(
     threads.map((t) => [t.head.id, getConfig(t.head.id)]),
@@ -147,10 +175,12 @@ export const ResolveBoard = ({ threads, onSpawnOne, onSpawnBatch, onOpenThread }
               thread={t}
               config={getConfig(t.head.id)}
               checked={!deselected.has(t.head.id)}
+              link={resolverFor?.(t)}
               connectedProviders={connectedProviders}
               onToggle={() => toggle(t.head.id)}
               onConfig={(next) => patchConfig(t.head.id, next)}
               onResolve={() => onSpawnOne(t, getConfig(t.head.id))}
+              onOpenResolver={onOpenResolver}
               onOpenThread={
                 t.head.threadId ? () => onOpenThread(t.head.threadId as string) : undefined
               }
@@ -166,24 +196,30 @@ function ResolveCard({
   thread,
   config,
   checked,
+  link,
   connectedProviders,
   onToggle,
   onConfig,
   onResolve,
+  onOpenResolver,
   onOpenThread,
 }: {
   thread: CommentThread;
   config: CardConfig;
   checked: boolean;
+  link?: ResolverLink;
   connectedProviders: ReadonlyArray<ProviderId>;
   onToggle: () => void;
   onConfig: (next: CardConfig) => void;
   onResolve: () => void;
+  onOpenResolver?: (agentId: AgentId) => void;
   onOpenThread?: () => void;
 }) {
   const [configOpen, setConfigOpen] = useState(false);
   const { head, replies } = thread;
   const loc = head.path ? `${head.path}${head.line ? `:${head.line}` : ''}` : 'conversation';
+  const claimed = isClaimed(link);
+  const failed = link != null && link.status === 'failed';
   return (
     <div
       className={cn(
@@ -194,27 +230,31 @@ function ResolveCard({
       <div className="flex items-start gap-2">
         <input
           type="checkbox"
-          checked={checked}
+          checked={checked && !claimed}
+          disabled={claimed}
           onChange={onToggle}
           aria-label={`include comment by ${head.author}`}
-          className="mt-0.5 size-3.5 accent-primary"
+          className="mt-0.5 size-3.5 accent-primary disabled:opacity-40"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{head.author}</span>
             <span className="opacity-50">·</span>
             <span className="min-w-0 truncate font-mono text-[11px]">{loc}</span>
-            {onOpenThread ? (
-              <button
-                type="button"
-                onClick={onOpenThread}
-                title="open the full thread"
-                aria-label="open the full thread"
-                className="ml-auto shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <ExternalLink size={12} aria-hidden />
-              </button>
-            ) : null}
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {link ? <ResolverStateBadge state={resolverBadgeState(link.status)} /> : null}
+              {onOpenThread ? (
+                <button
+                  type="button"
+                  onClick={onOpenThread}
+                  title="open the full thread"
+                  aria-label="open the full thread"
+                  className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <ExternalLink size={12} aria-hidden />
+                </button>
+              ) : null}
+            </div>
           </div>
           <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-[13px] leading-snug text-foreground [overflow-wrap:anywhere]">
             {head.body.trim() || '(empty)'}
@@ -234,49 +274,78 @@ function ResolveCard({
           )}
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <div className="relative">
+            {claimed && link ? (
               <button
                 type="button"
-                onClick={() => setConfigOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-2xs transition-colors hover:bg-muted/50"
+                onClick={() => onOpenResolver?.(link.agent.id as AgentId)}
+                title="open the resolver working on this comment"
+                className="inline-flex items-center gap-1 rounded-md border border-info/40 bg-info/10 px-2 py-1 text-2xs font-semibold text-info transition-colors hover:bg-info/20"
               >
-                <span className="text-muted-foreground">Resolve with</span>
-                <span className="font-medium text-foreground">
-                  {PROVIDER_LABEL[config.provider]} · {shortModelWithVersion(config.model)}
-                </span>
-                {modelEffortLevels(config.model) ? (
-                  <span className="text-muted-foreground/70">· {EFFORT_LABEL[config.effort]}</span>
-                ) : null}
-                <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
+                Open resolver
+                <ArrowUpRight size={11} aria-hidden />
               </button>
-              {configOpen ? (
-                <ConfigPanel
-                  className="absolute left-0 top-8 z-20 w-60"
-                  title="Resolve with"
-                  config={config}
-                  connectedProviders={connectedProviders}
-                  onChange={onConfig}
-                  footer={
-                    <button
-                      type="button"
-                      onClick={() => setConfigOpen(false)}
-                      className="w-full rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
-                    >
-                      Done
-                    </button>
+            ) : (
+              <>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setConfigOpen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-2xs transition-colors hover:bg-muted/50"
+                  >
+                    <span className="text-muted-foreground">Resolve with</span>
+                    <span className="font-medium text-foreground">
+                      {PROVIDER_LABEL[config.provider]} · {shortModelWithVersion(config.model)}
+                    </span>
+                    {modelEffortLevels(config.model) ? (
+                      <span className="text-muted-foreground/70">
+                        · {EFFORT_LABEL[config.effort]}
+                      </span>
+                    ) : null}
+                    <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
+                  </button>
+                  {configOpen ? (
+                    <ConfigPanel
+                      className="absolute left-0 top-8 z-20 w-60"
+                      title="Resolve with"
+                      config={config}
+                      connectedProviders={connectedProviders}
+                      onChange={onConfig}
+                      footer={
+                        <button
+                          type="button"
+                          onClick={() => setConfigOpen(false)}
+                          className="w-full rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
+                        >
+                          Done
+                        </button>
+                      }
+                    />
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={onResolve}
+                  title={
+                    failed
+                      ? 'retry the resolver for this comment'
+                      : 'spawn a resolver for this comment now'
                   }
-                />
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={onResolve}
-              title="spawn a resolver for this comment now"
-              className="inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-2 py-1 text-2xs font-semibold text-accent transition-colors hover:bg-accent/20"
-            >
-              <Sparkles size={11} aria-hidden />
-              Resolve
-            </button>
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-semibold transition-colors',
+                    failed
+                      ? 'border-danger/40 bg-danger/10 text-danger hover:bg-danger/20'
+                      : 'border-accent/40 bg-accent/10 text-accent hover:bg-accent/20',
+                  )}
+                >
+                  {failed ? (
+                    <RotateCcw size={11} aria-hidden />
+                  ) : (
+                    <Sparkles size={11} aria-hidden />
+                  )}
+                  {failed ? 'Retry' : 'Resolve'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

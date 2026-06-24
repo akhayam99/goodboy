@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Smartphone } from 'lucide-react';
-import { Divider } from '@goodboy/ui';
+import { Divider, StatusDot, formatUsd } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
+import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
 
 export const AppTopBar = () => (
   <>
@@ -16,6 +17,7 @@ export const AppTopBar = () => (
         <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
         <UpdateIndicator variant="pip" />
       </div>
+      <WorkspaceRollupStrip />
       <div className="flex items-center gap-2">
         <PairDeviceCta />
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
@@ -62,18 +64,44 @@ function PairDeviceCta() {
       aria-label={label}
       className="group/pair relative inline-flex shrink-0 items-center gap-1 rounded-full border border-border-soft/70 bg-gradient-to-b from-muted/40 to-muted/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm motion-safe:transition-all hover:border-primary/40 hover:from-primary/15 hover:to-primary/5 hover:text-primary hover:shadow-md"
     >
-      <Smartphone
-        size={11}
-        aria-hidden
-        className="motion-safe:transition-transform motion-safe:duration-200 group-hover/pair:-rotate-6 group-hover/pair:scale-110"
-      />
+      <Smartphone size={11} aria-hidden />
       <span>Pair</span>
       {linked ? (
-        <span aria-hidden className="relative ml-0.5 flex size-1.5">
-          <span className="absolute inline-flex size-full rounded-full bg-success opacity-75 motion-safe:animate-ping" />
-          <span className="relative inline-flex size-1.5 rounded-full bg-success" />
-        </span>
+        <span aria-hidden className="ml-0.5 size-1.5 shrink-0 rounded-full bg-success" />
       ) : null}
     </button>
+  );
+}
+
+function WorkspaceRollupStrip() {
+  const workspace = useCurrentWorkspace();
+  const sessions = useSessions();
+  const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions);
+  if (!workspace) {
+    return null;
+  }
+  return (
+    <div className="flex items-center gap-3 text-2xs">
+      {rollup.attentionCount > 0 ? (
+        <span className="flex items-center gap-1">
+          <StatusDot tone="warning" size="sm" pulsing />
+          <span className="font-medium tabular-nums text-foreground">{rollup.attentionCount}</span>
+          <span className="text-muted-foreground">need you</span>
+        </span>
+      ) : null}
+      {rollup.runningCount > 0 ? (
+        <span className="flex items-center gap-1">
+          <StatusDot tone="info" size="sm" pulsing />
+          <span className="font-medium tabular-nums text-foreground">{rollup.runningCount}</span>
+          <span className="text-muted-foreground">running</span>
+        </span>
+      ) : null}
+      <span className="flex items-center gap-1 text-muted-foreground">
+        <span className="font-medium tabular-nums text-foreground">
+          {formatUsd(rollup.todaySpend)}
+        </span>
+        today
+      </span>
+    </div>
   );
 }

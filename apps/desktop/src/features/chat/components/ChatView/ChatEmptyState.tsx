@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react';
 import { Workflow } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, Eyebrow } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import {
@@ -160,9 +160,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         )}
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-2xs font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
-          {copy.eyebrow}
-        </span>
+        <Eyebrow label={copy.eyebrow} className="tracking-[0.12em] text-muted-foreground/70" />
         <h2 className="text-base font-semibold text-foreground">{copy.title}</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
       </div>

@@ -1,11 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
-import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
+import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui';
 import { Fragment } from 'react';
 import type { Notification, NotificationSeverity } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
   switch (severity) {
@@ -182,7 +181,7 @@ export const NotificationCenter = () => {
                     No notifications
                   </p>
                 ) : (
-                  <ScrollFade className="max-h-80" fade={16}>
+                  <ScrollFade className="max-h-80" fadeSize={16}>
                     <ul>
                       {notifications.map((n, i) => (
                         <Fragment key={n.id}>

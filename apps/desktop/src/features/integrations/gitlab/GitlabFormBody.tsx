@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { Button, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Loader2, Unplug } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { ghClearToken, ghStatus } from '../../github/github';
 import { formatError } from '../../../shared/lib/errors';
@@ -179,15 +179,12 @@ export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
 
       {gitlab || githubScoped ? null : (
         <div className="flex justify-end">
-          <Button onClick={() => void onConnect()} disabled={busy || token.trim().length === 0}>
-            {busy ? (
-              <>
-                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />{' '}
-                Verifying…
-              </>
-            ) : (
-              'Connect'
-            )}
+          <Button
+            onClick={() => void onConnect()}
+            disabled={busy || token.trim().length === 0}
+            className={busy ? 'animate-border-pulse' : undefined}
+          >
+            {busy ? 'Verifying…' : 'Connect'}
           </Button>
         </div>
       )}

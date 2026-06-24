@@ -5,7 +5,6 @@ import {
   Clock,
   GitBranch,
   GitPullRequest,
-  Loader2,
   MessageSquare,
   RefreshCw,
   Sparkles,
@@ -16,7 +15,6 @@ import { cn } from '@goodboy/ui';
 import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
-import { PendingResolutionsStrip } from '../../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { AGENT_KIND_DEFAULTS } from '../../../agent-kind';
 import { useAppStore } from '../../../../../store';
@@ -30,17 +28,13 @@ export const PrPane = ({ session }: PrPaneProps) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind(session.workspaceId);
   return (
-    <PaneShell
-      title="Pull request"
-      description="Review status and queued comment resolutions for this session."
-    >
+    <PaneShell title="Pull request" description="Review status for this session.">
       <div className="flex flex-col gap-3">
         {remoteKind === 'gitlab' ? (
           <GitlabMrStrip sessionId={sessionId} />
         ) : (
           <GithubPrCard session={session} />
         )}
-        <PendingResolutionsStrip sessionId={sessionId} />
       </div>
     </PaneShell>
   );
@@ -136,26 +130,24 @@ const GithubPrCard = ({ session }: { session: Session }) => {
             type="button"
             onClick={() => void draftWithAgent()}
             disabled={busy !== null}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-          >
-            {busy === 'ai' ? (
-              <Loader2 size={14} aria-hidden className="shrink-0 motion-safe:animate-spin" />
-            ) : (
-              <Sparkles size={14} aria-hidden className="shrink-0" />
+            className={cn(
+              'inline-flex items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
+              busy === 'ai' && 'animate-border-pulse',
             )}
+          >
+            <Sparkles size={14} aria-hidden className="shrink-0" />
             Draft with an agent
           </button>
           <button
             type="button"
             onClick={() => void createQuickDraft()}
             disabled={busy !== null}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground/[0.04] px-4 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08] disabled:opacity-50"
-          >
-            {busy === 'draft' ? (
-              <Loader2 size={14} aria-hidden className="shrink-0 motion-safe:animate-spin" />
-            ) : (
-              <GitPullRequest size={14} aria-hidden className="shrink-0 opacity-70" />
+            className={cn(
+              'inline-flex items-center justify-center gap-1.5 rounded-lg border border-transparent bg-foreground/[0.04] px-4 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08] disabled:opacity-50',
+              busy === 'draft' && 'animate-border-pulse',
             )}
+          >
+            <GitPullRequest size={14} aria-hidden className="shrink-0 opacity-70" />
             Quick draft
           </button>
           <button
@@ -246,9 +238,12 @@ const RefreshButton = ({
     disabled={loading}
     title={error ? `refresh failed: ${error}` : 'refresh PR status'}
     aria-label="refresh PR status"
-    className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
+    className={cn(
+      'flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50',
+      loading && 'animate-border-pulse',
+    )}
   >
-    <RefreshCw size={12} aria-hidden className={loading ? 'motion-safe:animate-spin' : undefined} />
+    <RefreshCw size={12} aria-hidden />
   </button>
 );
 

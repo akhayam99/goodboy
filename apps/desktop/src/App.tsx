@@ -5,10 +5,12 @@ import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
-import { EmptyState } from './app/components/AppEmptyState';
+import { NoWorkspaceScreen } from './app/components/AppEmptyState';
+import { StageBoard } from './features/workspace/components/StageBoard';
 import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
 import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
 import { SettingsStudio } from './features/settings/components/SettingsStudio';
+import { GuideStudio } from './features/settings/components/GuideStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
 import { SessionSettingsPane } from './features/session/components/SessionSettingsPane';
 import { ToastProvider } from './app/components/Toast';
@@ -68,6 +70,7 @@ export const App = () => {
   const [companionOpen, setCompanionOpen] = useState(false);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
+  const [guideStudioOpen, setGuideStudioOpen] = useState(false);
   const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
   const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
     undefined,
@@ -137,6 +140,7 @@ export const App = () => {
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
+    const onOpenGuide = () => setGuideStudioOpen(true);
     const onOpenGithubStudio = (event: Event) => {
       const detail = (
         event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
@@ -207,12 +211,6 @@ export const App = () => {
       const sid = state.currentSessionId;
       if (sid) {
         state.setSessionStudio(sid, null);
-        if (!state.selectedAgentId[sid]) {
-          const first = (state.sessionPhaseRuns[sid] ?? [])[0];
-          if (first) {
-            void state.selectAgent(sid, first.id);
-          }
-        }
       }
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
@@ -220,6 +218,7 @@ export const App = () => {
     const onPairDevice = () => setCompanionOpen(true);
 
     window.addEventListener('goodboy:open-settings', onOpenSettings);
+    window.addEventListener('goodboy:open-guide', onOpenGuide);
     window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -234,6 +233,7 @@ export const App = () => {
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
     return () => {
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
+      window.removeEventListener('goodboy:open-guide', onOpenGuide);
       window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -676,13 +676,14 @@ export const App = () => {
                   />
                 ))}
               </div>
-            ) : (
-              <EmptyState
-                hasWorkspace={Boolean(currentWorkspace)}
-                hasSessions={currentWorkspaceSessions.length > 0}
-                onAddWorkspace={() => setAddWorkspaceOpen(true)}
+            ) : currentWorkspace ? (
+              <StageBoard
+                workspaceId={currentWorkspace.id}
+                sessions={currentWorkspaceSessions}
                 onCreateSession={openNewSession}
               />
+            ) : (
+              <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
             )}
 
             <OnboardingCard />
@@ -727,6 +728,7 @@ export const App = () => {
           }}
         />
       ) : null}
+      {guideStudioOpen ? <GuideStudio onClose={() => setGuideStudioOpen(false)} /> : null}
       {paletteOpen ? (
         <CommandPalette
           initialQuery={palettePrefix}

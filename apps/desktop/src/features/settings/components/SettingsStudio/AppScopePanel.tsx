@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { DollarSign, Loader2, RotateCcw } from 'lucide-react';
-import { Button, FieldRow, KbdPill, ScrollFade, Select } from '@goodboy/ui';
+import { DollarSign, RotateCcw } from 'lucide-react';
+import { Button, cn, FieldRow, KbdPill, ScrollFade, Select } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -228,6 +228,7 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
                   size="sm"
                   onClick={() => void onExport()}
                   disabled={exportState === 'busy'}
+                  className={exportState === 'busy' ? 'animate-border-pulse' : undefined}
                 >
                   {exportState === 'busy'
                     ? 'Exporting…'
@@ -265,12 +266,12 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
                     size="sm"
                     onClick={() => void onWipe()}
                     disabled={wipeState === 'wiping'}
-                    className="text-danger"
+                    className={cn(
+                      'text-danger',
+                      wipeState === 'wiping' && 'animate-border-pulse spin-border-danger',
+                    )}
                   >
-                    {wipeState === 'wiping' ? (
-                      <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
-                    ) : null}
-                    Confirm
+                    {wipeState === 'wiping' ? 'Wiping…' : 'Confirm'}
                   </Button>
                 </span>
               ) : (

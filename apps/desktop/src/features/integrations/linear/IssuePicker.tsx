@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { ChevronDown, ExternalLink, Loader2 } from 'lucide-react';
+import { cn, Skeleton } from '@goodboy/ui';
+import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { linearFetchAssignedIssues, type LinearIssue } from './client';
 
@@ -188,17 +188,29 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
           aria-label={open ? 'Close issue list' : 'Open issue list'}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          {loading ? (
-            <Loader2 size={13} className="motion-safe:animate-spin" aria-hidden />
-          ) : (
-            <ChevronDown
-              size={13}
-              aria-hidden
-              className={cn('motion-safe:transition-transform', open && 'rotate-180')}
-            />
-          )}
+          <ChevronDown
+            size={13}
+            aria-hidden
+            className={cn('motion-safe:transition-transform', open && 'rotate-180')}
+          />
         </button>
       </div>
+
+      {open && loading && issues.length === 0 ? (
+        <div
+          role="status"
+          aria-label="Loading issues"
+          className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-border bg-subtle py-0.5 shadow-lg"
+        >
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2 px-2.5 py-1.5">
+              <Skeleton className="h-3 w-12 shrink-0 rounded" />
+              <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+              <Skeleton className="h-3 w-10 shrink-0 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {open && error ? (
         <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-xs text-danger shadow-lg">

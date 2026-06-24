@@ -67,7 +67,7 @@ function ConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
     return <XCircle {...props} className="shrink-0 text-danger" />;
   }
   if (conclusion === 'pending') {
-    return <Clock {...props} className="shrink-0 text-warning motion-safe:animate-pulse" />;
+    return <Clock {...props} className="shrink-0 text-warning" />;
   }
   if (conclusion === 'cancelled' || conclusion === 'timed_out') {
     return <CircleSlash {...props} className="shrink-0 text-muted-foreground" />;

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Ban, CheckCheck, Loader2, MessageSquareReply, X } from 'lucide-react';
+import { Ban, CheckCheck, MessageSquareReply, X } from 'lucide-react';
+import { cn } from '@goodboy/ui';
 import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -73,14 +74,13 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
           data-testid="comment-wontfix-explain"
           aria-label="post the explanation and mark the thread solved"
           title="post the reason as a reply and resolve the thread on GitHub"
-          className="inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? (
-            <Loader2 size={9} aria-hidden className="motion-safe:animate-spin" />
-          ) : (
-            <MessageSquareReply size={9} aria-hidden />
+          className={cn(
+            'relative inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
+            busy && 'animate-border-pulse',
           )}
-          Mark as solved &amp; explain
+        >
+          <MessageSquareReply size={9} aria-hidden />
+          {busy ? 'Marking…' : 'Mark as solved & explain'}
         </button>
         <button
           type="button"

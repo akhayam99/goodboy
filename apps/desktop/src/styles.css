@@ -45,6 +45,21 @@
   --color-provider-sentry: oklch(0.55 0.18 320);
   --color-provider-gitlab: oklch(0.68 0.18 45);
 
+  /* Syntax palette for the diff viewer (dark). On-brand hues, readable on the
+     charcoal canvas. Unmapped languages fall back to foreground (no token). */
+  --color-syntax-keyword: oklch(0.75 0.13 300);
+  --color-syntax-string: oklch(0.75 0.12 145);
+  --color-syntax-number: oklch(0.79 0.1 75);
+  --color-syntax-comment: oklch(0.56 0.015 255);
+  --color-syntax-function: oklch(0.75 0.1 240);
+  --color-syntax-type: oklch(0.78 0.09 200);
+  --color-syntax-constant: oklch(0.77 0.13 55);
+  --color-syntax-property: oklch(0.85 0.025 230);
+  --color-syntax-operator: oklch(0.7 0.02 255);
+  --color-syntax-punctuation: oklch(0.62 0.015 255);
+  --color-syntax-tag: oklch(0.73 0.13 25);
+  --color-syntax-regex: oklch(0.77 0.11 120);
+
   --text-2xs: 11px;
   --text-xs: 12px;
   --text-sm: 14px;
@@ -69,6 +84,9 @@
   --density-comfortable-text: var(--text-sm);
   --density-comfortable-gap: 0.875rem; /* 14px */
   --density-comfortable-pad: 1rem; /* 16px */
+  --density-scan-text: var(--text-2xs);
+  --density-scan-gap: 0.25rem;
+  --density-scan-pad: 0.375rem;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -89,9 +107,9 @@
     }
   }
 
-  /* Border-only pulse, anima il border-color, lascia il contenuto stabile.
-     Usato sulle session card in pending: il bordo respira giallo per
-     attirare l'occhio, ma il testo resta leggibile a opacità piena. */
+  /* Border-only pulse: animates border-color, leaves the content stable.
+     Used on pending session cards so the border breathes the warning color
+     to draw attention while the text stays fully legible. */
   @keyframes border-pulse {
     0%,
     100% {
@@ -238,6 +256,19 @@ html[data-theme='light'] {
   --color-provider-sentry: oklch(0.48 0.18 320);
   --color-provider-gitlab: oklch(0.56 0.18 45);
   --color-focus-ring: oklch(0.5 0.13 200 / 0.45);
+  /* Syntax palette (light): same hues, lower L for contrast on the light canvas. */
+  --color-syntax-keyword: oklch(0.48 0.17 300);
+  --color-syntax-string: oklch(0.46 0.13 145);
+  --color-syntax-number: oklch(0.5 0.13 60);
+  --color-syntax-comment: oklch(0.6 0.02 255);
+  --color-syntax-function: oklch(0.48 0.15 255);
+  --color-syntax-type: oklch(0.46 0.11 200);
+  --color-syntax-constant: oklch(0.5 0.15 45);
+  --color-syntax-property: oklch(0.35 0.03 240);
+  --color-syntax-operator: oklch(0.45 0.02 255);
+  --color-syntax-punctuation: oklch(0.55 0.015 255);
+  --color-syntax-tag: oklch(0.5 0.16 25);
+  --color-syntax-regex: oklch(0.48 0.13 120);
   /* Light shadows, softer, multi-layered for depth without harshness. */
   --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.06), 0 1px 3px 0 oklch(0 0 0 / 0.08);
   --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.1), 0 2px 4px -1px oklch(0 0 0 / 0.08);

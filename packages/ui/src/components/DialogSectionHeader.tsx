@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
+import { tintClasses } from '../tint';
 
 export type DialogSectionHeaderTone = 'primary' | 'success' | 'warning' | 'danger' | 'info';
 
@@ -10,14 +11,6 @@ export type DialogSectionHeaderProps = {
   readonly tone?: DialogSectionHeaderTone;
   readonly beta?: boolean;
   readonly className?: string;
-};
-
-const TILE_BG: Record<DialogSectionHeaderTone, string> = {
-  primary: 'bg-primary/10',
-  success: 'bg-success/10',
-  warning: 'bg-warning/10',
-  danger: 'bg-danger/10',
-  info: 'bg-info/10',
 };
 
 const TITLE_FG: Record<DialogSectionHeaderTone, string> = {
@@ -39,7 +32,12 @@ export const DialogSectionHeader = ({
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <div className="flex items-center gap-2">
-        <span className={cn('flex h-7 w-7 items-center justify-center rounded-md', TILE_BG[tone])}>
+        <span
+          className={cn(
+            'flex h-7 w-7 items-center justify-center rounded-md',
+            tintClasses(tone).bg,
+          )}
+        >
           {icon}
         </span>
         <h3 className={cn('text-base font-semibold', TITLE_FG[tone])}>{title}</h3>

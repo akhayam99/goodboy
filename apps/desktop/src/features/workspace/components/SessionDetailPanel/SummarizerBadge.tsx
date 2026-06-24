@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Loader2, RotateCw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { AlertTriangle, RotateCw } from 'lucide-react';
+import { StatusDot, cn } from '@goodboy/ui';
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSummarizerStatus } from '../../../../store';
 
@@ -49,7 +49,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   if (status === 'running') {
     return (
       <span className="flex items-center gap-1">
-        <Loader2 size={10} aria-hidden className="motion-safe:animate-spin text-info" />
+        <StatusDot tone="info" size="sm" pulsing />
         {costPill}
       </span>
     );
@@ -72,6 +72,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
           aria-label={canRetry ? 'retry summarizer' : 'summarizer failed'}
           className={cn(
             'inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-2xs uppercase tracking-wide text-danger transition-colors',
+            retrying && 'animate-border-pulse',
             canRetry
               ? 'hover:bg-danger/15 hover:text-danger-foreground/90'
               : 'cursor-not-allowed opacity-70',
@@ -79,11 +80,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
         >
           <AlertTriangle size={10} aria-hidden />
           Cannot summarize
-          <RotateCw
-            size={10}
-            aria-hidden
-            className={cn('shrink-0', retrying && 'motion-safe:animate-spin')}
-          />
+          <RotateCw size={10} aria-hidden className="shrink-0" />
         </button>
       </span>
     );

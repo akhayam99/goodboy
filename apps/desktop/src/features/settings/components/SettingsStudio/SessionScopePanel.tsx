@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, FieldRow, Input, ScrollFade, cn } from '@goodboy/ui';
-import { AlertTriangle, ChevronDown, ChevronUp, GitBranch, Loader2 } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessionById } from '../../../../store';
@@ -299,17 +299,13 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                       onClick={() => void onChangeBranch()}
                       disabled={busy || branchesLoading || branchTarget.trim().length === 0}
                       variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
+                      className={busy ? 'animate-border-pulse' : undefined}
                     >
-                      {busy ? (
-                        <>
-                          <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
-                          Switching…
-                        </>
-                      ) : targetNeedsConfirm && confirmReuse ? (
-                        'Confirm switch'
-                      ) : (
-                        'Switch branch'
-                      )}
+                      {busy
+                        ? 'Switching…'
+                        : targetNeedsConfirm && confirmReuse
+                          ? 'Confirm switch'
+                          : 'Switch branch'}
                     </Button>
                   </div>
                 </div>

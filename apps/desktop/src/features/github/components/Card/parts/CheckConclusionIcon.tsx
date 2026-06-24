@@ -22,7 +22,7 @@ export const CheckConclusionIcon = ({ conclusion }: Props) => {
     return <XCircle {...props} className="text-danger" />;
   }
   if (conclusion === 'pending') {
-    return <Clock {...props} className="text-warning motion-safe:animate-pulse" />;
+    return <Clock {...props} className="text-warning" />;
   }
   if (conclusion === 'cancelled' || conclusion === 'timed_out') {
     return <CircleSlash {...props} className="text-muted-foreground" />;

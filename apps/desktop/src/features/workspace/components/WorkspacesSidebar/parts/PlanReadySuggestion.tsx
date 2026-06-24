@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Agent, Session, StepId, Workflow } from '@goodboy/types';
 import {
@@ -88,20 +88,16 @@ export const PlanReadySuggestion = ({ task }: Props) => {
       data-testid="plan-ready-suggestion"
       title={latest.title}
       aria-label={`spawn an implementer agent to execute the plan: ${latest.title}`}
-      className="group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+      className={cn(
+        'group mt-1 flex w-full items-start gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2 text-left transition-colors hover:border-primary/60 hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60',
+        spawning && 'animate-border-pulse',
+      )}
     >
       <span
-        className={cn(
-          'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary',
-          spawning && 'motion-safe:animate-pulse',
-        )}
+        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary"
         aria-hidden
       >
-        {spawning ? (
-          <Loader2 size={11} className="motion-safe:animate-spin" />
-        ) : (
-          <Sparkles size={11} />
-        )}
+        <Sparkles size={11} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">

@@ -12,7 +12,7 @@ import type {
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui';
-import { Check, GitBranch, Loader2, Unplug } from 'lucide-react';
+import { Check, GitBranch, Unplug } from 'lucide-react';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 import { ProviderChip } from '../../../../features/providers/components/ProviderChip';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
@@ -302,12 +302,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     size="sm"
                     onClick={() => void onDisconnect()}
                     disabled={disconnecting}
+                    className={disconnecting ? 'animate-border-pulse' : undefined}
                   >
                     {disconnecting ? (
-                      <>
-                        <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />
-                        Disconnecting…
-                      </>
+                      'Disconnecting…'
                     ) : (
                       <>
                         <Check size={12} aria-hidden />

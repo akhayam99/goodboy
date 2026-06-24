@@ -38,18 +38,10 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           agents: stateNow.sessionPhaseRuns[id] !== undefined,
         }
       : null;
-    const cachedSelectedAgentId =
-      id && cached?.agents ? (stateNow.selectedAgentId[id] ?? null) : null;
-    const transcriptReady =
-      id && cached?.agents
-        ? cachedSelectedAgentId === null
-          ? true
-          : stateNow.transcripts[cachedSelectedAgentId] !== undefined
-        : false;
     const initialLoading: SessionLoadingFlags = id
       ? {
           agents: cached ? !cached.agents : true,
-          transcript: !transcriptReady,
+          transcript: false,
           telemetry: cached ? !cached.telemetry : true,
           slots: cached ? !cached.slots : true,
           plans: cached ? !cached.plans : true,
@@ -60,6 +52,8 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
       currentSessionId: id,
       sessionSummary: null,
       sessionLoading: id ? { ...state.sessionLoading, [id]: initialLoading } : state.sessionLoading,
+      activeLens: id ? { ...state.activeLens, [id]: null } : state.activeLens,
+      selectedAgentId: id ? { ...state.selectedAgentId, [id]: null } : state.selectedAgentId,
     }));
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
     if (!id) {
@@ -179,13 +173,6 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
       ])
         .then(([agents, agentRunIds]) => {
-          const previouslySelected = get().selectedAgentId[id] ?? null;
-          const sortedAgents = [...agents].sort((a, b) => a.ordinal - b.ordinal);
-          const fallbackAgent = sortedAgents[sortedAgents.length - 1] ?? null;
-          const selectedAgent =
-            (previouslySelected && agents.find((a) => a.id === previouslySelected)) ||
-            fallbackAgent;
-
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = get().sessions.find((s) => s.id === id);
@@ -229,17 +216,13 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           }
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
-            selectedAgentId: {
-              ...state.selectedAgentId,
-              [id]: selectedAgent?.id ?? null,
-            },
             agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
             agentTurnState: { ...state.agentTurnState, ...seededTurnState },
             agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
           }));
           markDone('agents');
 
-          if (!selectedAgent) {
+          if (!get().selectedAgentId[id]) {
             set((state) => ({
               messages: { ...state.messages, [id]: [] as ReadonlyArray<Message> },
             }));

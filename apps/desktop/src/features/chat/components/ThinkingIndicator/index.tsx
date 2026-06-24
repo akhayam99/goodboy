@@ -43,10 +43,10 @@ export const ThinkingIndicator = ({ context }: Props) => {
     <div
       role="status"
       aria-label="agent working"
-      className="flex w-fit items-center gap-1.5 px-1 py-0.5 text-2xs"
+      className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-2xs animate-border-pulse"
     >
-      <DogMascot size={12} className="text-muted-foreground/70 motion-safe:animate-soft-pulse" />
-      <span aria-hidden className={reduced ? 'text-muted-foreground/80' : 'text-shimmer'}>
+      <DogMascot size={12} className="text-muted-foreground/70" />
+      <span aria-hidden className="text-muted-foreground/80">
         {phrase}
       </span>
     </div>

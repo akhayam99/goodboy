@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ImageOff, Paperclip, X } from 'lucide-react';
+import { Eyebrow, Skeleton } from '@goodboy/ui';
 import type { GoalAttachment, GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { fileIconFor } from '../../../../chat/attachment-kinds';
@@ -30,10 +31,12 @@ export function GoalAttachmentsStrip({ owner }: { readonly owner: GoalAttachment
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground/60">
-        <Paperclip size={11} aria-hidden />
-        <span>Attachments</span>
-      </div>
+      <Eyebrow
+        muted
+        icon={<Paperclip size={11} aria-hidden />}
+        label="Attachments"
+        className="gap-1.5 font-medium"
+      />
       <div className="flex flex-wrap gap-2">
         {attachments.map((att) => (
           <AttachmentChip
@@ -136,7 +139,7 @@ function ImageThumb({
   }
 
   if (src === null) {
-    return <div className="h-full w-full motion-safe:animate-pulse bg-foreground/10" />;
+    return <Skeleton className="h-full w-full rounded-none" />;
   }
 
   return (

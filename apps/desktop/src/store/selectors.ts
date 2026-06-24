@@ -127,6 +127,83 @@ export const useSortedGroupedSessions = (
   ]);
 };
 
+export const useStageGroupedSessions = (
+  workspaceId: WorkspaceId | null,
+  sessions: ReadonlyArray<Session>,
+): ReadonlyArray<GroupedSessions> => {
+  const prefs = useSessionViewPrefs(workspaceId);
+  const sessionGithub = useAppStore((s) => s.sessionGithub);
+  const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
+  const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId);
+  const currentSessionId = useAppStore((s) => s.currentSessionId);
+  return useMemo(() => {
+    const partial = {
+      sessionGithub,
+      sessionOpenQuestions,
+      sessionPhaseRuns,
+      selectedAgentId,
+      currentSessionId,
+    };
+    const stages: Record<SessionId, SessionStage> = {};
+    for (const session of sessions) {
+      stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage;
+    }
+    return sortAndGroupSessions(
+      sessions,
+      { sort: prefs.sort, group: 'stage' },
+      sessionGithub,
+      stages,
+    );
+  }, [
+    sessions,
+    prefs.sort,
+    sessionGithub,
+    sessionOpenQuestions,
+    sessionPhaseRuns,
+    selectedAgentId,
+    currentSessionId,
+  ]);
+};
+
+export type WorkspaceRollup = {
+  readonly attentionCount: number;
+  readonly runningCount: number;
+  readonly todaySpend: number;
+};
+
+export const useWorkspaceRollup = (
+  workspaceId: WorkspaceId | null,
+  sessions: ReadonlyArray<Session>,
+): WorkspaceRollup => {
+  const groups = useStageGroupedSessions(workspaceId, sessions);
+  const sessionTelemetry = useAppStore((s) => s.sessionTelemetry);
+  return useMemo(() => {
+    const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const cutoff = startOfDay.toISOString();
+    let todaySpend = 0;
+    for (const session of sessions) {
+      const recs = sessionTelemetry[session.id as SessionId];
+      if (!recs) {
+        continue;
+      }
+      for (const rec of recs) {
+        if (rec.kind === 'summarizer' || rec.recordedAt < cutoff) {
+          continue;
+        }
+        todaySpend += rec.estimatedCostUsd;
+      }
+    }
+    return {
+      attentionCount: countOf('attention'),
+      runningCount: countOf('running'),
+      todaySpend,
+    };
+  }, [groups, sessionTelemetry, sessions]);
+};
+
 const NO_LOADING: SessionLoadingFlags = {
   agents: false,
   transcript: false,

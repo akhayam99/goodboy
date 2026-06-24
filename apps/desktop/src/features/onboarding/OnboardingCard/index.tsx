@@ -28,7 +28,7 @@ export const OnboardingCard = () => {
   }
 
   return (
-    <div className="pointer-events-none absolute right-4 top-[calc(var(--chat-header-h)+1.5rem)] z-20">
+    <div className="pointer-events-none absolute bottom-4 right-4 z-20">
       <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2 rounded-[6px] border border-border-soft bg-elevated/80 p-3 shadow-md backdrop-blur-sm">
         {progress.isDone ? <CompletedBody /> : <ChecklistBody progress={progress} />}
       </div>
@@ -46,7 +46,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
           onClick={() => collapse()}
           title="hide, reopen from the sidebar"
           aria-label="hide onboarding checklist"
-          className="rounded-sm p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
         </button>
@@ -97,13 +97,13 @@ function CompletedBody() {
           onClick={() => finish()}
           title="dismiss"
           aria-label="dismiss onboarding"
-          className="rounded-sm p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
         </button>
       </div>
-      <p className="text-[11px] leading-snug text-muted-foreground/80">
-        Nice, you've got the hang of Goodboy. That was the last step.
+      <p className="text-2xs leading-snug text-muted-foreground/80">
+        That was the last step. Setup is complete.
       </p>
     </>
   );

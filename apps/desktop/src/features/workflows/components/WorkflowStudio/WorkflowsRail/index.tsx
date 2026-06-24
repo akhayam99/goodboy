@@ -1,7 +1,6 @@
-import { EmptyState, SectionHeader, cn } from '@goodboy/ui';
+import { EmptyState, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
 import { Check, Layers, Plus, RotateCcw, X } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
-import { ScrollFade } from '../../../../../shared/components/ScrollFade';
 import { PresetCard } from '../../PresetCard';
 
 type Props = {
@@ -51,7 +50,7 @@ export const WorkflowsRail = ({
         />
       </div>
 
-      <ScrollFade className="min-h-0 flex-1 px-3 pb-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 pb-3" fadeSize={24}>
         {presets.length === 0 ? (
           <EmptyState
             icon={Layers}

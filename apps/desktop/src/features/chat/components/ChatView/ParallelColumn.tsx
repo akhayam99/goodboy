@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { Agent, ProviderRunId } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade, StatusDot } from '@goodboy/ui';
 import { useAppStore, useTranscript } from '../../../../store';
 import { filterEventsByRunId, reduceTranscript } from '../../utils/transcript-items';
 import { inferAgentKindFromName } from '../../../session/agent-kind';
@@ -65,10 +65,7 @@ export const ParallelColumn = ({
         <AgentAvatar kind={kind} size="sm" title={label} />
         <span className="min-w-0 truncate text-foreground/80">{label}</span>
         {isRunning ? (
-          <span
-            className="ml-auto size-1.5 shrink-0 rounded-full bg-info motion-safe:animate-soft-pulse"
-            aria-label="running"
-          />
+          <StatusDot tone="info" size="sm" pulsing ariaLabel="running" className="ml-auto" />
         ) : null}
       </div>
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">

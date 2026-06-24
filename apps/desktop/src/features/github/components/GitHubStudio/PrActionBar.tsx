@@ -4,7 +4,6 @@ import {
   ExternalLink,
   GitMerge,
   GitPullRequestDraft,
-  Loader2,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -81,13 +80,9 @@ export const PrActionBar = ({
           type="button"
           onClick={onMarkReady}
           disabled={busy !== null}
-          className={cn(BTN, TONE.success)}
+          className={cn(BTN, TONE.success, spin('ready') && 'animate-border-pulse')}
         >
-          {spin('ready') ? (
-            <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
-          ) : (
-            <Send size={13} aria-hidden />
-          )}
+          <Send size={13} aria-hidden />
           Mark ready
         </button>
       ) : !isTerminal ? (
@@ -95,13 +90,9 @@ export const PrActionBar = ({
           type="button"
           onClick={onConvertDraft}
           disabled={busy !== null}
-          className={cn(BTN, TONE.warning)}
+          className={cn(BTN, TONE.warning, spin('undraft') && 'animate-border-pulse')}
         >
-          {spin('undraft') ? (
-            <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
-          ) : (
-            <GitPullRequestDraft size={13} aria-hidden />
-          )}
+          <GitPullRequestDraft size={13} aria-hidden />
           Convert to draft
         </button>
       ) : null}
@@ -111,13 +102,9 @@ export const PrActionBar = ({
           type="button"
           onClick={onClose}
           disabled={busy !== null}
-          className={cn(BTN, TONE.danger)}
+          className={cn(BTN, TONE.danger, spin('close') && 'animate-border-pulse')}
         >
-          {spin('close') ? (
-            <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
-          ) : (
-            <XCircle size={13} aria-hidden />
-          )}
+          <XCircle size={13} aria-hidden />
           Close
         </button>
       )}
@@ -128,13 +115,9 @@ export const PrActionBar = ({
             type="button"
             onClick={onReopen}
             disabled={busy !== null}
-            className={cn(BTN, TONE.success)}
+            className={cn(BTN, TONE.success, spin('reopen') && 'animate-border-pulse')}
           >
-            {spin('reopen') ? (
-              <Loader2 size={13} aria-hidden className="motion-safe:animate-spin" />
-            ) : (
-              <RotateCcw size={13} aria-hidden />
-            )}
+            <RotateCcw size={13} aria-hidden />
             Reopen
           </button>
           <button type="button" onClick={onCreateNew} className={cn(BTN, TONE.primary)}>
@@ -163,11 +146,7 @@ export const PrActionBar = ({
           aria-label="refresh"
           className={ICON_BTN}
         >
-          <RefreshCw
-            size={14}
-            aria-hidden
-            className={cn(detailLoading && 'motion-safe:animate-spin')}
-          />
+          <RefreshCw size={14} aria-hidden />
         </button>
 
         {!isTerminal && isQueued && (
@@ -191,7 +170,10 @@ export const PrActionBar = ({
                   type="button"
                   onClick={onMerge}
                   disabled={busy !== null}
-                  className="rounded bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground hover:opacity-90 disabled:opacity-50"
+                  className={cn(
+                    'rounded bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground hover:opacity-90 disabled:opacity-50',
+                    spin('merge') && 'animate-border-pulse',
+                  )}
                 >
                   {spin('merge') ? 'merging' : 'confirm'}
                 </button>

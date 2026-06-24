@@ -6,6 +6,7 @@ import {
   Input,
   Markdown,
   SectionHeader,
+  StatusDot,
   Textarea,
   cn,
 } from '@goodboy/ui';
@@ -15,13 +16,12 @@ import {
   ExternalLink,
   GitBranch,
   GitPullRequest,
-  Loader2,
   MessagesSquare,
   MousePointerClick,
   Target,
 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { ScrollFade } from '@goodboy/ui';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -303,7 +303,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       <Divider />
 
       <div className="min-h-0 flex-1">
-        <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-8">
+        <ScrollFade
+          className="mx-auto h-full max-w-3xl"
+          viewportClassName="px-10 py-8"
+          fadeSize={24}
+        >
           <div className="flex flex-col gap-8">
             <section className="flex flex-col gap-3">
               <SectionHeader label="description" />
@@ -385,8 +389,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                           />
                           {prResolving ? (
                             <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                              <Loader2 size={12} className="motion-safe:animate-spin" aria-hidden />{' '}
-                              resolving…
+                              <StatusDot tone="info" size="sm" pulsing /> resolving…
                             </span>
                           ) : prBranch ? (
                             <span className="truncate text-foreground">{prBranch}</span>
@@ -458,16 +461,10 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                         variant="danger"
                         onClick={() => void onLaunch(conflictPath ?? undefined)}
                         disabled={busy || goal.trim().length === 0}
+                        className={busy ? 'animate-border-pulse' : undefined}
                       >
                         {busy ? (
-                          <>
-                            <Loader2
-                              size={13}
-                              className="mr-1.5 motion-safe:animate-spin"
-                              aria-hidden
-                            />
-                            Working…
-                          </>
+                          'Working…'
                         ) : (
                           <>
                             Erase worktree &amp; launch
@@ -476,16 +473,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
                         )}
                       </Button>
                     ) : (
-                      <Button onClick={() => void onLaunch()} disabled={!canLaunch}>
+                      <Button
+                        onClick={() => void onLaunch()}
+                        disabled={!canLaunch}
+                        className={busy ? 'animate-border-pulse' : undefined}
+                      >
                         {busy ? (
-                          <>
-                            <Loader2
-                              size={13}
-                              className="mr-1.5 motion-safe:animate-spin"
-                              aria-hidden
-                            />
-                            Launching…
-                          </>
+                          'Launching…'
                         ) : (
                           <>
                             Launch session

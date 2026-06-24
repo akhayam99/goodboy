@@ -48,7 +48,7 @@ const computeCiStatus = (
     if (pr.checks === 'pending') {
       return {
         tone: 'warning',
-        icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
+        icon: <Clock size={9} aria-hidden />,
         label: 'ci running',
       };
     }
@@ -76,7 +76,7 @@ const computeCiStatus = (
   if (pending > 0) {
     return {
       tone: 'warning',
-      icon: <Clock size={9} aria-hidden className="motion-safe:animate-pulse" />,
+      icon: <Clock size={9} aria-hidden />,
       count: pending,
       label: `${pending} check${pending === 1 ? '' : 's'} running`,
     };

@@ -1,6 +1,6 @@
 import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, Check, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import { Button, cn, ScrollArea } from '@goodboy/ui';
+import { Button, cn, ScrollArea, StatusDot } from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -16,7 +16,7 @@ import {
   useSessionViewPrefs,
   useSortedGroupedSessions,
 } from '../../../../store';
-import { SESSION_STAGE_META } from '../../../../features/session/session-stage';
+import { SESSION_STAGE_META, STAGE_TONE } from '../../../../features/session/session-stage';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import {
   PullRequestChip,
@@ -308,7 +308,6 @@ const SessionActivityItem = memo(function SessionActivityItem({
   onClick,
 }: SessionActivityItemProps) {
   const { stage, reason } = useSessionStageInfo(session);
-  const stageMeta = SESSION_STAGE_META[stage];
   const isAutoMode =
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
@@ -356,13 +355,11 @@ const SessionActivityItem = memo(function SessionActivityItem({
       )}
     >
       <span className="flex w-full items-start gap-2">
-        <span
-          aria-hidden
-          className={cn(
-            'mt-[5px] size-1.5 shrink-0 rounded-full',
-            isAutoMode ? 'bg-danger' : stageMeta.dotClassName,
-            stage === 'running' && 'motion-safe:animate-pulse',
-          )}
+        <StatusDot
+          tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
+          size="sm"
+          pulsing={stage === 'running'}
+          className="mt-[5px]"
         />
         <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
           {session.goal}

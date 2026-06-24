@@ -7,14 +7,14 @@ import {
   FileDiff,
   FileText,
   GitPullRequest,
-  LayoutDashboard,
   Layers,
   MessageSquareReply,
   SquareTerminal,
   Target,
   Terminal,
 } from 'lucide-react';
-import { ScrollFade, cn } from '@goodboy/ui';
+import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { type AgentKind, inferAgentKindFromName } from '../../../../session/agent-kind';
 import {
@@ -38,28 +38,17 @@ type LensColumnProps = {
   readonly session: Session;
   readonly activeLens: LensKind | null;
   readonly onSelect: (lens: LensKind) => void;
-  readonly onSelectOverview: () => void;
   readonly filesCount: number;
-};
-
-type LensTone = 'primary' | 'success' | 'info' | 'warning' | 'accent' | 'neutral';
-
-const TONE: Record<LensTone, { readonly icon: string; readonly chip: string }> = {
-  primary: { icon: 'text-primary', chip: 'bg-primary/10 ring-primary/20' },
-  success: { icon: 'text-success', chip: 'bg-success/10 ring-success/20' },
-  info: { icon: 'text-info', chip: 'bg-info/10 ring-info/20' },
-  warning: { icon: 'text-warning', chip: 'bg-warning/10 ring-warning/20' },
-  accent: { icon: 'text-accent', chip: 'bg-accent/10 ring-accent/20' },
-  neutral: { icon: 'text-muted-foreground', chip: 'bg-muted ring-border-soft' },
 };
 
 type LensRow = {
   readonly kind: LensKind;
   readonly label: string;
   readonly icon: LucideIcon;
-  readonly tone: LensTone;
+  readonly tone: Tone;
   readonly count?: number;
   readonly dot?: 'attention' | 'running';
+  readonly secondaryDot?: boolean;
 };
 
 type LensGroup = {
@@ -67,13 +56,7 @@ type LensGroup = {
   readonly rows: ReadonlyArray<LensRow>;
 };
 
-export const LensColumn = ({
-  session,
-  activeLens,
-  onSelect,
-  onSelectOverview,
-  filesCount,
-}: LensColumnProps) => {
+export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const hasStandaloneAgent = useAppStore((s) =>
@@ -113,6 +96,9 @@ export const LensColumn = ({
       0,
     );
   });
+  const hasPendingBatch = useAppStore(
+    (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
+  );
 
   const contextRows: ReadonlyArray<LensRow> = [
     { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
@@ -159,6 +145,7 @@ export const LensColumn = ({
           icon: MessageSquareReply,
           tone: 'success',
           count: openResolvers,
+          secondaryDot: hasPendingBatch,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],
@@ -188,38 +175,9 @@ export const LensColumn = ({
     },
   ];
 
-  const overviewActive = activeLens === null;
-
   return (
     <ScrollFade className="min-h-0 flex-1">
       <nav className="flex flex-col gap-4 px-2 py-3">
-        <button
-          type="button"
-          onClick={onSelectOverview}
-          aria-current={overviewActive ? 'page' : undefined}
-          className={cn(
-            'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-            overviewActive
-              ? 'bg-foreground/[0.06] text-foreground'
-              : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
-          )}
-        >
-          <span
-            aria-hidden
-            className={cn(
-              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1',
-              TONE.neutral.chip,
-            )}
-          >
-            <LayoutDashboard size={12} aria-hidden className={TONE.neutral.icon} />
-          </span>
-          <span
-            className={cn('min-w-0 flex-1 truncate text-[13px]', overviewActive && 'font-medium')}
-          >
-            Overview
-          </span>
-        </button>
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
@@ -245,10 +203,11 @@ export const LensColumn = ({
                     aria-hidden
                     className={cn(
                       'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
-                      TONE[row.tone].chip,
+                      tintClasses(row.tone).bg,
+                      tintClasses(row.tone).ring,
                     )}
                   >
-                    <row.icon size={12} aria-hidden className={TONE[row.tone].icon} />
+                    <row.icon size={12} aria-hidden className={tintClasses(row.tone).icon} />
                   </span>
                   <span
                     className={cn('min-w-0 flex-1 truncate text-[13px]', active && 'font-medium')}
@@ -256,26 +215,27 @@ export const LensColumn = ({
                     {row.label}
                   </span>
                   {row.count != null && row.count > 0 ? (
-                    <span
-                      className={cn(
-                        'shrink-0 rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                        row.dot === 'attention'
-                          ? 'bg-warning/15 text-warning'
-                          : 'bg-muted text-muted-foreground',
-                      )}
-                    >
-                      {row.count}
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                      <span
+                        className={cn(
+                          'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
+                          row.dot === 'attention'
+                            ? 'bg-warning/15 text-warning'
+                            : 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        {row.count}
+                      </span>
                     </span>
                   ) : row.dot ? (
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'size-1.5 shrink-0 rounded-full',
-                        row.dot === 'attention'
-                          ? 'bg-warning'
-                          : 'motion-safe:animate-pulse bg-info',
-                      )}
+                    <StatusDot
+                      tone={row.dot === 'attention' ? 'warning' : 'info'}
+                      size="sm"
+                      pulsing={row.dot === 'running'}
                     />
+                  ) : row.secondaryDot ? (
+                    <StatusDot tone="accent" size="sm" />
                   ) : null}
                 </button>
               );

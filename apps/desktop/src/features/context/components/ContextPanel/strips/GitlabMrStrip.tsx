@@ -63,11 +63,7 @@ export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
           aria-label="refresh MR status"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw
-            size={12}
-            aria-hidden
-            className={loading ? 'motion-safe:animate-spin' : undefined}
-          />
+          <RefreshCw size={12} aria-hidden />
         </button>
       </div>
       {error ? (

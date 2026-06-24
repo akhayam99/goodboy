@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Archive, ArchiveRestore, Copy, FolderOpen, Pencil, Settings2, Trash2 } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  Copy,
+  FolderOpen,
+  Pencil,
+  Settings2,
+  Trash2,
+} from 'lucide-react';
 import { Input } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -31,6 +40,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const unarchiveTask = useAppStore((s) => s.unarchiveTask);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const { showToast } = useToast();
   const archived = Boolean(session.archivedAt);
 
@@ -148,6 +158,16 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   return (
     <div className="flex shrink-0 flex-col gap-2 px-2 pb-2 pt-2.5">
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void setCurrentSession(null)}
+          title="Back to the board"
+          aria-label="back to board"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        >
+          <ArrowLeft size={14} aria-hidden />
+          Board
+        </button>
         <SessionStageBadge session={session} />
         <div className="group/goal flex min-w-0 flex-1 items-center gap-1.5">
           {renaming ? (

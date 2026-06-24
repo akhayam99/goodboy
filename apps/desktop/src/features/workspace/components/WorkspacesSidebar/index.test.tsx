@@ -36,7 +36,6 @@ vi.mock('../../../../shared/lib/theme', () => ({
 vi.mock('../WorkspaceHeader', () => ({ WorkspaceHeader: () => null }));
 vi.mock('../SessionActivityBar', () => ({ SessionActivityBar: () => null }));
 vi.mock('../WorkspaceLinkDialog', () => ({ WorkspaceLinkDialog: () => null }));
-vi.mock('../../../settings/components/GuideDialog', () => ({ GuideDialog: () => null }));
 vi.mock('../../../../features/notifications/components/NotificationCenter', () => ({
   NotificationCenter: () => null,
 }));

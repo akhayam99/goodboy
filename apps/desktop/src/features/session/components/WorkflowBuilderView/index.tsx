@@ -8,7 +8,6 @@ import {
   Layers,
   Link2,
   ListChecks,
-  Loader2,
   Paperclip,
   Play,
   RotateCcw,
@@ -18,7 +17,7 @@ import {
   Wand2,
   type LucideIcon,
 } from 'lucide-react';
-import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
+import { Button, Divider, Input, Skeleton, Textarea, cn } from '@goodboy/ui';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -480,13 +479,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       onClick={() => void onPolishGoal()}
                       disabled={blocked || polishing || goalText.trim().length === 0}
                       aria-label="polish goal"
-                      className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {polishing ? (
-                        <Loader2 size={10} className="motion-safe:animate-spin" aria-hidden />
-                      ) : (
-                        <Wand2 size={10} aria-hidden />
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                        polishing && 'animate-border-pulse',
                       )}
+                    >
+                      <Wand2 size={10} aria-hidden />
                       Polish
                     </button>
                   </SectionHeader>
@@ -653,19 +651,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               size="sm"
                               onClick={() => void onPlan()}
                               disabled={blocked || processText.trim().length === 0}
-                              className="min-w-[6.5rem]"
+                              className={cn('min-w-[6.5rem]', planning && 'animate-border-pulse')}
                             >
-                              {planning ? (
-                                <Loader2
-                                  size={15}
-                                  className="motion-safe:animate-spin"
-                                  aria-label="planning"
-                                />
-                              ) : plan ? (
-                                'Re-plan'
-                              ) : (
-                                'Generate plan'
-                              )}
+                              {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
                             </Button>
                           </div>
                         </div>
@@ -908,16 +896,27 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     </p>
                   </div>
                 ) : planning ? (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-                    <Loader2
-                      size={22}
-                      className="motion-safe:animate-spin text-muted-foreground/40"
-                      aria-hidden
-                    />
-                    <p className="text-xs font-medium text-foreground">Drafting plan</p>
-                    <p className="max-w-[15rem] text-2xs leading-relaxed text-muted-foreground">
-                      The planner is breaking your process into ordered steps.
-                    </p>
+                  <div role="status" aria-label="Drafting plan" className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-28 rounded" />
+                    </div>
+                    <ol className="flex flex-col divide-y divide-border-soft/50">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <li key={i} className="flex flex-col gap-1.5 px-1 py-3 first:pt-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/40">
+                              {i + 1}
+                            </span>
+                            <Skeleton className="size-4 shrink-0 rounded-full" />
+                            <Skeleton className="h-3 flex-1 rounded" />
+                          </div>
+                          <div className="flex flex-col gap-1 pl-5">
+                            <Skeleton className="h-2 w-full rounded" />
+                            <Skeleton className="h-2 w-4/5 rounded" />
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                 ) : (
                   <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
@@ -958,12 +957,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
             <Button variant="ghost" onClick={handleClose} disabled={busy}>
               Cancel
             </Button>
-            <Button onClick={() => void onStart()} disabled={startDisabled}>
-              {busy ? (
-                <Loader2 size={15} className="motion-safe:animate-spin" aria-label="starting" />
-              ) : (
-                'Start workflow'
-              )}
+            <Button
+              onClick={() => void onStart()}
+              disabled={startDisabled}
+              className={cn(busy && 'animate-border-pulse')}
+            >
+              {busy ? 'Starting…' : 'Start workflow'}
             </Button>
           </footer>
         </div>

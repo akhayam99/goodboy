@@ -6,13 +6,12 @@ import {
   ExternalLink,
   GitBranch,
   GitMerge,
-  Loader2,
   MousePointerClick,
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
+import { ScrollFade } from '@goodboy/ui';
 import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -120,8 +119,8 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
         model: AGENT_KIND_DEFAULTS.generic.model,
         effort: AGENT_KIND_DEFAULTS.generic.effort,
       });
-      await selectAgent(sessionId, agentId);
       await setCurrentSession(sessionId);
+      await selectAgent(sessionId, agentId);
       onClose();
     } catch (err) {
       showToast('error', formatError(err));
@@ -171,11 +170,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
           aria-label="refresh merge request"
           className="flex size-7 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw
-            size={12}
-            aria-hidden
-            className={loading ? 'motion-safe:animate-spin' : undefined}
-          />
+          <RefreshCw size={12} aria-hidden />
         </button>
         {mr ? (
           <a
@@ -191,7 +186,11 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
       <Divider />
 
       <div className="min-h-0 flex-1">
-        <ScrollFade className="mx-auto h-full max-w-3xl px-10 py-8">
+        <ScrollFade
+          className="mx-auto h-full max-w-3xl"
+          viewportClassName="px-10 py-8"
+          fadeSize={24}
+        >
           {mr ? (
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-2">
@@ -236,16 +235,10 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                   <Button
                     onClick={() => void onMerge()}
                     disabled={busy !== null || mr.hasConflicts}
+                    className={busy === 'merge' ? 'animate-border-pulse' : undefined}
                   >
                     {busy === 'merge' ? (
-                      <>
-                        <Loader2
-                          size={13}
-                          className="mr-1.5 motion-safe:animate-spin"
-                          aria-hidden
-                        />
-                        Merging…
-                      </>
+                      'Merging…'
                     ) : (
                       <>
                         <GitMerge size={13} className="mr-1.5" aria-hidden />
@@ -313,27 +306,18 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                     onClick={() => void onCreateWithAi()}
                     disabled={busy !== null || !branch}
                     title="hand it to an agent: it drafts the title and description, then opens the MR"
+                    className={busy === 'ai' ? 'animate-border-pulse' : undefined}
                   >
-                    {busy === 'ai' ? (
-                      <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
-                    ) : (
-                      <Sparkles size={13} className="mr-1.5" aria-hidden />
-                    )}
+                    {busy === 'ai' ? null : <Sparkles size={13} className="mr-1.5" aria-hidden />}
                     Draft with an agent
                   </Button>
                   <Button
                     onClick={() => void onCreate()}
                     disabled={busy !== null || title.trim().length === 0 || !branch}
+                    className={busy === 'create' ? 'animate-border-pulse' : undefined}
                   >
                     {busy === 'create' ? (
-                      <>
-                        <Loader2
-                          size={13}
-                          className="mr-1.5 motion-safe:animate-spin"
-                          aria-hidden
-                        />
-                        Creating…
-                      </>
+                      'Creating…'
                     ) : (
                       <>
                         Create MR

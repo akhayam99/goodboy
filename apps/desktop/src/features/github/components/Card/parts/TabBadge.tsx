@@ -1,12 +1,17 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { TabStatus } from '../status';
 
-const TONE_PILL: Record<TabStatus['tone'], string> = {
-  success: 'bg-success/10 text-success',
-  danger: 'bg-danger/15 text-danger',
-  warning: 'bg-warning/15 text-warning',
-  info: 'bg-info/10 text-info',
-  muted: 'bg-muted text-muted-foreground',
+const TONE_MAP: Record<TabStatus['tone'], Tone> = {
+  success: 'success',
+  danger: 'danger',
+  warning: 'warning',
+  info: 'info',
+  muted: 'neutral',
+};
+
+const BG_OVERRIDE: Partial<Record<TabStatus['tone'], string>> = {
+  danger: 'bg-danger/15',
+  warning: 'bg-warning/15',
 };
 
 type Props = {
@@ -16,12 +21,15 @@ type Props = {
 
 export const TabBadge = ({ status, dim }: Props) => {
   const hasCount = status.count != null && status.count > 0;
+  const tint = tintClasses(TONE_MAP[status.tone]);
   return (
     <span
       aria-label={status.label}
       className={cn(
         'inline-flex items-center gap-0.5 rounded-full px-1 leading-none transition-opacity',
-        TONE_PILL[status.tone],
+        tint.bg,
+        tint.text,
+        BG_OVERRIDE[status.tone],
         dim && 'opacity-80',
       )}
     >

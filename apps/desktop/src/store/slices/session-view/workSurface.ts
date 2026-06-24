@@ -14,6 +14,10 @@ export const setActiveLens = (set: SetFn) => {
         activeLens: { ...s.activeLens, [sessionId]: lens },
         sessionStudio: { ...s.sessionStudio, [sessionId]: null },
         selectedAgentId: { ...s.selectedAgentId, [sessionId]: null },
+        focusedWorkflowRunId:
+          lens === 'workflows'
+            ? s.focusedWorkflowRunId
+            : { ...s.focusedWorkflowRunId, [sessionId]: null },
         lensHistory: {
           ...s.lensHistory,
           [sessionId]: { entries, index: entries.length - 1 },
@@ -53,8 +57,17 @@ export const toggleWorkflowExpand = (set: SetFn) => {
           ...s.workflowExpand,
           [sessionId]: { ...current, [runId]: next },
         },
+        focusedWorkflowRunId: { ...s.focusedWorkflowRunId, [sessionId]: null },
       };
     });
+  };
+};
+
+export const setFocusedWorkflowRun = (set: SetFn) => {
+  return (sessionId: SessionId, runId: string | null): void => {
+    set((s) => ({
+      focusedWorkflowRunId: { ...s.focusedWorkflowRunId, [sessionId]: runId },
+    }));
   };
 };
 

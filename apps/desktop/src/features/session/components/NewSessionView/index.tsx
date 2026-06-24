@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Divider, Input, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Loader2, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
+import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
+import { AlertTriangle, GitBranch, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CURSOR_AUTO_MODEL } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -23,7 +23,6 @@ import { goalFromIssue } from '../../../../features/integrations/linear/goal-fro
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
-import { ScrollFade } from '../../../../shared/components/ScrollFade';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 
@@ -388,7 +387,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       />
       <Divider />
 
-      <ScrollFade className="min-h-0 flex-1 px-6 py-5">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
         <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-8">
           {noProviderConnected ? (
             <div
@@ -517,9 +516,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                     {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
                   </span>
                   {slugGenerating ? (
-                    <span className="flex h-8 flex-1 motion-safe:animate-pulse items-center rounded border border-border bg-subtle px-2">
-                      <span className="h-2 w-full rounded bg-muted-foreground/20" />
-                    </span>
+                    <Skeleton className="h-8 flex-1 rounded border border-border" />
                   ) : (
                     <Input
                       value={branchSlug}
@@ -619,26 +616,17 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             variant="danger"
             onClick={() => void onCreate(conflictWorktreePath)}
             disabled={busy || !goalReady}
+            className={cn(busy && 'animate-border-pulse')}
           >
-            {busy ? (
-              <>
-                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
-                Working…
-              </>
-            ) : (
-              'Erase worktree & create'
-            )}
+            {busy ? 'Working…' : 'Erase worktree & create'}
           </Button>
         ) : (
-          <Button onClick={() => void onCreate()} disabled={!canCreate}>
-            {busy ? (
-              <>
-                <Loader2 size={13} className="mr-1.5 motion-safe:animate-spin" aria-hidden />
-                Creating…
-              </>
-            ) : (
-              'Create session'
-            )}
+          <Button
+            onClick={() => void onCreate()}
+            disabled={!canCreate}
+            className={cn(busy && 'animate-border-pulse')}
+          >
+            {busy ? 'Creating…' : 'Create session'}
           </Button>
         )}
       </footer>

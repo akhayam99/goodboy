@@ -5,6 +5,7 @@ import {
   lensGo,
   setActiveLens,
   setFocusedPlanId,
+  setFocusedWorkflowRun,
   setSessionStudio,
   toggleWorkflowExpand,
 } from './workSurface';
@@ -25,12 +26,14 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     focusedPlanId: {},
     sessionStudio: {},
     workflowExpand: {},
+    focusedWorkflowRunId: {},
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),
     setActiveLens: setActiveLens(set),
     lensGo: lensGo(set, get),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
+    setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedPlanId: setFocusedPlanId(set),
     setSessionStudio: setSessionStudio(set),
   };

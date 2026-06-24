@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
-import { ScrollFade } from '../../../../../shared/components/ScrollFade';
+import { cn, ScrollFade } from '@goodboy/ui';
 
 type PaneShellProps = {
   readonly title: string;
@@ -22,7 +21,7 @@ export const PaneShell = ({
   width = '2xl',
   children,
 }: PaneShellProps) => (
-  <ScrollFade className="h-full px-6 py-5">
+  <ScrollFade className="h-full" viewportClassName="px-6 py-5" fadeSize={24}>
     <div className={cn('mx-auto flex flex-col gap-5 motion-safe:animate-studio-in', WIDTH[width])}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">

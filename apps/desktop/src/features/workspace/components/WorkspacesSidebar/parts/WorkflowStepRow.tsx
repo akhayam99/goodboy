@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, Check, Clock, Loader2, Play } from 'lucide-react';
+import { StatusDot, cn } from '@goodboy/ui';
+import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
@@ -63,6 +63,8 @@ export function WorkflowStepRow({
   const isPendingFuture = run.status === 'pending' && !isActionable;
   const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
+  const isRunning = run.status === 'running';
+  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
 
   const [draft, setDraft] = useState(run.name);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -90,70 +92,58 @@ export function WorkflowStepRow({
     }
   };
 
-  const ROW_BASE = 'group flex w-full flex-col rounded border px-2 py-1.5 text-xs font-medium';
-  const isRunning = run.status === 'running';
-  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
-  const containerClass = isRunning
-    ? cn(
-        `${ROW_BASE} border-info/60 transition-colors cursor-pointer`,
-        isSelected ? 'bg-elevated text-foreground' : 'bg-muted/40 text-foreground/80',
-      )
-    : isStartable
-      ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
-      : isActionable && isBlocked
-        ? `${ROW_BASE} border-warning/70 bg-warning/10 text-foreground transition-colors hover:bg-warning/15 cursor-pointer`
-        : hasUnread
-          ? `${ROW_BASE} border-warning/70 bg-muted/40 text-foreground/80 transition-colors hover:border-warning hover:bg-muted/60 cursor-pointer`
-          : isPendingFuture
-            ? `${ROW_BASE} border-transparent text-muted-foreground/40`
-            : cn(
-                `${ROW_BASE} transition-colors cursor-pointer`,
-                isSelected
-                  ? 'border-border bg-elevated text-foreground'
-                  : 'border-border-soft/50 bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/60',
-              );
+  const containerClass = cn(
+    'group rounded border transition-colors',
+    isEditing || isPendingFuture ? '' : 'cursor-pointer',
+    isPendingFuture
+      ? 'border-transparent'
+      : isStartable
+        ? 'border-primary/45 bg-primary/[0.06] hover:bg-primary/[0.1]'
+        : isActionable && isBlocked
+          ? 'border-warning/60 bg-warning/[0.06] hover:bg-warning/[0.1]'
+          : isRunning
+            ? cn('border-info/60', isSelected ? 'bg-elevated' : 'bg-muted/40')
+            : hasUnread
+              ? 'border-warning/70 bg-muted/40 hover:bg-muted/60'
+              : isSelected
+                ? 'border-border bg-elevated'
+                : 'border-transparent bg-muted/40 hover:bg-muted/60',
+  );
 
   const renderStatusIcon = () => {
     if (isStartable) {
       return (
-        <span className="relative inline-flex size-3.5">
-          <span
-            className="absolute inset-0 motion-safe:animate-ping rounded-full bg-primary/30 opacity-75"
-            aria-hidden
-          />
-          <span className="relative flex size-3.5 items-center justify-center rounded-full bg-primary/15">
-            <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
-          </span>
+        <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+          <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
         </span>
       );
     }
     if (isActionable && isBlocked) {
       return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
-    if (run.status === 'running') {
-      return <Loader2 size={11} className="motion-safe:animate-spin text-info" aria-hidden />;
+    if (isRunning) {
+      return <StatusDot tone="info" size="md" pulsing />;
     }
-    if (run.status === 'completed') {
+    if (run.status === 'completed' || run.status === 'skipped') {
       return (
-        <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
-          <Check size={9} className="text-success" aria-hidden />
+        <span
+          className={cn(
+            'flex size-3.5 items-center justify-center rounded-full',
+            run.status === 'skipped' ? 'bg-muted' : 'bg-success/15',
+          )}
+        >
+          <Check
+            size={9}
+            className={run.status === 'skipped' ? 'text-muted-foreground/60' : 'text-success'}
+            aria-hidden
+          />
         </span>
       );
     }
     if (run.status === 'failed') {
       return <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
     }
-    return <Clock size={11} className="text-muted-foreground/70" aria-hidden />;
-  };
-
-  const renderActionIndicator = () => {
-    if (run.status === 'running') {
-      return null;
-    }
-    if (isActionable && isBlocked) {
-      return <ArrowRight size={13} aria-hidden className="text-warning" />;
-    }
-    return null;
+    return <Clock size={11} className="text-muted-foreground/50" aria-hidden />;
   };
 
   const stableTitle =
@@ -185,7 +175,7 @@ export function WorkflowStepRow({
         }}
         className={containerClass}
       >
-        <div className="flex w-full items-center gap-1.5">
+        <div className="flex items-center gap-2 px-2 py-1.5">
           <span
             aria-hidden
             className={cn(
@@ -217,39 +207,47 @@ export function WorkflowStepRow({
                 }
               }}
               onBlur={() => onRenameCommit(draft)}
-              className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none ring-1 ring-primary"
+              className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
               aria-label="rename agent"
             />
           ) : (
-            <span className="min-w-0 flex-1 truncate text-left font-semibold">{run.name}</span>
+            <span
+              className={cn(
+                'line-clamp-1 flex-1 text-left text-2xs font-medium',
+                isPendingFuture
+                  ? 'text-muted-foreground/50'
+                  : isSelected
+                    ? 'text-foreground'
+                    : 'text-muted-foreground',
+              )}
+            >
+              {run.name}
+            </span>
           )}
-          {renderActionIndicator()}
-        </div>
-        <div className="flex w-full items-center justify-between gap-2 pl-[22px] pt-0.5">
-          <span className="flex min-w-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <ProviderGlyph
               provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
               muted={isPendingFuture}
             />
             <span
               className={cn(
-                'min-w-0 truncate text-[10px] font-normal tabular-nums',
-                isPendingFuture ? 'text-muted-foreground/60' : 'opacity-60',
+                'text-2xs tabular-nums',
+                isPendingFuture ? 'text-muted-foreground/50' : 'text-muted-foreground/70',
               )}
               title={`model: ${resolvedModel}`}
             >
               {modelLabel}
             </span>
-          </span>
+          </div>
         </div>
         <div
           className={cn(
-            'grid w-full transition-[grid-template-rows] duration-200 ease-out',
+            'grid transition-[grid-template-rows] duration-200 ease-out',
             isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
           )}
         >
           <div className="overflow-hidden">
-            <div className="flex flex-col gap-1 pt-1">
+            <div className="flex flex-col gap-1 px-2 pb-1.5">
               <AgentMetricsBlock
                 run={run}
                 telemetry={telemetry}

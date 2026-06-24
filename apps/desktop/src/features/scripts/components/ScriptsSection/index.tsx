@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Popover, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, Popover, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import {
   ChevronDown,
@@ -181,7 +181,7 @@ function ScriptRow({
       className={cn(
         'group flex items-center gap-2 rounded border border-transparent px-2 py-1.5 transition-colors',
         !isPending && 'hover:bg-muted/60',
-        isPending && 'spin-border spin-border-info',
+        isPending && 'border-info/50',
       )}
     >
       <StatusDot status={status} />
@@ -301,7 +301,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
       }}
       className="z-50 flex flex-col"
     >
-      <div className="flex items-center gap-2 border-b border-border-soft px-3 py-2">
+      <div className="flex items-center gap-2 px-3 py-2">
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {script.name}
         </span>
@@ -316,6 +316,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
           <X size={12} aria-hidden />
         </button>
       </div>
+      <Divider className="shrink-0" />
       <pre className="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
         {result.stdout}
         {result.stderr ? (
