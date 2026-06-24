@@ -119,8 +119,8 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
         model: AGENT_KIND_DEFAULTS.generic.model,
         effort: AGENT_KIND_DEFAULTS.generic.effort,
       });
-      await selectAgent(sessionId, agentId);
       await setCurrentSession(sessionId);
+      await selectAgent(sessionId, agentId);
       onClose();
     } catch (err) {
       showToast('error', formatError(err));

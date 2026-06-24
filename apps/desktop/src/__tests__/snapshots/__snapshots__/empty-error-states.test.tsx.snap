@@ -462,11 +462,13 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
     </div>
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b h-[24px] from-background opacity-0"
+      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b from-background opacity-0"
+      style="height: 24px;"
     />
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t h-[24px] from-background opacity-0"
+      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t from-background opacity-0"
+      style="height: 24px;"
     />
   </div>
   <div
@@ -1641,11 +1643,13 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
     </div>
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b h-[24px] from-background opacity-0"
+      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b from-background opacity-0"
+      style="height: 24px;"
     />
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t h-[24px] from-background opacity-0"
+      class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t from-background opacity-0"
+      style="height: 24px;"
     />
   </div>
   <div

@@ -57,12 +57,13 @@ export const ScrollFade = ({
   }, [sync]);
 
   const from = FADE_FROM[fadeFrom];
-  const sizeClass =
+  const sizeClass = typeof fadeSize === 'string' ? fadeSize : undefined;
+  const sizeStyle =
     typeof fadeSize === 'number'
       ? horizontal
-        ? `w-[${fadeSize}px]`
-        : `h-[${fadeSize}px]`
-      : fadeSize;
+        ? { width: fadeSize }
+        : { height: fadeSize }
+      : undefined;
 
   return (
     <div className={cn('relative min-h-0', className)}>
@@ -80,6 +81,7 @@ export const ScrollFade = ({
       </div>
       <div
         aria-hidden
+        style={sizeStyle}
         className={cn(
           'pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200',
           horizontal ? 'inset-y-0 left-0 bg-gradient-to-r' : 'inset-x-0 top-0 bg-gradient-to-b',
@@ -90,6 +92,7 @@ export const ScrollFade = ({
       />
       <div
         aria-hidden
+        style={sizeStyle}
         className={cn(
           'pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200',
           horizontal ? 'inset-y-0 right-0 bg-gradient-to-l' : 'inset-x-0 bottom-0 bg-gradient-to-t',

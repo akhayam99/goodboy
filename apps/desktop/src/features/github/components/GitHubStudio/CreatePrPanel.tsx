@@ -104,8 +104,8 @@ export const CreatePrPanel = ({
         model: AGENT_KIND_DEFAULTS.generic.model,
         effort: AGENT_KIND_DEFAULTS.generic.effort,
       });
-      await selectAgent(sessionId, agentId);
       await setCurrentSession(sessionId);
+      await selectAgent(sessionId, agentId);
       onStudioClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

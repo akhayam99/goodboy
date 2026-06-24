@@ -20,7 +20,7 @@ type Runs = {
   resolveQueue: ReadonlyArray<unknown>;
 };
 
-const { store, hooks, runs, openAgentFromRunMock } = vi.hoisted(() => ({
+const { store, hooks, runs } = vi.hoisted(() => ({
   store: {
     sessionBranches: {} as Record<string, string>,
     spawnAgent: vi.fn(async () => undefined),
@@ -36,7 +36,6 @@ const { store, hooks, runs, openAgentFromRunMock } = vi.hoisted(() => ({
     stage: { stage: 'building', reason: '' } as SessionStageInfo,
   },
   runs: { lanes: [], freeAgents: [], resolveQueue: [] } as Runs,
-  openAgentFromRunMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -50,10 +49,6 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({
   useWorkspaceRuns: () => runs,
-}));
-
-vi.mock('../../../orchestration/hooks/useRunsNavigation', () => ({
-  useRunsNavigation: () => ({ openAgentFromRun: openAgentFromRunMock, jumpToComment: vi.fn() }),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -122,7 +117,6 @@ beforeEach(() => {
   runs.lanes = [];
   runs.freeAgents = [];
   runs.resolveQueue = [];
-  openAgentFromRunMock.mockReset();
 });
 afterEach(cleanup);
 

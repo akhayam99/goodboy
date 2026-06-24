@@ -258,8 +258,8 @@ export const PrDetailPanel = ({
         choice,
         false,
       );
-      await selectAgent(sessionId, agentId);
       await setCurrentSession(sessionId);
+      await selectAgent(sessionId, agentId);
       onClose();
     })();
   };
@@ -291,8 +291,8 @@ export const PrDetailPanel = ({
           true,
         );
       }
-      await activateNextResolver(sessionId);
       await setCurrentSession(sessionId);
+      await activateNextResolver(sessionId);
       onClose();
     })();
   };
