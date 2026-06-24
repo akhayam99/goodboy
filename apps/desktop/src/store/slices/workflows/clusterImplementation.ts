@@ -161,7 +161,8 @@ function findClustersPlan(
   sessionId: SessionId,
   workflowRunId: WorkflowRunId | undefined,
 ) {
-  return selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
+  const p = selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
+  return p?.status === 'active' ? p : null;
 }
 
 export const selectFanOutPlan = (

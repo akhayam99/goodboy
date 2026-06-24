@@ -106,6 +106,15 @@ describe('selectClustersPlan', () => {
     expect(selectClustersPlan([wf1, wf2], 'wf1' as WorkflowRunId)?.id).toBe('p-wf1');
     expect(selectClustersPlan([wf1, wf2], 'wf2' as WorkflowRunId)?.id).toBe('p-wf2');
   });
+
+  it('still returns a consumed plan so the dashboard keeps rendering it (display contract)', () => {
+    const consumed = plan({
+      id: 'planning',
+      status: 'consumed',
+      workflowRunId: 'wf1' as WorkflowRunId,
+    });
+    expect(selectClustersPlan([consumed], 'wf1' as WorkflowRunId)?.id).toBe('planning');
+  });
 });
 
 const fakeGet = (plans: ReadonlyArray<PlanWithCount>): GetFn =>
@@ -140,6 +149,17 @@ describe('selectFanOutPlan', () => {
 
   it('returns null when neither an explicit nor a stored plan qualifies', () => {
     expect(selectFanOutPlan(fakeGet([]), sessionId, {})).toBeNull();
+  });
+
+  it('ignores a consumed plan so a later workflow step does not re-fan-out the same clusters', () => {
+    const consumed = plan({
+      id: 'planning',
+      status: 'consumed',
+      workflowRunId: 'wf1' as WorkflowRunId,
+    });
+    expect(
+      selectFanOutPlan(fakeGet([consumed]), sessionId, { workflowRunId: 'wf1' as WorkflowRunId }),
+    ).toBeNull();
   });
 });
 

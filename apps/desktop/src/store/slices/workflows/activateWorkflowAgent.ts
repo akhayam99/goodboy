@@ -68,6 +68,14 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       : '';
     const planToConsume = explicitPlan ?? (latestPlan?.status === 'active' ? latestPlan : null);
 
+    const fanOutPlan =
+      effectiveKind === 'implementer'
+        ? selectFanOutPlan(get, sessionId, {
+            workflowRunId: agent.workflowRunId,
+            explicitPlan,
+          })
+        : null;
+
     if (consumesPlan && planToConsume) {
       await invokeAddPlanConsumption(planToConsume.id, agentId);
       const refreshedPlans = await invokeListPlansForSession(sessionId);
@@ -78,13 +86,6 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       }));
     }
 
-    const fanOutPlan =
-      effectiveKind === 'implementer'
-        ? selectFanOutPlan(get, sessionId, {
-            workflowRunId: agent.workflowRunId,
-            explicitPlan,
-          })
-        : null;
     const clusters =
       fanOutPlan?.clusters && fanOutPlan.clusters.length >= 2 ? fanOutPlan.clusters : undefined;
     if (clusters && clusters.length >= 2) {
