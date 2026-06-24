@@ -3,15 +3,27 @@ import type { PrComment, PullRequestState } from '@goodboy/types';
 import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
 import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react';
 import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
+import {
+  ResolverStateBadge,
+  resolverBadgeState,
+} from '../../../session/components/ResolverStateBadge';
+import type { ResolverLink } from '../../../session/resolver-linkage';
 
 type Props = {
   readonly comments: ReadonlyArray<PrComment>;
   readonly pr: PullRequestState;
+  readonly resolverFor?: (thread: CommentThread) => ResolverLink | undefined;
   readonly scrollToThreadId?: string | null;
   readonly onOpenUrl: (url: string) => void;
 };
 
-export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUrl }: Props) => {
+export const PrConversation = ({
+  comments,
+  pr,
+  resolverFor,
+  scrollToThreadId = null,
+  onOpenUrl,
+}: Props) => {
   const threads = useMemo(() => {
     const all = groupThreads(comments);
     return [...all].sort((a, b) => {
@@ -79,7 +91,7 @@ export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUr
                 tid && tid === flashThreadId ? 'ring-2 ring-accent/60' : '',
               )}
             >
-              <ConversationThread thread={t} onOpenUrl={onOpenUrl} />
+              <ConversationThread thread={t} link={resolverFor?.(t)} onOpenUrl={onOpenUrl} />
             </li>
           );
         })}
@@ -98,9 +110,11 @@ export const PrConversation = ({ comments, pr, scrollToThreadId = null, onOpenUr
 
 function ConversationThread({
   thread,
+  link,
   onOpenUrl,
 }: {
   thread: CommentThread;
+  link?: ResolverLink;
   onOpenUrl: (url: string) => void;
 }) {
   const { head, replies } = thread;
@@ -137,6 +151,9 @@ function ConversationThread({
             <CheckCheck size={11} aria-hidden />
             resolved
           </span>
+        ) : null}
+        {link && !resolved ? (
+          <ResolverStateBadge state={resolverBadgeState(link.status)} className="ml-1" />
         ) : null}
         <button
           type="button"

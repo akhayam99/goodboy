@@ -309,6 +309,7 @@ const DiffViewerContent = ({
   const selectAgent = useAppStore((s) => s.selectAgent);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const sendTurn = useAppStore((s) => s.sendTurn);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
 
   useEffect(() => {
@@ -583,6 +584,7 @@ const DiffViewerContent = ({
     if (!sessionId) {
       return;
     }
+    setActiveLens(sessionId, 'resolve');
     await selectAgent(sessionId, agentId);
     onClose();
   };

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
+import type { AgentId, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
 import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
 import {
@@ -7,6 +7,8 @@ import {
   type CommentAgentArgs,
   type ResolveModelChoice,
 } from '../../../chat/spawn-from-comment';
+import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
+import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
@@ -56,6 +58,13 @@ export const PrDetailPanel = ({
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
+
+  const resolverIndex = useResolverIndex((sessionId ?? '') as SessionId);
+  const resolverFor = useCallback(
+    (thread: CommentThread): ResolverLink | undefined =>
+      resolverForComment(resolverIndex, { threadId: thread.head.threadId, url: thread.head.url }),
+    [resolverIndex],
+  );
 
   const [busy, setBusy] = useState<ActionBusy>(null);
   const [mergeConfirm, setMergeConfirm] = useState(false);
@@ -226,8 +235,21 @@ export const PrDetailPanel = ({
     return agentId;
   };
 
+  const openResolver = (agentId: AgentId) => {
+    void (async () => {
+      await setCurrentSession(sessionId);
+      await selectAgent(sessionId, agentId);
+      onClose();
+    })();
+  };
+
   const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
     if (!activePr) {
+      return;
+    }
+    const existing = resolverFor(thread);
+    if (existing && existing.status !== 'failed') {
+      openResolver(existing.agent.id as AgentId);
       return;
     }
     void (async () => {
@@ -249,8 +271,19 @@ export const PrDetailPanel = ({
     if (!activePr || batch.length === 0) {
       return;
     }
+    const fresh = batch.filter((t) => {
+      const existing = resolverFor(t);
+      return !existing || existing.status === 'failed';
+    });
+    if (fresh.length === 0) {
+      void (async () => {
+        await setCurrentSession(sessionId);
+        onClose();
+      })();
+      return;
+    }
     void (async () => {
-      for (const t of batch) {
+      for (const t of fresh) {
         const choice = choiceById[t.head.id] ?? {};
         await spawnResolver(
           buildCommentAgentArgs(t.head, activePr, choice, t.replies),
@@ -385,8 +418,10 @@ export const PrDetailPanel = ({
                     threads={groupThreads(detail?.comments ?? []).filter(
                       (t) => t.head.source === 'review' && t.head.resolved === false,
                     )}
+                    resolverFor={resolverFor}
                     onSpawnOne={onSpawnOne}
                     onSpawnBatch={onSpawnBatch}
+                    onOpenResolver={openResolver}
                     onOpenThread={(threadId) => {
                       setJumpThreadId(threadId);
                       setSection('comments');
@@ -396,6 +431,7 @@ export const PrDetailPanel = ({
                   <PrConversation
                     comments={detail?.comments ?? []}
                     pr={activePr}
+                    resolverFor={resolverFor}
                     scrollToThreadId={jumpThreadId ?? initialThreadId}
                     onOpenUrl={(u) => void openUrl(u)}
                   />
