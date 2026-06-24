@@ -1,4 +1,4 @@
-import type { PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../features/plans/plans';
 
 export const buildPlanKickoffSection = async (
@@ -28,3 +28,13 @@ export const buildGoalKickoffSection = (goal?: string): string => {
   const trimmed = (goal ?? '').trim();
   return trimmed.length > 0 ? `Workflow goal:\n\n${trimmed}` : '';
 };
+
+export const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
+
+export const composeStepBoundary = (agentId: AgentId): string =>
+  [
+    'Complete ONLY this workflow step. Do not start later steps or work on their scope.',
+    'When this step is fully complete, emit on its own line exactly:',
+    stepBoundaryMarker(agentId),
+    'Do not emit that marker until the step is truly done.',
+  ].join('\n');

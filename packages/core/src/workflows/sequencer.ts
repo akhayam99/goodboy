@@ -80,6 +80,33 @@ export const buildStepPrompt = (input: {
   return parts.join('\n\n');
 };
 
+export type WorkflowChainState =
+  | { readonly kind: 'step'; readonly step: Step }
+  | { readonly kind: 'blocked'; readonly failedStep: Step }
+  | { readonly kind: 'complete' };
+
+export const classifyWorkflowChain = (
+  template: Workflow,
+  runs: ReadonlyArray<Agent>,
+): WorkflowChainState => {
+  const doneIds = new Set(
+    runs
+      .filter((r) => r.status === 'completed' || r.status === 'skipped')
+      .map((r) => r.stepId)
+      .filter((id): id is Step['id'] => id !== undefined),
+  );
+  const sorted = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  const pending = sorted.find((s) => !doneIds.has(s.id));
+  if (pending === undefined) {
+    return { kind: 'complete' };
+  }
+  const latest = findReusableAgent(runs, pending.id);
+  if (latest?.status === 'failed') {
+    return { kind: 'blocked', failedStep: pending };
+  }
+  return { kind: 'step', step: pending };
+};
+
 export const isWorkflowComplete = (template: Workflow, runs: ReadonlyArray<Agent>): boolean => {
   const doneIds = new Set(
     runs

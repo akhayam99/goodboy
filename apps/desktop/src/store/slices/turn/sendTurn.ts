@@ -6,6 +6,7 @@ import {
   buildStepPrompt,
   extractCommentResolved,
   extractCommentWontfix,
+  extractPlanFromMarker,
   extractScoutSplit,
   findReusableAgent,
   runsForWorkflowRun,
@@ -18,7 +19,6 @@ import {
   listContextSlotsForSession,
   updateProviderRunStatus,
   updateSessionState,
-  updateSessionWorkflowStep,
   upsertContextSlot,
 } from '@goodboy/db';
 import type {
@@ -730,6 +730,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
         } else if (ranAgent?.parentAgentId) {
           await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText);
+        } else if (!!ranAgent?.stepId && !!ranAgent?.workflowRunId) {
+          const planCapturedThisTurn = extractPlanFromMarker(assistantText) !== null;
+          const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
+            sessionId,
+            resolvedAgentId,
+            assistantText,
+            planCapturedThisTurn,
+          );
+          shouldAutoAdvanceWorkflow = shouldAutoAdvance;
         } else {
           await invokeAgentUpdateStatus(resolvedAgentId, {
             status: 'completed',
@@ -737,41 +746,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             completedAt: now(),
           });
           const refreshedRuns = await invokeAgentList(sessionId);
-          set((state) => {
-            if (!phaseDefinition) {
-              return {
-                sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-              };
-            }
-            const target = state.sessions.find((s) => s.id === sessionId);
-            const runId2 =
-              phaseWorkflowRunId && target?.workflowRuns.some((r) => r.id === phaseWorkflowRunId)
-                ? phaseWorkflowRunId
-                : null;
-            if (runId2) {
-              void updateSessionWorkflowStep(
-                tauriDatabase,
-                sessionId,
-                runId2,
-                phaseDefinition.ordinal,
-                new Date().toISOString() as IsoDateTime,
-              );
-            }
-            return {
-              sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-              sessions: state.sessions.map((s) => {
-                if (s.id !== sessionId || !runId2) {
-                  return s;
-                }
-                return {
-                  ...s,
-                  workflowRuns: s.workflowRuns.map((r) =>
-                    r.id === runId2 ? { ...r, currentStep: phaseDefinition!.ordinal } : r,
-                  ),
-                };
-              }),
-            };
-          });
+          set((state) => ({
+            sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+          }));
           void get().refreshUnreadWorkspaces();
 
           shouldAutoAdvanceWorkflow = true;

@@ -28,6 +28,10 @@ export const runPlan = (get: GetFn) => {
       return;
     }
 
+    if (creatorAgent.status === 'failed') {
+      return;
+    }
+
     const templates = state.phaseTemplates[session.workspaceId] ?? [];
     const creatorRun = session.workflowRuns.find((r) => r.id === creatorAgent.workflowRunId);
     const template =

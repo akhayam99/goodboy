@@ -40,7 +40,11 @@ import {
   useSessionLoading,
   useSessionOpenQuestions,
 } from '../../../../../store';
-import { pickNextWorkflowStep } from '../../../../../features/workflows/components/WorkflowNextStepCta';
+import { classifyWorkflowChain } from '@goodboy/core';
+import {
+  WorkflowNextStepCta,
+  pickNextWorkflowStep,
+} from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip';
@@ -177,6 +181,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
   const dequeueResolution = useAppStore((s) => s.dequeueResolution);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
+  const forceAdvanceWorkflowStep = useAppStore((s) => s.forceAdvanceWorkflowStep);
   const renameAgent = useAppStore((s) => s.renameAgent);
   const deleteAgent = useAppStore((s) => s.deleteAgent);
   const phaseTemplates = useAppStore(
@@ -292,16 +297,19 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
   }, [attachedRuns, agentsByRunId]);
   const blockReasonByRunId = useMemo(() => {
     const map = new Map<string, WorkflowBlockReason | null>();
-    for (const { run } of attachedRuns) {
-      const reason = workflowRunHasOpenQuestions(openQuestions, run.id)
+    for (const { run, workflow } of attachedRuns) {
+      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
+      const reason: WorkflowBlockReason | null = workflowRunHasOpenQuestions(openQuestions, run.id)
         ? 'questions'
         : summarizerBusy
           ? 'summarizer'
-          : null;
+          : classifyWorkflowChain(workflow, runAgents).kind === 'blocked'
+            ? 'failed-step'
+            : null;
       map.set(run.id, reason);
     }
     return map;
-  }, [attachedRuns, openQuestions, summarizerBusy]);
+  }, [attachedRuns, agentsByRunId, openQuestions, summarizerBusy]);
 
   const onDiscardWorkflow = useCallback(
     async (runId: WorkflowRunId) => {
@@ -950,6 +958,16 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               No agents yet for this workflow.
             </p>
           )
+        ) : null}
+        {expanded && !isDiscarded && wfBlockReason === 'failed-step' ? (
+          <div className={cn('pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
+            <WorkflowNextStepCta
+              workflow={workflow}
+              runs={wfAgents}
+              onAdvance={() => {}}
+              onForceAdvance={() => void forceAdvanceWorkflowStep(task.id, run.id)}
+            />
+          </div>
         ) : null}
         {expanded ? (
           <div className="pb-1 pl-3">

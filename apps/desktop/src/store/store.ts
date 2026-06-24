@@ -429,7 +429,15 @@ export type AppActions = {
     assistantText: string,
     opts?: { readonly force?: boolean },
   ): Promise<void>;
+  finalizeWorkflowStep(
+    sessionId: SessionId,
+    agentId: AgentId,
+    assistantText: string,
+    planCapturedThisTurn: boolean,
+    opts?: { readonly force?: boolean },
+  ): Promise<{ readonly shouldAutoAdvance: boolean }>;
   advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
+  forceAdvanceWorkflowStep(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;

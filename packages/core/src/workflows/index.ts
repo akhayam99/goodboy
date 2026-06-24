@@ -1,10 +1,12 @@
 export {
   buildStepPrompt,
+  classifyWorkflowChain,
   currentStep,
   findReusableAgent,
   isWorkflowComplete,
   nextStep,
   runsForWorkflowRun,
+  type WorkflowChainState,
 } from './sequencer';
 export { WorkflowPropagator, type WorkflowPropagatorDeps } from './propagator';
 export { WORKFLOW_LIBRARY, type WorkflowLibraryEntry, type WorkflowLibraryStep } from './library';

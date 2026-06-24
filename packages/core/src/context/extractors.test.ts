@@ -11,6 +11,7 @@ import {
   extractMarkers,
   extractPlanFromMarker,
   extractScoutSplit,
+  extractStepDone,
   isOpenQuestionAnswerText,
   isReviewThreadId,
   mergeIntoSlot,
@@ -571,5 +572,38 @@ describe('open-question answer markers', () => {
   it('returns false for ordinary text', () => {
     expect(isOpenQuestionAnswerText('just a normal answer')).toBe(false);
     expect(isOpenQuestionAnswerText('mentions <<oq-answers>> mid sentence')).toBe(false);
+  });
+});
+
+describe('extractStepDone', () => {
+  it('returns null for text without marker', () => {
+    expect(extractStepDone('no markers here')).toBeNull();
+  });
+
+  it('extracts id from a valid step-done marker', () => {
+    expect(extractStepDone('work done\n<<step-done id="agent-42">>')).toEqual({ id: 'agent-42' });
+  });
+
+  it('returns last match when multiple markers present', () => {
+    const text = '<<step-done id="first">> middle <<step-done id="second">>';
+    expect(extractStepDone(text)).toEqual({ id: 'second' });
+  });
+
+  it('ignores marker without id attribute', () => {
+    expect(extractStepDone('<<step-done foo="bar">>')).toBeNull();
+  });
+
+  it('ignores marker with empty id', () => {
+    expect(extractStepDone('<<step-done id="">> text')).toBeNull();
+  });
+
+  it('resets regex state across calls', () => {
+    extractStepDone('<<step-done id="a">>');
+    expect(extractStepDone('<<step-done id="b">>')).toEqual({ id: 'b' });
+  });
+
+  it('is stripped by stripControlMarkers (SELF_MARKER_ALT coverage)', () => {
+    const text = 'result\n<<step-done id="x">>\ndone';
+    expect(stripControlMarkers(text)).toBe('result\n\ndone');
   });
 });

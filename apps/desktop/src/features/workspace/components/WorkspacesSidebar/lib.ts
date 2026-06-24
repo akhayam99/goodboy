@@ -16,7 +16,7 @@ export function workflowKindName(workflow: Workflow): string {
 export const pluralize = (count: number, singular: string) =>
   `${count} ${singular}${count === 1 ? '' : 's'}`;
 
-export type WorkflowBlockReason = 'questions' | 'summarizer';
+export type WorkflowBlockReason = 'questions' | 'summarizer' | 'failed-step';
 
 export type ResolverState = 'awaiting' | 'committed' | 'wontfix';
 export type ResolverStatus =
