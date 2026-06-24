@@ -214,6 +214,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
   const workflowExpand = useAppStore((s) => s.workflowExpand[task.id]);
+  const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId?.[task.id] ?? null);
   const toggleWorkflowExpand = useAppStore((s) => s.toggleWorkflowExpand);
   const [resolveExpanded, setResolveExpanded] = useState(true);
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
@@ -712,7 +713,9 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     const isCompleted = !isDiscarded && total > 0 && done >= total;
     const unreadCount = countUnread(wfAgents);
     const expanded =
-      workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0));
+      focusedWorkflowRunId != null
+        ? run.id === focusedWorkflowRunId
+        : (workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0)));
     const hasStarted = wfAgents.length > 0;
     const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
     const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;

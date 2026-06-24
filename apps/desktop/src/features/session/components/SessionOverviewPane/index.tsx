@@ -21,7 +21,15 @@ import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
 import { Chip, cn, Divider, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
+import type {
+  Agent,
+  Session,
+  SessionId,
+  SessionStage,
+  Step,
+  Workflow as WorkflowModel,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -35,6 +43,8 @@ import { STAGE_TONE } from '../../session-stage';
 import { outcomeWord, type SpawnNodeStatus } from '../../../orchestration/components/SpawnTree/lib';
 import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
+import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
+import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { AgentKindChip } from '../AgentKindChip';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
@@ -119,41 +129,56 @@ const StepBadge = ({ step }: { readonly step: StepModel }) => {
   );
 };
 
+type LaneAdvance = {
+  readonly workflow: WorkflowModel;
+  readonly runs: ReadonlyArray<Agent>;
+  readonly hasOpenQuestions: boolean;
+  readonly onAdvance: (step: Step) => void | Promise<void>;
+};
+
 const PipelineLane = ({
   lane,
   onOpen,
+  advance,
 }: {
   readonly lane: RunLaneModel;
   readonly onOpen: () => void;
+  readonly advance?: LaneAdvance;
 }) => {
   const done = lane.steps.filter((s) => s.status === 'done').length;
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex w-full flex-col gap-2.5 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
-    >
-      <div className="flex items-center gap-2">
-        <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {lane.workflowName}
-        </span>
-        {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
-        <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
-          {done}/{lane.steps.length}
-        </span>
-        <ArrowRight
-          size={14}
-          aria-hidden
-          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+    <div className="group flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 shadow-sm transition-colors hover:border-border">
+      <button type="button" onClick={onOpen} className="flex w-full flex-col gap-2.5 text-left">
+        <div className="flex items-center gap-2">
+          <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+            {lane.workflowName}
+          </span>
+          {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
+          <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
+            {done}/{lane.steps.length}
+          </span>
+          <ArrowRight
+            size={14}
+            aria-hidden
+            className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          {lane.steps.map((step) => (
+            <StepBadge key={step.stepId} step={step} />
+          ))}
+        </div>
+      </button>
+      {advance ? (
+        <WorkflowNextStepCta
+          workflow={advance.workflow}
+          runs={advance.runs}
+          onAdvance={advance.onAdvance}
+          hasOpenQuestions={advance.hasOpenQuestions}
         />
-      </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        {lane.steps.map((step) => (
-          <StepBadge key={step.stepId} step={step} />
-        ))}
-      </div>
-    </button>
+      ) : null}
+    </div>
   );
 };
 
@@ -192,17 +217,69 @@ type PipelineSectionProps = {
 const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSectionProps) => {
   const sessionList = useMemo(() => [session], [session]);
   const { lanes, freeAgents, resolveQueue } = useWorkspaceRuns(workspaceId, sessionList);
+  const sessionId = session.id as SessionId;
+  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
+  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
+  const phaseRuns = useAppStore(
+    (s) => s.sessionPhaseRuns?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
+  );
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates?.[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
+  );
+  const sessionWorkflows = useAppStore(
+    (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
+  );
+  const openQuestions = useSessionOpenQuestions(sessionId);
+
+  const workflowById = useMemo(() => {
+    const m = new Map<string, WorkflowModel>();
+    for (const w of phaseTemplates) m.set(w.id, w);
+    for (const w of sessionWorkflows) m.set(w.id, w);
+    return m;
+  }, [phaseTemplates, sessionWorkflows]);
 
   if (lanes.length === 0 && freeAgents.length === 0 && resolveQueue.length === 0) {
     return null;
   }
+
+  const open = (runId: string) => {
+    setFocusedWorkflowRun(sessionId, runId);
+    onSelectLens('workflows');
+  };
+
+  const advanceFor = (runId: string): LaneAdvance | undefined => {
+    const run = session.workflowRuns.find((r) => r.id === runId);
+    const workflow = run ? workflowById.get(run.workflowId) : undefined;
+    if (!run || !workflow) {
+      return undefined;
+    }
+    const runs = phaseRuns.filter(
+      (r) => r.workflowRunId === runId && r.stepId != null && r.parentAgentId == null,
+    );
+    return {
+      workflow,
+      runs,
+      hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+      onAdvance: async (step) => {
+        const agent = runs.find((r) => r.stepId === step.id);
+        if (agent?.status === 'pending') {
+          await activateWorkflowAgent(sessionId, agent.id);
+        }
+      },
+    };
+  };
 
   return (
     <div className="flex flex-col gap-2">
       <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
       <div className="flex flex-col gap-2">
         {lanes.map((lane) => (
-          <PipelineLane key={lane.runId} lane={lane} onOpen={() => onSelectLens('workflows')} />
+          <PipelineLane
+            key={lane.runId}
+            lane={lane}
+            onOpen={() => open(lane.runId)}
+            advance={advanceFor(lane.runId)}
+          />
         ))}
         {freeAgents.length > 0 ? (
           <SummaryRow

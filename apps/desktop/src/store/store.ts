@@ -278,6 +278,7 @@ export type AppState = UpdaterState & {
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
+  readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
@@ -684,6 +685,7 @@ export type AppActions = {
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
+  setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
@@ -783,6 +785,7 @@ export const initialState: AppState = {
   sessionViewPrefs: {},
   activeLens: {},
   lensHistory: {},
+  focusedWorkflowRunId: {},
   workflowExpand: {},
   sessionStudio: {},
   focusedPlanId: {},

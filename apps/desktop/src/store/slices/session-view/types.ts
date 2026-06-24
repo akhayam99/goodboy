@@ -81,6 +81,7 @@ type SessionViewSliceState = {
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
+  readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
 };
 
 type SessionViewSliceActions = {
@@ -90,6 +91,7 @@ type SessionViewSliceActions = {
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
+  setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
 };
