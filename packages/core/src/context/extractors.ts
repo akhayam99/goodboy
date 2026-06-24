@@ -233,7 +233,7 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
 
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
-const STEP_DONE_RE = /<<step-done\s+([^>\s][^>]*?)>>/g;
+const STEP_DONE_RE = /<<step-done\s([^>]*)>>/g;
 
 export type ExtractedCluster = {
   readonly title: string;
