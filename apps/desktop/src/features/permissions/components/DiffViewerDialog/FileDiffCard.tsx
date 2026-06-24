@@ -395,7 +395,7 @@ export const FileDiffCard = ({
                         <tr key={`hunk-${row.hi}`}>
                           <td
                             colSpan={4}
-                            className="bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                            className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-[10px] font-medium tabular-nums text-muted-foreground/70"
                           >
                             {row.header}
                           </td>
@@ -425,15 +425,21 @@ export const FileDiffCard = ({
                           }}
                           className={cn(
                             'group',
-                            line.kind === 'add' && 'bg-success/10',
-                            line.kind === 'del' && 'bg-danger/10',
+                            line.kind === 'add' && 'bg-success/[0.07]',
+                            line.kind === 'del' && 'bg-danger/[0.07]',
                             selecting && 'bg-primary/15',
                           )}
                         >
                           <td
                             className={cn(
-                              'w-6 select-none px-0.5 align-top',
-                              rangeCommented && 'border-l-2 border-warning/60',
+                              'w-6 select-none border-l-2 px-0.5 align-top',
+                              rangeCommented
+                                ? 'border-warning/60'
+                                : line.kind === 'add'
+                                  ? 'border-success/50'
+                                  : line.kind === 'del'
+                                    ? 'border-danger/50'
+                                    : 'border-transparent',
                             )}
                           >
                             {canComment && anchor ? (
@@ -460,20 +466,26 @@ export const FileDiffCard = ({
                               </button>
                             ) : null}
                           </td>
-                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                          <td className="w-9 select-none px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50">
                             {line.oldLine ?? ''}
                           </td>
-                          <td className="w-8 select-none px-1.5 text-right text-[10px] text-muted-foreground/60">
+                          <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50">
                             {line.newLine ?? ''}
                           </td>
-                          <td
-                            className={cn(
-                              'whitespace-pre px-2',
-                              line.kind === 'add' && 'text-success',
-                              line.kind === 'del' && 'text-danger',
-                            )}
-                          >
-                            {linePrefix}
+                          <td className="whitespace-pre px-2.5 text-foreground/80">
+                            <span
+                              aria-hidden
+                              className={cn(
+                                'select-none',
+                                line.kind === 'add'
+                                  ? 'text-success'
+                                  : line.kind === 'del'
+                                    ? 'text-danger'
+                                    : 'text-transparent',
+                              )}
+                            >
+                              {linePrefix}
+                            </span>
                             {line.text}
                           </td>
                         </tr>
