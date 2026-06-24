@@ -12,6 +12,10 @@ type Store = {
   scriptRuns: Record<string, Record<string, { status: string }>>;
   sessionGithub: Record<string, { pr?: unknown }>;
   sessionGitlabMr: Record<string, { mr?: unknown }>;
+  setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
+  activateWorkflowAgent: ReturnType<typeof vi.fn>;
+  phaseTemplates: Record<string, ReadonlyArray<unknown>>;
+  sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
 };
 
 type Runs = {
@@ -28,6 +32,10 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionGithub: {} as Record<string, { pr?: unknown }>,
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
+    setFocusedWorkflowRun: vi.fn(),
+    activateWorkflowAgent: vi.fn(async () => undefined),
+    phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
   } as Store,
   hooks: {
     workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,
@@ -110,6 +118,11 @@ beforeEach(() => {
   store.scriptRuns = {};
   store.sessionGithub = {};
   store.sessionGitlabMr = {};
+  store.setFocusedWorkflowRun.mockReset();
+  store.activateWorkflowAgent.mockReset();
+  store.activateWorkflowAgent.mockResolvedValue(undefined);
+  store.phaseTemplates = {};
+  store.sessionWorkflows = {};
   hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
   hooks.openQuestions = [];
   hooks.plans = [];
@@ -258,5 +271,95 @@ describe('SessionOverviewPane jump-to links', () => {
     const onSelectLens = renderPane();
     fireEvent.click(screen.getByRole('button', { name: /^goal$/i }));
     expect(onSelectLens).toHaveBeenCalledWith('goal');
+  });
+});
+
+describe('SessionOverviewPane pipeline lane next-step badge', () => {
+  const STEP_ID = 'step-1';
+  const RUN_ID = 'run-1';
+  const WF_ID = 'wf-1';
+  const AGENT_ID = 'agent-1';
+
+  const lane = (steps?: ReadonlyArray<unknown>) => ({
+    runId: RUN_ID,
+    workflowName: 'Ship it',
+    sessionId: 'sess-1',
+    sessionGoal: 'g',
+    stage: 'building',
+    autoRun: false,
+    chainAfterId: null,
+    steps: steps ?? [
+      {
+        stepId: STEP_ID,
+        name: 'Execute',
+        kind: 'generic',
+        status: 'queued',
+        rootAgentId: null,
+        children: [],
+      },
+    ],
+    costUsd: 0,
+  });
+
+  const workflow = {
+    id: WF_ID,
+    workspaceId: 'ws-1',
+    name: 'Ship it',
+    description: '',
+    steps: [{ id: STEP_ID, workflowId: WF_ID, ordinal: 0, name: 'Execute', promptPrefix: '' }],
+    createdAt: '2026-06-22T10:00:00.000Z',
+    updatedAt: '2026-06-22T10:00:00.000Z',
+  };
+
+  const pendingAgent = (status = 'pending') => ({
+    id: AGENT_ID,
+    sessionId: 'sess-1',
+    stepId: STEP_ID,
+    workflowRunId: RUN_ID,
+    parentAgentId: null,
+    ordinal: 0,
+    name: 'Execute',
+    status,
+  });
+
+  const sessionWithRun = () =>
+    baseSession({
+      workflowRuns: [{ id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: false }],
+    } as unknown as Partial<Session>);
+
+  beforeEach(() => {
+    runs.lanes = [lane()];
+    store.phaseTemplates = { 'ws-1': [workflow] };
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent()] };
+  });
+
+  it('clicking the next-step badge starts the step without navigating', () => {
+    const onSelectLens = renderPane(sessionWithRun());
+    fireEvent.click(screen.getByTitle(/^start execute$/i));
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith('sess-1', AGENT_ID, undefined, false);
+    expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled();
+    expect(onSelectLens).not.toHaveBeenCalledWith('workflows');
+  });
+
+  it('clicking the card body navigates to the workflow without starting the step', () => {
+    const onSelectLens = renderPane(sessionWithRun());
+    fireEvent.click(screen.getByRole('button', { name: /ship it/i }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', RUN_ID);
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+    expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
+  });
+
+  it('open questions suppress the start badge so no step can be launched', () => {
+    hooks.openQuestions = [
+      { status: 'open', text: 'blocked?', workflowRunId: RUN_ID },
+    ] as unknown as ReadonlyArray<OpenQuestion>;
+    renderPane(sessionWithRun());
+    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
+  });
+
+  it('does not start a step whose agent is no longer pending', () => {
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('completed')] };
+    renderPane(sessionWithRun());
+    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
   });
 });
