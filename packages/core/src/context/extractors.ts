@@ -161,6 +161,9 @@ export const extractHandoff = (assistantText: string): ExtractedHandoff | null =
 
 function parseHandoffAttrs(inner: string): Record<string, string> {
   const out: Record<string, string> = {};
+  if (inner.length > 1000) {
+    return out;
+  }
   HANDOFF_ATTR_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = HANDOFF_ATTR_RE.exec(inner)) !== null) {
@@ -230,7 +233,7 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
 
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
-const STEP_DONE_RE = /<<step-done\s+([^>]+?)>>/g;
+const STEP_DONE_RE = /<<step-done\s+([^>\s][^>]*?)>>/g;
 
 export type ExtractedCluster = {
   readonly title: string;
