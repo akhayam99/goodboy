@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Skeleton } from '@goodboy/ui';
 import type { BootPhase } from '../../../store';
 import { openUrl } from '../../../shared/lib/editor';
 import { DogMascot } from '../../../shared/components/DogMascot';
 
 const GITHUB_NEW_ISSUE_URL =
   'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
+
+const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
+  pending: 'starting up',
+  migrating: 'updating your library',
+  'loading-settings': 'loading settings',
+  'detecting-cli': 'detecting agents',
+  'loading-workspaces': 'loading workspaces',
+  'restoring-session': 'restoring your session',
+  ready: 'ready',
+  error: 'something went wrong',
+};
 
 type BootSplashProps = {
   phase: BootPhase;
@@ -51,35 +61,14 @@ export const BootSplash = ({
 
   return (
     <div
-      className="flex h-screen flex-col bg-background text-foreground"
+      className="relative flex h-screen flex-col items-center justify-center gap-8 bg-background text-foreground"
       role="status"
       aria-label="Loading Goodboy"
     >
-      <div className="flex h-9 shrink-0 items-center justify-between px-3">
-        <div className="flex items-center gap-1.5">
-          <DogMascot size={15} className="shrink-0 text-foreground" />
-          <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
-        </div>
-        <Skeleton className="h-4 w-16 rounded-full" />
-      </div>
-      <div className="flex min-h-0 flex-1">
-        <div className="flex w-64 shrink-0 flex-col gap-3 p-3">
-          <Skeleton className="h-7 w-full rounded-md" />
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full rounded-md" />
-            ))}
-          </div>
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
-          <Skeleton className="h-6 w-1/3 rounded-md" />
-          <div className="flex flex-1 flex-col gap-2.5">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-full rounded" />
-            ))}
-          </div>
-        </div>
-      </div>
+      <BootBrand />
+      <span className="text-2xs tracking-tight text-muted-foreground/50 motion-safe:animate-pulse">
+        {BOOT_PHASE_LABEL[phase]}
+      </span>
     </div>
   );
 };
