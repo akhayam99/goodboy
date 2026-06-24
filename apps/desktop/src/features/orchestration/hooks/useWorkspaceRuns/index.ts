@@ -206,6 +206,7 @@ export const useWorkspaceRuns = (
         const hasUnread = runs
           ? runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected))
           : false;
+        const hasRunningAgent = runs ? runs.some((r) => r.status === 'running') : false;
         const openQuestionCount = (s.sessionOpenQuestions[id] ?? []).filter(
           (q) => q.status === 'open',
         ).length;
@@ -214,6 +215,7 @@ export const useWorkspaceRuns = (
           pr: s.sessionGithub[id]?.pr ?? null,
           hasUnread,
           openQuestionCount,
+          hasRunningAgent,
         }).stage;
       }
       return out;
