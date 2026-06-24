@@ -13,6 +13,7 @@ import {
   Layers,
   MessageSquareReply,
   Pencil,
+  Play,
   SquareTerminal,
   Target,
   Workflow,
@@ -43,7 +44,7 @@ import { STAGE_TONE } from '../../session-stage';
 import { outcomeWord, type SpawnNodeStatus } from '../../../orchestration/components/SpawnTree/lib';
 import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../workflows/components/WorkflowNextStepCta';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { AgentKindChip } from '../AgentKindChip';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
@@ -103,30 +104,55 @@ const CONTEXT_LINKS: ReadonlyArray<{
 const isGhostStep = (status: SpawnNodeStatus): boolean =>
   status === 'planned' || status === 'queued';
 
-const StepBadge = ({ step }: { readonly step: StepModel }) => {
+const StepBadge = ({
+  step,
+  onAdvance,
+}: {
+  readonly step: StepModel;
+  readonly onAdvance?: () => void;
+}) => {
   const ghost = isGhostStep(step.status);
-  const statusIcon =
-    step.status === 'running' ? (
-      <StatusDot tone="info" size="md" pulsing />
-    ) : step.status === 'done' ? (
-      <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
-        <Check size={9} aria-hidden className="text-success" />
-      </span>
-    ) : step.status === 'stalled' ? (
-      <span className="size-1.5 rounded-full bg-danger" aria-hidden />
-    ) : (
-      <Clock size={11} aria-hidden className="text-muted-foreground/60" />
-    );
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1">
+  const statusIcon = onAdvance ? (
+    <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+      <Play size={8} aria-hidden className="text-primary" fill="currentColor" />
+    </span>
+  ) : step.status === 'running' ? (
+    <StatusDot tone="info" size="md" pulsing />
+  ) : step.status === 'done' ? (
+    <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
+      <Check size={9} aria-hidden className="text-success" />
+    </span>
+  ) : step.status === 'stalled' ? (
+    <span className="size-1.5 rounded-full bg-danger" aria-hidden />
+  ) : (
+    <Clock size={11} aria-hidden className="text-muted-foreground/60" />
+  );
+  const inner = (
+    <>
       <span className="flex size-3.5 shrink-0 items-center justify-center">{statusIcon}</span>
       <AgentKindChip
         kind={step.kind}
-        muted={ghost}
+        muted={ghost && onAdvance == null}
         title={`${step.name || ''} ${ghost ? 'pending' : outcomeWord(step.status)}`.trim()}
       />
-    </span>
+    </>
   );
+  if (onAdvance) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onAdvance();
+        }}
+        title={`start ${step.name || 'this step'}`}
+        className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-primary/40 transition-colors hover:bg-primary/10"
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <span className="inline-flex shrink-0 items-center gap-1">{inner}</span>;
 };
 
 type LaneAdvance = {
@@ -146,38 +172,41 @@ const PipelineLane = ({
   readonly advance?: LaneAdvance;
 }) => {
   const done = lane.steps.filter((s) => s.status === 'done').length;
+  const nextStep = advance
+    ? pickNextWorkflowStep(advance.workflow, advance.runs, {
+        hasOpenQuestions: advance.hasOpenQuestions,
+      })
+    : null;
   return (
     <div className="group flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 shadow-sm transition-colors hover:border-border">
-      <button type="button" onClick={onOpen} className="flex w-full flex-col gap-2.5 text-left">
-        <div className="flex items-center gap-2">
-          <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-            {lane.workflowName}
-          </span>
-          {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
-          <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
-            {done}/{lane.steps.length}
-          </span>
-          <ArrowRight
-            size={14}
-            aria-hidden
-            className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          {lane.steps.map((step) => (
-            <StepBadge key={step.stepId} step={step} />
-          ))}
-        </div>
-      </button>
-      {advance ? (
-        <WorkflowNextStepCta
-          workflow={advance.workflow}
-          runs={advance.runs}
-          onAdvance={advance.onAdvance}
-          hasOpenQuestions={advance.hasOpenQuestions}
+      <button type="button" onClick={onOpen} className="flex w-full items-center gap-2 text-left">
+        <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          {lane.workflowName}
+        </span>
+        {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
+        <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
+          {done}/{lane.steps.length}
+        </span>
+        <ArrowRight
+          size={14}
+          aria-hidden
+          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
         />
-      ) : null}
+      </button>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        {lane.steps.map((step) => (
+          <StepBadge
+            key={step.stepId}
+            step={step}
+            onAdvance={
+              nextStep && advance && step.stepId === nextStep.id
+                ? () => void advance.onAdvance(nextStep)
+                : undefined
+            }
+          />
+        ))}
+      </div>
     </div>
   );
 };

@@ -844,7 +844,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
         </div>
         {expanded ? (
           wfAgents.length > 0 ? (
-            <div className={cn('flex flex-col pb-1', forceExpanded ? 'gap-2 pl-1' : 'gap-1 pl-3')}>
+            <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
               {wfAgents.map((run, index) => {
                 const isActionable = run.stepId === actionableStepId && run.status === 'pending';
                 const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
@@ -986,7 +986,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               <WorkflowStartButton sessionId={task.id} variant="empty" />
             ) : (
               <>
-                <div className={cn('flex flex-col', forceExpanded ? 'gap-4' : 'gap-0.5')}>
+                <div className={cn('flex flex-col', forceExpanded ? 'gap-3' : 'gap-0.5')}>
                   {attachedRuns.map(renderWorkflowRow)}
                 </div>
                 <WorkflowStartButton sessionId={task.id} variant="attach" />

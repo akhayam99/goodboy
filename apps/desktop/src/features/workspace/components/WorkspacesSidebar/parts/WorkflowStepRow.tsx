@@ -92,62 +92,34 @@ export function WorkflowStepRow({
     }
   };
 
-  const cardClass = cn(
-    'group flex w-full flex-col rounded-lg border px-3 py-2.5 text-left transition-colors',
+  const containerClass = cn(
+    'group rounded border transition-colors',
+    isEditing || isPendingFuture ? '' : 'cursor-pointer',
     isPendingFuture
-      ? 'cursor-default border-border-soft/40'
+      ? 'border-transparent'
       : isStartable
-        ? 'cursor-pointer border-primary/45 bg-primary/[0.06] hover:bg-primary/[0.1]'
+        ? 'border-primary/45 bg-primary/[0.06] hover:bg-primary/[0.1]'
         : isActionable && isBlocked
-          ? 'cursor-pointer border-warning/55 bg-warning/[0.06] hover:bg-warning/[0.1]'
+          ? 'border-warning/60 bg-warning/[0.06] hover:bg-warning/[0.1]'
           : isRunning
-            ? cn('cursor-pointer border-info/50', isSelected && 'bg-info/[0.05]')
+            ? cn('border-info/60', isSelected ? 'bg-elevated' : 'bg-muted/40')
             : hasUnread
-              ? 'cursor-pointer border-warning/55 hover:border-warning'
+              ? 'border-warning/70 bg-muted/40 hover:bg-muted/60'
               : isSelected
-                ? 'cursor-pointer border-accent/50 bg-accent/[0.05]'
-                : 'cursor-pointer border-border-soft/60 hover:border-border',
-  );
-
-  const statusLabel = isStartable
-    ? 'start'
-    : isActionable && isBlocked
-      ? 'needs you'
-      : isRunning
-        ? 'running…'
-        : run.status === 'completed'
-          ? 'done'
-          : run.status === 'skipped'
-            ? 'skipped'
-            : run.status === 'failed'
-              ? 'stalled'
-              : 'queued';
-
-  const statusLabelClass = cn(
-    'shrink-0 text-2xs font-medium uppercase tracking-wide',
-    isStartable
-      ? 'text-primary'
-      : isActionable && isBlocked
-        ? 'text-warning'
-        : isRunning
-          ? 'text-info'
-          : run.status === 'completed'
-            ? 'text-success'
-            : run.status === 'failed'
-              ? 'text-danger'
-              : 'text-muted-foreground/50',
+                ? 'border-border bg-elevated'
+                : 'border-transparent bg-muted/40 hover:bg-muted/60',
   );
 
   const renderStatusIcon = () => {
     if (isStartable) {
       return (
-        <span className="flex size-4 items-center justify-center rounded-full bg-primary/15">
+        <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
           <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
         </span>
       );
     }
     if (isActionable && isBlocked) {
-      return <AlertTriangle size={13} className="text-warning" aria-hidden />;
+      return <AlertTriangle size={12} className="text-warning" aria-hidden />;
     }
     if (isRunning) {
       return <StatusDot tone="info" size="md" pulsing />;
@@ -156,12 +128,12 @@ export function WorkflowStepRow({
       return (
         <span
           className={cn(
-            'flex size-4 items-center justify-center rounded-full',
+            'flex size-3.5 items-center justify-center rounded-full',
             run.status === 'skipped' ? 'bg-muted' : 'bg-success/15',
           )}
         >
           <Check
-            size={10}
+            size={9}
             className={run.status === 'skipped' ? 'text-muted-foreground/60' : 'text-success'}
             aria-hidden
           />
@@ -169,9 +141,9 @@ export function WorkflowStepRow({
       );
     }
     if (run.status === 'failed') {
-      return <span className="size-2 rounded-full bg-danger" aria-hidden />;
+      return <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
     }
-    return <Clock size={13} className="text-muted-foreground/50" aria-hidden />;
+    return <Clock size={11} className="text-muted-foreground/50" aria-hidden />;
   };
 
   const stableTitle =
@@ -201,90 +173,90 @@ export function WorkflowStepRow({
             handleRowClick();
           }
         }}
-        className={cardClass}
+        className={containerClass}
       >
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-center gap-2 px-2 py-1.5">
           <span
             aria-hidden
-            className="mt-0.5 w-3 shrink-0 text-right text-2xs tabular-nums text-muted-foreground/40"
+            className={cn(
+              'w-4 shrink-0 text-right text-2xs tabular-nums',
+              isPendingFuture ? 'text-muted-foreground/40' : 'text-muted-foreground/60',
+            )}
           >
-            {index + 1}
+            {index + 1}.
           </span>
-          <span className="mt-px flex size-4 shrink-0 items-center justify-center">
+          <span className="flex size-3.5 shrink-0 items-center justify-center">
             {renderStatusIcon()}
           </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <AgentKindChip kind={kind} muted={isPendingFuture} />
-                {isEditing ? (
-                  <input
-                    autoFocus
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onDoubleClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        onRenameCommit(draft);
-                      } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        onRenameCancel();
-                      }
-                    }}
-                    onBlur={() => onRenameCommit(draft)}
-                    className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-sm font-medium text-foreground outline-none ring-1 ring-primary"
-                    aria-label="rename agent"
-                  />
-                ) : (
-                  <span
-                    className={cn(
-                      'min-w-0 truncate text-sm font-medium',
-                      isPendingFuture ? 'text-muted-foreground/50' : 'text-foreground',
-                    )}
-                  >
-                    {run.name}
-                  </span>
-                )}
-              </div>
-              <span className={statusLabelClass}>{statusLabel}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ProviderGlyph
-                provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
-                muted={isPendingFuture}
-              />
-              <span
-                className={cn(
-                  'min-w-0 truncate text-[11px] tabular-nums',
-                  isPendingFuture ? 'text-muted-foreground/50' : 'text-muted-foreground/70',
-                )}
-                title={`model: ${resolvedModel}`}
-              >
-                {modelLabel}
-              </span>
-            </div>
-            <div
+          <AgentKindChip kind={kind} muted={isPendingFuture} />
+          {isEditing ? (
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onRenameCommit(draft);
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  onRenameCancel();
+                }
+              }}
+              onBlur={() => onRenameCommit(draft)}
+              className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
+              aria-label="rename agent"
+            />
+          ) : (
+            <span
               className={cn(
-                'grid transition-[grid-template-rows] duration-200 ease-out',
-                isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+                'line-clamp-1 flex-1 text-left text-2xs font-medium',
+                isPendingFuture
+                  ? 'text-muted-foreground/50'
+                  : isSelected
+                    ? 'text-foreground'
+                    : 'text-muted-foreground',
               )}
             >
-              <div className="overflow-hidden">
-                <div className="flex flex-col gap-1 pt-1.5">
-                  <AgentMetricsBlock
-                    run={run}
-                    telemetry={telemetry}
-                    aggregate={aggregate}
-                    turns={turns}
-                    turnsLoading={turnsLoading}
-                    variant="workflow"
-                  />
-                  <ContextWindowBar usage={contextUsage} />
-                </div>
-              </div>
+              {run.name}
+            </span>
+          )}
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ProviderGlyph
+              provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
+              muted={isPendingFuture}
+            />
+            <span
+              className={cn(
+                'text-2xs tabular-nums',
+                isPendingFuture ? 'text-muted-foreground/50' : 'text-muted-foreground/70',
+              )}
+              title={`model: ${resolvedModel}`}
+            >
+              {modelLabel}
+            </span>
+          </div>
+        </div>
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-200 ease-out',
+            isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="flex flex-col gap-1 px-2 pb-1.5">
+              <AgentMetricsBlock
+                run={run}
+                telemetry={telemetry}
+                aggregate={aggregate}
+                turns={turns}
+                turnsLoading={turnsLoading}
+                variant="workflow"
+              />
+              <ContextWindowBar usage={contextUsage} />
             </div>
           </div>
         </div>
