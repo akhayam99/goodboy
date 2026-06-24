@@ -87,6 +87,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showStudio = studio != null;
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
+  const onBareOverview = showLens && lens === null;
   const overlayHome = agentHome ?? 'agents';
 
   useEffect(() => {
@@ -104,16 +105,20 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-60 shrink-0 flex-col bg-background">
-          <LensColumn
-            session={session}
-            activeLens={lens}
-            onSelect={onSelectLens}
-            onSelectOverview={onSelectOverview}
-            filesCount={filesTouched.count}
-          />
-        </div>
-        <Divider orientation="vertical" />
+        {onBareOverview ? null : (
+          <>
+            <div className="flex w-60 shrink-0 flex-col bg-background">
+              <LensColumn
+                session={session}
+                activeLens={lens}
+                onSelect={onSelectLens}
+                onSelectOverview={onSelectOverview}
+                filesCount={filesTouched.count}
+              />
+            </div>
+            <Divider orientation="vertical" />
+          </>
+        )}
         <div className="relative min-w-0 flex-1">
           {showLens ? (
             <div className="absolute inset-0 z-0">

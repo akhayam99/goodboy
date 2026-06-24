@@ -161,11 +161,12 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         <button
           type="button"
           onClick={() => void setCurrentSession(null)}
-          title="Back to board"
+          title="Back to the board"
           aria-label="back to board"
-          className={ICON_BUTTON}
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
           <ArrowLeft size={14} aria-hidden />
+          Board
         </button>
         <SessionStageBadge session={session} />
         <div className="group/goal flex min-w-0 flex-1 items-center gap-1.5">

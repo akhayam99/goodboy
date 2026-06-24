@@ -16,6 +16,7 @@ import {
   Play,
   SquareTerminal,
   Target,
+  Terminal,
   Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -98,6 +99,7 @@ const CONTEXT_LINKS: ReadonlyArray<{
   { kind: 'goal', icon: Target, tone: 'primary', label: 'Goal' },
   { kind: 'decisions', icon: CheckCheck, tone: 'success', label: 'Decisions' },
   { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Last output' },
+  { kind: 'scripts', icon: Terminal, tone: 'info', label: 'Scripts' },
   { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
 ];
 
@@ -237,6 +239,36 @@ const SummaryRow = ({
   </button>
 );
 
+const StartCard = ({
+  icon: Icon,
+  tone,
+  label,
+  onClick,
+}: {
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+  readonly onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors hover:border-border"
+  >
+    <span
+      aria-hidden
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
+        tintClasses(tone).bg,
+        tintClasses(tone).ring,
+      )}
+    >
+      <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
+    </span>
+    <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
+  </button>
+);
+
 type PipelineSectionProps = {
   readonly session: Session;
   readonly workspaceId: WorkspaceId;
@@ -339,7 +371,6 @@ export const SessionOverviewPane = ({
   const stage = useSessionStageInfo(session);
   const workspace = useCurrentWorkspace();
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
   const agents = selectStandaloneAgents(
@@ -355,14 +386,6 @@ export const SessionOverviewPane = ({
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && agents.length === 0;
   const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
-
-  const openWorkflowBuilder = () => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-workflow-builder', {
-        detail: { sessionId: session.id as SessionId },
-      }),
-    );
-  };
 
   const nudges: Nudge[] = [];
   if (openCount > 0) {
@@ -482,6 +505,30 @@ export const SessionOverviewPane = ({
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <Eyebrow label="Start" muted className="px-0.5 font-medium" />
+          <div className="grid grid-cols-3 gap-2">
+            <StartCard
+              icon={Workflow}
+              tone="accent"
+              label="New workflow"
+              onClick={() => onSelectLens('workflows')}
+            />
+            <StartCard
+              icon={Bot}
+              tone="primary"
+              label="New agent"
+              onClick={() => onSelectLens('agents')}
+            />
+            <StartCard
+              icon={MessageSquareReply}
+              tone="success"
+              label="Resolve"
+              onClick={() => onSelectLens('resolve')}
+            />
+          </div>
+        </div>
+
         {nudges.length > 0 ? (
           <div className="flex flex-col gap-2">
             <Eyebrow label="Needs you" muted className="px-0.5 font-medium" />
@@ -515,73 +562,7 @@ export const SessionOverviewPane = ({
           </div>
         ) : null}
 
-        {isFresh ? (
-          <div className="flex flex-col gap-2">
-            <Eyebrow label="Get started" muted className="px-0.5 font-medium" />
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={openWorkflowBuilder}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                    tintClasses('accent').bg,
-                    tintClasses('accent').ring,
-                  )}
-                >
-                  <Workflow size={16} aria-hidden className={tintClasses('accent').icon} />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-semibold leading-tight text-foreground">
-                    Create a workflow
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Chain agents into steps
-                  </span>
-                </span>
-                <ArrowRight
-                  size={14}
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-                />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  void spawnAgent(session.id as SessionId, {});
-                }}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors hover:border-border"
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-                    tintClasses('primary').bg,
-                    tintClasses('primary').ring,
-                  )}
-                >
-                  <Bot size={16} aria-hidden className={tintClasses('primary').icon} />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-semibold leading-tight text-foreground">
-                    Spawn an agent
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Start a one-off session
-                  </span>
-                </span>
-                <ArrowRight
-                  size={14}
-                  aria-hidden
-                  className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-                />
-              </button>
-            </div>
-          </div>
-        ) : workspace ? (
+        {workspace ? (
           <PipelineSection
             session={session}
             workspaceId={workspace.id}

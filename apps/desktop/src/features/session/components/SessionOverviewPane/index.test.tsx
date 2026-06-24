@@ -150,29 +150,31 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
   });
 });
 
-describe('SessionOverviewPane guided empty-state (cluster B)', () => {
-  it('shows the get-started CTAs and hides the metrics strip when fresh', () => {
+describe('SessionOverviewPane start row (cluster B)', () => {
+  it('always shows the start entry cards and hides the metrics strip when fresh', () => {
     renderPane();
-    expect(screen.getByText('Get started')).toBeDefined();
-    expect(screen.getByRole('button', { name: /create a workflow/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /spawn an agent/i })).toBeDefined();
+    expect(screen.getByText('Start')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
 
-  it('dispatches the workflow-builder event scoped to the session', () => {
-    const handler = vi.fn();
-    window.addEventListener('goodboy:open-workflow-builder', handler);
-    renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /create a workflow/i }));
-    expect(handler).toHaveBeenCalledOnce();
-    expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({ sessionId: 'sess-1' });
-    window.removeEventListener('goodboy:open-workflow-builder', handler);
+  it('routes each start card to its lens', () => {
+    const onSelectLens = renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'New workflow' }));
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+    fireEvent.click(screen.getByRole('button', { name: 'New agent' }));
+    expect(onSelectLens).toHaveBeenCalledWith('agents');
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 
-  it('spawns an agent for the session from the second CTA', () => {
+  it('keeps the start cards once work exists', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /spawn an agent/i }));
-    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', {});
+    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
   });
 
   it('treats discarded workflow runs as not active for freshness', () => {
@@ -181,7 +183,7 @@ describe('SessionOverviewPane guided empty-state (cluster B)', () => {
         workflowRuns: [{ discardedAt: '2026-06-22T11:00:00.000Z' }],
       } as unknown as Partial<Session>),
     );
-    expect(screen.getByText('Get started')).toBeDefined();
+    expect(screen.queryByText('At a glance')).toBeNull();
   });
 });
 
