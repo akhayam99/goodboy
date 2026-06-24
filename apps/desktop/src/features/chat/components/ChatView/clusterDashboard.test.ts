@@ -79,6 +79,12 @@ describe('selectClusterDashboard', () => {
     expect(selectClusterDashboard(runs, 'container' as AgentId, [])).toBeNull();
   });
 
+  it('still renders for a consumed plan with implementer children (display contract)', () => {
+    const d = selectClusterDashboard(runs, 'container' as AgentId, [plan({ status: 'consumed' })]);
+    expect(d?.containerId).toBe('container');
+    expect(d?.items).toHaveLength(2);
+  });
+
   it('returns null when the selected agent has no cluster siblings', () => {
     const lone: ReadonlyArray<Agent> = [agent({ id: 'solo', ordinal: 0 })];
     expect(selectClusterDashboard(lone, 'solo' as AgentId, [plan({})])).toBeNull();

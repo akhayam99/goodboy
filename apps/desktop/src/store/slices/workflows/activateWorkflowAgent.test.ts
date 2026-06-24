@@ -205,7 +205,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('fans out a 2+ cluster plan regardless of status (count-based, status-agnostic)', async () => {
+  it('does not re-fan-out a consumed plan: a later step runs its own kickoff instead', async () => {
     const clusters: ReadonlyArray<ImplementationCluster> = [
       { title: 'a', instructions: 'i1' },
       { title: 'b', instructions: 'i2' },
@@ -219,8 +219,9 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     await activate(SESSION_ID, AGENT_ID);
 
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
-    expect(sendTurn).not.toHaveBeenCalled();
+    expect(fanOutClustersSpy).not.toHaveBeenCalled();
+    const [payload] = sendTurn.mock.calls[0]!;
+    expect(payload.content).toBe('run the step');
   });
 
   it('does not consume an already-consumed plan', async () => {
