@@ -421,6 +421,7 @@ export type AppActions = {
     sessionId: SessionId,
     agentId: AgentId,
     explicitPlanId?: PlanId,
+    navigate?: boolean,
   ): Promise<void>;
   advanceClusterImplementation(
     sessionId: SessionId,

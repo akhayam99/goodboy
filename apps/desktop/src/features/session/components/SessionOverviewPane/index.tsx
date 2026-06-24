@@ -363,7 +363,7 @@ const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSection
       onAdvance: async (step) => {
         const agent = runs.find((r) => r.stepId === step.id);
         if (agent?.status === 'pending') {
-          await activateWorkflowAgent(sessionId, agent.id);
+          await activateWorkflowAgent(sessionId, agent.id, undefined, false);
         }
       },
     };

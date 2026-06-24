@@ -144,11 +144,20 @@ function buildHarness(opts: {
   const get = (() => state) as unknown as Parameters<typeof activateWorkflowAgent>[1];
   return {
     sendTurn,
+    set,
+    state,
     activate: activateWorkflowAgent(
       set as unknown as Parameters<typeof activateWorkflowAgent>[0],
       get,
     ),
   };
+}
+
+function mergedSetPartials(set: ReturnType<typeof vi.fn>, state: Record<string, unknown>) {
+  return set.mock.calls.reduce((acc: Record<string, unknown>, call) => {
+    const updater = call[0] as (s: Record<string, unknown>) => Record<string, unknown>;
+    return { ...acc, ...updater({ ...state, ...acc }) };
+  }, {});
 }
 
 describe('activateWorkflowAgent, plan consumption by kind', () => {
@@ -255,6 +264,35 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(payload.content).not.toContain('do the thing');
   });
 
+  it('default call navigates: sets selectedAgentId for the session', async () => {
+    const { set, state, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await activate(SESSION_ID, AGENT_ID);
+
+    const merged = mergedSetPartials(set, state);
+    expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
+    expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
+  });
+
+  it('navigate=false starts the step without setting selectedAgentId but still inits turn and sends', async () => {
+    const { set, state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, undefined, false);
+
+    const merged = mergedSetPartials(set, state);
+    expect(merged.selectedAgentId).toBeUndefined();
+    expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
   it('replays an explicit plan even when it is already consumed', async () => {
     const { activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),
@@ -265,5 +303,99 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     await activate(SESSION_ID, AGENT_ID, PLAN_ID);
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
+  });
+
+  it('navigate=false fans out a multi-cluster implementer without setting selectedAgentId', async () => {
+    const clusters: ReadonlyArray<ImplementationCluster> = [
+      { title: 'a', instructions: 'i1' },
+      { title: 'b', instructions: 'i2' },
+    ];
+    const { set, state, activate } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ clusters })],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, undefined, false);
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    const merged = mergedSetPartials(set, state);
+    expect(merged.selectedAgentId).toBeUndefined();
+    expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
+  });
+
+  it('navigate=false on a reviewer step sends the kickoff without navigating', async () => {
+    const { set, state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('reviewer', 'Review'),
+      workflow: makeWorkflow('Review'),
+      plans: [makePlan()],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, undefined, false);
+
+    const merged = mergedSetPartials(set, state);
+    expect(merged.selectedAgentId).toBeUndefined();
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]![0].content).toBe('run the step');
+  });
+
+  it('navigate=false still injects and consumes an explicit plan', async () => {
+    const EXPLICIT_ID = 'plan-explicit' as PlanId;
+    const { set, state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan({ id: EXPLICIT_ID, bodyMd: 'explicit body' })],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, EXPLICIT_ID, false);
+
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(EXPLICIT_ID, AGENT_ID);
+    const merged = mergedSetPartials(set, state);
+    expect(merged.selectedAgentId).toBeUndefined();
+    expect(sendTurn.mock.calls[0]![0].content).toContain('explicit body');
+  });
+
+  it('navigate=false never emits a selectedAgentId key, leaving prior selection intact', async () => {
+    const { set, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, undefined, false);
+
+    const touchesSelection = set.mock.calls.some((call) => {
+      const updater = call[0] as (s: Record<string, unknown>) => Record<string, unknown>;
+      return 'selectedAgentId' in updater({ selectedAgentId: {} });
+    });
+    expect(touchesSelection).toBe(false);
+  });
+
+  it('explicit navigate=true behaves like the default and navigates', async () => {
+    const { set, state, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await activate(SESSION_ID, AGENT_ID, undefined, true);
+
+    const merged = mergedSetPartials(set, state);
+    expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
+  });
+
+  it('throws and never navigates or sends when the agent is missing', async () => {
+    const { set, sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await expect(activate(SESSION_ID, 'nope' as AgentId, undefined, false)).rejects.toThrow(
+      'agent not found or not a workflow agent',
+    );
+    expect(set).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 });

@@ -14,7 +14,12 @@ import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, agentId: AgentId, explicitPlanId?: PlanId) => {
+  return async (
+    sessionId: SessionId,
+    agentId: AgentId,
+    explicitPlanId?: PlanId,
+    navigate = true,
+  ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
     if (!agent || !agent.stepId) {
@@ -34,7 +39,6 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const goalSection = buildGoalKickoffSection(run?.goal ?? template?.goal);
 
     set((s) => ({
-      selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId },
       agentTurnState: {
         ...s.agentTurnState,
         [agentId]: {
@@ -42,6 +46,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
           lastActivityAt: new Date().toISOString() as IsoDateTime,
         },
       },
+      ...(navigate ? { selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId } } : {}),
     }));
 
     const effectiveKind: AgentKind =
