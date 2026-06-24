@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
-import { Code, GitCompare, MessagesSquare, SquareTerminal } from 'lucide-react';
-import { Button, Chip, cn, StatusDot } from '@goodboy/ui';
+import { Bot, Code, FileDiff, SquareTerminal, type LucideIcon } from 'lucide-react';
+import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -52,7 +52,6 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
     <button
       type="button"
       onClick={() => nav.selectCard(session)}
-      title={`${session.goal}${reason ? ` · ${reason}` : ''}`}
       className={cn(
         'group flex flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
@@ -72,9 +71,11 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
           ariaLabel={stageMeta.label}
           className="mt-[3px]"
         />
-        <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
-          {session.goal}
-        </span>
+        <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
+          <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
+            {session.goal}
+          </span>
+        </Tooltip>
       </span>
 
       {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
@@ -101,22 +102,26 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
 
       <span className="-mb-1 -ml-1 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
         <CardAction
-          icon={<MessagesSquare size={14} aria-hidden />}
+          icon={Bot}
+          color="text-primary"
           label="open agent"
           onClick={() => nav.openAgent(session)}
         />
         <CardAction
-          icon={<GitCompare size={14} aria-hidden />}
+          icon={FileDiff}
+          color="text-info"
           label="open diff"
           onClick={() => nav.openDiff(session)}
         />
         <CardAction
-          icon={<SquareTerminal size={14} aria-hidden />}
+          icon={SquareTerminal}
+          color="text-muted-foreground"
           label="open terminal"
           onClick={() => nav.openTerminal(session)}
         />
         <CardAction
-          icon={<Code size={14} aria-hidden />}
+          icon={Code}
+          color="text-muted-foreground"
           label="open in editor"
           onClick={() => nav.openIDE(session)}
           disabled={!worktreePath}
@@ -127,27 +132,28 @@ export const StageBoardCard = memo(function StageBoardCard({ session, nav }: Sta
 });
 
 type CardActionProps = {
-  readonly icon: React.ReactNode;
+  readonly icon: LucideIcon;
+  readonly color: string;
   readonly label: string;
   readonly onClick: () => void;
   readonly disabled?: boolean;
 };
 
-const CardAction = ({ icon, label, onClick, disabled }: CardActionProps) => {
+const CardAction = ({ icon: Icon, color, label, onClick, disabled }: CardActionProps) => {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className="size-7 p-0 text-muted-foreground/70 hover:text-foreground"
-    >
-      {icon}
-    </Button>
+    <Tooltip content={label} side="top">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-label={label}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="inline-flex size-7 items-center justify-center rounded-md transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Icon size={14} className={color} aria-hidden />
+      </button>
+    </Tooltip>
   );
 };
