@@ -43,7 +43,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
         </span>
         <Button size="sm" onClick={onCreateSession}>
           <Plus size={14} aria-hidden />
-          New goal
+          New session
         </Button>
       </div>
 
@@ -57,7 +57,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
             </div>
             <div className="flex flex-col gap-2.5">
               <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                Set your first goal
+                Start your first session
               </h2>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 Describe an outcome. An agent picks it up in its own worktree and branch; your main
@@ -66,7 +66,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
             </div>
             <Button size="md" onClick={onCreateSession}>
               <Plus size={16} aria-hidden />
-              New goal
+              New session
             </Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, Check, Clock, Play } from 'lucide-react';
+import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
@@ -63,6 +63,8 @@ export function WorkflowStepRow({
   const isPendingFuture = run.status === 'pending' && !isActionable;
   const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
+  const isRunning = run.status === 'running';
+  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
 
   const [draft, setDraft] = useState(run.name);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -90,64 +92,86 @@ export function WorkflowStepRow({
     }
   };
 
-  const ROW_BASE = 'group flex w-full flex-col rounded border px-2 py-1.5 text-xs font-medium';
-  const isRunning = run.status === 'running';
-  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
-  const containerClass = isRunning
-    ? cn(
-        `${ROW_BASE} border-info/60 transition-colors cursor-pointer`,
-        isSelected ? 'bg-elevated text-foreground' : 'bg-muted/40 text-foreground/80',
-      )
-    : isStartable
-      ? `${ROW_BASE} border-primary/40 bg-primary/10 text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/20 cursor-pointer`
+  const cardClass = cn(
+    'group flex w-full flex-col rounded-lg border px-3 py-2.5 text-left transition-colors',
+    isPendingFuture
+      ? 'cursor-default border-border-soft/40'
+      : isStartable
+        ? 'cursor-pointer border-primary/45 bg-primary/[0.06] hover:bg-primary/[0.1]'
+        : isActionable && isBlocked
+          ? 'cursor-pointer border-warning/55 bg-warning/[0.06] hover:bg-warning/[0.1]'
+          : isRunning
+            ? cn('cursor-pointer border-info/50', isSelected && 'bg-info/[0.05]')
+            : hasUnread
+              ? 'cursor-pointer border-warning/55 hover:border-warning'
+              : isSelected
+                ? 'cursor-pointer border-accent/50 bg-accent/[0.05]'
+                : 'cursor-pointer border-border-soft/60 hover:border-border',
+  );
+
+  const statusLabel = isStartable
+    ? 'start'
+    : isActionable && isBlocked
+      ? 'needs you'
+      : isRunning
+        ? 'running…'
+        : run.status === 'completed'
+          ? 'done'
+          : run.status === 'skipped'
+            ? 'skipped'
+            : run.status === 'failed'
+              ? 'stalled'
+              : 'queued';
+
+  const statusLabelClass = cn(
+    'shrink-0 text-2xs font-medium uppercase tracking-wide',
+    isStartable
+      ? 'text-primary'
       : isActionable && isBlocked
-        ? `${ROW_BASE} border-warning/70 bg-warning/10 text-foreground transition-colors hover:bg-warning/15 cursor-pointer`
-        : hasUnread
-          ? `${ROW_BASE} border-warning/70 bg-muted/40 text-foreground/80 transition-colors hover:border-warning hover:bg-muted/60 cursor-pointer`
-          : isPendingFuture
-            ? `${ROW_BASE} border-transparent text-muted-foreground/40`
-            : cn(
-                `${ROW_BASE} transition-colors cursor-pointer`,
-                isSelected
-                  ? 'border-border bg-elevated text-foreground'
-                  : 'border-border-soft/50 bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/60',
-              );
+        ? 'text-warning'
+        : isRunning
+          ? 'text-info'
+          : run.status === 'completed'
+            ? 'text-success'
+            : run.status === 'failed'
+              ? 'text-danger'
+              : 'text-muted-foreground/50',
+  );
 
   const renderStatusIcon = () => {
     if (isStartable) {
       return (
-        <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+        <span className="flex size-4 items-center justify-center rounded-full bg-primary/15">
           <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
         </span>
       );
     }
     if (isActionable && isBlocked) {
-      return <AlertTriangle size={12} className="text-warning" aria-hidden />;
+      return <AlertTriangle size={13} className="text-warning" aria-hidden />;
     }
-    if (run.status === 'running') {
+    if (isRunning) {
       return <StatusDot tone="info" size="md" pulsing />;
     }
-    if (run.status === 'completed') {
+    if (run.status === 'completed' || run.status === 'skipped') {
       return (
-        <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
-          <Check size={9} className="text-success" aria-hidden />
+        <span
+          className={cn(
+            'flex size-4 items-center justify-center rounded-full',
+            run.status === 'skipped' ? 'bg-muted' : 'bg-success/15',
+          )}
+        >
+          <Check
+            size={10}
+            className={run.status === 'skipped' ? 'text-muted-foreground/60' : 'text-success'}
+            aria-hidden
+          />
         </span>
       );
     }
     if (run.status === 'failed') {
-      return <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
+      return <span className="size-2 rounded-full bg-danger" aria-hidden />;
     }
-    return <Clock size={11} className="text-muted-foreground/70" aria-hidden />;
-  };
-
-  const renderActionIndicator = () => {
-    if (run.status === 'running') {
-      return null;
-    }
-    if (isActionable && isBlocked) {
-      return <ArrowRight size={13} aria-hidden className="text-warning" />;
-    }
-    return null;
+    return <Clock size={13} className="text-muted-foreground/50" aria-hidden />;
   };
 
   const stableTitle =
@@ -177,82 +201,90 @@ export function WorkflowStepRow({
             handleRowClick();
           }
         }}
-        className={containerClass}
+        className={cardClass}
       >
-        <div className="flex w-full items-center gap-1.5">
+        <div className="flex items-start gap-2.5">
           <span
             aria-hidden
-            className={cn(
-              'w-4 shrink-0 text-right text-2xs tabular-nums',
-              isPendingFuture ? 'text-muted-foreground/40' : 'text-muted-foreground/60',
-            )}
+            className="mt-0.5 w-3 shrink-0 text-right text-2xs tabular-nums text-muted-foreground/40"
           >
-            {index + 1}.
+            {index + 1}
           </span>
-          <span className="flex size-3.5 shrink-0 items-center justify-center">
+          <span className="mt-px flex size-4 shrink-0 items-center justify-center">
             {renderStatusIcon()}
           </span>
-          <AgentKindChip kind={kind} muted={isPendingFuture} />
-          {isEditing ? (
-            <input
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onDoubleClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  onRenameCommit(draft);
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  onRenameCancel();
-                }
-              }}
-              onBlur={() => onRenameCommit(draft)}
-              className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none ring-1 ring-primary"
-              aria-label="rename agent"
-            />
-          ) : (
-            <span className="min-w-0 flex-1 truncate text-left font-semibold">{run.name}</span>
-          )}
-          {renderActionIndicator()}
-        </div>
-        <div className="flex w-full items-center justify-between gap-2 pl-[22px] pt-0.5">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <ProviderGlyph
-              provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
-              muted={isPendingFuture}
-            />
-            <span
-              className={cn(
-                'min-w-0 truncate text-[10px] font-normal tabular-nums',
-                isPendingFuture ? 'text-muted-foreground/60' : 'opacity-60',
-              )}
-              title={`model: ${resolvedModel}`}
-            >
-              {modelLabel}
-            </span>
-          </span>
-        </div>
-        <div
-          className={cn(
-            'grid w-full transition-[grid-template-rows] duration-200 ease-out',
-            isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-          )}
-        >
-          <div className="overflow-hidden">
-            <div className="flex flex-col gap-1 pt-1">
-              <AgentMetricsBlock
-                run={run}
-                telemetry={telemetry}
-                aggregate={aggregate}
-                turns={turns}
-                turnsLoading={turnsLoading}
-                variant="workflow"
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <AgentKindChip kind={kind} muted={isPendingFuture} />
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        onRenameCommit(draft);
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        onRenameCancel();
+                      }
+                    }}
+                    onBlur={() => onRenameCommit(draft)}
+                    className="min-w-0 flex-1 rounded bg-background px-1.5 py-0.5 text-sm font-medium text-foreground outline-none ring-1 ring-primary"
+                    aria-label="rename agent"
+                  />
+                ) : (
+                  <span
+                    className={cn(
+                      'min-w-0 truncate text-sm font-medium',
+                      isPendingFuture ? 'text-muted-foreground/50' : 'text-foreground',
+                    )}
+                  >
+                    {run.name}
+                  </span>
+                )}
+              </div>
+              <span className={statusLabelClass}>{statusLabel}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ProviderGlyph
+                provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
+                muted={isPendingFuture}
               />
-              <ContextWindowBar usage={contextUsage} />
+              <span
+                className={cn(
+                  'min-w-0 truncate text-[11px] tabular-nums',
+                  isPendingFuture ? 'text-muted-foreground/50' : 'text-muted-foreground/70',
+                )}
+                title={`model: ${resolvedModel}`}
+              >
+                {modelLabel}
+              </span>
+            </div>
+            <div
+              className={cn(
+                'grid transition-[grid-template-rows] duration-200 ease-out',
+                isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+              )}
+            >
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-1 pt-1.5">
+                  <AgentMetricsBlock
+                    run={run}
+                    telemetry={telemetry}
+                    aggregate={aggregate}
+                    turns={turns}
+                    turnsLoading={turnsLoading}
+                    variant="workflow"
+                  />
+                  <ContextWindowBar usage={contextUsage} />
+                </div>
+              </div>
             </div>
           </div>
         </div>

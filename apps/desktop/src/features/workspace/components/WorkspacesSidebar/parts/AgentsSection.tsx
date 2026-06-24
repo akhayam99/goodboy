@@ -722,12 +722,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
     return (
       <div
         key={run.id}
-        className={cn(
-          'flex flex-col',
-          isDiscarded && 'opacity-70',
-          forceExpanded &&
-            'gap-1 rounded-lg border border-border-soft bg-elevated px-2 py-1.5 shadow-sm',
-        )}
+        className={cn('flex flex-col', forceExpanded && 'gap-1.5', isDiscarded && 'opacity-70')}
       >
         <div className="flex items-center gap-0.5">
           <button
@@ -846,7 +841,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
         </div>
         {expanded ? (
           wfAgents.length > 0 ? (
-            <div className="flex flex-col gap-1 pb-1 pl-3">
+            <div className={cn('flex flex-col pb-1', forceExpanded ? 'gap-2 pl-1' : 'gap-1 pl-3')}>
               {wfAgents.map((run, index) => {
                 const isActionable = run.stepId === actionableStepId && run.status === 'pending';
                 const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
@@ -988,7 +983,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
               <WorkflowStartButton sessionId={task.id} variant="empty" />
             ) : (
               <>
-                <div className={cn('flex flex-col', forceExpanded ? 'gap-2' : 'gap-0.5')}>
+                <div className={cn('flex flex-col', forceExpanded ? 'gap-4' : 'gap-0.5')}>
                   {attachedRuns.map(renderWorkflowRow)}
                 </div>
                 <WorkflowStartButton sessionId={task.id} variant="attach" />
