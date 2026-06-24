@@ -409,7 +409,9 @@ describe('autorun plan consumption ordering', () => {
   it('persists the plan before the implementer reads it, recording a consumption (plan flips to consumed)', async () => {
     const { useAppStore } = await import('./store');
     seedStore(useAppStore);
-    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER));
+    runTurnSpy
+      .mockImplementationOnce(streamText(PLAN_MARKER))
+      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
@@ -431,7 +433,7 @@ describe('autorun plan consumption ordering', () => {
     expect(kickoffPrompt).toBeDefined();
   });
 
-  it('still auto-advances on empty planner output, recording no consumption', async () => {
+  it('does not auto-advance on empty planner output: retries then fails the step', async () => {
     const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     runTurnSpy.mockImplementation(() => emptyStream());
@@ -442,9 +444,15 @@ describe('autorun plan consumption ordering', () => {
       content: 'plan it',
     });
 
+    await vi.waitFor(() =>
+      expect(phaseRunUpdateStatusSpy).toHaveBeenCalledWith(
+        PLANNER_ID,
+        expect.objectContaining({ status: 'failed' }),
+      ),
+    );
     expect(upsertPlanSpy).not.toHaveBeenCalled();
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
-    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(IMPL_ID);
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID);
   });
 
   it('fans out when the persisted plan carries 2+ clusters, after recording the consumption', async () => {
@@ -468,7 +476,9 @@ describe('autorun plan consumption ordering', () => {
   it('persists the plan strictly before recording its consumption (race-fix invariant)', async () => {
     const { useAppStore } = await import('./store');
     seedStore(useAppStore);
-    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER));
+    runTurnSpy
+      .mockImplementationOnce(streamText(PLAN_MARKER))
+      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
@@ -476,8 +486,8 @@ describe('autorun plan consumption ordering', () => {
       content: 'plan it',
     });
 
+    await vi.waitFor(() => expect(addPlanConsumptionSpy).toHaveBeenCalledTimes(1));
     expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
-    expect(addPlanConsumptionSpy).toHaveBeenCalledTimes(1);
     expect(upsertPlanSpy.mock.invocationCallOrder[0]!).toBeLessThan(
       addPlanConsumptionSpy.mock.invocationCallOrder[0]!,
     );
@@ -508,7 +518,9 @@ describe('autorun plan consumption ordering', () => {
     const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     upsertPlanSpy.mockRejectedValueOnce(new Error('db unavailable'));
-    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER));
+    runTurnSpy
+      .mockImplementationOnce(streamText(PLAN_MARKER))
+      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,

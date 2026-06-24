@@ -194,7 +194,8 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     const [payload] = sendTurn.mock.calls[0]!;
     expect(payload.content).not.toContain('do the thing');
-    expect(payload.content).toBe('run the step');
+    expect(payload.content).toContain('run the step');
+    expect(payload.content).toContain('<<step-done');
   });
 
   it('an implementer step with multiple clusters still fans out (no regression)', async () => {
@@ -230,7 +231,8 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
     const [payload] = sendTurn.mock.calls[0]!;
-    expect(payload.content).toBe('run the step');
+    expect(payload.content).toContain('run the step');
+    expect(payload.content).toContain('<<step-done');
   });
 
   it('does not consume an already-consumed plan', async () => {
@@ -338,7 +340,8 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(merged.selectedAgentId).toBeUndefined();
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     expect(sendTurn).toHaveBeenCalledTimes(1);
-    expect(sendTurn.mock.calls[0]![0].content).toBe('run the step');
+    expect(sendTurn.mock.calls[0]![0].content).toContain('run the step');
+    expect(sendTurn.mock.calls[0]![0].content).toContain('<<step-done');
   });
 
   it('navigate=false still injects and consumes an explicit plan', async () => {

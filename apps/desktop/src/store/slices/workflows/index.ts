@@ -5,6 +5,8 @@ import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
 import { detachWorkflowFromSession } from './detachWorkflowFromSession';
 import { discardWorkflow } from './discardWorkflow';
+import { finalizeWorkflowStep } from './finalizeWorkflowStep';
+import { forceAdvanceWorkflowStep } from './forceAdvanceWorkflowStep';
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
@@ -38,6 +40,8 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),
+    finalizeWorkflowStep: finalizeWorkflowStep(set, get),
+    forceAdvanceWorkflowStep: forceAdvanceWorkflowStep(set, get),
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
   };

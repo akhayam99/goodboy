@@ -33,6 +33,7 @@ export {
   extractMarkers,
   extractPlanFromMarker,
   extractScoutSplit,
+  extractStepDone,
   isOpenQuestionAnswerText,
   isReviewThreadId,
   isSlotKey,
@@ -148,11 +149,13 @@ export {
 
 export {
   buildStepPrompt,
+  classifyWorkflowChain,
   currentStep,
   findReusableAgent,
   isWorkflowComplete,
   nextStep,
   runsForWorkflowRun,
+  type WorkflowChainState,
   WorkflowPropagator,
   type WorkflowPropagatorDeps,
   WORKFLOW_LIBRARY,

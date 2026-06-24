@@ -19,6 +19,7 @@ export {
   extractMarkers,
   extractPlanFromMarker,
   extractScoutSplit,
+  extractStepDone,
   isOpenQuestionAnswerText,
   isReviewThreadId,
   mergeIntoSlot,

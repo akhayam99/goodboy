@@ -129,4 +129,57 @@ describe('WorkflowNextStepCta', () => {
     ).toBeDefined();
     expect(onAdvance).not.toHaveBeenCalled();
   });
+
+  it('renders force CTA when chain is blocked (failed predecessor)', () => {
+    const blockedRuns: Agent[] = [
+      run('s1' as StepId, 'failed', 0),
+      run('s2' as StepId, 'pending', 1),
+    ];
+    const onAdvance = vi.fn();
+    const onForceAdvance = vi.fn();
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={blockedRuns}
+        onAdvance={onAdvance}
+        onForceAdvance={onForceAdvance}
+      />,
+    );
+    expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
+    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
+  });
+
+  it('shows confirmation before executing force advance', async () => {
+    const blockedRuns: Agent[] = [
+      run('s1' as StepId, 'failed', 0),
+      run('s2' as StepId, 'pending', 1),
+    ];
+    const onForceAdvance = vi.fn();
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={blockedRuns}
+        onAdvance={vi.fn()}
+        onForceAdvance={onForceAdvance}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('workflow-force-next-step-cta'));
+    expect(screen.getByText(/skip the blocked step/i)).toBeDefined();
+    expect(onForceAdvance).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText(/skip and continue/i));
+    await Promise.resolve();
+    expect(onForceAdvance).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders nothing when workflow is complete', () => {
+    const doneRuns: Agent[] = [
+      run('s1' as StepId, 'completed', 0),
+      run('s2' as StepId, 'completed', 1),
+      run('s3' as StepId, 'completed', 2),
+    ];
+    const { container } = render(
+      <WorkflowNextStepCta workflow={wf()} runs={doneRuns} onAdvance={vi.fn()} />,
+    );
+    expect(container.innerHTML).toBe('');
+  });
 });

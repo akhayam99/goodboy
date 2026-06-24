@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, ClipboardList } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { classifyWorkflowChain } from '@goodboy/core';
 import type { Agent, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import {
@@ -18,6 +19,7 @@ export type Props = {
     model: string,
     verbosity: VerbosityLevel | undefined,
   ) => void | Promise<void>;
+  readonly onForceAdvance?: () => void | Promise<void>;
   readonly hasOpenQuestions?: boolean;
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
@@ -58,16 +60,78 @@ export const WorkflowNextStepCta = ({
   workflow,
   runs,
   onAdvance,
+  onForceAdvance,
   hasOpenQuestions = false,
   consumesActivePlan = false,
   className,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
-  const next = useMemo(() => pickNextWorkflowStep(workflow, runs), [workflow, runs]);
+  const [pendingForce, setPendingForce] = useState(false);
+  const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
+  const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
   const defaults = AGENT_KIND_DEFAULTS[kind];
   const palette = AGENT_KIND_PALETTE[kind];
+  const doForce = async () => {
+    if (busy) {
+      return;
+    }
+    setBusy(true);
+    setPendingForce(false);
+    try {
+      await onForceAdvance?.();
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (chain.kind === 'complete') {
+    return null;
+  }
+  if (chain.kind === 'blocked') {
+    return (
+      <div className={cn('flex flex-col gap-1.5', className)}>
+        {pendingForce ? (
+          <div className="flex flex-col gap-2 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-2xs">
+            <p className="font-medium text-foreground">
+              Skip the blocked step and start the next agent?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingForce(false)}
+                className="rounded border border-border px-2 py-0.5 text-2xs font-semibold text-foreground motion-safe:transition-colors hover:bg-muted"
+              >
+                cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void doForce()}
+                disabled={busy}
+                className="rounded bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground motion-safe:transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                skip and continue
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPendingForce(true)}
+            disabled={busy}
+            data-testid="workflow-force-next-step-cta"
+            title={`step blocked: ${chain.failedStep.name}`}
+            className="group flex w-full items-center justify-between gap-2 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle size={13} aria-hidden className="shrink-0" />
+              <span className="font-semibold">force next step</span>
+            </span>
+          </button>
+        )}
+      </div>
+    );
+  }
   if (!next) {
     return null;
   }

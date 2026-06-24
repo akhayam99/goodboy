@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Step, Agent, Workflow } from '@goodboy/types';
 import {
   buildStepPrompt,
+  classifyWorkflowChain,
   currentStep,
   findReusableAgent,
   isWorkflowComplete,
@@ -282,5 +283,80 @@ describe('buildStepPrompt', () => {
       userMessage: '\n',
     });
     expect(result).toBe('You are an expert.');
+  });
+});
+
+describe('classifyWorkflowChain', () => {
+  it('returns step for first pending step when no runs exist', () => {
+    const chain = classifyWorkflowChain(TEMPLATE, []);
+    expect(chain).toEqual({ kind: 'step', step: D1 });
+  });
+
+  it('returns step for next pending step after completed predecessor', () => {
+    const runs = [makeRun('d1', 'completed', 1)];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain).toEqual({ kind: 'step', step: D2 });
+  });
+
+  it('returns blocked when predecessor has failed', () => {
+    const runs = [makeRun('d1', 'failed', 1, '2026-01-01T00:00:00Z')];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain.kind).toBe('blocked');
+    if (chain.kind === 'blocked') {
+      expect(chain.failedStep).toBe(D1);
+    }
+  });
+
+  it('returns complete when all steps done', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1),
+      makeRun('d2', 'completed', 2),
+      makeRun('d3', 'completed', 3),
+    ];
+    expect(classifyWorkflowChain(TEMPLATE, runs)).toEqual({ kind: 'complete' });
+  });
+
+  it('returns complete when mix of completed and skipped', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1),
+      makeRun('d2', 'skipped', 2),
+      makeRun('d3', 'completed', 3),
+    ];
+    expect(classifyWorkflowChain(TEMPLATE, runs)).toEqual({ kind: 'complete' });
+  });
+
+  it('returns step (not blocked) when pending step has no agent yet', () => {
+    const runs = [makeRun('d1', 'completed', 1)];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain.kind).toBe('step');
+  });
+
+  it('returns step when pending step agent is still running', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1),
+      makeRun('d2', 'running', 2, '2026-01-02T00:00:00Z'),
+    ];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain.kind).toBe('step');
+    if (chain.kind === 'step') {
+      expect(chain.step).toBe(D2);
+    }
+  });
+
+  it('returns complete for empty template', () => {
+    const empty: Workflow = { ...TEMPLATE, steps: [] };
+    expect(classifyWorkflowChain(empty, [])).toEqual({ kind: 'complete' });
+  });
+
+  it('blocked on second step when it has a failed agent', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1),
+      makeRun('d2', 'failed', 2, '2026-01-02T00:00:00Z'),
+    ];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain.kind).toBe('blocked');
+    if (chain.kind === 'blocked') {
+      expect(chain.failedStep).toBe(D2);
+    }
   });
 });

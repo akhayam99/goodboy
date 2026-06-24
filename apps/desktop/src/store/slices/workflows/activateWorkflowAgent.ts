@@ -9,7 +9,12 @@ import {
   kindConsumesPlan,
   type AgentKind,
 } from '../../../features/session/agent-kind';
-import { buildGoalKickoffSection, buildPlanKickoffSection, composeKickoff } from '../../kickoff';
+import {
+  buildGoalKickoffSection,
+  buildPlanKickoffSection,
+  composeKickoff,
+  composeStepBoundary,
+} from '../../kickoff';
 import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
@@ -93,7 +98,12 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const kickoff = composeKickoff(goalSection, planSection, promptPrefix);
+    const kickoff = composeKickoff(
+      goalSection,
+      planSection,
+      promptPrefix,
+      composeStepBoundary(agentId),
+    );
     if (kickoff.length > 0) {
       void get().sendTurn({ sessionId, agentId, content: kickoff });
     }

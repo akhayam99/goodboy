@@ -230,6 +230,7 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
 
 const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
 const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
+const STEP_DONE_RE = /<<step-done\s+([^>]+?)>>/g;
 
 export type ExtractedCluster = {
   readonly title: string;
@@ -292,6 +293,22 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
   let last: { id: string } | null = null;
   let m: RegExpExecArray | null;
   while ((m = CLUSTER_DONE_RE.exec(assistantText)) !== null) {
+    const inner = m[1] ?? '';
+    const attrs = parseHandoffAttrs(inner);
+    const id = (attrs.id ?? '').trim();
+    if (id.length === 0) {
+      continue;
+    }
+    last = { id };
+  }
+  return last;
+};
+
+export const extractStepDone = (assistantText: string): { readonly id: string } | null => {
+  STEP_DONE_RE.lastIndex = 0;
+  let last: { id: string } | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = STEP_DONE_RE.exec(assistantText)) !== null) {
     const inner = m[1] ?? '';
     const attrs = parseHandoffAttrs(inner);
     const id = (attrs.id ?? '').trim();
@@ -407,7 +424,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 
 const BLOCK_MARKER_ALT =
   'plan|clusters|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
-const SELF_MARKER_ALT = 'handoff|comment-resolved|comment-wontfix|cluster-done';
+const SELF_MARKER_ALT = 'handoff|comment-resolved|comment-wontfix|cluster-done|step-done';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,

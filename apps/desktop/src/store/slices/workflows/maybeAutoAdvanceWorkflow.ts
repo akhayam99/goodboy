@@ -47,9 +47,6 @@ export const maybeAutoAdvanceWorkflow = (_set: SetFn, get: GetFn) => {
     if (activeRuns.length === 0) {
       return;
     }
-    if (runs.some((r) => r.status === 'failed')) {
-      return;
-    }
     const summarizerBusy = state.summarizerStatus[sessionId]?.status === 'running';
     if (summarizerBusy) {
       return;
