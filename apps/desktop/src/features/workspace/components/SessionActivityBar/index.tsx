@@ -349,9 +349,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
           : stage === 'attention'
             ? 'border-warning/50'
             : stage === 'running'
-              ? isAutoMode
-                ? 'border-danger/60'
-                : 'border-info/60'
+              ? 'border-info/60'
               : 'border-transparent',
         dimmed && 'opacity-50',
       )}

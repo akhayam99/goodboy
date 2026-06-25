@@ -38,7 +38,7 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
 export const STAGE_TONE: Record<SessionStage, Tone> = {
   attention: 'warning',
   running: 'info',
-  review: 'danger',
+  review: 'success',
   building: 'primary',
   done: 'merged',
 };

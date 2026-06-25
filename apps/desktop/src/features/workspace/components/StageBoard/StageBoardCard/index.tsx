@@ -76,9 +76,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       className={cn(
         'group flex min-h-[7.25rem] flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
-          ? isAutoMode
-            ? 'border-danger/50'
-            : 'border-info/50'
+          ? 'border-info/50'
           : stage === 'attention'
             ? 'border-warning/50'
             : 'border-transparent',

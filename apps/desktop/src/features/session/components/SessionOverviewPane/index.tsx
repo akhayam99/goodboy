@@ -56,6 +56,7 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
+import { inferAgentKindFromName } from '../../agent-kind';
 import {
   resolveAttentionLens,
   selectAttention,
@@ -439,19 +440,35 @@ export const SessionOverviewPane = ({
       lens: 'questions',
     });
   }
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const hasResolver = agents.some(
+    (a) => (agentKindOverride?.[a.id] ?? inferAgentKindFromName(a.name ?? '')) === 'resolver',
+  );
   const attentionLens = resolveAttentionLens(stage, {
     hasStandalone: agents.length > 0,
     hasWorkflow: activeWorkflows > 0,
+    hasResolver,
   });
   if (attention.active && attentionLens && attentionLens !== 'questions') {
+    const attentionIcon =
+      attentionLens === 'pr'
+        ? GitPullRequest
+        : attentionLens === 'workflows'
+          ? Layers
+          : attentionLens === 'resolve'
+            ? MessageSquareReply
+            : Bot;
+    const attentionLabel =
+      attentionLens === 'pr'
+        ? 'Your pull request needs you'
+        : attentionLens === 'workflows'
+          ? 'A workflow needs you'
+          : attentionLens === 'resolve'
+            ? 'A resolver needs you'
+            : 'An agent needs you';
     nudges.push({
-      icon: attentionLens === 'pr' ? GitPullRequest : attentionLens === 'workflows' ? Layers : Bot,
-      label:
-        attentionLens === 'pr'
-          ? 'Your pull request needs you'
-          : attentionLens === 'workflows'
-            ? 'A workflow needs you'
-            : 'An agent needs you',
+      icon: attentionIcon,
+      label: attentionLabel,
       detail: attention.reason,
       lens: attentionLens,
     });

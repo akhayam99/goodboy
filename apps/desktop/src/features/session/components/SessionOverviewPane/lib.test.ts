@@ -76,7 +76,7 @@ describe('selectAttention', () => {
 });
 
 describe('resolveAttentionLens', () => {
-  const ctx = { hasStandalone: false, hasWorkflow: false };
+  const ctx = { hasStandalone: false, hasWorkflow: false, hasResolver: false };
 
   it('returns null when not in the attention stage', () => {
     expect(resolveAttentionLens(stage({ stage: 'running' }), ctx)).toBeNull();
@@ -99,6 +99,7 @@ describe('resolveAttentionLens', () => {
       resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
         hasStandalone: true,
         hasWorkflow: true,
+        hasResolver: false,
       }),
     ).toBe('agents');
   });
@@ -108,12 +109,43 @@ describe('resolveAttentionLens', () => {
       resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
         hasStandalone: false,
         hasWorkflow: true,
+        hasResolver: false,
       }),
     ).toBe('workflows');
   });
 
   it('defaults to agents when nothing else matches', () => {
     expect(resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), ctx)).toBe('agents');
+  });
+
+  it('routes to resolve when a resolver agent needs attention', () => {
+    expect(
+      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
+        hasStandalone: true,
+        hasWorkflow: false,
+        hasResolver: true,
+      }),
+    ).toBe('resolve');
+  });
+
+  it('routes to resolve even when non-resolver standalones are also present', () => {
+    expect(
+      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
+        hasStandalone: true,
+        hasWorkflow: true,
+        hasResolver: true,
+      }),
+    ).toBe('resolve');
+  });
+
+  it('routes to agents when standalone is non-resolver', () => {
+    expect(
+      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
+        hasStandalone: true,
+        hasWorkflow: false,
+        hasResolver: false,
+      }),
+    ).toBe('agents');
   });
 });
 
