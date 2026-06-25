@@ -32,10 +32,11 @@ functional. One register per surface; let the other supply only texture.
 
 ## Layout & navigation
 
-- **App chrome**: a single top bar (`AppTopBar`) holds the logo, breadcrumb,
-  and all global controls (palette, skills, workflows, providers, integrations,
-  budget, notifications, settings). The breadcrumb is global, not chat-scoped;
-  it tracks the current location across board, session, and studio surfaces.
+- **App chrome**: a single top bar (`AppTopBar`) holds the logo (left) and all
+  global controls (right): palette, skills, workflows, providers, integrations,
+  budget, notifications, settings. No breadcrumb renders in the top bar.
+  Navigation context is surfaced contextually: a "Back to board" action in the
+  session sidebar, and an in-content breadcrumb inside session lenses.
   See [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb
   derivation rules.
 - **Shell layout**: top bar (always visible) · left sidebar (sessions and

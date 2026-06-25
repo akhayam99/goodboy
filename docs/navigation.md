@@ -9,12 +9,28 @@ taxonomy. For the file locations of every component named here see
 
 `buildBreadcrumb(input)` is a pure function in
 `apps/desktop/src/app/components/AppBreadcrumb/buildBreadcrumb.ts`.
-It is rendered by `AppBreadcrumb` (same folder) inside `AppTopBar`. No router, no
-nav store: the crumb is derived from the existing store
-(`currentWorkspaceId`, `currentSessionId`, `workspaces`, `sessions`) plus the
-studio open-state flags forwarded from `App.tsx`.
+It is rendered by `AppBreadcrumb` (same folder) inside `WorkspaceLinkDialog`
+(the workspace-create dialog). No router, no nav store: the crumb is derived
+from the existing store (`currentWorkspaceId`, `currentSessionId`,
+`workspaces`, `sessions`) plus the studio open-state flags forwarded from
+`App.tsx`.
+
+`AppBreadcrumb` is NOT rendered in `AppTopBar`. The top bar holds only the
+logo (left) and global controls (right). Navigation context is surfaced
+differently depending on where the user is:
+
+- Inside a session: `WorkspacesSidebar` shows a "Back to board" action
+  directly under the workspace header, above the sessions list.
+- Inside a session lens: an in-content breadcrumb leads with a "Back to
+  overview" action (arrow + label), followed by the lens name
+  (`SessionWorkspace`).
 
 ### Crumb trails
+
+The table below shows the conceptual IA that `buildBreadcrumb` implements.
+It is currently rendered only inside `WorkspaceLinkDialog` for the
+`Overview > Workspace > Create` trail; the other rows describe the logical
+model the function supports.
 
 | Trail                                               | When shown                                                                                                    |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -49,8 +65,8 @@ crumbs navigate via `toOverview` / `toWorkspaceLauncher` / `toWorkspaceBoard`.
 
 ## App-chrome header
 
-`AppTopBar` is the single app-chrome row. Layout: logo and breadcrumb on the
-left; all global controls on the right.
+`AppTopBar` is the single app-chrome row. Layout: logo on the left; all
+global controls on the right. No breadcrumb renders in the top bar.
 
 Global controls (right side): palette, skills, workflows, providers,
 GitHub/GitLab/Linear/Sentry integrations, budget, notifications, guide,
@@ -88,8 +104,9 @@ their close button or Esc.
 ### Workspace creation
 
 `WorkspaceLinkDialog` renders the `Overview > Workspace > Create` breadcrumb
-inside its header. After creation it lands on the new workspace board. The
-first-run onboarding wizard continues if `isWizardDone` is false.
+(via `AppBreadcrumb`) inside its header. After creation it lands on the new
+workspace board. The first-run onboarding wizard continues if `isWizardDone`
+is false.
 
 ### Master-detail studios
 
@@ -101,11 +118,20 @@ does not do.
 
 ## Agent-kind picker
 
-Every agent-creation entry point exposes the `AGENT_KIND` role picker:
-`NewSessionView` (first-agent picker) and `SessionOverviewPane` via
-`SpawnAgentControl`.
+The `AGENT_KIND` role picker is exposed from `SessionOverviewPane` via
+`SpawnAgentControl`. New-session creation does not include an agent-kind picker
+or a workflow picker. Agents and workflows are created after the session exists,
+from the session overview.
 
 ## Session activity bar
 
-The session activity bar shows running sessions only (`stage === 'running'`).
-The board surfaces every stage.
+The session activity bar (sessions list in `WorkspacesSidebar`) shows ALL
+sessions grouped by stage: building, running, needs-you/attention, in-review,
+done. It is not filtered to running sessions only. The board also surfaces
+every stage.
+
+## Full-page studios
+
+Studios using `StudioShell` (fullscreen variant) render below the top bar with
+a top offset equal to the top bar height. The top bar stays visible and
+interactive while any studio is open.
