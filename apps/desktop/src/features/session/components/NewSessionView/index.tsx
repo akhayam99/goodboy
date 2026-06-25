@@ -1,7 +1,16 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
+import { Button, Divider, Input, Popover, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
+import {
+  AlertTriangle,
+  ChevronDown,
+  GitBranch,
+  Paperclip,
+  Plus,
+  Target,
+  Wand2,
+} from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CURSOR_AUTO_MODEL } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -25,6 +34,13 @@ import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
+import {
+  AGENT_KIND_DEFAULTS,
+  AGENT_KIND_META,
+  AGENT_KIND_ORDER,
+  AGENT_KIND_PALETTE,
+  type AgentKind,
+} from '../../../../features/session/agent-kind';
 
 type Props = {
   onClose: () => void;
@@ -197,6 +213,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const settingKey = settingBranchPrefix(workspaceId);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
 
+  const [firstAgentKind, setFirstAgentKind] = useState<AgentKind>('generic');
+  const [kindPickerOpen, setKindPickerOpen] = useState(false);
+  const kindPickerRef = useRef<HTMLButtonElement>(null);
+  const kindMenuRef = useRef<HTMLDivElement>(null);
   const [goal, setGoal] = useState('');
   const [branchSlug, setBranchSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
@@ -251,6 +271,29 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [busy, onClose]);
+
+  const computeKindAnchor = useCallback(() => {
+    const rect = kindPickerRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return null;
+    }
+    return { left: rect.left, bottom: window.innerHeight - rect.top + 4 };
+  }, []);
+
+  useEffect(() => {
+    if (!kindPickerOpen) {
+      return;
+    }
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (kindPickerRef.current?.contains(target) || kindMenuRef.current?.contains(target)) {
+        return;
+      }
+      setKindPickerOpen(false);
+    };
+    window.addEventListener('mousedown', onDocClick);
+    return () => window.removeEventListener('mousedown', onDocClick);
+  }, [kindPickerOpen]);
 
   const onPickLinearIssue = (issue: LinearIssue) => {
     setLinearIssue(issue);
@@ -335,6 +378,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       const { session } = await createSession({
         workspaceId,
         goal,
+        firstAgentKind,
         branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
         branchSlug: branchSlug.trim() || undefined,
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
@@ -604,6 +648,17 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           disabled={busy}
         />
         <Divider orientation="vertical" className="h-5 self-center" />
+        <AgentKindPicker
+          kind={firstAgentKind}
+          onChange={setFirstAgentKind}
+          open={kindPickerOpen}
+          onOpenChange={setKindPickerOpen}
+          triggerRef={kindPickerRef}
+          menuRef={kindMenuRef}
+          computeAnchor={computeKindAnchor}
+          disabled={busy}
+        />
+        <Divider orientation="vertical" className="h-5 self-center" />
         <Button variant="ghost" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
@@ -639,6 +694,116 @@ type Tone = 'primary' | 'success';
 const TONE_BG: Record<Tone, string> = {
   primary: 'bg-primary/10',
   success: 'bg-success/10',
+};
+
+const KIND_PICKER_MENU_WIDTH = 280;
+
+type AgentKindPickerProps = {
+  kind: AgentKind;
+  onChange: (k: AgentKind) => void;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  triggerRef: RefObject<HTMLButtonElement | null>;
+  menuRef: RefObject<HTMLDivElement | null>;
+  computeAnchor: () => { left: number; bottom: number } | null;
+  disabled: boolean;
+};
+
+const AgentKindPicker = ({
+  kind,
+  onChange,
+  open,
+  onOpenChange,
+  triggerRef,
+  menuRef,
+  computeAnchor,
+  disabled,
+}: AgentKindPickerProps) => {
+  const meta = AGENT_KIND_META[kind];
+  const palette = AGENT_KIND_PALETTE[kind];
+
+  const onToggle = () => {
+    if (disabled) {
+      return;
+    }
+    onOpenChange(!open);
+  };
+
+  const anchor = open ? computeAnchor() : null;
+
+  const menu =
+    open && anchor
+      ? createPortal(
+          <Popover
+            innerRef={menuRef}
+            role="menu"
+            style={{
+              position: 'fixed',
+              left: anchor.left,
+              bottom: anchor.bottom,
+              width: KIND_PICKER_MENU_WIDTH,
+            }}
+            className="z-50 max-h-72 overflow-y-auto py-1"
+          >
+            <div className="px-3 pb-1 pt-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
+              first agent role
+            </div>
+            {[...AGENT_KIND_ORDER]
+              .filter((k) => AGENT_KIND_DEFAULTS[k].visible !== false)
+              .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
+              .map((k) => {
+                const m = AGENT_KIND_META[k];
+                const p = AGENT_KIND_PALETTE[k];
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      onChange(k);
+                      onOpenChange(false);
+                    }}
+                    className={cn(
+                      'flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted',
+                      k === kind && 'bg-muted/60',
+                    )}
+                  >
+                    <span className={cn('mt-1 size-2 shrink-0 rounded-full', p.bg)} aria-hidden />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-xs font-medium text-foreground">{m.label}</span>
+                      <span className="text-2xs leading-snug text-muted-foreground">{m.hint}</span>
+                    </span>
+                  </button>
+                );
+              })}
+          </Popover>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors',
+          disabled
+            ? 'cursor-not-allowed text-muted-foreground/40'
+            : 'text-foreground hover:bg-muted',
+        )}
+      >
+        <span className={cn('size-2 shrink-0 rounded-full', palette.bg)} aria-hidden />
+        {meta.label}
+        <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
+      </button>
+      {menu}
+    </>
+  );
 };
 
 function Section({

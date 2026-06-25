@@ -62,6 +62,7 @@ import {
   selectOpenQuestions,
   selectStandaloneAgents,
 } from './lib';
+import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -405,7 +406,6 @@ export const SessionOverviewPane = ({
   const stage = useSessionStageInfo(session);
   const workspace = useCurrentWorkspace();
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
   const agents = selectStandaloneAgents(
@@ -428,9 +428,6 @@ export const SessionOverviewPane = ({
         detail: { sessionId: session.id as SessionId },
       }),
     );
-  };
-  const startAgent = () => {
-    void spawnAgent(session.id as SessionId, {});
   };
 
   const nudges: Nudge[] = [];
@@ -560,7 +557,7 @@ export const SessionOverviewPane = ({
               label="New workflow"
               onClick={openWorkflowBuilder}
             />
-            <StartCard icon={Bot} tone="primary" label="New agent" onClick={startAgent} />
+            <SpawnAgentControl sessionId={session.id as SessionId} className="mt-0" />
             <StartCard
               icon={MessageSquareReply}
               tone="success"

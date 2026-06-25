@@ -180,7 +180,7 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     renderPane();
     expect(screen.getByText('Start')).toBeDefined();
     expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
@@ -195,10 +195,12 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     window.removeEventListener('goodboy:open-workflow-builder', handler);
   });
 
-  it('spawns an agent directly from the new-agent card', () => {
+  it('opens the role-picker menu from the new-agent card and spawns with chosen kind', () => {
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'New agent' }));
-    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', {});
+    fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
+    const menuitem = screen.getByRole('menuitem', { name: /Scout/i });
+    fireEvent.click(menuitem);
+    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 
   it('routes the resolve card to the resolve lens', () => {
