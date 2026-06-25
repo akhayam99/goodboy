@@ -42,14 +42,15 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.stopPropagation();
         requestClose();
       }
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, { capture: true });
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keydown', onKey, { capture: true });
       document.body.style.overflow = prevOverflow;
     };
   }, [requestClose]);

@@ -1,59 +1,23 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, HelpCircle, Moon, Settings, Smartphone, Sun } from 'lucide-react';
-import { Divider, StatusDot, formatUsd } from '@goodboy/ui';
+import { HelpCircle, Moon, Settings, Smartphone, Sun } from 'lucide-react';
+import { cn, Divider, StatusDot, formatUsd } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
-import { useCurrentWorkspace, useSessions, useWorkspaceRollup, useAppStore } from '../../../store';
+import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
 import { useThemeStore } from '../../../shared/lib/theme';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
-import { QuickActionsRow } from '../../../features/workspace/components/WorkspacesSidebar/parts/QuickActionsRow';
-import { WORKSPACE_FEATURES } from '../../../shared/lib/features';
-import type { WorkspaceId } from '@goodboy/types';
 
 const TOPBAR_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
 export type AppTopBarProps = {
   onOpenSettings: () => void;
-  onOpenPalette: (initialQuery?: string) => void;
-  onOpenWorkflows: () => void;
-  onOpenLinear: () => void;
-  onOpenSentry: () => void;
-  onOpenGitlab: () => void;
-  onOpenProviders: () => void;
-  onOpenGithub: () => void;
-  onOpenBudget: () => void;
+  activeStudio: string | null;
 };
 
-export const AppTopBar = ({
-  onOpenSettings,
-  onOpenPalette,
-  onOpenWorkflows,
-  onOpenLinear,
-  onOpenSentry,
-  onOpenGitlab,
-  onOpenProviders,
-  onOpenGithub,
-  onOpenBudget,
-}: AppTopBarProps) => {
-  const currentWorkspace = useCurrentWorkspace();
-  const hasLinear = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'linear',
-    ),
-  );
-  const hasSentry = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'sentry',
-    ),
-  );
-  const hasGitlab = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'gitlab',
-    ),
-  );
+export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
@@ -73,33 +37,7 @@ export const AppTopBar = ({
 
         <WorkspaceRollupStrip />
 
-        {currentWorkspace ? (
-          <QuickActionsRow
-            onOpenPalette={onOpenPalette}
-            onOpenWorkflows={onOpenWorkflows}
-            onOpenLinear={onOpenLinear}
-            onOpenSentry={onOpenSentry}
-            onOpenGitlab={onOpenGitlab}
-            onOpenProviders={onOpenProviders}
-            onOpenGithub={onOpenGithub}
-            linearEnabled={hasLinear}
-            sentryEnabled={hasSentry}
-            gitlabEnabled={hasGitlab}
-            skillsEnabled={WORKSPACE_FEATURES.skills}
-            compact
-          />
-        ) : null}
-
         <div className="flex shrink-0 items-center gap-0.5">
-          <button
-            type="button"
-            onClick={onOpenBudget}
-            title="open budget studio"
-            aria-label="open budget studio"
-            className={TOPBAR_ICON_BTN}
-          >
-            <DollarSign size={14} aria-hidden />
-          </button>
           <button
             type="button"
             onClick={toggleTheme}
@@ -126,7 +64,12 @@ export const AppTopBar = ({
             onClick={onOpenSettings}
             title="settings (⌘,)"
             aria-label="open settings"
-            className={TOPBAR_ICON_BTN}
+            className={cn(
+              'flex items-center justify-center rounded p-1.5 transition-colors',
+              activeStudio === 'settings'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+            )}
           >
             <Settings size={14} aria-hidden />
           </button>

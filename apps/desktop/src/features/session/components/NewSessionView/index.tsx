@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CURSOR_AUTO_MODEL } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -21,7 +21,6 @@ import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
-import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 
@@ -353,17 +352,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in">
-      <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl">
-        <OverlayHeader
-          icon={Plus}
-          title="New session"
-          subtitle={workspace ? `in: ${workspace.name}` : 'creates a worktree on a fresh branch'}
-          onClose={onClose}
-          closeLabel="cancel new session"
-          closeDisabled={busy}
-        />
-        <Divider />
-
+      <div className="flex w-full max-w-2xl flex-col overflow-hidden">
         <ScrollFade
           className="max-h-[70vh] overflow-y-auto"
           viewportClassName="px-6 py-5"

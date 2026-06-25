@@ -1,17 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { GitlabWorkspaceIntegration, Workspace, WorkspaceId } from '@goodboy/types';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
 
-const { state, currentWorkspace } = vi.hoisted(() => ({
-  state: {
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    providers: [] as ReadonlyArray<{ connection: string }>,
-  },
+const { currentWorkspace } = vi.hoisted(() => ({
   currentWorkspace: { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace,
 }));
 
 vi.mock('../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useCurrentWorkspace: () => currentWorkspace,
   useSessions: () => [],
   useWorkspaceRollup: () => ({ attentionCount: 0, runningCount: 0, todaySpend: 0 }),
@@ -42,61 +37,25 @@ vi.mock('../../../shared/components/DogMascot', () => ({
   DogMascot: () => null,
 }));
 
-const WS_ID = 'ws-1' as WorkspaceId;
-
-const gitlabIntegration: GitlabWorkspaceIntegration = {
-  id: 'wi-1' as never,
-  workspaceId: WS_ID,
-  provider: 'gitlab',
-  credentialKey: 'cred-1',
-  config: { userName: 'octo', userId: '42', host: 'https://gitlab.com' },
-  createdAt: '2026-01-01T00:00:00.000Z' as never,
-  updatedAt: '2026-01-01T00:00:00.000Z' as never,
-};
-
-const baseProps = {
-  breadcrumb: [],
-  onOpenSettings: vi.fn(),
-  onOpenPalette: vi.fn(),
-  onOpenWorkflows: vi.fn(),
-  onOpenLinear: vi.fn(),
-  onOpenSentry: vi.fn(),
-  onOpenGitlab: vi.fn(),
-  onOpenProviders: vi.fn(),
-  onOpenGithub: vi.fn(),
-  onOpenBudget: vi.fn(),
-};
-
-beforeEach(() => {
-  state.workspaceIntegrations = {};
-  state.providers = [];
-});
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
 
-describe('AppTopBar quick-action chips', () => {
-  describe('when GitLab is connected', () => {
-    beforeEach(() => {
-      state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
-    });
-
-    it('shows the GitLab chip and hides the GitHub chip', () => {
-      render(<AppTopBar {...baseProps} />);
-      expect(screen.getByTitle('launch a session from a GitLab issue')).toBeDefined();
-      expect(
-        screen.queryByTitle('review and act on pull requests across this workspace'),
-      ).toBeNull();
-    });
+describe('AppTopBar', () => {
+  it('renders settings button', () => {
+    render(<AppTopBar onOpenSettings={vi.fn()} activeStudio={null} />);
+    expect(screen.getByTitle('settings (⌘,)')).toBeDefined();
   });
 
-  describe('when GitLab is not connected', () => {
-    it('shows the GitHub chip and hides the GitLab chip', () => {
-      render(<AppTopBar {...baseProps} />);
-      expect(
-        screen.getByTitle('review and act on pull requests across this workspace'),
-      ).toBeDefined();
-      expect(screen.queryByTitle('launch a session from a GitLab issue')).toBeNull();
-    });
+  it('settings button has active state when settings studio is open', () => {
+    render(<AppTopBar onOpenSettings={vi.fn()} activeStudio="settings" />);
+    const btn = screen.getByTitle('settings (⌘,)');
+    expect(btn.className).toContain('bg-foreground');
+  });
+
+  it('settings button is normal when a different studio is open', () => {
+    render(<AppTopBar onOpenSettings={vi.fn()} activeStudio="workflow" />);
+    const btn = screen.getByTitle('settings (⌘,)');
+    expect(btn.className).not.toContain('bg-foreground');
   });
 });

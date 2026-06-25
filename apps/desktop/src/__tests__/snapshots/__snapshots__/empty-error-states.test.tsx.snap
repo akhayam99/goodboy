@@ -102,76 +102,8 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
   class="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in"
 >
   <div
-    class="flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl"
+    class="flex w-full max-w-2xl flex-col overflow-hidden"
   >
-    <header
-      class="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-plus shrink-0 text-primary"
-        fill="none"
-        height="12"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="12"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M5 12h14"
-        />
-        <path
-          d="M12 5v14"
-        />
-      </svg>
-      <h1
-        class="shrink-0 text-2xs font-semibold text-foreground"
-      >
-        New session
-      </h1>
-      <span
-        class="truncate text-2xs text-muted-foreground"
-      >
-        creates a worktree on a fresh branch
-      </span>
-      <div
-        class="flex-1"
-      />
-      <button
-        aria-label="cancel new session"
-        class="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-x"
-          fill="none"
-          height="14"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="14"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M18 6 6 18"
-          />
-          <path
-            d="m6 6 12 12"
-          />
-        </svg>
-      </button>
-    </header>
-    <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
-    />
     <div
       class="relative min-h-0 max-h-[70vh] overflow-y-auto"
     >
@@ -1055,76 +987,8 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
   class="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in"
 >
   <div
-    class="flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl"
+    class="flex w-full max-w-2xl flex-col overflow-hidden"
   >
-    <header
-      class="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-plus shrink-0 text-primary"
-        fill="none"
-        height="12"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="12"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M5 12h14"
-        />
-        <path
-          d="M12 5v14"
-        />
-      </svg>
-      <h1
-        class="shrink-0 text-2xs font-semibold text-foreground"
-      >
-        New session
-      </h1>
-      <span
-        class="truncate text-2xs text-muted-foreground"
-      >
-        creates a worktree on a fresh branch
-      </span>
-      <div
-        class="flex-1"
-      />
-      <button
-        aria-label="cancel new session"
-        class="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-x"
-          fill="none"
-          height="14"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="14"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M18 6 6 18"
-          />
-          <path
-            d="m6 6 12 12"
-          />
-        </svg>
-      </button>
-    </header>
-    <div
-      aria-orientation="horizontal"
-      class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-      role="separator"
-    />
     <div
       class="relative min-h-0 max-h-[70vh] overflow-y-auto"
     >

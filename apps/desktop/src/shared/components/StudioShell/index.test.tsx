@@ -22,7 +22,7 @@ describe('StudioShell variant rendering', () => {
     expect(shell.className).toContain('fixed');
     expect(shell.className).toContain('top-9');
     expect(shell.className).toContain('inset-x-0');
-    expect(shell.className).toContain('bottom-0');
+    expect(shell.className).toContain('bottom-9');
     expect(shell.className).toContain('z-50');
   });
 

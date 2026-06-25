@@ -3,6 +3,7 @@ import { cn } from '../cn';
 
 export type AppShellProps = {
   topBar?: ReactNode;
+  footer?: ReactNode;
   leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
   leftHidden?: boolean;
@@ -46,6 +47,7 @@ function buildLayout(opts: {
   leftHidden: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
+  hasFooter: boolean;
   leftWidthPx: number;
   rightWidthPx: number;
 }): {
@@ -59,24 +61,29 @@ function buildLayout(opts: {
     leftHidden,
     hasLeftSidebar,
     hasRightSidebar,
+    hasFooter,
     leftWidthPx,
     rightWidthPx,
   } = opts;
 
+  const rows = hasFooter ? 'minmax(0,1fr) 2.25rem' : 'minmax(0,1fr)';
+
   if (!hasLeftSidebar) {
     if (!hasRightSidebar) {
       return {
-        templateAreas: '"main"',
+        templateAreas: hasFooter ? '"main" "footer"' : '"main"',
         templateColumns: 'minmax(0,1fr)',
-        templateRows: 'minmax(0,1fr)',
+        templateRows: rows,
       };
     }
     return {
-      templateAreas: '"main rhandle right"',
+      templateAreas: hasFooter
+        ? '"main rhandle right" "footer footer footer"'
+        : '"main rhandle right"',
       templateColumns: `minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
         collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
       }px`,
-      templateRows: 'minmax(0,1fr)',
+      templateRows: rows,
     };
   }
 
@@ -84,22 +91,27 @@ function buildLayout(opts: {
   const handleCol = leftHidden ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
-      templateAreas: '"left lhandle main"',
+      templateAreas: hasFooter
+        ? '"left lhandle main" "footer footer footer"'
+        : '"left lhandle main"',
       templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
-      templateRows: 'minmax(0,1fr)',
+      templateRows: rows,
     };
   }
   return {
-    templateAreas: '"left lhandle main rhandle right"',
+    templateAreas: hasFooter
+      ? '"left lhandle main rhandle right" "footer footer footer footer footer"'
+      : '"left lhandle main rhandle right"',
     templateColumns: `${leftCol} ${handleCol} minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
       collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
     }px`,
-    templateRows: 'minmax(0,1fr)',
+    templateRows: rows,
   };
 }
 
 export const AppShell = ({
   topBar,
+  footer,
   leftSidebar,
   leftSidebarCollapsed = false,
   leftHidden = false,
@@ -109,6 +121,7 @@ export const AppShell = ({
   overlay,
   className,
 }: AppShellProps) => {
+  const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
@@ -218,6 +231,7 @@ export const AppShell = ({
     leftHidden,
     hasLeftSidebar,
     hasRightSidebar,
+    hasFooter,
     leftWidthPx: leftWidth,
     rightWidthPx: rightWidth,
   });
@@ -305,10 +319,15 @@ export const AppShell = ({
             className="relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden"
             style={{
               gridColumn: hasRightSidebar ? 'main-start / right-end' : 'main',
-              gridRow: '1 / -1',
+              gridRow: '1 / 2',
             }}
           >
             {overlay}
+          </div>
+        ) : null}
+        {hasFooter ? (
+          <div className="shrink-0" style={{ gridArea: 'footer' }}>
+            {footer}
           </div>
         ) : null}
       </div>
