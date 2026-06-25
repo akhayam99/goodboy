@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { Chip, cn, Divider, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
+import { Chip, cn, Divider, Eyebrow, Input, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type {
   Agent,
@@ -64,6 +64,7 @@ import {
   selectStandaloneAgents,
 } from './lib';
 import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
+import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -405,6 +406,10 @@ export const SessionOverviewPane = ({
   onSelectLens,
 }: SessionOverviewPaneProps) => {
   const stage = useSessionStageInfo(session);
+  const rename = useSessionTitleRename({
+    sessionId: session.id as SessionId,
+    currentTitle: session.goal,
+  });
   const workspace = useCurrentWorkspace();
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const attention = selectAttention(stage);
@@ -527,25 +532,41 @@ export const SessionOverviewPane = ({
             <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
             <Eyebrow label={STAGE_LABEL[stage.stage]} />
           </div>
-          <div className="group/goal flex items-start gap-2">
-            <h1 className="text-balance text-xl font-semibold leading-snug text-foreground">
-              {session.goal || 'Untitled session'}
-            </h1>
-            <button
-              type="button"
-              onClick={() => onSelectLens('goal')}
-              aria-label="edit goal"
-              title="Edit goal"
-              className={cn(
-                'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
-                'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-                'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                'group-hover/goal:opacity-100 motion-reduce:opacity-60',
-              )}
-            >
-              <Pencil size={13} aria-hidden />
-            </button>
-          </div>
+          {rename.renaming ? (
+            <div className="flex flex-col gap-1">
+              <Input
+                autoFocus
+                value={rename.draft}
+                maxLength={rename.maxLength}
+                onChange={(e) => rename.setDraft(e.target.value)}
+                onBlur={() => void rename.commit()}
+                onKeyDown={rename.onKeyDown}
+                aria-label="session goal"
+                className="text-xl font-semibold"
+              />
+              {rename.error && <span className="text-2xs text-danger">{rename.error}</span>}
+            </div>
+          ) : (
+            <div className="group/goal flex items-start gap-2">
+              <h1 className="text-balance text-xl font-semibold leading-snug text-foreground">
+                {session.goal || 'Untitled session'}
+              </h1>
+              <button
+                type="button"
+                onClick={rename.start}
+                aria-label="edit goal"
+                title="Edit goal"
+                className={cn(
+                  'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
+                  'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                  'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                  'group-hover/goal:opacity-100 motion-reduce:opacity-60',
+                )}
+              >
+                <Pencil size={13} aria-hidden />
+              </button>
+            </div>
+          )}
           {stage.reason ? (
             <p className="text-sm leading-relaxed text-muted-foreground">{stage.reason}</p>
           ) : null}
