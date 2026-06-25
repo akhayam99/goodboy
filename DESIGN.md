@@ -32,20 +32,27 @@ functional. One register per surface; let the other supply only texture.
 
 ## Layout & navigation
 
-- **Three-pane shell**: workspaces sidebar (where am I, what's running) ·
-  main (workspace board by default, session destination when selected) · right
-  pane (session detail and artifacts). Each pane owns one job; the right pane
-  shows the active session's state alongside its plans, PRs, and other work
-  products.
+- **App chrome**: a single top bar (`AppTopBar`) holds the logo, breadcrumb,
+  and all global controls (palette, skills, workflows, providers, integrations,
+  budget, notifications, settings). The breadcrumb is global, not chat-scoped;
+  it tracks the current location across board, session, and studio surfaces.
+  See [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb
+  derivation rules.
+- **Shell layout**: top bar (always visible) · left sidebar (sessions and
+  agents; hidden at Overview, revealed on session entry) · main (workspace
+  board or session work surface) · right pane (session detail and artifacts).
+  Each pane owns one job. The sidebar is session-scoped: at Overview only the
+  board renders, with no left panel alongside it.
 - **The board is home; chat is a destination.** With a workspace open and no
   session selected, the main pane is a cross-session stage board (needs you /
   running / in review / building / done), not chat. Selecting a card navigates
   into the session, resting on its overview pane. Chat, diff, terminal, and
   open-in-IDE are destinations reached from cards — never the landing surface.
   Every capability stays one navigation away; zero capability is lost.
-- **Sidebar is presence, palette is transit.** The sidebar answers "where am
-  I"; the command palette (⌘K) answers "where do I want to be". They must not
-  compete — navigation belongs to the palette, spatial state to the sidebar.
+- **Top bar is chrome, sidebar is presence, palette is transit.** The top bar
+  holds every global control. The sidebar answers "where am I" (session list,
+  agents). The command palette (⌘K) answers "where do I want to be". Each has
+  one job; they must not compete.
 - **Pin the structure, flex the density.** Nothing appears or disappears at a
   count threshold. Panels collapse to a rail; they never vanish. A control's
   position is fixed so it can be learned.

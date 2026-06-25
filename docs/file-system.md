@@ -28,7 +28,7 @@ A feature is self-contained:
 
 ## App shell (`app/`)
 
-Only code that is global by definition: `App.tsx`, `main.tsx`, `styles.css`, and shell components (boot splash, error boundary, status bar, toast). A component rendered in a single feature's view belongs in that feature, not here.
+Only code that is global by definition: `App.tsx`, `main.tsx`, `styles.css`, and shell components (boot splash, error boundary, status bar, toast, `AppTopBar`, `AppBreadcrumb`, `AppShell`). A component rendered in a single feature's view belongs in that feature, not here. For the breadcrumb IA and `AppTopBar` control layout see [navigation.md](navigation.md).
 
 ## Components (`apps/desktop/src/features/**/components/`, `apps/desktop/src/shared/components/`)
 
