@@ -7,6 +7,7 @@ import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { ArchiveSessionDialog } from '../../../session/components/ArchiveSessionDialog';
 import { DeleteSessionDialog } from '../../../session/components/DeleteSessionDialog';
+import { WorkspaceHeader } from '../WorkspaceHeader';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 
@@ -50,6 +51,11 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
+      <div className="-mx-6 -mt-6 shrink-0">
+        <WorkspaceHeader />
+        <Divider />
+      </div>
+
       <div className="flex shrink-0 items-center justify-between gap-4">
         <span className="flex items-baseline gap-2">
           <Eyebrow label="Stage board" />
