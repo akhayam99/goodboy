@@ -9,6 +9,8 @@ const { state, toastMock } = vi.hoisted(() => ({
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     renameTask: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
+    archiveTask: vi.fn(async () => undefined),
+    deleteTask: vi.fn(async () => undefined),
     unarchiveTask: vi.fn(async () => undefined),
     sessionExternalTasks: {} as Record<string, unknown>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
@@ -53,6 +55,9 @@ beforeEach(() => {
   state.sessionWorktrees = {};
   state.sessionExternalTasks = {};
   state.detectedEditors = [];
+  state.archiveTask.mockClear();
+  state.deleteTask.mockClear();
+  state.unarchiveTask.mockClear();
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -74,6 +79,30 @@ describe('SessionDetailPanel', () => {
     render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
     expect(screen.getByRole('button', { name: /open worktree/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /archive session/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
+  });
+
+  it('arms then confirms archive inline without firing on the first click', () => {
+    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /archive session/i }));
+    expect(state.archiveTask).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /^archive session$/i }));
+    expect(state.archiveTask).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('arms then confirms delete inline without firing on the first click', () => {
+    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+    expect(state.deleteTask).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /^delete session$/i }));
+    expect(state.deleteTask).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('cancel disarms the confirm without deleting', () => {
+    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+    expect(state.deleteTask).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
   });
 

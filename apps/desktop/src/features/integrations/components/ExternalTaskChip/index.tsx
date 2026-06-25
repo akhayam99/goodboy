@@ -3,7 +3,7 @@ import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/
 
 type ExternalTaskChipProps = {
   task: SessionExternalTask;
-  variant?: 'full' | 'icon';
+  variant?: 'full' | 'icon' | 'badge';
   onClick?: () => void;
 };
 
@@ -79,7 +79,10 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleClick();
+      }}
       title={tooltip}
       aria-label={`open ${task.identifier} in ${meta.label} studio`}
       className={cn(
@@ -89,7 +92,7 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
     >
       {glyph}
       <span className="shrink-0 font-mono">{task.identifier}</span>
-      <span className="truncate">{task.title}</span>
+      {variant === 'full' && <span className="truncate">{task.title}</span>}
     </button>
   );
 };

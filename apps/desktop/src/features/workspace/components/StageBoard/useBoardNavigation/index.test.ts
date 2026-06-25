@@ -161,4 +161,33 @@ describe('useBoardNavigation', () => {
     result.current.restore(session);
     expect(unarchiveTaskMock).toHaveBeenCalledWith(SESSION_ID);
   });
+
+  it('openQuestions sets lens to questions', async () => {
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openQuestions(session);
+    await Promise.resolve();
+    expect(setCurrentSessionMock).toHaveBeenCalledWith(SESSION_ID);
+    expect(setActiveLensMock).toHaveBeenCalledWith(SESSION_ID, 'questions');
+  });
+
+  it('openWorkflows sets lens to workflows', async () => {
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openWorkflows(session);
+    await Promise.resolve();
+    expect(setActiveLensMock).toHaveBeenCalledWith(SESSION_ID, 'workflows');
+  });
+
+  it('openGithub navigates then dispatches goodboy:open-github-session', async () => {
+    const dispatch = vi.spyOn(window, 'dispatchEvent');
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openGithub(session);
+    await Promise.resolve();
+    expect(setCurrentSessionMock).toHaveBeenCalledWith(SESSION_ID);
+    const event = dispatch.mock.calls
+      .map((c) => c[0])
+      .find((e): e is CustomEvent => e.type === 'goodboy:open-github-session');
+    expect(event).toBeTruthy();
+    expect((event as CustomEvent).detail).toEqual({ sessionId: SESSION_ID });
+    dispatch.mockRestore();
+  });
 });

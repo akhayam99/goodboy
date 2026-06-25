@@ -1,27 +1,14 @@
 import { memo, useMemo } from 'react';
-import {
-  Archive,
-  Bot,
-  Code,
-  FileDiff,
-  RotateCcw,
-  SquareTerminal,
-  Trash2,
-  type LucideIcon,
-} from 'lucide-react';
+import { Archive, Code, RotateCcw, SquareTerminal, Trash2, type LucideIcon } from 'lucide-react';
 import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
-import {
-  EMPTY_ARRAY,
-  useAppStore,
-  useSessionHasUnread,
-  useSessionStageInfo,
-} from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionStageInfo } from '../../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import type { BoardNavigation } from '../useBoardNavigation';
+import { useDynamicActions } from './useDynamicActions';
 
 type StageBoardCardProps = {
   readonly session: Session;
@@ -50,7 +37,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const externalTask = useAppStore((s) => s.sessionExternalTasks?.[id] ?? null);
   const agentCount = useAppStore((s) => (s.sessionPhaseRuns[id] ?? EMPTY_ARRAY).length);
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
-  useSessionHasUnread(id);
+  const dynamicActions = useDynamicActions(session, nav, stage, reason);
 
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
@@ -74,7 +61,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       data-archived={archived || undefined}
       onClick={() => nav.selectCard(session)}
       className={cn(
-        'group flex min-h-[7.25rem] shrink-0 flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
+        'group flex min-h-[7.25rem] shrink-0 gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
           ? 'border-info/50'
           : stage === 'attention'
@@ -82,93 +69,110 @@ export const StageBoardCard = memo(function StageBoardCard({
             : 'border-transparent',
       )}
     >
-      <span className="flex w-full items-start gap-2">
-        <span className="inline-flex h-5 shrink-0 items-center">
-          <StatusDot
-            tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
-            size="sm"
-            pulsing={stage === 'running'}
-            ariaLabel={stageMeta.label}
-          />
-        </span>
-        <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
-          <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
-            {session.goal}
+      <span className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className="flex items-start gap-2">
+          <span className="inline-flex h-5 shrink-0 items-center">
+            <StatusDot
+              tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
+              size="sm"
+              pulsing={stage === 'running'}
+              ariaLabel={stageMeta.label}
+            />
           </span>
-        </Tooltip>
+          <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
+            <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
+              {session.goal}
+            </span>
+          </Tooltip>
+        </span>
+
+        {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
+
+        {(sessionCost > 0 || prState || externalTask || agentCount > 0 || isAutoMode) && (
+          <span className="flex flex-wrap items-center gap-1.5">
+            {sessionCost > 0 && (
+              <CostBadge
+                value={sessionCost}
+                title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
+                className="text-2xs font-medium tabular-nums text-muted-foreground"
+              />
+            )}
+            {prState && (
+              <PullRequestChip state={prState} variant="icon" number={prNumber} iconSize={12} />
+            )}
+            {externalTask && <ExternalTaskChip task={externalTask} variant="badge" />}
+            {agentCount > 0 && (
+              <Chip tone="neutral" size="sm" shape="pill" label={`${agentCount} agents`} />
+            )}
+            {isAutoMode && <Chip tone="danger" size="sm" label="auto" />}
+          </span>
+        )}
       </span>
 
-      {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
-
-      {(sessionCost > 0 || prState || externalTask || agentCount > 0 || isAutoMode) && (
-        <span className="flex flex-wrap items-center gap-1.5">
-          {sessionCost > 0 && (
-            <CostBadge
-              value={sessionCost}
-              title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
-              className="text-2xs font-medium tabular-nums text-muted-foreground"
-            />
-          )}
-          {prState && (
-            <PullRequestChip state={prState} variant="icon" number={prNumber} iconSize={12} />
-          )}
-          {externalTask && <ExternalTaskChip task={externalTask} variant="icon" />}
-          {agentCount > 0 && (
-            <Chip tone="neutral" size="sm" shape="pill" label={`${agentCount} agents`} />
-          )}
-          {isAutoMode && <Chip tone="danger" size="sm" label="auto" />}
-        </span>
-      )}
-
-      <span className="-mb-1 -ml-1 mt-auto flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
-        {archived ? (
-          <CardAction
-            icon={RotateCcw}
-            color="text-primary"
-            label="restore"
-            onClick={() => onRestore?.(session)}
-          />
-        ) : (
-          <>
-            <CardAction
-              icon={Bot}
-              color="text-primary"
-              label="open agent"
-              onClick={() => nav.openAgent(session)}
-            />
-            <CardAction
-              icon={FileDiff}
-              color="text-info"
-              label="open diff"
-              onClick={() => nav.openDiff(session)}
-            />
-            <CardAction
-              icon={SquareTerminal}
-              color="text-muted-foreground"
-              label="open terminal"
-              onClick={() => nav.openTerminal(session)}
-            />
-            <CardAction
-              icon={Code}
-              color="text-muted-foreground"
-              label="open in editor"
-              onClick={() => nav.openIDE(session)}
-              disabled={!worktreePath}
-            />
-            <CardAction
-              icon={Archive}
-              color="text-muted-foreground"
-              label="archive"
-              onClick={() => onArchive?.(session)}
-            />
-          </>
+      <span className="-mr-1 flex shrink-0 flex-col items-end gap-1">
+        {!archived && dynamicActions.length > 0 && (
+          <span className="flex flex-wrap justify-end gap-0.5">
+            {dynamicActions.map((action) => (
+              <CardAction
+                key={action.key}
+                icon={action.icon}
+                color={action.color}
+                label={action.label}
+                onClick={action.onClick}
+              />
+            ))}
+          </span>
         )}
-        <CardAction
-          icon={Trash2}
-          color="text-danger"
-          label="delete"
-          onClick={() => onDelete?.(session)}
-        />
+        <span className="mt-auto flex flex-col items-end gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
+          {archived ? (
+            <span className="flex gap-0.5">
+              <CardAction
+                icon={RotateCcw}
+                color="text-primary"
+                label="restore"
+                onClick={() => onRestore?.(session)}
+              />
+              <CardAction
+                icon={Trash2}
+                color="text-danger"
+                label="delete"
+                onClick={() => onDelete?.(session)}
+              />
+            </span>
+          ) : (
+            <>
+              <span className="flex gap-0.5">
+                <CardAction
+                  icon={Code}
+                  color="text-muted-foreground"
+                  label="open in editor"
+                  onClick={() => nav.openIDE(session)}
+                  disabled={!worktreePath}
+                />
+                <CardAction
+                  icon={SquareTerminal}
+                  color="text-muted-foreground"
+                  label="open terminal"
+                  onClick={() => nav.openTerminal(session)}
+                />
+              </span>
+              <span className="flex gap-0.5">
+                <CardAction
+                  icon={Archive}
+                  color="text-muted-foreground"
+                  label="archive"
+                  onClick={() => onArchive?.(session)}
+                />
+                <CardAction
+                  icon={Trash2}
+                  color="text-danger"
+                  label="delete"
+                  onClick={() => onDelete?.(session)}
+                />
+              </span>
+            </>
+          )}
+        </span>
       </span>
     </button>
   );
