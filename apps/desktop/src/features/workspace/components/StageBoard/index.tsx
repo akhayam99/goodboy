@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, Divider, Eyebrow } from '@goodboy/ui';
+import { Button, Divider, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { Session, SessionStage, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
@@ -19,6 +19,27 @@ const STAGES: ReadonlyArray<SessionStage> = (
   .sort((a, b) => a[1] - b[1])
   .map(([stage]) => stage);
 
+const SKELETON_COLUMNS = [3, 2, 2, 1, 2];
+
+const BoardSkeleton = () => (
+  <div
+    className="flex min-h-0 flex-1 gap-4 overflow-x-hidden"
+    role="status"
+    aria-label="Loading board"
+  >
+    {SKELETON_COLUMNS.map((cards, col) => (
+      <div key={col} className="flex min-h-0 w-72 shrink-0 flex-col gap-3">
+        <Skeleton className="h-4 w-24 rounded-full" />
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: cards }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 type StageBoardProps = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
@@ -29,6 +50,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
   const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
+  const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
@@ -69,7 +91,9 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
 
       <Divider />
 
-      {empty ? (
+      {!boardReady ? (
+        <BoardSkeleton />
+      ) : empty ? (
         <div className="flex flex-1 items-center justify-center">
           <div className="flex max-w-md flex-col items-center gap-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40">

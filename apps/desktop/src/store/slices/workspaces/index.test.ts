@@ -392,6 +392,17 @@ function buildSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+function buildWorktree(sessionId: SessionId, worktreePath: string, branch: string) {
+  return {
+    id: `wt_${sessionId}`,
+    sessionId,
+    worktreePath,
+    branch,
+    parallelIndex: 0,
+    createdAt: Date.now(),
+  };
+}
+
 function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
   return {
     sessionId: SESSION_ID,
@@ -620,6 +631,61 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.currentWorkspaceId).toBeNull();
       expect(s.providerSpendBreakdown).toEqual([]);
+    });
+
+    describe('boardReady flag', () => {
+      it('sets boardReady=false before sessions load on workspace switch', async () => {
+        const store = await getStore();
+        store.setState({ workspaces: [buildWorkspace()], boardReady: true } as never);
+
+        const promise = store.getState().setCurrentWorkspace(WS_ID);
+        await Promise.resolve();
+
+        expect(store.getState().boardReady).toBe(false);
+        await promise;
+      });
+
+      it('releases boardReady=true for a workspace with no session branches', async () => {
+        const store = await getStore();
+        const db = await import('@goodboy/db');
+        vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+          buildSession(),
+          buildSession({ id: SESSION_ID_2 }),
+        ]);
+        vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(new Map());
+
+        store.setState({ workspaces: [buildWorkspace()] });
+        await store.getState().setCurrentWorkspace(WS_ID);
+
+        expect(store.getState().boardReady).toBe(true);
+      });
+
+      it('does NOT release boardReady=true when sessions have branches (delegated to sweepGithub)', async () => {
+        const store = await getStore();
+        const db = await import('@goodboy/db');
+        vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+          buildSession(),
+          buildSession({ id: SESSION_ID_2 }),
+        ]);
+        vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
+          new Map([
+            [SESSION_ID, [buildWorktree(SESSION_ID, '/tmp/wt', 'feat/foo')]],
+            [SESSION_ID_2, [buildWorktree(SESSION_ID_2, '/tmp/wt2', 'feat/bar')]],
+          ]),
+        );
+
+        store.setState({ workspaces: [buildWorkspace()] });
+        await store.getState().setCurrentWorkspace(WS_ID);
+
+        expect(store.getState().boardReady).toBe(false);
+      });
+
+      it('boardReady stays false when workspace null (no id branch)', async () => {
+        const store = await getStore();
+        store.setState({ boardReady: true } as never);
+        await store.getState().setCurrentWorkspace(null);
+        expect(store.getState().boardReady).toBe(false);
+      });
     });
   });
 });
