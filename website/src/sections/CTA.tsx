@@ -62,11 +62,14 @@ export function CTA() {
     >
       <div className="reveal mx-auto max-w-3xl px-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-          Open source &middot; MIT
+          Open source, MIT
         </p>
-        <p className="mx-auto mt-7 max-w-xl text-[18px] leading-[1.5] text-foreground/85 sm:text-[20px]">
-          No waitlist, no email, no sign-up. Plug in the Claude, Cursor, Codex or Gemini you already
-          pay for and you&apos;ll be running on your own machine in a minute.
+        <h2 className="mx-auto mt-7 max-w-xl text-[18px] leading-[1.5] font-semibold text-foreground/85 sm:text-[20px]">
+          Keep your thread on your own machine
+        </h2>
+        <p className="mx-auto mt-4 max-w-xl text-[16px] leading-[1.65] text-foreground/80 sm:text-[17px]">
+          <strong className="font-semibold text-foreground">No waitlist, no sign-up.</strong>{' '}
+          Connect a command-line tool you already use and you&apos;re running in a minute.
         </p>
 
         <div className="mx-auto mt-11 max-w-lg pointer-fine:hidden">

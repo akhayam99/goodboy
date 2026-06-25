@@ -1,48 +1,98 @@
-import { Eyebrow } from '../components/ui';
+import type { ReactNode } from 'react';
+import { Eyebrow, SectionTitle } from '../components/ui';
 import { useInView } from '../components/Reveal';
 
-/* The sixth "point": everything else, kept deliberately dry. One line each,
-   no mockups. The five sections above carry the weight; this is the tail. */
-const ITEMS: ReadonlyArray<{ k: string; v: string }> = [
+type Item = { k: string; v: ReactNode };
+
+const B = ({ children }: { children: ReactNode }) => (
+  <strong className="font-semibold text-foreground">{children}</strong>
+);
+
+const ITEMS: ReadonlyArray<Item> = [
   {
-    k: 'Costs',
-    v: 'Each task goes to the right model, and Goodboy gives you a heads-up before you burn Opus on a one-liner. Every session shows its cost in real time.',
+    k: 'Scout fan-out',
+    v: (
+      <>
+        On a huge repo, a scout splits into <B>parallel child scouts</B> to survey more at once.
+      </>
+    ),
   },
   {
-    k: 'Seven agents',
-    v: 'Scout, plan, implement, debug, test, review, docs: each agent sticks to its role and no one steps into someone else’s job.',
+    k: 'Plan clusters',
+    v: (
+      <>
+        When a plan splits into clusters, the implementer runs <B>one agent per cluster</B>.
+      </>
+    ),
   },
   {
-    k: 'Plans',
-    v: 'Agents write the plan before touching your code. It stays in place: you can easily read and edit it. It’s not a message that scrolls away.',
+    k: 'Stage board',
+    v: (
+      <>
+        The home sorts every session by <B>what it needs</B>: attention, running, in review,
+        building, done.
+      </>
+    ),
   },
   {
-    k: 'Local-first',
-    v: 'Runs on your machine, with your keys and data. Just use the subscription you already have.',
+    k: 'Diff lens',
+    v: (
+      <>
+        Syntax-highlighted diffs across <B>a dozen languages</B>, with change bars in the gutter.
+      </>
+    ),
   },
   {
-    k: 'Open source',
-    v: 'MIT licensed, fully open. Try it, break it, send feedback.',
+    k: 'Budget register',
+    v: (
+      <>
+        One dashboard totals your spend <B>per provider</B>, against the caps you set.
+      </>
+    ),
+  },
+  {
+    k: 'GPU terminal',
+    v: (
+      <>
+        A real <B>login shell</B> on xterm 6, GPU-rendered, multi-tab, spawned on demand.
+      </>
+    ),
+  },
+  {
+    k: 'Composite workspaces',
+    v: (
+      <>
+        Run one session across <B>many repos</B>, one chat, a branch checked out per repo.
+      </>
+    ),
+  },
+  {
+    k: 'Mobile companion',
+    v: (
+      <>
+        Spawn a workflow or merge a PR <B>from your phone</B>. A companion, not a full app.
+      </>
+    ),
   },
 ];
 
-export function MoreBriefly() {
+export const MoreBriefly = () => {
   const { ref, inView } = useInView<HTMLElement>();
   return (
     <section
+      id="more"
       ref={ref}
-      className={`reveal-group relative py-20 sm:py-24 ${inView ? 'is-visible' : ''}`}
+      className={`reveal-group relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
     >
       <div className="mx-auto max-w-5xl px-6">
         <div className="reveal max-w-2xl">
-          <Eyebrow>06 &middot; Everything else</Eyebrow>
-          <p className="mt-4 text-pretty text-[16px] leading-[1.6] text-muted-foreground sm:text-[17px]">
-            The stuff that matters, kept short.
-          </p>
+          <Eyebrow>Everything else</Eyebrow>
+          <SectionTitle>The rest, briefly</SectionTitle>
         </div>
+
         <dl
-          className="reveal mt-8 grid gap-x-12 gap-y-7 sm:grid-cols-2 lg:grid-cols-3"
-          style={{ animationDelay: '120ms' }}
+          className="reveal mt-12 grid gap-x-10 gap-y-7 sm:grid-cols-2"
+          style={{ animationDelay: '100ms' }}
         >
           {ITEMS.map((it) => (
             <div key={it.k} className="border-t border-border-soft pt-3.5">
@@ -56,4 +106,4 @@ export function MoreBriefly() {
       </div>
     </section>
   );
-}
+};
