@@ -180,6 +180,10 @@ function setSessionStudio(s: SessionForeground, kind: SessionStudioKind | null):
     : { ...s, sessionStudio: null };
 }
 
+function revealChat(s: SessionForeground): SessionForeground {
+  return setSessionStudio(s, null);
+}
+
 function foregroundLayer(s: SessionForeground): 'studio' | 'agent' | 'lens' {
   if (s.sessionStudio !== null) return 'studio';
   if (s.selectedAgentId !== null) return 'agent';
@@ -237,6 +241,26 @@ describe('work-surface foreground triad mutual exclusion', () => {
     expect(s.sessionStudio).toBe('workflow');
     expect(s.selectedAgentId).toBeNull();
     expect(foregroundLayer(s)).toBe('studio');
+  });
+
+  it('reveal-chat keeps the just-selected agent overlay instead of dropping to the lens', () => {
+    let s = setActiveLens(emptyForeground(), 'agents');
+    s = selectAgent(s, 'agent-1');
+    s = revealChat(s);
+    expect(s.selectedAgentId).toBe('agent-1');
+    expect(s.activeLens).toBe('agents');
+    expect(foregroundLayer(s)).toBe('agent');
+  });
+
+  it('reveal-chat from a studio over a selected agent restores that agent overlay', () => {
+    let s = setActiveLens(emptyForeground(), 'workflows');
+    s = selectAgent(s, 'agent-7');
+    s = setSessionStudio(s, 'workflow');
+    s = selectAgent(s, 'agent-7');
+    s = revealChat(s);
+    expect(s.selectedAgentId).toBe('agent-7');
+    expect(s.sessionStudio).toBeNull();
+    expect(foregroundLayer(s)).toBe('agent');
   });
 });
 

@@ -310,7 +310,6 @@ export const App = () => {
       const sid = state.currentSessionId;
       if (sid) {
         state.setSessionStudio(sid, null);
-        state.setActiveLens(sid, null);
       }
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
