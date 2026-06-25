@@ -25,7 +25,7 @@ impl TokenStore {
     pub fn mint(&self) -> Vec<u8> {
         use rand::RngCore;
         let mut token = vec![0u8; 32];
-        rand::thread_rng().fill_bytes(&mut token);
+        rand::rng().fill_bytes(&mut token);
         let mut guard = self.entries.lock().unwrap();
         guard.retain(|e| e.expires_at > Instant::now());
         guard.push(Entry {

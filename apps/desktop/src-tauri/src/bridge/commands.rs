@@ -124,7 +124,7 @@ pub const ACK_TIMEOUT: Duration = Duration::from_secs(30);
 pub fn random_id() -> String {
     use rand::RngCore;
     let mut b = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut b);
+    rand::rng().fill_bytes(&mut b);
     b.iter().map(|x| format!("{x:02x}")).collect()
 }
 

@@ -3,13 +3,15 @@ import {
   Archive,
   ArchiveRestore,
   ArrowLeft,
+  Check,
   Copy,
   FolderOpen,
   Pencil,
   Settings2,
   Trash2,
+  X,
 } from 'lucide-react';
-import { Input } from '@goodboy/ui';
+import { Input, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { SessionStageBadge } from '../../../session/components/SessionStageBadge';
@@ -26,6 +28,51 @@ const REFERENCE_EDITORS = new Set(['code', 'cursor']);
 const ICON_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
+type ConfirmPillProps = {
+  readonly label: string;
+  readonly confirmAria: string;
+  readonly danger?: boolean;
+  readonly busy?: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+};
+
+const ConfirmPill = ({
+  label,
+  confirmAria,
+  danger,
+  busy,
+  onConfirm,
+  onCancel,
+}: ConfirmPillProps) => (
+  <span className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm">
+    <span className="px-0.5 text-2xs text-muted-foreground">{label}</span>
+    <button
+      type="button"
+      onClick={onConfirm}
+      disabled={busy}
+      title={confirmAria}
+      aria-label={confirmAria}
+      className={cn(
+        'rounded p-0.5 motion-safe:transition-colors disabled:opacity-50',
+        danger ? 'text-danger hover:bg-danger/10' : 'text-foreground hover:bg-muted/60',
+      )}
+    >
+      <Check size={12} aria-hidden />
+    </button>
+    <button
+      type="button"
+      onClick={onCancel}
+      disabled={busy}
+      title="cancel"
+      aria-label="cancel"
+      className="rounded p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+    >
+      <X size={12} aria-hidden />
+    </button>
+  </span>
+);
+
 type SessionDetailPanelProps = {
   session: Session;
   onOpenSessionSettings: () => void;
@@ -39,6 +86,8 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   );
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
+  const archiveTask = useAppStore((s) => s.archiveTask);
+  const deleteTask = useAppStore((s) => s.deleteTask);
   const unarchiveTask = useAppStore((s) => s.unarchiveTask);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const { showToast } = useToast();
@@ -47,12 +96,27 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [armed, setArmed] = useState<'archive' | 'delete' | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (detectedEditors.length === 0) {
       void loadDetectedEditors();
     }
   }, []);
+
+  useEffect(() => {
+    if (!armed) {
+      return;
+    }
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setArmed(null);
+      }
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [armed]);
 
   const launchEditor = async (binary: string) => {
     if (!worktreePath) {
@@ -77,14 +141,30 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
     }
   };
 
-  const onToggleArchive = () => {
-    if (archived) {
-      unarchiveTask(session.id as SessionId).catch((err: unknown) => {
-        showToast('error', `couldn't unarchive: ${formatError(err)}`);
+  const doUnarchive = () => {
+    unarchiveTask(session.id as SessionId).catch((err: unknown) => {
+      showToast('error', `couldn't unarchive: ${formatError(err)}`);
+    });
+  };
+
+  const doArchive = () => {
+    setBusy(true);
+    archiveTask(session.id as SessionId)
+      .catch((err: unknown) => showToast('error', `couldn't archive: ${formatError(err)}`))
+      .finally(() => {
+        setBusy(false);
+        setArmed(null);
       });
-      return;
-    }
-    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
+  };
+
+  const doDelete = () => {
+    setBusy(true);
+    deleteTask(session.id as SessionId)
+      .catch((err: unknown) => showToast('error', `couldn't delete: ${formatError(err)}`))
+      .finally(() => {
+        setBusy(false);
+        setArmed(null);
+      });
   };
 
   const folderItems = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
@@ -194,6 +274,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         <OverflowMenu
           items={folderItems}
           label="open worktree"
+          triggerClassName={ICON_BUTTON}
           trigger={<FolderOpen size={13} aria-hidden />}
         />
         <button
@@ -205,24 +286,55 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         >
           <Settings2 size={13} aria-hidden />
         </button>
-        <button
-          type="button"
-          onClick={onToggleArchive}
-          title={archived ? 'Unarchive session' : 'Archive session'}
-          aria-label={archived ? 'unarchive session' : 'archive session'}
-          className={ICON_BUTTON}
-        >
-          {archived ? <ArchiveRestore size={13} aria-hidden /> : <Archive size={13} aria-hidden />}
-        </button>
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('goodboy:delete-session'))}
-          title="Delete session"
-          aria-label="delete session"
-          className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        >
-          <Trash2 size={13} aria-hidden />
-        </button>
+        {archived ? (
+          <button
+            type="button"
+            onClick={doUnarchive}
+            title="Unarchive session"
+            aria-label="unarchive session"
+            className={ICON_BUTTON}
+          >
+            <ArchiveRestore size={13} aria-hidden />
+          </button>
+        ) : armed === 'archive' ? (
+          <ConfirmPill
+            label="Archive?"
+            confirmAria="archive session"
+            busy={busy}
+            onConfirm={doArchive}
+            onCancel={() => setArmed(null)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setArmed('archive')}
+            title="Archive session"
+            aria-label="archive session"
+            className={ICON_BUTTON}
+          >
+            <Archive size={13} aria-hidden />
+          </button>
+        )}
+        {armed === 'delete' ? (
+          <ConfirmPill
+            label="Delete?"
+            confirmAria="delete session"
+            danger
+            busy={busy}
+            onConfirm={doDelete}
+            onCancel={() => setArmed(null)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setArmed('delete')}
+            title="Delete session"
+            aria-label="delete session"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          >
+            <Trash2 size={13} aria-hidden />
+          </button>
+        )}
       </div>
     </div>
   );

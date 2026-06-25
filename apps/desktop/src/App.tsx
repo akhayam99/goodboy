@@ -547,25 +547,6 @@ export const App = () => {
     }
   }, [currentSession]);
 
-  useEffect(() => {
-    const handler = () => {
-      if (currentSession) {
-        setDeleteOpen(true);
-      }
-    };
-    window.addEventListener('goodboy:delete-session', handler);
-    return () => window.removeEventListener('goodboy:delete-session', handler);
-  }, [currentSession]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (currentSession) {
-        setArchiveOpen(true);
-      }
-    };
-    window.addEventListener('goodboy:archive-session', handler);
-    return () => window.removeEventListener('goodboy:archive-session', handler);
-  }, [currentSession]);
   const openShortcutHelp = useCallback(() => {
     setAppSettingsFocus('shortcuts');
     setAppSettingsOpen(true);

@@ -10,6 +10,9 @@ export type BoardNavigation = {
   readonly openDiff: (session: Session) => void;
   readonly openTerminal: (session: Session) => void;
   readonly openIDE: (session: Session) => void;
+  readonly openQuestions: (session: Session) => void;
+  readonly openWorkflows: (session: Session) => void;
+  readonly openGithub: (session: Session) => void;
   readonly restore: (session: Session) => void;
 };
 
@@ -62,10 +65,43 @@ export const useBoardNavigation = (): BoardNavigation => {
       }
     };
 
+    const openQuestions = (session: Session): void => {
+      const id = session.id as SessionId;
+      void setCurrentSession(id).then(() => {
+        setActiveLens(id, 'questions');
+      });
+    };
+
+    const openWorkflows = (session: Session): void => {
+      const id = session.id as SessionId;
+      void setCurrentSession(id).then(() => {
+        setActiveLens(id, 'workflows');
+      });
+    };
+
+    const openGithub = (session: Session): void => {
+      const id = session.id as SessionId;
+      void setCurrentSession(id).then(() => {
+        window.dispatchEvent(
+          new CustomEvent('goodboy:open-github-session', { detail: { sessionId: id } }),
+        );
+      });
+    };
+
     const restore = (session: Session): void => {
       void unarchiveTask(session.id as SessionId);
     };
 
-    return { selectCard, openAgent, openDiff, openTerminal, openIDE, restore };
+    return {
+      selectCard,
+      openAgent,
+      openDiff,
+      openTerminal,
+      openIDE,
+      openQuestions,
+      openWorkflows,
+      openGithub,
+      restore,
+    };
   }, [setCurrentSession, setActiveLens, selectAgent, unarchiveTask]);
 };
