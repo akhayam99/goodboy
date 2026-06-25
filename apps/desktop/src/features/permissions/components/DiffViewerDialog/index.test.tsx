@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { state, fixtures } = vi.hoisted(() => ({
   state: {
@@ -328,6 +328,99 @@ describe('per-file reviewed state', () => {
     );
     await screen.findByText(/alpha/);
     expect(screen.getByText(/previously reviewed/i)).toBeDefined();
+  });
+});
+
+const flushMicrotasks = () => act(async () => {});
+
+const makeFiles = (count: number, prefix = 'file') =>
+  Array.from({ length: count }, (_, i) => ({
+    path: `src/${prefix}${i}.ts`,
+    status: 'modified',
+    additions: 1,
+    deletions: 0,
+    binary: false,
+    hunks: [
+      {
+        header: '@@ -1,0 +1,1 @@',
+        oldStart: 1,
+        oldLines: 0,
+        newStart: 1,
+        newLines: 1,
+        lines: [{ kind: 'add', oldLine: null, newLine: 1, text: `${prefix}${i}` }],
+      },
+    ],
+  }));
+
+describe('progressive batching', () => {
+  it('mounts only the first batch initially and appends more after idle', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    fixtures.files = makeFiles(25);
+    const { container } = render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        loader={async () => 'raw'}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await flushMicrotasks();
+
+    const countAfterFirst = container.querySelectorAll('[data-file-path]').length;
+    expect(countAfterFirst).toBeLessThanOrEqual(20);
+    expect(countAfterFirst).toBeGreaterThan(0);
+
+    await act(async () => {
+      vi.runAllTimers();
+    });
+
+    expect(container.querySelectorAll('[data-file-path]').length).toBe(25);
+
+    vi.useRealTimers();
+  });
+
+  it('resets batch count when the diff source changes', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    fixtures.files = makeFiles(25, 'a');
+    const { container, rerender } = render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        loader={async () => 'raw'}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await flushMicrotasks();
+    await act(async () => {
+      vi.runAllTimers();
+    });
+    expect(container.querySelectorAll('[data-file-path]').length).toBe(25);
+
+    fixtures.files = makeFiles(25, 'b');
+    rerender(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        loader={async () => 'raw2'}
+        onClose={vi.fn()}
+      />,
+    );
+    await flushMicrotasks();
+
+    const countAfterReset = container.querySelectorAll('[data-file-path]').length;
+    expect(countAfterReset).toBeLessThanOrEqual(20);
+    expect(countAfterReset).toBeGreaterThan(0);
+
+    await act(async () => {
+      vi.runAllTimers();
+    });
+    expect(container.querySelectorAll('[data-file-path]').length).toBe(25);
+
+    vi.useRealTimers();
   });
 });
 
