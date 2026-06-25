@@ -689,6 +689,7 @@ export const App = () => {
           />
         }
         leftSidebarCollapsed={leftCollapsed}
+        leftHidden={!currentSession}
         leftSidebar={
           hasWorkspaces ? (
             <WorkspacesSidebar collapsed={leftCollapsed} onToggleCollapse={toggleLeftSidebar} />

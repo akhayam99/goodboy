@@ -5,6 +5,7 @@ export type AppShellProps = {
   topBar?: ReactNode;
   leftSidebar?: ReactNode;
   leftSidebarCollapsed?: boolean;
+  leftHidden?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
@@ -42,6 +43,7 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 function buildLayout(opts: {
   collapsed: boolean;
   leftCollapsed: boolean;
+  leftHidden: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
   leftWidthPx: number;
@@ -51,8 +53,15 @@ function buildLayout(opts: {
   templateColumns: string;
   templateRows: string;
 } {
-  const { collapsed, leftCollapsed, hasLeftSidebar, hasRightSidebar, leftWidthPx, rightWidthPx } =
-    opts;
+  const {
+    collapsed,
+    leftCollapsed,
+    leftHidden,
+    hasLeftSidebar,
+    hasRightSidebar,
+    leftWidthPx,
+    rightWidthPx,
+  } = opts;
 
   if (!hasLeftSidebar) {
     if (!hasRightSidebar) {
@@ -71,17 +80,18 @@ function buildLayout(opts: {
     };
   }
 
-  const leftCol = `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
+  const leftCol = leftHidden ? '0px' : `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
+  const handleCol = leftHidden ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
       templateAreas: '"left lhandle main"',
-      templateColumns: `${leftCol} 6px minmax(0,1fr)`,
+      templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
       templateRows: 'minmax(0,1fr)',
     };
   }
   return {
     templateAreas: '"left lhandle main rhandle right"',
-    templateColumns: `${leftCol} 6px minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
+    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
       collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
     }px`,
     templateRows: 'minmax(0,1fr)',
@@ -92,6 +102,7 @@ export const AppShell = ({
   topBar,
   leftSidebar,
   leftSidebarCollapsed = false,
+  leftHidden = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
@@ -204,6 +215,7 @@ export const AppShell = ({
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
     leftCollapsed: leftSidebarCollapsed,
+    leftHidden,
     hasLeftSidebar,
     hasRightSidebar,
     leftWidthPx: leftWidth,
@@ -227,7 +239,12 @@ export const AppShell = ({
       >
         {hasLeftSidebar ? (
           <aside
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+            className={cn(
+              'flex min-h-0 min-w-0 flex-col overflow-hidden bg-background motion-safe:transition-[opacity,transform] duration-200 ease-out',
+              leftHidden
+                ? 'pointer-events-none -translate-x-2 opacity-0'
+                : 'translate-x-0 opacity-100',
+            )}
             style={{ gridArea: 'left' }}
           >
             {leftSidebar}
@@ -238,13 +255,18 @@ export const AppShell = ({
             role="separator"
             aria-orientation="vertical"
             aria-label="resize left sidebar"
-            tabIndex={0}
-            onMouseDown={startDrag('left')}
-            onKeyDown={onLeftKeyDown}
-            className="group relative cursor-col-resize select-none"
+            tabIndex={leftHidden ? -1 : 0}
+            onMouseDown={leftHidden ? undefined : startDrag('left')}
+            onKeyDown={leftHidden ? undefined : onLeftKeyDown}
+            className={cn(
+              'group relative select-none overflow-hidden',
+              leftHidden ? 'pointer-events-none' : 'cursor-col-resize',
+            )}
             style={{ gridArea: 'lhandle' }}
           >
-            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
+            {!leftHidden && (
+              <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
+            )}
           </div>
         ) : null}
         <main
