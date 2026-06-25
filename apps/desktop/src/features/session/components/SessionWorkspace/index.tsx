@@ -120,7 +120,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         )}
         <div className="relative flex min-w-0 flex-1 flex-col">
           {showLens && lens !== null ? (
-            <div className="flex shrink-0 items-center gap-1.5 px-6 pt-4 text-xs text-muted-foreground">
+            <div className="flex shrink-0 items-center gap-1.5 px-6 pb-3 pt-4 text-xs text-muted-foreground">
               <button
                 type="button"
                 onClick={onSelectOverview}

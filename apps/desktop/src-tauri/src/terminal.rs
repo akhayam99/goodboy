@@ -185,7 +185,7 @@ pub async fn terminal_open(
 
         thread::spawn(move || {
             let mut reader = reader;
-            let mut buf = [0u8; 4096];
+            let mut buf = vec![0u8; 65536];
             loop {
                 match reader.read(&mut buf) {
                     Ok(0) | Err(_) => break,

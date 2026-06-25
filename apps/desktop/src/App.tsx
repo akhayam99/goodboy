@@ -45,6 +45,7 @@ import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 import { CompanionStudio } from './features/companion/CompanionStudio';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { markStepComplete } from './features/onboarding/onboarding-store';
+import { disposeTerminalPty } from './features/terminal/closeTab';
 import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
@@ -56,6 +57,7 @@ import {
   useCurrentWorkspace,
   useSessions,
   useWorkspaces,
+  type LensKind,
 } from './store';
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
@@ -623,6 +625,46 @@ export const App = () => {
     [currentSession, lensGo],
   );
 
+  const goToLens = useCallback((kind: LensKind) => {
+    const s = useAppStore.getState();
+    if (!s.currentSessionId) {
+      return;
+    }
+    s.setActiveLens(s.currentSessionId, kind);
+  }, []);
+
+  const toggleTerminalLens = useCallback(() => {
+    const s = useAppStore.getState();
+    const id = s.currentSessionId;
+    if (!id) {
+      return;
+    }
+    s.setActiveLens(id, s.activeLens[id] === 'terminal' ? null : 'terminal');
+  }, []);
+
+  const openNewTerminalTab = useCallback(() => {
+    const s = useAppStore.getState();
+    const id = s.currentSessionId;
+    if (!id || s.activeLens[id] !== 'terminal') {
+      return;
+    }
+    s.addTerminalTab(id, s.sessionWorktrees[id]?.[0] ?? null);
+  }, []);
+
+  const closeActiveTerminalTab = useCallback(() => {
+    const s = useAppStore.getState();
+    const id = s.currentSessionId;
+    if (!id || s.activeLens[id] !== 'terminal') {
+      return;
+    }
+    const tabId = s.activeTerminalTab[id];
+    if (!tabId) {
+      return;
+    }
+    disposeTerminalPty(tabId);
+    s.closeTerminalTab(id, tabId);
+  }, []);
+
   const openNewSession = useCallback(() => {
     if (!currentWorkspace) {
       return;
@@ -669,6 +711,17 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+]', () => navigateSession(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+k', openModelPicker);
   useKeyboardShortcut('cmd+shift+p', openPermissionPicker);
+  useKeyboardShortcut('cmd+j', toggleTerminalLens, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+t', openNewTerminalTab, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+w', closeActiveTerminalTab, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+g', () => goToLens('goal'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+w', () => goToLens('workflows'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+b', () => goToLens('agents'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+r', () => goToLens('resolve'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+d', () => goToLens('files'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+l', () => goToLens('plans'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+s', () => goToLens('scripts'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+q', () => goToLens('questions'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false });

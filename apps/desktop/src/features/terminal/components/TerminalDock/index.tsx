@@ -1,22 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { SquareTerminal } from 'lucide-react';
 import { Button, Divider, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
-  clearTerminalCache,
   GenericTerminalPanel,
   type TerminalDriver,
 } from '../../../../shared/components/GenericTerminalPanel';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import {
-  invokeTerminalClose,
   invokeTerminalOpen,
   invokeTerminalResize,
   invokeTerminalWrite,
   listenTerminalExit,
   listenTerminalOutput,
 } from '../../terminal';
+import { disposeTerminalPty } from '../../closeTab';
 import { TerminalTabStrip } from '../TerminalTabStrip';
 
 function base64ToBytes(b64: string): Uint8Array {
@@ -52,16 +51,6 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
   const closeTerminalTab = useAppStore((s) => s.closeTerminalTab);
   const setActiveTerminalTab = useAppStore((s) => s.setActiveTerminalTab);
   const setTerminalTabStatus = useAppStore((s) => s.setTerminalTabStatus);
-
-  const spawnedRef = useRef(false);
-
-  useEffect(() => {
-    if (!isActive || spawnedRef.current || tabs.length > 0) {
-      return;
-    }
-    spawnedRef.current = true;
-    addTerminalTab(sessionId, cwd);
-  }, [isActive, tabs.length, sessionId, cwd, addTerminalTab]);
 
   const activeTab = useMemo(() => tabs.find((t) => t.id === activeId) ?? null, [tabs, activeId]);
 
@@ -106,8 +95,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
 
   const handleClose = useCallback(
     (id: TerminalTabId) => {
-      void invokeTerminalClose(id).catch(() => undefined);
-      clearTerminalCache(id);
+      disposeTerminalPty(id);
       closeTerminalTab(sessionId, id);
     },
     [sessionId, closeTerminalTab],
