@@ -28,7 +28,6 @@ const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly lab
   { combo: ['⌘', ']'], label: 'forward (lens history)' },
   { combo: ['⌘', '⇧', '['], label: 'previous session' },
   { combo: ['⌘', '⇧', ']'], label: 'next session' },
-  { combo: ['⌘', 'B'], label: 'toggle sidebar' },
   { combo: ['⌘', '⇧', 'K'], label: 'open model picker' },
   { combo: ['⌘', '⇧', 'P'], label: 'open permission picker' },
   { combo: ['⌘', '↵'], label: 'send message (queue if running)' },
