@@ -75,7 +75,7 @@ export const StageColumn = ({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className={cn('flex min-h-0 shrink-0 flex-col gap-3', collapsed ? 'w-auto' : 'w-72')}>
       {view.collapsible ? (
         <button
           type="button"
