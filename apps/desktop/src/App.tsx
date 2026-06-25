@@ -131,11 +131,6 @@ export const App = () => {
   }, []);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
-  const [leftCollapsed, setLeftCollapsed] = useState(
-    () =>
-      typeof localStorage !== 'undefined' &&
-      localStorage.getItem('goodboy:left-sidebar-collapsed') === '1',
-  );
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
 
   useEffect(() => {
@@ -578,16 +573,6 @@ export const App = () => {
     setPaletteOpen(true);
     markStepComplete('palette');
   }, []);
-  const toggleLeftSidebar = useCallback(() => {
-    setLeftCollapsed((v) => {
-      const next = !v;
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('goodboy:left-sidebar-collapsed', next ? '1' : '0');
-      }
-      return next;
-    });
-  }, []);
-
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const lensGo = useAppStore((s) => s.lensGo);
@@ -676,7 +661,6 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+a', openArchiveSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
-  useKeyboardShortcut('cmd+b', toggleLeftSidebar);
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
@@ -784,13 +768,8 @@ export const App = () => {
             />
           ) : undefined
         }
-        leftSidebarCollapsed={leftCollapsed}
         leftHidden={!currentSession}
-        leftSidebar={
-          hasWorkspaces ? (
-            <WorkspacesSidebar collapsed={leftCollapsed} onToggleCollapse={toggleLeftSidebar} />
-          ) : undefined
-        }
+        leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         main={
           <div className="relative h-full w-full">
             {error ? (

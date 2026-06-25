@@ -206,7 +206,7 @@ describe('snapshot, empty states', () => {
   });
 
   it('WorkspacesSidebar: no workspace selected', () => {
-    const { container } = render(<WorkspacesSidebar onToggleCollapse={vi.fn()} />);
+    const { container } = render(<WorkspacesSidebar />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

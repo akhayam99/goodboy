@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 
@@ -35,15 +35,8 @@ afterEach(cleanup);
 import { WorkspacesSidebar } from './index';
 
 describe('WorkspacesSidebar', () => {
-  it('renders collapse toggle button', () => {
-    render(<WorkspacesSidebar onToggleCollapse={vi.fn()} />);
-    expect(screen.getByTitle('collapse sidebar (⌘B)')).toBeDefined();
-  });
-
-  describe('when collapsed', () => {
-    it('renders the rail instead of the full sidebar', () => {
-      render(<WorkspacesSidebar collapsed onToggleCollapse={vi.fn()} />);
-      expect(screen.queryByTitle('collapse sidebar (⌘B)')).toBeNull();
-    });
+  it('renders without crashing when workspace is selected', () => {
+    render(<WorkspacesSidebar />);
+    expect(screen.queryByRole('button', { name: /collapse sidebar/i })).toBeNull();
   });
 });

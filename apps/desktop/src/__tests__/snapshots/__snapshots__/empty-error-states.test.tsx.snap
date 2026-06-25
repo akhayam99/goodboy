@@ -645,49 +645,6 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
       </button>
     </div>
   </div>
-  <div
-    aria-orientation="horizontal"
-    class="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
-    role="separator"
-  />
-  <div
-    class="flex shrink-0 items-center gap-0.5 px-2.5 py-2"
-  >
-    <button
-      aria-label="collapse sidebar"
-      class="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
-      title="collapse sidebar (⌘B)"
-      type="button"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-panel-left-close"
-        fill="none"
-        height="14"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="14"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <rect
-          height="18"
-          rx="2"
-          width="18"
-          x="3"
-          y="3"
-        />
-        <path
-          d="M9 3v18"
-        />
-        <path
-          d="m16 15-3-3 3-3"
-        />
-      </svg>
-    </button>
-  </div>
 </div>
 `;
 

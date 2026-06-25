@@ -1,9 +1,6 @@
 import type { Agent, Workflow } from '@goodboy/types';
 import { WORKFLOW_LIBRARY } from '@goodboy/core';
 
-export const FOOTER_ICON_BTN =
-  'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
-
 export function workflowKindName(workflow: Workflow): string {
   const raw = workflow.name.trim();
   if (!raw) {

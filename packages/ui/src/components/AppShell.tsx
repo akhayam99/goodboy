@@ -5,7 +5,6 @@ export type AppShellProps = {
   topBar?: ReactNode;
   footer?: ReactNode;
   leftSidebar?: ReactNode;
-  leftSidebarCollapsed?: boolean;
   leftHidden?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
@@ -18,7 +17,6 @@ const LEFT_SIDEBAR_MIN = 260;
 const LEFT_SIDEBAR_MAX = 640;
 const LEFT_SIDEBAR_DEFAULT = 340;
 const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
-const LEFT_RAIL_WIDTH = 80;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
@@ -43,7 +41,6 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 
 function buildLayout(opts: {
   collapsed: boolean;
-  leftCollapsed: boolean;
   leftHidden: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
@@ -57,7 +54,6 @@ function buildLayout(opts: {
 } {
   const {
     collapsed,
-    leftCollapsed,
     leftHidden,
     hasLeftSidebar,
     hasRightSidebar,
@@ -87,7 +83,7 @@ function buildLayout(opts: {
     };
   }
 
-  const leftCol = leftHidden ? '0px' : `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
+  const leftCol = leftHidden ? '0px' : `${leftWidthPx}px`;
   const handleCol = leftHidden ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
@@ -113,7 +109,6 @@ export const AppShell = ({
   topBar,
   footer,
   leftSidebar,
-  leftSidebarCollapsed = false,
   leftHidden = false,
   main,
   rightSidebar,
@@ -227,7 +222,6 @@ export const AppShell = ({
 
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
-    leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
     hasRightSidebar,

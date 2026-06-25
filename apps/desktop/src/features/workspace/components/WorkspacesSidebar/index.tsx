@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Divider } from '@goodboy/ui';
-import { ArrowLeft, PanelLeftClose } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -12,19 +12,9 @@ import {
 import { WorkspaceHeader } from '../WorkspaceHeader';
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
-import { FOOTER_ICON_BTN } from './lib';
-import { CollapsedSidebarRail } from './parts/CollapsedSidebarRail';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
 
-type WorkspacesSidebarProps = {
-  collapsed?: boolean;
-  onToggleCollapse: () => void;
-};
-
-export const WorkspacesSidebar = ({
-  collapsed = false,
-  onToggleCollapse,
-}: WorkspacesSidebarProps) => {
+export const WorkspacesSidebar = () => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -47,10 +37,6 @@ export const WorkspacesSidebar = ({
     }
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
-
-  if (collapsed) {
-    return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
-  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -93,19 +79,6 @@ export const WorkspacesSidebar = ({
             </p>
           </div>
         )}
-      </div>
-
-      <Divider />
-      <div className="flex shrink-0 items-center gap-0.5 px-2.5 py-2">
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          title="collapse sidebar (⌘B)"
-          aria-label="collapse sidebar"
-          className={FOOTER_ICON_BTN}
-        >
-          <PanelLeftClose size={14} aria-hidden />
-        </button>
       </div>
 
       {addWorkspaceOpen ? (

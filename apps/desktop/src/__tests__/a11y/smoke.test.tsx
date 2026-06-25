@@ -133,7 +133,7 @@ describe('a11y smoke, BootSplash', () => {
 
 describe('a11y smoke, WorkspacesSidebar', () => {
   it('no violations (no workspace selected)', async () => {
-    const { container } = render(<WorkspacesSidebar onToggleCollapse={vi.fn()} />);
+    const { container } = render(<WorkspacesSidebar />);
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });
