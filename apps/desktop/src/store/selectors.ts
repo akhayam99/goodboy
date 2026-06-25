@@ -86,17 +86,6 @@ export const useSessionStageInfo = (session: Session): SessionStageInfo => {
   return useMemo(() => ({ stage, reason }), [stage, reason]);
 };
 
-export const useRunningSessionIds = (sessions: ReadonlyArray<Session>): ReadonlySet<SessionId> => {
-  const key = useAppStore((s) =>
-    sessions
-      .filter((session) => stageInfoOf(s, session).stage === 'running')
-      .map((session) => session.id)
-      .sort()
-      .join(','),
-  );
-  return useMemo(() => new Set(key ? (key.split(',') as SessionId[]) : []), [key]);
-};
-
 export const useSortedGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,

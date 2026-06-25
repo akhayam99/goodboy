@@ -12,7 +12,6 @@ import type {
 import {
   EMPTY_ARRAY,
   useAppStore,
-  useRunningSessionIds,
   useSessionStageInfo,
   useSessionViewPrefs,
   useSortedGroupedSessions,
@@ -79,13 +78,7 @@ export const SessionActivityBar = ({
 
   const prefs = useSessionViewPrefs(workspaceId);
 
-  const runningIds = useRunningSessionIds(sessions);
-  const runningSessions = useMemo(
-    () => sessions.filter((s) => runningIds.has(s.id as SessionId)),
-    [sessions, runningIds],
-  );
-
-  const groupedActive = useSortedGroupedSessions(workspaceId, runningSessions);
+  const groupedActive = useSortedGroupedSessions(workspaceId, sessions);
   const groupedArchived = useSortedGroupedSessions(workspaceId, archivedSessions);
 
   const displayGroups = tab === 'active' ? groupedActive : groupedArchived;
@@ -212,7 +205,7 @@ export const SessionActivityBar = ({
 
           {!isArchivedView && totalVisible === 0 && (
             <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
-              No running sessions.
+              No sessions yet.
             </p>
           )}
           {isArchivedView && totalVisible === 0 && (
@@ -362,12 +355,13 @@ const SessionActivityItem = memo(function SessionActivityItem({
       )}
     >
       <span className="flex w-full items-start gap-2">
-        <StatusDot
-          tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
-          size="sm"
-          pulsing={stage === 'running'}
-          className="mt-[5px]"
-        />
+        <span className="inline-flex h-5 shrink-0 items-center">
+          <StatusDot
+            tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
+            size="sm"
+            pulsing={stage === 'running'}
+          />
+        </span>
         <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
           {session.goal}
         </span>

@@ -53,7 +53,6 @@ import {
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
-import { buildBreadcrumb } from './app/components/AppBreadcrumb/buildBreadcrumb';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -450,61 +449,6 @@ export const App = () => {
     });
   }, []);
 
-  const toOverview = useCallback(() => {
-    void useAppStore.getState().setCurrentSession(null);
-    setWorkflowStudioOpen(false);
-    setLinearStudioOpen(false);
-    setSentryStudioOpen(false);
-    setGitlabStudioOpen(false);
-    setProviderStudioOpen(false);
-    setGithubStudioOpen(false);
-    setBudgetStudioOpen(false);
-    setAddWorkspaceOpen(false);
-    setSwitcherOpen(false);
-  }, []);
-
-  const toWorkspaceLauncher = useCallback(() => {
-    setSwitcherOpen(true);
-  }, []);
-
-  const toWorkspaceBoard = useCallback(() => {
-    void useAppStore.getState().setCurrentSession(null);
-    setWorkflowStudioOpen(false);
-    setLinearStudioOpen(false);
-    setSentryStudioOpen(false);
-    setGitlabStudioOpen(false);
-    setProviderStudioOpen(false);
-    setGithubStudioOpen(false);
-    setBudgetStudioOpen(false);
-  }, []);
-
-  const breadcrumbCrumbs = useMemo(() => {
-    const chromeKind = addWorkspaceOpen
-      ? ({ kind: 'workspace-create' } as const)
-      : switcherOpen
-        ? ({ kind: 'workspace-launcher' } as const)
-        : githubStudioOpen
-          ? ({ kind: 'pull-request', view: 'comments' } as const)
-          : ({ kind: 'none' } as const);
-    return buildBreadcrumb({
-      workspace: currentWorkspace ? { id: currentWorkspace.id, name: currentWorkspace.name } : null,
-      session: currentSession
-        ? { id: currentSession.id, label: currentSession.goal.trim() || 'untitled session' }
-        : null,
-      chrome: chromeKind,
-      handlers: { toOverview, toWorkspaceLauncher, toWorkspaceBoard },
-    });
-  }, [
-    addWorkspaceOpen,
-    switcherOpen,
-    githubStudioOpen,
-    currentWorkspace,
-    currentSession,
-    toOverview,
-    toWorkspaceLauncher,
-    toWorkspaceBoard,
-  ]);
-
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const lensGo = useAppStore((s) => s.lensGo);
@@ -657,7 +601,6 @@ export const App = () => {
       <AppShell
         topBar={
           <AppTopBar
-            breadcrumb={breadcrumbCrumbs}
             onOpenSettings={openSettings}
             onOpenPalette={openPalette}
             onOpenWorkflows={() => setWorkflowStudioOpen(true)}

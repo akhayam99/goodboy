@@ -10,15 +10,12 @@ import { NotificationCenter } from '../../../features/notifications/components/N
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { QuickActionsRow } from '../../../features/workspace/components/WorkspacesSidebar/parts/QuickActionsRow';
 import { WORKSPACE_FEATURES } from '../../../shared/lib/features';
-import { AppBreadcrumb } from '../AppBreadcrumb';
-import type { BreadcrumbCrumb } from '../AppBreadcrumb/buildBreadcrumb';
 import type { WorkspaceId } from '@goodboy/types';
 
 const TOPBAR_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
 export type AppTopBarProps = {
-  breadcrumb: BreadcrumbCrumb[];
   onOpenSettings: () => void;
   onOpenPalette: (initialQuery?: string) => void;
   onOpenWorkflows: () => void;
@@ -31,7 +28,6 @@ export type AppTopBarProps = {
 };
 
 export const AppTopBar = ({
-  breadcrumb,
   onOpenSettings,
   onOpenPalette,
   onOpenWorkflows,
@@ -73,9 +69,7 @@ export const AppTopBar = ({
           <UpdateIndicator variant="pip" />
         </div>
 
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <AppBreadcrumb crumbs={breadcrumb} />
-        </div>
+        <div className="min-w-0 flex-1" />
 
         <WorkspaceRollupStrip />
 

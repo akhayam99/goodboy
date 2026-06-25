@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Divider } from '@goodboy/ui';
-import { PanelLeftClose } from 'lucide-react';
+import { ArrowLeft, PanelLeftClose } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -59,6 +59,18 @@ export const WorkspacesSidebar = ({
           <WorkspaceHeader />
           <Divider />
         </>
+      ) : null}
+
+      {currentWorkspace && currentSession ? (
+        <button
+          type="button"
+          onClick={() => void setCurrentSession(null)}
+          aria-label="back to board"
+          className="mx-2 mb-1 mt-2 inline-flex shrink-0 items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-xs font-semibold text-foreground motion-safe:transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        >
+          <ArrowLeft size={14} aria-hidden />
+          Back to board
+        </button>
       ) : null}
 
       <div className="flex min-h-0 flex-1">

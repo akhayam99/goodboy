@@ -124,9 +124,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               <button
                 type="button"
                 onClick={onSelectOverview}
-                className="rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="inline-flex items-center gap-1 rounded font-medium text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
               >
-                Overview
+                <ArrowLeft size={12} aria-hidden className="shrink-0" />
+                Back to overview
               </button>
               <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
               <span className="font-medium text-foreground">{LENS_LABEL[lens]}</span>

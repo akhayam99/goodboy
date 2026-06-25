@@ -14,18 +14,12 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-const runningSessionIds: Set<string> = new Set();
-
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionHasUnread: () => false,
   useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle' }),
   useSessionViewPrefs: () => ({ group: 'none' as const, sort: 'recent' as const }),
-  useRunningSessionIds: (sessions: ReadonlyArray<{ id: string }>) =>
-    runningSessionIds.size > 0
-      ? new Set(sessions.filter((s) => runningSessionIds.has(s.id)).map((s) => s.id))
-      : new Set(),
   useSortedGroupedSessions: (_w: unknown, sessions: ReadonlyArray<unknown>) => [
     { key: 'all', sessions },
   ],
@@ -108,18 +102,9 @@ describe('SessionActivityBar, baseline', () => {
     expect(screen.getByRole('button', { name: /create new session/i })).toBeDefined();
   });
 
-  it('renders empty-state copy when no running sessions in active tab', () => {
-    renderBar([], [makeSession('a-1', 'idle one')]);
-    expect(screen.getByText(/no running sessions/i)).toBeDefined();
-  });
-
-  it('shows only running sessions in the active tab by default', () => {
-    runningSessionIds.clear();
-    runningSessionIds.add('a-2');
-    renderBar([], [makeSession('a-1', 'idle one'), makeSession('a-2', 'running one')]);
-    expect(screen.queryByText('idle one')).toBeNull();
-    expect(screen.getByText('running one')).toBeDefined();
-    runningSessionIds.clear();
+  it('renders empty-state copy when no sessions in active tab', () => {
+    renderBar([]);
+    expect(screen.getByText(/no sessions yet/i)).toBeDefined();
   });
 });
 
@@ -257,14 +242,6 @@ describe('SessionActivityBar, bulk selection', () => {
 });
 
 describe('SessionActivityBar, external task chip', () => {
-  beforeEach(() => {
-    runningSessionIds.add('a-1');
-  });
-
-  afterEach(() => {
-    runningSessionIds.clear();
-  });
-
   it('renders no external task chip when the session has no mapped task', () => {
     renderBar([], [makeSession('a-1', 'plain session')]);
     expect(screen.queryByRole('button', { name: /studio/i })).toBeNull();
