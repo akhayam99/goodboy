@@ -12,6 +12,7 @@ export {
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionSlots,
+  useRunningSessionIds,
   useSessionStageInfo,
   useSessionViewPrefs,
   useSlotHistory,

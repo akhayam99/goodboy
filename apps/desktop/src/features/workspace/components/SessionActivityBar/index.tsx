@@ -12,6 +12,7 @@ import type {
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useRunningSessionIds,
   useSessionStageInfo,
   useSessionViewPrefs,
   useSortedGroupedSessions,
@@ -78,7 +79,13 @@ export const SessionActivityBar = ({
 
   const prefs = useSessionViewPrefs(workspaceId);
 
-  const groupedActive = useSortedGroupedSessions(workspaceId, sessions);
+  const runningIds = useRunningSessionIds(sessions);
+  const runningSessions = useMemo(
+    () => sessions.filter((s) => runningIds.has(s.id as SessionId)),
+    [sessions, runningIds],
+  );
+
+  const groupedActive = useSortedGroupedSessions(workspaceId, runningSessions);
   const groupedArchived = useSortedGroupedSessions(workspaceId, archivedSessions);
 
   const displayGroups = tab === 'active' ? groupedActive : groupedArchived;
@@ -205,7 +212,7 @@ export const SessionActivityBar = ({
 
           {!isArchivedView && totalVisible === 0 && (
             <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
-              No sessions yet.
+              No running sessions.
             </p>
           )}
           {isArchivedView && totalVisible === 0 && (
