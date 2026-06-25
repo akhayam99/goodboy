@@ -28,11 +28,6 @@
   --color-info: oklch(0.69 0.11 238);
   --color-merged: oklch(0.70 0.15 305);
 
-  --color-provider-anthropic: oklch(0.74 0.15 55);
-  --color-provider-cursor: oklch(0.70 0.16 290);
-  --color-provider-codex: oklch(0.72 0.16 150);
-  --color-provider-gemini: oklch(0.70 0.15 255);
-
   --text-2xs: 11px;
   --text-xs: 12px;
   --text-sm: 14px;
@@ -62,6 +57,13 @@
     0 18px 40px -10px oklch(0 0 0 / 0.52),
     0 6px 12px -4px oklch(0 0 0 / 0.38),
     inset 0 1px 0 0 oklch(1 0 0 / 0.05);
+}
+
+:root {
+  --color-provider-anthropic: oklch(0.74 0.15 55);
+  --color-provider-cursor: oklch(0.7 0.16 290);
+  --color-provider-codex: oklch(0.72 0.16 150);
+  --color-provider-gemini: oklch(0.7 0.15 255);
 }
 
 html {
