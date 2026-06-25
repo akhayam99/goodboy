@@ -53,6 +53,7 @@ import {
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
+import { buildBreadcrumb } from './app/components/AppBreadcrumb/buildBreadcrumb';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -449,30 +450,60 @@ export const App = () => {
     });
   }, []);
 
-  // The NotificationCenter (the only listener for goodboy:open-notifications) lives
-  // in the expanded sidebar footer; when the sidebar is collapsed it isn't mounted,
-  // so the Toast overflow chip's event would be a silent no-op. Force-expand here,
-  // then re-fire on the next frame once NotificationCenter has mounted. When already
-  // expanded, do nothing — NotificationCenter handles the original event itself.
-  useEffect(() => {
-    const handler = () => {
-      let wasCollapsed = false;
-      setLeftCollapsed((v) => {
-        wasCollapsed = v;
-        if (v && typeof localStorage !== 'undefined') {
-          localStorage.setItem('goodboy:left-sidebar-collapsed', '0');
-        }
-        return false;
-      });
-      if (wasCollapsed) {
-        requestAnimationFrame(() => {
-          window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
-        });
-      }
-    };
-    window.addEventListener('goodboy:open-notifications', handler);
-    return () => window.removeEventListener('goodboy:open-notifications', handler);
+  const toOverview = useCallback(() => {
+    void useAppStore.getState().setCurrentSession(null);
+    setWorkflowStudioOpen(false);
+    setLinearStudioOpen(false);
+    setSentryStudioOpen(false);
+    setGitlabStudioOpen(false);
+    setProviderStudioOpen(false);
+    setGithubStudioOpen(false);
+    setBudgetStudioOpen(false);
+    setAddWorkspaceOpen(false);
+    setSwitcherOpen(false);
   }, []);
+
+  const toWorkspaceLauncher = useCallback(() => {
+    setSwitcherOpen(true);
+  }, []);
+
+  const toWorkspaceBoard = useCallback(() => {
+    void useAppStore.getState().setCurrentSession(null);
+    setWorkflowStudioOpen(false);
+    setLinearStudioOpen(false);
+    setSentryStudioOpen(false);
+    setGitlabStudioOpen(false);
+    setProviderStudioOpen(false);
+    setGithubStudioOpen(false);
+    setBudgetStudioOpen(false);
+  }, []);
+
+  const breadcrumbCrumbs = useMemo(() => {
+    const chromeKind = addWorkspaceOpen
+      ? ({ kind: 'workspace-create' } as const)
+      : switcherOpen
+        ? ({ kind: 'workspace-launcher' } as const)
+        : githubStudioOpen
+          ? ({ kind: 'pull-request', view: 'comments' } as const)
+          : ({ kind: 'none' } as const);
+    return buildBreadcrumb({
+      workspace: currentWorkspace ? { id: currentWorkspace.id, name: currentWorkspace.name } : null,
+      session: currentSession
+        ? { id: currentSession.id, label: currentSession.goal.trim() || 'untitled session' }
+        : null,
+      chrome: chromeKind,
+      handlers: { toOverview, toWorkspaceLauncher, toWorkspaceBoard },
+    });
+  }, [
+    addWorkspaceOpen,
+    switcherOpen,
+    githubStudioOpen,
+    currentWorkspace,
+    currentSession,
+    toOverview,
+    toWorkspaceLauncher,
+    toWorkspaceBoard,
+  ]);
 
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
@@ -624,42 +655,43 @@ export const App = () => {
     <ToastProvider>
       <NotificationToastBridge />
       <AppShell
-        topBar={<AppTopBar />}
+        topBar={
+          <AppTopBar
+            breadcrumb={breadcrumbCrumbs}
+            onOpenSettings={openSettings}
+            onOpenPalette={openPalette}
+            onOpenWorkflows={() => setWorkflowStudioOpen(true)}
+            onOpenLinear={() => {
+              setLinearStudioFocus(null);
+              setLinearStudioOpen(true);
+            }}
+            onOpenSentry={() => {
+              setSentryStudioFocus(null);
+              setSentryStudioOpen(true);
+            }}
+            onOpenGitlab={() => {
+              setGitlabStudioFocus(null);
+              setGitlabStudioOpen(true);
+            }}
+            onOpenProviders={() => {
+              setProviderStudioFocus(null);
+              setProviderStudioAction(null);
+              setProviderStudioOpen(true);
+            }}
+            onOpenGithub={() => {
+              setGithubStudioSession(currentSession?.id ?? null);
+              setGithubStudioOpen(true);
+            }}
+            onOpenBudget={() => {
+              setBudgetStudioScope({ kind: 'overview' });
+              setBudgetStudioOpen(true);
+            }}
+          />
+        }
         leftSidebarCollapsed={leftCollapsed}
         leftSidebar={
           hasWorkspaces ? (
-            <WorkspacesSidebar
-              onOpenSettings={openSettings}
-              onOpenPalette={openPalette}
-              onOpenWorkflows={() => setWorkflowStudioOpen(true)}
-              onOpenLinear={() => {
-                setLinearStudioFocus(null);
-                setLinearStudioOpen(true);
-              }}
-              onOpenSentry={() => {
-                setSentryStudioFocus(null);
-                setSentryStudioOpen(true);
-              }}
-              onOpenGitlab={() => {
-                setGitlabStudioFocus(null);
-                setGitlabStudioOpen(true);
-              }}
-              onOpenProviders={() => {
-                setProviderStudioFocus(null);
-                setProviderStudioAction(null);
-                setProviderStudioOpen(true);
-              }}
-              onOpenGithub={() => {
-                setGithubStudioSession(currentSession?.id ?? null);
-                setGithubStudioOpen(true);
-              }}
-              onOpenBudget={() => {
-                setBudgetStudioScope({ kind: 'overview' });
-                setBudgetStudioOpen(true);
-              }}
-              collapsed={leftCollapsed}
-              onToggleCollapse={toggleLeftSidebar}
-            />
+            <WorkspacesSidebar collapsed={leftCollapsed} onToggleCollapse={toggleLeftSidebar} />
           ) : undefined
         }
         main={

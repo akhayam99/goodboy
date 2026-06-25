@@ -14,6 +14,7 @@ type Props = {
   sentryEnabled: boolean;
   gitlabEnabled: boolean;
   skillsEnabled: boolean;
+  compact?: boolean;
 };
 
 export const QuickActionsRow = ({
@@ -28,6 +29,7 @@ export const QuickActionsRow = ({
   sentryEnabled,
   gitlabEnabled,
   skillsEnabled,
+  compact = false,
 }: Props) => {
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
@@ -40,6 +42,7 @@ export const QuickActionsRow = ({
           label="Skills"
           title="browse and run skills for this workspace"
           onClick={() => onOpenPalette('/')}
+          compact={compact}
         />
       ) : null}
 
@@ -48,6 +51,7 @@ export const QuickActionsRow = ({
         label="Workflows"
         title="open the workflow library for this workspace"
         onClick={onOpenWorkflows}
+        compact={compact}
       />
       <QuickAction
         icon={<Plug size={12} className="text-info" aria-hidden />}
@@ -55,6 +59,7 @@ export const QuickActionsRow = ({
         title="connect and manage your provider accounts"
         onClick={onOpenProviders}
         pulse={noProviderConnected}
+        compact={compact}
       />
       {linearEnabled ? (
         <QuickAction
@@ -66,6 +71,7 @@ export const QuickActionsRow = ({
           label="Linear"
           title="launch a session from a Linear issue"
           onClick={onOpenLinear}
+          compact={compact}
         />
       ) : null}
       {sentryEnabled ? (
@@ -78,6 +84,7 @@ export const QuickActionsRow = ({
           label="Sentry"
           title="launch a session from a Sentry issue"
           onClick={onOpenSentry}
+          compact={compact}
         />
       ) : null}
       {gitlabEnabled ? (
@@ -90,6 +97,7 @@ export const QuickActionsRow = ({
           label="GitLab"
           title="launch a session from a GitLab issue"
           onClick={onOpenGitlab}
+          compact={compact}
         />
       ) : null}
       {!gitlabEnabled ? (
@@ -98,6 +106,7 @@ export const QuickActionsRow = ({
           label="GitHub"
           title="review and act on pull requests across this workspace"
           onClick={onOpenGithub}
+          compact={compact}
         />
       ) : null}
     </div>

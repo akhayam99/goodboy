@@ -133,20 +133,7 @@ describe('a11y smoke, BootSplash', () => {
 
 describe('a11y smoke, WorkspacesSidebar', () => {
   it('no violations (no workspace selected)', async () => {
-    const { container } = render(
-      <WorkspacesSidebar
-        onOpenSettings={vi.fn()}
-        onOpenPalette={vi.fn()}
-        onOpenWorkflows={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onToggleCollapse={vi.fn()}
-      />,
-    );
+    const { container } = render(<WorkspacesSidebar onToggleCollapse={vi.fn()} />);
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });

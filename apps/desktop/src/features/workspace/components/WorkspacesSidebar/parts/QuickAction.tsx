@@ -7,9 +7,29 @@ type Props = {
   title?: string;
   onClick: () => void;
   pulse?: boolean;
+  compact?: boolean;
 };
 
-export const QuickAction = ({ icon, label, title, onClick, pulse }: Props) => {
+export const QuickAction = ({ icon, label, title, onClick, pulse, compact = false }: Props) => {
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title ?? label}
+        aria-label={title ?? label}
+        className={cn(
+          'flex items-center justify-center rounded p-1.5 transition-colors',
+          pulse
+            ? 'animate-soft-pulse text-info hover:bg-info/10'
+            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+        )}
+      >
+        {icon}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
