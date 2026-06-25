@@ -1,34 +1,34 @@
-import { Button, Divider, ScrollFade } from '@goodboy/ui';
-import { ArrowLeft } from 'lucide-react';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
-import { CommandPreview } from '../ProviderLifecycleTile/CommandPreview';
-import { ErrorPanel } from '../ProviderLifecycleTile/ErrorPanel';
-import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
-import { OpenInBrowserButton } from '../ProviderLifecycleTile/OpenInBrowserButton';
-import { StatusPill } from '../ProviderLifecycleTile/StatusPill';
-import { Stepper } from '../ProviderLifecycleTile/Stepper';
-import { EscapeHatch } from '../ProviderConnectModal/EscapeHatch';
-import { GuidePanel } from '../ProviderConnectModal/GuidePanel';
+import { Button, Divider, ScrollFade } from '@goodboy/ui'
+import { ArrowLeft } from 'lucide-react'
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
+import { brandColor, PROVIDER_BRAND } from '../provider-brand'
+import { CommandPreview } from '../ProviderLifecycleTile/CommandPreview'
+import { ErrorPanel } from '../ProviderLifecycleTile/ErrorPanel'
+import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal'
+import { OpenInBrowserButton } from '../ProviderLifecycleTile/OpenInBrowserButton'
+import { StatusPill } from '../ProviderLifecycleTile/StatusPill'
+import { Stepper } from '../ProviderLifecycleTile/Stepper'
+import { EscapeHatch } from '../ProviderConnectModal/EscapeHatch'
+import { GuidePanel } from '../ProviderConnectModal/GuidePanel'
 import {
   EmptyTerminalPlaceholder,
   HelperNote,
   useProviderConnect,
-} from '../ProviderConnectModal/useProviderConnect';
+} from '../ProviderConnectModal/useProviderConnect'
 
 type Props = {
-  readonly providerId: ProviderId;
-  readonly action: ProviderLifecycleAction;
-  readonly onBack: () => void;
-};
+  readonly providerId: ProviderId
+  readonly action: ProviderLifecycleAction
+  readonly onBack: () => void
+}
 
 export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
   const { lifecycle, provider, guide, command, inFlight, connected, primary, runPrimary } =
-    useProviderConnect(providerId, action, true);
+    useProviderConnect(providerId, action, true)
 
-  const brand = PROVIDER_BRAND[providerId];
-  const Icon = brand.icon;
-  const color = brandColor(providerId);
+  const brand = PROVIDER_BRAND[providerId]
+  const Icon = brand.icon
+  const color = brandColor(providerId)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -99,5 +99,5 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}

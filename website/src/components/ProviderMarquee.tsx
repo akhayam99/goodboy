@@ -1,22 +1,22 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties } from 'react'
 
 type Provider = {
-  name: string;
-  color: string;
-  desc: string;
-};
+  name: string
+  color: string
+  desc: string
+}
 
 const providers: Provider[] = [
   { name: 'Claude', color: 'oklch(0.74 0.15 55)', desc: 'Planning, refactors, reviews' },
   { name: 'Cursor', color: 'oklch(0.70 0.16 290)', desc: 'Inline edits, autocomplete' },
   { name: 'Codex', color: 'oklch(0.72 0.16 150)', desc: 'Scaffolds, one-shots' },
   { name: 'Gemini', color: 'oklch(0.72 0.16 240)', desc: 'Long context, multimodal' },
-];
+]
 
 const MASK: CSSProperties = {
   WebkitMaskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
   maskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)',
-};
+}
 
 export function ProviderMarquee() {
   return (
@@ -31,7 +31,7 @@ export function ProviderMarquee() {
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 function Card({ provider, ...rest }: { provider: Provider } & { 'aria-hidden'?: boolean }) {
@@ -52,5 +52,5 @@ function Card({ provider, ...rest }: { provider: Provider } & { 'aria-hidden'?: 
       </div>
       <p className="mt-2 text-[12.5px] leading-snug text-muted-foreground">{provider.desc}</p>
     </div>
-  );
+  )
 }

@@ -1,23 +1,23 @@
-import { Button } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
+import { Button } from '@goodboy/ui'
+import type { ProviderId } from '@goodboy/types'
+import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers'
 
 type Props = {
-  readonly providerId: ProviderId;
-  readonly identity?: string | null;
-  readonly onRefresh: () => void;
-};
+  readonly providerId: ProviderId
+  readonly identity?: string | null
+  readonly onRefresh: () => void
+}
 
 export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) => {
-  const label = PROVIDER_LABEL_LOWER[providerId];
+  const label = PROVIDER_LABEL_LOWER[providerId]
 
   const onConnect = () => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-provider-studio', {
         detail: { providerId, action: 'login' },
       }),
-    );
-  };
+    )
+  }
 
   return (
     <div className="rounded-md border border-warning/40 bg-warning/5 px-3 py-3 text-sm">
@@ -39,5 +39,5 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,59 +1,59 @@
-import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
-import { getModelDescriptor, getModelPrice } from '@goodboy/core';
-import type { VerbosityLevel } from '../../settings/verbosity';
+import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types'
+import { getModelDescriptor, getModelPrice } from '@goodboy/core'
+import type { VerbosityLevel } from '../../settings/verbosity'
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
   cursor: 'Cursor',
   codex: 'Codex',
   gemini: 'Gemini',
-};
+}
 
 export const PROVIDER_TEXT: Record<ProviderId, string> = {
   anthropic: 'text-[var(--color-provider-anthropic)]',
   cursor: 'text-[var(--color-provider-cursor)]',
   codex: 'text-[var(--color-provider-codex)]',
   gemini: 'text-[var(--color-provider-gemini)]',
-};
+}
 
 export const PROVIDER_DOT: Record<ProviderId, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',
   cursor: 'bg-[var(--color-provider-cursor)]',
   codex: 'bg-[var(--color-provider-codex)]',
   gemini: 'bg-[var(--color-provider-gemini)]',
-};
+}
 
-export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
-export type EffortLevel = ModelEffort;
+export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const
+export type EffortLevel = ModelEffort
 
-const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
-const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
-const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
+const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high']
+const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max']
+const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high']
 
 export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null => {
-  const descriptor = getModelDescriptor(model);
+  const descriptor = getModelDescriptor(model)
   if (descriptor) {
-    return descriptor.effort;
+    return descriptor.effort
   }
   if (/claude-opus/i.test(model)) {
-    return OPUS_EFFORT;
+    return OPUS_EFFORT
   }
   if (/claude-sonnet/i.test(model)) {
-    return SONNET_EFFORT;
+    return SONNET_EFFORT
   }
   if (/gpt|codex/i.test(model)) {
-    return CODEX_EFFORT;
+    return CODEX_EFFORT
   }
-  return null;
-};
+  return null
+}
 
 export const clampEffort = (model: string, effort: EffortLevel): EffortLevel => {
-  const levels = modelEffortLevels(model);
+  const levels = modelEffortLevels(model)
   if (!levels) {
-    return effort;
+    return effort
   }
-  return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort);
-};
+  return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort)
+}
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   minimal: 'Minimal',
@@ -62,7 +62,7 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
   high: 'High',
   'extra-high': 'Very high',
   max: 'Max',
-};
+}
 
 export const EFFORT_DOT: Record<EffortLevel, string> = {
   minimal: 'bg-muted-foreground',
@@ -71,7 +71,7 @@ export const EFFORT_DOT: Record<EffortLevel, string> = {
   high: 'bg-warning',
   'extra-high': 'bg-danger/80',
   max: 'bg-danger',
-};
+}
 
 export const EFFORT_TEXT: Record<EffortLevel, string> = {
   minimal: 'text-muted-foreground',
@@ -80,9 +80,9 @@ export const EFFORT_TEXT: Record<EffortLevel, string> = {
   high: 'text-warning',
   'extra-high': 'text-danger/85',
   max: 'text-danger',
-};
+}
 
-export type CostTier = ModelCostTier;
+export type CostTier = ModelCostTier
 
 const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'cursor-small': { weight: 4, tier: 'cheap' },
@@ -95,213 +95,213 @@ const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
   'claude-opus-4-8': { weight: 80, tier: 'expensive' },
   'claude-fable-5': { weight: 90, tier: 'expensive' },
-};
+}
 
 export const TIER_TEXT: Record<CostTier, string> = {
   cheap: 'text-success',
   mid: 'text-warning',
   expensive: 'text-danger',
-};
+}
 
 export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
   brief: 'text-success',
   normal: 'text-info',
   verbose: 'text-danger',
-};
+}
 
 export const modelLabel = (id: string): string => {
-  const descriptor = getModelDescriptor(id);
+  const descriptor = getModelDescriptor(id)
   if (descriptor) {
-    return descriptor.label;
+    return descriptor.label
   }
-  const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
+  const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i)
   if (m) {
-    const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
-    return `${family} ${m[2]}.${m[3]}`;
+    const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase()
+    return `${family} ${m[2]}.${m[3]}`
   }
-  return id;
-};
+  return id
+}
 
-export type { ModelFamily };
+export type { ModelFamily }
 
 export type ParsedModel = {
-  readonly family: ModelFamily;
-  readonly subfamily: string | null;
-  readonly variantLabel: string;
-};
+  readonly family: ModelFamily
+  readonly subfamily: string | null
+  readonly variantLabel: string
+}
 
 function stripProviderPrefix(id: string): string {
-  const slash = id.indexOf('/');
-  return slash >= 0 ? id.slice(slash + 1) : id;
+  const slash = id.indexOf('/')
+  return slash >= 0 ? id.slice(slash + 1) : id
 }
 
 export const parseModelId = (id: string): ParsedModel => {
-  const descriptor = getModelDescriptor(id);
+  const descriptor = getModelDescriptor(id)
   if (descriptor) {
     return {
       family: descriptor.family,
       subfamily: descriptor.subfamily,
       variantLabel: descriptor.variantLabel,
-    };
+    }
   }
 
-  const local = stripProviderPrefix(id);
+  const local = stripProviderPrefix(id)
 
-  let m = local.match(/^claude-(haiku|sonnet|opus)-(\d+)-(\d+)(?:-(.+))?$/i);
+  let m = local.match(/^claude-(haiku|sonnet|opus)-(\d+)-(\d+)(?:-(.+))?$/i)
   if (m) {
     return {
       family: 'claude',
       subfamily: m[1]!.toLowerCase(),
       variantLabel: `${m[2]}.${m[3]}`,
-    };
+    }
   }
 
-  m = local.match(/^claude-(\d+\.\d+)-(haiku|sonnet|opus)(?:-(.+))?$/i);
+  m = local.match(/^claude-(\d+\.\d+)-(haiku|sonnet|opus)(?:-(.+))?$/i)
   if (m) {
-    const suffix = m[3] ? ` ${m[3].replace(/-/g, ' ')}` : '';
+    const suffix = m[3] ? ` ${m[3].replace(/-/g, ' ')}` : ''
     return {
       family: 'claude',
       subfamily: m[2]!.toLowerCase(),
       variantLabel: `${m[1]}${suffix}`,
-    };
+    }
   }
 
-  m = local.match(/^composer-(.+)$/i);
+  m = local.match(/^composer-(.+)$/i)
   if (m) {
-    return { family: 'composer', subfamily: null, variantLabel: m[1]! };
+    return { family: 'composer', subfamily: null, variantLabel: m[1]! }
   }
 
   if (local === 'auto') {
-    return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
+    return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' }
   }
 
-  m = local.match(/^gpt-(\d+\.\d+)-codex$/i);
+  m = local.match(/^gpt-(\d+\.\d+)-codex$/i)
   if (m) {
-    return { family: 'gpt', subfamily: `${m[1]}-codex`, variantLabel: 'codex' };
+    return { family: 'gpt', subfamily: `${m[1]}-codex`, variantLabel: 'codex' }
   }
 
-  m = local.match(/^gpt-(\d+\.\d+)-(.+)$/i);
+  m = local.match(/^gpt-(\d+\.\d+)-(.+)$/i)
   if (m) {
-    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[2]! };
+    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[2]! }
   }
 
-  m = local.match(/^gpt-(\d+\.\d+)$/i);
+  m = local.match(/^gpt-(\d+\.\d+)$/i)
   if (m) {
-    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[1]! };
+    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[1]! }
   }
 
-  m = local.match(/^gpt-(.+)$/i);
+  m = local.match(/^gpt-(.+)$/i)
   if (m) {
-    return { family: 'gpt', subfamily: null, variantLabel: m[1]! };
+    return { family: 'gpt', subfamily: null, variantLabel: m[1]! }
   }
 
   if (local.startsWith('gemini-')) {
-    return { family: 'gemini', subfamily: null, variantLabel: local.slice('gemini-'.length) };
+    return { family: 'gemini', subfamily: null, variantLabel: local.slice('gemini-'.length) }
   }
 
   if (local.startsWith('codex-')) {
-    return { family: 'codex', subfamily: null, variantLabel: local.slice('codex-'.length) };
+    return { family: 'codex', subfamily: null, variantLabel: local.slice('codex-'.length) }
   }
 
-  return { family: 'other', subfamily: null, variantLabel: local };
-};
+  return { family: 'other', subfamily: null, variantLabel: local }
+}
 
 export const modelTier = (model: string): CostTier => {
-  const descriptor = getModelDescriptor(model);
+  const descriptor = getModelDescriptor(model)
   if (descriptor) {
-    return descriptor.costTier;
+    return descriptor.costTier
   }
-  const known = MODEL_COST[model];
+  const known = MODEL_COST[model]
   if (known) {
-    return known.tier;
+    return known.tier
   }
   if (/haiku|small|mini|flash|nano|fast/i.test(model)) {
-    return 'cheap';
+    return 'cheap'
   }
   if (/opus|max/i.test(model)) {
-    return 'expensive';
+    return 'expensive'
   }
-  return 'mid';
-};
+  return 'mid'
+}
 
 export const modelWeight = (model: string): number => {
-  const descriptor = getModelDescriptor(model);
+  const descriptor = getModelDescriptor(model)
   if (descriptor) {
-    return descriptor.weight;
+    return descriptor.weight
   }
-  return MODEL_COST[model]?.weight ?? 10;
-};
+  return MODEL_COST[model]?.weight ?? 10
+}
 
-const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
+const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 }
 
 export type ModelSuggestion = {
-  readonly id: string;
-  readonly kind: 'strong' | 'optional';
-  readonly costMultiplier: number | null;
-};
+  readonly id: string
+  readonly kind: 'strong' | 'optional'
+  readonly costMultiplier: number | null
+}
 
 const costRatio = (numerator: string, denominator: string): number | null => {
-  const a = getModelPrice(numerator);
-  const b = getModelPrice(denominator);
+  const a = getModelPrice(numerator)
+  const b = getModelPrice(denominator)
   if (!a || !b) {
-    return null;
+    return null
   }
-  const avg = (a.inputPerMtok / b.inputPerMtok + a.outputPerMtok / b.outputPerMtok) / 2;
-  const rounded = Math.round(avg * 10) / 10;
-  return rounded === 1 ? null : rounded;
-};
+  const avg = (a.inputPerMtok / b.inputPerMtok + a.outputPerMtok / b.outputPerMtok) / 2
+  const rounded = Math.round(avg * 10) / 10
+  return rounded === 1 ? null : rounded
+}
 
 export const suggestLighterModel = (
   current: string,
   candidates: ReadonlyArray<string>,
 ): ModelSuggestion | null => {
-  const currentRank = TIER_RANK[modelTier(current)];
-  let best: { id: string; weight: number } | null = null;
+  const currentRank = TIER_RANK[modelTier(current)]
+  let best: { id: string; weight: number } | null = null
   for (const id of candidates) {
     if (id === current) {
-      continue;
+      continue
     }
-    const rank = TIER_RANK[modelTier(id)];
+    const rank = TIER_RANK[modelTier(id)]
     if (rank >= currentRank || rank === TIER_RANK.cheap) {
-      continue;
+      continue
     }
-    const weight = modelWeight(id);
+    const weight = modelWeight(id)
     if (!best || weight > best.weight) {
-      best = { id, weight };
+      best = { id, weight }
     }
   }
   if (!best) {
-    return null;
+    return null
   }
-  return { id: best.id, kind: 'strong', costMultiplier: costRatio(current, best.id) };
-};
+  return { id: best.id, kind: 'strong', costMultiplier: costRatio(current, best.id) }
+}
 
 export const suggestHeavierModel = (
   current: string,
   candidates: ReadonlyArray<string>,
 ): ModelSuggestion | null => {
-  const currentRank = TIER_RANK[modelTier(current)];
-  const currentWeight = modelWeight(current);
-  let best: { id: string; rank: number; weight: number } | null = null;
+  const currentRank = TIER_RANK[modelTier(current)]
+  const currentWeight = modelWeight(current)
+  let best: { id: string; rank: number; weight: number } | null = null
   for (const id of candidates) {
     if (id === current) {
-      continue;
+      continue
     }
-    const rank = TIER_RANK[modelTier(id)];
-    const weight = modelWeight(id);
+    const rank = TIER_RANK[modelTier(id)]
+    const weight = modelWeight(id)
     if (rank < currentRank || weight <= currentWeight) {
-      continue;
+      continue
     }
     if (!best || rank > best.rank || (rank === best.rank && weight > best.weight)) {
-      best = { id, rank, weight };
+      best = { id, rank, weight }
     }
   }
   if (!best) {
-    return null;
+    return null
   }
-  const kind = modelTier(current) === 'expensive' ? 'optional' : 'strong';
-  return { id: best.id, kind, costMultiplier: costRatio(best.id, current) };
-};
+  const kind = modelTier(current) === 'expensive' ? 'optional' : 'strong'
+  return { id: best.id, kind, costMultiplier: costRatio(best.id, current) }
+}
 
 export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   claude: 'Claude',
@@ -311,7 +311,7 @@ export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   gemini: 'Gemini',
   codex: 'Codex',
   other: 'Other',
-};
+}
 
 const SUBFAMILY_LABEL: Record<string, string> = {
   haiku: 'Haiku',
@@ -323,7 +323,7 @@ const SUBFAMILY_LABEL: Record<string, string> = {
   mini: 'Mini',
   pro: 'Pro',
   flash: 'Flash',
-};
+}
 
 const SUBFAMILY_TIER: Record<string, CostTier> = {
   haiku: 'cheap',
@@ -335,18 +335,18 @@ const SUBFAMILY_TIER: Record<string, CostTier> = {
   mini: 'cheap',
   pro: 'expensive',
   flash: 'cheap',
-};
+}
 
 export const subfamilyLabel = (family: ModelFamily, subfamily: string): string => {
   if (SUBFAMILY_LABEL[subfamily]) {
-    return SUBFAMILY_LABEL[subfamily];
+    return SUBFAMILY_LABEL[subfamily]
   }
   if (family === 'gpt' && subfamily.endsWith('-codex')) {
-    return subfamily.replace('-codex', '-Codex');
+    return subfamily.replace('-codex', '-Codex')
   }
-  return subfamily;
-};
+  return subfamily
+}
 
 export const subfamilyTier = (_family: ModelFamily, subfamily: string): CostTier => {
-  return SUBFAMILY_TIER[subfamily] ?? 'mid';
-};
+  return SUBFAMILY_TIER[subfamily] ?? 'mid'
+}

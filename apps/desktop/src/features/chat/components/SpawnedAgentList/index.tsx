@@ -1,28 +1,28 @@
-import type { Agent, AgentId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
-import { Check, Clock, Loader2 } from 'lucide-react';
-import { MARKER_ACCENT } from '../marker-accents';
+import type { Agent, AgentId } from '@goodboy/types'
+import { cn } from '@goodboy/ui'
+import { Check, Clock, Loader2 } from 'lucide-react'
+import { MARKER_ACCENT } from '../marker-accents'
 
-const accent = MARKER_ACCENT.clusters;
+const accent = MARKER_ACCENT.clusters
 
-export type SpawnStatus = Agent['status'] | 'planned';
+export type SpawnStatus = Agent['status'] | 'planned'
 
 export type SpawnedAgentItem = Readonly<{
-  key: string;
-  index: number;
-  total: number;
-  name: string;
-  body: string | null;
-  status: SpawnStatus;
-  agentId: AgentId | null;
-}>;
+  key: string
+  index: number
+  total: number
+  name: string
+  body: string | null
+  status: SpawnStatus
+  agentId: AgentId | null
+}>
 
 type Props = {
-  readonly items: ReadonlyArray<SpawnedAgentItem>;
-  readonly selectedAgentId?: AgentId | undefined;
-  readonly onSelect?: (agentId: AgentId) => void;
-  readonly variant?: 'inline' | 'dashboard';
-};
+  readonly items: ReadonlyArray<SpawnedAgentItem>
+  readonly selectedAgentId?: AgentId | undefined
+  readonly onSelect?: (agentId: AgentId) => void
+  readonly variant?: 'inline' | 'dashboard'
+}
 
 const statusIcon = (status: SpawnStatus) =>
   status === 'running' ? (
@@ -35,7 +35,7 @@ const statusIcon = (status: SpawnStatus) =>
     <span className="size-2 rounded-full bg-danger" aria-hidden />
   ) : (
     <Clock size={14} className="text-muted-foreground/60" aria-hidden />
-  );
+  )
 
 const statusLabel = (status: SpawnStatus): string =>
   status === 'running'
@@ -46,7 +46,7 @@ const statusLabel = (status: SpawnStatus): string =>
         ? 'stalled'
         : status === 'planned'
           ? 'planned'
-          : 'queued';
+          : 'queued'
 
 export const SpawnedAgentList = ({
   items,
@@ -54,12 +54,12 @@ export const SpawnedAgentList = ({
   onSelect,
   variant = 'dashboard',
 }: Props) => {
-  const dense = variant === 'inline';
+  const dense = variant === 'inline'
   return (
     <div className={cn('flex flex-col', dense ? 'gap-1' : 'gap-3')}>
       {items.map((item) => {
-        const isSelected = item.agentId != null && item.agentId === selectedAgentId;
-        const navigable = item.agentId != null && onSelect != null;
+        const isSelected = item.agentId != null && item.agentId === selectedAgentId
+        const navigable = item.agentId != null && onSelect != null
         const rowClass = cn(
           'flex w-full items-start gap-3 rounded-lg border text-left transition-colors',
           dense ? 'px-2 py-1.5' : 'px-3 py-2.5',
@@ -68,7 +68,7 @@ export const SpawnedAgentList = ({
             : navigable
               ? 'border-border hover:border-merged/40 hover:bg-merged/5'
               : 'border-border-soft/60',
-        );
+        )
         const inner = (
           <>
             <span className="mt-0.5 shrink-0 tabular-nums text-xs text-muted-foreground/60">
@@ -94,9 +94,9 @@ export const SpawnedAgentList = ({
               ) : null}
             </span>
           </>
-        );
+        )
         if (navigable) {
-          const agentId = item.agentId as AgentId;
+          const agentId = item.agentId as AgentId
           return (
             <button
               key={item.key}
@@ -106,14 +106,14 @@ export const SpawnedAgentList = ({
             >
               {inner}
             </button>
-          );
+          )
         }
         return (
           <div key={item.key} className={rowClass}>
             {inner}
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

@@ -6,13 +6,13 @@ export type QuickActionGroup =
   | 'workflow'
   | 'script'
   | 'action'
-  | 'help';
+  | 'help'
 
 export type PrefixMeta = {
-  readonly symbol: string;
-  readonly hint: string;
-  readonly group: QuickActionGroup;
-};
+  readonly symbol: string
+  readonly hint: string
+  readonly group: QuickActionGroup
+}
 
 export const PREFIXES: ReadonlyArray<PrefixMeta> = [
   { symbol: '@', hint: 'agents in current session', group: 'agent' },
@@ -23,22 +23,22 @@ export const PREFIXES: ReadonlyArray<PrefixMeta> = [
   { symbol: '$', hint: 'scripts', group: 'script' },
   { symbol: '>', hint: 'actions', group: 'action' },
   { symbol: '?', hint: 'help & shortcuts', group: 'help' },
-];
+]
 
 export type ParsedQuery = {
-  readonly prefix: PrefixMeta | null;
-  readonly query: string;
-};
+  readonly prefix: PrefixMeta | null
+  readonly query: string
+}
 
 export const parseQuery = (raw: string): ParsedQuery => {
-  const trimmed = raw.trimStart();
+  const trimmed = raw.trimStart()
   if (trimmed.length === 0) {
-    return { prefix: null, query: '' };
+    return { prefix: null, query: '' }
   }
-  const ch = trimmed[0]!;
-  const meta = PREFIXES.find((p) => p.symbol === ch);
+  const ch = trimmed[0]!
+  const meta = PREFIXES.find((p) => p.symbol === ch)
   if (meta) {
-    return { prefix: meta, query: trimmed.slice(1).trim() };
+    return { prefix: meta, query: trimmed.slice(1).trim() }
   }
-  return { prefix: null, query: trimmed };
-};
+  return { prefix: null, query: trimmed }
+}

@@ -10,11 +10,11 @@ import type {
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
-} from './ids';
-import type { ModelEffort, ProviderId } from './provider-registry';
-import type { VerbosityLevel } from './settings';
+} from './ids'
+import type { ModelEffort, ProviderId } from './provider-registry'
+import type { VerbosityLevel } from './settings'
 
-export type AgentEffort = ModelEffort;
+export type AgentEffort = ModelEffort
 
 export type AgentRole =
   | 'scout'
@@ -26,110 +26,110 @@ export type AgentRole =
   | 'architect'
   | 'tester'
   | 'explorer'
-  | 'custom';
+  | 'custom'
 
-export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped'
 
-export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
+export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven'
 
 export type StepDef = Readonly<{
-  id: StepDefId;
-  workspaceId: WorkspaceId | null;
-  baseStepId?: StepDefId;
-  role: AgentRole;
-  name: string;
-  promptPrefix: string;
-  providerDefault?: ProviderId;
-  modelDefault?: string;
-  effortDefault?: AgentEffort;
-  verbosityDefault?: VerbosityLevel;
-  deletedAt?: IsoDateTime;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
-}>;
+  id: StepDefId
+  workspaceId: WorkspaceId | null
+  baseStepId?: StepDefId
+  role: AgentRole
+  name: string
+  promptPrefix: string
+  providerDefault?: ProviderId
+  modelDefault?: string
+  effortDefault?: AgentEffort
+  verbosityDefault?: VerbosityLevel
+  deletedAt?: IsoDateTime
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
+}>
 
 export type Step = Readonly<{
-  id: StepId;
-  workflowId: WorkflowId;
-  libraryStepId?: StepDefId;
-  role?: AgentRole;
-  ordinal: number;
-  name: string;
-  promptPrefix: string;
-  providerOverride?: ProviderId;
-  modelOverride?: string;
-  effort?: AgentEffort;
-  verbosity?: VerbosityLevel;
-  parallelGroup?: number;
-  deletedAt?: IsoDateTime;
-}>;
+  id: StepId
+  workflowId: WorkflowId
+  libraryStepId?: StepDefId
+  role?: AgentRole
+  ordinal: number
+  name: string
+  promptPrefix: string
+  providerOverride?: ProviderId
+  modelOverride?: string
+  effort?: AgentEffort
+  verbosity?: VerbosityLevel
+  parallelGroup?: number
+  deletedAt?: IsoDateTime
+}>
 
 export type Workflow = Readonly<{
-  id: WorkflowId;
-  workspaceId: WorkspaceId;
-  name: string;
-  description: string;
-  goal?: string;
-  steps: ReadonlyArray<Step>;
-  isPreset?: boolean;
-  deletedAt?: IsoDateTime;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
-}>;
+  id: WorkflowId
+  workspaceId: WorkspaceId
+  name: string
+  description: string
+  goal?: string
+  steps: ReadonlyArray<Step>
+  isPreset?: boolean
+  deletedAt?: IsoDateTime
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
+}>
 
 export type Agent = Readonly<{
-  id: AgentId;
-  sessionId: SessionId;
-  stepId?: StepId;
-  workflowRunId?: WorkflowRunId;
-  parentAgentId?: AgentId;
-  ordinal: number;
-  name: string;
-  status: AgentStatus;
-  runId?: ProviderRunId;
-  outputSummary?: string;
-  startedAt?: IsoDateTime;
-  completedAt?: IsoDateTime;
-  providerSessionId?: string;
-  lastFinishedAt?: IsoDateTime;
-  lastViewedAt?: IsoDateTime;
-  deletedAt?: IsoDateTime;
-  verbosity?: 'brief' | 'normal' | 'verbose';
-  effort?: ModelEffort;
-  modelOverride?: string;
-  providerOverride?: string;
-  kind?: string;
-  sourceThreadId?: string;
-  sourceCommentUrl?: string;
-}>;
+  id: AgentId
+  sessionId: SessionId
+  stepId?: StepId
+  workflowRunId?: WorkflowRunId
+  parentAgentId?: AgentId
+  ordinal: number
+  name: string
+  status: AgentStatus
+  runId?: ProviderRunId
+  outputSummary?: string
+  startedAt?: IsoDateTime
+  completedAt?: IsoDateTime
+  providerSessionId?: string
+  lastFinishedAt?: IsoDateTime
+  lastViewedAt?: IsoDateTime
+  deletedAt?: IsoDateTime
+  verbosity?: 'brief' | 'normal' | 'verbose'
+  effort?: ModelEffort
+  modelOverride?: string
+  providerOverride?: string
+  kind?: string
+  sourceThreadId?: string
+  sourceCommentUrl?: string
+}>
 
 export type StepTransition = Readonly<{
-  workflowRunId?: WorkflowRunId;
-  fromOrdinal: number;
-  toOrdinal: number;
-  carryForwardContext: string;
-  at: IsoDateTime;
-}>;
+  workflowRunId?: WorkflowRunId
+  fromOrdinal: number
+  toOrdinal: number
+  carryForwardContext: string
+  at: IsoDateTime
+}>
 
 export type ParallelGroup = {
-  readonly id: ParallelGroupId;
-  readonly sessionId: SessionId;
-  readonly ordinal: number;
-  readonly mergeStrategy: ParallelMergeStrategy;
-  readonly createdAt: IsoDateTime;
-  readonly completedAt: IsoDateTime | null;
-};
+  readonly id: ParallelGroupId
+  readonly sessionId: SessionId
+  readonly ordinal: number
+  readonly mergeStrategy: ParallelMergeStrategy
+  readonly createdAt: IsoDateTime
+  readonly completedAt: IsoDateTime | null
+}
 
 export type ParallelAgent = {
-  readonly id: ParallelAgentId;
-  readonly groupId: ParallelGroupId;
-  readonly stepId: StepId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly parallelIndex: number;
-  readonly runId: ProviderRunId;
-  readonly status: AgentStatus;
-  readonly worktreePath: string;
-  readonly outputSummary: string | null;
-  readonly startedAt: IsoDateTime;
-  readonly completedAt: IsoDateTime | null;
-};
+  readonly id: ParallelAgentId
+  readonly groupId: ParallelGroupId
+  readonly stepId: StepId
+  readonly workflowRunId?: WorkflowRunId
+  readonly parallelIndex: number
+  readonly runId: ProviderRunId
+  readonly status: AgentStatus
+  readonly worktreePath: string
+  readonly outputSummary: string | null
+  readonly startedAt: IsoDateTime
+  readonly completedAt: IsoDateTime | null
+}

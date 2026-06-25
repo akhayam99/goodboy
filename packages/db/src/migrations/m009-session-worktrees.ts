@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS session_worktrees (
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_session_worktrees_session_id ON session_worktrees(session_id);
-`;
+`

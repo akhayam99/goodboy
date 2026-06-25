@@ -1,34 +1,34 @@
-import { useMemo } from 'react';
-import { FileText } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { extractPlanFromMarker } from '@goodboy/core';
-import { useSessionPlans } from '../../../../store';
-import { MARKER_ACCENT } from '../marker-accents';
+import { useMemo } from 'react'
+import { FileText } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { extractPlanFromMarker } from '@goodboy/core'
+import { useSessionPlans } from '../../../../store'
+import { MARKER_ACCENT } from '../marker-accents'
 
 type Props = {
-  readonly assistantText: string;
-  readonly sessionId: SessionId;
-};
+  readonly assistantText: string
+  readonly sessionId: SessionId
+}
 
-const accent = MARKER_ACCENT.plan;
+const accent = MARKER_ACCENT.plan
 
 export const PlanChip = ({ assistantText, sessionId }: Props) => {
-  const plan = useMemo(() => extractPlanFromMarker(assistantText), [assistantText]);
-  const plans = useSessionPlans(sessionId);
+  const plan = useMemo(() => extractPlanFromMarker(assistantText), [assistantText])
+  const plans = useSessionPlans(sessionId)
 
   if (!plan) {
-    return null;
+    return null
   }
 
-  const resolved = plans.find((p) => p.title === plan.title) ?? plans[plans.length - 1] ?? null;
+  const resolved = plans.find((p) => p.title === plan.title) ?? plans[plans.length - 1] ?? null
 
   const onClick = () => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-plan-studio', {
         detail: { sessionId, ...(resolved ? { planId: resolved.id } : {}) },
       }),
-    );
-  };
+    )
+  }
 
   return (
     <button
@@ -40,5 +40,5 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       <FileText size={11} aria-hidden />
       <span>{plan.title}</span>
     </button>
-  );
-};
+  )
+}

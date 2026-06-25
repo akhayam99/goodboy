@@ -9,32 +9,32 @@ import type {
   SessionId,
   StepId,
   WorkflowRunId,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type AgentRow = {
-  id: string;
-  session_id: string;
-  step_id: string | null;
-  workflow_run_id: string | null;
-  parent_agent_id: string | null;
-  ordinal: number;
-  name: string;
-  status: string;
-  provider_run_id: string | null;
-  output_summary: string | null;
-  started_at: string | null;
-  completed_at: string | null;
-  provider_session_id: string | null;
-  last_finished_at: string | null;
-  last_viewed_at: string | null;
-  deleted_at: number | null;
-  verbosity: string | null;
-  effort: string | null;
-  model_override: string | null;
-  provider_override: string | null;
-  kind: string | null;
-};
+  id: string
+  session_id: string
+  step_id: string | null
+  workflow_run_id: string | null
+  parent_agent_id: string | null
+  ordinal: number
+  name: string
+  status: string
+  provider_run_id: string | null
+  output_summary: string | null
+  started_at: string | null
+  completed_at: string | null
+  provider_session_id: string | null
+  last_finished_at: string | null
+  last_viewed_at: string | null
+  deleted_at: number | null
+  verbosity: string | null
+  effort: string | null
+  model_override: string | null
+  provider_override: string | null
+  kind: string | null
+}
 
 function toAgent(row: AgentRow): Agent {
   return {
@@ -63,7 +63,7 @@ function toAgent(row: AgentRow): Agent {
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
     ...(row.kind && { kind: row.kind }),
-  };
+  }
 }
 
 export const listAgentsForSession = async (
@@ -73,37 +73,37 @@ export const listAgentsForSession = async (
   const rows = await db.select<AgentRow>(
     'SELECT * FROM agents WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
-  );
-  return rows.map(toAgent);
-};
+  )
+  return rows.map(toAgent)
+}
 
 export const listAgentsForSessions = async (
   db: Database,
   sessionIds: ReadonlyArray<SessionId>,
 ): Promise<Map<SessionId, ReadonlyArray<Agent>>> => {
-  const out = new Map<SessionId, Agent[]>();
+  const out = new Map<SessionId, Agent[]>()
   if (sessionIds.length === 0) {
-    return out;
+    return out
   }
-  const placeholders = sessionIds.map(() => '?').join(', ');
+  const placeholders = sessionIds.map(() => '?').join(', ')
   const rows = await db.select<AgentRow>(
     `SELECT * FROM agents WHERE session_id IN (${placeholders}) AND deleted_at IS NULL ORDER BY session_id, ordinal ASC`,
     sessionIds,
-  );
+  )
   for (const row of rows) {
-    const agent = toAgent(row);
-    const bucket = out.get(agent.sessionId) ?? [];
-    bucket.push(agent);
-    out.set(agent.sessionId, bucket);
+    const agent = toAgent(row)
+    const bucket = out.get(agent.sessionId) ?? []
+    bucket.push(agent)
+    out.set(agent.sessionId, bucket)
   }
-  return out;
-};
+  return out
+}
 
 export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | null> => {
-  const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id]);
-  const row = rows[0];
-  return row ? toAgent(row) : null;
-};
+  const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id])
+  const row = rows[0]
+  return row ? toAgent(row) : null
+}
 
 export const insertAgent = async (db: Database, agent: Agent): Promise<void> => {
   await db.execute(
@@ -124,98 +124,98 @@ export const insertAgent = async (db: Database, agent: Agent): Promise<void> => 
       agent.startedAt ?? null,
       agent.completedAt ?? null,
     ],
-  );
-};
+  )
+}
 
 export const updateAgentStatus = async (
   db: Database,
   id: AgentId,
   fields: {
-    status?: AgentStatus;
-    runId?: ProviderRunId;
-    outputSummary?: string;
-    startedAt?: IsoDateTime;
-    completedAt?: IsoDateTime;
+    status?: AgentStatus
+    runId?: ProviderRunId
+    outputSummary?: string
+    startedAt?: IsoDateTime
+    completedAt?: IsoDateTime
   },
 ): Promise<void> => {
-  const updates: string[] = [];
-  const values: unknown[] = [];
+  const updates: string[] = []
+  const values: unknown[] = []
 
   if (fields.status !== undefined) {
-    updates.push('status = ?');
-    values.push(fields.status);
+    updates.push('status = ?')
+    values.push(fields.status)
   }
   if (fields.runId !== undefined) {
-    updates.push('provider_run_id = ?');
-    values.push(fields.runId);
+    updates.push('provider_run_id = ?')
+    values.push(fields.runId)
   }
   if (fields.outputSummary !== undefined) {
-    updates.push('output_summary = ?');
-    values.push(fields.outputSummary);
+    updates.push('output_summary = ?')
+    values.push(fields.outputSummary)
   }
   if (fields.startedAt !== undefined) {
-    updates.push('started_at = ?');
-    values.push(fields.startedAt);
+    updates.push('started_at = ?')
+    values.push(fields.startedAt)
   }
   if (fields.completedAt !== undefined) {
-    updates.push('completed_at = ?');
-    values.push(fields.completedAt);
+    updates.push('completed_at = ?')
+    values.push(fields.completedAt)
   }
 
   if (updates.length === 0) {
-    return;
+    return
   }
 
-  values.push(id);
-  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
-};
+  values.push(id)
+  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values)
+}
 
 export const softDeleteAgent = async (db: Database, id: AgentId): Promise<void> => {
-  await db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
+  await db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [Date.now(), id])
+}
 
 export const restoreAgent = async (db: Database, id: AgentId): Promise<void> => {
-  await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
-};
+  await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id])
+}
 
 export type AgentConfigUpdate = {
-  verbosity?: 'brief' | 'normal' | 'verbose' | null;
-  effort?: ModelEffort | null;
-  modelOverride?: string | null;
-  providerOverride?: ProviderId | null;
-  kind?: string | null;
-};
+  verbosity?: 'brief' | 'normal' | 'verbose' | null
+  effort?: ModelEffort | null
+  modelOverride?: string | null
+  providerOverride?: ProviderId | null
+  kind?: string | null
+}
 
 export const updateAgentConfig = async (
   db: Database,
   id: AgentId,
   fields: AgentConfigUpdate,
 ): Promise<void> => {
-  const updates: string[] = [];
-  const values: unknown[] = [];
+  const updates: string[] = []
+  const values: unknown[] = []
   if (fields.verbosity !== undefined) {
-    updates.push('verbosity = ?');
-    values.push(fields.verbosity);
+    updates.push('verbosity = ?')
+    values.push(fields.verbosity)
   }
   if (fields.effort !== undefined) {
-    updates.push('effort = ?');
-    values.push(fields.effort);
+    updates.push('effort = ?')
+    values.push(fields.effort)
   }
   if (fields.modelOverride !== undefined) {
-    updates.push('model_override = ?');
-    values.push(fields.modelOverride);
+    updates.push('model_override = ?')
+    values.push(fields.modelOverride)
   }
   if (fields.providerOverride !== undefined) {
-    updates.push('provider_override = ?');
-    values.push(fields.providerOverride);
+    updates.push('provider_override = ?')
+    values.push(fields.providerOverride)
   }
   if (fields.kind !== undefined) {
-    updates.push('kind = ?');
-    values.push(fields.kind);
+    updates.push('kind = ?')
+    values.push(fields.kind)
   }
   if (updates.length === 0) {
-    return;
+    return
   }
-  values.push(id);
-  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
-};
+  values.push(id)
+  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values)
+}

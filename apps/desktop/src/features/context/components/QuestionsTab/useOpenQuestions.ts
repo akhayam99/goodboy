@@ -1,40 +1,40 @@
-import { create } from 'zustand';
-import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import { create } from 'zustand'
+import type { OpenQuestion, OpenQuestionId } from '@goodboy/types'
 
-const UNDO_TTL_MS = 5_000;
+const UNDO_TTL_MS = 5_000
 
 type QuestionDraft = {
-  selectedSuggestions: ReadonlyArray<string>;
-  customAnswer: string;
-  showCustomField: boolean;
-};
+  selectedSuggestions: ReadonlyArray<string>
+  customAnswer: string
+  showCustomField: boolean
+}
 
 type PendingUndo = {
-  question: OpenQuestion;
-  timer: ReturnType<typeof setTimeout>;
-};
+  question: OpenQuestion
+  timer: ReturnType<typeof setTimeout>
+}
 
 type OpenQuestionsUiState = {
-  drafts: Record<string, QuestionDraft>;
-  justAnswered: ReadonlyArray<OpenQuestionId>;
-  pendingUndo: PendingUndo | null;
-  toggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
-  setCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
-  toggleCustomField: (questionId: OpenQuestionId) => void;
-  flashAnswered: (ids: ReadonlyArray<OpenQuestionId>) => void;
-  clearJustAnswered: (id: OpenQuestionId) => void;
-  beginUndo: (question: OpenQuestion) => void;
-  clearUndo: () => void;
-};
+  drafts: Record<string, QuestionDraft>
+  justAnswered: ReadonlyArray<OpenQuestionId>
+  pendingUndo: PendingUndo | null
+  toggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void
+  setCustomAnswer: (questionId: OpenQuestionId, text: string) => void
+  toggleCustomField: (questionId: OpenQuestionId) => void
+  flashAnswered: (ids: ReadonlyArray<OpenQuestionId>) => void
+  clearJustAnswered: (id: OpenQuestionId) => void
+  beginUndo: (question: OpenQuestion) => void
+  clearUndo: () => void
+}
 
 function emptyDraft(): QuestionDraft {
-  return { selectedSuggestions: [], customAnswer: '', showCustomField: false };
+  return { selectedSuggestions: [], customAnswer: '', showCustomField: false }
 }
 
 export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string =>
   (draft?.customAnswer.trim().length ?? 0) > 0
     ? draft!.customAnswer.trim()
-    : (draft?.selectedSuggestions ?? []).join(', ');
+    : (draft?.selectedSuggestions ?? []).join(', ')
 
 export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   drafts: {},
@@ -42,55 +42,55 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   pendingUndo: null,
 
   toggleSuggestion: (questionId, suggestion) => {
-    const drafts = { ...get().drafts };
-    const draft = drafts[questionId] ?? emptyDraft();
-    const next = draft.selectedSuggestions.includes(suggestion) ? [] : [suggestion];
-    drafts[questionId] = { ...draft, selectedSuggestions: next };
-    set({ drafts });
+    const drafts = { ...get().drafts }
+    const draft = drafts[questionId] ?? emptyDraft()
+    const next = draft.selectedSuggestions.includes(suggestion) ? [] : [suggestion]
+    drafts[questionId] = { ...draft, selectedSuggestions: next }
+    set({ drafts })
   },
 
   setCustomAnswer: (questionId, text) => {
-    const drafts = { ...get().drafts };
-    const draft = drafts[questionId] ?? emptyDraft();
-    drafts[questionId] = { ...draft, customAnswer: text };
-    set({ drafts });
+    const drafts = { ...get().drafts }
+    const draft = drafts[questionId] ?? emptyDraft()
+    drafts[questionId] = { ...draft, customAnswer: text }
+    set({ drafts })
   },
 
   toggleCustomField: (questionId) => {
-    const drafts = { ...get().drafts };
-    const draft = drafts[questionId] ?? emptyDraft();
-    drafts[questionId] = { ...draft, showCustomField: !draft.showCustomField };
-    set({ drafts });
+    const drafts = { ...get().drafts }
+    const draft = drafts[questionId] ?? emptyDraft()
+    drafts[questionId] = { ...draft, showCustomField: !draft.showCustomField }
+    set({ drafts })
   },
 
   flashAnswered: (ids) => {
-    const drafts = { ...get().drafts };
-    for (const id of ids) delete drafts[id];
-    set({ drafts, justAnswered: ids });
+    const drafts = { ...get().drafts }
+    for (const id of ids) delete drafts[id]
+    set({ drafts, justAnswered: ids })
   },
 
   clearJustAnswered: (id) => {
-    set((s) => ({ justAnswered: s.justAnswered.filter((x) => x !== id) }));
+    set((s) => ({ justAnswered: s.justAnswered.filter((x) => x !== id) }))
   },
 
   beginUndo: (question) => {
-    const existing = get().pendingUndo;
+    const existing = get().pendingUndo
     if (existing) {
-      clearTimeout(existing.timer);
+      clearTimeout(existing.timer)
     }
     const timer = setTimeout(() => {
       set((s) => ({
         pendingUndo: s.pendingUndo?.question.id === question.id ? null : s.pendingUndo,
-      }));
-    }, UNDO_TTL_MS);
-    set({ pendingUndo: { question, timer } });
+      }))
+    }, UNDO_TTL_MS)
+    set({ pendingUndo: { question, timer } })
   },
 
   clearUndo: () => {
-    const existing = get().pendingUndo;
+    const existing = get().pendingUndo
     if (existing) {
-      clearTimeout(existing.timer);
+      clearTimeout(existing.timer)
     }
-    set({ pendingUndo: null });
+    set({ pendingUndo: null })
   },
-}));
+}))

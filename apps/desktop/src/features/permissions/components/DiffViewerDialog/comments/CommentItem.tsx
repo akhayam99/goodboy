@@ -1,16 +1,16 @@
-import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { AgentId, DiffComment } from '@goodboy/types';
-import { relativeTime } from '../lib';
+import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { AgentId, DiffComment } from '@goodboy/types'
+import { relativeTime } from '../lib'
 
 type Props = {
-  comment: DiffComment;
-  onResolve: (id: string) => void;
-  onReopen: (id: string) => void;
-  onDelete: (id: string) => void;
-  onViewAgent: (agentId: AgentId) => void;
-  getAgentName: (agentId: AgentId) => string | undefined;
-};
+  comment: DiffComment
+  onResolve: (id: string) => void
+  onReopen: (id: string) => void
+  onDelete: (id: string) => void
+  onViewAgent: (agentId: AgentId) => void
+  getAgentName: (agentId: AgentId) => string | undefined
+}
 
 export const CommentItem = ({
   comment,
@@ -20,19 +20,19 @@ export const CommentItem = ({
   onViewAgent,
   getAgentName,
 }: Props) => {
-  const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined;
+  const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined
   const containerClass =
     comment.status === 'resolved'
       ? 'border-success/40 bg-success/5 opacity-60'
       : comment.status === 'consumed'
         ? 'border-info/40 bg-info/5'
-        : 'border-warning bg-warning/5';
+        : 'border-warning bg-warning/5'
   const statusPill =
     comment.status === 'resolved'
       ? { label: 'resolved', cls: 'bg-success/15 text-success' }
       : comment.status === 'consumed'
         ? { label: 'in progress', cls: 'bg-info/15 text-info' }
-        : null;
+        : null
   return (
     <div
       className={cn('group flex flex-col gap-1.5 rounded-md border-l-2 px-3 py-2', containerClass)}
@@ -114,5 +114,5 @@ export const CommentItem = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}

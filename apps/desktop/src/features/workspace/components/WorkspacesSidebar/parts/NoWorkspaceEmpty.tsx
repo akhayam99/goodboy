@@ -1,8 +1,8 @@
-import { FolderPlus, Plus } from 'lucide-react';
+import { FolderPlus, Plus } from 'lucide-react'
 
 type Props = {
-  onAddWorkspace: () => void;
-};
+  onAddWorkspace: () => void
+}
 
 export const NoWorkspaceEmpty = ({ onAddWorkspace }: Props) => {
   return (
@@ -25,5 +25,5 @@ export const NoWorkspaceEmpty = ({ onAddWorkspace }: Props) => {
         <span>Add workspace</span>
       </button>
     </div>
-  );
-};
+  )
+}

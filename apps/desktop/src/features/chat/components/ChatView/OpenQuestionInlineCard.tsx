@@ -1,32 +1,32 @@
-import { useCallback, useState } from 'react';
-import { Bot, CheckCircle2, ChevronDown } from 'lucide-react';
-import { cn, Markdown } from '@goodboy/ui';
-import type { OpenQuestion, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { QuestionCard } from '../../../context/components/QuestionsTab/QuestionCard';
-import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
+import { useCallback, useState } from 'react'
+import { Bot, CheckCircle2, ChevronDown } from 'lucide-react'
+import { cn, Markdown } from '@goodboy/ui'
+import type { OpenQuestion, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
+import { QuestionCard } from '../../../context/components/QuestionsTab/QuestionCard'
+import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions'
 
-const RESOLVED_BY_AGENT = '[resolved by agent]';
+const RESOLVED_BY_AGENT = '[resolved by agent]'
 
 type Props = {
-  question: OpenQuestion;
-  sessionId: SessionId;
-};
+  question: OpenQuestion
+  sessionId: SessionId
+}
 
 function relativeTime(isoDate: string): string {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
-  const mins = Math.floor(diffMs / 60_000);
+  const diffMs = Date.now() - new Date(isoDate).getTime()
+  const mins = Math.floor(diffMs / 60_000)
   if (mins < 1) {
-    return 'just now';
+    return 'just now'
   }
   if (mins < 60) {
-    return `${mins}m ago`;
+    return `${mins}m ago`
   }
-  const hrs = Math.floor(mins / 60);
+  const hrs = Math.floor(mins / 60)
   if (hrs < 24) {
-    return `${hrs}h ago`;
+    return `${hrs}h ago`
   }
-  return `${Math.floor(hrs / 24)}d ago`;
+  return `${Math.floor(hrs / 24)}d ago`
 }
 
 const InteractiveCard = ({ question, sessionId }: Props) => {
@@ -37,14 +37,14 @@ const InteractiveCard = ({ question, sessionId }: Props) => {
     setCustomAnswer,
     toggleCustomField,
     clearJustAnswered,
-  } = useOpenQuestions();
-  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
+  } = useOpenQuestions()
+  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion)
 
-  const draft = drafts[question.id];
+  const draft = drafts[question.id]
 
   const handleDismiss = useCallback(() => {
-    void dismissOpenQuestion(sessionId, question);
-  }, [dismissOpenQuestion, sessionId, question]);
+    void dismissOpenQuestion(sessionId, question)
+  }, [dismissOpenQuestion, sessionId, question])
 
   return (
     <div className="flex flex-col gap-2">
@@ -61,13 +61,13 @@ const InteractiveCard = ({ question, sessionId }: Props) => {
         onClearJustAnswered={clearJustAnswered}
       />
     </div>
-  );
-};
+  )
+}
 
 const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
-  const [expanded, setExpanded] = useState(false);
-  const resolvedByAgent = question.userAnswer === RESOLVED_BY_AGENT;
-  const answeredAt = question.answeredAt ?? question.createdAt;
+  const [expanded, setExpanded] = useState(false)
+  const resolvedByAgent = question.userAnswer === RESOLVED_BY_AGENT
+  const answeredAt = question.answeredAt ?? question.createdAt
 
   return (
     <div
@@ -124,8 +124,8 @@ const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 export const OpenQuestionInlineCard = ({ question, sessionId }: Props) => {
   return (
@@ -136,5 +136,5 @@ export const OpenQuestionInlineCard = ({ question, sessionId }: Props) => {
         <InteractiveCard question={question} sessionId={sessionId} />
       )}
     </div>
-  );
-};
+  )
+}

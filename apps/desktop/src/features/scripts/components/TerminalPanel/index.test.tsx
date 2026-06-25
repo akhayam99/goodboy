@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
 
 vi.mock('@xterm/xterm', () => ({
   Terminal: vi.fn().mockImplementation(() => ({
@@ -16,44 +16,44 @@ vi.mock('@xterm/xterm', () => ({
     rows: 24,
     options: {},
   })),
-}));
+}))
 vi.mock('@xterm/addon-fit', () => ({
   FitAddon: vi.fn().mockImplementation(() => ({ fit: vi.fn() })),
-}));
-vi.mock('@xterm/xterm/css/xterm.css', () => ({}));
+}))
+vi.mock('@xterm/xterm/css/xterm.css', () => ({}))
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: { openTerminal: () => void; closeTerminal: () => void }) => T) =>
     selector({ openTerminal: vi.fn(), closeTerminal: vi.fn() }),
-}));
+}))
 
 vi.mock('../../../../shared/lib/theme', () => ({
   useThemeStore: <T,>(selector: (s: { theme: 'light' | 'dark' }) => T) =>
     selector({ theme: 'light' }),
-}));
+}))
 
 vi.mock('../../../terminal/terminal', () => ({
   invokeTerminalWrite: vi.fn(),
   invokeTerminalResize: vi.fn(),
   listenTerminalOutput: vi.fn(async () => () => undefined),
   listenTerminalExit: vi.fn(async () => () => undefined),
-}));
+}))
 
 class ResizeObserverMock {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
 }
-(globalThis as unknown as { ResizeObserver: typeof ResizeObserverMock }).ResizeObserver =
-  ResizeObserverMock;
+;(globalThis as unknown as { ResizeObserver: typeof ResizeObserverMock }).ResizeObserver =
+  ResizeObserverMock
 
-import { TerminalPanel } from './index';
+import { TerminalPanel } from './index'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 describe('TerminalPanel', () => {
   it('renders a restart button accessible by label', () => {
-    render(<TerminalPanel sessionId={'sess' as never} isActive cwd={null} />);
-    expect(screen.getByRole('button', { name: /restart shell/i })).toBeDefined();
-  });
-});
+    render(<TerminalPanel sessionId={'sess' as never} isActive cwd={null} />)
+    expect(screen.getByRole('button', { name: /restart shell/i })).toBeDefined()
+  })
+})

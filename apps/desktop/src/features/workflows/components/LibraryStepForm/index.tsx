@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Input, Textarea } from '@goodboy/ui';
-import { X } from 'lucide-react';
-import { getDefaultTurnModel } from '@goodboy/core';
+import { useState } from 'react'
+import { Input, Textarea } from '@goodboy/ui'
+import { X } from 'lucide-react'
+import { getDefaultTurnModel } from '@goodboy/core'
 import type {
   AgentEffort,
   AgentRole,
@@ -9,28 +9,28 @@ import type {
   StepDef,
   VerbosityLevel,
   WorkspaceId,
-} from '@goodboy/types';
-import type { StepDefUpsertArgs } from '../../workflows';
-import { modelEffortLevels, type EffortLevel } from '../../../chat/utils/chat-constants';
-import { RoleSelect } from '../../../session/components/RoleSelect';
-import { InlineField } from '../../../session/components/InlineField';
-import { ModelSelect } from '../../../session/components/ModelSelect';
-import { EffortSelect } from '../../../session/components/EffortSelect';
-import { VerbositySelect } from '../../../session/components/VerbositySelect';
-import { ProviderSelect } from '../../../session/components/ProviderSelect';
+} from '@goodboy/types'
+import type { StepDefUpsertArgs } from '../../workflows'
+import { modelEffortLevels, type EffortLevel } from '../../../chat/utils/chat-constants'
+import { RoleSelect } from '../../../session/components/RoleSelect'
+import { InlineField } from '../../../session/components/InlineField'
+import { ModelSelect } from '../../../session/components/ModelSelect'
+import { EffortSelect } from '../../../session/components/EffortSelect'
+import { VerbositySelect } from '../../../session/components/VerbositySelect'
+import { ProviderSelect } from '../../../session/components/ProviderSelect'
 
 type Props = {
-  readonly def: StepDef | null;
-  readonly workspaceId: WorkspaceId;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly def: StepDef | null
+  readonly workspaceId: WorkspaceId
+  readonly connectedProviders: ReadonlyArray<ProviderId>
   // Commit the current values without closing the editor (blur-driven autosave).
-  readonly onCommit: (args: StepDefUpsertArgs) => void;
+  readonly onCommit: (args: StepDefUpsertArgs) => void
   // Close the editor; for an unsaved new step this discards it.
-  readonly onClose: () => void;
-};
+  readonly onClose: () => void
+}
 
-const DEFAULT_EFFORT: EffortLevel = 'medium';
-const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
+const DEFAULT_EFFORT: EffortLevel = 'medium'
+const DEFAULT_VERBOSITY: VerbosityLevel = 'normal'
 
 export const LibraryStepForm = ({
   def,
@@ -39,33 +39,33 @@ export const LibraryStepForm = ({
   onCommit,
   onClose,
 }: Props) => {
-  const isGlobal = def?.workspaceId === null;
-  const [name, setName] = useState(def?.name ?? '');
-  const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom');
-  const [promptPrefix, setPromptPrefix] = useState(def?.promptPrefix ?? '');
+  const isGlobal = def?.workspaceId === null
+  const [name, setName] = useState(def?.name ?? '')
+  const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom')
+  const [promptPrefix, setPromptPrefix] = useState(def?.promptPrefix ?? '')
   const [providerOverride, setProviderOverride] = useState<ProviderId | ''>(
     (def?.providerDefault as ProviderId | undefined) ?? '',
-  );
-  const [modelOverride, setModelOverride] = useState(def?.modelDefault ?? '');
+  )
+  const [modelOverride, setModelOverride] = useState(def?.modelDefault ?? '')
   const [effort, setEffort] = useState<EffortLevel>(
     (def?.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,
-  );
+  )
   const [verbosity, setVerbosity] = useState<VerbosityLevel>(
     def?.verbosityDefault ?? DEFAULT_VERBOSITY,
-  );
+  )
 
-  const effProvider: ProviderId = providerOverride || connectedProviders[0] || 'anthropic';
-  const modelValue = modelOverride || getDefaultTurnModel(effProvider);
+  const effProvider: ProviderId = providerOverride || connectedProviders[0] || 'anthropic'
+  const modelValue = modelOverride || getDefaultTurnModel(effProvider)
 
   type FormState = {
-    name: string;
-    role: AgentRole;
-    promptPrefix: string;
-    providerOverride: ProviderId | '';
-    modelOverride: string;
-    effort: EffortLevel;
-    verbosity: VerbosityLevel;
-  };
+    name: string
+    role: AgentRole
+    promptPrefix: string
+    providerOverride: ProviderId | ''
+    modelOverride: string
+    effort: EffortLevel
+    verbosity: VerbosityLevel
+  }
 
   // Build args from a partial override so a freshly-changed select commits its new
   // value immediately rather than the stale state captured in this render.
@@ -79,9 +79,9 @@ export const LibraryStepForm = ({
       effort,
       verbosity,
       ...over,
-    };
+    }
     if (next.name.trim().length === 0) {
-      return;
+      return
     }
     const base: StepDefUpsertArgs = {
       workspaceId,
@@ -92,15 +92,15 @@ export const LibraryStepForm = ({
       ...(next.modelOverride.trim() ? { modelDefault: next.modelOverride.trim() } : {}),
       effortDefault: next.effort as AgentEffort,
       verbosityDefault: next.verbosity,
-    };
-    if (def && !isGlobal) {
-      onCommit({ ...base, id: def.id });
-    } else if (def && isGlobal) {
-      onCommit({ ...base, baseStepId: def.id });
-    } else {
-      onCommit(base);
     }
-  };
+    if (def && !isGlobal) {
+      onCommit({ ...base, id: def.id })
+    } else if (def && isGlobal) {
+      onCommit({ ...base, baseStepId: def.id })
+    } else {
+      onCommit(base)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-primary/40 bg-background p-3">
@@ -116,8 +116,8 @@ export const LibraryStepForm = ({
           <RoleSelect
             value={role}
             onChange={(r) => {
-              setRole(r);
-              commit({ role: r });
+              setRole(r)
+              commit({ role: r })
             }}
             disabled={false}
           />
@@ -157,8 +157,8 @@ export const LibraryStepForm = ({
             value={providerOverride}
             providers={connectedProviders}
             onChange={(p) => {
-              setProviderOverride(p);
-              commit({ providerOverride: p });
+              setProviderOverride(p)
+              commit({ providerOverride: p })
             }}
             disabled={false}
           />
@@ -168,14 +168,14 @@ export const LibraryStepForm = ({
             provider={effProvider}
             value={modelValue}
             onChange={(m) => {
-              const levels = modelEffortLevels(m);
-              setModelOverride(m);
-              const over: Partial<FormState> = { modelOverride: m };
+              const levels = modelEffortLevels(m)
+              setModelOverride(m)
+              const over: Partial<FormState> = { modelOverride: m }
               if (levels && !levels.includes(effort)) {
-                setEffort(levels[0]!);
-                over.effort = levels[0]!;
+                setEffort(levels[0]!)
+                over.effort = levels[0]!
               }
-              commit(over);
+              commit(over)
             }}
             disabled={false}
           />
@@ -185,8 +185,8 @@ export const LibraryStepForm = ({
             model={modelValue}
             value={effort}
             onChange={(eff) => {
-              setEffort(eff);
-              commit({ effort: eff });
+              setEffort(eff)
+              commit({ effort: eff })
             }}
             disabled={false}
           />
@@ -195,13 +195,13 @@ export const LibraryStepForm = ({
           <VerbositySelect
             value={verbosity}
             onChange={(v) => {
-              setVerbosity(v);
-              commit({ verbosity: v });
+              setVerbosity(v)
+              commit({ verbosity: v })
             }}
             disabled={false}
           />
         </InlineField>
       </div>
     </div>
-  );
-};
+  )
+}

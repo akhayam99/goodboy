@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonText } from '@goodboy/ui';
+import { Skeleton, SkeletonText } from '@goodboy/ui'
 
 export const TranscriptSkeleton = () => {
   return (
@@ -20,5 +20,5 @@ export const TranscriptSkeleton = () => {
         </div>
       ))}
     </div>
-  );
-};
+  )
+}

@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS workspace_members (
 CREATE INDEX IF NOT EXISTS idx_workspace_members_composite ON workspace_members(composite_workspace_id);
 ALTER TABLE session_worktrees ADD COLUMN mount_workspace_id TEXT;
 ALTER TABLE session_worktrees ADD COLUMN mount_name TEXT;
-`;
+`

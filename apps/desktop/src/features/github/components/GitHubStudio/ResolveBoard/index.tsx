@@ -1,49 +1,42 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type { AgentId, ProviderId } from '@goodboy/types';
-import { cn, EmptyState } from '@goodboy/ui';
-import {
-  ArrowUpRight,
-  ChevronDown,
-  ExternalLink,
-  RotateCcw,
-  Sliders,
-  Sparkles,
-} from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import type { AgentId, ProviderId } from '@goodboy/types'
+import { cn, EmptyState } from '@goodboy/ui'
+import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw, Sliders, Sparkles } from 'lucide-react'
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
   modelEffortLevels,
   type EffortLevel,
-} from '../../../../chat/utils/chat-constants';
-import { shortModelWithVersion } from '../../../../session/agent-row-format';
-import { ProviderSelect } from '../../../../session/components/ProviderSelect';
-import { ModelSelect } from '../../../../session/components/ModelSelect';
-import { EffortSelect } from '../../../../session/components/EffortSelect';
-import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
-import type { CommentThread } from '../../../comment-threads';
+} from '../../../../chat/utils/chat-constants'
+import { shortModelWithVersion } from '../../../../session/agent-row-format'
+import { ProviderSelect } from '../../../../session/components/ProviderSelect'
+import { ModelSelect } from '../../../../session/components/ModelSelect'
+import { EffortSelect } from '../../../../session/components/EffortSelect'
+import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment'
+import type { CommentThread } from '../../../comment-threads'
 import {
   ResolverStateBadge,
   resolverBadgeState,
-} from '../../../../session/components/ResolverStateBadge';
-import type { ResolverLink } from '../../../../session/resolver-linkage';
-import { useAppStore } from '../../../../../store';
-import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
+} from '../../../../session/components/ResolverStateBadge'
+import type { ResolverLink } from '../../../../session/resolver-linkage'
+import { useAppStore } from '../../../../../store'
+import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config'
 
 type Props = {
-  readonly threads: ReadonlyArray<CommentThread>;
-  readonly resolverFor?: (thread: CommentThread) => ResolverLink | undefined;
-  readonly onSpawnOne: (thread: CommentThread, choice: ResolveModelChoice) => void;
+  readonly threads: ReadonlyArray<CommentThread>
+  readonly resolverFor?: (thread: CommentThread) => ResolverLink | undefined
+  readonly onSpawnOne: (thread: CommentThread, choice: ResolveModelChoice) => void
   readonly onSpawnBatch: (
     threads: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
-  ) => void;
-  readonly onOpenResolver?: (agentId: AgentId) => void;
-  readonly onOpenThread: (threadId: string) => void;
-};
+  ) => void
+  readonly onOpenResolver?: (agentId: AgentId) => void
+  readonly onOpenThread: (threadId: string) => void
+}
 
 const isClaimed = (link: ResolverLink | undefined): boolean =>
-  link != null && link.status !== 'failed';
+  link != null && link.status !== 'failed'
 
 export const ResolveBoard = ({
   threads,
@@ -55,27 +48,27 @@ export const ResolveBoard = ({
 }: Props) => {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
-  const [configById, setConfigById] = useState<Readonly<Record<string, CardConfig>>>({});
-  const [deselected, setDeselected] = useState<ReadonlySet<string>>(new Set());
-  const [overrideOpen, setOverrideOpen] = useState(false);
+  )
+  const [configById, setConfigById] = useState<Readonly<Record<string, CardConfig>>>({})
+  const [deselected, setDeselected] = useState<ReadonlySet<string>>(new Set())
+  const [overrideOpen, setOverrideOpen] = useState(false)
 
-  const getConfig = (id: string): CardConfig => configById[id] ?? DEFAULT_CONFIG;
+  const getConfig = (id: string): CardConfig => configById[id] ?? DEFAULT_CONFIG
   const patchConfig = (id: string, next: CardConfig) =>
-    setConfigById((prev) => ({ ...prev, [id]: next }));
+    setConfigById((prev) => ({ ...prev, [id]: next }))
   const applyToAll = (next: CardConfig) =>
-    setConfigById(() => Object.fromEntries(threads.map((t) => [t.head.id, next])));
+    setConfigById(() => Object.fromEntries(threads.map((t) => [t.head.id, next])))
 
   const selectable = useMemo(
     () => threads.filter((t) => !isClaimed(resolverFor?.(t))),
     [threads, resolverFor],
-  );
+  )
   const selected = useMemo(
     () => selectable.filter((t) => !deselected.has(t.head.id)),
     [selectable, deselected],
-  );
-  const allSelected = selectable.length > 0 && selected.length === selectable.length;
-  const aggregate = aggregateConfig(threads.map((t) => getConfig(t.head.id)));
+  )
+  const allSelected = selectable.length > 0 && selected.length === selectable.length
+  const aggregate = aggregateConfig(threads.map((t) => getConfig(t.head.id)))
 
   if (threads.length === 0) {
     return (
@@ -85,25 +78,25 @@ export const ResolveBoard = ({
         title="Nothing to resolve"
         description="Open review comments will appear here."
       />
-    );
+    )
   }
 
   const toggle = (id: string) =>
     setDeselected((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(id)) {
-        next.delete(id);
+        next.delete(id)
       } else {
-        next.add(id);
+        next.add(id)
       }
-      return next;
-    });
+      return next
+    })
   const toggleAll = () =>
-    setDeselected(allSelected ? new Set(selectable.map((t) => t.head.id)) : new Set());
+    setDeselected(allSelected ? new Set(selectable.map((t) => t.head.id)) : new Set())
 
   const choiceById: Record<string, ResolveModelChoice> = Object.fromEntries(
     threads.map((t) => [t.head.id, getConfig(t.head.id)]),
-  );
+  )
 
   return (
     <div className="flex flex-col gap-3">
@@ -114,7 +107,7 @@ export const ResolveBoard = ({
             checked={allSelected}
             ref={(el) => {
               if (el) {
-                el.indeterminate = !allSelected && selected.length > 0;
+                el.indeterminate = !allSelected && selected.length > 0
               }
             }}
             onChange={toggleAll}
@@ -189,8 +182,8 @@ export const ResolveBoard = ({
         ))}
       </ul>
     </div>
-  );
-};
+  )
+}
 
 function ResolveCard({
   thread,
@@ -204,22 +197,22 @@ function ResolveCard({
   onOpenResolver,
   onOpenThread,
 }: {
-  thread: CommentThread;
-  config: CardConfig;
-  checked: boolean;
-  link?: ResolverLink;
-  connectedProviders: ReadonlyArray<ProviderId>;
-  onToggle: () => void;
-  onConfig: (next: CardConfig) => void;
-  onResolve: () => void;
-  onOpenResolver?: (agentId: AgentId) => void;
-  onOpenThread?: () => void;
+  thread: CommentThread
+  config: CardConfig
+  checked: boolean
+  link?: ResolverLink
+  connectedProviders: ReadonlyArray<ProviderId>
+  onToggle: () => void
+  onConfig: (next: CardConfig) => void
+  onResolve: () => void
+  onOpenResolver?: (agentId: AgentId) => void
+  onOpenThread?: () => void
 }) {
-  const [configOpen, setConfigOpen] = useState(false);
-  const { head, replies } = thread;
-  const loc = head.path ? `${head.path}${head.line ? `:${head.line}` : ''}` : 'conversation';
-  const claimed = isClaimed(link);
-  const failed = link != null && link.status === 'failed';
+  const [configOpen, setConfigOpen] = useState(false)
+  const { head, replies } = thread
+  const loc = head.path ? `${head.path}${head.line ? `:${head.line}` : ''}` : 'conversation'
+  const claimed = isClaimed(link)
+  const failed = link != null && link.status === 'failed'
   return (
     <div
       className={cn(
@@ -350,7 +343,7 @@ function ResolveCard({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function ConfigPanel({
@@ -361,22 +354,22 @@ function ConfigPanel({
   onChange,
   footer,
 }: {
-  className?: string;
-  title: string;
-  config: CardConfig;
-  connectedProviders: ReadonlyArray<ProviderId>;
-  onChange: (next: CardConfig) => void;
-  footer?: ReactNode;
+  className?: string
+  title: string
+  config: CardConfig
+  connectedProviders: ReadonlyArray<ProviderId>
+  onChange: (next: CardConfig) => void
+  footer?: ReactNode
 }) {
   const onProvider = (next: ProviderId | '') => {
     if (next === '') {
-      return;
+      return
     }
-    onChange(configFor(next));
-  };
+    onChange(configFor(next))
+  }
   const onModel = (model: string) =>
-    onChange({ ...config, model, effort: clampEffort(model, config.effort) });
-  const onEffort = (effort: EffortLevel) => onChange({ ...config, effort });
+    onChange({ ...config, model, effort: clampEffort(model, config.effort) })
+  const onEffort = (effort: EffortLevel) => onChange({ ...config, effort })
   return (
     <div
       className={cn(
@@ -407,5 +400,5 @@ function ConfigPanel({
       />
       {footer}
     </div>
-  );
+  )
 }

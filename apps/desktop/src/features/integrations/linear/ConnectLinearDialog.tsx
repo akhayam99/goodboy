@@ -1,12 +1,12 @@
-import type { WorkspaceId } from '@goodboy/types';
-import { Button, Dialog } from '@goodboy/ui';
-import { LinearFormBody } from './LinearFormBody';
+import type { WorkspaceId } from '@goodboy/types'
+import { Button, Dialog } from '@goodboy/ui'
+import { LinearFormBody } from './LinearFormBody'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  open: boolean;
-  onClose: () => void;
-};
+  workspaceId: WorkspaceId
+  open: boolean
+  onClose: () => void
+}
 
 export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => (
   <Dialog
@@ -23,4 +23,4 @@ export const ConnectLinearDialog = ({ workspaceId, open, onClose }: Props) => (
   >
     {open ? <LinearFormBody workspaceId={workspaceId} /> : null}
   </Dialog>
-);
+)

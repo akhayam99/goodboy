@@ -1,120 +1,120 @@
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
 import {
   buildProviderList,
   type ProviderAuthResults,
   type ProviderStatus,
   type ProviderStatuses,
-} from '../../../features/providers/providers';
+} from '../../../features/providers/providers'
 import {
   invokeProviderLifecycleRun,
   listenLifecycleExit,
   listenLifecycleOutput,
   resolveLifecycleCommand,
   type LifecycleExitPayload,
-} from '../../../features/providers/provider-lifecycle';
-import { formatError } from '../../../shared/lib/errors';
-import type { GetFn, SetFn } from './types';
-import { IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
+} from '../../../features/providers/provider-lifecycle'
+import { formatError } from '../../../shared/lib/errors'
+import type { GetFn, SetFn } from './types'
+import { IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types'
 
-const OUTPUT_TAIL_CAP = 4 * 1024;
+const OUTPUT_TAIL_CAP = 4 * 1024
 // eslint-disable-next-line no-control-regex
-const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
-const URL_RE = /https?:\/\/[^\s<>"'\x00-\x1F]+/g;
+const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
+const URL_RE = /https?:\/\/[^\s<>"'\x00-\x1F]+/g
 const AUTH_HINT_RE =
-  /oauth|authoriz|sign[-_]?in|\/login|cli-auth|claude\.|anthropic\.|cursor\.|openai\.|accounts\.google\./i;
+  /oauth|authoriz|sign[-_]?in|\/login|cli-auth|claude\.|anthropic\.|cursor\.|openai\.|accounts\.google\./i
 
 function findAuthUrl(text: string): string | null {
-  const matches = text.match(URL_RE);
+  const matches = text.match(URL_RE)
   if (!matches) {
-    return null;
+    return null
   }
   for (const url of matches) {
     if (AUTH_HINT_RE.test(url)) {
-      return url;
+      return url
     }
   }
-  return null;
+  return null
 }
 
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
   if (action === 'install') {
-    return 'installing';
+    return 'installing'
   }
   if (action === 'login') {
-    return 'connecting';
+    return 'connecting'
   }
-  return 'disconnecting';
+  return 'disconnecting'
 }
 
 function restingPhase(
   action: ProviderLifecycleAction,
   payload: LifecycleExitPayload,
 ): ProviderLifecyclePhase {
-  const installed = payload.status.available;
-  const connected = payload.auth.state === 'connected';
+  const installed = payload.status.available
+  const connected = payload.auth.state === 'connected'
   if (payload.exitCode !== 0) {
     if (action === 'install') {
-      return installed ? 'installed' : 'error';
+      return installed ? 'installed' : 'error'
     }
     if (action === 'login') {
-      return connected ? 'connected' : 'error';
+      return connected ? 'connected' : 'error'
     }
-    return connected ? 'error' : 'installed';
+    return connected ? 'error' : 'installed'
   }
   if (action === 'install') {
-    return installed ? 'installed' : 'error';
+    return installed ? 'installed' : 'error'
   }
   if (action === 'login') {
-    return connected ? 'connected' : 'error';
+    return connected ? 'connected' : 'error'
   }
-  return connected ? 'error' : 'installed';
+  return connected ? 'error' : 'installed'
 }
 
 function statusSlotPatch(
   providerId: ProviderId,
   status: ProviderStatus,
 ): {
-  providerStatus?: ProviderStatus;
-  cursorStatus?: ProviderStatus;
-  codexStatus?: ProviderStatus;
-  geminiStatus?: ProviderStatus;
+  providerStatus?: ProviderStatus
+  cursorStatus?: ProviderStatus
+  codexStatus?: ProviderStatus
+  geminiStatus?: ProviderStatus
 } {
   if (providerId === 'anthropic') {
-    return { providerStatus: status };
+    return { providerStatus: status }
   }
   if (providerId === 'cursor') {
-    return { cursorStatus: status };
+    return { cursorStatus: status }
   }
   if (providerId === 'codex') {
-    return { codexStatus: status };
+    return { codexStatus: status }
   }
-  return { geminiStatus: status };
+  return { geminiStatus: status }
 }
 
 export type RunLifecycleArgs = {
-  readonly providerId: ProviderId;
-  readonly action: ProviderLifecycleAction;
-  readonly cols?: number;
-  readonly rows?: number;
-};
+  readonly providerId: ProviderId
+  readonly action: ProviderLifecycleAction
+  readonly cols?: number
+  readonly rows?: number
+}
 
 export const runLifecycle = async (
   set: SetFn,
   get: GetFn,
   { providerId, action, cols = 100, rows = 24 }: RunLifecycleArgs,
 ): Promise<void> => {
-  const existing = get().providerLifecycle[providerId];
+  const existing = get().providerLifecycle[providerId]
   if (
     existing.phase === 'installing' ||
     existing.phase === 'connecting' ||
     existing.phase === 'disconnecting'
   ) {
-    return;
+    return
   }
 
-  const runId = crypto.randomUUID();
-  const command = resolveLifecycleCommand(providerId, action);
-  const startedAt = Date.now();
+  const runId = crypto.randomUUID()
+  const command = resolveLifecycleCommand(providerId, action)
+  const startedAt = Date.now()
 
   set((state) => ({
     providerLifecycle: {
@@ -130,50 +130,50 @@ export const runLifecycle = async (
         detectedAuthUrl: null,
       },
     },
-  }));
+  }))
 
-  let outputTail = '';
-  let foundAuthUrl = false;
-  let unlistenOutput: () => void = () => undefined;
-  let unlistenExit: () => void = () => undefined;
+  let outputTail = ''
+  let foundAuthUrl = false
+  let unlistenOutput: () => void = () => undefined
+  let unlistenExit: () => void = () => undefined
 
   unlistenOutput = await listenLifecycleOutput((payload) => {
     if (payload.runId !== runId) {
-      return;
+      return
     }
-    const chunk = atob(payload.data);
-    outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
+    const chunk = atob(payload.data)
+    outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP)
     if (!foundAuthUrl) {
-      const url = findAuthUrl(chunk.replace(ANSI_RE, ''));
+      const url = findAuthUrl(chunk.replace(ANSI_RE, ''))
       if (url) {
-        foundAuthUrl = true;
+        foundAuthUrl = true
         set((state) => {
-          const curr = state.providerLifecycle[providerId];
+          const curr = state.providerLifecycle[providerId]
           if (curr.runId !== runId) {
-            return {};
+            return {}
           }
           return {
             providerLifecycle: {
               ...state.providerLifecycle,
               [providerId]: { ...curr, detectedAuthUrl: url },
             },
-          };
-        });
+          }
+        })
       }
     }
-  });
+  })
 
   unlistenExit = await listenLifecycleExit((payload) => {
     if (payload.runId !== runId) {
-      return;
+      return
     }
-    unlistenExit();
-    unlistenOutput();
+    unlistenExit()
+    unlistenOutput()
 
-    const curr = get().providerLifecycle[providerId];
+    const curr = get().providerLifecycle[providerId]
     const finalPhase: ProviderLifecyclePhase =
-      curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
-    const errorTail = finalPhase === 'error' ? outputTail.replace(ANSI_RE, '').slice(-500) : null;
+      curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload)
+    const errorTail = finalPhase === 'error' ? outputTail.replace(ANSI_RE, '').slice(-500) : null
 
     set((state) => {
       const statuses: ProviderStatuses = {
@@ -181,7 +181,7 @@ export const runLifecycle = async (
         cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
         codex: providerId === 'codex' ? payload.status : state.codexStatus,
         gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
-      };
+      }
       const authResults: ProviderAuthResults = {
         ...(state.authResults ?? {
           anthropic: null,
@@ -190,7 +190,7 @@ export const runLifecycle = async (
           gemini: null,
         }),
         [providerId]: payload.auth,
-      };
+      }
       return {
         ...statusSlotPatch(providerId, payload.status),
         authResults,
@@ -204,9 +204,9 @@ export const runLifecycle = async (
             errorTail,
           },
         },
-      };
-    });
-  });
+      }
+    })
+  })
 
   try {
     await invokeProviderLifecycleRun({
@@ -216,10 +216,10 @@ export const runLifecycle = async (
       runId,
       cols,
       rows,
-    });
+    })
   } catch (err) {
-    unlistenExit();
-    unlistenOutput();
+    unlistenExit()
+    unlistenOutput()
     set((state) => ({
       providerLifecycle: {
         ...state.providerLifecycle,
@@ -231,6 +231,6 @@ export const runLifecycle = async (
           errorTail: formatError(err),
         },
       },
-    }));
+    }))
   }
-};
+}

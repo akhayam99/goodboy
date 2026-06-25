@@ -1,19 +1,19 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { AlertTriangle, Archive, Keyboard, Plug, Settings, SlidersHorizontal } from 'lucide-react';
-import { cn, Divider } from '@goodboy/ui';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { AppScopePanel } from './AppScopePanel';
+import { useRef, useState, type ReactNode } from 'react'
+import { AlertTriangle, Archive, Keyboard, Plug, Settings, SlidersHorizontal } from 'lucide-react'
+import { cn, Divider } from '@goodboy/ui'
+import { StudioShell } from '../../../../shared/components/StudioShell'
+import { AppScopePanel } from './AppScopePanel'
 
 type Props = {
-  readonly initialFocus?: string;
-  readonly onClose: () => void;
-};
+  readonly initialFocus?: string
+  readonly onClose: () => void
+}
 
 type NavItem = {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: ReactNode;
-};
+  readonly id: string
+  readonly label: string
+  readonly icon: ReactNode
+}
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'editor', label: 'Editor', icon: <SlidersHorizontal size={13} aria-hidden /> },
@@ -21,18 +21,18 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'integrations', label: 'Integrations', icon: <Plug size={13} aria-hidden /> },
   { id: 'advanced', label: 'Config backup', icon: <Archive size={13} aria-hidden /> },
   { id: 'initialization', label: 'Danger zone', icon: <AlertTriangle size={13} aria-hidden /> },
-];
+]
 
 export const SettingsStudio = ({ initialFocus, onClose }: Props) => {
-  const scrollToRef = useRef<(id: string) => void>(() => {});
+  const scrollToRef = useRef<(id: string) => void>(() => {})
   const [active, setActive] = useState(() =>
     NAV_ITEMS.some((i) => i.id === initialFocus) ? (initialFocus as string) : NAV_ITEMS[0]!.id,
-  );
+  )
 
   const jump = (id: string) => {
-    setActive(id);
-    scrollToRef.current(id);
-  };
+    setActive(id)
+    scrollToRef.current(id)
+  }
 
   return (
     <StudioShell
@@ -72,12 +72,12 @@ export const SettingsStudio = ({ initialFocus, onClose }: Props) => {
               initialSection={initialFocus}
               requestClose={requestClose}
               registerScrollTo={(fn) => {
-                scrollToRef.current = fn;
+                scrollToRef.current = fn
               }}
             />
           </div>
         </div>
       )}
     </StudioShell>
-  );
-};
+  )
+}

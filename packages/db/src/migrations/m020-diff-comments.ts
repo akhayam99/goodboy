@@ -12,4 +12,4 @@ CREATE TABLE diff_comments (
 
 CREATE INDEX idx_diff_comments_task_status ON diff_comments(task_id, status);
 CREATE INDEX idx_diff_comments_task_file ON diff_comments(task_id, file_path);
-`;
+`

@@ -1,18 +1,18 @@
-import { useNow } from '../../../../../shared/hooks/useNow';
-import { formatRelative } from '../lib';
+import { useNow } from '../../../../../shared/hooks/useNow'
+import { formatRelative } from '../lib'
 
 type Props = {
-  readonly fetchedAt: string | null;
-};
+  readonly fetchedAt: string | null
+}
 
 export const StaleCaption = ({ fetchedAt }: Props) => {
-  const now = useNow(30_000, !!fetchedAt);
+  const now = useNow(30_000, !!fetchedAt)
   if (!fetchedAt) {
-    return null;
+    return null
   }
-  const ageMs = now - new Date(fetchedAt).getTime();
+  const ageMs = now - new Date(fetchedAt).getTime()
   if (!Number.isFinite(ageMs) || ageMs < 60_000) {
-    return null;
+    return null
   }
   return (
     <span
@@ -21,5 +21,5 @@ export const StaleCaption = ({ fetchedAt }: Props) => {
     >
       updated {formatRelative(ageMs)}
     </span>
-  );
-};
+  )
+}

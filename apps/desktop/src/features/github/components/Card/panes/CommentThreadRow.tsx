@@ -1,27 +1,27 @@
-import { CheckCheck, ExternalLink, Sparkles } from 'lucide-react';
-import { cn, Markdown, StatusDot } from '@goodboy/ui';
-import { type CommentThread, isBot } from '../../../comment-threads';
-import { formatRelative, TAB_ICON_BTN } from '../lib';
-import { Avatar } from '../parts/Avatar';
+import { CheckCheck, ExternalLink, Sparkles } from 'lucide-react'
+import { cn, Markdown, StatusDot } from '@goodboy/ui'
+import { type CommentThread, isBot } from '../../../comment-threads'
+import { formatRelative, TAB_ICON_BTN } from '../lib'
+import { Avatar } from '../parts/Avatar'
 
 type Props = {
-  readonly thread: CommentThread;
-  readonly expanded: boolean;
-  readonly onToggle: () => void;
-  readonly onOpenUrl: (url: string) => void;
-  readonly onSpawn?: () => void;
-};
+  readonly thread: CommentThread
+  readonly expanded: boolean
+  readonly onToggle: () => void
+  readonly onOpenUrl: (url: string) => void
+  readonly onSpawn?: () => void
+}
 
 export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpawn }: Props) => {
-  const { head, replies } = thread;
-  const isReview = head.source === 'review';
+  const { head, replies } = thread
+  const isReview = head.source === 'review'
   const status: 'open' | 'resolved' | 'issue' = !isReview
     ? 'issue'
     : head.resolved
       ? 'resolved'
-      : 'open';
-  const statusLabel = status === 'open' ? 'open' : status === 'resolved' ? 'resolved' : 'comment';
-  const bot = isBot(head.author);
+      : 'open'
+  const statusLabel = status === 'open' ? 'open' : status === 'resolved' ? 'resolved' : 'comment'
+  const bot = isBot(head.author)
 
   return (
     <div className="flex gap-1.5">
@@ -123,5 +123,5 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
         )}
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,124 +1,122 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
-import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui';
-import { Fragment } from 'react';
-import type { Notification, NotificationSeverity } from '@goodboy/db';
-import { useAppStore } from '../../../../store';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react'
+import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui'
+import { Fragment } from 'react'
+import type { Notification, NotificationSeverity } from '@goodboy/db'
+import { useAppStore } from '../../../../store'
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
   switch (severity) {
     case 'success':
-      return <CheckCircle size={size} aria-hidden />;
+      return <CheckCircle size={size} aria-hidden />
     case 'warning':
-      return <AlertTriangle size={size} aria-hidden />;
+      return <AlertTriangle size={size} aria-hidden />
     case 'error':
-      return <AlertCircle size={size} aria-hidden />;
+      return <AlertCircle size={size} aria-hidden />
     default:
-      return <Info size={size} aria-hidden />;
+      return <Info size={size} aria-hidden />
   }
 }
 
 function severityClass(severity: NotificationSeverity): string {
   switch (severity) {
     case 'success':
-      return 'text-success';
+      return 'text-success'
     case 'warning':
-      return 'text-warning';
+      return 'text-warning'
     case 'error':
-      return 'text-danger';
+      return 'text-danger'
     default:
-      return 'text-info';
+      return 'text-info'
   }
 }
 
 function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diff / 60_000);
+  const diff = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diff / 60_000)
   if (minutes < 1) {
-    return 'just now';
+    return 'just now'
   }
   if (minutes < 60) {
-    return `${minutes}m ago`;
+    return `${minutes}m ago`
   }
-  const hours = Math.floor(minutes / 60);
+  const hours = Math.floor(minutes / 60)
   if (hours < 24) {
-    return `${hours}h ago`;
+    return `${hours}h ago`
   }
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
 
-const DROPDOWN_WIDTH = 320;
-const VIEWPORT_MARGIN = 8;
+const DROPDOWN_WIDTH = 320
+const VIEWPORT_MARGIN = 8
 
 export const NotificationCenter = () => {
-  const notifications = useAppStore((s) => s.notifications);
-  const loadNotifications = useAppStore((s) => s.loadNotifications);
-  const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
-  const clearNotifications = useAppStore((s) => s.clearNotifications);
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(
-    null,
-  );
+  const notifications = useAppStore((s) => s.notifications)
+  const loadNotifications = useAppStore((s) => s.loadNotifications)
+  const markNotificationsRead = useAppStore((s) => s.markNotificationsRead)
+  const clearNotifications = useAppStore((s) => s.clearNotifications)
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
 
   useEffect(() => {
-    void loadNotifications();
-  }, [loadNotifications]);
+    void loadNotifications()
+  }, [loadNotifications])
 
   useEffect(() => {
     const handleOpenRequest = () => {
       setOpen((prev) => {
         if (!prev) {
-          void markNotificationsRead();
+          void markNotificationsRead()
         }
-        return true;
-      });
-    };
-    window.addEventListener('goodboy:open-notifications', handleOpenRequest);
+        return true
+      })
+    }
+    window.addEventListener('goodboy:open-notifications', handleOpenRequest)
     return () => {
-      window.removeEventListener('goodboy:open-notifications', handleOpenRequest);
-    };
-  }, [markNotificationsRead]);
+      window.removeEventListener('goodboy:open-notifications', handleOpenRequest)
+    }
+  }, [markNotificationsRead])
 
   useLayoutEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const updatePosition = () => {
-      const el = triggerRef.current;
+      const el = triggerRef.current
       if (!el) {
-        return;
+        return
       }
-      const rect = el.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const desiredLeft = centerX - DROPDOWN_WIDTH / 2;
-      const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
-      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openAbove = spaceBelow < 300;
-      const top = openAbove ? undefined : rect.bottom + 6;
-      const bottom = openAbove ? window.innerHeight - rect.top + 6 : undefined;
-      setCoords({ top, bottom, left });
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
+      const rect = el.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const desiredLeft = centerX - DROPDOWN_WIDTH / 2
+      const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN
+      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft)
+      const spaceBelow = window.innerHeight - rect.bottom
+      const openAbove = spaceBelow < 300
+      const top = openAbove ? undefined : rect.bottom + 6
+      const bottom = openAbove ? window.innerHeight - rect.top + 6 : undefined
+      setCoords({ top, bottom, left })
+    }
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
     return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open]);
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open])
 
   const handleOpen = () => {
-    setOpen((v) => !v);
+    setOpen((v) => !v)
     if (!open) {
-      void markNotificationsRead();
+      void markNotificationsRead()
     }
-  };
+  }
 
-  const unread = notifications.filter((n) => !n.read).length;
+  const unread = notifications.filter((n) => !n.read).length
 
   return (
     <div role="region" aria-label="notifications" aria-live="polite">
@@ -202,12 +200,12 @@ export const NotificationCenter = () => {
           )
         : null}
     </div>
-  );
-};
+  )
+}
 
 type NotificationItemProps = {
-  notification: Notification;
-};
+  notification: Notification
+}
 
 function NotificationItem({ notification: n }: NotificationItemProps) {
   return (
@@ -225,5 +223,5 @@ function NotificationItem({ notification: n }: NotificationItemProps) {
         <p className="mt-0.5 text-2xs text-muted-foreground/70">{relativeTime(n.ts)}</p>
       </div>
     </li>
-  );
+  )
 }

@@ -1,7 +1,7 @@
-import type { ComponentProps } from 'react';
-import { cn } from '../cn';
+import type { ComponentProps } from 'react'
+import { cn } from '../cn'
 
-export type InputProps = ComponentProps<'input'>;
+export type InputProps = ComponentProps<'input'>
 
 export const Input = ({ className, type = 'text', ...rest }: InputProps) => {
   return (
@@ -13,5 +13,5 @@ export const Input = ({ className, type = 'text', ...rest }: InputProps) => {
       )}
       {...rest}
     />
-  );
-};
+  )
+}

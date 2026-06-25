@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types'
 
 const {
   sendTurnMock,
@@ -13,53 +13,53 @@ const {
   deleteAttachmentMock,
   readDroppedAttachmentMock,
 } = await vi.hoisted(async () => {
-  const { create } = await import('zustand');
-  const send = vi.fn(async () => undefined);
-  const cancel = vi.fn();
-  const writeAttachment = vi.fn(async () => 'attachments/att-pic.png');
-  const readAttachment = vi.fn(async () => 'data:image/png;base64,QUJD');
-  const deleteAttachment = vi.fn(async () => undefined);
+  const { create } = await import('zustand')
+  const send = vi.fn(async () => undefined)
+  const cancel = vi.fn()
+  const writeAttachment = vi.fn(async () => 'attachments/att-pic.png')
+  const readAttachment = vi.fn(async () => 'data:image/png;base64,QUJD')
+  const deleteAttachment = vi.fn(async () => undefined)
   const readDroppedAttachment = vi.fn(async () => ({
     fileName: 'pic.png',
     mimeType: 'image/png',
     dataBase64: 'QUJD',
-  }));
+  }))
   type S = {
-    sendTurn: typeof send;
-    cancelCurrentTurn: typeof cancel;
-    setAgentVerbosity: (sessionId: string, agentId: string, level: string) => Promise<void>;
-    setSessionConfig: (sessionId: string, fields: unknown) => Promise<void>;
-    setAgentConfig: (sessionId: string, agentId: string, fields: unknown) => Promise<void>;
-    workspaceOverrides: Record<string, never>;
-    providers: ReadonlyArray<{ id: string; connection: string }>;
-    skills: Record<string, never>;
-    workspaceScripts: Record<string, never>;
-    sessionWorktrees: Record<string, ReadonlyArray<string>>;
-    providerSpendBreakdown: ReadonlyArray<never>;
-    selectedAgentId: Record<string, string>;
-    agentTurnState: Record<string, never>;
-    agentModelOverride: Record<string, never>;
-    agentKindOverride: Record<string, never>;
-    agentRunHistory: Record<string, never>;
-    agentDraft: Record<string, string>;
-    agentAttachments: Record<string, ReadonlyArray<never>>;
-    sessionNudges: Record<string, null>;
-    sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
-    phaseTemplates: Record<string, never>;
-    setAgentDraft: (agentId: string, value: string) => void;
-    clearAgentDraft: (agentId: string) => void;
-    setAgentAttachments: (agentId: string, attachments: ReadonlyArray<never>) => void;
-    clearAgentAttachments: (agentId: string) => void;
-    dismissSessionNudge: () => Promise<void>;
-    acceptSessionNudgeHandoff: () => Promise<void>;
-    spawnAgent: () => Promise<void>;
-    runScript: () => Promise<{ stdout: string; stderr: string; exitCode: number }>;
-    loadScripts: () => Promise<void>;
-    selectAgent: () => Promise<void>;
-    attachWorkflowToSession: () => Promise<void>;
-    loadPhaseTemplates: () => Promise<void>;
-    loadPhaseRunsForSession: () => Promise<void>;
-  };
+    sendTurn: typeof send
+    cancelCurrentTurn: typeof cancel
+    setAgentVerbosity: (sessionId: string, agentId: string, level: string) => Promise<void>
+    setSessionConfig: (sessionId: string, fields: unknown) => Promise<void>
+    setAgentConfig: (sessionId: string, agentId: string, fields: unknown) => Promise<void>
+    workspaceOverrides: Record<string, never>
+    providers: ReadonlyArray<{ id: string; connection: string }>
+    skills: Record<string, never>
+    workspaceScripts: Record<string, never>
+    sessionWorktrees: Record<string, ReadonlyArray<string>>
+    providerSpendBreakdown: ReadonlyArray<never>
+    selectedAgentId: Record<string, string>
+    agentTurnState: Record<string, never>
+    agentModelOverride: Record<string, never>
+    agentKindOverride: Record<string, never>
+    agentRunHistory: Record<string, never>
+    agentDraft: Record<string, string>
+    agentAttachments: Record<string, ReadonlyArray<never>>
+    sessionNudges: Record<string, null>
+    sessionPhaseRuns: Record<string, ReadonlyArray<never>>
+    phaseTemplates: Record<string, never>
+    setAgentDraft: (agentId: string, value: string) => void
+    clearAgentDraft: (agentId: string) => void
+    setAgentAttachments: (agentId: string, attachments: ReadonlyArray<never>) => void
+    clearAgentAttachments: (agentId: string) => void
+    dismissSessionNudge: () => Promise<void>
+    acceptSessionNudgeHandoff: () => Promise<void>
+    spawnAgent: () => Promise<void>
+    runScript: () => Promise<{ stdout: string; stderr: string; exitCode: number }>
+    loadScripts: () => Promise<void>
+    selectAgent: () => Promise<void>
+    attachWorkflowToSession: () => Promise<void>
+    loadPhaseTemplates: () => Promise<void>
+    loadPhaseRunsForSession: () => Promise<void>
+  }
   const store = create<S>((set) => ({
     sendTurn: send,
     cancelCurrentTurn: cancel,
@@ -91,22 +91,22 @@ const {
     clearAgentDraft: (agentId) =>
       set((s) => {
         if (!(agentId in s.agentDraft)) {
-          return s;
+          return s
         }
-        const next = { ...s.agentDraft };
-        delete next[agentId];
-        return { agentDraft: next };
+        const next = { ...s.agentDraft }
+        delete next[agentId]
+        return { agentDraft: next }
       }),
     setAgentAttachments: (agentId, attachments) =>
       set((s) => ({ agentAttachments: { ...s.agentAttachments, [agentId]: attachments } })),
     clearAgentAttachments: (agentId) =>
       set((s) => {
         if (!(agentId in s.agentAttachments)) {
-          return s;
+          return s
         }
-        const next = { ...s.agentAttachments };
-        delete next[agentId];
-        return { agentAttachments: next };
+        const next = { ...s.agentAttachments }
+        delete next[agentId]
+        return { agentAttachments: next }
       }),
     dismissSessionNudge: async () => undefined,
     acceptSessionNudgeHandoff: async () => undefined,
@@ -117,7 +117,7 @@ const {
     attachWorkflowToSession: async () => undefined,
     loadPhaseTemplates: async () => undefined,
     loadPhaseRunsForSession: async () => undefined,
-  }));
+  }))
   return {
     sendTurnMock: send,
     cancelCurrentTurnMock: cancel,
@@ -126,32 +126,32 @@ const {
     readAttachmentMock: readAttachment,
     deleteAttachmentMock: deleteAttachment,
     readDroppedAttachmentMock: readDroppedAttachment,
-  };
-});
+  }
+})
 
 function resetMockStore() {
-  mockStore.setState({ agentDraft: {}, agentAttachments: {}, sessionWorktrees: {} });
+  mockStore.setState({ agentDraft: {}, agentAttachments: {}, sessionWorktrees: {} })
 }
 
 vi.mock('../../../../store', () => ({
   useAppStore: mockStore,
   EMPTY_ARRAY: [] as never[],
-}));
+}))
 
 vi.mock('../../../../permissions', () => ({
   useEffectivePermissionRules: () => [],
-}));
+}))
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
-}));
+}))
 
 vi.mock('../../turn', () => ({
   writeAttachment: writeAttachmentMock,
   readAttachment: readAttachmentMock,
   deleteAttachment: deleteAttachmentMock,
   readDroppedAttachment: readDroppedAttachmentMock,
-}));
+}))
 
 vi.mock('@goodboy/core', () => ({
   buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
@@ -170,9 +170,9 @@ vi.mock('@goodboy/core', () => ({
     reason: 'preference',
   })),
   assessTurnWeight: () => 'small',
-}));
+}))
 
-import { ChatInput } from './index';
+import { ChatInput } from './index'
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -192,31 +192,31 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     createdAt: '2026-01-01T00:00:00.000Z' as Session['createdAt'],
     updatedAt: '2026-01-01T00:00:00.000Z' as Session['updatedAt'],
     ...overrides,
-  };
+  }
 }
 
 afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-  resetMockStore();
-});
+  cleanup()
+  vi.clearAllMocks()
+  resetMockStore()
+})
 
 describe('ChatInput, input wiring', () => {
   it('typed characters appear in the textarea', async () => {
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
+    const user = userEvent.setup()
+    render(<ChatInput session={makeSession()} />)
 
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hello');
+    const textarea = screen.getByRole('textbox')
+    await user.type(textarea, 'hello')
 
-    expect((textarea as HTMLTextAreaElement).value).toBe('hello');
-  });
+    expect((textarea as HTMLTextAreaElement).value).toBe('hello')
+  })
 
   it('textarea is enabled when session is idle and provider is connected', () => {
-    render(<ChatInput session={makeSession()} />);
-    const textarea = screen.getByRole('textbox');
-    expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
-  });
+    render(<ChatInput session={makeSession()} />)
+    const textarea = screen.getByRole('textbox')
+    expect((textarea as HTMLTextAreaElement).disabled).toBe(false)
+  })
 
   it('textarea stays enabled when session is running so user can queue next message', () => {
     render(
@@ -229,57 +229,57 @@ describe('ChatInput, input wiring', () => {
           },
         })}
       />,
-    );
-    const textarea = screen.getByRole('textbox');
-    expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
-  });
+    )
+    const textarea = screen.getByRole('textbox')
+    expect((textarea as HTMLTextAreaElement).disabled).toBe(false)
+  })
 
   it('Enter sends the turn and clears the input', async () => {
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
+    const user = userEvent.setup()
+    render(<ChatInput session={makeSession()} />)
 
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hello');
-    await user.keyboard('{Enter}');
+    const textarea = screen.getByRole('textbox')
+    await user.type(textarea, 'hello')
+    await user.keyboard('{Enter}')
 
-    expect(sendTurnMock).toHaveBeenCalledOnce();
+    expect(sendTurnMock).toHaveBeenCalledOnce()
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: 'session-1', content: 'hello' }),
-    );
-    expect((textarea as HTMLTextAreaElement).value).toBe('');
-  });
+    )
+    expect((textarea as HTMLTextAreaElement).value).toBe('')
+  })
 
   it('Shift+Enter inserts a newline instead of sending', async () => {
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
+    const user = userEvent.setup()
+    render(<ChatInput session={makeSession()} />)
 
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hello');
-    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    const textarea = screen.getByRole('textbox')
+    await user.type(textarea, 'hello')
+    await user.keyboard('{Shift>}{Enter}{/Shift}')
 
-    expect(sendTurnMock).not.toHaveBeenCalled();
-    expect((textarea as HTMLTextAreaElement).value).toBe('hello\n');
-  });
+    expect(sendTurnMock).not.toHaveBeenCalled()
+    expect((textarea as HTMLTextAreaElement).value).toBe('hello\n')
+  })
 
   it('send button invokes sendTurn', async () => {
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
+    const user = userEvent.setup()
+    render(<ChatInput session={makeSession()} />)
 
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hi there');
+    const textarea = screen.getByRole('textbox')
+    await user.type(textarea, 'hi there')
 
-    const sendButton = screen.getByRole('button', { name: /send/i });
-    await user.click(sendButton);
+    const sendButton = screen.getByRole('button', { name: /send/i })
+    await user.click(sendButton)
 
-    expect(sendTurnMock).toHaveBeenCalledOnce();
-    expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }));
-  });
+    expect(sendTurnMock).toHaveBeenCalledOnce()
+    expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }))
+  })
 
   it('provider override persists across sends (regression for bug D)', async () => {
-    const setSessionConfig = vi.fn(async () => undefined);
-    mockStore.setState({ setSessionConfig });
+    const setSessionConfig = vi.fn(async () => undefined)
+    mockStore.setState({ setSessionConfig })
 
-    const user = userEvent.setup();
+    const user = userEvent.setup()
     render(
       <ChatInput
         session={makeSession({
@@ -290,84 +290,84 @@ describe('ChatInput, input wiring', () => {
           providerOverride: 'cursor',
         })}
       />,
-    );
+    )
 
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hello cursor');
-    await user.keyboard('{Enter}');
+    const textarea = screen.getByRole('textbox')
+    await user.type(textarea, 'hello cursor')
+    await user.keyboard('{Enter}')
 
-    expect(sendTurnMock).toHaveBeenCalledOnce();
+    expect(sendTurnMock).toHaveBeenCalledOnce()
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({
         override: expect.objectContaining({ providerId: 'cursor' }),
       }),
-    );
-  });
-});
+    )
+  })
+})
 
 describe('ChatInput, attachment persistence', () => {
-  const pngFile = () => new File(['abc'], 'pic.png', { type: 'image/png' });
+  const pngFile = () => new File(['abc'], 'pic.png', { type: 'image/png' })
 
   function fileInput(container: HTMLElement): HTMLInputElement {
-    const input = container.querySelector('input[type="file"]');
+    const input = container.querySelector('input[type="file"]')
     if (!input) {
-      throw new Error('file input not found');
+      throw new Error('file input not found')
     }
-    return input as HTMLInputElement;
+    return input as HTMLInputElement
   }
 
   it('persists an added attachment to the store and restores it on remount', async () => {
-    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
-    const user = userEvent.setup();
-    const { container, unmount } = render(<ChatInput session={makeSession()} />);
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } })
+    const user = userEvent.setup()
+    const { container, unmount } = render(<ChatInput session={makeSession()} />)
 
-    await user.upload(fileInput(container), pngFile());
+    await user.upload(fileInput(container), pngFile())
 
-    expect(await screen.findByAltText('pic.png')).toBeTruthy();
+    expect(await screen.findByAltText('pic.png')).toBeTruthy()
     await waitFor(() => {
-      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
-    });
-    expect(writeAttachmentMock).toHaveBeenCalled();
+      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1)
+    })
+    expect(writeAttachmentMock).toHaveBeenCalled()
     expect(mockStore.getState().agentAttachments['agent-1']?.[0]).toMatchObject({
       fileName: 'pic.png',
       mimeType: 'image/png',
       relPath: 'attachments/att-pic.png',
-    });
+    })
 
-    unmount();
-    readAttachmentMock.mockClear();
-    render(<ChatInput session={makeSession()} />);
+    unmount()
+    readAttachmentMock.mockClear()
+    render(<ChatInput session={makeSession()} />)
 
-    expect(await screen.findByAltText('pic.png')).toBeTruthy();
-    expect(readAttachmentMock).toHaveBeenCalledWith('/wt', 'attachments/att-pic.png');
-  });
+    expect(await screen.findByAltText('pic.png')).toBeTruthy()
+    expect(readAttachmentMock).toHaveBeenCalledWith('/wt', 'attachments/att-pic.png')
+  })
 
   it('clears stored attachments and deletes the disk file on send', async () => {
-    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
-    const user = userEvent.setup();
-    const { container } = render(<ChatInput session={makeSession()} />);
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } })
+    const user = userEvent.setup()
+    const { container } = render(<ChatInput session={makeSession()} />)
 
-    await user.upload(fileInput(container), pngFile());
-    await screen.findByAltText('pic.png');
+    await user.upload(fileInput(container), pngFile())
+    await screen.findByAltText('pic.png')
     await waitFor(() => {
-      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
-    });
+      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1)
+    })
 
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'with attachment');
-    await user.keyboard('{Enter}');
+    const textarea = screen.getByRole('textbox')
+    await user.type(textarea, 'with attachment')
+    await user.keyboard('{Enter}')
 
-    expect(sendTurnMock).toHaveBeenCalledOnce();
+    expect(sendTurnMock).toHaveBeenCalledOnce()
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({
         attachments: expect.arrayContaining([expect.objectContaining({ fileName: 'pic.png' })]),
       }),
-    );
+    )
     await waitFor(() => {
-      expect(deleteAttachmentMock).toHaveBeenCalledWith('/wt', 'attachments/att-pic.png');
-    });
+      expect(deleteAttachmentMock).toHaveBeenCalledWith('/wt', 'attachments/att-pic.png')
+    })
     await waitFor(() => {
-      expect(mockStore.getState().agentAttachments['agent-1']).toBeUndefined();
-    });
-  });
-});
+      expect(mockStore.getState().agentAttachments['agent-1']).toBeUndefined()
+    })
+  })
+})

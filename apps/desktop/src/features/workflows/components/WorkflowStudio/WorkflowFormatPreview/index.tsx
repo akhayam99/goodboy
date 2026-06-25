@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Button, Dialog, Textarea, cn } from '@goodboy/ui';
-import type { FormattedWorkflow } from '@goodboy/core';
-import type { AgentRole } from '@goodboy/types';
-import { Lightbulb, Sparkles } from 'lucide-react';
-import { AGENT_KIND_PALETTE, ROLE_TO_KIND } from '../../../../session/agent-kind';
+import { useEffect, useState } from 'react'
+import { Button, Dialog, Textarea, cn } from '@goodboy/ui'
+import type { FormattedWorkflow } from '@goodboy/core'
+import type { AgentRole } from '@goodboy/types'
+import { Lightbulb, Sparkles } from 'lucide-react'
+import { AGENT_KIND_PALETTE, ROLE_TO_KIND } from '../../../../session/agent-kind'
 
 type Props = {
-  readonly open: boolean;
-  readonly formatting: boolean;
-  readonly proposal: FormattedWorkflow | null;
-  readonly currentStepNames: ReadonlyArray<string>;
-  readonly onFormat: (description: string) => void;
-  readonly onApply: () => void;
-  readonly onClose: () => void;
-};
+  readonly open: boolean
+  readonly formatting: boolean
+  readonly proposal: FormattedWorkflow | null
+  readonly currentStepNames: ReadonlyArray<string>
+  readonly onFormat: (description: string) => void
+  readonly onApply: () => void
+  readonly onClose: () => void
+}
 
 export const WorkflowFormatPreview = ({
   open,
@@ -24,17 +24,17 @@ export const WorkflowFormatPreview = ({
   onApply,
   onClose,
 }: Props) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState('')
 
   // Reset the draft each time the overlay opens so a prior session never leaks in.
   useEffect(() => {
     if (open) {
-      setText('');
+      setText('')
     }
-  }, [open]);
+  }, [open])
 
-  const before = currentStepNames.filter((s) => s.trim().length > 0);
-  const canFormat = text.trim().length > 0 && !formatting;
+  const before = currentStepNames.filter((s) => s.trim().length > 0)
+  const canFormat = text.trim().length > 0 && !formatting
 
   return (
     <Dialog
@@ -114,7 +114,7 @@ export const WorkflowFormatPreview = ({
 
             <ol className="flex flex-col gap-2">
               {proposal.steps.map((step, i) => {
-                const kind = ROLE_TO_KIND[step.role as AgentRole] ?? 'generic';
+                const kind = ROLE_TO_KIND[step.role as AgentRole] ?? 'generic'
                 return (
                   <li key={i} className="flex flex-col gap-1 rounded-lg bg-muted/20 px-3 py-2.5">
                     <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export const WorkflowFormatPreview = ({
                       </p>
                     ) : null}
                   </li>
-                );
+                )
               })}
             </ol>
 
@@ -164,5 +164,5 @@ export const WorkflowFormatPreview = ({
         ) : null}
       </div>
     </Dialog>
-  );
-};
+  )
+}

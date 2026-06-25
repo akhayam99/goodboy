@@ -1,16 +1,16 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { ClusterProgressDashboard } from './ClusterProgressDashboard';
-import type { ClusterDashboardItem } from './clusterDashboard';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { Agent, AgentId, SessionId } from '@goodboy/types'
+import { ClusterProgressDashboard } from './ClusterProgressDashboard'
+import type { ClusterDashboardItem } from './clusterDashboard'
 
 const agent = (over: {
-  id: string;
-  name?: string;
-  status?: Agent['status'];
-  outputSummary?: string;
+  id: string
+  name?: string
+  status?: Agent['status']
+  outputSummary?: string
 }): Agent =>
   ({
     sessionId: 's1',
@@ -20,28 +20,28 @@ const agent = (over: {
     kind: 'implementer',
     ...over,
     id: over.id as AgentId,
-  }) as Agent;
+  }) as Agent
 
 const item = (over: {
-  id: string;
-  index: number;
-  status?: Agent['status'];
-  instructions?: string | null;
-  outputSummary?: string;
+  id: string
+  index: number
+  status?: Agent['status']
+  instructions?: string | null
+  outputSummary?: string
 }): ClusterDashboardItem => ({
   agent: agent({ id: over.id, status: over.status, outputSummary: over.outputSummary }),
   index: over.index,
   total: 3,
   instructions: over.instructions ?? `do ${over.index}`,
-});
+})
 
 const items: ReadonlyArray<ClusterDashboardItem> = [
   item({ id: 'child0', index: 0, status: 'completed', outputSummary: 'built thing 0' }),
   item({ id: 'child1', index: 1, status: 'running' }),
   item({ id: 'child2', index: 2, status: 'pending' }),
-];
+]
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 describe('ClusterProgressDashboard', () => {
   it('renders one card per item with the header count', () => {
@@ -55,12 +55,12 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('cluster progress 1/3')).toBeTruthy();
-    expect(screen.getByText('child0')).toBeTruthy();
-    expect(screen.getByText('child1')).toBeTruthy();
-    expect(screen.getByText('child2')).toBeTruthy();
-  });
+    )
+    expect(screen.getByText('cluster progress 1/3')).toBeTruthy()
+    expect(screen.getByText('child0')).toBeTruthy()
+    expect(screen.getByText('child1')).toBeTruthy()
+    expect(screen.getByText('child2')).toBeTruthy()
+  })
 
   it('shows the right status label per status', () => {
     render(
@@ -73,11 +73,11 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('done')).toBeTruthy();
-    expect(screen.getByText('running…')).toBeTruthy();
-    expect(screen.getByText('queued')).toBeTruthy();
-  });
+    )
+    expect(screen.getByText('done')).toBeTruthy()
+    expect(screen.getByText('running…')).toBeTruthy()
+    expect(screen.getByText('queued')).toBeTruthy()
+  })
 
   it('shows outputSummary for completed and instructions otherwise', () => {
     render(
@@ -90,13 +90,13 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('built thing 0')).toBeTruthy();
-    expect(screen.getByText('do 1')).toBeTruthy();
-  });
+    )
+    expect(screen.getByText('built thing 0')).toBeTruthy()
+    expect(screen.getByText('do 1')).toBeTruthy()
+  })
 
   it('fires onSelect with the agent id on click', () => {
-    const onSelect = vi.fn();
+    const onSelect = vi.fn()
     render(
       <ClusterProgressDashboard
         sessionId={'s1' as SessionId}
@@ -107,10 +107,10 @@ describe('ClusterProgressDashboard', () => {
         onSelect={onSelect}
         onAdvance={vi.fn()}
       />,
-    );
-    fireEvent.click(screen.getByText('child1'));
-    expect(onSelect).toHaveBeenCalledWith('child1');
-  });
+    )
+    fireEvent.click(screen.getByText('child1'))
+    expect(onSelect).toHaveBeenCalledWith('child1')
+  })
 
   it('applies the selected highlight to the active card', () => {
     render(
@@ -123,10 +123,10 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    const selected = screen.getByText('child1').closest('button');
-    expect(selected?.className).toContain(MARKER_ACCENT_BG);
-  });
+    )
+    const selected = screen.getByText('child1').closest('button')
+    expect(selected?.className).toContain(MARKER_ACCENT_BG)
+  })
 
   it('does not highlight cards that are not selected', () => {
     render(
@@ -139,10 +139,10 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    const other = screen.getByText('child0').closest('button');
-    expect(other?.className).not.toContain(MARKER_ACCENT_BG);
-  });
+    )
+    const other = screen.getByText('child0').closest('button')
+    expect(other?.className).not.toContain(MARKER_ACCENT_BG)
+  })
 
   it('labels a failed cluster as stalled', () => {
     render(
@@ -155,9 +155,9 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('stalled')).toBeTruthy();
-  });
+    )
+    expect(screen.getByText('stalled')).toBeTruthy()
+  })
 
   it('renders the ordinal badge as index+1 over total per card', () => {
     render(
@@ -170,11 +170,11 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('1/3')).toBeTruthy();
-    expect(screen.getByText('2/3')).toBeTruthy();
-    expect(screen.getByText('3/3')).toBeTruthy();
-  });
+    )
+    expect(screen.getByText('1/3')).toBeTruthy()
+    expect(screen.getByText('2/3')).toBeTruthy()
+    expect(screen.getByText('3/3')).toBeTruthy()
+  })
 
   it('falls back to instructions when a completed cluster has no outputSummary', () => {
     render(
@@ -189,9 +189,9 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('fallback body')).toBeTruthy();
-  });
+    )
+    expect(screen.getByText('fallback body')).toBeTruthy()
+  })
 
   it('renders no body text when there is neither summary nor instructions', () => {
     const bodyless: ClusterDashboardItem = {
@@ -199,7 +199,7 @@ describe('ClusterProgressDashboard', () => {
       index: 0,
       total: 1,
       instructions: null,
-    };
+    }
     render(
       <ClusterProgressDashboard
         sessionId={'s1' as SessionId}
@@ -210,10 +210,10 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    const card = screen.getByText('lonely').closest('button');
-    expect(card?.querySelector('.line-clamp-2')).toBeNull();
-  });
+    )
+    const card = screen.getByText('lonely').closest('button')
+    expect(card?.querySelector('.line-clamp-2')).toBeNull()
+  })
 
   it('renders only the header when there are no items', () => {
     render(
@@ -226,10 +226,10 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByText('cluster progress 0/0')).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
-  });
+    )
+    expect(screen.getByText('cluster progress 0/0')).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
 
   it('tags the container with the session id', () => {
     render(
@@ -242,11 +242,11 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
+    )
     expect(screen.getByTestId('cluster-progress-dashboard').getAttribute('data-session-id')).toBe(
       's1',
-    );
-  });
+    )
+  })
 
   it('shows the advance button while a cluster is still unfinished', () => {
     render(
@@ -259,9 +259,9 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.getByTestId('cluster-advance-button')).toBeTruthy();
-  });
+    )
+    expect(screen.getByTestId('cluster-advance-button')).toBeTruthy()
+  })
 
   it('hides the advance button once every cluster is completed', () => {
     render(
@@ -274,12 +274,12 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={vi.fn()}
       />,
-    );
-    expect(screen.queryByTestId('cluster-advance-button')).toBeNull();
-  });
+    )
+    expect(screen.queryByTestId('cluster-advance-button')).toBeNull()
+  })
 
   it('requires a confirming second click before advancing the first unfinished cluster', () => {
-    const onAdvance = vi.fn();
+    const onAdvance = vi.fn()
     render(
       <ClusterProgressDashboard
         sessionId={'s1' as SessionId}
@@ -290,14 +290,14 @@ describe('ClusterProgressDashboard', () => {
         onSelect={vi.fn()}
         onAdvance={onAdvance}
       />,
-    );
-    const button = screen.getByTestId('cluster-advance-button');
-    fireEvent.click(button);
-    expect(onAdvance).not.toHaveBeenCalled();
-    expect(screen.getByText('advance without marker?')).toBeTruthy();
-    fireEvent.click(button);
-    expect(onAdvance).toHaveBeenCalledWith('child1');
-  });
-});
+    )
+    const button = screen.getByTestId('cluster-advance-button')
+    fireEvent.click(button)
+    expect(onAdvance).not.toHaveBeenCalled()
+    expect(screen.getByText('advance without marker?')).toBeTruthy()
+    fireEvent.click(button)
+    expect(onAdvance).toHaveBeenCalledWith('child1')
+  })
+})
 
-const MARKER_ACCENT_BG = 'bg-merged/10';
+const MARKER_ACCENT_BG = 'bg-merged/10'

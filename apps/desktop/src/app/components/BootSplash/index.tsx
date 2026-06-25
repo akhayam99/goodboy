@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
-import type { BootPhase } from '../../../store';
-import { openUrl } from '../../../shared/lib/editor';
-import { DogMascot } from '../../../shared/components/DogMascot';
+import { useCallback, useEffect, useRef } from 'react'
+import type { BootPhase } from '../../../store'
+import { openUrl } from '../../../shared/lib/editor'
+import { DogMascot } from '../../../shared/components/DogMascot'
 
 const GITHUB_NEW_ISSUE_URL =
-  'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
+  'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure'
 
 const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
   pending: 'starting up',
@@ -15,15 +15,15 @@ const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
   'restoring-session': 'restoring your session',
   ready: 'ready',
   error: 'something went wrong',
-};
+}
 
 type BootSplashProps = {
-  phase: BootPhase;
-  error: string | null;
-  onRetry?: () => void;
-  onSkipProviderDetection?: () => void;
-  onFinished?: () => void;
-};
+  phase: BootPhase
+  error: string | null
+  onRetry?: () => void
+  onSkipProviderDetection?: () => void
+  onFinished?: () => void
+}
 
 export const BootSplash = ({
   phase,
@@ -32,18 +32,18 @@ export const BootSplash = ({
   onSkipProviderDetection,
   onFinished,
 }: BootSplashProps) => {
-  const hasError = error != null;
-  const finishedRef = useRef(false);
+  const hasError = error != null
+  const finishedRef = useRef(false)
 
   useEffect(() => {
     if (finishedRef.current || hasError) {
-      return;
+      return
     }
     if (phase === 'ready') {
-      finishedRef.current = true;
-      onFinished?.();
+      finishedRef.current = true
+      onFinished?.()
     }
-  }, [phase, hasError, onFinished]);
+  }, [phase, hasError, onFinished])
 
   if (hasError) {
     return (
@@ -56,7 +56,7 @@ export const BootSplash = ({
           onSkipProviderDetection={onSkipProviderDetection}
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -70,8 +70,8 @@ export const BootSplash = ({
         {BOOT_PHASE_LABEL[phase]}
       </span>
     </div>
-  );
-};
+  )
+}
 
 function BootBrand() {
   return (
@@ -91,7 +91,7 @@ function BootBrand() {
         </span>
       </div>
     </div>
-  );
+  )
 }
 
 function BootErrorRecovery({
@@ -100,23 +100,23 @@ function BootErrorRecovery({
   onRetry,
   onSkipProviderDetection,
 }: {
-  error: string;
-  phase: BootPhase;
-  onRetry?: () => void;
-  onSkipProviderDetection?: () => void;
+  error: string
+  phase: BootPhase
+  onRetry?: () => void
+  onSkipProviderDetection?: () => void
 }) {
-  const isDetectingCli = phase === 'detecting-cli' || phase === 'error';
+  const isDetectingCli = phase === 'detecting-cli' || phase === 'error'
 
   const openLogs = useCallback(() => {
     void openUrl('tauri://localhost/__log_dir__').catch(() => {
-      void openUrl('about:blank');
-    });
-  }, []);
+      void openUrl('about:blank')
+    })
+  }, [])
 
   const openIssue = useCallback(() => {
-    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``)}`;
-    void openUrl(url);
-  }, [error, phase]);
+    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``)}`
+    void openUrl(url)
+  }, [error, phase])
 
   const category =
     phase === 'migrating'
@@ -129,7 +129,7 @@ function BootErrorRecovery({
             ? 'workspace load'
             : phase === 'restoring-session'
               ? 'session restore'
-              : 'init';
+              : 'init'
 
   return (
     <div
@@ -179,5 +179,5 @@ function BootErrorRecovery({
         </button>
       </div>
     </div>
-  );
+  )
 }

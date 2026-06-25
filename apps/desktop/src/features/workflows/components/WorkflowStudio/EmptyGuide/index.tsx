@@ -1,16 +1,16 @@
-import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, ArrowRight, Layers, Plus } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import type { LucideIcon } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Layers, Plus } from 'lucide-react'
+import { Button } from '@goodboy/ui'
 
 type Props = {
-  readonly onNew: () => void;
-  readonly hasPresets: boolean;
-};
+  readonly onNew: () => void
+  readonly hasPresets: boolean
+}
 
 type GuideStep = {
-  readonly text: string;
-  readonly arrow?: LucideIcon;
-};
+  readonly text: string
+  readonly arrow?: LucideIcon
+}
 
 const STEPS: ReadonlyArray<GuideStep> = [
   {
@@ -24,7 +24,7 @@ const STEPS: ReadonlyArray<GuideStep> = [
     text: 'Drag steps from the Step Library on the right. When it is ready, run it on a session from "Start a workflow".',
     arrow: ArrowRight,
   },
-];
+]
 
 export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
   return (
@@ -46,7 +46,7 @@ export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
 
         <ol className="flex w-full flex-col gap-2.5 text-left">
           {STEPS.map((step, idx) => {
-            const Arrow = step.arrow;
+            const Arrow = step.arrow
             return (
               <li key={idx} className="flex items-start gap-2.5 rounded-lg bg-muted/20 px-3 py-2.5">
                 <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-2xs font-medium text-muted-foreground">
@@ -63,7 +63,7 @@ export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
                   />
                 ) : null}
               </li>
-            );
+            )
           })}
         </ol>
 
@@ -79,5 +79,5 @@ export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

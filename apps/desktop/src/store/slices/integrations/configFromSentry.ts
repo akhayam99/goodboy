@@ -1,5 +1,5 @@
-import type { SentryIntegrationConfig } from '@goodboy/types';
-import type { SentryProject } from '../../../features/integrations/sentry/client';
+import type { SentryIntegrationConfig } from '@goodboy/types'
+import type { SentryProject } from '../../../features/integrations/sentry/client'
 
 export const configFromSentry = (project: SentryProject): SentryIntegrationConfig => {
   return {
@@ -7,5 +7,5 @@ export const configFromSentry = (project: SentryProject): SentryIntegrationConfi
     project: project.slug,
     projectName: project.name,
     orgName: project.organization.name,
-  };
-};
+  }
+}

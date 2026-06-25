@@ -3,36 +3,36 @@
    here grows ::before glow rings or animated borders, it has broken the rule.
 */
 
-import type { AnchorHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ReactNode } from 'react'
 
 function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(' ');
+  return parts.filter(Boolean).join(' ')
 }
 
 /* ----------------------------- Button --------------------------------- */
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
-type ButtonSize = 'md' | 'lg';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost'
+type ButtonSize = 'md' | 'lg'
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
     'bg-primary text-primary-foreground hover:bg-[oklch(0.78_0.11_200)] active:bg-[oklch(0.70_0.11_200)]',
   secondary: 'border border-border bg-subtle text-foreground hover:bg-muted',
   ghost: 'text-muted-foreground hover:text-foreground',
-};
+}
 
 const sizeClass: Record<ButtonSize, string> = {
   md: 'h-9 px-4 text-sm rounded-md',
   lg: 'h-11 px-5 text-[15px] rounded-md',
-};
+}
 
 const baseClass =
-  'inline-flex items-center justify-center gap-1.5 font-medium tracking-[-0.005em] transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
+  'inline-flex items-center justify-center gap-1.5 font-medium tracking-[-0.005em] transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
 
 type LinkButtonProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-};
+  variant?: ButtonVariant
+  size?: ButtonSize
+}
 
 export function LinkButton({
   variant = 'primary',
@@ -42,7 +42,7 @@ export function LinkButton({
 }: LinkButtonProps) {
   return (
     <a className={cn(baseClass, variantClass[variant], sizeClass[size], className)} {...rest} />
-  );
+  )
 }
 
 /* ----------------------------- Eyebrow -------------------------------- */
@@ -59,7 +59,7 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
     >
       {children}
     </p>
-  );
+  )
 }
 
 /* ----------------------------- SectionTitle --------------------------- */
@@ -78,5 +78,5 @@ export function SectionTitle({ children, className }: { children: ReactNode; cla
     >
       {children}
     </h2>
-  );
+  )
 }

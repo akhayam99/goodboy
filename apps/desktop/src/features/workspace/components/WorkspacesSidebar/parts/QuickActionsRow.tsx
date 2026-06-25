@@ -1,20 +1,20 @@
-import { GitPullRequest, Layers, Plug, Sparkles } from 'lucide-react';
-import { useAppStore } from '../../../../../store';
-import { QuickAction } from './QuickAction';
+import { GitPullRequest, Layers, Plug, Sparkles } from 'lucide-react'
+import { useAppStore } from '../../../../../store'
+import { QuickAction } from './QuickAction'
 
 type Props = {
-  onOpenPalette: (initialQuery?: string) => void;
-  onOpenWorkflows: () => void;
-  onOpenLinear: () => void;
-  onOpenSentry: () => void;
-  onOpenGitlab: () => void;
-  onOpenProviders: () => void;
-  onOpenGithub: () => void;
-  linearEnabled: boolean;
-  sentryEnabled: boolean;
-  gitlabEnabled: boolean;
-  skillsEnabled: boolean;
-};
+  onOpenPalette: (initialQuery?: string) => void
+  onOpenWorkflows: () => void
+  onOpenLinear: () => void
+  onOpenSentry: () => void
+  onOpenGitlab: () => void
+  onOpenProviders: () => void
+  onOpenGithub: () => void
+  linearEnabled: boolean
+  sentryEnabled: boolean
+  gitlabEnabled: boolean
+  skillsEnabled: boolean
+}
 
 export const QuickActionsRow = ({
   onOpenPalette,
@@ -31,7 +31,7 @@ export const QuickActionsRow = ({
 }: Props) => {
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
-  );
+  )
   return (
     <div className="flex shrink-0 items-center gap-1 px-2.5 py-2">
       {skillsEnabled ? (
@@ -101,5 +101,5 @@ export const QuickActionsRow = ({
         />
       ) : null}
     </div>
-  );
-};
+  )
+}

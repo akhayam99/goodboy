@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
+import { createHash } from 'node:crypto'
 
-const MAX_SLUG_LENGTH = 40;
+const MAX_SLUG_LENGTH = 40
 
 export const sanitizeSlug = (input: string): string => {
   const cleaned = input
@@ -9,10 +9,10 @@ export const sanitizeSlug = (input: string): string => {
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, MAX_SLUG_LENGTH)
-    .replace(/-+$/, '');
+    .replace(/-+$/, '')
 
   if (cleaned.length === 0) {
-    return createHash('sha256').update(input).digest('hex').slice(0, 8);
+    return createHash('sha256').update(input).digest('hex').slice(0, 8)
   }
-  return cleaned;
-};
+  return cleaned
+}

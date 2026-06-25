@@ -7,46 +7,46 @@ import type {
   WorkspaceId,
   WorkspaceIntegrationId,
   WorkspaceScriptId,
-} from './ids';
-import type { SessionProviderPreference } from './provider-preference';
-import type { ModelEffort } from './provider-registry';
-import type { ClaudePermissionMode } from './permission';
+} from './ids'
+import type { SessionProviderPreference } from './provider-preference'
+import type { ModelEffort } from './provider-registry'
+import type { ClaudePermissionMode } from './permission'
 
-export type WorkspaceKind = 'repo' | 'composite';
+export type WorkspaceKind = 'repo' | 'composite'
 
 export type WorkspaceMember = Readonly<{
-  workspaceId: WorkspaceId;
-  rootPath: string;
-  mountName: string;
-}>;
+  workspaceId: WorkspaceId
+  rootPath: string
+  mountName: string
+}>
 
 export type Workspace = Readonly<{
-  id: WorkspaceId;
-  name: string;
-  rootPath: string;
-  kind?: WorkspaceKind;
-  members?: ReadonlyArray<WorkspaceMember>;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
-  disconnectedAt?: IsoDateTime;
-  lastAccessedAt?: IsoDateTime;
-}>;
+  id: WorkspaceId
+  name: string
+  rootPath: string
+  kind?: WorkspaceKind
+  members?: ReadonlyArray<WorkspaceMember>
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
+  disconnectedAt?: IsoDateTime
+  lastAccessedAt?: IsoDateTime
+}>
 
 export type ContextSlot = Readonly<{
-  key: string;
-  value: string;
-  enabled: boolean;
-}>;
+  key: string
+  value: string
+  enabled: boolean
+}>
 
-export type ContextSlotAuthor = 'user' | 'summarizer';
+export type ContextSlotAuthor = 'user' | 'summarizer'
 
 export type ContextSlotHistoryEntry = Readonly<{
-  id: string;
-  key: string;
-  value: string;
-  author: ContextSlotAuthor;
-  createdAt: IsoDateTime;
-}>;
+  id: string
+  key: string
+  value: string
+  author: ContextSlotAuthor
+  createdAt: IsoDateTime
+}>
 
 export type TurnState =
   | { kind: 'draft' }
@@ -54,118 +54,133 @@ export type TurnState =
   | { kind: 'idle'; lastActivityAt: IsoDateTime }
   | { kind: 'running'; runId: ProviderRunId; startedAt: IsoDateTime }
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
-  | { kind: 'ended'; endedAt: IsoDateTime };
+  | { kind: 'ended'; endedAt: IsoDateTime }
 
-export type WorkflowTriggerMode = 'immediate' | 'manual' | 'after_run';
+export type WorkflowTriggerMode = 'immediate' | 'manual' | 'after_run'
 
 export type WorkflowRun = Readonly<{
-  id: WorkflowRunId;
-  workflowId: WorkflowId;
-  ordinal: number;
-  currentStep: number;
-  autoRun: boolean;
-  triggerMode: WorkflowTriggerMode;
-  chainAfterId?: WorkflowRunId;
-  goal?: string;
-  discardedAt?: IsoDateTime;
-}>;
+  id: WorkflowRunId
+  workflowId: WorkflowId
+  ordinal: number
+  currentStep: number
+  autoRun: boolean
+  triggerMode: WorkflowTriggerMode
+  chainAfterId?: WorkflowRunId
+  goal?: string
+  discardedAt?: IsoDateTime
+}>
 
 export type Session = Readonly<{
-  id: SessionId;
-  workspaceId: WorkspaceId;
-  goal: string;
-  state: TurnState;
-  contextSlots: ReadonlyArray<ContextSlot>;
-  providerPreference: SessionProviderPreference;
-  permissionMode: ClaudePermissionMode;
-  workflowRuns: ReadonlyArray<WorkflowRun>;
-  autoRun: boolean;
-  titleUserEdited: boolean;
-  archivedAt?: IsoDateTime;
-  deletedAt?: IsoDateTime;
-  verbosity?: 'brief' | 'normal' | 'verbose';
-  effort?: ModelEffort;
-  modelOverride?: string;
-  providerOverride?: string;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
-}>;
+  id: SessionId
+  workspaceId: WorkspaceId
+  goal: string
+  state: TurnState
+  contextSlots: ReadonlyArray<ContextSlot>
+  providerPreference: SessionProviderPreference
+  permissionMode: ClaudePermissionMode
+  workflowRuns: ReadonlyArray<WorkflowRun>
+  autoRun: boolean
+  titleUserEdited: boolean
+  archivedAt?: IsoDateTime
+  deletedAt?: IsoDateTime
+  verbosity?: 'brief' | 'normal' | 'verbose'
+  effort?: ModelEffort
+  modelOverride?: string
+  providerOverride?: string
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
+}>
 
 export type WorkspaceScript = Readonly<{
-  id: WorkspaceScriptId;
-  workspaceId: WorkspaceId;
-  name: string;
-  body: string;
-  sortOrder: number;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
-}>;
+  id: WorkspaceScriptId
+  workspaceId: WorkspaceId
+  name: string
+  body: string
+  sortOrder: number
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
+}>
 
-export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab';
+export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab' | 'bitbucket'
 
 export type LinearIntegrationConfig = Readonly<{
-  workspaceUrlKey: string;
-  viewerUserId: string;
-  viewerName: string;
-}>;
+  workspaceUrlKey: string
+  viewerUserId: string
+  viewerName: string
+}>
 
 export type SentryIntegrationConfig = Readonly<{
-  org: string;
-  project: string;
-  projectName?: string;
-  orgName?: string;
-}>;
+  org: string
+  project: string
+  projectName?: string
+  orgName?: string
+}>
 
 export type GitlabIntegrationConfig = Readonly<{
-  userName: string;
-  userId: string;
-  host: string;
-}>;
+  userName: string
+  userId: string
+  host: string
+}>
+
+export type BitbucketIntegrationConfig = Readonly<{
+  userName: string
+  userId: string
+  workspaceSlug: string
+  host: string
+}>
 
 export type WorkspaceIntegrationConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
-  | GitlabIntegrationConfig;
+  | GitlabIntegrationConfig
+  | BitbucketIntegrationConfig
 
 type WorkspaceIntegrationBase = Readonly<{
-  id: WorkspaceIntegrationId;
-  workspaceId: WorkspaceId;
-  credentialKey: string;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
-}>;
+  id: WorkspaceIntegrationId
+  workspaceId: WorkspaceId
+  credentialKey: string
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
+}>
 
 export type LinearWorkspaceIntegration = WorkspaceIntegrationBase &
   Readonly<{
-    provider: 'linear';
-    config: LinearIntegrationConfig;
-  }>;
+    provider: 'linear'
+    config: LinearIntegrationConfig
+  }>
 
 export type SentryWorkspaceIntegration = WorkspaceIntegrationBase &
   Readonly<{
-    provider: 'sentry';
-    config: SentryIntegrationConfig;
-  }>;
+    provider: 'sentry'
+    config: SentryIntegrationConfig
+  }>
 
 export type GitlabWorkspaceIntegration = WorkspaceIntegrationBase &
   Readonly<{
-    provider: 'gitlab';
-    config: GitlabIntegrationConfig;
-  }>;
+    provider: 'gitlab'
+    config: GitlabIntegrationConfig
+  }>
+
+export type BitbucketWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'bitbucket'
+    config: BitbucketIntegrationConfig
+  }>
 
 export type WorkspaceIntegration =
   | LinearWorkspaceIntegration
   | SentryWorkspaceIntegration
-  | GitlabWorkspaceIntegration;
+  | GitlabWorkspaceIntegration
+  | BitbucketWorkspaceIntegration
 
-export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab';
+export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'bitbucket'
 
 export type SessionExternalTask = Readonly<{
-  sessionId: SessionId;
-  provider: SessionExternalTaskProvider;
-  externalId: string;
-  identifier: string;
-  url: string;
-  title: string;
-  createdAt: IsoDateTime;
-}>;
+  sessionId: SessionId
+  provider: SessionExternalTaskProvider
+  externalId: string
+  identifier: string
+  url: string
+  title: string
+  createdAt: IsoDateTime
+}>

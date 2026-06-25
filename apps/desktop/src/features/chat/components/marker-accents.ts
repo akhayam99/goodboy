@@ -5,14 +5,14 @@ export type MarkerType =
   | 'resolve'
   | 'wontfix'
   | 'error'
-  | 'operations';
+  | 'operations'
 
 export type MarkerAccent = {
-  readonly border: string;
-  readonly bg: string;
-  readonly text: string;
-  readonly icon: string;
-};
+  readonly border: string
+  readonly bg: string
+  readonly text: string
+  readonly icon: string
+}
 
 export const MARKER_ACCENT: Readonly<Record<MarkerType, MarkerAccent>> = {
   plan: {
@@ -57,4 +57,4 @@ export const MARKER_ACCENT: Readonly<Record<MarkerType, MarkerAccent>> = {
     text: 'text-foreground/80',
     icon: 'text-primary/60',
   },
-};
+}

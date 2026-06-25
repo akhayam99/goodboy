@@ -1,44 +1,44 @@
-import { useState } from 'react';
-import { Button, Dialog } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useState } from 'react'
+import { Button, Dialog } from '@goodboy/ui'
+import type { Session, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 function unwrapError(err: unknown): string {
   if (err instanceof Error) {
-    return err.message;
+    return err.message
   }
   if (typeof err === 'object' && err !== null && 'message' in err) {
-    const { message } = err as Record<string, unknown>;
+    const { message } = err as Record<string, unknown>
     if (typeof message === 'string') {
-      return message;
+      return message
     }
   }
-  return String(err);
+  return String(err)
 }
 
 type Props = {
-  session: Session;
-  open: boolean;
-  onClose: () => void;
-};
+  session: Session
+  open: boolean
+  onClose: () => void
+}
 
 export const ArchiveSessionDialog = ({ session, open, onClose }: Props) => {
-  const archiveTask = useAppStore((s) => s.archiveTask);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const archiveTask = useAppStore((s) => s.archiveTask)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const onConfirm = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await archiveTask(session.id as SessionId);
-      onClose();
+      await archiveTask(session.id as SessionId)
+      onClose()
     } catch (err) {
-      setError(unwrapError(err));
+      setError(unwrapError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <Dialog
@@ -63,5 +63,5 @@ export const ArchiveSessionDialog = ({ session, open, onClose }: Props) => {
         <span className="font-mono text-foreground">{session.goal}</span>
       </div>
     </Dialog>
-  );
-};
+  )
+}

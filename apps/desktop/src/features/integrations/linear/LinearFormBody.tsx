@@ -1,52 +1,52 @@
-import { useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
-import { useAppStore } from '../../../store';
-import { formatError } from '../../../shared/lib/errors';
+import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types'
+import { Button, Input } from '@goodboy/ui'
+import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react'
+import { useAppStore } from '../../../store'
+import { formatError } from '../../../shared/lib/errors'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  onConnected?: () => void;
-};
+  workspaceId: WorkspaceId
+  onConnected?: () => void
+}
 
 export const LinearFormBody = ({ workspaceId, onConnected }: Props) => {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
-  const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null;
-  const connectLinear = useAppStore((s) => s.connectLinear);
-  const disconnectLinear = useAppStore((s) => s.disconnectLinear);
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []))
+  const linear = integrations.find((i) => i.provider === 'linear') ?? null
+  const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null
+  const connectLinear = useAppStore((s) => s.connectLinear)
+  const disconnectLinear = useAppStore((s) => s.disconnectLinear)
 
-  const [token, setToken] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const onConnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await connectLinear(workspaceId, token.trim());
-      setToken('');
-      onConnected?.();
+      await connectLinear(workspaceId, token.trim())
+      setToken('')
+      onConnected?.()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onDisconnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await disconnectLinear(workspaceId);
+      await disconnectLinear(workspaceId)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -116,5 +116,5 @@ export const LinearFormBody = ({ workspaceId, onConnected }: Props) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

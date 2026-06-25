@@ -1,29 +1,29 @@
-import type { ReactNode } from 'react';
-import { cn } from '../cn';
-import { tintClasses, type Tone } from '../tint';
+import type { ReactNode } from 'react'
+import { cn } from '../cn'
+import { tintClasses, type Tone } from '../tint'
 
 export type ChipProps = {
-  readonly tone: Tone;
-  readonly label?: ReactNode;
-  readonly icon?: ReactNode;
-  readonly trailing?: ReactNode;
-  readonly size?: 'xs' | 'sm' | 'md';
-  readonly shape?: 'pill' | 'badge';
-  readonly bordered?: boolean;
-  readonly emphasis?: 'soft' | 'strong';
-  readonly as?: 'span' | 'button';
-  readonly title?: string;
-  readonly ariaLabel?: string;
-  readonly testId?: string;
-  readonly onClick?: () => void;
-  readonly className?: string;
-};
+  readonly tone: Tone
+  readonly label?: ReactNode
+  readonly icon?: ReactNode
+  readonly trailing?: ReactNode
+  readonly size?: 'xs' | 'sm' | 'md'
+  readonly shape?: 'pill' | 'badge'
+  readonly bordered?: boolean
+  readonly emphasis?: 'soft' | 'strong'
+  readonly as?: 'span' | 'button'
+  readonly title?: string
+  readonly ariaLabel?: string
+  readonly testId?: string
+  readonly onClick?: () => void
+  readonly className?: string
+}
 
 const sizeClasses: Record<'xs' | 'sm' | 'md', string> = {
   xs: 'px-1.5 py-0.5 text-[11px]',
   sm: 'text-2xs px-2 py-0.5',
   md: 'text-xs px-2 py-1',
-};
+}
 
 const strongRing: Record<Tone, string> = {
   success: 'ring-success/40',
@@ -34,7 +34,7 @@ const strongRing: Record<Tone, string> = {
   accent: 'ring-accent/40',
   merged: 'ring-merged/40',
   neutral: 'ring-border-soft',
-};
+}
 
 export const Chip = ({
   tone,
@@ -52,7 +52,7 @@ export const Chip = ({
   onClick,
   className,
 }: ChipProps) => {
-  const tint = tintClasses(tone);
+  const tint = tintClasses(tone)
   const classes = cn(
     'inline-flex items-center gap-1 font-medium',
     shape === 'pill' ? 'rounded-full' : 'rounded-md',
@@ -62,7 +62,7 @@ export const Chip = ({
     bordered ? 'ring-1' : '',
     bordered ? (emphasis === 'strong' ? strongRing[tone] : tint.ring) : '',
     className,
-  );
+  )
 
   const inner = (
     <>
@@ -70,7 +70,7 @@ export const Chip = ({
       {label}
       {trailing}
     </>
-  );
+  )
 
   if (as === 'button' || onClick) {
     return (
@@ -84,12 +84,12 @@ export const Chip = ({
       >
         {inner}
       </button>
-    );
+    )
   }
 
   return (
     <span title={title} aria-label={ariaLabel} data-testid={testId} className={classes}>
       {inner}
     </span>
-  );
-};
+  )
+}

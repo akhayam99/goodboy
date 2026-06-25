@@ -3,4 +3,4 @@ export {
   type RecordSummarizerInput,
   type RecordTurnInput,
   type TelemetryRecorderDeps,
-} from './recorder';
+} from './recorder'

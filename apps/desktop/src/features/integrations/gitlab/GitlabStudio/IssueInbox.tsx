@@ -1,32 +1,32 @@
-import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search } from 'lucide-react';
-import { issueIdentifier, type GitlabIssue } from '../client';
-import type { GitlabIssueGroup } from './useGitlabIssues';
+import { useMemo, useState } from 'react'
+import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui'
+import { Inbox, MessagesSquare, Search } from 'lucide-react'
+import { issueIdentifier, type GitlabIssue } from '../client'
+import type { GitlabIssueGroup } from './useGitlabIssues'
 
 type Props = {
-  readonly groups: ReadonlyArray<GitlabIssueGroup>;
-  readonly focusedIssueId: number | null;
-  readonly onSelect: (issue: GitlabIssue) => void;
-  readonly loading: boolean;
-  readonly error: string | null;
-};
+  readonly groups: ReadonlyArray<GitlabIssueGroup>
+  readonly focusedIssueId: number | null
+  readonly onSelect: (issue: GitlabIssue) => void
+  readonly loading: boolean
+  readonly error: string | null
+}
 
 function shortDate(iso: string): string {
-  const d = new Date(iso);
+  const d = new Date(iso)
   if (Number.isNaN(d.getTime())) {
-    return '';
+    return ''
   }
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }: Props) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim().toLowerCase()
     if (!q) {
-      return groups;
+      return groups
     }
     return groups
       .map((g) => ({
@@ -38,8 +38,8 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
             r.issue.title.toLowerCase().includes(q),
         ),
       }))
-      .filter((g) => g.rows.length > 0);
-  }, [groups, query]);
+      .filter((g) => g.rows.length > 0)
+  }, [groups, query])
 
   return (
     <div className="flex h-full flex-col">
@@ -105,7 +105,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                 />
                 <ul className="flex flex-col gap-0.5">
                   {group.rows.map((row) => {
-                    const active = row.issue.id === focusedIssueId;
+                    const active = row.issue.id === focusedIssueId
                     return (
                       <li key={row.issue.id}>
                         <button
@@ -140,7 +140,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                           ) : null}
                         </button>
                       </li>
-                    );
+                    )
                   })}
                 </ul>
               </div>
@@ -149,5 +149,5 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
         </ScrollFade>
       )}
     </div>
-  );
-};
+  )
+}

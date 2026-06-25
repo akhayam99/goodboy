@@ -1,16 +1,16 @@
-import { useMemo } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import type { BudgetAlert, TelemetrySummary } from '@goodboy/types';
-import type { ProviderSpendEntry } from '../../../../store';
-import { brandColor } from '../../../providers/components/provider-brand';
-import { AlertBanner } from './AlertBanner';
-import { ModelTable } from './ModelTable';
-import { PanelShell } from './PanelShell';
-import { ProviderIcon } from './ProviderIcon';
-import { SpendBar } from './SpendBar';
-import { Sparkline } from './Sparkline';
-import { TurnsTable } from './TurnsTable';
-import { Widget } from './Widget';
+import { useMemo } from 'react'
+import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui'
+import type { BudgetAlert, TelemetrySummary } from '@goodboy/types'
+import type { ProviderSpendEntry } from '../../../../store'
+import { brandColor } from '../../../providers/components/provider-brand'
+import { AlertBanner } from './AlertBanner'
+import { ModelTable } from './ModelTable'
+import { PanelShell } from './PanelShell'
+import { ProviderIcon } from './ProviderIcon'
+import { SpendBar } from './SpendBar'
+import { Sparkline } from './Sparkline'
+import { TurnsTable } from './TurnsTable'
+import { Widget } from './Widget'
 import {
   buildModelBreakdown,
   chronologicalTurnCosts,
@@ -19,17 +19,17 @@ import {
   toProviderId,
   type BudgetScope,
   type WorkspaceTurn,
-} from './lib';
+} from './lib'
 
 type Props = {
-  readonly workspaceSummary: TelemetrySummary | null;
-  readonly providers: ReadonlyArray<ProviderSpendEntry>;
-  readonly turns: ReadonlyArray<WorkspaceTurn>;
-  readonly sessionCount: number;
-  readonly alerts: ReadonlyArray<BudgetAlert>;
-  readonly onDismissAlert: (id: string) => void;
-  readonly onSelect: (scope: BudgetScope) => void;
-};
+  readonly workspaceSummary: TelemetrySummary | null
+  readonly providers: ReadonlyArray<ProviderSpendEntry>
+  readonly turns: ReadonlyArray<WorkspaceTurn>
+  readonly sessionCount: number
+  readonly alerts: ReadonlyArray<BudgetAlert>
+  readonly onDismissAlert: (id: string) => void
+  readonly onSelect: (scope: BudgetScope) => void
+}
 
 export const OverviewPanel = ({
   workspaceSummary,
@@ -40,16 +40,16 @@ export const OverviewPanel = ({
   onDismissAlert,
   onSelect,
 }: Props) => {
-  const records = useMemo(() => turns.map((t) => t.record), [turns]);
-  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
-  const totalTokens = (workspaceSummary?.inputTokens ?? 0) + (workspaceSummary?.outputTokens ?? 0);
-  const recordCount = workspaceSummary?.recordCount ?? records.length;
-  const avgPerTurn = recordCount > 0 ? workspaceCost / recordCount : 0;
+  const records = useMemo(() => turns.map((t) => t.record), [turns])
+  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0
+  const totalTokens = (workspaceSummary?.inputTokens ?? 0) + (workspaceSummary?.outputTokens ?? 0)
+  const recordCount = workspaceSummary?.recordCount ?? records.length
+  const avgPerTurn = recordCount > 0 ? workspaceCost / recordCount : 0
 
-  const models = useMemo(() => buildModelBreakdown(records), [records]);
-  const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
-  const totalSpend = providers.reduce((sum, p) => sum + p.spentUsd, 0);
-  const showProvider = providers.length >= 2;
+  const models = useMemo(() => buildModelBreakdown(records), [records])
+  const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records])
+  const totalSpend = providers.reduce((sum, p) => sum + p.spentUsd, 0)
+  const showProvider = providers.length >= 2
 
   return (
     <PanelShell
@@ -75,7 +75,7 @@ export const OverviewPanel = ({
           <Widget label="spend by provider" hint="share of workspace total">
             <div className="flex flex-col gap-3">
               {providers.map((entry) => {
-                const id = toProviderId(entry.provider);
+                const id = toProviderId(entry.provider)
                 return (
                   <SpendBar
                     key={entry.provider}
@@ -86,7 +86,7 @@ export const OverviewPanel = ({
                     icon={<ProviderIcon provider={entry.provider} size={14} />}
                     onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
                   />
-                );
+                )
               })}
             </div>
           </Widget>
@@ -103,5 +103,5 @@ export const OverviewPanel = ({
 
       <TurnsTable turns={turns} showProvider={showProvider} showSession />
     </PanelShell>
-  );
-};
+  )
+}

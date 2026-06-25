@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type {
   GhTokenStatus,
   GitlabIntegrationConfig,
@@ -9,90 +9,90 @@ import type {
   VerbosityLevel,
   WorkspaceId,
   WorkspaceIntegration,
-} from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui';
-import { Check, GitBranch, Unplug } from 'lucide-react';
-import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
-import { ProviderChip } from '../../../../features/providers/components/ProviderChip';
-import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
-import { ScriptsPanel } from '../../../../features/scripts';
-import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
-import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
-import { ConnectSentryDialog } from '../../../../features/integrations/sentry/ConnectSentryDialog';
-import { ConnectGitlabDialog } from '../../../../features/integrations/gitlab/ConnectGitlabDialog';
-import { ConnectGithubDialog } from '../../../../features/integrations/github/ConnectGithubDialog';
-import { ghStatus } from '../../../../features/github/github';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
-import { formatError } from '../../../../shared/lib/errors';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
-import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+} from '@goodboy/types'
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types'
+import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui'
+import { Check, GitBranch, Unplug } from 'lucide-react'
+import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants'
+import { ProviderChip } from '../../../../features/providers/components/ProviderChip'
+import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel'
+import { ScriptsPanel } from '../../../../features/scripts'
+import { VerbositySelect } from '../../../../features/session/components/VerbositySelect'
+import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog'
+import { ConnectSentryDialog } from '../../../../features/integrations/sentry/ConnectSentryDialog'
+import { ConnectGitlabDialog } from '../../../../features/integrations/gitlab/ConnectGitlabDialog'
+import { ConnectGithubDialog } from '../../../../features/integrations/github/ConnectGithubDialog'
+import { ghStatus } from '../../../../features/github/github'
+import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch'
+import { formatError } from '../../../../shared/lib/errors'
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings'
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly initialSection?: string;
-  readonly requestClose: () => void;
-};
+  readonly workspaceId: WorkspaceId
+  readonly initialSection?: string
+  readonly requestClose: () => void
+}
 
 const WORKSPACE_PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
   'anthropic',
   'cursor',
   'codex',
   'gemini',
-];
+]
 
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const saveSetting = useAppStore((s) => s.saveSetting);
-  const disconnect = useAppStore((s) => s.deleteWorkspace);
-  const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
-  const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
+  const loadSetting = useAppStore((s) => s.loadSetting)
+  const saveSetting = useAppStore((s) => s.saveSetting)
+  const disconnect = useAppStore((s) => s.deleteWorkspace)
+  const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null)
+  const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides)
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
-  const { showToast } = useToast();
+  )
+  const { showToast } = useToast()
 
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
 
-  const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({})
 
-  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
+  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal'
   const defaultProvider =
-    wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const scoutFanout = wsOverrides?.scoutFanout ?? false;
+    wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider
+  const scoutFanout = wsOverrides?.scoutFanout ?? false
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
-      const value = v ?? DEFAULT_BRANCH_PREFIX;
-      setBranchPrefix(value);
-      setSavedBranchPrefix(value);
-    });
-  }, [workspaceId, loadSetting]);
+      const value = v ?? DEFAULT_BRANCH_PREFIX
+      setBranchPrefix(value)
+      setSavedBranchPrefix(value)
+    })
+  }, [workspaceId, loadSetting])
 
   useEffect(() => {
     if (!initialSection) {
-      return;
+      return
     }
-    anchorsRef.current[initialSection]?.scrollIntoView({ block: 'start' });
-  }, [initialSection]);
+    anchorsRef.current[initialSection]?.scrollIntoView({ block: 'start' })
+  }, [initialSection])
 
   const persistOverrides = async (
     partial: Partial<{
-      defaultProviderId: ProviderId | null;
-      defaultVerbosity: VerbosityLevel;
-      scoutFanout: boolean;
+      defaultProviderId: ProviderId | null
+      defaultVerbosity: VerbosityLevel
+      scoutFanout: boolean
     }>,
     successMessage: string,
   ) => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
       await storeSetWorkspaceOverrides(workspaceId, {
         defaultProviderId: wsOverrides?.defaultProviderId ?? null,
@@ -103,57 +103,57 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         providerBindings: wsOverrides?.providerBindings ?? null,
         scoutFanout,
         ...partial,
-      });
-      showToast('success', successMessage);
+      })
+      showToast('success', successMessage)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const commitBranchPrefix = async () => {
-    const next = branchPrefix.trim() || DEFAULT_BRANCH_PREFIX;
+    const next = branchPrefix.trim() || DEFAULT_BRANCH_PREFIX
     if (next === savedBranchPrefix) {
-      setBranchPrefix(next);
-      return;
+      setBranchPrefix(next)
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await saveSetting(settingBranchPrefix(workspaceId), next);
-      setBranchPrefix(next);
-      setSavedBranchPrefix(next);
-      showToast('success', 'branch prefix saved');
+      await saveSetting(settingBranchPrefix(workspaceId), next)
+      setBranchPrefix(next)
+      setSavedBranchPrefix(next)
+      showToast('success', 'branch prefix saved')
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onDisconnect = async () => {
-    setDisconnecting(true);
-    setError(null);
+    setDisconnecting(true)
+    setError(null)
     try {
-      await disconnect(workspaceId);
-      requestClose();
+      await disconnect(workspaceId)
+      requestClose()
     } catch (err) {
-      setError(formatError(err));
-      setDisconnecting(false);
+      setError(formatError(err))
+      setDisconnecting(false)
     }
-  };
+  }
 
   const sanitized = (input: string): string =>
     input
       .toLowerCase()
       .replace(/[^a-z0-9-]+/g, '')
       .replace(/^-+/, '')
-      .slice(0, 16);
+      .slice(0, 16)
 
   const anchor = (id: string) => (el: HTMLDivElement | null) => {
-    anchorsRef.current[id] = el;
-  };
+    anchorsRef.current[id] = el
+  }
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
@@ -169,7 +169,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                 onBlur={() => void commitBranchPrefix()}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    void commitBranchPrefix();
+                    void commitBranchPrefix()
                   }
                 }}
                 placeholder={DEFAULT_BRANCH_PREFIX}
@@ -322,14 +322,14 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         {error ? <p className="pt-4 text-xs text-danger">{error}</p> : null}
       </div>
     </ScrollFade>
-  );
-};
+  )
+}
 
 function LinearRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
-  const config = linear ? (linear.config as LinearIntegrationConfig) : null;
-  const [open, setOpen] = useState(false);
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []))
+  const linear = integrations.find((i) => i.provider === 'linear') ?? null
+  const config = linear ? (linear.config as LinearIntegrationConfig) : null
+  const [open, setOpen] = useState(false)
 
   return (
     <FieldRow
@@ -345,16 +345,16 @@ function LinearRow({ workspaceId }: { workspaceId: WorkspaceId }) {
       </Button>
       <ConnectLinearDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
     </FieldRow>
-  );
+  )
 }
 
 function SentryRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []))
   const sentry =
     (integrations.find((i) => i.provider === 'sentry') as
       | (WorkspaceIntegration & { config: SentryIntegrationConfig })
-      | undefined) ?? null;
-  const [open, setOpen] = useState(false);
+      | undefined) ?? null
+  const [open, setOpen] = useState(false)
 
   return (
     <FieldRow
@@ -370,14 +370,14 @@ function SentryRow({ workspaceId }: { workspaceId: WorkspaceId }) {
       </Button>
       <ConnectSentryDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
     </FieldRow>
-  );
+  )
 }
 
 function GitlabRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const gitlab = integrations.find((i) => i.provider === 'gitlab') ?? null;
-  const config = gitlab ? (gitlab.config as GitlabIntegrationConfig) : null;
-  const [open, setOpen] = useState(false);
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []))
+  const gitlab = integrations.find((i) => i.provider === 'gitlab') ?? null
+  const config = gitlab ? (gitlab.config as GitlabIntegrationConfig) : null
+  const [open, setOpen] = useState(false)
 
   return (
     <FieldRow
@@ -393,31 +393,31 @@ function GitlabRow({ workspaceId }: { workspaceId: WorkspaceId }) {
       </Button>
       <ConnectGitlabDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
     </FieldRow>
-  );
+  )
 }
 
 function GithubRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const [status, setStatus] = useState<GhTokenStatus | null>(null);
-  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<GhTokenStatus | null>(null)
+  const [open, setOpen] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
-      setStatus(await ghStatus(workspaceId));
+      setStatus(await ghStatus(workspaceId))
     } catch {
-      setStatus(null);
+      setStatus(null)
     }
-  }, [workspaceId]);
+  }, [workspaceId])
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refresh()
+  }, [refresh])
 
-  const scoped = status?.scoped ?? false;
+  const scoped = status?.scoped ?? false
   const subtitle = scoped
     ? `Connected as ${status?.user ?? '(unknown)'} · this workspace`
     : status?.user
       ? `Using system gh (${status.user}). Connect a token to override.`
-      : 'Resolve and act on pull requests.';
+      : 'Resolve and act on pull requests.'
 
   return (
     <FieldRow label="GitHub" help={subtitle}>
@@ -428,10 +428,10 @@ function GithubRow({ workspaceId }: { workspaceId: WorkspaceId }) {
         workspaceId={workspaceId}
         open={open}
         onClose={() => {
-          setOpen(false);
-          void refresh();
+          setOpen(false)
+          void refresh()
         }}
       />
     </FieldRow>
-  );
+  )
 }

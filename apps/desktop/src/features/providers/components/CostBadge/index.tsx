@@ -1,14 +1,14 @@
-import { cn, formatUsd } from '@goodboy/ui';
+import { cn, formatUsd } from '@goodboy/ui'
 
 export type Props = {
-  readonly value: number;
-  readonly className?: string;
-  readonly title?: string;
-};
+  readonly value: number
+  readonly className?: string
+  readonly title?: string
+}
 
 export const CostBadge = ({ value, className, title }: Props) => {
-  const formatted = formatUsd(value);
-  const split = splitDollarsCents(formatted);
+  const formatted = formatUsd(value)
+  const split = splitDollarsCents(formatted)
   return (
     <span className={cn('inline-flex items-baseline tabular-nums', className)} title={title}>
       {split ? (
@@ -20,13 +20,13 @@ export const CostBadge = ({ value, className, title }: Props) => {
         <span>{formatted}</span>
       )}
     </span>
-  );
-};
+  )
+}
 
 function splitDollarsCents(formatted: string): { dollars: string; cents: string } | null {
-  const m = formatted.match(/^(\$\d+)(\.\d+)$/);
+  const m = formatted.match(/^(\$\d+)(\.\d+)$/)
   if (!m) {
-    return null;
+    return null
   }
-  return { dollars: m[1]!, cents: m[2]! };
+  return { dollars: m[1]!, cents: m[2]! }
 }

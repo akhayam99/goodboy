@@ -1,16 +1,16 @@
-import type { SessionId } from '@goodboy/types';
-import { recordOutcome } from './recordOutcome';
-import type { GetFn, SetFn } from './types';
+import type { SessionId } from '@goodboy/types'
+import { recordOutcome } from './recordOutcome'
+import type { GetFn, SetFn } from './types'
 
 export const dismissSessionNudge = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, outcome: 'accepted' | 'dismissed' = 'dismissed') => {
-    const nudge = get().sessionNudges[sessionId] ?? null;
+    const nudge = get().sessionNudges[sessionId] ?? null
     if (!nudge) {
-      return;
+      return
     }
     set((state) => ({
       sessionNudges: { ...state.sessionNudges, [sessionId]: null },
-    }));
-    await recordOutcome(nudge.id, outcome);
-  };
-};
+    }))
+    await recordOutcome(nudge.id, outcome)
+  }
+}

@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/core';
-import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
-import type { GetFn, SetFn } from './types';
+import { invoke } from '@tauri-apps/api/core'
+import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types'
+import type { GetFn, SetFn } from './types'
 
 const EMPTY_OVERRIDE: OverrideSettings = {
   defaultProviderId: null,
@@ -10,7 +10,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   scoutFanout: null,
-};
+}
 
 export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {
   return async (
@@ -18,20 +18,20 @@ export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {
     providerId: ProviderId,
     credentialId: string | null,
   ): Promise<void> => {
-    const current = get().workspaceOverrides[workspaceId] ?? EMPTY_OVERRIDE;
-    const bindings = { ...(current.providerBindings ?? {}) };
+    const current = get().workspaceOverrides[workspaceId] ?? EMPTY_OVERRIDE
+    const bindings = { ...(current.providerBindings ?? {}) }
     if (credentialId === null) {
-      delete bindings[providerId];
+      delete bindings[providerId]
     } else {
-      bindings[providerId] = credentialId;
+      bindings[providerId] = credentialId
     }
     const next: OverrideSettings = {
       ...current,
       providerBindings: Object.keys(bindings).length > 0 ? bindings : null,
-    };
-    await invoke('set_workspace_overrides', { workspaceId, overrides: next });
+    }
+    await invoke('set_workspace_overrides', { workspaceId, overrides: next })
     set((state) => ({
       workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: next },
-    }));
-  };
-};
+    }))
+  }
+}

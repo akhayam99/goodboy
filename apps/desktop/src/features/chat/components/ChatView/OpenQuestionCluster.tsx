@@ -1,37 +1,37 @@
-import { useCallback } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { OpenQuestion, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useCallback } from 'react'
+import { ArrowRight } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { OpenQuestion, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 import {
   deriveDraftAnswer,
   useOpenQuestions,
-} from '../../../context/components/QuestionsTab/useOpenQuestions';
-import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
+} from '../../../context/components/QuestionsTab/useOpenQuestions'
+import { OpenQuestionInlineCard } from './OpenQuestionInlineCard'
 
 type Props = {
-  questions: ReadonlyArray<OpenQuestion>;
-  sessionId: SessionId;
-};
+  questions: ReadonlyArray<OpenQuestion>
+  sessionId: SessionId
+}
 
 export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
-  const drafts = useOpenQuestions((s) => s.drafts);
-  const flashAnswered = useOpenQuestions((s) => s.flashAnswered);
-  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
+  const drafts = useOpenQuestions((s) => s.drafts)
+  const flashAnswered = useOpenQuestions((s) => s.flashAnswered)
+  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions)
 
   const pendingPairs = questions
     .filter((q) => q.status !== 'answered')
     .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }))
-    .filter((pair) => pair.answer.length > 0);
-  const targetAgentId = questions[0]?.createdByAgentId ?? null;
+    .filter((pair) => pair.answer.length > 0)
+  const targetAgentId = questions[0]?.createdByAgentId ?? null
 
   const handleSubmit = useCallback(async () => {
     if (pendingPairs.length === 0) {
-      return;
+      return
     }
-    flashAnswered(pendingPairs.map((pair) => pair.id));
-    await answerOpenQuestions(sessionId, pendingPairs, targetAgentId);
-  }, [pendingPairs, flashAnswered, answerOpenQuestions, sessionId, targetAgentId]);
+    flashAnswered(pendingPairs.map((pair) => pair.id))
+    await answerOpenQuestions(sessionId, pendingPairs, targetAgentId)
+  }, [pendingPairs, flashAnswered, answerOpenQuestions, sessionId, targetAgentId])
 
   return (
     <div className="flex flex-col gap-2">
@@ -60,5 +60,5 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
         </button>
       )}
     </div>
-  );
-};
+  )
+}

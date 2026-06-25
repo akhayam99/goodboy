@@ -1,22 +1,22 @@
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
 
 type GuideStep = {
-  readonly title: string;
-  readonly body: string;
-};
+  readonly title: string
+  readonly body: string
+}
 
 export type ProviderGuide = {
-  readonly headline: string;
-  readonly subscription: string;
-  readonly steps: ReadonlyArray<GuideStep>;
-  readonly docsUrl: string;
-  readonly docsLabel: string;
-};
+  readonly headline: string
+  readonly subscription: string
+  readonly steps: ReadonlyArray<GuideStep>
+  readonly docsUrl: string
+  readonly docsLabel: string
+}
 
-const ANTHROPIC_DOCS = 'https://docs.claude.com/en/docs/claude-code/overview';
-const CURSOR_DOCS = 'https://docs.cursor.com/en/cli/installation';
-const CODEX_DOCS = 'https://github.com/openai/codex#installation';
-const GEMINI_DOCS = 'https://github.com/google-gemini/gemini-cli#installation';
+const ANTHROPIC_DOCS = 'https://docs.claude.com/en/docs/claude-code/overview'
+const CURSOR_DOCS = 'https://docs.cursor.com/en/cli/installation'
+const CODEX_DOCS = 'https://github.com/openai/codex#installation'
+const GEMINI_DOCS = 'https://github.com/google-gemini/gemini-cli#installation'
 
 const INSTALL_GUIDES: Record<ProviderId, ProviderGuide> = {
   anthropic: {
@@ -99,7 +99,7 @@ const INSTALL_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Gemini CLI docs',
   },
-};
+}
 
 const LOGIN_GUIDES: Record<ProviderId, ProviderGuide> = {
   anthropic: {
@@ -166,7 +166,7 @@ const LOGIN_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Gemini CLI auth',
   },
-};
+}
 
 const LOGOUT_GUIDES: Record<ProviderId, ProviderGuide> = {
   anthropic: {
@@ -217,17 +217,17 @@ const LOGOUT_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Gemini CLI docs',
   },
-};
+}
 
 export const guideFor = (
   providerId: ProviderId,
   action: ProviderLifecycleAction,
 ): ProviderGuide => {
   if (action === 'install') {
-    return INSTALL_GUIDES[providerId];
+    return INSTALL_GUIDES[providerId]
   }
   if (action === 'login') {
-    return LOGIN_GUIDES[providerId];
+    return LOGIN_GUIDES[providerId]
   }
-  return LOGOUT_GUIDES[providerId];
-};
+  return LOGOUT_GUIDES[providerId]
+}

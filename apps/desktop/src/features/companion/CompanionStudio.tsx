@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react';
-import { Skeleton, cn } from '@goodboy/ui';
-import { StudioShell } from '../../shared/components/StudioShell';
-import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
-import { clearMobileSharedSessions } from './mobileConfinement';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react'
+import { Skeleton, cn } from '@goodboy/ui'
+import { StudioShell } from '../../shared/components/StudioShell'
+import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge'
+import { clearMobileSharedSessions } from './mobileConfinement'
 
 type Props = {
-  readonly onClose: () => void;
-};
+  readonly onClose: () => void
+}
 
 function barColorClass(remaining: number, total: number): string {
-  const ratio = total > 0 ? remaining / total : 0;
-  if (ratio <= 0.15) return 'bg-danger';
-  if (ratio <= 0.35) return 'bg-warning';
-  return 'bg-success';
+  const ratio = total > 0 ? remaining / total : 0
+  if (ratio <= 0.15) return 'bg-danger'
+  if (ratio <= 0.35) return 'bg-warning'
+  return 'bg-success'
 }
 
 /**
@@ -22,72 +22,72 @@ function barColorClass(remaining: number, total: number): string {
  * an auto-reminting countdown bar, and lets the human disconnect a paired phone.
  */
 export const CompanionStudio = ({ onClose }: Props) => {
-  const [info, setInfo] = useState<QrInfo | null>(null);
-  const [status, setStatus] = useState<BridgeStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [revoking, setRevoking] = useState(false);
-  const [remaining, setRemaining] = useState(0);
-  const totalRef = useRef(0);
+  const [info, setInfo] = useState<QrInfo | null>(null)
+  const [status, setStatus] = useState<BridgeStatus | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [revoking, setRevoking] = useState(false)
+  const [remaining, setRemaining] = useState(0)
+  const totalRef = useRef(0)
 
   const refreshStatus = useCallback(async () => {
     try {
-      setStatus(await bridgeStatus());
+      setStatus(await bridgeStatus())
     } catch {
-      setStatus(null);
+      setStatus(null)
     }
-  }, []);
+  }, [])
 
   const mint = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const next = await bridgeStart();
-      totalRef.current = next.expiresInSecs;
-      setRemaining(next.expiresInSecs);
-      setInfo(next);
-      await refreshStatus();
+      const next = await bridgeStart()
+      totalRef.current = next.expiresInSecs
+      setRemaining(next.expiresInSecs)
+      setInfo(next)
+      await refreshStatus()
     } catch (e) {
-      setError(String(e));
-      setInfo(null);
+      setError(String(e))
+      setInfo(null)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [refreshStatus]);
+  }, [refreshStatus])
 
   const revoke = useCallback(async () => {
-    setRevoking(true);
-    setError(null);
+    setRevoking(true)
+    setError(null)
     try {
-      await bridgeRevoke();
-      clearMobileSharedSessions();
-      window.dispatchEvent(new CustomEvent('goodboy:bridge-paired-changed'));
-      await mint();
+      await bridgeRevoke()
+      clearMobileSharedSessions()
+      window.dispatchEvent(new CustomEvent('goodboy:bridge-paired-changed'))
+      await mint()
     } catch (e) {
-      setError(String(e));
+      setError(String(e))
     } finally {
-      setRevoking(false);
+      setRevoking(false)
     }
-  }, [mint]);
+  }, [mint])
 
   useEffect(() => {
-    void mint();
-  }, [mint]);
+    void mint()
+  }, [mint])
 
   useEffect(() => {
-    if (!info) return;
-    const id = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
-    return () => clearInterval(id);
-  }, [info]);
+    if (!info) return
+    const id = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [info])
 
   useEffect(() => {
     if (info && remaining === 0 && !loading) {
-      void mint();
+      void mint()
     }
-  }, [remaining, info, loading, mint]);
+  }, [remaining, info, loading, mint])
 
-  const enrolled = status?.enrolledCount ?? 0;
-  const total = totalRef.current || 1;
+  const enrolled = status?.enrolledCount ?? 0
+  const total = totalRef.current || 1
 
   return (
     <StudioShell
@@ -206,5 +206,5 @@ export const CompanionStudio = ({ onClose }: Props) => {
         </div>
       )}
     </StudioShell>
-  );
-};
+  )
+}

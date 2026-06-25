@@ -1,11 +1,11 @@
-import { addTerminalTab } from './addTerminalTab';
-import { closeSessionTerminals } from './closeSessionTerminals';
-import { closeTerminal } from './closeTerminal';
-import { closeTerminalTab } from './closeTerminalTab';
-import { openTerminal } from './openTerminal';
-import { setActiveTerminalTab } from './setActiveTerminalTab';
-import { setTerminalTabStatus } from './setTerminalTabStatus';
-import type { GetFn, SetFn } from './types';
+import { addTerminalTab } from './addTerminalTab'
+import { closeSessionTerminals } from './closeSessionTerminals'
+import { closeTerminal } from './closeTerminal'
+import { closeTerminalTab } from './closeTerminalTab'
+import { openTerminal } from './openTerminal'
+import { setActiveTerminalTab } from './setActiveTerminalTab'
+import { setTerminalTabStatus } from './setTerminalTabStatus'
+import type { GetFn, SetFn } from './types'
 
 export const createTerminalSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -16,5 +16,5 @@ export const createTerminalSlice = (set: SetFn, get: GetFn) => {
     setActiveTerminalTab: setActiveTerminalTab(set),
     setTerminalTabStatus: setTerminalTabStatus(set),
     closeSessionTerminals: closeSessionTerminals(set, get),
-  };
-};
+  }
+}

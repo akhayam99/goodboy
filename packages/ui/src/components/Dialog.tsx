@@ -1,30 +1,30 @@
-import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
-import { cn } from '../cn';
-import { Divider } from './Divider';
-import { ScrollFade } from './ScrollFade';
+import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
+import { cn } from '../cn'
+import { Divider } from './Divider'
+import { ScrollFade } from './ScrollFade'
 
-export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
 export type DialogProps = {
-  open: boolean;
-  onClose: () => void;
-  title?: ReactNode;
-  description?: ReactNode;
-  children: ReactNode;
-  footer?: ReactNode;
-  size?: DialogSize;
-  className?: string;
-  showClose?: boolean;
-  closeOnBackdrop?: boolean;
-  initialFocusRef?: React.RefObject<HTMLElement | null>;
-  fullScreenOnSmall?: boolean;
-  fixedHeightClass?: string;
-  bodyClassName?: string;
-  headerBordered?: boolean;
-  panel?: ReactNode;
-  panelWidthClass?: string;
-  panelClassName?: string;
-};
+  open: boolean
+  onClose: () => void
+  title?: ReactNode
+  description?: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+  size?: DialogSize
+  className?: string
+  showClose?: boolean
+  closeOnBackdrop?: boolean
+  initialFocusRef?: React.RefObject<HTMLElement | null>
+  fullScreenOnSmall?: boolean
+  fixedHeightClass?: string
+  bodyClassName?: string
+  headerBordered?: boolean
+  panel?: ReactNode
+  panelWidthClass?: string
+  panelClassName?: string
+}
 
 const SIZE: Record<DialogSize, string> = {
   sm: 'w-[24rem]',
@@ -32,7 +32,7 @@ const SIZE: Record<DialogSize, string> = {
   lg: 'w-[44rem]',
   xl: 'w-[56rem]',
   '2xl': 'w-[64rem]',
-};
+}
 
 const MIN_HEIGHT: Record<DialogSize, string> = {
   sm: 'min-h-[16rem]',
@@ -40,9 +40,9 @@ const MIN_HEIGHT: Record<DialogSize, string> = {
   lg: 'min-h-[28rem]',
   xl: 'min-h-[32rem]',
   '2xl': 'min-h-[34rem]',
-};
+}
 
-const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
+const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none'
 
 export const Dialog = ({
   open,
@@ -64,68 +64,68 @@ export const Dialog = ({
   panelWidthClass = 'w-48',
   panelClassName,
 }: DialogProps) => {
-  const ref = useRef<HTMLDialogElement>(null);
-  const uid = useId();
-  const titleId = title ? `${uid}-title` : undefined;
-  const descId = description ? `${uid}-desc` : undefined;
+  const ref = useRef<HTMLDialogElement>(null)
+  const uid = useId()
+  const titleId = title ? `${uid}-title` : undefined
+  const descId = description ? `${uid}-desc` : undefined
 
-  const onCloseRef = useRef(onClose);
+  const onCloseRef = useRef(onClose)
   useEffect(() => {
-    onCloseRef.current = onClose;
-  });
+    onCloseRef.current = onClose
+  })
 
-  const programmaticCloseRef = useRef(false);
+  const programmaticCloseRef = useRef(false)
 
   useEffect(() => {
-    const dialog = ref.current;
+    const dialog = ref.current
     if (!dialog) {
-      return;
+      return
     }
 
     const handleClose = () => {
       if (programmaticCloseRef.current) {
-        programmaticCloseRef.current = false;
-        return;
+        programmaticCloseRef.current = false
+        return
       }
-      onCloseRef.current();
-    };
-    dialog.addEventListener('close', handleClose);
+      onCloseRef.current()
+    }
+    dialog.addEventListener('close', handleClose)
 
     if (open) {
       if (!dialog.open) {
-        dialog.showModal();
-        const target = initialFocusRef?.current;
+        dialog.showModal()
+        const target = initialFocusRef?.current
         if (target) {
-          target.focus();
+          target.focus()
         } else {
           const first = dialog.querySelector<HTMLElement>(
             'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          );
-          first?.focus();
+          )
+          first?.focus()
         }
       }
     } else if (dialog.open) {
-      programmaticCloseRef.current = true;
-      dialog.close();
+      programmaticCloseRef.current = true
+      dialog.close()
     }
 
     return () => {
-      dialog.removeEventListener('close', handleClose);
+      dialog.removeEventListener('close', handleClose)
       if (dialog.open) {
-        programmaticCloseRef.current = true;
-        dialog.close();
+        programmaticCloseRef.current = true
+        dialog.close()
       }
-    };
-  }, [open, initialFocusRef]);
+    }
+  }, [open, initialFocusRef])
 
   const onBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
     if (!closeOnBackdrop) {
-      return;
+      return
     }
     if (event.target === ref.current) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   return (
     <dialog
@@ -133,7 +133,7 @@ export const Dialog = ({
       onClick={onBackdropClick}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
-          e.stopPropagation();
+          e.stopPropagation()
         }
       }}
       aria-labelledby={titleId}
@@ -222,5 +222,5 @@ export const Dialog = ({
         ) : null}
       </div>
     </dialog>
-  );
-};
+  )
+}

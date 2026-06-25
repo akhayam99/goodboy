@@ -1,9 +1,9 @@
-import { dismissSystemAlert } from './dismissSystemAlert';
-import { exportConfig } from './exportConfig';
-import { importConfig } from './importConfig';
-import { loadSetting } from './loadSetting';
-import { saveSetting } from './saveSetting';
-import type { GetFn, SetFn } from './types';
+import { dismissSystemAlert } from './dismissSystemAlert'
+import { exportConfig } from './exportConfig'
+import { importConfig } from './importConfig'
+import { loadSetting } from './loadSetting'
+import { saveSetting } from './saveSetting'
+import type { GetFn, SetFn } from './types'
 
 export const createSettingsSlice = (set: SetFn, _get: GetFn) => {
   return {
@@ -12,5 +12,5 @@ export const createSettingsSlice = (set: SetFn, _get: GetFn) => {
     exportConfig: exportConfig(),
     importConfig: importConfig(),
     dismissSystemAlert: dismissSystemAlert(set),
-  };
-};
+  }
+}

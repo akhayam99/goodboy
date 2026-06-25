@@ -1,34 +1,34 @@
-import { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, ClipboardList } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { classifyWorkflowChain } from '@goodboy/core';
-import type { Agent, Step, Workflow } from '@goodboy/types';
-import type { VerbosityLevel } from '../../../../features/settings/verbosity';
+import { useMemo, useState } from 'react'
+import { AlertTriangle, ArrowRight, ClipboardList } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import { classifyWorkflowChain } from '@goodboy/core'
+import type { Agent, Step, Workflow } from '@goodboy/types'
+import type { VerbosityLevel } from '../../../../features/settings/verbosity'
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_PALETTE,
   inferAgentKindFromName,
-} from '../../../../features/session/agent-kind';
-import { shortModel } from '../../../../features/session/agent-row-format';
+} from '../../../../features/session/agent-kind'
+import { shortModel } from '../../../../features/session/agent-row-format'
 
 export type Props = {
-  readonly workflow: Workflow;
-  readonly runs: ReadonlyArray<Agent>;
+  readonly workflow: Workflow
+  readonly runs: ReadonlyArray<Agent>
   readonly onAdvance: (
     step: Step,
     model: string,
     verbosity: VerbosityLevel | undefined,
-  ) => void | Promise<void>;
-  readonly onForceAdvance?: () => void | Promise<void>;
-  readonly hasOpenQuestions?: boolean;
-  readonly consumesActivePlan?: boolean;
-  readonly className?: string;
-};
+  ) => void | Promise<void>
+  readonly onForceAdvance?: () => void | Promise<void>
+  readonly hasOpenQuestions?: boolean
+  readonly consumesActivePlan?: boolean
+  readonly className?: string
+}
 
 export type PickNextWorkflowStepGate = {
-  readonly hasOpenQuestions?: boolean;
-  readonly summarizerBusy?: boolean;
-};
+  readonly hasOpenQuestions?: boolean
+  readonly summarizerBusy?: boolean
+}
 
 export const pickNextWorkflowStep = (
   workflow: Workflow,
@@ -36,25 +36,25 @@ export const pickNextWorkflowStep = (
   gate?: PickNextWorkflowStepGate,
 ): Step | null => {
   if (gate?.hasOpenQuestions || gate?.summarizerBusy) {
-    return null;
+    return null
   }
-  const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
+  const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal)
   for (const step of sorted) {
-    const agent = runs.find((r) => r.stepId === step.id);
+    const agent = runs.find((r) => r.stepId === step.id)
     if (!agent || agent.status !== 'pending') {
-      continue;
+      continue
     }
-    const prevSteps = sorted.filter((s) => s.ordinal < step.ordinal);
+    const prevSteps = sorted.filter((s) => s.ordinal < step.ordinal)
     const allDone = prevSteps.every((s) =>
       runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
-    );
+    )
     if (allDone) {
-      return step;
+      return step
     }
-    return null;
+    return null
   }
-  return null;
-};
+  return null
+}
 
 export const WorkflowNextStepCta = ({
   workflow,
@@ -65,28 +65,28 @@ export const WorkflowNextStepCta = ({
   consumesActivePlan = false,
   className,
 }: Props) => {
-  const [busy, setBusy] = useState(false);
-  const [pendingConfirm, setPendingConfirm] = useState(false);
-  const [pendingForce, setPendingForce] = useState(false);
-  const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
-  const next = chain.kind === 'step' ? chain.step : null;
-  const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
-  const defaults = AGENT_KIND_DEFAULTS[kind];
-  const palette = AGENT_KIND_PALETTE[kind];
+  const [busy, setBusy] = useState(false)
+  const [pendingConfirm, setPendingConfirm] = useState(false)
+  const [pendingForce, setPendingForce] = useState(false)
+  const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs])
+  const next = chain.kind === 'step' ? chain.step : null
+  const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next])
+  const defaults = AGENT_KIND_DEFAULTS[kind]
+  const palette = AGENT_KIND_PALETTE[kind]
   const doForce = async () => {
     if (busy) {
-      return;
+      return
     }
-    setBusy(true);
-    setPendingForce(false);
+    setBusy(true)
+    setPendingForce(false)
     try {
-      await onForceAdvance?.();
+      await onForceAdvance?.()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
   if (chain.kind === 'complete') {
-    return null;
+    return null
   }
   if (chain.kind === 'blocked') {
     return (
@@ -130,31 +130,31 @@ export const WorkflowNextStepCta = ({
           </button>
         )}
       </div>
-    );
+    )
   }
   if (!next) {
-    return null;
+    return null
   }
-  const stepVerbosity = next.verbosity;
+  const stepVerbosity = next.verbosity
   const doAdvance = async () => {
     if (busy) {
-      return;
+      return
     }
-    setBusy(true);
-    setPendingConfirm(false);
+    setBusy(true)
+    setPendingConfirm(false)
     try {
-      await onAdvance(next, defaults.model, stepVerbosity);
+      await onAdvance(next, defaults.model, stepVerbosity)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
   const onClick = () => {
     if (hasOpenQuestions) {
-      setPendingConfirm(true);
+      setPendingConfirm(true)
     } else {
-      void doAdvance();
+      void doAdvance()
     }
-  };
+  }
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <button
@@ -220,5 +220,5 @@ export const WorkflowNextStepCta = ({
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

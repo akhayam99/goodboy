@@ -1,9 +1,9 @@
-import { loadSessionSlots } from './loadSessionSlots';
-import { loadSessionTelemetry } from './loadSessionTelemetry';
-import { loadSlotHistory } from './loadSlotHistory';
-import { toggleSessionSlot } from './toggleSessionSlot';
-import { upsertSessionSlot } from './upsertSessionSlot';
-import type { GetFn, SetFn } from './types';
+import { loadSessionSlots } from './loadSessionSlots'
+import { loadSessionTelemetry } from './loadSessionTelemetry'
+import { loadSlotHistory } from './loadSlotHistory'
+import { toggleSessionSlot } from './toggleSessionSlot'
+import { upsertSessionSlot } from './upsertSessionSlot'
+import type { GetFn, SetFn } from './types'
 
 export const createSlotsSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -12,5 +12,5 @@ export const createSlotsSlice = (set: SetFn, get: GetFn) => {
     upsertSessionSlot: upsertSessionSlot(set, get),
     loadSlotHistory: loadSlotHistory(set),
     toggleSessionSlot: toggleSessionSlot(set, get),
-  };
-};
+  }
+}

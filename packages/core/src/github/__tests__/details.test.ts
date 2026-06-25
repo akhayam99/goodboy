@@ -1,36 +1,36 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { GhResult, GhRunner } from '../gh';
-import { fetchPrDetail } from '../details';
+import { describe, expect, it, vi } from 'vitest'
+import type { GhResult, GhRunner } from '../gh'
+import { fetchPrDetail } from '../details'
 
 type FakeResponse = {
-  match: (args: ReadonlyArray<string>) => boolean;
-  result: GhResult;
-};
+  match: (args: ReadonlyArray<string>) => boolean
+  result: GhResult
+}
 
 function makeMultiRunner(responses: ReadonlyArray<FakeResponse>): GhRunner {
   return {
     run: vi.fn(async (args: ReadonlyArray<string>) => {
       for (const r of responses) {
         if (r.match(args)) {
-          return r.result;
+          return r.result
         }
       }
-      return { stdout: '[]', stderr: '', exitCode: 0 };
+      return { stdout: '[]', stderr: '', exitCode: 0 }
     }),
-  };
+  }
 }
 
 function jsonOk(data: unknown): GhResult {
-  return { stdout: JSON.stringify(data), stderr: '', exitCode: 0 };
+  return { stdout: JSON.stringify(data), stderr: '', exitCode: 0 }
 }
 
 const matchIssueComments = (a: ReadonlyArray<string>) =>
-  a.some((s) => s.includes('issues/1/comments'));
-const matchReviewThreads = (a: ReadonlyArray<string>) => a[0] === 'api' && a[1] === 'graphql';
+  a.some((s) => s.includes('issues/1/comments'))
+const matchReviewThreads = (a: ReadonlyArray<string>) => a[0] === 'api' && a[1] === 'graphql'
 
 const emptyReviewThreads = jsonOk({
   data: { repository: { pullRequest: { reviewThreads: { nodes: [] } } } },
-});
+})
 
 describe('fetchPrDetail', () => {
   it('merges issue + review comments sorted by createdAt', async () => {
@@ -90,16 +90,16 @@ describe('fetchPrDetail', () => {
           statusCheckRollup: [],
         }),
       },
-    ]);
-    const detail = await fetchPrDetail(runner, 'org/repo', 1);
-    expect(detail.comments.map((c) => c.author)).toEqual(['alice', 'bob']);
-    expect(detail.comments[0]!.source).toBe('issue');
-    expect(detail.comments[1]!.source).toBe('review');
-    expect(detail.comments[1]!.path).toBe('src/foo.ts');
-    expect(detail.comments[1]!.line).toBe(42);
-    expect(detail.comments[1]!.resolved).toBe(false);
-    expect(detail.comments[1]!.threadId).toBe('PRT_1');
-  });
+    ])
+    const detail = await fetchPrDetail(runner, 'org/repo', 1)
+    expect(detail.comments.map((c) => c.author)).toEqual(['alice', 'bob'])
+    expect(detail.comments[0]!.source).toBe('issue')
+    expect(detail.comments[1]!.source).toBe('review')
+    expect(detail.comments[1]!.path).toBe('src/foo.ts')
+    expect(detail.comments[1]!.line).toBe(42)
+    expect(detail.comments[1]!.resolved).toBe(false)
+    expect(detail.comments[1]!.threadId).toBe('PRT_1')
+  })
 
   it('propagates resolved status and reply threading from review threads', async () => {
     const runner = makeMultiRunner([
@@ -152,12 +152,12 @@ describe('fetchPrDetail', () => {
         match: (a) => a[0] === 'pr' && a[1] === 'view',
         result: jsonOk({ reviews: [], reviewRequests: [], statusCheckRollup: [] }),
       },
-    ]);
-    const detail = await fetchPrDetail(runner, 'org/repo', 1);
-    expect(detail.comments).toHaveLength(2);
-    expect(detail.comments.every((c) => c.resolved === true)).toBe(true);
-    expect(detail.comments[1]!.inReplyToId).toBe('review-1');
-  });
+    ])
+    const detail = await fetchPrDetail(runner, 'org/repo', 1)
+    expect(detail.comments).toHaveLength(2)
+    expect(detail.comments.every((c) => c.resolved === true)).toBe(true)
+    expect(detail.comments[1]!.inReplyToId).toBe('review-1')
+  })
 
   it('maps review states + review requests', async () => {
     const runner = makeMultiRunner([
@@ -180,14 +180,14 @@ describe('fetchPrDetail', () => {
           statusCheckRollup: [],
         }),
       },
-    ]);
-    const detail = await fetchPrDetail(runner, 'org/repo', 1);
-    expect(detail.reviews).toHaveLength(1);
-    expect(detail.reviews[0]!.state).toBe('approved');
-    expect(detail.reviewRequests).toHaveLength(1);
-    expect(detail.reviewRequests[0]!.login).toBe('carol');
-    expect(detail.reviewRequests[0]!.kind).toBe('user');
-  });
+    ])
+    const detail = await fetchPrDetail(runner, 'org/repo', 1)
+    expect(detail.reviews).toHaveLength(1)
+    expect(detail.reviews[0]!.state).toBe('approved')
+    expect(detail.reviewRequests).toHaveLength(1)
+    expect(detail.reviewRequests[0]!.login).toBe('carol')
+    expect(detail.reviewRequests[0]!.kind).toBe('user')
+  })
 
   it('derives check conclusions including pending and failure', async () => {
     const runner = makeMultiRunner([
@@ -226,23 +226,23 @@ describe('fetchPrDetail', () => {
           ],
         }),
       },
-    ]);
-    const detail = await fetchPrDetail(runner, 'org/repo', 1);
-    expect(detail.checks).toHaveLength(3);
-    expect(detail.checks[0]!.conclusion).toBe('success');
-    expect(detail.checks[0]!.durationMs).toBe(90_000);
-    expect(detail.checks[1]!.conclusion).toBe('pending');
-    expect(detail.checks[2]!.conclusion).toBe('failure');
-  });
+    ])
+    const detail = await fetchPrDetail(runner, 'org/repo', 1)
+    expect(detail.checks).toHaveLength(3)
+    expect(detail.checks[0]!.conclusion).toBe('success')
+    expect(detail.checks[0]!.durationMs).toBe(90_000)
+    expect(detail.checks[1]!.conclusion).toBe('pending')
+    expect(detail.checks[2]!.conclusion).toBe('failure')
+  })
 
   it('returns empty pieces when gh exits non-zero', async () => {
     const runner: GhRunner = {
       run: vi.fn().mockResolvedValue({ stdout: '', stderr: 'boom', exitCode: 1 }),
-    };
-    const detail = await fetchPrDetail(runner, 'org/repo', 1);
-    expect(detail.comments).toEqual([]);
-    expect(detail.reviews).toEqual([]);
-    expect(detail.reviewRequests).toEqual([]);
-    expect(detail.checks).toEqual([]);
-  });
-});
+    }
+    const detail = await fetchPrDetail(runner, 'org/repo', 1)
+    expect(detail.comments).toEqual([])
+    expect(detail.reviews).toEqual([])
+    expect(detail.reviewRequests).toEqual([])
+    expect(detail.checks).toEqual([])
+  })
+})

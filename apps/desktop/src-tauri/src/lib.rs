@@ -1,4 +1,5 @@
 mod attachment;
+mod bitbucket;
 mod bridge;
 mod budget;
 mod config_export;
@@ -63,6 +64,7 @@ pub fn run() {
   let linear_token_cache = linear::LinearTokenCache::new();
   let sentry_token_cache = sentry::SentryTokenCache::new();
   let gitlab_token_cache = gitlab::GitlabTokenCache::new();
+  let bitbucket_token_cache = bitbucket::BitbucketTokenCache::new();
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
@@ -80,6 +82,7 @@ pub fn run() {
     .manage(linear_token_cache)
     .manage(sentry_token_cache)
     .manage(gitlab_token_cache)
+    .manage(bitbucket_token_cache)
     .setup(|app| {
       #[cfg(desktop)]
       app
@@ -235,6 +238,10 @@ pub fn run() {
       gitlab::gitlab_mr_for_branch,
       gitlab::gitlab_create_mr,
       gitlab::gitlab_merge_mr,
+      bitbucket::bitbucket_connect,
+      bitbucket::bitbucket_disconnect,
+      bitbucket::bitbucket_pr_for_branch,
+      bitbucket::bitbucket_pr_detail,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

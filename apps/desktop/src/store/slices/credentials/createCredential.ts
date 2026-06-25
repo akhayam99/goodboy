@@ -1,14 +1,14 @@
-import { invoke } from '@tauri-apps/api/core';
-import { insertProviderCredential } from '@goodboy/db';
-import type { CredentialId, IsoDateTime, ProviderCredential, ProviderId } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { credentialSecretKey, maskApiKey } from './credentialKey';
-import type { SetFn } from './types';
+import { invoke } from '@tauri-apps/api/core'
+import { insertProviderCredential } from '@goodboy/db'
+import type { CredentialId, IsoDateTime, ProviderCredential, ProviderId } from '@goodboy/types'
+import { tauriDatabase } from '../../../shared/lib/db'
+import { credentialSecretKey, maskApiKey } from './credentialKey'
+import type { SetFn } from './types'
 
 type ApiKeyCheck = {
-  readonly valid: boolean;
-  readonly message: string | null;
-};
+  readonly valid: boolean
+  readonly message: string | null
+}
 
 export const createCredential = (set: SetFn) => {
   return async (
@@ -19,9 +19,9 @@ export const createCredential = (set: SetFn) => {
     const check = await invoke<ApiKeyCheck>('provider_api_key_validate', {
       providerId,
       apiKey: apiKey.trim(),
-    });
+    })
     if (!check.valid) {
-      throw new Error(check.message ?? 'API key validation failed');
+      throw new Error(check.message ?? 'API key validation failed')
     }
     const credential: ProviderCredential = {
       id: crypto.randomUUID() as CredentialId,
@@ -29,10 +29,10 @@ export const createCredential = (set: SetFn) => {
       label: label.trim() || 'api key',
       hint: maskApiKey(apiKey),
       createdAt: new Date().toISOString() as IsoDateTime,
-    };
-    await invoke('secret_set', { key: credentialSecretKey(credential.id), value: apiKey.trim() });
-    await insertProviderCredential(tauriDatabase, credential);
-    set((state) => ({ providerCredentials: [...state.providerCredentials, credential] }));
-    return credential;
-  };
-};
+    }
+    await invoke('secret_set', { key: credentialSecretKey(credential.id), value: apiKey.trim() })
+    await insertProviderCredential(tauriDatabase, credential)
+    set((state) => ({ providerCredentials: [...state.providerCredentials, credential] }))
+    return credential
+  }
+}

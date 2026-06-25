@@ -1,11 +1,11 @@
-import { getDefaultTurnModel, resolveProvider } from '@goodboy/core';
+import { getDefaultTurnModel, resolveProvider } from '@goodboy/core'
 import type {
   ProviderId,
   RoutingDecision,
   SessionProviderPreference,
   TurnProviderOverride,
-} from '@goodboy/types';
-import { invokeCheckProviderBudget } from '../budget/budget';
+} from '@goodboy/types'
+import { invokeCheckProviderBudget } from '../budget/budget'
 
 export const resolveProviderForTurn = async (
   sessionPreference: SessionProviderPreference,
@@ -20,5 +20,5 @@ export const resolveProviderForTurn = async (
       checkProviderBudget: (provider, period) => invokeCheckProviderBudget(provider, period),
     },
     getDefaultModel: (providerId) => getDefaultTurnModel(providerId),
-  });
-};
+  })
+}

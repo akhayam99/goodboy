@@ -1,12 +1,12 @@
-import type { WorkspaceId } from '@goodboy/types';
-import { Button, Dialog } from '@goodboy/ui';
-import { GitlabFormBody } from './GitlabFormBody';
+import type { WorkspaceId } from '@goodboy/types'
+import { Button, Dialog } from '@goodboy/ui'
+import { GitlabFormBody } from './GitlabFormBody'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  open: boolean;
-  onClose: () => void;
-};
+  workspaceId: WorkspaceId
+  open: boolean
+  onClose: () => void
+}
 
 export const ConnectGitlabDialog = ({ workspaceId, open, onClose }: Props) => (
   <Dialog
@@ -23,4 +23,4 @@ export const ConnectGitlabDialog = ({ workspaceId, open, onClose }: Props) => (
   >
     {open ? <GitlabFormBody workspaceId={workspaceId} /> : null}
   </Dialog>
-);
+)

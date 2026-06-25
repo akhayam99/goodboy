@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { cn, Divider, ScrollFade } from '@goodboy/ui';
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { cn, Divider, ScrollFade } from '@goodboy/ui'
 import {
   ArrowRight,
   BookOpen,
@@ -15,14 +15,14 @@ import {
   Sparkles,
   Workflow,
   Wrench,
-} from 'lucide-react';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { DogMascot } from '../../../../shared/components/DogMascot';
+} from 'lucide-react'
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features'
+import { StudioShell } from '../../../../shared/components/StudioShell'
+import { DogMascot } from '../../../../shared/components/DogMascot'
 
 type Props = {
-  readonly onClose: () => void;
-};
+  readonly onClose: () => void
+}
 
 type Section =
   | 'overview'
@@ -33,13 +33,13 @@ type Section =
   | 'tokens'
   | 'agents'
   | 'tips'
-  | 'legenda';
+  | 'legenda'
 
 type NavItem = {
-  readonly id: Section;
-  readonly label: string;
-  readonly icon: ReactNode;
-};
+  readonly id: Section
+  readonly label: string
+  readonly icon: ReactNode
+}
 
 const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'overview', label: 'Overview', icon: <BookOpen size={13} aria-hidden /> },
@@ -51,24 +51,24 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'agents', label: 'Agents', icon: <DogMascot size={13} /> },
   { id: 'tips', label: 'Tips', icon: <Lightbulb size={13} aria-hidden /> },
   { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },
-];
+]
 
 export const GuideStudio = ({ onClose }: Props) => {
-  const scrollToRef = useRef<(id: Section) => void>(() => {});
-  const suppressUntilRef = useRef(0);
-  const [active, setActive] = useState<Section>('overview');
+  const scrollToRef = useRef<(id: Section) => void>(() => {})
+  const suppressUntilRef = useRef(0)
+  const [active, setActive] = useState<Section>('overview')
 
   const jump = (id: Section) => {
-    suppressUntilRef.current = Date.now() + 700;
-    setActive(id);
-    scrollToRef.current(id);
-  };
+    suppressUntilRef.current = Date.now() + 700
+    setActive(id)
+    scrollToRef.current(id)
+  }
 
   const onVisible = (id: Section) => {
     if (Date.now() >= suppressUntilRef.current) {
-      setActive(id);
+      setActive(id)
     }
-  };
+  }
 
   return (
     <StudioShell
@@ -108,74 +108,74 @@ export const GuideStudio = ({ onClose }: Props) => {
               onJump={jump}
               onVisible={onVisible}
               registerScrollTo={(fn) => {
-                scrollToRef.current = fn;
+                scrollToRef.current = fn
               }}
             />
           </div>
         </div>
       )}
     </StudioShell>
-  );
-};
+  )
+}
 
 type GuideContentProps = {
-  readonly onJump: (s: Section) => void;
-  readonly onVisible: (s: Section) => void;
-  readonly registerScrollTo: (fn: (id: Section) => void) => void;
-};
+  readonly onJump: (s: Section) => void
+  readonly onVisible: (s: Section) => void
+  readonly registerScrollTo: (fn: (id: Section) => void) => void
+}
 
 const findScrollParent = (el: HTMLElement): HTMLElement | null => {
-  let parent = el.parentElement;
+  let parent = el.parentElement
   while (parent) {
-    const overflowY = getComputedStyle(parent).overflowY;
+    const overflowY = getComputedStyle(parent).overflowY
     if (overflowY === 'auto' || overflowY === 'scroll') {
-      return parent;
+      return parent
     }
-    parent = parent.parentElement;
+    parent = parent.parentElement
   }
-  return null;
-};
+  return null
+}
 
 const GuideContent = ({ onJump, onVisible, registerScrollTo }: GuideContentProps) => {
-  const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({});
-  const onVisibleRef = useRef(onVisible);
-  onVisibleRef.current = onVisible;
+  const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({})
+  const onVisibleRef = useRef(onVisible)
+  onVisibleRef.current = onVisible
 
   useEffect(() => {
     registerScrollTo((id) =>
       anchorsRef.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
-  }, [registerScrollTo]);
+    )
+  }, [registerScrollTo])
 
   useEffect(() => {
-    const els = Object.values(anchorsRef.current).filter((el): el is HTMLDivElement => el != null);
+    const els = Object.values(anchorsRef.current).filter((el): el is HTMLDivElement => el != null)
     if (els.length === 0) {
-      return;
+      return
     }
-    const root = findScrollParent(els[0]!);
+    const root = findScrollParent(els[0]!)
     const observer = new IntersectionObserver(
       (records) => {
         const top = records
           .filter((r) => r.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        const id = top?.target.getAttribute('data-guide-section');
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+        const id = top?.target.getAttribute('data-guide-section')
         if (id) {
-          onVisibleRef.current(id as Section);
+          onVisibleRef.current(id as Section)
         }
       },
       { root, rootMargin: '0px 0px -65% 0px', threshold: 0 },
-    );
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
+    )
+    els.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
 
   const anchor = (id: Section) => (el: HTMLDivElement | null) => {
     if (el) {
-      el.dataset.guideSection = id;
-      el.style.scrollMarginTop = '2.5rem';
+      el.dataset.guideSection = id
+      el.style.scrollMarginTop = '2.5rem'
     }
-    anchorsRef.current[id] = el;
-  };
+    anchorsRef.current[id] = el
+  }
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName="px-8 py-6">
@@ -209,8 +209,8 @@ const GuideContent = ({ onJump, onVisible, registerScrollTo }: GuideContentProps
         </div>
       </div>
     </ScrollFade>
-  );
-};
+  )
+}
 
 const OverviewSection = ({ onJump }: { onJump: (s: Section) => void }) => (
   <div className="flex flex-col gap-7">
@@ -266,7 +266,7 @@ const OverviewSection = ({ onJump }: { onJump: (s: Section) => void }) => (
       </div>
     </div>
   </div>
-);
+)
 
 const StageBoardSection = () => (
   <div className="flex flex-col gap-7">
@@ -321,7 +321,7 @@ const StageBoardSection = () => (
       you never have to open a session to see what it is costing you.
     </Callout>
   </div>
-);
+)
 
 const SessionsSection = () => (
   <div className="flex flex-col gap-7">
@@ -420,7 +420,7 @@ const SessionsSection = () => (
       </div>
     </Block>
   </div>
-);
+)
 
 const TurnsSection = () => (
   <div className="flex flex-col gap-7">
@@ -456,7 +456,7 @@ const TurnsSection = () => (
       time to start a new session.
     </Callout>
   </div>
-);
+)
 
 const ToolsSection = () => (
   <div className="flex flex-col gap-7">
@@ -494,7 +494,7 @@ const ToolsSection = () => (
       </Block>
     ) : null}
   </div>
-);
+)
 
 const TokensSection = () => (
   <div className="flex flex-col gap-7">
@@ -556,7 +556,7 @@ const TokensSection = () => (
       </p>
     </Block>
   </div>
-);
+)
 
 const AgentsSection = () => (
   <div className="flex flex-col gap-7">
@@ -614,7 +614,7 @@ const AgentsSection = () => (
       </div>
     </Block>
   </div>
-);
+)
 
 const TipsSection = () => {
   const tips: ReadonlyArray<{ readonly title: string; readonly body: string }> = [
@@ -642,7 +642,7 @@ const TipsSection = () => {
       title: 'Restart on CLI upgrades',
       body: 'When you update an underlying provider CLI, restart Goodboy so it re-detects versions and auth.',
     },
-  ];
+  ]
   return (
     <div className="flex flex-col gap-7">
       <SectionHeader
@@ -668,8 +668,8 @@ const TipsSection = () => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const LegendSection = () => (
   <div className="flex flex-col gap-7">
@@ -781,9 +781,9 @@ const LegendSection = () => (
       />
     </LegendBlock>
   </div>
-);
+)
 
-type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
+type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted'
 
 const TONE_BG: Record<Tone, string> = {
   primary: 'bg-primary/10',
@@ -792,7 +792,7 @@ const TONE_BG: Record<Tone, string> = {
   danger: 'bg-danger/10',
   info: 'bg-info/10',
   muted: 'bg-muted',
-};
+}
 
 const TONE_FG: Record<Tone, string> = {
   primary: 'text-primary',
@@ -801,7 +801,7 @@ const TONE_FG: Record<Tone, string> = {
   danger: 'text-danger',
   info: 'text-info',
   muted: 'text-muted-foreground',
-};
+}
 
 const TONE_BORDER: Record<Tone, string> = {
   primary: 'border-primary/20',
@@ -810,7 +810,7 @@ const TONE_BORDER: Record<Tone, string> = {
   danger: 'border-danger/20',
   info: 'border-info/20',
   muted: 'border-border-soft',
-};
+}
 
 const SectionHeader = ({
   icon,
@@ -818,10 +818,10 @@ const SectionHeader = ({
   description,
   tone,
 }: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  tone: Tone;
+  icon: ReactNode
+  title: string
+  description: string
+  tone: Tone
 }) => (
   <div className="flex items-start gap-3">
     <span
@@ -837,36 +837,36 @@ const SectionHeader = ({
       <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
     </div>
   </div>
-);
+)
 
 const Eyebrow = ({ children }: { children: ReactNode }) => (
   <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
     {children}
   </span>
-);
+)
 
 const Block = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="flex flex-col gap-3">
     <Eyebrow>{title}</Eyebrow>
     {children}
   </div>
-);
+)
 
 const LegendBlock = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="flex flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle/40 p-4">
     <Eyebrow>{title}</Eyebrow>
     {children}
   </div>
-);
+)
 
 const Callout = ({
   tone,
   icon,
   children,
 }: {
-  tone: Tone;
-  icon: ReactNode;
-  children: ReactNode;
+  tone: Tone
+  icon: ReactNode
+  children: ReactNode
 }) => (
   <div
     className={cn(
@@ -878,7 +878,7 @@ const Callout = ({
     <span className={cn('mt-0.5 shrink-0', TONE_FG[tone])}>{icon}</span>
     <div>{children}</div>
   </div>
-);
+)
 
 const ConceptCard = ({
   icon,
@@ -887,11 +887,11 @@ const ConceptCard = ({
   body,
   onClick,
 }: {
-  icon: ReactNode;
-  tone: Tone;
-  label: string;
-  body: string;
-  onClick?: () => void;
+  icon: ReactNode
+  tone: Tone
+  label: string
+  body: string
+  onClick?: () => void
 }) => (
   <button
     type="button"
@@ -910,14 +910,14 @@ const ConceptCard = ({
     <span className="text-sm font-semibold text-foreground">{label}</span>
     <span className="text-xs leading-relaxed text-muted-foreground">{body}</span>
   </button>
-);
+)
 
 type DefinitionRow = {
-  readonly term: string;
-  readonly desc: string;
-  readonly icon?: ReactNode;
-  readonly tone?: Tone;
-};
+  readonly term: string
+  readonly desc: string
+  readonly icon?: ReactNode
+  readonly tone?: Tone
+}
 
 const DefinitionList = ({ rows }: { rows: ReadonlyArray<DefinitionRow> }) => (
   <ul className="flex flex-col gap-2">
@@ -951,7 +951,7 @@ const DefinitionList = ({ rows }: { rows: ReadonlyArray<DefinitionRow> }) => (
       </li>
     ))}
   </ul>
-);
+)
 
 const Tile = ({
   tone,
@@ -959,10 +959,10 @@ const Tile = ({
   mono,
   children,
 }: {
-  tone: Tone;
-  label: string;
-  mono?: boolean;
-  children: ReactNode;
+  tone: Tone
+  label: string
+  mono?: boolean
+  children: ReactNode
 }) => (
   <div
     className={cn(
@@ -978,7 +978,7 @@ const Tile = ({
       {children}
     </span>
   </div>
-);
+)
 
 const Chip = ({ tone, children }: { tone: Tone; children: ReactNode }) => (
   <span
@@ -990,19 +990,19 @@ const Chip = ({ tone, children }: { tone: Tone; children: ReactNode }) => (
   >
     {children}
   </span>
-);
+)
 
 const InlineCode = ({ children }: { children: ReactNode }) => (
   <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
     {children}
   </code>
-);
+)
 
 type LegendaRow = {
-  readonly dot: string;
-  readonly label: string;
-  readonly desc: string;
-};
+  readonly dot: string
+  readonly label: string
+  readonly desc: string
+}
 
 const LegendaGrid = ({ rows }: { rows: ReadonlyArray<LegendaRow> }) => (
   <ul className="flex flex-col gap-1">
@@ -1017,4 +1017,4 @@ const LegendaGrid = ({ rows }: { rows: ReadonlyArray<LegendaRow> }) => (
       </li>
     ))}
   </ul>
-);
+)

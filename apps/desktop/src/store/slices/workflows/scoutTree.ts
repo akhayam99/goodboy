@@ -1,58 +1,58 @@
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractScoutSplit, type ExtractedScoutArea } from '@goodboy/core';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types'
+import { extractScoutSplit, type ExtractedScoutArea } from '@goodboy/core'
 import {
   invokeAgentInsert,
   invokeAgentList,
   invokeAgentUpdateStatus,
-} from '../../../features/workflows/workflows';
+} from '../../../features/workflows/workflows'
 import {
   AGENT_KIND_DEFAULTS,
   inferAgentKindFromName,
   type AgentKind,
-} from '../../../features/session/agent-kind';
-import type { GetFn, SetFn } from './types';
+} from '../../../features/session/agent-kind'
+import type { GetFn, SetFn } from './types'
 
-export const SCOUT_DEPTH_CAP = 2;
-export const SCOUT_MAX_CHILDREN = 6;
+export const SCOUT_DEPTH_CAP = 2
+export const SCOUT_MAX_CHILDREN = 6
 
 function resolveContainerModel(get: GetFn, container: Agent): string {
-  const override = get().agentModelOverride[container.id];
+  const override = get().agentModelOverride[container.id]
   if (override) {
-    return override;
+    return override
   }
   if (container.modelOverride) {
-    return container.modelOverride;
+    return container.modelOverride
   }
-  const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name);
-  return AGENT_KIND_DEFAULTS[kind]?.model ?? AGENT_KIND_DEFAULTS.scout.model;
+  const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name)
+  return AGENT_KIND_DEFAULTS[kind]?.model ?? AGENT_KIND_DEFAULTS.scout.model
 }
 
-const synthesisStarted = new Set<string>();
-const selfExploreTasked = new Set<string>();
+const synthesisStarted = new Set<string>()
+const selfExploreTasked = new Set<string>()
 
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime
 
-const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skipped'];
+const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skipped']
 
 function childrenOf(runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArray<Agent> {
-  return runs.filter((r) => r.parentAgentId === parentId).sort((a, b) => a.ordinal - b.ordinal);
+  return runs.filter((r) => r.parentAgentId === parentId).sort((a, b) => a.ordinal - b.ordinal)
 }
 
 export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number => {
-  const seen = new Set<AgentId>();
-  let depth = 0;
-  let cur = runs.find((r) => r.id === agentId);
+  const seen = new Set<AgentId>()
+  let depth = 0
+  let cur = runs.find((r) => r.id === agentId)
   while (cur?.parentAgentId && !seen.has(cur.id)) {
-    seen.add(cur.id);
-    depth += 1;
-    const parentId = cur.parentAgentId;
-    cur = runs.find((r) => r.id === parentId);
+    seen.add(cur.id)
+    depth += 1
+    const parentId = cur.parentAgentId
+    cur = runs.find((r) => r.id === parentId)
   }
-  return depth;
-};
+  return depth
+}
 
 function composeScoutKickoff(area: ExtractedScoutArea, depth: number): string {
-  const canSplit = depth < SCOUT_DEPTH_CAP;
+  const canSplit = depth < SCOUT_DEPTH_CAP
   return [
     'You are a scout exploring ONE area of a larger search, running in parallel with sibling scouts.',
     `Area: ${area.area}`,
@@ -62,24 +62,24 @@ function composeScoutKickoff(area: ExtractedScoutArea, depth: number): string {
     canSplit
       ? 'If this area is itself too broad, you MAY fan out further: emit on its own line <<scout-split>> followed by a JSON array of {"area","query"} (2 to 6 entries), then <</scout-split>>.'
       : 'You are at maximum split depth. Do not fan out further: read your scope and summarize directly.',
-  ].join('\n');
+  ].join('\n')
 }
 
 function composeSelfExploreKickoff(areas: ReadonlyArray<ExtractedScoutArea>): string {
-  const list = areas.map((a) => `- ${a.area}: ${a.query}`).join('\n');
+  const list = areas.map((a) => `- ${a.area}: ${a.query}`).join('\n')
   return [
     'Multi-scout fan-out is disabled for this workspace, so do NOT split.',
     'Explore all of these areas yourself in this turn and report one consolidated finding:',
     list,
-  ].join('\n');
+  ].join('\n')
 }
 
 function scoutFanoutEnabled(get: GetFn, sessionId: SessionId): boolean {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = get().sessions.find((s) => s.id === sessionId)
   if (!session) {
-    return false;
+    return false
   }
-  return get().workspaceOverrides[session.workspaceId]?.scoutFanout === true;
+  return get().workspaceOverrides[session.workspaceId]?.scoutFanout === true
 }
 
 function emitScoutFanoutNudge(
@@ -89,9 +89,9 @@ function emitScoutFanoutNudge(
   agentId: AgentId,
   areaCount: number,
 ): void {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = get().sessions.find((s) => s.id === sessionId)
   if (!session) {
-    return;
+    return
   }
   set((s) => ({
     sessionNudges: {
@@ -104,19 +104,19 @@ function emitScoutFanoutNudge(
         areaCount,
       },
     },
-  }));
+  }))
 }
 
 function composeSynthesisKickoff(containerName: string, children: ReadonlyArray<Agent>): string {
   const blocks = children
     .map((c) => `[${c.name}] (${c.status})\n${c.outputSummary ?? '(no findings reported)'}`)
-    .join('\n\n');
+    .join('\n\n')
   return [
     `Your sub-scouts for "${containerName}" finished. Consolidate their findings into ONE report.`,
     'Do NOT re-read the repo: synthesize only from the summaries below.',
     '',
     blocks,
-  ].join('\n');
+  ].join('\n')
 }
 
 function activateAgent(
@@ -133,8 +133,8 @@ function activateAgent(
       ...s.agentTurnState,
       [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
     },
-  }));
-  void get().sendTurn({ sessionId, agentId, content });
+  }))
+  void get().sendTurn({ sessionId, agentId, content })
 }
 
 export const fanOutScouts = async (
@@ -144,8 +144,8 @@ export const fanOutScouts = async (
   container: Agent,
   areas: ReadonlyArray<ExtractedScoutArea>,
 ): Promise<void> => {
-  const clamped = areas.slice(0, SCOUT_MAX_CHILDREN);
-  const dropped = areas.length - clamped.length;
+  const clamped = areas.slice(0, SCOUT_MAX_CHILDREN)
+  const dropped = areas.length - clamped.length
   if (dropped > 0) {
     void get().emitNotification(
       'agent-auto-spawn',
@@ -153,21 +153,21 @@ export const fanOutScouts = async (
       `scout fan-out capped: ${container.name}`,
       `dropped ${dropped} area(s) over the ${SCOUT_MAX_CHILDREN}-child limit`,
       { sessionId },
-    );
+    )
   }
   if (clamped.length < 2) {
-    return;
+    return
   }
 
-  synthesisStarted.delete(container.id);
-  await invokeAgentUpdateStatus(container.id, { status: 'running' });
+  synthesisStarted.delete(container.id)
+  await invokeAgentUpdateStatus(container.id, { status: 'running' })
 
-  const runs = get().sessionPhaseRuns[sessionId] ?? [];
-  const childDepth = scoutDepth(runs, container.id) + 1;
-  const childModel = resolveContainerModel(get, container);
-  const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
+  const runs = get().sessionPhaseRuns[sessionId] ?? []
+  const childDepth = scoutDepth(runs, container.id) + 1
+  const childModel = resolveContainerModel(get, container)
+  const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1
 
-  const childIds: AgentId[] = [];
+  const childIds: AgentId[] = []
   for (let i = 0; i < clamped.length; i++) {
     const inserted = await invokeAgentInsert({
       sessionId,
@@ -177,21 +177,21 @@ export const fanOutScouts = async (
       status: 'pending',
       kind: 'scout',
       ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
-    });
-    childIds.push(inserted.id);
+    })
+    childIds.push(inserted.id)
   }
 
-  const refreshed = await invokeAgentList(sessionId);
+  const refreshed = await invokeAgentList(sessionId)
   set((s) => {
-    const transcripts = { ...s.transcripts };
-    const agentTurnState = { ...s.agentTurnState };
-    const agentKindOverride = { ...s.agentKindOverride };
-    const agentModelOverride = { ...s.agentModelOverride };
+    const transcripts = { ...s.transcripts }
+    const agentTurnState = { ...s.agentTurnState }
+    const agentKindOverride = { ...s.agentKindOverride }
+    const agentModelOverride = { ...s.agentModelOverride }
     for (const id of childIds) {
-      transcripts[id] = transcripts[id] ?? [];
-      agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
-      agentKindOverride[id] = 'scout';
-      agentModelOverride[id] = childModel;
+      transcripts[id] = transcripts[id] ?? []
+      agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() }
+      agentKindOverride[id] = 'scout'
+      agentModelOverride[id] = childModel
     }
     return {
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
@@ -199,8 +199,8 @@ export const fanOutScouts = async (
       agentTurnState,
       agentKindOverride,
       agentModelOverride,
-    };
-  });
+    }
+  })
 
   for (let i = 0; i < childIds.length; i++) {
     activateAgent(
@@ -210,9 +210,9 @@ export const fanOutScouts = async (
       childIds[i]!,
       composeScoutKickoff(clamped[i]!, childDepth),
       false,
-    );
+    )
   }
-};
+}
 
 async function maybeSynthesizeParent(
   set: SetFn,
@@ -220,25 +220,25 @@ async function maybeSynthesizeParent(
   sessionId: SessionId,
   childId: AgentId,
 ): Promise<void> {
-  const runs = get().sessionPhaseRuns[sessionId] ?? [];
-  const child = runs.find((r) => r.id === childId);
-  const parentId = child?.parentAgentId;
+  const runs = get().sessionPhaseRuns[sessionId] ?? []
+  const child = runs.find((r) => r.id === childId)
+  const parentId = child?.parentAgentId
   if (!parentId) {
-    return;
+    return
   }
 
-  const siblings = childrenOf(runs, parentId);
+  const siblings = childrenOf(runs, parentId)
   if (siblings.some((s) => !TERMINAL.includes(s.status))) {
-    return;
+    return
   }
   if (synthesisStarted.has(parentId)) {
-    return;
+    return
   }
-  synthesisStarted.add(parentId);
+  synthesisStarted.add(parentId)
 
-  const container = runs.find((r) => r.id === parentId);
+  const container = runs.find((r) => r.id === parentId)
   if (!container) {
-    return;
+    return
   }
   activateAgent(
     set,
@@ -247,7 +247,7 @@ async function maybeSynthesizeParent(
     parentId,
     composeSynthesisKickoff(container.name, siblings),
     false,
-  );
+  )
 }
 
 async function settleScout(
@@ -261,35 +261,35 @@ async function settleScout(
     status: 'completed',
     outputSummary: summary,
     completedAt: nowIso(),
-  });
-  const refreshed = await invokeAgentList(sessionId);
-  set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
-  void get().refreshUnreadWorkspaces();
-  await maybeSynthesizeParent(set, get, sessionId, agentId);
+  })
+  const refreshed = await invokeAgentList(sessionId)
+  set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }))
+  void get().refreshUnreadWorkspaces()
+  await maybeSynthesizeParent(set, get, sessionId, agentId)
 }
 
 export const advanceScoutTree = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void> => {
-    const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const agent = runs.find((r) => r.id === agentId);
+    const runs = get().sessionPhaseRuns[sessionId] ?? []
+    const agent = runs.find((r) => r.id === agentId)
     if (!agent) {
-      return;
+      return
     }
 
-    const split = extractScoutSplit(assistantText);
+    const split = extractScoutSplit(assistantText)
     if (split != null && split.length >= 2 && scoutDepth(runs, agentId) < SCOUT_DEPTH_CAP) {
       if (scoutFanoutEnabled(get, sessionId)) {
-        await fanOutScouts(set, get, sessionId, agent, split);
-        return;
+        await fanOutScouts(set, get, sessionId, agent, split)
+        return
       }
       if (agent.parentAgentId == null && !selfExploreTasked.has(agentId)) {
-        selfExploreTasked.add(agentId);
-        emitScoutFanoutNudge(set, get, sessionId, agentId, split.length);
-        activateAgent(set, get, sessionId, agentId, composeSelfExploreKickoff(split), true);
-        return;
+        selfExploreTasked.add(agentId)
+        emitScoutFanoutNudge(set, get, sessionId, agentId, split.length)
+        activateAgent(set, get, sessionId, agentId, composeSelfExploreKickoff(split), true)
+        return
       }
     }
 
-    await settleScout(set, get, sessionId, agentId, assistantText.slice(0, 2000));
-  };
-};
+    await settleScout(set, get, sessionId, agentId, assistantText.slice(0, 2000))
+  }
+}

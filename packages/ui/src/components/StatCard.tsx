@@ -1,26 +1,26 @@
-import type { ReactNode } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { cn } from '../cn';
-import { tintClasses, type Tone } from '../tint';
-import { Eyebrow } from './Eyebrow';
+import type { ReactNode } from 'react'
+import { ArrowRight } from 'lucide-react'
+import { cn } from '../cn'
+import { tintClasses, type Tone } from '../tint'
+import { Eyebrow } from './Eyebrow'
 
 export type StatCardProps = {
-  readonly value: string;
-  readonly label: string;
-  readonly hint?: string;
-  readonly icon?: ReactNode;
-  readonly tone?: Tone;
-  readonly alert?: boolean;
-  readonly valueSize?: 'lg' | 'xl';
-  readonly status?: ReactNode;
-  readonly onClick?: () => void;
-  readonly className?: string;
-};
+  readonly value: string
+  readonly label: string
+  readonly hint?: string
+  readonly icon?: ReactNode
+  readonly tone?: Tone
+  readonly alert?: boolean
+  readonly valueSize?: 'lg' | 'xl'
+  readonly status?: ReactNode
+  readonly onClick?: () => void
+  readonly className?: string
+}
 
 const valueSizeClasses: Record<'lg' | 'xl', string> = {
   lg: 'text-lg',
   xl: 'text-xl',
-};
+}
 
 export const StatCard = ({
   value,
@@ -34,7 +34,7 @@ export const StatCard = ({
   onClick,
   className,
 }: StatCardProps) => {
-  const tint = tone ? tintClasses(tone) : null;
+  const tint = tone ? tintClasses(tone) : null
 
   const body = (
     <>
@@ -62,14 +62,14 @@ export const StatCard = ({
       </div>
       {onClick ? <ArrowRight size={14} aria-hidden className="text-muted-foreground" /> : null}
     </>
-  );
+  )
 
   const shell = cn(
     icon && tint ? 'flex items-start gap-3' : 'flex flex-col gap-1',
     'rounded-lg border bg-muted/20 px-4 py-3',
     alert ? 'border-warning/40' : 'border-border-soft',
     className,
-  );
+  )
 
   if (onClick) {
     return (
@@ -80,8 +80,8 @@ export const StatCard = ({
       >
         {body}
       </button>
-    );
+    )
   }
 
-  return <div className={shell}>{body}</div>;
-};
+  return <div className={shell}>{body}</div>
+}

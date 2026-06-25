@@ -1,10 +1,10 @@
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import { TAB_ICON_BTN } from '../lib';
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import { TAB_ICON_BTN } from '../lib'
 
 type Props = {
-  readonly message: string;
-  readonly onRetry: () => void;
-};
+  readonly message: string
+  readonly onRetry: () => void
+}
 
 export const ErrorRow = ({ message, onRetry }: Props) => {
   return (
@@ -23,5 +23,5 @@ export const ErrorRow = ({ message, onRetry }: Props) => {
         <RefreshCw size={10} aria-hidden />
       </button>
     </div>
-  );
-};
+  )
+}

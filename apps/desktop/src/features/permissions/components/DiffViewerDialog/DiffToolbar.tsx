@@ -1,23 +1,23 @@
-import { Check, GitBranch, PanelLeftClose, PanelLeftOpen, RefreshCw, X } from 'lucide-react';
-import { cn, Divider } from '@goodboy/ui';
-import type { WorktreeStatus } from '@goodboy/types';
-import { TOOLBAR_ICON_BTN } from './lib';
+import { Check, GitBranch, PanelLeftClose, PanelLeftOpen, RefreshCw, X } from 'lucide-react'
+import { cn, Divider } from '@goodboy/ui'
+import type { WorktreeStatus } from '@goodboy/types'
+import { TOOLBAR_ICON_BTN } from './lib'
 
 type Props = {
-  title?: string;
-  prNumber?: number;
-  openCommentsCount: number;
-  reviewedCount: number | null;
-  filesCount: number;
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-  status: WorktreeStatus | null;
-  onRefresh?: () => void;
-  refreshing: boolean;
-  showClose: boolean;
-  onClose: () => void;
-  viewSelector?: React.ReactNode;
-};
+  title?: string
+  prNumber?: number
+  openCommentsCount: number
+  reviewedCount: number | null
+  filesCount: number
+  sidebarCollapsed: boolean
+  onToggleSidebar: () => void
+  status: WorktreeStatus | null
+  onRefresh?: () => void
+  refreshing: boolean
+  showClose: boolean
+  onClose: () => void
+  viewSelector?: React.ReactNode
+}
 
 export const DiffToolbar = ({
   title,
@@ -34,11 +34,11 @@ export const DiffToolbar = ({
   onClose,
   viewSelector,
 }: Props) => {
-  const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
+  const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff')
   const aheadBehind =
     status?.hasUpstream && (status.ahead > 0 || status.behind > 0)
       ? `↑${status.ahead} ↓${status.behind}`
-      : null;
+      : null
   return (
     <>
       <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
@@ -118,5 +118,5 @@ export const DiffToolbar = ({
       </div>
       <Divider className="shrink-0" />
     </>
-  );
-};
+  )
+}

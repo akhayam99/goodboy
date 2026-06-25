@@ -1,27 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button, ScrollFade, cn, type ButtonVariant } from '@goodboy/ui';
-import { finishWizard } from '../onboarding-store';
-import { useOnboardingWizard } from './useOnboardingWizard';
-import { Stepper } from './Stepper';
-import { WelcomeStep } from './steps/WelcomeStep';
-import { ProvidersStep } from './steps/ProvidersStep';
-import { WorkspaceStep } from './steps/WorkspaceStep';
-import { PreferencesStep } from './steps/PreferencesStep';
-import { CodeHostStep } from './steps/CodeHostStep';
-import { TrackerStep } from './steps/TrackerStep';
-import { SentryStep } from './steps/SentryStep';
-import { ReadyStep } from './steps/ReadyStep';
+import { useEffect, useRef, useState } from 'react'
+import { Button, ScrollFade, cn, type ButtonVariant } from '@goodboy/ui'
+import { finishWizard } from '../onboarding-store'
+import { useOnboardingWizard } from './useOnboardingWizard'
+import { Stepper } from './Stepper'
+import { WelcomeStep } from './steps/WelcomeStep'
+import { ProvidersStep } from './steps/ProvidersStep'
+import { WorkspaceStep } from './steps/WorkspaceStep'
+import { PreferencesStep } from './steps/PreferencesStep'
+import { CodeHostStep } from './steps/CodeHostStep'
+import { TrackerStep } from './steps/TrackerStep'
+import { SentryStep } from './steps/SentryStep'
+import { ReadyStep } from './steps/ReadyStep'
 
-const STEP_COUNT = 8;
-const SETUP_START_STEP = 3;
-const EXIT_MS = 200;
+const STEP_COUNT = 8
+const SETUP_START_STEP = 3
+const EXIT_MS = 200
 
 type Cta = {
-  readonly label: string;
-  readonly onClick: () => void;
-  readonly variant: ButtonVariant;
-  readonly disabled?: boolean;
-};
+  readonly label: string
+  readonly onClick: () => void
+  readonly variant: ButtonVariant
+  readonly disabled?: boolean
+}
 
 export const OnboardingWizard = () => {
   const {
@@ -36,52 +36,52 @@ export const OnboardingWizard = () => {
     hasLinear,
     hasSentry,
     refreshGithubStatus,
-  } = useOnboardingWizard();
-  const [step, setStep] = useState(0);
-  const [closing, setClosing] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  } = useOnboardingWizard()
+  const [step, setStep] = useState(0)
+  const [closing, setClosing] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const minStep = mode === 'setup' ? SETUP_START_STEP : 0;
-  const last = STEP_COUNT - 1;
+  const minStep = mode === 'setup' ? SETUP_START_STEP : 0
+  const last = STEP_COUNT - 1
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
-    setStep(minStep);
-    setClosing(false);
-    containerRef.current?.focus();
-  }, [open, minStep]);
+    setStep(minStep)
+    setClosing(false)
+    containerRef.current?.focus()
+  }, [open, minStep])
 
   if (!open) {
-    return null;
+    return null
   }
 
-  const goNext = () => setStep((s) => Math.min(s + 1, last));
-  const goBack = () => setStep((s) => Math.max(s - 1, minStep));
-  const canSkipSetup = hasWorkspace;
+  const goNext = () => setStep((s) => Math.min(s + 1, last))
+  const goBack = () => setStep((s) => Math.max(s - 1, minStep))
+  const canSkipSetup = hasWorkspace
   const dismiss = () => {
-    setClosing(true);
-    window.setTimeout(finishWizard, EXIT_MS);
-  };
+    setClosing(true)
+    window.setTimeout(finishWizard, EXIT_MS)
+  }
 
-  let body = <WelcomeStep />;
-  let cta: Cta = { label: 'Get started', onClick: goNext, variant: 'primary' };
+  let body = <WelcomeStep />
+  let cta: Cta = { label: 'Get started', onClick: goNext, variant: 'primary' }
 
   if (step === 1) {
-    body = <ProvidersStep />;
+    body = <ProvidersStep />
     cta = {
       label: 'Continue',
       onClick: goNext,
       variant: 'primary',
       disabled: providersConnected === 0,
-    };
+    }
   } else if (step === 2) {
-    body = <WorkspaceStep hasWorkspace={hasWorkspace} />;
-    cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
+    body = <WorkspaceStep hasWorkspace={hasWorkspace} />
+    cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace }
   } else if (step === 3) {
-    body = <PreferencesStep workspaceId={workspaceId} />;
-    cta = { label: 'Continue', onClick: goNext, variant: 'primary' };
+    body = <PreferencesStep workspaceId={workspaceId} />
+    cta = { label: 'Continue', onClick: goNext, variant: 'primary' }
   } else if (step === 4) {
     body = (
       <CodeHostStep
@@ -90,23 +90,23 @@ export const OnboardingWizard = () => {
         gitlabConnected={gitlabConnected}
         onConnected={refreshGithubStatus}
       />
-    );
+    )
     cta = hasCodeHost
       ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
+      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' }
   } else if (step === 5) {
-    body = <TrackerStep workspaceId={workspaceId} linearConnected={hasLinear} />;
+    body = <TrackerStep workspaceId={workspaceId} linearConnected={hasLinear} />
     cta = hasLinear
       ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
+      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' }
   } else if (step === 6) {
-    body = <SentryStep workspaceId={workspaceId} />;
+    body = <SentryStep workspaceId={workspaceId} />
     cta = hasSentry
       ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
+      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' }
   } else if (step === 7) {
-    body = <ReadyStep />;
-    cta = { label: 'Start building', onClick: dismiss, variant: 'primary' };
+    body = <ReadyStep />
+    cta = { label: 'Start building', onClick: dismiss, variant: 'primary' }
   }
 
   return (
@@ -173,5 +173,5 @@ export const OnboardingWizard = () => {
         </div>
       </ScrollFade>
     </div>
-  );
-};
+  )
+}

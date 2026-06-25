@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS parallel_phase_groups (
 
 CREATE INDEX IF NOT EXISTS idx_parallel_phase_groups_session ON parallel_phase_groups(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_phase_runs_group ON session_phase_runs(group_id);
-`;
+`

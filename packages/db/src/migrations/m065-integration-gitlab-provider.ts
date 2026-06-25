@@ -51,4 +51,4 @@ CREATE INDEX idx_session_external_tasks_provider_external
 
 PRAGMA foreign_key_check;
 PRAGMA foreign_keys = ON;
-`;
+`

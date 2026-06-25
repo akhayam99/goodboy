@@ -1,20 +1,20 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { cn } from '../cn';
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { cn } from '../cn'
 
 const FADE_FROM = {
   background: 'from-background',
   subtle: 'from-subtle',
   muted: 'from-muted',
-} as const;
+} as const
 
 export type ScrollFadeProps = {
-  readonly children: ReactNode;
-  readonly className?: string;
-  readonly viewportClassName?: string;
-  readonly fadeFrom?: keyof typeof FADE_FROM;
-  readonly fadeSize?: number | string;
-  readonly orientation?: 'vertical' | 'horizontal';
-};
+  readonly children: ReactNode
+  readonly className?: string
+  readonly viewportClassName?: string
+  readonly fadeFrom?: keyof typeof FADE_FROM
+  readonly fadeSize?: number | string
+  readonly orientation?: 'vertical' | 'horizontal'
+}
 
 export const ScrollFade = ({
   children,
@@ -24,46 +24,46 @@ export const ScrollFade = ({
   fadeSize = 'h-8',
   orientation = 'vertical',
 }: ScrollFadeProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [edges, setEdges] = useState({ start: false, end: false });
-  const horizontal = orientation === 'horizontal';
+  const ref = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ start: false, end: false })
+  const horizontal = orientation === 'horizontal'
 
   const sync = useCallback(() => {
-    const el = ref.current;
+    const el = ref.current
     if (!el) {
-      return;
+      return
     }
-    const start = horizontal ? el.scrollLeft > 1 : el.scrollTop > 1;
+    const start = horizontal ? el.scrollLeft > 1 : el.scrollTop > 1
     const end = horizontal
       ? el.scrollLeft + el.clientWidth < el.scrollWidth - 1
-      : el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-    setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
-  }, [horizontal]);
+      : el.scrollTop + el.clientHeight < el.scrollHeight - 1
+    setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }))
+  }, [horizontal])
 
   useLayoutEffect(() => {
-    const el = ref.current;
+    const el = ref.current
     if (!el) {
-      return;
+      return
     }
-    sync();
-    const resize = new ResizeObserver(sync);
-    resize.observe(el);
-    const mutate = new MutationObserver(sync);
-    mutate.observe(el, { childList: true, subtree: true });
+    sync()
+    const resize = new ResizeObserver(sync)
+    resize.observe(el)
+    const mutate = new MutationObserver(sync)
+    mutate.observe(el, { childList: true, subtree: true })
     return () => {
-      resize.disconnect();
-      mutate.disconnect();
-    };
-  }, [sync]);
+      resize.disconnect()
+      mutate.disconnect()
+    }
+  }, [sync])
 
-  const from = FADE_FROM[fadeFrom];
-  const sizeClass = typeof fadeSize === 'string' ? fadeSize : undefined;
+  const from = FADE_FROM[fadeFrom]
+  const sizeClass = typeof fadeSize === 'string' ? fadeSize : undefined
   const sizeStyle =
     typeof fadeSize === 'number'
       ? horizontal
         ? { width: fadeSize }
         : { height: fadeSize }
-      : undefined;
+      : undefined
 
   return (
     <div className={cn('relative min-h-0', className)}>
@@ -102,5 +102,5 @@ export const ScrollFade = ({
         )}
       />
     </div>
-  );
-};
+  )
+}

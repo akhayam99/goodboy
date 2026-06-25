@@ -1,78 +1,78 @@
-import type { PlanId, SessionId } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
-import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind';
-import { pickNextWorkflowStep } from '../../../features/workflows/components/WorkflowNextStepCta';
-import type { GetFn } from './types';
+import type { PlanId, SessionId } from '@goodboy/types'
+import { runsForWorkflowRun } from '@goodboy/core'
+import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind'
+import { pickNextWorkflowStep } from '../../../features/workflows/components/WorkflowNextStepCta'
+import type { GetFn } from './types'
 
 export const runPlan = (get: GetFn) => {
   return async (sessionId: SessionId, planId: PlanId) => {
-    const state = get();
+    const state = get()
 
-    const session = state.sessions.find((s) => s.id === sessionId);
+    const session = state.sessions.find((s) => s.id === sessionId)
     if (!session || session.workflowRuns.length === 0) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
-      });
-      return;
+      })
+      return
     }
 
-    const plan = state.sessionPlans[sessionId]?.find((p) => p.id === planId);
-    const runs = state.sessionPhaseRuns[sessionId] ?? [];
-    const creatorAgent = plan ? runs.find((r) => r.id === plan.agentId) : undefined;
+    const plan = state.sessionPlans[sessionId]?.find((p) => p.id === planId)
+    const runs = state.sessionPhaseRuns[sessionId] ?? []
+    const creatorAgent = plan ? runs.find((r) => r.id === plan.agentId) : undefined
     if (!creatorAgent?.stepId || !creatorAgent.workflowRunId) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
-      });
-      return;
+      })
+      return
     }
 
     if (creatorAgent.status === 'failed') {
-      return;
+      return
     }
 
-    const templates = state.phaseTemplates[session.workspaceId] ?? [];
-    const creatorRun = session.workflowRuns.find((r) => r.id === creatorAgent.workflowRunId);
+    const templates = state.phaseTemplates[session.workspaceId] ?? []
+    const creatorRun = session.workflowRuns.find((r) => r.id === creatorAgent.workflowRunId)
     const template =
       creatorRun && !creatorRun.discardedAt
         ? (templates.find((t) => t.id === creatorRun.workflowId) ?? null)
-        : null;
+        : null
     if (!creatorRun || !template) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
-      });
-      return;
+      })
+      return
     }
 
-    const runAgents = runsForWorkflowRun(runs, creatorRun.id);
-    const nextStep = pickNextWorkflowStep(template, runAgents);
+    const runAgents = runsForWorkflowRun(runs, creatorRun.id)
+    const nextStep = pickNextWorkflowStep(template, runAgents)
     if (!nextStep) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
-      });
-      return;
+      })
+      return
     }
 
-    const nextKind = inferAgentKindFromName(nextStep.name);
+    const nextKind = inferAgentKindFromName(nextStep.name)
     if (!kindConsumesPlan(nextKind)) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
-      });
-      return;
+      })
+      return
     }
 
-    const stepAgent = runAgents.find((r) => r.stepId === nextStep.id && r.status === 'pending');
+    const stepAgent = runAgents.find((r) => r.stepId === nextStep.id && r.status === 'pending')
     if (!stepAgent) {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
-      });
-      return;
+      })
+      return
     }
-    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId);
-  };
-};
+    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId)
+  }
+}

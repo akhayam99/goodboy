@@ -1,13 +1,13 @@
-import { GitMerge } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { MrDetailPanel } from '../GitlabStudio/MrDetailPanel';
-import { StudioShell } from '../../../../shared/components/StudioShell';
+import { GitMerge } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { MrDetailPanel } from '../GitlabStudio/MrDetailPanel'
+import { StudioShell } from '../../../../shared/components/StudioShell'
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly workspaceName: string;
-  readonly onClose: () => void;
-};
+  readonly sessionId: SessionId
+  readonly workspaceName: string
+  readonly onClose: () => void
+}
 
 export const MrSessionPane = ({ sessionId, workspaceName, onClose }: Props) => (
   <StudioShell
@@ -24,4 +24,4 @@ export const MrSessionPane = ({ sessionId, workspaceName, onClose }: Props) => (
       </div>
     )}
   </StudioShell>
-);
+)

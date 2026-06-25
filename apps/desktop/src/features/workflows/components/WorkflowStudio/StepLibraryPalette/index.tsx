@@ -1,19 +1,19 @@
-import { Fragment, useState } from 'react';
-import { Divider, EmptyState, SectionHeader } from '@goodboy/ui';
-import { Layers, Plus } from 'lucide-react';
-import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
-import type { StepDefUpsertArgs } from '../../../workflows';
-import { LibraryCard } from '../../LibraryCard';
-import { LibraryStepForm } from '../../LibraryStepForm';
+import { Fragment, useState } from 'react'
+import { Divider, EmptyState, SectionHeader } from '@goodboy/ui'
+import { Layers, Plus } from 'lucide-react'
+import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types'
+import type { StepDefUpsertArgs } from '../../../workflows'
+import { LibraryCard } from '../../LibraryCard'
+import { LibraryStepForm } from '../../LibraryStepForm'
 
 type Props = {
-  readonly library: ReadonlyArray<StepDef>;
-  readonly workspaceId: WorkspaceId;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
-  readonly onSaveDef: (args: StepDefUpsertArgs) => void;
-  readonly onDeleteDef: (id: StepDefId) => void;
-};
+  readonly library: ReadonlyArray<StepDef>
+  readonly workspaceId: WorkspaceId
+  readonly connectedProviders: ReadonlyArray<ProviderId>
+  readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void
+  readonly onSaveDef: (args: StepDefUpsertArgs) => void
+  readonly onDeleteDef: (id: StepDefId) => void
+}
 
 export const StepLibraryPalette = ({
   library,
@@ -23,7 +23,7 @@ export const StepLibraryPalette = ({
   onSaveDef,
   onDeleteDef,
 }: Props) => {
-  const [editing, setEditing] = useState<StepDefId | 'new' | null>(null);
+  const [editing, setEditing] = useState<StepDefId | 'new' | null>(null)
 
   return (
     <div className="flex flex-col gap-3">
@@ -47,10 +47,10 @@ export const StepLibraryPalette = ({
           workspaceId={workspaceId}
           connectedProviders={connectedProviders}
           onCommit={(args) => {
-            onSaveDef(args);
+            onSaveDef(args)
             // A new step persists on its first valid commit; close so repeated
             // blurs don't insert duplicates. It reappears in the list to re-edit.
-            setEditing(null);
+            setEditing(null)
           }}
           onClose={() => setEditing(null)}
         />
@@ -95,5 +95,5 @@ export const StepLibraryPalette = ({
         )}
       </ul>
     </div>
-  );
-};
+  )
+}

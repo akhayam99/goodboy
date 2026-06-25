@@ -1,13 +1,13 @@
-import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types';
+import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types'
 
-export type { AgentEffort, AgentRole } from '@goodboy/types';
+export type { AgentEffort, AgentRole } from '@goodboy/types'
 
 export type RoleDefaults = {
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly effort: AgentEffort;
-  readonly description: string;
-};
+  readonly provider: ProviderId
+  readonly model: string
+  readonly effort: AgentEffort
+  readonly description: string
+}
 
 export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
   scout: {
@@ -70,14 +70,14 @@ export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
     effort: 'medium',
     description: 'user-defined role',
   },
-};
+}
 
-const KNOWN_ROLES = new Set<string>(Object.keys(ROLE_DEFAULTS));
+const KNOWN_ROLES = new Set<string>(Object.keys(ROLE_DEFAULTS))
 
 export const isAgentRole = (role: string): role is AgentRole => {
-  return KNOWN_ROLES.has(role);
-};
+  return KNOWN_ROLES.has(role)
+}
 
 export const defaultsForRole = (role: string): RoleDefaults => {
-  return isAgentRole(role) ? ROLE_DEFAULTS[role] : ROLE_DEFAULTS.custom;
-};
+  return isAgentRole(role) ? ROLE_DEFAULTS[role] : ROLE_DEFAULTS.custom
+}

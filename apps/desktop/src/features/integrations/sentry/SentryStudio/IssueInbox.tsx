@@ -1,19 +1,19 @@
-import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search, Users } from 'lucide-react';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import type { SentryIssue } from '../client';
-import type { SentryIssueRow } from './useSentryIssues';
+import { useMemo, useState } from 'react'
+import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui'
+import { Inbox, MessagesSquare, Search, Users } from 'lucide-react'
+import { formatRelativeDuration } from '../../../../shared/utils/relativeDate'
+import type { SentryIssue } from '../client'
+import type { SentryIssueRow } from './useSentryIssues'
 
 type Props = {
-  readonly rows: ReadonlyArray<SentryIssueRow>;
-  readonly focusedIssueId: string | null;
-  readonly onSelect: (issue: SentryIssue) => void;
-  readonly onLoadMore: () => void;
-  readonly hasMore: boolean;
-  readonly loading: boolean;
-  readonly error: string | null;
-};
+  readonly rows: ReadonlyArray<SentryIssueRow>
+  readonly focusedIssueId: string | null
+  readonly onSelect: (issue: SentryIssue) => void
+  readonly onLoadMore: () => void
+  readonly hasMore: boolean
+  readonly loading: boolean
+  readonly error: string | null
+}
 
 const LEVEL_TONE: Record<string, string> = {
   fatal: 'border-danger/40 bg-danger/10 text-danger',
@@ -21,10 +21,10 @@ const LEVEL_TONE: Record<string, string> = {
   warning: 'border-warning/40 bg-warning/10 text-warning',
   info: 'border-info/40 bg-info/10 text-info',
   debug: 'border-border-soft bg-muted/40 text-muted-foreground',
-};
+}
 
 const levelTone = (level: string | null): string =>
-  LEVEL_TONE[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground';
+  LEVEL_TONE[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground'
 
 export const IssueInbox = ({
   rows,
@@ -35,20 +35,20 @@ export const IssueInbox = ({
   loading,
   error,
 }: Props) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim().toLowerCase()
     if (!q) {
-      return rows;
+      return rows
     }
     return rows.filter(
       (r) =>
         r.issue.title.toLowerCase().includes(q) ||
         (r.issue.culprit?.toLowerCase().includes(q) ?? false) ||
         (r.issue.shortId?.toLowerCase().includes(q) ?? false),
-    );
-  }, [rows, query]);
+    )
+  }, [rows, query])
 
   return (
     <div className="flex h-full flex-col">
@@ -102,8 +102,8 @@ export const IssueInbox = ({
         <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
           <ul className="flex flex-col gap-0.5 px-3 pb-3">
             {filtered.map((row) => {
-              const active = row.issue.id === focusedIssueId;
-              const lastSeen = row.issue.lastSeen ? formatRelativeDuration(row.issue.lastSeen) : '';
+              const active = row.issue.id === focusedIssueId
+              const lastSeen = row.issue.lastSeen ? formatRelativeDuration(row.issue.lastSeen) : ''
               return (
                 <li key={row.issue.id}>
                   <button
@@ -155,7 +155,7 @@ export const IssueInbox = ({
                     </div>
                   </button>
                 </li>
-              );
+              )
             })}
           </ul>
           {hasMore ? (
@@ -178,5 +178,5 @@ export const IssueInbox = ({
         </ScrollFade>
       )}
     </div>
-  );
-};
+  )
+}

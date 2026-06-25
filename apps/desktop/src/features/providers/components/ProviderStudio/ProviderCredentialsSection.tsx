@@ -1,51 +1,51 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Button, Input, SectionHeader } from '@goodboy/ui';
-import { KeyRound, Plus, Trash2 } from 'lucide-react';
-import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useCallback, useMemo, useState } from 'react'
+import { Button, Input, SectionHeader } from '@goodboy/ui'
+import { KeyRound, Plus, Trash2 } from 'lucide-react'
+import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly providerId: ProviderId;
-};
+  readonly providerId: ProviderId
+}
 
 export const ProviderCredentialsSection = ({ providerId }: Props) => {
-  const credentials = useAppStore((s) => s.providerCredentials);
-  const createCredential = useAppStore((s) => s.createCredential);
-  const deleteCredential = useAppStore((s) => s.deleteCredential);
+  const credentials = useAppStore((s) => s.providerCredentials)
+  const createCredential = useAppStore((s) => s.createCredential)
+  const deleteCredential = useAppStore((s) => s.deleteCredential)
 
   const mine = useMemo(
     () => credentials.filter((c) => c.providerId === providerId),
     [credentials, providerId],
-  );
+  )
 
-  const [adding, setAdding] = useState(false);
-  const [label, setLabel] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false)
+  const [label, setLabel] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const reset = useCallback(() => {
-    setAdding(false);
-    setLabel('');
-    setApiKey('');
-    setError(null);
-  }, []);
+    setAdding(false)
+    setLabel('')
+    setApiKey('')
+    setError(null)
+  }, [])
 
   const onSave = useCallback(async () => {
     if (!apiKey.trim()) {
-      return;
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await createCredential(providerId, label, apiKey);
-      reset();
+      await createCredential(providerId, label, apiKey)
+      reset()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  }, [apiKey, label, providerId, createCredential, reset]);
+  }, [apiKey, label, providerId, createCredential, reset])
 
   return (
     <section className="flex flex-col gap-2">
@@ -134,5 +134,5 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         </div>
       ) : null}
     </section>
-  );
-};
+  )
+}

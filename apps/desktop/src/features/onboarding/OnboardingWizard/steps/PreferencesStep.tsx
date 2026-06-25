@@ -1,28 +1,28 @@
-import { useEffect, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type { OverrideSettings, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import { Button, FieldRow, cn } from '@goodboy/ui';
-import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { ProviderChip } from '../../../providers/components/ProviderChip';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
-import { VerbositySelect } from '../../../session/components/VerbositySelect';
-import { formatError } from '../../../../shared/lib/errors';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
-import { useAppStore } from '../../../../store';
+import { useEffect, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import type { OverrideSettings, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types'
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types'
+import { Button, FieldRow, cn } from '@goodboy/ui'
+import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { ProviderChip } from '../../../providers/components/ProviderChip'
+import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch'
+import { VerbositySelect } from '../../../session/components/VerbositySelect'
+import { formatError } from '../../../../shared/lib/errors'
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly workspaceId: WorkspaceId | null;
-};
+  readonly workspaceId: WorkspaceId | null
+}
 
-const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini']
 
 const sanitizePrefix = (input: string): string =>
   input
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '')
     .replace(/^-+/, '')
-    .slice(0, 16);
+    .slice(0, 16)
 
 export const PreferencesStep = ({ workspaceId }: Props) => {
   return (
@@ -41,8 +41,8 @@ export const PreferencesStep = ({ workspaceId }: Props) => {
 
       {workspaceId === null ? <EmptyState /> : <PreferencesForm workspaceId={workspaceId} />}
     </div>
-  );
-};
+  )
+}
 
 const EmptyState = () => (
   <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-border-soft/40 bg-subtle/20 px-4 py-6 text-center">
@@ -60,42 +60,42 @@ const EmptyState = () => (
       <FolderGit2 size={14} aria-hidden /> Add workspace
     </Button>
   </div>
-);
+)
 
 const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const saveSetting = useAppStore((s) => s.saveSetting);
-  const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
-  const setWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
+  const loadSetting = useAppStore((s) => s.loadSetting)
+  const saveSetting = useAppStore((s) => s.saveSetting)
+  const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null)
+  const setWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides)
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
+  )
 
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
+  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal'
   const defaultProvider =
-    wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const scoutFanout = wsOverrides?.scoutFanout ?? false;
+    wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider
+  const scoutFanout = wsOverrides?.scoutFanout ?? false
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
-      const value = v ?? DEFAULT_BRANCH_PREFIX;
-      setBranchPrefix(value);
-      setSavedBranchPrefix(value);
-    });
-  }, [workspaceId, loadSetting]);
+      const value = v ?? DEFAULT_BRANCH_PREFIX
+      setBranchPrefix(value)
+      setSavedBranchPrefix(value)
+    })
+  }, [workspaceId, loadSetting])
 
   const persistOverrides = async (
     partial: Partial<
       Pick<OverrideSettings, 'defaultProviderId' | 'defaultVerbosity' | 'scoutFanout'>
     >,
   ) => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
       await setWorkspaceOverrides(workspaceId, {
         defaultProviderId: wsOverrides?.defaultProviderId ?? null,
@@ -106,31 +106,31 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
         providerBindings: wsOverrides?.providerBindings ?? null,
         scoutFanout,
         ...partial,
-      });
+      })
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const commitBranchPrefix = async () => {
-    const next = branchPrefix.trim() || DEFAULT_BRANCH_PREFIX;
-    setBranchPrefix(next);
+    const next = branchPrefix.trim() || DEFAULT_BRANCH_PREFIX
+    setBranchPrefix(next)
     if (next === savedBranchPrefix) {
-      return;
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await saveSetting(settingBranchPrefix(workspaceId), next);
-      setSavedBranchPrefix(next);
+      await saveSetting(settingBranchPrefix(workspaceId), next)
+      setSavedBranchPrefix(next)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <div className="flex w-full flex-col gap-4 text-left">
@@ -148,7 +148,7 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
               onBlur={() => void commitBranchPrefix()}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  void commitBranchPrefix();
+                  void commitBranchPrefix()
                 }
               }}
               placeholder={DEFAULT_BRANCH_PREFIX}
@@ -223,5 +223,5 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
 
       {error ? <p className="text-xs text-danger">{error}</p> : null}
     </div>
-  );
-};
+  )
+}

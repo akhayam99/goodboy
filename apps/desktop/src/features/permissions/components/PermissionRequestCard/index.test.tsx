@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import type { TranscriptItem } from '../../../chat/utils/transcript-items';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import type { TranscriptItem } from '../../../chat/utils/transcript-items'
 
 vi.mock('../PermissionScopePicker', () => ({
   PermissionScopePicker: ({ onResolved }: { onResolved: () => void }) => (
@@ -10,11 +10,11 @@ vi.mock('../PermissionScopePicker', () => ({
       mock-picker
     </button>
   ),
-}));
+}))
 
-import { PermissionRequestCard } from './index';
+import { PermissionRequestCard } from './index'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 function makeItem(): Extract<TranscriptItem, { kind: 'permission_request' }> {
   return {
@@ -23,7 +23,7 @@ function makeItem(): Extract<TranscriptItem, { kind: 'permission_request' }> {
     toolUseId: 'tu-1',
     toolName: 'bash',
     runId: 'run-1',
-  } as Extract<TranscriptItem, { kind: 'permission_request' }>;
+  } as Extract<TranscriptItem, { kind: 'permission_request' }>
 }
 
 describe('PermissionRequestCard', () => {
@@ -34,13 +34,13 @@ describe('PermissionRequestCard', () => {
         sessionId={'sess' as never}
         agentId={'agent' as never}
       />,
-    );
-    expect(screen.getByText('bash')).toBeDefined();
-    expect(screen.getByTestId('scope-picker-mock')).toBeDefined();
-  });
+    )
+    expect(screen.getByText('bash')).toBeDefined()
+    expect(screen.getByTestId('scope-picker-mock')).toBeDefined()
+  })
 
   it('does not render a scope picker when sessionId is missing', () => {
-    render(<PermissionRequestCard item={makeItem()} sessionId={null} agentId={null} />);
-    expect(screen.queryByTestId('scope-picker-mock')).toBeNull();
-  });
-});
+    render(<PermissionRequestCard item={makeItem()} sessionId={null} agentId={null} />)
+    expect(screen.queryByTestId('scope-picker-mock')).toBeNull()
+  })
+})

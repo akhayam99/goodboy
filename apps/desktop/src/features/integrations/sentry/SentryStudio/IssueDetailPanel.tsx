@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react'
 import {
   Button,
   Divider,
@@ -8,7 +8,7 @@ import {
   Skeleton,
   Textarea,
   cn,
-} from '@goodboy/ui';
+} from '@goodboy/ui'
 import {
   ArrowRight,
   ExternalLink,
@@ -17,26 +17,26 @@ import {
   MessagesSquare,
   MousePointerClick,
   Target,
-} from 'lucide-react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
-import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors';
-import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
-import { goalFromSentry } from '../goal-from-sentry';
-import { sentryFetchIssueDetail, type SentryIssue, type SentryIssueDetail } from '../client';
+} from 'lucide-react'
+import type { SessionId, WorkspaceId } from '@goodboy/types'
+import { ScrollFade } from '@goodboy/ui'
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
+import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors'
+import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide'
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings'
+import { goalFromSentry } from '../goal-from-sentry'
+import { sentryFetchIssueDetail, type SentryIssue, type SentryIssueDetail } from '../client'
 
 type Props = {
-  readonly issue: SentryIssue | null;
-  readonly sessionId: SessionId | null;
-  readonly workspaceId: WorkspaceId;
-  readonly onClose: () => void;
-};
+  readonly issue: SentryIssue | null
+  readonly sessionId: SessionId | null
+  readonly workspaceId: WorkspaceId
+  readonly onClose: () => void
+}
 
-const SLUG_MAX_LEN = 30;
+const SLUG_MAX_LEN = 30
 
 function slugify(input: string): string {
   return input
@@ -46,7 +46,7 @@ function slugify(input: string): string {
     .replace(/[\s_]+/g, '-')
     .replace(/-+/g, '-')
     .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
+    .replace(/-+$/, '')
 }
 
 function sanitizeSlug(input: string): string {
@@ -54,7 +54,7 @@ function sanitizeSlug(input: string): string {
     .replace(/[^a-zA-Z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
+    .slice(0, SLUG_MAX_LEN)
 }
 
 function sanitizePrefix(input: string): string {
@@ -62,15 +62,15 @@ function sanitizePrefix(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '')
     .replace(/^-+/, '')
-    .slice(0, 16);
+    .slice(0, 16)
 }
 
 function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
+  const s = slug.trim()
   if (!s) {
-    return false;
+    return false
   }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..')
 }
 
 const LEVEL_TONE: Record<string, string> = {
@@ -79,85 +79,85 @@ const LEVEL_TONE: Record<string, string> = {
   warning: 'border-warning/40 bg-warning/10 text-warning',
   info: 'border-info/40 bg-info/10 text-info',
   debug: 'border-border-soft bg-muted/40 text-muted-foreground',
-};
+}
 
 const levelTone = (level: string | null): string =>
-  LEVEL_TONE[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground';
+  LEVEL_TONE[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground'
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
-  const createSession = useAppStore((s) => s.createSession);
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const { showToast } = useToast();
+  const createSession = useAppStore((s) => s.createSession)
+  const loadSetting = useAppStore((s) => s.loadSetting)
+  const { showToast } = useToast()
 
-  const [goal, setGoal] = useState('');
-  const [branchSlug, setBranchSlug] = useState('');
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [detail, setDetail] = useState<SentryIssueDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState<string | null>(null);
+  const [goal, setGoal] = useState('')
+  const [branchSlug, setBranchSlug] = useState('')
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [detail, setDetail] = useState<SentryIssueDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState<string | null>(null)
   const [setupWorkflow, setSetupWorkflow] = useState(() => {
     try {
-      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
+      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0'
     } catch {
-      return true;
+      return true
     }
-  });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const lastGenRef = useRef('');
+  })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const lastGenRef = useRef('')
 
   useEffect(() => {
     if (!issue) {
-      return;
+      return
     }
-    const initial = goalFromSentry(issue);
-    lastGenRef.current = initial;
-    setGoal(initial);
-    setBranchSlug(slugify(issue.title));
-    setDetail(null);
-    setDetailError(null);
-    setError(null);
-    setBusy(false);
-  }, [issue]);
+    const initial = goalFromSentry(issue)
+    lastGenRef.current = initial
+    setGoal(initial)
+    setBranchSlug(slugify(issue.title))
+    setDetail(null)
+    setDetailError(null)
+    setError(null)
+    setBusy(false)
+  }, [issue])
 
   useEffect(() => {
     if (!issue) {
-      return;
+      return
     }
-    let cancelled = false;
-    setDetailLoading(true);
-    setDetailError(null);
+    let cancelled = false
+    setDetailLoading(true)
+    setDetailError(null)
     sentryFetchIssueDetail(workspaceId, issue.id)
       .then((d) => {
         if (cancelled) {
-          return;
+          return
         }
-        setDetail(d);
-        const regenerated = goalFromSentry(issue, d);
-        const prevGen = lastGenRef.current;
-        lastGenRef.current = regenerated;
-        setGoal((cur) => (cur === prevGen ? regenerated : cur));
+        setDetail(d)
+        const regenerated = goalFromSentry(issue, d)
+        const prevGen = lastGenRef.current
+        lastGenRef.current = regenerated
+        setGoal((cur) => (cur === prevGen ? regenerated : cur))
       })
       .catch((err) => {
         if (!cancelled) {
-          setDetailError(formatError(err));
+          setDetailError(formatError(err))
         }
       })
       .finally(() => {
         if (!cancelled) {
-          setDetailLoading(false);
+          setDetailLoading(false)
         }
-      });
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [issue, workspaceId]);
+      cancelled = true
+    }
+  }, [issue, workspaceId])
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((value) => {
-      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
-    });
-  }, [workspaceId, loadSetting]);
+      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX)
+    })
+  }, [workspaceId, loadSetting])
 
   if (!issue) {
     return (
@@ -168,15 +168,15 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           description="Pick an issue to see its stack trace and launch a session."
         />
       </div>
-    );
+    )
   }
 
-  const canLaunch = goal.trim().length > 0 && isValidBranchSlug(branchSlug) && !busy;
-  const missingBase = error !== null && isMissingBaseRefError(error);
+  const canLaunch = goal.trim().length > 0 && isValidBranchSlug(branchSlug) && !busy
+  const missingBase = error !== null && isMissingBaseRefError(error)
 
   const onLaunch = async () => {
-    setError(null);
-    setBusy(true);
+    setError(null)
+    setBusy(true)
     try {
       const { session } = await createSession({
         workspaceId,
@@ -190,35 +190,35 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           url: issue.permalink ?? '',
           title: issue.title,
         },
-      });
-      showToast('success', `Session created: ${session.goal}`);
-      onClose();
+      })
+      showToast('success', `Session created: ${session.goal}`)
+      onClose()
       if (setupWorkflow) {
         setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent('goodboy:open-workflow-builder', {
               detail: { sessionId: session.id },
             }),
-          );
-        }, 0);
+          )
+        }, 0)
       }
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onToggleSetupWorkflow = (next: boolean) => {
-    setSetupWorkflow(next);
+    setSetupWorkflow(next)
     try {
-      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
+      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0')
     } catch {
-      void 0;
+      void 0
     }
-  };
+  }
 
-  const frames = detail?.frames ?? [];
+  const frames = detail?.frames ?? []
 
   return (
     <div className="flex h-full flex-col">
@@ -393,5 +393,5 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}

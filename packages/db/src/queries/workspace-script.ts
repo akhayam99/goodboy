@@ -1,15 +1,15 @@
-import type { IsoDateTime, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
-import type { Database } from '../client';
+import type { IsoDateTime, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types'
+import type { Database } from '../client'
 
 type WorkspaceScriptRow = {
-  id: string;
-  workspace_id: string;
-  name: string;
-  body: string;
-  sort_order: number;
-  created_at: number;
-  updated_at: number;
-};
+  id: string
+  workspace_id: string
+  name: string
+  body: string
+  sort_order: number
+  created_at: number
+  updated_at: number
+}
 
 function toDomain(row: WorkspaceScriptRow): WorkspaceScript {
   return {
@@ -20,7 +20,7 @@ function toDomain(row: WorkspaceScriptRow): WorkspaceScript {
     sortOrder: row.sort_order,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  };
+  }
 }
 
 export const listWorkspaceScripts = async (
@@ -30,9 +30,9 @@ export const listWorkspaceScripts = async (
   const rows = await db.select<WorkspaceScriptRow>(
     'SELECT * FROM workspace_scripts WHERE workspace_id = ? ORDER BY sort_order ASC, created_at ASC',
     [workspaceId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const upsertWorkspaceScript = async (
   db: Database,
@@ -56,12 +56,12 @@ export const upsertWorkspaceScript = async (
       Date.parse(script.createdAt),
       Date.parse(script.updatedAt),
     ],
-  );
-};
+  )
+}
 
 export const deleteWorkspaceScript = async (
   db: Database,
   scriptId: WorkspaceScriptId,
 ): Promise<void> => {
-  await db.execute('DELETE FROM workspace_scripts WHERE id = ?', [scriptId]);
-};
+  await db.execute('DELETE FROM workspace_scripts WHERE id = ?', [scriptId])
+}

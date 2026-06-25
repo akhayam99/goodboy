@@ -1,44 +1,44 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 
-export type ToastKind = 'info' | 'warning' | 'error' | 'success';
+export type ToastKind = 'info' | 'warning' | 'error' | 'success'
 
 export type ToastItem = {
-  readonly id: string;
-  readonly kind: ToastKind;
-  readonly message: string;
-  readonly title?: string;
-  readonly context?: string;
-  readonly persist?: boolean;
-};
+  readonly id: string
+  readonly kind: ToastKind
+  readonly message: string
+  readonly title?: string
+  readonly context?: string
+  readonly persist?: boolean
+}
 
 export type ShowToastOptions = {
-  readonly title?: string;
-  readonly context?: string;
-  readonly persist?: boolean;
-};
+  readonly title?: string
+  readonly context?: string
+  readonly persist?: boolean
+}
 
 type ToastContextValue = {
-  showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void;
-};
+  showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void
+}
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+const ToastContext = createContext<ToastContextValue | null>(null)
 
-const AUTO_DISMISS_MS = 5000;
-const MAX_PERSISTED_ERRORS = 3;
+const AUTO_DISMISS_MS = 5000
+const MAX_PERSISTED_ERRORS = 3
 
 type ToastProviderProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 export const ToastProvider = ({ children }: ToastProviderProps) => {
-  const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
+  const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([])
 
   const showToast = useCallback((kind: ToastKind, message: string, opts?: ShowToastOptions) => {
-    const id = crypto.randomUUID();
+    const id = crypto.randomUUID()
     const formatted =
-      message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message;
+      message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message
     setToasts((prev) => [
       ...prev,
       {
@@ -49,52 +49,52 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
         context: opts?.context,
         persist: opts?.persist,
       },
-    ]);
-  }, []);
+    ])
+  }, [])
 
   const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <ToastStack toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>
-  );
-};
+  )
+}
 
 export const useToast = (): ToastContextValue => {
-  const ctx = useContext(ToastContext);
+  const ctx = useContext(ToastContext)
   if (ctx === null) {
-    throw new Error('useToast must be used inside ToastProvider');
+    throw new Error('useToast must be used inside ToastProvider')
   }
-  return ctx;
-};
+  return ctx
+}
 
 type ToastStackProps = {
-  toasts: ReadonlyArray<ToastItem>;
-  onDismiss: (id: string) => void;
-};
+  toasts: ReadonlyArray<ToastItem>
+  onDismiss: (id: string) => void
+}
 
-const isAssertive = (t: ToastItem): boolean => t.kind === 'error' || t.kind === 'warning';
-const isPersistedError = (t: ToastItem): boolean => t.kind === 'error' && Boolean(t.persist);
+const isAssertive = (t: ToastItem): boolean => t.kind === 'error' || t.kind === 'warning'
+const isPersistedError = (t: ToastItem): boolean => t.kind === 'error' && Boolean(t.persist)
 
 function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   if (toasts.length === 0) {
-    return null;
+    return null
   }
 
   // Cap persisted-error toasts so a failing agent can't bury the viewport.
   // The newest survive; the overflow collapses into a single chip that
   // points to the notification center where the full history lives.
-  const persistedErrors = toasts.filter(isPersistedError);
-  const overflowCount = Math.max(0, persistedErrors.length - MAX_PERSISTED_ERRORS);
-  const suppressed = new Set(persistedErrors.slice(0, overflowCount).map((t) => t.id));
+  const persistedErrors = toasts.filter(isPersistedError)
+  const overflowCount = Math.max(0, persistedErrors.length - MAX_PERSISTED_ERRORS)
+  const suppressed = new Set(persistedErrors.slice(0, overflowCount).map((t) => t.id))
 
-  const visible = toasts.filter((t) => !suppressed.has(t.id));
-  const assertive = visible.filter(isAssertive);
-  const polite = visible.filter((t) => !isAssertive(t));
+  const visible = toasts.filter((t) => !suppressed.has(t.id))
+  const assertive = visible.filter(isAssertive)
+  const polite = visible.filter((t) => !isAssertive(t))
 
   return (
     <div className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2">
@@ -112,7 +112,7 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 function ErrorOverflowChip({ count }: { count: number }) {
@@ -125,20 +125,20 @@ function ErrorOverflowChip({ count }: { count: number }) {
       <Bell size={11} aria-hidden />
       <span className="tabular-nums">+{count} more errors</span>
     </button>
-  );
+  )
 }
 
 type ToastCardProps = {
-  toast: ToastItem;
-  onDismiss: (id: string) => void;
-};
+  toast: ToastItem
+  onDismiss: (id: string) => void
+}
 
 const KIND_ICON = {
   error: AlertCircle,
   warning: AlertTriangle,
   success: CheckCircle2,
   info: Info,
-} as const;
+} as const
 
 const KIND_CLASSES = {
   error: {
@@ -161,32 +161,32 @@ const KIND_CLASSES = {
     strip: 'bg-info',
     icon: 'text-info',
   },
-} as const;
+} as const
 
 function ToastCard({ toast, onDismiss }: ToastCardProps) {
-  const [visible, setVisible] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [visible, setVisible] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setVisible(true));
+    const raf = requestAnimationFrame(() => setVisible(true))
     if (!toast.persist) {
       timerRef.current = setTimeout(() => {
-        setVisible(false);
-        setTimeout(() => onDismiss(toast.id), 200);
-      }, AUTO_DISMISS_MS);
+        setVisible(false)
+        setTimeout(() => onDismiss(toast.id), 200)
+      }, AUTO_DISMISS_MS)
     }
 
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(raf)
       if (timerRef.current !== null) {
-        clearTimeout(timerRef.current);
+        clearTimeout(timerRef.current)
       }
-    };
-  }, [toast.id, toast.persist, onDismiss]);
+    }
+  }, [toast.id, toast.persist, onDismiss])
 
-  const { card, strip, icon } = KIND_CLASSES[toast.kind];
-  const Icon = KIND_ICON[toast.kind];
-  const hasTitle = Boolean(toast.title);
+  const { card, strip, icon } = KIND_CLASSES[toast.kind]
+  const Icon = KIND_ICON[toast.kind]
+  const hasTitle = Boolean(toast.title)
 
   return (
     <div
@@ -227,5 +227,5 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         </button>
       </div>
     </div>
-  );
+  )
 }

@@ -1,36 +1,36 @@
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
-import { MoreVertical } from 'lucide-react';
-import { Popover, cn } from '@goodboy/ui';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { MoreVertical } from 'lucide-react'
+import { Popover, cn } from '@goodboy/ui'
 
 type IconProps = {
-  readonly size?: number;
-  readonly className?: string;
-  readonly 'aria-hidden'?: boolean;
-};
+  readonly size?: number
+  readonly className?: string
+  readonly 'aria-hidden'?: boolean
+}
 
 export type OverflowMenuItem =
   | {
-      readonly kind: 'item';
-      readonly key: string;
-      readonly label: string;
-      readonly icon?: ComponentType<IconProps>;
-      readonly onClick: () => void;
-      readonly destructive?: boolean;
-      readonly disabled?: boolean;
-      readonly hint?: string;
+      readonly kind: 'item'
+      readonly key: string
+      readonly label: string
+      readonly icon?: ComponentType<IconProps>
+      readonly onClick: () => void
+      readonly destructive?: boolean
+      readonly disabled?: boolean
+      readonly hint?: string
     }
   | { readonly kind: 'separator'; readonly key: string }
   | { readonly kind: 'header'; readonly key: string; readonly label: string }
-  | { readonly kind: 'empty'; readonly key: string; readonly label: string };
+  | { readonly kind: 'empty'; readonly key: string; readonly label: string }
 
 type OverflowMenuProps = {
-  readonly items: ReadonlyArray<OverflowMenuItem>;
-  readonly label?: string;
-  readonly triggerClassName?: string;
-  readonly trigger?: ReactNode;
-  readonly disabled?: boolean;
-  readonly align?: 'left' | 'right';
-};
+  readonly items: ReadonlyArray<OverflowMenuItem>
+  readonly label?: string
+  readonly triggerClassName?: string
+  readonly trigger?: ReactNode
+  readonly disabled?: boolean
+  readonly align?: 'left' | 'right'
+}
 
 export const OverflowMenu = ({
   items,
@@ -40,30 +40,30 @@ export const OverflowMenu = ({
   disabled,
   align = 'right',
 }: OverflowMenuProps) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const onDocClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
+    }
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    window.addEventListener('mousedown', onDocClick);
-    window.addEventListener('keydown', onEsc);
+    }
+    window.addEventListener('mousedown', onDocClick)
+    window.addEventListener('keydown', onEsc)
     return () => {
-      window.removeEventListener('mousedown', onDocClick);
-      window.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
+      window.removeEventListener('mousedown', onDocClick)
+      window.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
 
   return (
     <div className="relative" ref={containerRef}>
@@ -97,7 +97,7 @@ export const OverflowMenu = ({
         >
           {items.map((item) => {
             if (item.kind === 'separator') {
-              return <div key={item.key} aria-hidden className="my-1 h-px bg-border-soft" />;
+              return <div key={item.key} aria-hidden className="my-1 h-px bg-border-soft" />
             }
             if (item.kind === 'header') {
               return (
@@ -107,16 +107,16 @@ export const OverflowMenu = ({
                 >
                   {item.label}
                 </div>
-              );
+              )
             }
             if (item.kind === 'empty') {
               return (
                 <div key={item.key} className="px-2.5 py-1.5 text-muted-foreground/50 italic">
                   {item.label}
                 </div>
-              );
+              )
             }
-            const Icon = item.icon;
+            const Icon = item.icon
             return (
               <button
                 key={item.key}
@@ -125,10 +125,10 @@ export const OverflowMenu = ({
                 disabled={item.disabled}
                 onClick={() => {
                   if (item.disabled) {
-                    return;
+                    return
                   }
-                  item.onClick();
-                  setOpen(false);
+                  item.onClick()
+                  setOpen(false)
                 }}
                 className={cn(
                   'flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors',
@@ -147,10 +147,10 @@ export const OverflowMenu = ({
                   <kbd className="font-mono text-2xs text-muted-foreground/60">{item.hint}</kbd>
                 ) : null}
               </button>
-            );
+            )
           })}
         </Popover>
       ) : null}
     </div>
-  );
-};
+  )
+}

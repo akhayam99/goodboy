@@ -1,15 +1,15 @@
-import { cn, formatUsd } from '@goodboy/ui';
-import { LayoutDashboard } from 'lucide-react';
-import type { ProviderSpendEntry } from '../../../../store';
-import { ProviderIcon } from './ProviderIcon';
-import { providerLabel, spendBarColor, type BudgetScope, type SessionSpend } from './lib';
+import { cn, formatUsd } from '@goodboy/ui'
+import { LayoutDashboard } from 'lucide-react'
+import type { ProviderSpendEntry } from '../../../../store'
+import { ProviderIcon } from './ProviderIcon'
+import { providerLabel, spendBarColor, type BudgetScope, type SessionSpend } from './lib'
 
 type Props = {
-  readonly scope: BudgetScope;
-  readonly onSelect: (scope: BudgetScope) => void;
-  readonly providers: ReadonlyArray<ProviderSpendEntry>;
-  readonly sessions: ReadonlyArray<SessionSpend>;
-};
+  readonly scope: BudgetScope
+  readonly onSelect: (scope: BudgetScope) => void
+  readonly providers: ReadonlyArray<ProviderSpendEntry>
+  readonly sessions: ReadonlyArray<SessionSpend>
+}
 
 export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
   return (
@@ -38,9 +38,9 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
           <GroupLabel label="providers" count={providers.length} />
           <ul className="flex flex-col gap-0.5">
             {providers.map((entry) => {
-              const active = scope.kind === 'provider' && scope.provider === entry.provider;
-              const hasCap = entry.capUsd !== null;
-              const pctClamped = Math.min(entry.pct, 1);
+              const active = scope.kind === 'provider' && scope.provider === entry.provider
+              const hasCap = entry.capUsd !== null
+              const pctClamped = Math.min(entry.pct, 1)
               return (
                 <li key={entry.provider}>
                   <button
@@ -71,7 +71,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     ) : null}
                   </button>
                 </li>
-              );
+              )
             })}
           </ul>
         </div>
@@ -82,7 +82,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
           <GroupLabel label="sessions" count={sessions.length} />
           <ul className="flex flex-col gap-0.5">
             {sessions.map((s) => {
-              const active = scope.kind === 'session' && scope.sessionId === s.sessionId;
+              const active = scope.kind === 'session' && scope.sessionId === s.sessionId
               return (
                 <li key={s.sessionId}>
                   <button
@@ -111,14 +111,14 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     </span>
                   </button>
                 </li>
-              );
+              )
             })}
           </ul>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 function GroupLabel({ label, count }: { label: string; count?: number }) {
   return (
@@ -131,5 +131,5 @@ function GroupLabel({ label, count }: { label: string; count?: number }) {
       )}
       <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
     </div>
-  );
+  )
 }

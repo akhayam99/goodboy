@@ -1,36 +1,36 @@
-import { useEffect } from 'react';
+import { useEffect } from 'react'
 
-type ShortcutScope = 'global' | 'dialog';
+type ShortcutScope = 'global' | 'dialog'
 
 type ShortcutOptions = {
-  ignoreInInputs?: boolean;
-  scope?: ShortcutScope;
-};
+  ignoreInInputs?: boolean
+  scope?: ShortcutScope
+}
 
 type ShortcutCombo = {
-  key: string;
-  meta?: boolean;
-  ctrl?: boolean;
-  shift?: boolean;
-  alt?: boolean;
-};
+  key: string
+  meta?: boolean
+  ctrl?: boolean
+  shift?: boolean
+  alt?: boolean
+}
 
 const KEY_ALIAS: Record<string, string> = {
   comma: ',',
   period: '.',
   slash: '/',
-};
+}
 
 function parseCombo(combo: string): ShortcutCombo {
-  const parts = combo.toLowerCase().split('+');
-  const key = parts[parts.length - 1] ?? '';
+  const parts = combo.toLowerCase().split('+')
+  const key = parts[parts.length - 1] ?? ''
   return {
     key: KEY_ALIAS[key] ?? key,
     meta: parts.includes('cmd') || parts.includes('meta'),
     ctrl: parts.includes('ctrl'),
     shift: parts.includes('shift'),
     alt: parts.includes('alt'),
-  };
+  }
 }
 
 function comboMatches(e: KeyboardEvent, combo: ShortcutCombo): boolean {
@@ -40,22 +40,22 @@ function comboMatches(e: KeyboardEvent, combo: ShortcutCombo): boolean {
     Boolean(e.ctrlKey) === Boolean(combo.ctrl) &&
     Boolean(e.shiftKey) === Boolean(combo.shift) &&
     Boolean(e.altKey) === Boolean(combo.alt)
-  );
+  )
 }
 
 function isFocusInInput(): boolean {
-  const el = document.activeElement;
+  const el = document.activeElement
   if (!el) {
-    return false;
+    return false
   }
-  const tag = el.tagName.toLowerCase();
+  const tag = el.tagName.toLowerCase()
   if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-    return true;
+    return true
   }
   if ((el as HTMLElement).isContentEditable) {
-    return true;
+    return true
   }
-  return false;
+  return false
 }
 
 export const useKeyboardShortcut = (
@@ -63,23 +63,23 @@ export const useKeyboardShortcut = (
   handler: () => void,
   options: ShortcutOptions = {},
 ): void => {
-  const { ignoreInInputs = true } = options;
+  const { ignoreInInputs = true } = options
 
   useEffect(() => {
-    const parsed = parseCombo(combo);
+    const parsed = parseCombo(combo)
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (!comboMatches(e, parsed)) {
-        return;
+        return
       }
       if (ignoreInInputs && parsed.meta && isFocusInInput()) {
-        return;
+        return
       }
-      e.preventDefault();
-      handler();
-    };
+      e.preventDefault()
+      handler()
+    }
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [combo, handler, ignoreInInputs]);
-};
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [combo, handler, ignoreInInputs])
+}

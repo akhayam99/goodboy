@@ -1,7 +1,7 @@
-import { updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
-import type { IsoDateTime } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
+import { updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db'
+import type { IsoDateTime } from '@goodboy/types'
+import { tauriDatabase } from '../../../shared/lib/db'
+import { formatError } from '../../../shared/lib/errors'
 
 export const recordOutcome = async (id: string, outcome: NudgeOutcome): Promise<void> => {
   try {
@@ -10,10 +10,10 @@ export const recordOutcome = async (id: string, outcome: NudgeOutcome): Promise<
       id,
       outcome,
       new Date().toISOString() as IsoDateTime,
-    );
+    )
   } catch (err) {
     if (import.meta.env.DEV) {
-      console.warn(`[nudge-event] update failed: ${formatError(err)}`);
+      console.warn(`[nudge-event] update failed: ${formatError(err)}`)
     }
   }
-};
+}

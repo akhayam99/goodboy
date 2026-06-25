@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS provider_credentials (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_provider_credentials_provider_id ON provider_credentials(provider_id);
-`;
+`

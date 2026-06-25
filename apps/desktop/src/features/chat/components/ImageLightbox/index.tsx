@@ -1,60 +1,60 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
 
 type Props = {
-  readonly src: string;
-  readonly alt: string;
-  readonly onClose: () => void;
-  readonly media?: 'image' | 'pdf';
-};
+  readonly src: string
+  readonly alt: string
+  readonly onClose: () => void
+  readonly media?: 'image' | 'pdf'
+}
 
-const EXIT_MS = 180;
+const EXIT_MS = 180
 
 export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => {
-  const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
-  const exitTimerRef = useRef<number | null>(null);
+  const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter')
+  const exitTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setPhase('open'));
-    });
-    return () => cancelAnimationFrame(id);
-  }, []);
+      requestAnimationFrame(() => setPhase('open'))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   const requestClose = useCallback(() => {
-    setPhase((prev) => (prev === 'leave' ? prev : 'leave'));
-  }, []);
+    setPhase((prev) => (prev === 'leave' ? prev : 'leave'))
+  }, [])
 
   useEffect(() => {
     if (phase !== 'leave') {
-      return;
+      return
     }
-    exitTimerRef.current = window.setTimeout(onClose, EXIT_MS);
+    exitTimerRef.current = window.setTimeout(onClose, EXIT_MS)
     return () => {
       if (exitTimerRef.current !== null) {
-        clearTimeout(exitTimerRef.current);
-        exitTimerRef.current = null;
+        clearTimeout(exitTimerRef.current)
+        exitTimerRef.current = null
       }
-    };
-  }, [phase, onClose]);
+    }
+  }, [phase, onClose])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        requestClose();
+        requestClose()
       }
-    };
-    window.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [requestClose]);
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [requestClose])
 
-  const visible = phase === 'open';
+  const visible = phase === 'open'
 
   return createPortal(
     <div
@@ -98,5 +98,5 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
       )}
     </div>,
     document.body,
-  );
-};
+  )
+}

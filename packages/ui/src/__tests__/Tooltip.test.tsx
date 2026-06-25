@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, act } from '@testing-library/react';
-import { Tooltip } from '../components/Tooltip';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, act } from '@testing-library/react'
+import { Tooltip } from '../components/Tooltip'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 describe('Tooltip', () => {
   it('does not show tooltip initially', () => {
@@ -11,72 +11,72 @@ describe('Tooltip', () => {
       <Tooltip content="test tip">
         <button type="button">btn</button>
       </Tooltip>,
-    );
-    expect(screen.queryByRole('tooltip')).toBeNull();
-  });
+    )
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
 
   it('shows tooltip after mouse enter delay', async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers()
     render(
       <Tooltip content="test tip">
         <button type="button">btn</button>
       </Tooltip>,
-    );
-    fireEvent.mouseEnter(screen.getByRole('button'));
-    expect(screen.queryByRole('tooltip')).toBeNull();
+    )
+    fireEvent.mouseEnter(screen.getByRole('button'))
+    expect(screen.queryByRole('tooltip')).toBeNull()
     await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    expect(screen.getByRole('tooltip')).toBeDefined();
-    expect(screen.getByRole('tooltip').textContent).toBe('test tip');
-    vi.useRealTimers();
-  });
+      vi.advanceTimersByTime(400)
+    })
+    expect(screen.getByRole('tooltip')).toBeDefined()
+    expect(screen.getByRole('tooltip').textContent).toBe('test tip')
+    vi.useRealTimers()
+  })
 
   it('hides tooltip on mouse leave', async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers()
     render(
       <Tooltip content="test tip">
         <button type="button">btn</button>
       </Tooltip>,
-    );
-    fireEvent.mouseEnter(screen.getByRole('button'));
+    )
+    fireEvent.mouseEnter(screen.getByRole('button'))
     await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    expect(screen.getByRole('tooltip')).toBeDefined();
-    fireEvent.mouseLeave(screen.getByRole('button'));
-    expect(screen.queryByRole('tooltip')).toBeNull();
-    vi.useRealTimers();
-  });
+      vi.advanceTimersByTime(400)
+    })
+    expect(screen.getByRole('tooltip')).toBeDefined()
+    fireEvent.mouseLeave(screen.getByRole('button'))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    vi.useRealTimers()
+  })
 
   it('shows tooltip on focus (keyboard navigation)', async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers()
     render(
       <Tooltip content="keyboard tip">
         <button type="button">btn</button>
       </Tooltip>,
-    );
-    fireEvent.focus(screen.getByRole('button'));
+    )
+    fireEvent.focus(screen.getByRole('button'))
     await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    expect(screen.getByRole('tooltip').textContent).toBe('keyboard tip');
-    vi.useRealTimers();
-  });
+      vi.advanceTimersByTime(400)
+    })
+    expect(screen.getByRole('tooltip').textContent).toBe('keyboard tip')
+    vi.useRealTimers()
+  })
 
   it('hides tooltip on blur', async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers()
     render(
       <Tooltip content="keyboard tip">
         <button type="button">btn</button>
       </Tooltip>,
-    );
-    fireEvent.focus(screen.getByRole('button'));
+    )
+    fireEvent.focus(screen.getByRole('button'))
     await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    fireEvent.blur(screen.getByRole('button'));
-    expect(screen.queryByRole('tooltip')).toBeNull();
-    vi.useRealTimers();
-  });
-});
+      vi.advanceTimersByTime(400)
+    })
+    fireEvent.blur(screen.getByRole('button'))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    vi.useRealTimers()
+  })
+})

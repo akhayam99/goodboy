@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { TranscriptItem } from '../../utils/transcript-items';
-import { PhaseTransitionCard } from './index';
+import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { TranscriptItem } from '../../utils/transcript-items'
+import { PhaseTransitionCard } from './index'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 const item = {
   kind: 'step_transition',
@@ -14,18 +14,18 @@ const item = {
   fromStep: { ordinal: 0, name: 'discover' },
   toStep: { ordinal: 1, name: 'plan' },
   carryForwardContext: 'carry me forward',
-} as Extract<TranscriptItem, { kind: 'step_transition' }>;
+} as Extract<TranscriptItem, { kind: 'step_transition' }>
 
 describe('PhaseTransitionCard', () => {
   it('renders the step transition header with both step names', () => {
-    render(<PhaseTransitionCard item={item} />);
-    expect(screen.getByText(/discover/i)).toBeDefined();
-    expect(screen.getByText(/plan/i)).toBeDefined();
-  });
+    render(<PhaseTransitionCard item={item} />)
+    expect(screen.getByText(/discover/i)).toBeDefined()
+    expect(screen.getByText(/plan/i)).toBeDefined()
+  })
 
   it('reveals the carry-forward context when expanded', () => {
-    render(<PhaseTransitionCard item={item} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('carry me forward')).toBeDefined();
-  });
-});
+    render(<PhaseTransitionCard item={item} />)
+    fireEvent.click(screen.getByRole('button'))
+    expect(screen.getByText('carry me forward')).toBeDefined()
+  })
+})

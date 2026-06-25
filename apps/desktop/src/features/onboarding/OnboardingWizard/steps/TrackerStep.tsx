@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { FolderGit2, Layers, ListChecks } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
-import { LinearFormBody } from '../../../integrations/linear/LinearFormBody';
-import { Segmented, type SegmentedOption } from '../Segmented';
+import { useState } from 'react'
+import { FolderGit2, Layers, ListChecks } from 'lucide-react'
+import { Button } from '@goodboy/ui'
+import type { WorkspaceId } from '@goodboy/types'
+import { LinearFormBody } from '../../../integrations/linear/LinearFormBody'
+import { Segmented, type SegmentedOption } from '../Segmented'
 
-type Tracker = 'linear' | 'jira';
+type Tracker = 'linear' | 'jira'
 
 type Props = {
-  readonly workspaceId: WorkspaceId | null;
-  readonly linearConnected: boolean;
-};
+  readonly workspaceId: WorkspaceId | null
+  readonly linearConnected: boolean
+}
 
 export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
-  const [tracker, setTracker] = useState<Tracker>('linear');
+  const [tracker, setTracker] = useState<Tracker>('linear')
 
   const options: ReadonlyArray<SegmentedOption<Tracker>> = [
     {
@@ -24,7 +24,7 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
       connected: linearConnected,
     },
     { value: 'jira', label: 'Jira', icon: Layers, badge: 'soon', disabled: true },
-  ];
+  ]
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
@@ -75,5 +75,5 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

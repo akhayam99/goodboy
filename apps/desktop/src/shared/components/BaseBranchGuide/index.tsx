@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Check, Copy, GitBranch } from 'lucide-react';
+import { useState } from 'react'
+import { Check, Copy, GitBranch } from 'lucide-react'
 
-const COMMANDS = ['git branch -M main', 'git push -u origin main'] as const;
+const COMMANDS = ['git branch -M main', 'git push -u origin main'] as const
 
 export const BaseBranchGuide = () => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const onCopy = () => {
     void navigator.clipboard.writeText(COMMANDS.join('\n')).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    });
-  };
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    })
+  }
 
   return (
     <div
@@ -49,5 +49,5 @@ export const BaseBranchGuide = () => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

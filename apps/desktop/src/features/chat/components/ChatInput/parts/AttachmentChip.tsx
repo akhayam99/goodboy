@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { ImageLightbox } from '../../ImageLightbox';
-import { attachmentKindFor, fileIconFor } from '../../../attachment-kinds';
-import { dataUrlToBase64, type PendingAttachment } from '../lib';
+import { useState } from 'react'
+import { X } from 'lucide-react'
+import { ImageLightbox } from '../../ImageLightbox'
+import { attachmentKindFor, fileIconFor } from '../../../attachment-kinds'
+import { dataUrlToBase64, type PendingAttachment } from '../lib'
 
 export function AttachmentChip({
   attachment,
   onRemove,
 }: {
-  readonly attachment: PendingAttachment;
-  readonly onRemove: () => void;
+  readonly attachment: PendingAttachment
+  readonly onRemove: () => void
 }) {
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false)
   const removeButton = (
     <button
       type="button"
@@ -22,7 +22,7 @@ export function AttachmentChip({
     >
       <X size={10} aria-hidden />
     </button>
-  );
+  )
 
   if (attachmentKindFor(attachment.mimeType) === 'image') {
     return (
@@ -49,11 +49,11 @@ export function AttachmentChip({
         ) : null}
         {removeButton}
       </div>
-    );
+    )
   }
 
-  const Icon = fileIconFor(attachment.mimeType);
-  const isPdf = attachment.mimeType === 'application/pdf';
+  const Icon = fileIconFor(attachment.mimeType)
+  const isPdf = attachment.mimeType === 'application/pdf'
   return (
     <div className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background/60 py-2 pl-2.5 pr-6 ring-1 ring-border-soft">
       <button
@@ -77,5 +77,5 @@ export function AttachmentChip({
       ) : null}
       {removeButton}
     </div>
-  );
+  )
 }

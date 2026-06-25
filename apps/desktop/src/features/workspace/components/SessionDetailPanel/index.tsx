@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react'
 import {
   Archive,
   ArchiveRestore,
@@ -8,88 +8,86 @@ import {
   Pencil,
   Settings2,
   Trash2,
-} from 'lucide-react';
-import { Input } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { SessionStageBadge } from '../../../session/components/SessionStageBadge';
-import { openInEditor } from '../../../../shared/lib/editor';
-import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
-import { formatError } from '../../../../shared/lib/errors';
-import { useToast } from '../../../../app/components/Toast';
-import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
+} from 'lucide-react'
+import { Input } from '@goodboy/ui'
+import type { Session, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
+import { SessionStageBadge } from '../../../session/components/SessionStageBadge'
+import { openInEditor } from '../../../../shared/lib/editor'
+import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu'
+import { formatError } from '../../../../shared/lib/errors'
+import { useToast } from '../../../../app/components/Toast'
+import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip'
 
 // The folder CTA only ever opens the reference editors Goodboy auto-detects.
 // Other detected editors (Zed, Vim, …) are intentionally not surfaced here.
-const REFERENCE_EDITORS = new Set(['code', 'cursor']);
+const REFERENCE_EDITORS = new Set(['code', 'cursor'])
 
 const ICON_BUTTON =
-  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]'
 
 type SessionDetailPanelProps = {
-  session: Session;
-  onOpenSessionSettings: () => void;
-};
+  session: Session
+  onOpenSessionSettings: () => void
+}
 
 export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDetailPanelProps) => {
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
-  const renameTask = useAppStore((s) => s.renameTask);
-  const externalTask = useAppStore(
-    (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
-  );
-  const detectedEditors = useAppStore((s) => s.detectedEditors);
-  const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
-  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const { showToast } = useToast();
-  const archived = Boolean(session.archivedAt);
+  const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null)
+  const renameTask = useAppStore((s) => s.renameTask)
+  const externalTask = useAppStore((s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null)
+  const detectedEditors = useAppStore((s) => s.detectedEditors)
+  const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors)
+  const unarchiveTask = useAppStore((s) => s.unarchiveTask)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const { showToast } = useToast()
+  const archived = Boolean(session.archivedAt)
 
-  const [renaming, setRenaming] = useState(false);
-  const [renameDraft, setRenameDraft] = useState('');
-  const [renameError, setRenameError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false)
+  const [renameDraft, setRenameDraft] = useState('')
+  const [renameError, setRenameError] = useState<string | null>(null)
 
   useEffect(() => {
     if (detectedEditors.length === 0) {
-      void loadDetectedEditors();
+      void loadDetectedEditors()
     }
-  }, []);
+  }, [])
 
   const launchEditor = async (binary: string) => {
     if (!worktreePath) {
-      return;
+      return
     }
     try {
-      await openInEditor(worktreePath, binary);
+      await openInEditor(worktreePath, binary)
     } catch (err) {
-      showToast('error', `couldn't open editor: ${formatError(err)}`);
+      showToast('error', `couldn't open editor: ${formatError(err)}`)
     }
-  };
+  }
 
   const copyPath = async () => {
     if (!worktreePath) {
-      return;
+      return
     }
     try {
-      await navigator.clipboard.writeText(worktreePath);
-      showToast('success', 'worktree path copied');
+      await navigator.clipboard.writeText(worktreePath)
+      showToast('success', 'worktree path copied')
     } catch (err) {
-      showToast('error', `couldn't copy path: ${formatError(err)}`);
+      showToast('error', `couldn't copy path: ${formatError(err)}`)
     }
-  };
+  }
 
   const onToggleArchive = () => {
     if (archived) {
       unarchiveTask(session.id as SessionId).catch((err: unknown) => {
-        showToast('error', `couldn't unarchive: ${formatError(err)}`);
-      });
-      return;
+        showToast('error', `couldn't unarchive: ${formatError(err)}`)
+      })
+      return
     }
-    window.dispatchEvent(new CustomEvent('goodboy:archive-session'));
-  };
+    window.dispatchEvent(new CustomEvent('goodboy:archive-session'))
+  }
 
   const folderItems = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
-    const items: OverflowMenuItem[] = [];
-    const refEditors = detectedEditors.filter((ed) => REFERENCE_EDITORS.has(ed.binary));
+    const items: OverflowMenuItem[] = []
+    const refEditors = detectedEditors.filter((ed) => REFERENCE_EDITORS.has(ed.binary))
     if (refEditors.length === 0) {
       items.push({
         kind: 'item',
@@ -98,9 +96,9 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         icon: FolderOpen,
         onClick: () => undefined,
         disabled: true,
-      });
+      })
     } else {
-      items.push({ kind: 'header', key: 'editor-header', label: 'Open in editor' });
+      items.push({ kind: 'header', key: 'editor-header', label: 'Open in editor' })
       for (const ed of refEditors) {
         items.push({
           kind: 'item',
@@ -109,10 +107,10 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
           icon: FolderOpen,
           onClick: () => void launchEditor(ed.binary),
           disabled: !worktreePath,
-        });
+        })
       }
     }
-    items.push({ kind: 'separator', key: 'path-sep' });
+    items.push({ kind: 'separator', key: 'path-sep' })
     items.push({
       kind: 'item',
       key: 'copy-path',
@@ -120,40 +118,40 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
       icon: Copy,
       onClick: () => void copyPath(),
       disabled: !worktreePath,
-    });
-    return items;
+    })
+    return items
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detectedEditors, worktreePath]);
+  }, [detectedEditors, worktreePath])
 
   const startRename = () => {
-    setRenameDraft(session.goal);
-    setRenameError(null);
-    setRenaming(true);
-  };
+    setRenameDraft(session.goal)
+    setRenameError(null)
+    setRenaming(true)
+  }
 
   const commitRename = async () => {
     if (!renameDraft.trim()) {
-      setRenameError('name cannot be empty');
-      return;
+      setRenameError('name cannot be empty')
+      return
     }
     try {
-      await renameTask(session.id as SessionId, renameDraft.trim());
-      setRenaming(false);
-      setRenameError(null);
+      await renameTask(session.id as SessionId, renameDraft.trim())
+      setRenaming(false)
+      setRenameError(null)
     } catch (err) {
-      setRenameError(formatError(err));
+      setRenameError(formatError(err))
     }
-  };
+  }
 
   const onRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      void commitRename();
+      void commitRename()
     }
     if (e.key === 'Escape') {
-      setRenaming(false);
-      setRenameError(null);
+      setRenaming(false)
+      setRenameError(null)
     }
-  };
+  }
 
   return (
     <div className="flex shrink-0 flex-col gap-2 px-2 pb-2 pt-2.5">
@@ -235,5 +233,5 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,4 +1,4 @@
-import type { OpenQuestion, WorkflowId, WorkflowRunId } from '@goodboy/types';
+import type { OpenQuestion, WorkflowId, WorkflowRunId } from '@goodboy/types'
 
 export const workflowHasOpenQuestions = (
   questions: ReadonlyArray<OpenQuestion>,
@@ -6,14 +6,14 @@ export const workflowHasOpenQuestions = (
 ): boolean => {
   for (const q of questions) {
     if (q.status !== 'open') {
-      continue;
+      continue
     }
     if (!q.workflowId || q.workflowId === workflowId) {
-      return true;
+      return true
     }
   }
-  return false;
-};
+  return false
+}
 
 export const workflowRunHasOpenQuestions = (
   questions: ReadonlyArray<OpenQuestion>,
@@ -21,15 +21,15 @@ export const workflowRunHasOpenQuestions = (
 ): boolean => {
   for (const q of questions) {
     if (q.status !== 'open') {
-      continue;
+      continue
     }
     if (!q.workflowRunId || q.workflowRunId === workflowRunId) {
-      return true;
+      return true
     }
   }
-  return false;
-};
+  return false
+}
 
 export const hasOrphanOpenQuestions = (questions: ReadonlyArray<OpenQuestion>): boolean => {
-  return questions.some((q) => q.status === 'open' && !q.workflowId);
-};
+  return questions.some((q) => q.status === 'open' && !q.workflowId)
+}

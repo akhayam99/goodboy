@@ -1,30 +1,30 @@
-import { Plus, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Plus, X } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 import type {
   TerminalTab,
   TerminalTabId,
   TerminalTabStatus,
-} from '../../../../shared/types/terminal';
+} from '../../../../shared/types/terminal'
 
 type Props = {
-  readonly tabs: readonly TerminalTab[];
-  readonly activeId: TerminalTabId | null;
-  readonly onSelect: (id: TerminalTabId) => void;
-  readonly onClose: (id: TerminalTabId) => void;
-  readonly onSpawn: () => void;
-};
+  readonly tabs: readonly TerminalTab[]
+  readonly activeId: TerminalTabId | null
+  readonly onSelect: (id: TerminalTabId) => void
+  readonly onClose: (id: TerminalTabId) => void
+  readonly onSpawn: () => void
+}
 
 const STATUS_DOT: Record<TerminalTabStatus, string> = {
   running: 'bg-success',
   exited: 'bg-muted-foreground/40',
   attention: 'bg-warning',
-};
+}
 
 export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }: Props) => {
   return (
     <div className="flex items-center gap-0.5 overflow-x-auto px-2 py-1">
       {tabs.map((t) => {
-        const active = t.id === activeId;
+        const active = t.id === activeId
         return (
           <div
             key={t.id}
@@ -34,8 +34,8 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
             onClick={() => onSelect(t.id)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onSelect(t.id);
+                e.preventDefault()
+                onSelect(t.id)
               }
             }}
             className={cn(
@@ -54,15 +54,15 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
               type="button"
               aria-label={`close ${t.title}`}
               onClick={(e) => {
-                e.stopPropagation();
-                onClose(t.id);
+                e.stopPropagation()
+                onClose(t.id)
               }}
               className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
             >
               <X size={11} aria-hidden />
             </button>
           </div>
-        );
+        )
       })}
       <button
         type="button"
@@ -73,5 +73,5 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
         <Plus size={13} aria-hidden />
       </button>
     </div>
-  );
-};
+  )
+}

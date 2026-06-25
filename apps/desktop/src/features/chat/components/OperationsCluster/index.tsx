@@ -1,33 +1,33 @@
-import { useMemo, useState } from 'react';
-import { ChevronRight, Layers } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
-import type { TranscriptItem } from '../../utils/transcript-items';
-import { TranscriptCard } from '../TranscriptCards';
-import { MARKER_ACCENT } from '../marker-accents';
+import { useMemo, useState } from 'react'
+import { ChevronRight, Layers } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { AgentId, SessionId } from '@goodboy/types'
+import type { TranscriptItem } from '../../utils/transcript-items'
+import { TranscriptCard } from '../TranscriptCards'
+import { MARKER_ACCENT } from '../marker-accents'
 
 type OperationsClusterProps = {
-  readonly items: ReadonlyArray<TranscriptItem>;
-  readonly sessionId?: SessionId | null;
-  readonly agentId?: AgentId | null;
-  readonly workingDir?: string | null;
-  readonly onRefreshAuth?: () => void;
-  readonly onOpenDiff?: (filePath: string) => void;
-};
+  readonly items: ReadonlyArray<TranscriptItem>
+  readonly sessionId?: SessionId | null
+  readonly agentId?: AgentId | null
+  readonly workingDir?: string | null
+  readonly onRefreshAuth?: () => void
+  readonly onOpenDiff?: (filePath: string) => void
+}
 
 function runningTool(
   items: ReadonlyArray<TranscriptItem>,
 ): Extract<TranscriptItem, { kind: 'tool_call' }> | null {
   for (let i = items.length - 1; i >= 0; i -= 1) {
-    const item = items[i]!;
+    const item = items[i]!
     if (item.kind === 'tool_call' && !item.ended) {
-      return item;
+      return item
     }
   }
-  return null;
+  return null
 }
 
-const accent = MARKER_ACCENT.operations;
+const accent = MARKER_ACCENT.operations
 
 export const OperationsCluster = ({
   items,
@@ -37,21 +37,21 @@ export const OperationsCluster = ({
   onRefreshAuth,
   onOpenDiff,
 }: OperationsClusterProps) => {
-  const [open, setOpen] = useState(false);
-  const running = runningTool(items);
-  const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
-  const successCount = items.length - errorCount;
-  const showError = !running && errorCount > 0;
+  const [open, setOpen] = useState(false)
+  const running = runningTool(items)
+  const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0)
+  const successCount = items.length - errorCount
+  const showError = !running && errorCount > 0
 
   const summary = useMemo(() => {
-    const counts = new Map<string, number>();
+    const counts = new Map<string, number>()
     for (const item of items) {
       const name =
-        item.kind === 'tool_call' ? item.toolName : item.kind === 'file_edit' ? 'edit' : item.kind;
-      counts.set(name, (counts.get(name) ?? 0) + 1);
+        item.kind === 'tool_call' ? item.toolName : item.kind === 'file_edit' ? 'edit' : item.kind
+      counts.set(name, (counts.get(name) ?? 0) + 1)
     }
-    return [...counts.entries()].map(([name, count]) => `${count} ${name}`).join(' · ');
-  }, [items]);
+    return [...counts.entries()].map(([name, count]) => `${count} ${name}`).join(' · ')
+  }, [items])
 
   const ariaLabel = `operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
     running
@@ -59,7 +59,7 @@ export const OperationsCluster = ({
       : showError
         ? `, ${successCount} succeeded, ${errorCount} failed`
         : ''
-  }`;
+  }`
 
   return (
     <div className="group">
@@ -133,5 +133,5 @@ export const OperationsCluster = ({
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

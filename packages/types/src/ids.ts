@@ -1,24 +1,24 @@
-export type WorkspaceId = string & { readonly __brand: 'WorkspaceId' };
-export type SessionId = string & { readonly __brand: 'SessionId' };
-export type MessageId = string & { readonly __brand: 'MessageId' };
-export type ProviderRunId = string & { readonly __brand: 'ProviderRunId' };
-export type TelemetryRecordId = string & { readonly __brand: 'TelemetryRecordId' };
-export type SkillId = string & { readonly __brand: 'SkillId' };
-export type WorkspaceScriptId = string & { readonly __brand: 'WorkspaceScriptId' };
-export type WorkflowId = string & { readonly __brand: 'WorkflowId' };
-export type WorkflowRunId = string & { readonly __brand: 'WorkflowRunId' };
-export type StepId = string & { readonly __brand: 'StepId' };
-export type StepDefId = string & { readonly __brand: 'StepDefId' };
-export type AgentId = string & { readonly __brand: 'AgentId' };
-export type ParallelGroupId = string & { readonly __brand: 'ParallelGroupId' };
-export type ParallelAgentId = string & { readonly __brand: 'ParallelAgentId' };
+export type WorkspaceId = string & { readonly __brand: 'WorkspaceId' }
+export type SessionId = string & { readonly __brand: 'SessionId' }
+export type MessageId = string & { readonly __brand: 'MessageId' }
+export type ProviderRunId = string & { readonly __brand: 'ProviderRunId' }
+export type TelemetryRecordId = string & { readonly __brand: 'TelemetryRecordId' }
+export type SkillId = string & { readonly __brand: 'SkillId' }
+export type WorkspaceScriptId = string & { readonly __brand: 'WorkspaceScriptId' }
+export type WorkflowId = string & { readonly __brand: 'WorkflowId' }
+export type WorkflowRunId = string & { readonly __brand: 'WorkflowRunId' }
+export type StepId = string & { readonly __brand: 'StepId' }
+export type StepDefId = string & { readonly __brand: 'StepDefId' }
+export type AgentId = string & { readonly __brand: 'AgentId' }
+export type ParallelGroupId = string & { readonly __brand: 'ParallelGroupId' }
+export type ParallelAgentId = string & { readonly __brand: 'ParallelAgentId' }
 
-export type IsoDateTime = string & { readonly __brand: 'IsoDateTime' };
+export type IsoDateTime = string & { readonly __brand: 'IsoDateTime' }
 
-export type PermissionRuleId = string & { readonly __brand: 'PermissionRuleId' };
-export type PermissionRequestId = string & { readonly __brand: 'PermissionRequestId' };
+export type PermissionRuleId = string & { readonly __brand: 'PermissionRuleId' }
+export type PermissionRequestId = string & { readonly __brand: 'PermissionRequestId' }
 
-export type OpenQuestionId = string & { readonly __brand: 'OpenQuestionId' };
-export type WorkspaceIntegrationId = string & { readonly __brand: 'WorkspaceIntegrationId' };
+export type OpenQuestionId = string & { readonly __brand: 'OpenQuestionId' }
+export type WorkspaceIntegrationId = string & { readonly __brand: 'WorkspaceIntegrationId' }
 
-export type CredentialId = string & { readonly __brand: 'CredentialId' };
+export type CredentialId = string & { readonly __brand: 'CredentialId' }

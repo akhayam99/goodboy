@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -30,37 +30,35 @@ import type {
   WorkspaceIntegrationId,
   WorkspaceScript,
   WorkspaceScriptId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
-}));
+}))
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async () => () => undefined),
-}));
+}))
 
-const dbSetSettingSpy = vi.fn(async () => undefined);
+const dbSetSettingSpy = vi.fn(async () => undefined)
 const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
   async () => null,
-);
-const insertNotificationSpy = vi.fn(async () => undefined);
-const insertNudgeEventSpy = vi.fn(async () => undefined);
-const updateNudgeOutcomeSpy = vi.fn(async () => undefined);
-const insertDiffCommentSpy = vi.fn(async () => undefined);
-const listDiffCommentsSpy = vi.fn(async () => [] as ReadonlyArray<DiffComment>);
-const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
-const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
-const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
-const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listIntegrationsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
-);
-const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+)
+const insertNotificationSpy = vi.fn(async () => undefined)
+const insertNudgeEventSpy = vi.fn(async () => undefined)
+const updateNudgeOutcomeSpy = vi.fn(async () => undefined)
+const insertDiffCommentSpy = vi.fn(async () => undefined)
+const listDiffCommentsSpy = vi.fn(async () => [] as ReadonlyArray<DiffComment>)
+const resolveDiffCommentDbSpy = vi.fn(async () => undefined)
+const reopenDiffCommentDbSpy = vi.fn(async () => undefined)
+const consumeDiffCommentsDbSpy = vi.fn(async () => undefined)
+const deleteDiffCommentDbSpy = vi.fn(async () => undefined)
+const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined)
+const listIntegrationsForWorkspaceSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceIntegration>)
+const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined)
+const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>)
+const upsertWorkspaceScriptSpy = vi.fn(async () => undefined)
+const deleteWorkspaceScriptSpy = vi.fn(async () => undefined)
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -141,21 +139,21 @@ vi.mock('@goodboy/db', () => ({
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),
   deleteGithubPrCache: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../shared/lib/db', () => ({
   runDbMigrations: vi.fn(async () => undefined),
   wipeDb: vi.fn(async () => undefined),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('../../../shared/lib/ls-to-db-migration', () => ({
   migrateLsToDb: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/onboarding/onboarding-store', () => ({
   hydrateOnboardingFromDb: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -163,7 +161,7 @@ vi.mock('../../../features/chat/turn', () => ({
   writeAttachment: vi.fn(async () => 'rel/path'),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
 vi.mock('../../../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -173,7 +171,7 @@ vi.mock('../../../features/permissions/permissions', () => ({
   invokeAuditRetryDrain: vi.fn(async () => []),
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
   invokeAuditRetryDelete: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -181,7 +179,7 @@ vi.mock('../../../features/providers/providers', () => ({
   getCursorStatus: vi.fn(async () => null),
   getCodexStatus: vi.fn(async () => null),
   getProviderStatus: vi.fn(async () => null),
-}));
+}))
 
 vi.mock('../../../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -189,15 +187,15 @@ vi.mock('../../../features/providers/routing', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
-}));
+}))
 
-const invokeBudgetRuleListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetRule>);
-const invokeBudgetRuleUpsertSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
-const invokeBudgetRuleDeleteSpy = vi.fn(async () => undefined);
-const invokeBudgetAlertsListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetAlert>);
-const invokeBudgetAlertDismissSpy = vi.fn(async () => undefined);
-const invokeSessionBudgetGetSpy: ReturnType<typeof vi.fn> = vi.fn(async () => null);
-const invokeSessionBudgetSetSpy = vi.fn(async () => undefined);
+const invokeBudgetRuleListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetRule>)
+const invokeBudgetRuleUpsertSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined)
+const invokeBudgetRuleDeleteSpy = vi.fn(async () => undefined)
+const invokeBudgetAlertsListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetAlert>)
+const invokeBudgetAlertDismissSpy = vi.fn(async () => undefined)
+const invokeSessionBudgetGetSpy: ReturnType<typeof vi.fn> = vi.fn(async () => null)
+const invokeSessionBudgetSetSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/budget/budget', () => ({
   invokeBudgetRuleList: invokeBudgetRuleListSpy,
@@ -208,12 +206,12 @@ vi.mock('../../../features/budget/budget', () => ({
   invokeSessionBudgetGet: invokeSessionBudgetGetSpy,
   invokeSessionBudgetSet: invokeSessionBudgetSetSpy,
   invokeCheckProviderBudget: vi.fn(async () => undefined),
-}));
+}))
 
-const invokeSkillListSpy = vi.fn(async () => [] as ReadonlyArray<Skill>);
-const invokeSkillUpsertSpy = vi.fn(async () => undefined);
-const invokeSkillDeleteSpy = vi.fn(async () => undefined);
-const invokeSkillRescanSpy = vi.fn(async () => [] as ReadonlyArray<Skill>);
+const invokeSkillListSpy = vi.fn(async () => [] as ReadonlyArray<Skill>)
+const invokeSkillUpsertSpy = vi.fn(async () => undefined)
+const invokeSkillDeleteSpy = vi.fn(async () => undefined)
+const invokeSkillRescanSpy = vi.fn(async () => [] as ReadonlyArray<Skill>)
 
 vi.mock('../../../features/skills/skills', () => ({
   invokeSkillList: invokeSkillListSpy,
@@ -221,19 +219,19 @@ vi.mock('../../../features/skills/skills', () => ({
   invokeSkillDelete: invokeSkillDeleteSpy,
   invokeSkillRescan: invokeSkillRescanSpy,
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
-const invokeWorkflowListSpy = vi.fn(async () => [] as ReadonlyArray<Workflow>);
-const invokeWorkflowUpsertSpy = vi.fn(async () => undefined);
-const invokeWorkflowDeleteSpy = vi.fn(async () => undefined);
-const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>);
-const invokeAgentInsertSpy = vi.fn();
-const invokeAgentUpdateStatusSpy = vi.fn();
-const invokeAgentSetKindSpy = vi.fn(async () => undefined);
-const invokeAgentSetVerbositySpy = vi.fn(async () => undefined);
-const invokeAgentMarkViewedSpy = vi.fn(async () => undefined);
-const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined);
-const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>);
+const invokeWorkflowListSpy = vi.fn(async () => [] as ReadonlyArray<Workflow>)
+const invokeWorkflowUpsertSpy = vi.fn(async () => undefined)
+const invokeWorkflowDeleteSpy = vi.fn(async () => undefined)
+const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>)
+const invokeAgentInsertSpy = vi.fn()
+const invokeAgentUpdateStatusSpy = vi.fn()
+const invokeAgentSetKindSpy = vi.fn(async () => undefined)
+const invokeAgentSetVerbositySpy = vi.fn(async () => undefined)
+const invokeAgentMarkViewedSpy = vi.fn(async () => undefined)
+const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined)
+const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>)
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: invokeWorkflowListSpy,
@@ -247,33 +245,33 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentMarkViewed: invokeAgentMarkViewedSpy,
   invokeAgentSetProviderSessionId: invokeAgentSetProviderSessionIdSpy,
   invokeWorkspacesWithUnread: invokeWorkspacesWithUnreadSpy,
-}));
+}))
 
-const createWorktreeSpy = vi.fn();
-const removeWorktreeSpy = vi.fn(async () => undefined);
-const changeWorktreeBranchSpy = vi.fn(async () => undefined);
+const createWorktreeSpy = vi.fn()
+const removeWorktreeSpy = vi.fn(async () => undefined)
+const changeWorktreeBranchSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
   worktreeChangedFiles: vi.fn(async () => []),
-}));
+}))
 
 vi.mock('../../../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
-}));
+}))
 
 vi.mock('../../../shared/lib/editor', () => ({
   detectEditors: vi.fn(async () => []),
-}));
+}))
 
-const invokePlanListSpy = vi.fn(async () => [] as ReadonlyArray<PlanWithCount>);
-const invokeUpsertPlanSpy = vi.fn();
-const invokeSetPlanStatusSpy = vi.fn(async () => undefined);
-const invokeSetPlanBodySpy = vi.fn(async () => undefined);
-const invokeAddPlanConsumptionSpy = vi.fn(async () => undefined);
-const invokeListConsumptionsForPlanSpy = vi.fn(async () => [] as ReadonlyArray<PlanConsumption>);
+const invokePlanListSpy = vi.fn(async () => [] as ReadonlyArray<PlanWithCount>)
+const invokeUpsertPlanSpy = vi.fn()
+const invokeSetPlanStatusSpy = vi.fn(async () => undefined)
+const invokeSetPlanBodySpy = vi.fn(async () => undefined)
+const invokeAddPlanConsumptionSpy = vi.fn(async () => undefined)
+const invokeListConsumptionsForPlanSpy = vi.fn(async () => [] as ReadonlyArray<PlanConsumption>)
 
 vi.mock('../../../features/plans/plans', () => ({
   listPlansForSession: invokePlanListSpy,
@@ -282,26 +280,26 @@ vi.mock('../../../features/plans/plans', () => ({
   setPlanBody: invokeSetPlanBodySpy,
   addPlanConsumption: invokeAddPlanConsumptionSpy,
   listConsumptionsForPlan: invokeListConsumptionsForPlanSpy,
-}));
+}))
 
-const linearConnectSpy = vi.fn();
-const linearDisconnectSpy = vi.fn(async () => undefined);
+const linearConnectSpy = vi.fn()
+const linearDisconnectSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/integrations/linear/client', () => ({
   linearConnect: linearConnectSpy,
   linearDisconnect: linearDisconnectSpy,
-}));
+}))
 
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
   available: true,
   mode: 'gh-cli',
   scopes: [],
-}));
-const ghSetTokenSpy = vi.fn();
-const ghClearTokenSpy = vi.fn(async () => undefined);
-const gitPushSpy = vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 }));
-const resolveThreadSpy = vi.fn(async () => undefined);
-const addReplySpy = vi.fn(async () => undefined);
+}))
+const ghSetTokenSpy = vi.fn()
+const ghClearTokenSpy = vi.fn(async () => undefined)
+const gitPushSpy = vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 }))
+const resolveThreadSpy = vi.fn(async () => undefined)
+const addReplySpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/github/github', () => ({
   ghStatus: ghStatusSpy,
@@ -310,10 +308,10 @@ vi.mock('../../../features/github/github', () => ({
   gitPush: gitPushSpy,
   tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
   createTauriPrCacheStore: () => ({ get: vi.fn(), upsert: vi.fn(), delete: vi.fn() }),
-}));
+}))
 
 vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
+  const actual = await importOriginal<Record<string, unknown>>()
   return {
     ...actual,
     detectRepoSlug: vi.fn(async () => null),
@@ -323,41 +321,41 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     resolveReviewThread: resolveThreadSpy,
     addReviewThreadReply: addReplySpy,
     seedWorkflowLibrary: vi.fn(async () => undefined),
-  };
-});
+  }
+})
 
 vi.mock('../../../features/scripts/scripts', () => ({
   invokeScriptRun: vi.fn(async () => undefined),
   invokeScriptCancel: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
   listenScriptExit: vi.fn(async () => () => undefined),
-}));
+}))
 
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
   invokeTerminalClose: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', () => ({
   useOpenQuestions: {
     getState: () => ({ loadQuestions: vi.fn(async () => undefined) }),
   },
-}));
+}))
 
 vi.mock('../../../features/settings/config-export', () => ({
   exportConfigToFile: vi.fn(async () => '/tmp/export.json'),
   importConfigFromFile: vi.fn(async () => null),
-}));
+}))
 
-const WS_ID = 'workspace-1' as WorkspaceId;
-const WS_ID_2 = 'workspace-2' as WorkspaceId;
-const SESSION_ID = 'session-1' as SessionId;
-const SESSION_ID_2 = 'session-2' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const AGENT_ID_2 = 'agent-2' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
-const PLAN_ID = 'plan-1' as PlanId;
-const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
+const WS_ID = 'workspace-1' as WorkspaceId
+const WS_ID_2 = 'workspace-2' as WorkspaceId
+const SESSION_ID = 'session-1' as SessionId
+const SESSION_ID_2 = 'session-2' as SessionId
+const AGENT_ID = 'agent-1' as AgentId
+const AGENT_ID_2 = 'agent-2' as AgentId
+const RUN_ID = 'run-1' as ProviderRunId
+const PLAN_ID = 'plan-1' as PlanId
+const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
@@ -368,7 +366,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     updatedAt: NOW,
     lastAccessedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 function buildSession(overrides: Partial<Session> = {}): Session {
@@ -386,7 +384,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
@@ -396,7 +394,7 @@ function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
     name: 'agent 1',
     status: 'pending',
     ...overrides,
-  };
+  }
 }
 
 function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
@@ -411,38 +409,38 @@ function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 async function getStore() {
-  const mod = await import('../../store');
-  return mod.useAppStore;
+  const mod = await import('../../store')
+  return mod.useAppStore
 }
 
-let resetState: Record<string, unknown> | null = null;
+let resetState: Record<string, unknown> | null = null
 
 describe('store contract', () => {
   beforeEach(async () => {
-    vi.clearAllMocks();
-    invokeBudgetRuleListSpy.mockResolvedValue([]);
-    invokeBudgetAlertsListSpy.mockResolvedValue([]);
-    invokeSessionBudgetGetSpy.mockResolvedValue(null);
-    invokeWorkflowListSpy.mockResolvedValue([]);
-    invokeAgentListSpy.mockResolvedValue([]);
-    invokeSkillListSpy.mockResolvedValue([]);
-    invokeSkillRescanSpy.mockResolvedValue([]);
-    invokePlanListSpy.mockResolvedValue([]);
-    invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
-    invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
-    listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
-    listDiffCommentsSpy.mockResolvedValue([]);
-    dbGetSettingSpy.mockResolvedValue(null);
-    ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
+    vi.clearAllMocks()
+    invokeBudgetRuleListSpy.mockResolvedValue([])
+    invokeBudgetAlertsListSpy.mockResolvedValue([])
+    invokeSessionBudgetGetSpy.mockResolvedValue(null)
+    invokeWorkflowListSpy.mockResolvedValue([])
+    invokeAgentListSpy.mockResolvedValue([])
+    invokeSkillListSpy.mockResolvedValue([])
+    invokeSkillRescanSpy.mockResolvedValue([])
+    invokePlanListSpy.mockResolvedValue([])
+    invokeListConsumptionsForPlanSpy.mockResolvedValue([])
+    invokeWorkspacesWithUnreadSpy.mockResolvedValue([])
+    listWorkspaceScriptsSpy.mockResolvedValue([])
+    listIntegrationsForWorkspaceSpy.mockResolvedValue([])
+    listDiffCommentsSpy.mockResolvedValue([])
+    dbGetSettingSpy.mockResolvedValue(null)
+    ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] })
 
-    const store = await getStore();
+    const store = await getStore()
     if (!resetState) {
-      const snap = store.getState();
+      const snap = store.getState()
       resetState = {
         workspaces: [],
         workspaceIntegrations: {},
@@ -509,129 +507,129 @@ describe('store contract', () => {
         sessionLoading: {},
         sessionViewPrefs: {},
         terminalSessions: {},
-      };
+      }
     }
-    store.setState(resetState as never);
+    store.setState(resetState as never)
     if (typeof globalThis.localStorage !== 'undefined') {
-      globalThis.localStorage.clear();
+      globalThis.localStorage.clear()
     }
-  });
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   describe('github', () => {
     it('refreshGithubStatus stores the status returned by the runner', async () => {
-      const store = await getStore();
+      const store = await getStore()
       ghStatusSpy.mockResolvedValueOnce({
         available: true,
         mode: 'pat',
         user: 'tester',
         scopes: ['repo'],
-      });
-      await store.getState().refreshGithubStatus();
-      expect(store.getState().githubStatus?.mode).toBe('pat');
-    });
+      })
+      await store.getState().refreshGithubStatus()
+      expect(store.getState().githubStatus?.mode).toBe('pat')
+    })
 
     it('refreshGithubStatus falls back to an absent status when ghStatus throws', async () => {
-      const store = await getStore();
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-      ghStatusSpy.mockRejectedValueOnce(new Error('boom'));
-      await store.getState().refreshGithubStatus();
-      expect(store.getState().githubStatus?.available).toBe(false);
-      expect(store.getState().githubStatus?.mode).toBe('absent');
-      warnSpy.mockRestore();
-    });
+      const store = await getStore()
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+      ghStatusSpy.mockRejectedValueOnce(new Error('boom'))
+      await store.getState().refreshGithubStatus()
+      expect(store.getState().githubStatus?.available).toBe(false)
+      expect(store.getState().githubStatus?.mode).toBe('absent')
+      warnSpy.mockRestore()
+    })
 
     it('setGithubPat stores the new status', async () => {
-      const store = await getStore();
+      const store = await getStore()
       ghSetTokenSpy.mockResolvedValueOnce({
         available: true,
         mode: 'pat',
         user: 'me',
         scopes: ['repo'],
-      });
-      const out = await store.getState().setGithubPat('tok');
-      expect(out.mode).toBe('pat');
-      expect(store.getState().githubStatus?.user).toBe('me');
-    });
+      })
+      const out = await store.getState().setGithubPat('tok')
+      expect(out.mode).toBe('pat')
+      expect(store.getState().githubStatus?.user).toBe('me')
+    })
 
     it('refreshSessionPr noops without a session branch', async () => {
-      const store = await getStore();
+      const store = await getStore()
       store.setState({
         workspaces: [buildWorkspace()],
         sessions: [buildSession()],
-      });
-      await store.getState().refreshSessionPr(SESSION_ID);
-      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
-    });
+      })
+      await store.getState().refreshSessionPr(SESSION_ID)
+      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined()
+    })
 
     it('sweepGithub is a no-op when github is unavailable', async () => {
-      const store = await getStore();
+      const store = await getStore()
       store.setState({
         githubStatus: { available: false, mode: 'absent', scopes: [] } as never,
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'main' },
-      });
-      store.getState().sweepGithub();
-      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
-    });
+      })
+      store.getState().sweepGithub()
+      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined()
+    })
 
     it('resolveGithubThread pushes the session branch before replying and resolving', async () => {
-      const store = await getStore();
+      const store = await getStore()
       store.setState({
         workspaces: [buildWorkspace()],
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
-      });
+      })
       const ok = await store
         .getState()
-        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
-      expect(ok).toBe(true);
-      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID);
-      const pushOrder = gitPushSpy.mock.invocationCallOrder[0] ?? 0;
-      const replyOrder = addReplySpy.mock.invocationCallOrder[0] ?? 0;
-      expect(pushOrder).toBeGreaterThan(0);
-      expect(replyOrder).toBeGreaterThan(0);
-      expect(pushOrder).toBeLessThan(replyOrder);
-      expect(resolveThreadSpy).toHaveBeenCalled();
-    });
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' })
+      expect(ok).toBe(true)
+      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID)
+      const pushOrder = gitPushSpy.mock.invocationCallOrder[0] ?? 0
+      const replyOrder = addReplySpy.mock.invocationCallOrder[0] ?? 0
+      expect(pushOrder).toBeGreaterThan(0)
+      expect(replyOrder).toBeGreaterThan(0)
+      expect(pushOrder).toBeLessThan(replyOrder)
+      expect(resolveThreadSpy).toHaveBeenCalled()
+    })
 
     it('resolveGithubThread leaves the thread open and skips resolve when the push fails', async () => {
-      const store = await getStore();
+      const store = await getStore()
       store.setState({
         workspaces: [buildWorkspace()],
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
         sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
-      });
+      })
       gitPushSpy.mockResolvedValueOnce({
         stdout: '',
         stderr: 'rejected: non-fast-forward',
         exitCode: 1,
-      });
+      })
       const ok = await store
         .getState()
-        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
-      expect(ok).toBe(false);
-      expect(addReplySpy).not.toHaveBeenCalled();
-      expect(resolveThreadSpy).not.toHaveBeenCalled();
-    });
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' })
+      expect(ok).toBe(false)
+      expect(addReplySpy).not.toHaveBeenCalled()
+      expect(resolveThreadSpy).not.toHaveBeenCalled()
+    })
 
     it('resolveGithubThread does not push for a reason-only closure', async () => {
-      const store = await getStore();
+      const store = await getStore()
       store.setState({
         workspaces: [buildWorkspace()],
         sessions: [buildSession()],
-      });
+      })
       const ok = await store
         .getState()
-        .resolveGithubThread(SESSION_ID, 'PRT_1', { reason: 'not applicable' });
-      expect(ok).toBe(true);
-      expect(gitPushSpy).not.toHaveBeenCalled();
-      expect(resolveThreadSpy).toHaveBeenCalled();
-    });
-  });
-});
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { reason: 'not applicable' })
+      expect(ok).toBe(true)
+      expect(gitPushSpy).not.toHaveBeenCalled()
+      expect(resolveThreadSpy).toHaveBeenCalled()
+    })
+  })
+})

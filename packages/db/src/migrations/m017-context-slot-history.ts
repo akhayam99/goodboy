@@ -10,4 +10,4 @@ CREATE TABLE context_slot_history (
 );
 
 CREATE INDEX idx_context_slot_history_task_key ON context_slot_history(task_id, key, created_at DESC);
-`;
+`

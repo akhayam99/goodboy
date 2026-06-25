@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import type { SessionId } from '@goodboy/types';
-import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
-import { ArrowRight, GitBranch, Sparkles } from 'lucide-react';
-import { ghBaseBranches } from '../../github';
-import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
-import { useAppStore } from '../../../../store';
+import { useEffect, useState } from 'react'
+import type { SessionId } from '@goodboy/types'
+import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui'
+import { ArrowRight, GitBranch, Sparkles } from 'lucide-react'
+import { ghBaseBranches } from '../../github'
+import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly defaultTitle: string;
-  readonly closedPr?: { number: number; url: string };
-  readonly onCreated: () => void;
-  readonly onStudioClose: () => void;
-  readonly onCancel?: () => void;
-};
+  readonly sessionId: SessionId
+  readonly defaultTitle: string
+  readonly closedPr?: { number: number; url: string }
+  readonly onCreated: () => void
+  readonly onStudioClose: () => void
+  readonly onCancel?: () => void
+}
 
 export const CreatePrPanel = ({
   sessionId,
@@ -23,67 +23,67 @@ export const CreatePrPanel = ({
   onStudioClose,
   onCancel,
 }: Props) => {
-  const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const createPrForSession = useAppStore((s) => s.createPrForSession)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const selectAgent = useAppStore((s) => s.selectAgent)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null)
   const workspaceRoot = useAppStore((s) => {
-    const sess = s.sessions.find((x) => x.id === sessionId);
-    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
-    return ws?.rootPath ?? null;
-  });
-  const workspaceId = useAppStore((s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId);
+    const sess = s.sessions.find((x) => x.id === sessionId)
+    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined
+    return ws?.rootPath ?? null
+  })
+  const workspaceId = useAppStore((s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId)
 
-  const [title, setTitle] = useState(defaultTitle);
-  const [body, setBody] = useState('');
-  const [base, setBase] = useState('');
-  const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
-  const [draft, setDraft] = useState(true);
-  const [busy, setBusy] = useState<'create' | 'ai' | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [title, setTitle] = useState(defaultTitle)
+  const [body, setBody] = useState('')
+  const [base, setBase] = useState('')
+  const [branches, setBranches] = useState<ReadonlyArray<string>>([])
+  const [draft, setDraft] = useState(true)
+  const [busy, setBusy] = useState<'create' | 'ai' | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!workspaceRoot) {
-      return;
+      return
     }
-    let cancelled = false;
+    let cancelled = false
     void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
       if (cancelled) {
-        return;
+        return
       }
-      setBranches(list);
+      setBranches(list)
       if (defaultBranch) {
-        setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+        setBase((cur) => (cur.trim() === '' ? defaultBranch : cur))
       }
-    });
+    })
     return () => {
-      cancelled = true;
-    };
-  }, [workspaceRoot, workspaceId]);
+      cancelled = true
+    }
+  }, [workspaceRoot, workspaceId])
 
   const onCreate = async () => {
     if (busy || title.trim().length === 0) {
-      return;
+      return
     }
-    setBusy('create');
-    setError(null);
+    setBusy('create')
+    setError(null)
     try {
-      await createPrForSession(sessionId, { title, body, base, draft });
-      onCreated();
+      await createPrForSession(sessionId, { title, body, base, draft })
+      onCreated()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
-      setBusy(null);
+      setBusy(null)
     }
-  };
+  }
 
   const onCreateWithAi = async () => {
     if (busy) {
-      return;
+      return
     }
-    setBusy('ai');
-    setError(null);
+    setBusy('ai')
+    setError(null)
     try {
       const prompt = [
         `Open a GitHub pull request for this session's branch.`,
@@ -97,21 +97,21 @@ export const CreatePrPanel = ({
         `- If this project defines a PR-creation skill, command, or template (look under .claude/), follow it.`,
         `- Open it as a ${draft ? 'draft' : 'ready-for-review'} PR.`,
         `Then run \`gh pr create\` to open it and report the PR URL.`,
-      ].join('\n');
+      ].join('\n')
       const agentId = await spawnAgent(sessionId, {
         name: 'open pull request',
         initialPrompt: prompt,
         model: AGENT_KIND_DEFAULTS.generic.model,
         effort: AGENT_KIND_DEFAULTS.generic.effort,
-      });
-      await setCurrentSession(sessionId);
-      await selectAgent(sessionId, agentId);
-      onStudioClose();
+      })
+      await setCurrentSession(sessionId)
+      await selectAgent(sessionId, agentId)
+      onStudioClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setBusy(null);
+      setError(err instanceof Error ? err.message : String(err))
+      setBusy(null)
     }
-  };
+  }
 
   return (
     <div className="min-h-0 flex-1">
@@ -216,5 +216,5 @@ export const CreatePrPanel = ({
         </section>
       </ScrollFade>
     </div>
-  );
-};
+  )
+}

@@ -1,13 +1,13 @@
-import { renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
+import { renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Agent, Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types'
 
-type StoreState = Record<string, unknown>;
+type StoreState = Record<string, unknown>
 
 const { store } = vi.hoisted(() => {
-  const store: { state: StoreState } = { state: {} };
-  return { store };
-});
+  const store: { state: StoreState } = { state: {} }
+  return { store }
+})
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
@@ -15,20 +15,20 @@ vi.mock('../../../../store', () => ({
   useAppStore: Object.assign((selector: (s: StoreState) => unknown) => selector(store.state), {
     getState: () => store.state,
   }),
-}));
+}))
 
 vi.mock('zustand/react/shallow', () => ({
   useShallow: <T>(selector: T) => selector,
-}));
+}))
 
 vi.mock('../../../../store/slices/session-view', () => ({
   deriveSessionStage: () => ({ stage: 'running', reason: 'agent running' }),
-}));
+}))
 
-import { useWorkspaceRuns } from './index';
+import { useWorkspaceRuns } from './index'
 
-const WS = 'ws-1' as WorkspaceId;
-const SID = 'sess-1' as SessionId;
+const WS = 'ws-1' as WorkspaceId
+const SID = 'sess-1' as SessionId
 
 const makeAgent = (over: Record<string, unknown>): Agent =>
   ({
@@ -38,7 +38,7 @@ const makeAgent = (over: Record<string, unknown>): Agent =>
     name: 'agent',
     status: 'completed',
     ...over,
-  }) as unknown as Agent;
+  }) as unknown as Agent
 
 const workflow: Workflow = {
   id: 'wf-1',
@@ -58,7 +58,7 @@ const workflow: Workflow = {
   ],
   createdAt: '2026-01-01T00:00:00Z' as Session['createdAt'],
   updatedAt: '2026-01-01T00:00:00Z' as Session['updatedAt'],
-} as unknown as Workflow;
+} as unknown as Workflow
 
 const session: Session = {
   id: SID,
@@ -77,7 +77,7 @@ const session: Session = {
     },
   ],
   autoRun: false,
-} as unknown as Session;
+} as unknown as Session
 
 const baseState = (over: Partial<StoreState> = {}): StoreState => ({
   sessionPhaseRuns: {},
@@ -90,15 +90,15 @@ const baseState = (over: Partial<StoreState> = {}): StoreState => ({
   sessionOpenQuestions: {},
   currentSessionId: null,
   ...over,
-});
+})
 
 function reset() {
-  store.state = baseState();
+  store.state = baseState()
 }
 
 describe('useWorkspaceRuns', () => {
-  beforeEach(reset);
-  afterEach(reset);
+  beforeEach(reset)
+  afterEach(reset)
 
   it('groups spawned agents under their run step and renders ghost steps for unspawned template steps', () => {
     store.state = baseState({
@@ -114,25 +114,25 @@ describe('useWorkspaceRuns', () => {
           }),
         ],
       },
-    });
-    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
-    expect(result.current.lanes).toHaveLength(1);
-    const lane = result.current.lanes[0]!;
-    expect(lane.runId).toBe('run-1');
-    expect(lane.workflowName).toBe('Ship it');
-    expect(lane.autoRun).toBe(true);
-    expect(lane.steps).toHaveLength(3);
-    const scoutStep = lane.steps[0]!;
-    expect(scoutStep.status).toBe('done');
-    expect(scoutStep.rootAgentId).toBe('scout-1');
-    expect(scoutStep.children).toHaveLength(1);
-    const implStep = lane.steps[1]!;
-    expect(implStep.status).toBe('planned');
-    expect(implStep.rootAgentId).toBeNull();
-    expect(implStep.children).toHaveLength(0);
-    const reviewStep = lane.steps[2]!;
-    expect(reviewStep.status).toBe('planned');
-  });
+    })
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]))
+    expect(result.current.lanes).toHaveLength(1)
+    const lane = result.current.lanes[0]!
+    expect(lane.runId).toBe('run-1')
+    expect(lane.workflowName).toBe('Ship it')
+    expect(lane.autoRun).toBe(true)
+    expect(lane.steps).toHaveLength(3)
+    const scoutStep = lane.steps[0]!
+    expect(scoutStep.status).toBe('done')
+    expect(scoutStep.rootAgentId).toBe('scout-1')
+    expect(scoutStep.children).toHaveLength(1)
+    const implStep = lane.steps[1]!
+    expect(implStep.status).toBe('planned')
+    expect(implStep.rootAgentId).toBeNull()
+    expect(implStep.children).toHaveLength(0)
+    const reviewStep = lane.steps[2]!
+    expect(reviewStep.status).toBe('planned')
+  })
 
   it('sums cost per agent matching the telemetry rollup and rolls children into the parent', () => {
     store.state = baseState({
@@ -181,14 +181,14 @@ describe('useWorkspaceRuns', () => {
           },
         ],
       },
-    });
-    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
-    const lane = result.current.lanes[0]!;
-    expect(lane.costUsd).toBeCloseTo(0.35, 5);
-    expect(result.current.aggregate.spendUsd).toBeCloseTo(0.35, 5);
-    const scoutNode = lane.steps[0]!.children[0]!;
-    expect(scoutNode.costUsd).toBeCloseTo(0.35, 5);
-  });
+    })
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]))
+    const lane = result.current.lanes[0]!
+    expect(lane.costUsd).toBeCloseTo(0.35, 5)
+    expect(result.current.aggregate.spendUsd).toBeCloseTo(0.35, 5)
+    const scoutNode = lane.steps[0]!.children[0]!
+    expect(scoutNode.costUsd).toBeCloseTo(0.35, 5)
+  })
 
   it('routes resolver agents to resolveQueue and standalone agents to freeAgents', () => {
     store.state = baseState({
@@ -204,12 +204,12 @@ describe('useWorkspaceRuns', () => {
           }),
         ],
       },
-    });
-    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
-    expect(result.current.freeAgents.map((n) => n.id)).toEqual(['free-1']);
-    expect(result.current.resolveQueue.map((n) => n.id)).toEqual(['resolve-1']);
-    expect(result.current.resolveQueue[0]!.resolver?.commentUrl).toBe('https://x/y');
-    expect(result.current.aggregate.runningCount).toBe(2);
-    expect(result.current.aggregate.agentCount).toBe(2);
-  });
-});
+    })
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]))
+    expect(result.current.freeAgents.map((n) => n.id)).toEqual(['free-1'])
+    expect(result.current.resolveQueue.map((n) => n.id)).toEqual(['resolve-1'])
+    expect(result.current.resolveQueue[0]!.resolver?.commentUrl).toBe('https://x/y')
+    expect(result.current.aggregate.runningCount).toBe(2)
+    expect(result.current.aggregate.agentCount).toBe(2)
+  })
+})

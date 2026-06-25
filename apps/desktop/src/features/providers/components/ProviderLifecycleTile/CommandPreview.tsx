@@ -1,6 +1,6 @@
 type Props = {
-  readonly command: string;
-};
+  readonly command: string
+}
 
 export const CommandPreview = ({ command }: Props) => {
   return (
@@ -10,5 +10,5 @@ export const CommandPreview = ({ command }: Props) => {
       </span>
       <span className="text-foreground">{command}</span>
     </div>
-  );
-};
+  )
+}

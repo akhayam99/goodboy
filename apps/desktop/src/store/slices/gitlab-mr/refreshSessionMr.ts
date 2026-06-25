@@ -1,17 +1,17 @@
-import type { IsoDateTime, SessionId } from '@goodboy/types';
-import { gitlabMrForBranch } from '../../../features/integrations/gitlab/client';
-import { formatError } from '../../../shared/lib/errors';
-import { resolveMrContext } from './resolveMrContext';
-import type { GetFn, SetFn } from './types';
+import type { IsoDateTime, SessionId } from '@goodboy/types'
+import { gitlabMrForBranch } from '../../../features/integrations/gitlab/client'
+import { formatError } from '../../../shared/lib/errors'
+import { resolveMrContext } from './resolveMrContext'
+import type { GetFn, SetFn } from './types'
 
 export const refreshSessionMr = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: { force?: boolean; silent?: boolean }) => {
     if (!opts?.force && get().sessionGitlabMr[sessionId]?.loading) {
-      return;
+      return
     }
-    const ctx = await resolveMrContext(get, sessionId);
+    const ctx = await resolveMrContext(get, sessionId)
     if (!ctx) {
-      return;
+      return
     }
     set((state) => ({
       sessionGitlabMr: {
@@ -23,9 +23,9 @@ export const refreshSessionMr = (set: SetFn, get: GetFn) => {
           error: null,
         },
       },
-    }));
+    }))
     try {
-      const mr = await gitlabMrForBranch(ctx.workspaceId, ctx.host, ctx.projectPath, ctx.branch);
+      const mr = await gitlabMrForBranch(ctx.workspaceId, ctx.host, ctx.projectPath, ctx.branch)
       set((state) => ({
         sessionGitlabMr: {
           ...state.sessionGitlabMr,
@@ -36,7 +36,7 @@ export const refreshSessionMr = (set: SetFn, get: GetFn) => {
             error: null,
           },
         },
-      }));
+      }))
     } catch (err) {
       set((state) => ({
         sessionGitlabMr: {
@@ -48,7 +48,7 @@ export const refreshSessionMr = (set: SetFn, get: GetFn) => {
             error: opts?.silent ? null : formatError(err),
           },
         },
-      }));
+      }))
     }
-  };
-};
+  }
+}

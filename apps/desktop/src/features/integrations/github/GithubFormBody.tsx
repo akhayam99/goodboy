@@ -1,72 +1,72 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { Button, Input } from '@goodboy/ui';
-import { CheckCircle2, Unplug } from 'lucide-react';
-import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
-import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
-import { useAppStore } from '../../../store';
-import { formatError } from '../../../shared/lib/errors';
-import { CreateTokenLink } from './CreateTokenLink';
+import { useCallback, useEffect, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { Button, Input } from '@goodboy/ui'
+import { CheckCircle2, Unplug } from 'lucide-react'
+import type { GhTokenStatus, WorkspaceId } from '@goodboy/types'
+import { ghClearToken, ghSetToken, ghStatus } from '../../github/github'
+import { useAppStore } from '../../../store'
+import { formatError } from '../../../shared/lib/errors'
+import { CreateTokenLink } from './CreateTokenLink'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  onConnected?: () => void;
-};
+  workspaceId: WorkspaceId
+  onConnected?: () => void
+}
 
 export const GithubFormBody = ({ workspaceId, onConnected }: Props) => {
-  const [status, setStatus] = useState<GhTokenStatus | null>(null);
-  const [token, setToken] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<GhTokenStatus | null>(null)
+  const [token, setToken] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const gitlabConnected = useAppStore(
     useShallow((s) =>
       (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab'),
     ),
-  );
-  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
+  )
+  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab)
 
   const refresh = useCallback(async () => {
     try {
-      setStatus(await ghStatus(workspaceId));
+      setStatus(await ghStatus(workspaceId))
     } catch {
-      setStatus(null);
+      setStatus(null)
     }
-  }, [workspaceId]);
+  }, [workspaceId])
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refresh()
+  }, [refresh])
 
   const onConnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await ghSetToken(token.trim(), workspaceId);
-      setToken('');
-      await refresh();
-      onConnected?.();
+      await ghSetToken(token.trim(), workspaceId)
+      setToken('')
+      await refresh()
+      onConnected?.()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onDisconnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await ghClearToken(workspaceId);
-      await refresh();
+      await ghClearToken(workspaceId)
+      await refresh()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
-  const scoped = status?.scoped ?? false;
+  const scoped = status?.scoped ?? false
 
   return (
     <div className="flex flex-col gap-5">
@@ -143,5 +143,5 @@ export const GithubFormBody = ({ workspaceId, onConnected }: Props) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

@@ -1,46 +1,46 @@
-import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
-import type { GetFn, SetFn } from './types';
+import type { SessionId } from '@goodboy/types'
+import { tauriGhRunner } from '../../../features/github/github'
+import type { GetFn, SetFn } from './types'
 
 export type EditPrOptions = {
-  title?: string;
-  body?: string;
-};
+  title?: string
+  body?: string
+}
 
 export const editPr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === sessionId)
     if (!session) {
-      return;
+      return
     }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId)
     if (!workspace) {
-      return;
+      return
     }
 
-    const args = ['pr', 'edit', String(prNumber)];
+    const args = ['pr', 'edit', String(prNumber)]
     if (opts.title !== undefined) {
-      args.push('--title', opts.title);
+      args.push('--title', opts.title)
     }
     if (opts.body !== undefined) {
-      args.push('--body', opts.body);
+      args.push('--body', opts.body)
     }
     if (args.length === 3) {
-      return;
+      return
     }
 
     const res = await tauriGhRunner.run(args, {
       cwd: workspace.rootPath,
       workspaceId: session.workspaceId,
-    });
+    })
     if (res.exitCode !== 0) {
-      const errMsg = res.stderr.trim() || `gh pr edit exited with ${res.exitCode}`;
+      const errMsg = res.stderr.trim() || `gh pr edit exited with ${res.exitCode}`
       void get().emitNotification('error', 'error', 'Edit failed', errMsg, {
         sessionId,
         workspaceId: workspace.id,
-      });
-      throw new Error(errMsg);
+      })
+      throw new Error(errMsg)
     }
-    await get().refreshSessionPr(sessionId, { force: true });
-  };
-};
+    await get().refreshSessionPr(sessionId, { force: true })
+  }
+}

@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Button, Input, formatUsd } from '@goodboy/ui';
-import { parseCap } from '../../../../shared/lib/parse-cap';
-import { Widget } from './Widget';
+import { useEffect, useState } from 'react'
+import { Button, Input, formatUsd } from '@goodboy/ui'
+import { parseCap } from '../../../../shared/lib/parse-cap'
+import { Widget } from './Widget'
 
 type Props = {
-  readonly label: string;
-  readonly hint?: string;
-  readonly currentCapUsd: number | null;
-  readonly placeholder?: string;
-  readonly onSave: (capUsd: number) => Promise<void>;
-  readonly onRemove?: () => Promise<void>;
-};
+  readonly label: string
+  readonly hint?: string
+  readonly currentCapUsd: number | null
+  readonly placeholder?: string
+  readonly onSave: (capUsd: number) => Promise<void>
+  readonly onRemove?: () => Promise<void>
+}
 
 export const CapEditor = ({
   label,
@@ -20,40 +20,40 @@ export const CapEditor = ({
   onSave,
   onRemove,
 }: Props) => {
-  const [draft, setDraft] = useState(currentCapUsd !== null ? String(currentCapUsd) : '');
-  const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState(currentCapUsd !== null ? String(currentCapUsd) : '')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    setDraft(currentCapUsd !== null ? String(currentCapUsd) : '');
-  }, [currentCapUsd]);
+    setDraft(currentCapUsd !== null ? String(currentCapUsd) : '')
+  }, [currentCapUsd])
 
-  const parsed = parseCap(draft);
-  const unchanged = parsed !== null && parsed === currentCapUsd;
-  const canSave = parsed !== null && !unchanged && !busy;
+  const parsed = parseCap(draft)
+  const unchanged = parsed !== null && parsed === currentCapUsd
+  const canSave = parsed !== null && !unchanged && !busy
 
   const save = async () => {
     if (parsed === null) {
-      return;
+      return
     }
-    setBusy(true);
+    setBusy(true)
     try {
-      await onSave(parsed);
+      await onSave(parsed)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const remove = async () => {
     if (!onRemove) {
-      return;
+      return
     }
-    setBusy(true);
+    setBusy(true)
     try {
-      await onRemove();
+      await onRemove()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <Widget label={label} hint={hint}>
@@ -68,7 +68,7 @@ export const CapEditor = ({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && canSave) {
-              void save();
+              void save()
             }
           }}
           className="max-w-40 font-mono tabular-nums"
@@ -89,5 +89,5 @@ export const CapEditor = ({
         ) : null}
       </div>
     </Widget>
-  );
-};
+  )
+}

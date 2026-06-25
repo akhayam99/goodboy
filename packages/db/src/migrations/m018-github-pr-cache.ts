@@ -8,4 +8,4 @@ CREATE TABLE github_pr_cache (
 );
 
 CREATE INDEX idx_github_pr_cache_branch ON github_pr_cache(branch);
-`;
+`

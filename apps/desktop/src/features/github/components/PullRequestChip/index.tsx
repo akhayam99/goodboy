@@ -5,16 +5,16 @@ import {
   GitPullRequestClosed,
   GitPullRequestDraft,
   ListChecks,
-} from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { PullRequestStateKind } from '@goodboy/types';
+} from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { PullRequestStateKind } from '@goodboy/types'
 
 type PrStateMeta = {
-  readonly icon: React.ElementType;
-  readonly label: string;
-  readonly textClass: string;
-  readonly bgClass: string;
-};
+  readonly icon: React.ElementType
+  readonly label: string
+  readonly textClass: string
+  readonly bgClass: string
+}
 
 const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   draft: {
@@ -53,21 +53,21 @@ const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
     textClass: 'text-danger',
     bgClass: 'bg-danger/10',
   },
-};
+}
 
 export const pullRequestMeta = (state: PullRequestStateKind): PrStateMeta => {
-  return PR_META[state];
-};
+  return PR_META[state]
+}
 
-type Variant = 'icon' | 'compact' | 'badge';
+type Variant = 'icon' | 'compact' | 'badge'
 
 type Props = {
-  readonly state: PullRequestStateKind;
-  readonly variant?: Variant;
-  readonly number?: number;
-  readonly iconSize?: number;
-  readonly className?: string;
-};
+  readonly state: PullRequestStateKind
+  readonly variant?: Variant
+  readonly number?: number
+  readonly iconSize?: number
+  readonly className?: string
+}
 
 export const PullRequestChip = ({
   state,
@@ -76,8 +76,8 @@ export const PullRequestChip = ({
   iconSize,
   className,
 }: Props) => {
-  const meta = PR_META[state];
-  const Icon = meta.icon;
+  const meta = PR_META[state]
+  const Icon = meta.icon
 
   if (variant === 'icon') {
     return (
@@ -88,7 +88,7 @@ export const PullRequestChip = ({
       >
         <Icon size={iconSize ?? 10} aria-hidden />
       </span>
-    );
+    )
   }
 
   if (variant === 'compact') {
@@ -104,7 +104,7 @@ export const PullRequestChip = ({
         <Icon size={iconSize ?? 12} aria-hidden />
         {number !== undefined && <span>#{number}</span>}
       </span>
-    );
+    )
   }
 
   return (
@@ -127,5 +127,5 @@ export const PullRequestChip = ({
         </>
       )}
     </span>
-  );
-};
+  )
+}

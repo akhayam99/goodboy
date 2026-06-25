@@ -1,17 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
-import { EventEmitter } from 'node:events';
-import { PlannerAgent, PlannerSpawnError } from './cli';
+import { describe, expect, it, vi } from 'vitest'
+import { EventEmitter } from 'node:events'
+import { PlannerAgent, PlannerSpawnError } from './cli'
 
 type FakeChild = EventEmitter & {
-  stdout: EventEmitter;
-  stderr: EventEmitter;
-};
+  stdout: EventEmitter
+  stderr: EventEmitter
+}
 
 function makeFakeChild(): FakeChild {
-  const child = new EventEmitter() as FakeChild;
-  child.stdout = new EventEmitter();
-  child.stderr = new EventEmitter();
-  return child;
+  const child = new EventEmitter() as FakeChild
+  child.stdout = new EventEmitter()
+  child.stderr = new EventEmitter()
+  return child
 }
 
 const validPlannerJson = JSON.stringify({
@@ -31,7 +31,7 @@ const validPlannerJson = JSON.stringify({
       expectedOutput: 'A diff with the cleanup applied.',
     },
   ],
-});
+})
 
 describe('PlannerAgent', () => {
   it('spawns the cli, parses claude json envelope, and returns parsed output', async () => {
@@ -42,77 +42,77 @@ describe('PlannerAgent', () => {
         output_tokens: 50,
         cache_read_input_tokens: 10,
       },
-    });
+    })
 
-    const child = makeFakeChild();
-    const spawnFn = vi.fn().mockReturnValue(child);
+    const child = makeFakeChild()
+    const spawnFn = vi.fn().mockReturnValue(child)
 
     const agent = new PlannerAgent({
       providerId: 'anthropic',
       spawnFn: spawnFn as never,
-    });
+    })
 
-    const promise = agent.plan({ process: 'Refactor auth module' });
+    const promise = agent.plan({ process: 'Refactor auth module' })
 
     setImmediate(() => {
-      child.stdout.emit('data', Buffer.from(claudeEnvelope, 'utf8'));
-      child.emit('close', 0);
-    });
+      child.stdout.emit('data', Buffer.from(claudeEnvelope, 'utf8'))
+      child.emit('close', 0)
+    })
 
-    const result = await promise;
-    expect(result.output.workflowName).toBe('Cleanup');
-    expect(result.output.steps).toHaveLength(2);
-    expect(result.usage.inputTokens).toBe(100);
-    expect(result.usage.outputTokens).toBe(50);
-    expect(spawnFn).toHaveBeenCalledOnce();
-  });
+    const result = await promise
+    expect(result.output.workflowName).toBe('Cleanup')
+    expect(result.output.steps).toHaveLength(2)
+    expect(result.usage.inputTokens).toBe(100)
+    expect(result.usage.outputTokens).toBe(50)
+    expect(spawnFn).toHaveBeenCalledOnce()
+  })
 
   it('throws PlannerSpawnError on non-zero exit', async () => {
-    const child = makeFakeChild();
-    const spawnFn = vi.fn().mockReturnValue(child);
+    const child = makeFakeChild()
+    const spawnFn = vi.fn().mockReturnValue(child)
 
     const agent = new PlannerAgent({
       providerId: 'anthropic',
       spawnFn: spawnFn as never,
-    });
+    })
 
-    const promise = agent.plan({ process: 'X' });
+    const promise = agent.plan({ process: 'X' })
 
     setImmediate(() => {
-      child.stderr.emit('data', Buffer.from('boom', 'utf8'));
-      child.emit('close', 1);
-    });
+      child.stderr.emit('data', Buffer.from('boom', 'utf8'))
+      child.emit('close', 1)
+    })
 
-    await expect(promise).rejects.toBeInstanceOf(PlannerSpawnError);
-  });
+    await expect(promise).rejects.toBeInstanceOf(PlannerSpawnError)
+  })
 
   it('passes process + repoContext into user message', async () => {
-    const claudeEnvelope = JSON.stringify({ result: validPlannerJson });
-    const child = makeFakeChild();
-    let capturedArgs: string[] = [];
+    const claudeEnvelope = JSON.stringify({ result: validPlannerJson })
+    const child = makeFakeChild()
+    let capturedArgs: string[] = []
     const spawnFn = vi.fn().mockImplementation((_bin: string, args: string[]) => {
-      capturedArgs = args;
-      return child;
-    });
+      capturedArgs = args
+      return child
+    })
 
     const agent = new PlannerAgent({
       providerId: 'anthropic',
       spawnFn: spawnFn as never,
-    });
+    })
 
     const promise = agent.plan({
       process: 'Migrate to Drizzle ORM',
       repoContext: 'Workspace: goodboy, TypeScript monorepo',
-    });
+    })
 
     setImmediate(() => {
-      child.stdout.emit('data', Buffer.from(claudeEnvelope, 'utf8'));
-      child.emit('close', 0);
-    });
+      child.stdout.emit('data', Buffer.from(claudeEnvelope, 'utf8'))
+      child.emit('close', 0)
+    })
 
-    await promise;
-    const userMsg = capturedArgs[1] ?? '';
-    expect(userMsg).toContain('Migrate to Drizzle ORM');
-    expect(userMsg).toContain('Workspace: goodboy');
-  });
-});
+    await promise
+    const userMsg = capturedArgs[1] ?? ''
+    expect(userMsg).toContain('Migrate to Drizzle ORM')
+    expect(userMsg).toContain('Workspace: goodboy')
+  })
+})

@@ -1,35 +1,35 @@
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { listMessagesForAgent, listTurnEventsForAgent } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
-import { EMPTY_LOADING } from '../../session-mutators';
-import type { GetFn, SetFn } from './types';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types'
+import { listMessagesForAgent, listTurnEventsForAgent } from '@goodboy/db'
+import { tauriDatabase } from '../../../shared/lib/db'
+import { invokeAgentMarkViewed } from '../../../features/workflows/workflows'
+import { EMPTY_LOADING } from '../../session-mutators'
+import type { GetFn, SetFn } from './types'
 
 export const selectAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
-    const stampedAt = new Date().toISOString() as IsoDateTime;
-    const prevAgentId = get().selectedAgentId[sessionId] ?? null;
-    const stampAgents = new Set<AgentId>([agentId]);
+    const stampedAt = new Date().toISOString() as IsoDateTime
+    const prevAgentId = get().selectedAgentId[sessionId] ?? null
+    const stampAgents = new Set<AgentId>([agentId])
     if (prevAgentId && prevAgentId !== agentId) {
-      stampAgents.add(prevAgentId);
+      stampAgents.add(prevAgentId)
     }
 
-    const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const childrenByParentId = new Map<AgentId, AgentId[]>();
+    const runs = get().sessionPhaseRuns[sessionId] ?? []
+    const childrenByParentId = new Map<AgentId, AgentId[]>()
     for (const run of runs) {
       if (run.parentAgentId) {
-        const list = childrenByParentId.get(run.parentAgentId) ?? [];
-        list.push(run.id);
-        childrenByParentId.set(run.parentAgentId, list);
+        const list = childrenByParentId.get(run.parentAgentId) ?? []
+        list.push(run.id)
+        childrenByParentId.set(run.parentAgentId, list)
       }
     }
-    const queue: AgentId[] = [agentId];
+    const queue: AgentId[] = [agentId]
     while (queue.length > 0) {
-      const current = queue.shift() as AgentId;
+      const current = queue.shift() as AgentId
       for (const childId of childrenByParentId.get(current) ?? []) {
         if (!stampAgents.has(childId)) {
-          stampAgents.add(childId);
-          queue.push(childId);
+          stampAgents.add(childId)
+          queue.push(childId)
         }
       }
     }
@@ -37,19 +37,19 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
     const markViewed = (): Promise<void> =>
       Promise.all(
         [...stampAgents].map((id) => invokeAgentMarkViewed(id, stampedAt).catch(() => undefined)),
-      ).then(() => undefined);
+      ).then(() => undefined)
 
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
-      runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
+      runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s))
 
-    set((state) => ({ sessionStudio: { ...state.sessionStudio, [sessionId]: null } }));
+    set((state) => ({ sessionStudio: { ...state.sessionStudio, [sessionId]: null } }))
 
-    const cached = get().transcripts[agentId];
+    const cached = get().transcripts[agentId]
     if (cached) {
       // eslint-disable-next-line no-console
-      console.log(`[perf] selectAgent:${agentId} cached`);
+      console.log(`[perf] selectAgent:${agentId} cached`)
       set((state) => {
-        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING
         return {
           selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
           sessionLoading: {
@@ -60,35 +60,35 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
             ...state.sessionPhaseRuns,
             [sessionId]: stampRuns(state.sessionPhaseRuns[sessionId] ?? []),
           },
-        };
-      });
-      await markViewed();
-      void get().refreshUnreadWorkspaces();
-      return;
+        }
+      })
+      await markViewed()
+      void get().refreshUnreadWorkspaces()
+      return
     }
     set((state) => {
-      const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+      const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING
       return {
         selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
         sessionLoading: {
           ...state.sessionLoading,
           [sessionId]: { ...current, transcript: true },
         },
-      };
-    });
-    const INITIAL_LIMIT = 50;
-    const tInitial = performance.now();
+      }
+    })
+    const INITIAL_LIMIT = 50
+    const tInitial = performance.now()
     try {
       const [messages, events] = await Promise.all([
         listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
         listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
-      ]);
+      ])
       // eslint-disable-next-line no-console
       console.log(
         `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
-      );
+      )
       set((state) => {
-        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING
         return {
           transcripts: { ...state.transcripts, [agentId]: events },
           messages: { ...state.messages, [sessionId]: messages },
@@ -100,12 +100,12 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
             ...state.sessionPhaseRuns,
             [sessionId]: stampRuns(state.sessionPhaseRuns[sessionId] ?? []),
           },
-        };
-      });
-      await markViewed();
-      void get().refreshUnreadWorkspaces();
+        }
+      })
+      await markViewed()
+      void get().refreshUnreadWorkspaces()
       if (events.length === INITIAL_LIMIT) {
-        const tFull = performance.now();
+        const tFull = performance.now()
         void Promise.all([
           listMessagesForAgent(tauriDatabase, agentId),
           listTurnEventsForAgent(tauriDatabase, agentId),
@@ -114,31 +114,31 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
             // eslint-disable-next-line no-console
             console.log(
               `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
-            );
+            )
             set((state) => {
-              const current = state.transcripts[agentId];
+              const current = state.transcripts[agentId]
               if (current && current.length > fullEvents.length) {
-                return {};
+                return {}
               }
               return {
                 transcripts: { ...state.transcripts, [agentId]: fullEvents },
                 messages: { ...state.messages, [sessionId]: fullMessages },
-              };
-            });
+              }
+            })
           })
-          .catch(() => {});
+          .catch(() => {})
       }
     } catch (err) {
       set((state) => {
-        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+        const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING
         return {
           sessionLoading: {
             ...state.sessionLoading,
             [sessionId]: { ...current, transcript: false },
           },
-        };
-      });
-      throw err;
+        }
+      })
+      throw err
     }
-  };
-};
+  }
+}

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Smartphone } from 'lucide-react';
-import { Divider, StatusDot, formatUsd } from '@goodboy/ui';
-import { DogMascot } from '../../../shared/components/DogMascot';
-import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
-import { bridgeStatus } from '../../../features/companion/bridge';
-import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
+import { useEffect, useState } from 'react'
+import { Smartphone } from 'lucide-react'
+import { Divider, StatusDot, formatUsd } from '@goodboy/ui'
+import { DogMascot } from '../../../shared/components/DogMascot'
+import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator'
+import { bridgeStatus } from '../../../features/companion/bridge'
+import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store'
 
 export const AppTopBar = () => (
   <>
@@ -27,34 +27,34 @@ export const AppTopBar = () => (
     </div>
     <Divider />
   </>
-);
+)
 
 // App-header pairing entry-point, beside the Beta chip — twin of the hidden
 // cmd+ctrl+shift+m shortcut. Polls bridge status to surface a presence dot.
 function PairDeviceCta() {
-  const [linked, setLinked] = useState(false);
+  const [linked, setLinked] = useState(false)
 
   useEffect(() => {
-    let active = true;
+    let active = true
     const refresh = () => {
       bridgeStatus()
         .then((s) => {
-          if (active) setLinked(s.running && s.enrolledCount > 0);
+          if (active) setLinked(s.running && s.enrolledCount > 0)
         })
-        .catch(() => {});
-    };
-    refresh();
-    const id = window.setInterval(refresh, 5000);
-    const onChanged = () => refresh();
-    window.addEventListener('goodboy:bridge-paired-changed', onChanged);
+        .catch(() => {})
+    }
+    refresh()
+    const id = window.setInterval(refresh, 5000)
+    const onChanged = () => refresh()
+    window.addEventListener('goodboy:bridge-paired-changed', onChanged)
     return () => {
-      active = false;
-      window.clearInterval(id);
-      window.removeEventListener('goodboy:bridge-paired-changed', onChanged);
-    };
-  }, []);
+      active = false
+      window.clearInterval(id)
+      window.removeEventListener('goodboy:bridge-paired-changed', onChanged)
+    }
+  }, [])
 
-  const label = linked ? 'iPhone linked — manage' : 'Pair your iPhone';
+  const label = linked ? 'iPhone linked — manage' : 'Pair your iPhone'
 
   return (
     <button
@@ -70,15 +70,15 @@ function PairDeviceCta() {
         <span aria-hidden className="ml-0.5 size-1.5 shrink-0 rounded-full bg-success" />
       ) : null}
     </button>
-  );
+  )
 }
 
 function WorkspaceRollupStrip() {
-  const workspace = useCurrentWorkspace();
-  const sessions = useSessions();
-  const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions);
+  const workspace = useCurrentWorkspace()
+  const sessions = useSessions()
+  const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions)
   if (!workspace) {
-    return null;
+    return null
   }
   return (
     <div className="flex items-center gap-3 text-2xs">
@@ -103,5 +103,5 @@ function WorkspaceRollupStrip() {
         today
       </span>
     </div>
-  );
+  )
 }

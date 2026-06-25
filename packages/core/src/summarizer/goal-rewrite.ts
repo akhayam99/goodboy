@@ -1,5 +1,5 @@
-import type { ProviderId } from '@goodboy/types';
-import { getCheapModel, getDefaultBinary } from './client';
+import type { ProviderId } from '@goodboy/types'
+import { getCheapModel, getDefaultBinary } from './client'
 
 const GOAL_REWRITE_SYSTEM_PROMPT = `You clean the "goal" note for an AI coding session that is driven by a multi-step agent workflow. Each workflow step runs as its own dedicated agent, so the goal note must describe ONLY the desired end result, never the process used to reach it.
 
@@ -13,27 +13,27 @@ Rewrite the goal so that it:
 
 If the goal already states only the objective with no process, return it essentially unchanged.
 
-Output ONLY the rewritten goal text. No preamble, no quotes, no JSON, no explanation.`;
+Output ONLY the rewritten goal text. No preamble, no quotes, no JSON, no explanation.`
 
 export type GoalRewriteInput = {
-  readonly goal: string;
-  readonly stepNames: ReadonlyArray<string>;
-};
+  readonly goal: string
+  readonly stepNames: ReadonlyArray<string>
+}
 
 export type GoalRewriteDeps = {
-  readonly providerId: ProviderId;
-  readonly binary?: string;
-  readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-};
+  readonly providerId: ProviderId
+  readonly binary?: string
+  readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>
+}
 
 type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
+  readonly stdout: string
+  readonly stderr: string
+  readonly exitCode: number | null
+}
 
 export const buildGoalRewriteUserPrompt = (input: GoalRewriteInput): string => {
-  const steps = input.stepNames.map((name) => `- ${name}`).join('\n');
+  const steps = input.stepNames.map((name) => `- ${name}`).join('\n')
   return [
     'CURRENT GOAL:',
     input.goal.trim(),
@@ -42,16 +42,16 @@ export const buildGoalRewriteUserPrompt = (input: GoalRewriteInput): string => {
     steps,
     '',
     'Rewrite the goal following your instructions. Output only the cleaned goal text.',
-  ].join('\n');
-};
+  ].join('\n')
+}
 
 export const rewriteWorkflowGoal = async (
   deps: GoalRewriteDeps,
   input: GoalRewriteInput,
 ): Promise<string | null> => {
-  const goal = input.goal.trim();
+  const goal = input.goal.trim()
   if (goal.length === 0 || input.stepNames.length === 0) {
-    return null;
+    return null
   }
 
   const result = await deps.invokeFn<OneShotResult>('summarize_session', {
@@ -62,24 +62,24 @@ export const rewriteWorkflowGoal = async (
       userMessage: buildGoalRewriteUserPrompt(input),
       systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,
     },
-  });
+  })
   if ((result.exitCode ?? 0) !== 0) {
-    return null;
+    return null
   }
 
-  const cleaned = extractText(deps.providerId, result.stdout).trim();
-  return cleaned.length > 0 ? cleaned : null;
-};
+  const cleaned = extractText(deps.providerId, result.stdout).trim()
+  return cleaned.length > 0 ? cleaned : null
+}
 
 function extractText(providerId: ProviderId, stdout: string): string {
-  const trimmed = stdout.trim();
+  const trimmed = stdout.trim()
   if (providerId === 'anthropic') {
     try {
-      const parsed = JSON.parse(trimmed) as { result?: string };
-      return parsed.result ?? '';
+      const parsed = JSON.parse(trimmed) as { result?: string }
+      return parsed.result ?? ''
     } catch {
-      return trimmed;
+      return trimmed
     }
   }
-  return trimmed;
+  return trimmed
 }

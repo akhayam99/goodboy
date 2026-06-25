@@ -292,4 +292,4 @@ CREATE TABLE parallel_groups (
   FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
 );
 CREATE INDEX idx_parallel_groups_task ON parallel_groups(task_id);
-`;
+`

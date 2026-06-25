@@ -1,14 +1,14 @@
-import { useCallback, useLayoutEffect, useRef, type ComponentProps } from 'react';
-import { cn } from '../cn';
+import { useCallback, useLayoutEffect, useRef, type ComponentProps } from 'react'
+import { cn } from '../cn'
 
 export type TextareaProps = ComponentProps<'textarea'> & {
-  autoGrow?: boolean;
-  maxRows?: number;
-  minRows?: number;
-};
+  autoGrow?: boolean
+  maxRows?: number
+  minRows?: number
+}
 
-const LINE_HEIGHT_PX = 20;
-const PADDING_PX = 16;
+const LINE_HEIGHT_PX = 20
+const PADDING_PX = 16
 
 export const Textarea = ({
   className,
@@ -20,25 +20,25 @@ export const Textarea = ({
   value,
   ...rest
 }: TextareaProps) => {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const minPx = minRows * LINE_HEIGHT_PX + PADDING_PX;
-  const maxPx = maxRows * LINE_HEIGHT_PX + PADDING_PX;
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const minPx = minRows * LINE_HEIGHT_PX + PADDING_PX
+  const maxPx = maxRows * LINE_HEIGHT_PX + PADDING_PX
 
   const resize = useCallback(() => {
-    const el = ref.current;
+    const el = ref.current
     if (!el || !autoGrow) {
-      return;
+      return
     }
-    el.style.height = 'auto';
-    const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx));
-    el.style.height = `${next}px`;
-    el.style.overflowY = el.scrollHeight > maxPx ? 'auto' : 'hidden';
-  }, [autoGrow, maxPx, minPx]);
+    el.style.height = 'auto'
+    const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
+    el.style.height = `${next}px`
+    el.style.overflowY = el.scrollHeight > maxPx ? 'auto' : 'hidden'
+  }, [autoGrow, maxPx, minPx])
 
   useLayoutEffect(() => {
-    const id = requestAnimationFrame(resize);
-    return () => cancelAnimationFrame(id);
-  }, [resize, value]);
+    const id = requestAnimationFrame(resize)
+    return () => cancelAnimationFrame(id)
+  }, [resize, value])
 
   return (
     <textarea
@@ -51,10 +51,10 @@ export const Textarea = ({
       )}
       style={autoGrow ? { ...style, overflowY: 'hidden' } : style}
       onChange={(e) => {
-        onChange?.(e);
-        resize();
+        onChange?.(e)
+        resize()
       }}
       {...rest}
     />
-  );
-};
+  )
+}

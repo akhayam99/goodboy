@@ -1,35 +1,35 @@
-import { useMemo, useState } from 'react';
-import { cn, formatUsdPrecise } from '@goodboy/ui';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { ProviderIcon } from './ProviderIcon';
-import { Widget } from './Widget';
-import { formatModel, formatTokens, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
+import { useMemo, useState } from 'react'
+import { cn, formatUsdPrecise } from '@goodboy/ui'
+import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys'
+import { ProviderIcon } from './ProviderIcon'
+import { Widget } from './Widget'
+import { formatModel, formatTokens, sortTurns, type SortKey, type WorkspaceTurn } from './lib'
 
 type Props = {
-  readonly turns: ReadonlyArray<WorkspaceTurn>;
-  readonly showProvider: boolean;
-  readonly showSession: boolean;
-};
+  readonly turns: ReadonlyArray<WorkspaceTurn>
+  readonly showProvider: boolean
+  readonly showSession: boolean
+}
 
-const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
-const PAGE_SIZE = 10;
+const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey
+const PAGE_SIZE = 10
 
 export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
-    const stored = localStorage.getItem(SORT_KEY_STORAGE);
-    return stored === 'expensive' ? 'expensive' : 'recent';
-  });
-  const [visible, setVisible] = useState(PAGE_SIZE);
+    const stored = localStorage.getItem(SORT_KEY_STORAGE)
+    return stored === 'expensive' ? 'expensive' : 'recent'
+  })
+  const [visible, setVisible] = useState(PAGE_SIZE)
 
-  const sorted = useMemo(() => sortTurns(turns, sortKey), [turns, sortKey]);
-  const shown = sorted.slice(0, visible);
-  const remaining = sorted.length - shown.length;
+  const sorted = useMemo(() => sortTurns(turns, sortKey), [turns, sortKey])
+  const shown = sorted.slice(0, visible)
+  const remaining = sorted.length - shown.length
 
   const handleSortKey = (key: SortKey) => {
-    setSortKey(key);
-    setVisible(PAGE_SIZE);
-    localStorage.setItem(SORT_KEY_STORAGE, key);
-  };
+    setSortKey(key)
+    setVisible(PAGE_SIZE)
+    localStorage.setItem(SORT_KEY_STORAGE, key)
+  }
 
   const action = (
     <div className="flex gap-1">
@@ -44,7 +44,7 @@ export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
         label="expensive"
       />
     </div>
-  );
+  )
 
   return (
     <Widget label="turns" action={action}>
@@ -120,17 +120,17 @@ export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
         </>
       )}
     </Widget>
-  );
-};
+  )
+}
 
 function SortChip({
   active,
   label,
   onClick,
 }: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
+  active: boolean
+  label: string
+  onClick: () => void
 }) {
   return (
     <button
@@ -143,5 +143,5 @@ function SortChip({
     >
       {label}
     </button>
-  );
+  )
 }

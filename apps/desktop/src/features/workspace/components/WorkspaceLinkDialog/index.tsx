@@ -1,112 +1,112 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, StatusDot, cn } from '@goodboy/ui';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
-import { Boxes, Check, FolderGit2, FolderPlus } from 'lucide-react';
-import { useAppStore, useWorkspaces } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
-import { validateGitRepo } from '../../../../shared/lib/repo';
-import { reopenWizard } from '../../../onboarding/onboarding-store';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
+import { Button, Dialog, Input, StatusDot, cn } from '@goodboy/ui'
+import type { Workspace, WorkspaceId } from '@goodboy/types'
+import { Boxes, Check, FolderGit2, FolderPlus } from 'lucide-react'
+import { useAppStore, useWorkspaces } from '../../../../store'
+import { formatError } from '../../../../shared/lib/errors'
+import { validateGitRepo } from '../../../../shared/lib/repo'
+import { reopenWizard } from '../../../onboarding/onboarding-store'
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
-};
+  open: boolean
+  onClose: () => void
+}
 
-type Mode = 'single' | 'multi';
+type Mode = 'single' | 'multi'
 
-const lastSegment = (p: string): string => p.split('/').filter(Boolean).at(-1) ?? p;
+const lastSegment = (p: string): string => p.split('/').filter(Boolean).at(-1) ?? p
 
 const commonParentDir = (paths: ReadonlyArray<string>): string => {
   if (paths.length === 0) {
-    return '';
+    return ''
   }
-  const split = paths.map((p) => p.split('/'));
-  const first = split[0]!;
-  const shared: string[] = [];
+  const split = paths.map((p) => p.split('/'))
+  const first = split[0]!
+  const shared: string[] = []
   for (let i = 0; i < first.length; i += 1) {
-    const seg = first[i];
+    const seg = first[i]
     if (split.every((s) => s[i] === seg)) {
-      shared.push(seg!);
+      shared.push(seg!)
     } else {
-      break;
+      break
     }
   }
-  return shared.join('/');
-};
+  return shared.join('/')
+}
 
 export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
-  const addWorkspace = useAppStore((s) => s.addWorkspace);
-  const addCompositeWorkspace = useAppStore((s) => s.addCompositeWorkspace);
-  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
-  const workspaces = useWorkspaces();
-  const linkable = useMemo(() => workspaces.filter((w) => w.kind !== 'composite'), [workspaces]);
+  const addWorkspace = useAppStore((s) => s.addWorkspace)
+  const addCompositeWorkspace = useAppStore((s) => s.addCompositeWorkspace)
+  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace)
+  const workspaces = useWorkspaces()
+  const linkable = useMemo(() => workspaces.filter((w) => w.kind !== 'composite'), [workspaces])
 
-  const [mode, setMode] = useState<Mode>('single');
+  const [mode, setMode] = useState<Mode>('single')
 
-  const [path, setPath] = useState('');
-  const [validating, setValidating] = useState(false);
-  const [validPath, setValidPath] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [path, setPath] = useState('')
+  const [validating, setValidating] = useState(false)
+  const [validPath, setValidPath] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  const [selected, setSelected] = useState<ReadonlyArray<WorkspaceId>>([]);
-  const [mountNames, setMountNames] = useState<Record<string, string>>({});
-  const [containerPath, setContainerPath] = useState('');
-  const [containerEdited, setContainerEdited] = useState(false);
-  const [compositeName, setCompositeName] = useState('');
+  const [selected, setSelected] = useState<ReadonlyArray<WorkspaceId>>([])
+  const [mountNames, setMountNames] = useState<Record<string, string>>({})
+  const [containerPath, setContainerPath] = useState('')
+  const [containerEdited, setContainerEdited] = useState(false)
+  const [compositeName, setCompositeName] = useState('')
 
-  const pathInputRef = useRef<HTMLInputElement>(null);
+  const pathInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
-    setMode('single');
-    setPath('');
-    setValidating(false);
-    setValidPath(false);
-    setValidationError(null);
-    setSubmitError(null);
-    setBusy(false);
-    setSelected([]);
-    setMountNames({});
-    setContainerPath('');
-    setContainerEdited(false);
-    setCompositeName('');
-  }, [open]);
+    setMode('single')
+    setPath('')
+    setValidating(false)
+    setValidPath(false)
+    setValidationError(null)
+    setSubmitError(null)
+    setBusy(false)
+    setSelected([])
+    setMountNames({})
+    setContainerPath('')
+    setContainerEdited(false)
+    setCompositeName('')
+  }, [open])
 
   useEffect(() => {
     if (path.length === 0) {
-      setValidPath(false);
-      setValidationError(null);
-      return;
+      setValidPath(false)
+      setValidationError(null)
+      return
     }
-    setValidating(true);
-    setValidPath(false);
-    setValidationError(null);
+    setValidating(true)
+    setValidPath(false)
+    setValidationError(null)
     const timer = setTimeout(() => {
       void (async () => {
         try {
-          const result = await validateGitRepo(path);
+          const result = await validateGitRepo(path)
           if (result.isRepo) {
-            setValidPath(true);
-            setValidationError(null);
+            setValidPath(true)
+            setValidationError(null)
           } else {
-            setValidPath(false);
-            setValidationError(result.error ?? 'not a git repository');
+            setValidPath(false)
+            setValidationError(result.error ?? 'not a git repository')
           }
         } catch {
-          setValidPath(false);
-          setValidationError('could not validate path');
+          setValidPath(false)
+          setValidationError('could not validate path')
         } finally {
-          setValidating(false);
+          setValidating(false)
         }
-      })();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [path]);
+      })()
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [path])
 
   const selectedWorkspaces = useMemo(
     () =>
@@ -114,84 +114,84 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
         .map((id) => linkable.find((w) => w.id === id))
         .filter((w): w is Workspace => w !== undefined),
     [selected, linkable],
-  );
+  )
 
   const suggestedContainer = useMemo(() => {
     if (selectedWorkspaces.length < 2) {
-      return '';
+      return ''
     }
-    const parent = commonParentDir(selectedWorkspaces.map((w) => w.rootPath));
+    const parent = commonParentDir(selectedWorkspaces.map((w) => w.rootPath))
     if (parent.length === 0) {
-      return '';
+      return ''
     }
-    const mounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath));
-    return `${parent}/${mounts.join('+')}`;
-  }, [selectedWorkspaces, mountNames]);
+    const mounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath))
+    return `${parent}/${mounts.join('+')}`
+  }, [selectedWorkspaces, mountNames])
 
   useEffect(() => {
     if (!containerEdited) {
-      setContainerPath(suggestedContainer);
+      setContainerPath(suggestedContainer)
     }
-  }, [suggestedContainer, containerEdited]);
+  }, [suggestedContainer, containerEdited])
 
   const toggleMember = useCallback((ws: Workspace) => {
     setSelected((prev) =>
       prev.includes(ws.id) ? prev.filter((id) => id !== ws.id) : [...prev, ws.id],
-    );
-    setMountNames((prev) => (prev[ws.id] ? prev : { ...prev, [ws.id]: lastSegment(ws.rootPath) }));
-  }, []);
+    )
+    setMountNames((prev) => (prev[ws.id] ? prev : { ...prev, [ws.id]: lastSegment(ws.rootPath) }))
+  }, [])
 
   const onPick = useCallback(async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
+    const picked = await openDialog({ directory: true, multiple: false })
     if (typeof picked === 'string') {
-      setPath(picked);
-      pathInputRef.current?.focus();
+      setPath(picked)
+      pathInputRef.current?.focus()
     }
-  }, []);
+  }, [])
 
   const onPickContainer = useCallback(async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
+    const picked = await openDialog({ directory: true, multiple: false })
     if (typeof picked === 'string') {
-      setContainerEdited(true);
-      setContainerPath(picked);
+      setContainerEdited(true)
+      setContainerPath(picked)
     }
-  }, []);
+  }, [])
 
   const onSubmitSingle = useCallback(async () => {
-    setBusy(true);
-    setSubmitError(null);
+    setBusy(true)
+    setSubmitError(null)
     try {
-      const ws = await addWorkspace({ rootPath: path });
-      await setCurrentWorkspace(ws.id);
-      onClose();
-      reopenWizard('setup');
+      const ws = await addWorkspace({ rootPath: path })
+      await setCurrentWorkspace(ws.id)
+      onClose()
+      reopenWizard('setup')
     } catch (err) {
-      setSubmitError(formatError(err));
+      setSubmitError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  }, [path, addWorkspace, setCurrentWorkspace, onClose]);
+  }, [path, addWorkspace, setCurrentWorkspace, onClose])
 
   const onSubmitMulti = useCallback(async () => {
-    setBusy(true);
-    setSubmitError(null);
+    setBusy(true)
+    setSubmitError(null)
     try {
       const members = selectedWorkspaces.map((w) => ({
         workspaceId: w.id,
         mountName: (mountNames[w.id] ?? lastSegment(w.rootPath)).trim(),
-      }));
+      }))
       const ws = await addCompositeWorkspace({
         name: compositeName,
         containerPath: containerPath.trim(),
         members,
-      });
-      await setCurrentWorkspace(ws.id);
-      onClose();
-      reopenWizard('setup');
+      })
+      await setCurrentWorkspace(ws.id)
+      onClose()
+      reopenWizard('setup')
     } catch (err) {
-      setSubmitError(formatError(err));
+      setSubmitError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }, [
     selectedWorkspaces,
@@ -201,18 +201,18 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     addCompositeWorkspace,
     setCurrentWorkspace,
     onClose,
-  ]);
+  ])
 
   const mountValues = selectedWorkspaces.map((w) =>
     (mountNames[w.id] ?? lastSegment(w.rootPath)).trim(),
-  );
+  )
   const mountsValid =
-    mountValues.every((m) => m.length > 0) && new Set(mountValues).size === mountValues.length;
+    mountValues.every((m) => m.length > 0) && new Set(mountValues).size === mountValues.length
   const multiDisabled =
-    busy || selectedWorkspaces.length < 2 || containerPath.trim().length === 0 || !mountsValid;
-  const primaryDisabled = mode === 'single' ? busy || !validPath : multiDisabled;
+    busy || selectedWorkspaces.length < 2 || containerPath.trim().length === 0 || !mountsValid
+  const primaryDisabled = mode === 'single' ? busy || !validPath : multiDisabled
 
-  const previewMounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath));
+  const previewMounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath))
 
   return (
     <Dialog
@@ -331,7 +331,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                   <span className="text-xs font-semibold text-foreground">pick repos to link</span>
                   <ul className="flex max-h-44 flex-col gap-0.5 overflow-y-auto">
                     {linkable.map((ws) => {
-                      const isOn = selected.includes(ws.id);
+                      const isOn = selected.includes(ws.id)
                       return (
                         <li key={ws.id}>
                           <button
@@ -360,7 +360,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                             </span>
                           </button>
                         </li>
-                      );
+                      )
                     })}
                   </ul>
                 </div>
@@ -397,8 +397,8 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                       value={containerPath}
                       placeholder="/path/to/container"
                       onChange={(e) => {
-                        setContainerEdited(true);
-                        setContainerPath(e.target.value);
+                        setContainerEdited(true)
+                        setContainerPath(e.target.value)
                       }}
                       className="flex-1"
                     />
@@ -439,5 +439,5 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
         )}
       </div>
     </Dialog>
-  );
-};
+  )
+}

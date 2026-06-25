@@ -1,62 +1,62 @@
-import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react';
-import { Workflow } from 'lucide-react';
-import { Button, Eyebrow } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
-import { DogMascot } from '../../../../shared/components/DogMascot';
+import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react'
+import { Workflow } from 'lucide-react'
+import { Button, Eyebrow } from '@goodboy/ui'
+import type { AgentId, SessionId } from '@goodboy/types'
+import { DogMascot } from '../../../../shared/components/DogMascot'
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind as AgentKindLabel,
-} from '../../../session/agent-kind';
-import { useAppStore } from '../../../../store';
-import { getAgentVisual } from '../../../../shared/components/AgentAvatar';
+} from '../../../session/agent-kind'
+import { useAppStore } from '../../../../store'
+import { getAgentVisual } from '../../../../shared/components/AgentAvatar'
 
-type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
+type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus'
 
 type EmptyCopy = {
-  eyebrow: string;
-  title: string;
-  body: string;
-  hints: ReadonlyArray<ReactNode>;
-};
+  eyebrow: string
+  title: string
+  body: string
+  hints: ReadonlyArray<ReactNode>
+}
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly selectedAgentId: AgentId | null;
-  readonly phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>;
-  readonly hasWorkflow: boolean;
-};
+  readonly sessionId: SessionId
+  readonly selectedAgentId: AgentId | null
+  readonly phaseRuns: ReadonlyArray<import('@goodboy/types').Agent>
+  readonly hasWorkflow: boolean
+}
 
 export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkflow }: Props) => {
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride)
   const selectedAgent = useMemo(
     () => (selectedAgentId ? (phaseRuns.find((r) => r.id === selectedAgentId) ?? null) : null),
     [selectedAgentId, phaseRuns],
-  );
+  )
   const selectedKind = useMemo(() => {
     if (!selectedAgent) {
-      return null;
+      return null
     }
-    return agentKindOverride[selectedAgent.id] ?? inferAgentKindFromName(selectedAgent.name);
-  }, [selectedAgent, agentKindOverride]);
+    return agentKindOverride[selectedAgent.id] ?? inferAgentKindFromName(selectedAgent.name)
+  }, [selectedAgent, agentKindOverride])
 
   const scenario = useMemo<EmptyScenario>(() => {
     if (selectedAgent && selectedKind) {
-      return 'agent_focus';
+      return 'agent_focus'
     }
     if (phaseRuns.length > 0) {
-      return 'pick_agent';
+      return 'pick_agent'
     }
     if (hasWorkflow) {
-      return 'workflow_no_agent';
+      return 'workflow_no_agent'
     }
-    return 'fresh';
-  }, [selectedAgent, selectedKind, phaseRuns.length, hasWorkflow]);
+    return 'fresh'
+  }, [selectedAgent, selectedKind, phaseRuns.length, hasWorkflow])
 
   const copy = useMemo<EmptyCopy>(() => {
     switch (scenario) {
       case 'agent_focus': {
-        const meta = AGENT_KIND_META[selectedKind as AgentKindLabel];
+        const meta = AGENT_KIND_META[selectedKind as AgentKindLabel]
         const example =
           selectedKind === 'scout'
             ? 'find where X is defined'
@@ -72,7 +72,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
                       ? 'review the current diff'
                       : selectedKind === 'resolver'
                         ? 'spawned by the resolve flow'
-                        : null;
+                        : null
         return {
           eyebrow: `${meta.label.toLowerCase()} agent`,
           title: `${meta.label} agent ready`,
@@ -85,7 +85,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
               to send
             </span>,
           ].filter((x): x is ReactElement => x !== null),
-        };
+        }
       }
       case 'pick_agent':
         return {
@@ -96,7 +96,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
             <span key="select">select to open its transcript</span>,
             <span key="spawn">context travels to new agents</span>,
           ],
-        };
+        }
       case 'workflow_no_agent':
         return {
           eyebrow: 'workflow ready',
@@ -106,7 +106,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
             <span key="goal">goal in 1-2 lines</span>,
             <span key="brief">lands in the shared brief</span>,
           ],
-        };
+        }
       case 'fresh':
       default:
         return {
@@ -118,19 +118,19 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
             <span key="limits">constraints and non-goals</span>,
             <span key="first">the first agent</span>,
           ],
-        };
+        }
     }
-  }, [scenario, selectedKind, phaseRuns.length]);
+  }, [scenario, selectedKind, phaseRuns.length])
 
   const agentVisual =
-    scenario === 'agent_focus' && selectedKind ? getAgentVisual(selectedKind) : null;
+    scenario === 'agent_focus' && selectedKind ? getAgentVisual(selectedKind) : null
 
-  const showWorkflowCta = scenario === 'fresh' || scenario === 'workflow_no_agent';
+  const showWorkflowCta = scenario === 'fresh' || scenario === 'workflow_no_agent'
   const openWorkflowBuilder = useCallback(() => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
-    );
-  }, [sessionId]);
+    )
+  }, [sessionId])
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
@@ -181,13 +181,13 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         </Button>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
 function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-border-soft bg-muted px-1 font-mono text-[10px] leading-none text-muted-foreground">
       {children}
     </kbd>
-  );
+  )
 }

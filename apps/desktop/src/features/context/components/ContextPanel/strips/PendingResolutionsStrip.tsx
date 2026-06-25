@@ -1,31 +1,31 @@
-import { useEffect, useState } from 'react';
-import { ArrowUpRight, Upload } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { useEffect, useState } from 'react'
+import { ArrowUpRight, Upload } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { SessionId } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store'
 
 export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId }) {
-  const pending = useAppStore((s) => s.sessionPendingResolutions[sessionId] ?? EMPTY_ARRAY);
-  const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
-  const pushAllResolutions = useAppStore((s) => s.pushAllResolutions);
-  const [busy, setBusy] = useState(false);
+  const pending = useAppStore((s) => s.sessionPendingResolutions[sessionId] ?? EMPTY_ARRAY)
+  const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions)
+  const pushAllResolutions = useAppStore((s) => s.pushAllResolutions)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    void loadPendingResolutions(sessionId);
-  }, [sessionId, loadPendingResolutions]);
+    void loadPendingResolutions(sessionId)
+  }, [sessionId, loadPendingResolutions])
 
-  const count = pending.length;
-  if (count === 0) return null;
+  const count = pending.length
+  if (count === 0) return null
 
   const onPush = async () => {
-    if (busy) return;
-    setBusy(true);
+    if (busy) return
+    setBusy(true)
     try {
-      await pushAllResolutions(sessionId);
+      await pushAllResolutions(sessionId)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <button
@@ -46,5 +46,5 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
       </span>
       <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
     </button>
-  );
+  )
 }

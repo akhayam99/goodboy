@@ -1,28 +1,28 @@
-import type { ContextSlot } from '@goodboy/types';
-import type { ContextSlotDelta, SummarizeInput } from './client';
+import type { ContextSlot } from '@goodboy/types'
+import type { ContextSlotDelta, SummarizeInput } from './client'
 
-export type NextActionKind = 'scout' | 'plan' | 'implement';
+export type NextActionKind = 'scout' | 'plan' | 'implement'
 
 export type NextAction = {
-  readonly id: string;
-  readonly kind: NextActionKind;
-  readonly label: string;
-  readonly prompt: string;
-};
+  readonly id: string
+  readonly kind: NextActionKind
+  readonly label: string
+  readonly prompt: string
+}
 
 export type InferNextActionsInput = {
-  readonly input: SummarizeInput;
-  readonly delta: ContextSlotDelta;
-  readonly slotsAfter: ReadonlyArray<ContextSlot>;
-  readonly prState?: NextActionsPrState | null;
-};
+  readonly input: SummarizeInput
+  readonly delta: ContextSlotDelta
+  readonly slotsAfter: ReadonlyArray<ContextSlot>
+  readonly prState?: NextActionsPrState | null
+}
 
 export type NextActionsPrState = {
-  readonly hasOpenPr: boolean;
-  readonly checksGreen: boolean;
-};
+  readonly hasOpenPr: boolean
+  readonly checksGreen: boolean
+}
 
-const MAX_TOPICS = 3;
+const MAX_TOPICS = 3
 const STOPWORDS = new Set([
   'a',
   'an',
@@ -51,22 +51,22 @@ const STOPWORDS = new Set([
   'were',
   'will',
   'with',
-]);
+])
 
 export const inferNextActions = (input: InferNextActionsInput): ReadonlyArray<NextAction> => {
-  const slots = mapSlots(input.slotsAfter);
-  const openQuestions = (slots.open_questions ?? '').trim();
-  const lastOutput = (slots.last_output_summary ?? '').trim();
-  const turnOutput = input.input.turnOutput.trim();
+  const slots = mapSlots(input.slotsAfter)
+  const openQuestions = (slots.open_questions ?? '').trim()
+  const lastOutput = (slots.last_output_summary ?? '').trim()
+  const turnOutput = input.input.turnOutput.trim()
 
-  const triggered = turnOutput.length > 0 || openQuestions.length > 0 || lastOutput.length > 0;
+  const triggered = turnOutput.length > 0 || openQuestions.length > 0 || lastOutput.length > 0
   if (!triggered) {
-    return [];
+    return []
   }
 
-  const topics = pickTopics(openQuestions, lastOutput, turnOutput);
-  const subject = topics.length > 0 ? topics.join(', ') : 'lo scope corrente';
-  const focus = topics[0] ?? 'lo scope corrente';
+  const topics = pickTopics(openQuestions, lastOutput, turnOutput)
+  const subject = topics.length > 0 ? topics.join(', ') : 'lo scope corrente'
+  const focus = topics[0] ?? 'lo scope corrente'
 
   return [
     {
@@ -87,18 +87,18 @@ export const inferNextActions = (input: InferNextActionsInput): ReadonlyArray<Ne
       label: 'Implementa',
       prompt: `vai diretto e implementa ${focus}`,
     },
-  ];
-};
+  ]
+}
 
 function mapSlots(slots: ReadonlyArray<ContextSlot>): Record<string, string> {
-  const out: Record<string, string> = {};
+  const out: Record<string, string> = {}
   for (const slot of slots) {
     if (!slot.enabled) {
-      continue;
+      continue
     }
-    out[slot.key] = slot.value ?? '';
+    out[slot.key] = slot.value ?? ''
   }
-  return out;
+  return out
 }
 
 function pickTopics(
@@ -107,13 +107,13 @@ function pickTopics(
   turnOutput: string,
 ): ReadonlyArray<string> {
   if (openQuestions.length > 0) {
-    const items = splitList(openQuestions).slice(0, MAX_TOPICS);
+    const items = splitList(openQuestions).slice(0, MAX_TOPICS)
     if (items.length > 0) {
-      return items;
+      return items
     }
   }
-  const fromOutput = extractNouns(lastOutput.length > 0 ? lastOutput : turnOutput);
-  return fromOutput.slice(0, MAX_TOPICS);
+  const fromOutput = extractNouns(lastOutput.length > 0 ? lastOutput : turnOutput)
+  return fromOutput.slice(0, MAX_TOPICS)
 }
 
 function splitList(text: string): ReadonlyArray<string> {
@@ -125,26 +125,26 @@ function splitList(text: string): ReadonlyArray<string> {
         .replace(/^[-*•\d.)\s]+/, '')
         .trim(),
     )
-    .filter((s) => s.length > 0);
+    .filter((s) => s.length > 0)
 }
 
 function extractNouns(text: string): ReadonlyArray<string> {
-  const seen = new Set<string>();
-  const out: string[] = [];
+  const seen = new Set<string>()
+  const out: string[] = []
   for (const raw of text.split(/[^\p{L}\p{N}_/.-]+/u)) {
-    const token = raw.trim();
+    const token = raw.trim()
     if (token.length < 3) {
-      continue;
+      continue
     }
-    const lower = token.toLowerCase();
+    const lower = token.toLowerCase()
     if (STOPWORDS.has(lower)) {
-      continue;
+      continue
     }
     if (seen.has(lower)) {
-      continue;
+      continue
     }
-    seen.add(lower);
-    out.push(token);
+    seen.add(lower)
+    out.push(token)
   }
-  return out;
+  return out
 }

@@ -1,182 +1,182 @@
-import { useEffect, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { Button, FieldRow, Input, ScrollFade, cn } from '@goodboy/ui';
-import { AlertTriangle, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
-import type { ProviderId, SessionId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
-import { useAppStore, useSessionById } from '../../../../store';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
-import { parseCap } from '../../../../shared/lib/parse-cap';
-import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
-import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
-import { useToast } from '../../../../app/components/Toast';
-import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
-import { ProviderChip } from '../../../../features/providers/components/ProviderChip';
+import { useEffect, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { Button, FieldRow, Input, ScrollFade, cn } from '@goodboy/ui'
+import { AlertTriangle, ChevronDown, ChevronUp, GitBranch } from 'lucide-react'
+import type { ProviderId, SessionId } from '@goodboy/types'
+import { formatError } from '../../../../shared/lib/errors'
+import { useAppStore, useSessionById } from '../../../../store'
+import { SESSION_FEATURES } from '../../../../shared/lib/features'
+import { parseCap } from '../../../../shared/lib/parse-cap'
+import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree'
+import { BranchCombobox } from '../../../../features/worktree/BranchCombobox'
+import { useToast } from '../../../../app/components/Toast'
+import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants'
+import { ProviderChip } from '../../../../features/providers/components/ProviderChip'
 
 type Props = {
-  readonly sessionId: SessionId;
-};
+  readonly sessionId: SessionId
+}
 
 export const SessionScopePanel = ({ sessionId }: Props) => {
-  const session = useSessionById(sessionId);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
-  const sessionBranches = useAppStore((s) => s.sessionBranches);
-  const budget = useAppStore((s) => s.sessionBudgets[sessionId] ?? null);
-  const sessionSummary = useAppStore((s) => s.sessionSummary);
-  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
-  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
-  const setSessionConfig = useAppStore((s) => s.setSessionConfig);
+  const session = useSessionById(sessionId)
+  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null)
+  const sessionBranches = useAppStore((s) => s.sessionBranches)
+  const budget = useAppStore((s) => s.sessionBudgets[sessionId] ?? null)
+  const sessionSummary = useAppStore((s) => s.sessionSummary)
+  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget)
+  const setSessionBudget = useAppStore((s) => s.setSessionBudget)
+  const setSessionConfig = useAppStore((s) => s.setSessionConfig)
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
-  const changeSessionBranch = useAppStore((s) => s.changeSessionBranch);
+  )
+  const changeSessionBranch = useAppStore((s) => s.changeSessionBranch)
   const workspace = useAppStore((s) =>
     session ? (s.workspaces.find((w) => w.id === session.workspaceId) ?? null) : null,
-  );
-  const { showToast } = useToast();
+  )
+  const { showToast } = useToast()
 
-  const [capDraft, setCapDraft] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [capDraft, setCapDraft] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  const [branchEditOpen, setBranchEditOpen] = useState(false);
-  const [branchMode, setBranchMode] = useState<'existing' | 'new'>('existing');
-  const [branchTarget, setBranchTarget] = useState('');
-  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
-  const [branchesLoading, setBranchesLoading] = useState(false);
-  const [confirmReuse, setConfirmReuse] = useState(false);
+  const [branchEditOpen, setBranchEditOpen] = useState(false)
+  const [branchMode, setBranchMode] = useState<'existing' | 'new'>('existing')
+  const [branchTarget, setBranchTarget] = useState('')
+  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>([])
+  const [branchesLoading, setBranchesLoading] = useState(false)
+  const [confirmReuse, setConfirmReuse] = useState(false)
 
   useEffect(() => {
-    void loadSessionBudget(sessionId);
-  }, [sessionId, loadSessionBudget]);
+    void loadSessionBudget(sessionId)
+  }, [sessionId, loadSessionBudget])
 
   useEffect(() => {
     if (!branchEditOpen || !workspace?.rootPath) {
-      return;
+      return
     }
-    setBranchesLoading(true);
-    setConfirmReuse(false);
-    setBranchTarget('');
+    setBranchesLoading(true)
+    setConfirmReuse(false)
+    setBranchTarget('')
     listLocalBranches(workspace.rootPath)
       .then(setBranches)
       .catch(() => setBranches([]))
-      .finally(() => setBranchesLoading(false));
-  }, [branchEditOpen, workspace?.rootPath]);
+      .finally(() => setBranchesLoading(false))
+  }, [branchEditOpen, workspace?.rootPath])
 
   useEffect(() => {
-    setCapDraft(budget?.softCapUsd != null ? String(budget.softCapUsd) : '');
-  }, [budget?.softCapUsd]);
+    setCapDraft(budget?.softCapUsd != null ? String(budget.softCapUsd) : '')
+  }, [budget?.softCapUsd])
 
   if (!session) {
-    return null;
+    return null
   }
 
-  const isActiveSession = sessionSummary !== null;
-  const spent = isActiveSession ? (sessionSummary?.estimatedCostUsd ?? 0) : 0;
-  const currentProvider = session.providerPreference.defaultProvider;
+  const isActiveSession = sessionSummary !== null
+  const spent = isActiveSession ? (sessionSummary?.estimatedCostUsd ?? 0) : 0
+  const currentProvider = session.providerPreference.defaultProvider
 
   const commitCap = async () => {
-    const savedCap = budget?.softCapUsd != null ? String(budget.softCapUsd) : '';
+    const savedCap = budget?.softCapUsd != null ? String(budget.softCapUsd) : ''
     if (capDraft.trim() === savedCap) {
-      return;
+      return
     }
-    const parsed = parseCap(capDraft);
+    const parsed = parseCap(capDraft)
     if (parsed === null) {
-      setError('Cap must be a positive number.');
-      return;
+      setError('Cap must be a positive number.')
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await setSessionBudget(sessionId, parsed);
-      showToast('success', 'budget cap saved');
+      await setSessionBudget(sessionId, parsed)
+      showToast('success', 'budget cap saved')
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
-  const targetTrimmed = branchTarget.trim();
-  const targetInfo = branches.find((b) => b.name === targetTrimmed) ?? null;
+  const targetTrimmed = branchTarget.trim()
+  const targetInfo = branches.find((b) => b.name === targetTrimmed) ?? null
   const targetOwnedByOtherSession = Object.entries(sessionBranches).some(
     ([otherSessionId, b]) => otherSessionId !== sessionId && b === targetTrimmed,
-  );
-  const targetInUseElsewhere = targetInfo?.inUse === true;
-  const targetDirty = targetInfo?.hasUncommitted === true;
+  )
+  const targetInUseElsewhere = targetInfo?.inUse === true
+  const targetDirty = targetInfo?.hasUncommitted === true
   const targetNeedsConfirm =
-    branchMode === 'existing' && (targetOwnedByOtherSession || targetInUseElsewhere || targetDirty);
+    branchMode === 'existing' && (targetOwnedByOtherSession || targetInUseElsewhere || targetDirty)
 
   const onChangeBranch = async () => {
     if (!targetTrimmed) {
-      setError('Pick a branch.');
-      return;
+      setError('Pick a branch.')
+      return
     }
     if (targetTrimmed === branch) {
-      setBranchEditOpen(false);
-      return;
+      setBranchEditOpen(false)
+      return
     }
     if (targetNeedsConfirm && !confirmReuse) {
-      setConfirmReuse(true);
-      return;
+      setConfirmReuse(true)
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
       await changeSessionBranch(sessionId, {
         branch: targetTrimmed,
         createNew: branchMode === 'new',
-      });
-      showToast('success', `branch switched to ${targetTrimmed}`);
-      setBranchEditOpen(false);
+      })
+      showToast('success', `branch switched to ${targetTrimmed}`)
+      setBranchEditOpen(false)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onChangeProvider = async (next: ProviderId) => {
     if (next === session.providerPreference.defaultProvider) {
-      return;
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await setSessionConfig(sessionId, { defaultProvider: next });
-      showToast('success', `default provider set to ${PROVIDER_LABEL[next] ?? next}`);
+      await setSessionConfig(sessionId, { defaultProvider: next })
+      showToast('success', `default provider set to ${PROVIDER_LABEL[next] ?? next}`)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onToggleEnabledProvider = async (next: ProviderId) => {
-    const pref = session.providerPreference;
+    const pref = session.providerPreference
     if (next === pref.defaultProvider) {
-      return;
+      return
     }
-    const effective = new Set<ProviderId>(pref.enabledProviders ?? connectedProviderIds);
+    const effective = new Set<ProviderId>(pref.enabledProviders ?? connectedProviderIds)
     if (effective.has(next)) {
-      effective.delete(next);
+      effective.delete(next)
     } else {
-      effective.add(next);
+      effective.add(next)
     }
-    effective.add(pref.defaultProvider);
-    const selected = connectedProviderIds.filter((p) => effective.has(p));
-    const allEnabled = selected.length === connectedProviderIds.length;
-    setBusy(true);
-    setError(null);
+    effective.add(pref.defaultProvider)
+    const selected = connectedProviderIds.filter((p) => effective.has(p))
+    const allEnabled = selected.length === connectedProviderIds.length
+    setBusy(true)
+    setError(null)
     try {
-      await setSessionConfig(sessionId, { enabledProviders: allEnabled ? null : selected });
-      showToast('success', 'routing providers updated');
+      await setSessionConfig(sessionId, { enabledProviders: allEnabled ? null : selected })
+      showToast('success', 'routing providers updated')
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
@@ -217,7 +217,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                     className="inline-flex w-fit rounded-md bg-muted/40 p-0.5"
                   >
                     {(['existing', 'new'] as const).map((m) => {
-                      const active = branchMode === m;
+                      const active = branchMode === m
                       return (
                         <button
                           key={m}
@@ -225,9 +225,9 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                           role="tab"
                           aria-selected={active}
                           onClick={() => {
-                            setBranchMode(m);
-                            setBranchTarget('');
-                            setConfirmReuse(false);
+                            setBranchMode(m)
+                            setBranchTarget('')
+                            setConfirmReuse(false)
                           }}
                           disabled={busy}
                           className={cn(
@@ -239,7 +239,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                         >
                           {m === 'existing' ? 'pick existing' : 'create new'}
                         </button>
-                      );
+                      )
                     })}
                   </div>
 
@@ -248,8 +248,8 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                       branches={branches}
                       value={branchTarget}
                       onChange={(v) => {
-                        setBranchTarget(v);
-                        setConfirmReuse(false);
+                        setBranchTarget(v)
+                        setConfirmReuse(false)
                       }}
                       disabled={busy}
                       loading={branchesLoading}
@@ -259,8 +259,8 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                     <Input
                       value={branchTarget}
                       onChange={(e) => {
-                        setBranchTarget(e.target.value);
-                        setConfirmReuse(false);
+                        setBranchTarget(e.target.value)
+                        setConfirmReuse(false)
                       }}
                       placeholder="feat/something"
                       disabled={busy}
@@ -343,8 +343,8 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                 {connectedProviderIds.map((id) => {
                   const enabled = (
                     session.providerPreference.enabledProviders ?? connectedProviderIds
-                  ).includes(id);
-                  const isDefault = id === currentProvider;
+                  ).includes(id)
+                  const isDefault = id === currentProvider
                   return (
                     <ProviderChip
                       key={id}
@@ -361,7 +361,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                         ) : null
                       }
                     />
-                  );
+                  )
                 })}
               </div>
             )}
@@ -382,7 +382,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                 onBlur={() => void commitCap()}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    void commitCap();
+                    void commitCap()
                   }
                 }}
                 placeholder="2.50"
@@ -399,20 +399,20 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
         {error ? <p className="pt-4 text-xs text-danger">{error}</p> : null}
       </div>
     </ScrollFade>
-  );
-};
+  )
+}
 
 const SESSION_PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
   'anthropic',
   'cursor',
   'codex',
   'gemini',
-];
+]
 
 function CapProgress({ spent, softCapUsd }: { spent: number; softCapUsd: number }) {
-  const pct = softCapUsd > 0 ? Math.min(1, spent / softCapUsd) : 0;
+  const pct = softCapUsd > 0 ? Math.min(1, spent / softCapUsd) : 0
   const barTone =
-    pct >= 1 ? 'bg-danger' : pct >= 0.8 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success';
+    pct >= 1 ? 'bg-danger' : pct >= 0.8 ? 'bg-warning' : pct >= 0.5 ? 'bg-info' : 'bg-success'
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-xs">
@@ -436,5 +436,5 @@ function CapProgress({ spent, softCapUsd }: { spent: number; softCapUsd: number 
         ) : null}
       </div>
     </div>
-  );
+  )
 }

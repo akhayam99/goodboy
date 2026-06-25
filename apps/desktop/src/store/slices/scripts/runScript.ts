@@ -1,13 +1,13 @@
-import type { SessionId, WorkspaceScriptId } from '@goodboy/types';
+import type { SessionId, WorkspaceScriptId } from '@goodboy/types'
 import {
   invokeScriptRun,
   listenScriptExit,
   listenScriptOutput,
   type ScriptRunRecord,
   type ScriptRunResult,
-} from '../../../features/scripts/scripts';
-import { formatError } from '../../../shared/lib/errors';
-import type { GetFn, SetFn } from './types';
+} from '../../../features/scripts/scripts'
+import { formatError } from '../../../shared/lib/errors'
+import type { GetFn, SetFn } from './types'
 
 export const runScript = (set: SetFn, get: GetFn) => {
   return async (
@@ -17,7 +17,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
     cols: number = 220,
     rows: number = 50,
   ) => {
-    const runId = crypto.randomUUID();
+    const runId = crypto.randomUUID()
 
     const writeRun = (record: ScriptRunRecord) =>
       set((state) => ({
@@ -25,72 +25,72 @@ export const runScript = (set: SetFn, get: GetFn) => {
           ...state.scriptRuns,
           [sessionId]: { ...state.scriptRuns[sessionId], [scriptId]: record },
         },
-      }));
+      }))
 
-    writeRun({ status: 'pending', result: null, runId });
+    writeRun({ status: 'pending', result: null, runId })
 
-    let unlistenExit: () => void = () => undefined;
-    let unlistenOutput: () => void = () => undefined;
-    let resolveResult!: (r: ScriptRunResult) => void;
-    let rejectResult!: (e: unknown) => void;
+    let unlistenExit: () => void = () => undefined
+    let unlistenOutput: () => void = () => undefined
+    let resolveResult!: (r: ScriptRunResult) => void
+    let rejectResult!: (e: unknown) => void
     const resultPromise = new Promise<ScriptRunResult>((res, rej) => {
-      resolveResult = res;
-      rejectResult = rej;
-    });
+      resolveResult = res
+      rejectResult = rej
+    })
 
-    const STDOUT_CAP = 64 * 1024;
+    const STDOUT_CAP = 64 * 1024
     // eslint-disable-next-line no-control-regex
-    const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
-    let stdoutBuf = '';
-    let truncated = false;
+    const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
+    let stdoutBuf = ''
+    let truncated = false
 
     unlistenOutput = await listenScriptOutput((payload) => {
       if (payload.runId !== runId) {
-        return;
+        return
       }
       if (truncated) {
-        return;
+        return
       }
-      const chunk = atob(payload.data);
+      const chunk = atob(payload.data)
       if (stdoutBuf.length + chunk.length > STDOUT_CAP) {
-        stdoutBuf = '…(truncated)\n' + (stdoutBuf + chunk).slice(-(STDOUT_CAP - 14));
-        truncated = true;
+        stdoutBuf = '…(truncated)\n' + (stdoutBuf + chunk).slice(-(STDOUT_CAP - 14))
+        truncated = true
       } else {
-        stdoutBuf += chunk;
+        stdoutBuf += chunk
       }
-    });
+    })
 
     unlistenExit = await listenScriptExit((payload) => {
       if (payload.runId !== runId) {
-        return;
+        return
       }
-      unlistenExit();
-      unlistenOutput();
-      const curr = get().scriptRuns[sessionId]?.[scriptId];
+      unlistenExit()
+      unlistenOutput()
+      const curr = get().scriptRuns[sessionId]?.[scriptId]
       if (!curr || curr.runId !== runId) {
-        return;
+        return
       }
-      const stdout = stdoutBuf.replace(ANSI_RE, '');
-      const result: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
+      const stdout = stdoutBuf.replace(ANSI_RE, '')
+      const result: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode }
       writeRun({
         status: curr.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
         result,
         runId,
-      });
-      resolveResult(result);
-    });
+      })
+      resolveResult(result)
+    })
 
     try {
-      await invokeScriptRun(scriptId, runId, cwd, cols, rows);
+      await invokeScriptRun(scriptId, runId, cwd, cols, rows)
     } catch (err) {
-      unlistenExit();
-      unlistenOutput();
-      const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 };
-      writeRun({ status: 'error', result, runId });
-      rejectResult(err);
-      return result;
+      unlistenExit()
+      unlistenOutput()
+      const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 }
+      writeRun({ status: 'error', result, runId })
+      rejectResult(err)
+      return result
     }
 
-    return resultPromise;
-  };
-};
+    return resultPromise
+  }
+}

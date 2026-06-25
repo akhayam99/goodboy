@@ -1,15 +1,15 @@
-import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { cn } from '../cn';
+import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { cn } from '../cn'
 
 export type EmptyStateProps = {
-  readonly icon: LucideIcon;
-  readonly title: string;
-  readonly description?: string;
-  readonly action?: ReactNode;
-  readonly bordered?: boolean;
-  readonly className?: string;
-};
+  readonly icon: LucideIcon
+  readonly title: string
+  readonly description?: string
+  readonly action?: ReactNode
+  readonly bordered?: boolean
+  readonly className?: string
+}
 
 export const EmptyState = ({
   icon: Icon,
@@ -38,5 +38,5 @@ export const EmptyState = ({
       </div>
       {action ?? null}
     </div>
-  );
-};
+  )
+}

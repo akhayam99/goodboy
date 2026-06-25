@@ -1,8 +1,8 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react'
 
 type Props = {
-  readonly tail: string;
-};
+  readonly tail: string
+}
 
 export const ErrorPanel = ({ tail }: Props) => {
   return (
@@ -15,5 +15,5 @@ export const ErrorPanel = ({ tail }: Props) => {
         {tail.trim() || 'No output captured.'}
       </pre>
     </div>
-  );
-};
+  )
+}

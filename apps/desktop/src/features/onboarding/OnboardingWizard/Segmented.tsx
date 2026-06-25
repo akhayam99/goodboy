@@ -1,23 +1,23 @@
-import type { LucideIcon } from 'lucide-react';
-import { Check } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import type { LucideIcon } from 'lucide-react'
+import { Check } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 
 export type SegmentedOption<T extends string> = {
-  readonly value: T;
-  readonly label: string;
-  readonly icon: LucideIcon;
-  readonly color?: string;
-  readonly disabled?: boolean;
-  readonly badge?: string;
-  readonly connected?: boolean;
-};
+  readonly value: T
+  readonly label: string
+  readonly icon: LucideIcon
+  readonly color?: string
+  readonly disabled?: boolean
+  readonly badge?: string
+  readonly connected?: boolean
+}
 
 type Props<T extends string> = {
-  readonly options: ReadonlyArray<SegmentedOption<T>>;
-  readonly value: T;
-  readonly onChange: (value: T) => void;
-  readonly ariaLabel: string;
-};
+  readonly options: ReadonlyArray<SegmentedOption<T>>
+  readonly value: T
+  readonly onChange: (value: T) => void
+  readonly ariaLabel: string
+}
 
 export const Segmented = <T extends string>({ options, value, onChange, ariaLabel }: Props<T>) => {
   return (
@@ -28,8 +28,8 @@ export const Segmented = <T extends string>({ options, value, onChange, ariaLabe
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((opt) => {
-        const active = opt.value === value;
-        const Icon = opt.icon;
+        const active = opt.value === value
+        const Icon = opt.icon
         return (
           <button
             key={opt.value}
@@ -65,8 +65,8 @@ export const Segmented = <T extends string>({ options, value, onChange, ariaLabe
             ) : null}
             {opt.connected ? <Check size={13} aria-hidden className="text-success" /> : null}
           </button>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

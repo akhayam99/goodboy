@@ -1,4 +1,4 @@
-import { Eyebrow } from '../components/ui';
+import { Eyebrow } from '../components/ui'
 
 /* A founder note. Marketing-side editorial centerpiece. Serif body, generous
    leading, prose width. The only place on the site where the voice is "I"
@@ -45,5 +45,5 @@ export function Letter() {
         </div>
       </div>
     </section>
-  );
+  )
 }

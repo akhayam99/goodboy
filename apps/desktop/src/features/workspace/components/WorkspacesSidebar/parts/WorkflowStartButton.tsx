@@ -1,18 +1,18 @@
-import { Plus } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
+import { Plus } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
 
 export function WorkflowStartButton({
   sessionId,
   variant,
 }: {
-  sessionId: SessionId;
-  variant: 'empty' | 'attach';
+  sessionId: SessionId
+  variant: 'empty' | 'attach'
 }) {
   const onClick = () => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
-    );
-  };
+    )
+  }
   return (
     <div className={variant === 'empty' ? '' : 'mt-1.5'}>
       <button
@@ -26,5 +26,5 @@ export function WorkflowStartButton({
         </span>
       </button>
     </div>
-  );
+  )
 }

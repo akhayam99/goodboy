@@ -1,453 +1,453 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { AppShell } from '@goodboy/ui';
-import type { PlanId, ProviderId, ProviderLifecycleAction, SessionId } from '@goodboy/types';
-import { CommandPalette } from './features/session/components/CommandPalette';
-import { BootSplash } from './app/components/BootSplash';
-import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
-import { AppTopBar } from './app/components/AppTopBar';
-import { NoWorkspaceScreen } from './app/components/AppEmptyState';
-import { StageBoard } from './features/workspace/components/StageBoard';
-import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
-import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
-import { SettingsStudio } from './features/settings/components/SettingsStudio';
-import { GuideStudio } from './features/settings/components/GuideStudio';
-import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
-import { SessionSettingsPane } from './features/session/components/SessionSettingsPane';
-import { ToastProvider } from './app/components/Toast';
-import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
-import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
-import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
-import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
-import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
-import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
-import { isMainWindow } from './features/workspace/window';
-import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
-import { NewSessionView } from './features/session/components/NewSessionView';
-import { GitHubStudio } from './features/github/components/GitHubStudio';
-import { LinearStudio } from './features/integrations/linear/LinearStudio';
-import { SentryStudio } from './features/integrations/sentry/SentryStudio';
-import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
-import { ProviderStudio } from './features/providers/components/ProviderStudio';
-import { BudgetStudio } from './features/budget/components/BudgetStudio';
-import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
-import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
-import { ghCommitDiff } from './features/github/github';
-import { worktreeDiffCommit } from './features/worktree/worktree';
-import { OnboardingCard } from './features/onboarding/OnboardingCard';
-import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
-import { CompanionStudio } from './features/companion/CompanionStudio';
-import { listenBridgeCommands } from './features/companion/commandExecutor';
-import { markStepComplete } from './features/onboarding/onboarding-store';
-import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
-import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
-import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
-import { useEscapeToCloseDialog } from './shared/hooks/useEscapeToCloseDialog';
-import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { AppShell } from '@goodboy/ui'
+import type { PlanId, ProviderId, ProviderLifecycleAction, SessionId } from '@goodboy/types'
+import { CommandPalette } from './features/session/components/CommandPalette'
+import { BootSplash } from './app/components/BootSplash'
+import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface'
+import { AppTopBar } from './app/components/AppTopBar'
+import { NoWorkspaceScreen } from './app/components/AppEmptyState'
+import { StageBoard } from './features/workspace/components/StageBoard'
+import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog'
+import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog'
+import { SettingsStudio } from './features/settings/components/SettingsStudio'
+import { GuideStudio } from './features/settings/components/GuideStudio'
+import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane'
+import { SessionSettingsPane } from './features/session/components/SessionSettingsPane'
+import { ToastProvider } from './app/components/Toast'
+import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge'
+import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar'
+import { useWindowPresence } from './features/workspace/hooks/useWindowPresence'
+import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog'
+import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher'
+import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher'
+import { isMainWindow } from './features/workspace/window'
+import { WorkflowStudio } from './features/workflows/components/WorkflowStudio'
+import { NewSessionView } from './features/session/components/NewSessionView'
+import { GitHubStudio } from './features/github/components/GitHubStudio'
+import { LinearStudio } from './features/integrations/linear/LinearStudio'
+import { SentryStudio } from './features/integrations/sentry/SentryStudio'
+import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio'
+import { ProviderStudio } from './features/providers/components/ProviderStudio'
+import { BudgetStudio } from './features/budget/components/BudgetStudio'
+import type { BudgetScope } from './features/budget/components/BudgetStudio/lib'
+import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog'
+import { ghCommitDiff } from './features/github/github'
+import { worktreeDiffCommit } from './features/worktree/worktree'
+import { OnboardingCard } from './features/onboarding/OnboardingCard'
+import { OnboardingWizard } from './features/onboarding/OnboardingWizard'
+import { CompanionStudio } from './features/companion/CompanionStudio'
+import { listenBridgeCommands } from './features/companion/commandExecutor'
+import { markStepComplete } from './features/onboarding/onboarding-store'
+import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut'
+import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus'
+import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts'
+import { useEscapeToCloseDialog } from './shared/hooks/useEscapeToCloseDialog'
+import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor'
 import {
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
   useSessions,
   useWorkspaces,
-} from './store';
-import { refreshPricingTable } from './features/providers/provider-pricing';
-import { useGithubPolling } from './features/github/hooks/useGithubPolling';
-import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
+} from './store'
+import { refreshPricingTable } from './features/providers/provider-pricing'
+import { useGithubPolling } from './features/github/hooks/useGithubPolling'
+import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling'
 
-const KEEP_ALIVE_CAP = 5;
+const KEEP_ALIVE_CAP = 5
 
 export const App = () => {
-  const hydrate = useAppStore((s) => s.hydrate);
-  const checkForUpdates = useAppStore((s) => s.checkForUpdates);
-  const hydrated = useAppStore((s) => s.hydrated);
-  const bootPhase = useAppStore((s) => s.bootPhase);
-  const error = useAppStore((s) => s.error);
-  const [splashFinished, setSplashFinished] = useState(false);
-  const workspaces = useWorkspaces();
-  const hasWorkspaces = workspaces.length > 0;
-  const currentWorkspace = useCurrentWorkspace();
-  const currentSession = useCurrentSession();
-  const [companionOpen, setCompanionOpen] = useState(false);
-  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
-  const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
-  const [guideStudioOpen, setGuideStudioOpen] = useState(false);
-  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
+  const hydrate = useAppStore((s) => s.hydrate)
+  const checkForUpdates = useAppStore((s) => s.checkForUpdates)
+  const hydrated = useAppStore((s) => s.hydrated)
+  const bootPhase = useAppStore((s) => s.bootPhase)
+  const error = useAppStore((s) => s.error)
+  const [splashFinished, setSplashFinished] = useState(false)
+  const workspaces = useWorkspaces()
+  const hasWorkspaces = workspaces.length > 0
+  const currentWorkspace = useCurrentWorkspace()
+  const currentSession = useCurrentSession()
+  const [companionOpen, setCompanionOpen] = useState(false)
+  const [appSettingsOpen, setAppSettingsOpen] = useState(false)
+  const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined)
+  const [guideStudioOpen, setGuideStudioOpen] = useState(false)
+  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false)
   const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
     undefined,
-  );
-  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [palettePrefix, setPalettePrefix] = useState('');
-  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
-  const [linearStudioOpen, setLinearStudioOpen] = useState(false);
-  const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
-  const [sentryStudioOpen, setSentryStudioOpen] = useState(false);
-  const [sentryStudioFocus, setSentryStudioFocus] = useState<string | null>(null);
-  const [gitlabStudioOpen, setGitlabStudioOpen] = useState(false);
-  const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
-  const [providerStudioOpen, setProviderStudioOpen] = useState(false);
-  const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
+  )
+  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [palettePrefix, setPalettePrefix] = useState('')
+  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false)
+  const [switcherOpen, setSwitcherOpen] = useState(false)
+  const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false)
+  const [linearStudioOpen, setLinearStudioOpen] = useState(false)
+  const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null)
+  const [sentryStudioOpen, setSentryStudioOpen] = useState(false)
+  const [sentryStudioFocus, setSentryStudioFocus] = useState<string | null>(null)
+  const [gitlabStudioOpen, setGitlabStudioOpen] = useState(false)
+  const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null)
+  const [providerStudioOpen, setProviderStudioOpen] = useState(false)
+  const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null)
   const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
     null,
-  );
-  const [githubStudioOpen, setGithubStudioOpen] = useState(false);
-  const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
-  const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
-  const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
-  const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
-  const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
-  const setSessionStudio = useAppStore((s) => s.setSessionStudio);
+  )
+  const [githubStudioOpen, setGithubStudioOpen] = useState(false)
+  const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null)
+  const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null)
+  const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null)
+  const [budgetStudioOpen, setBudgetStudioOpen] = useState(false)
+  const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined)
+  const setSessionStudio = useAppStore((s) => s.setSessionStudio)
   const clearSessionStudio = useCallback(() => {
-    const id = useAppStore.getState().currentSessionId;
+    const id = useAppStore.getState().currentSessionId
     if (id) {
-      useAppStore.getState().setSessionStudio(id, null);
+      useAppStore.getState().setSessionStudio(id, null)
     }
-  }, []);
-  const [newSessionOpen, setNewSessionOpen] = useState(false);
-  const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
+  }, [])
+  const [newSessionOpen, setNewSessionOpen] = useState(false)
+  const { commitDiff, setCommitDiff } = useCommitLinkInterceptor()
   const [leftCollapsed, setLeftCollapsed] = useState(
     () =>
       typeof localStorage !== 'undefined' &&
       localStorage.getItem('goodboy:left-sidebar-collapsed') === '1',
-  );
-  const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
+  )
+  const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([])
 
   useEffect(() => {
-    void hydrate();
-    void refreshPricingTable();
+    void hydrate()
+    void refreshPricingTable()
     if (import.meta.env.PROD) {
-      void checkForUpdates();
+      void checkForUpdates()
     }
-  }, [hydrate, checkForUpdates]);
+  }, [hydrate, checkForUpdates])
 
-  useGithubPolling();
-  useProviderRefreshOnFocus();
-  useUpdaterPolling();
-  useWindowPresence();
-  useZoomShortcuts();
-  useEscapeToCloseDialog();
+  useGithubPolling()
+  useProviderRefreshOnFocus()
+  useUpdaterPolling()
+  useWindowPresence()
+  useZoomShortcuts()
+  useEscapeToCloseDialog()
 
   // Stateless overlay-open listeners (all with empty deps) registered under one hook:
   // each handler only touches stable setters or reads fresh state via useAppStore.getState().
   // Moved verbatim — no open/close behavior changed.
   useEffect(() => {
     const onOpenSettings = (event: Event) => {
-      const detail = (event as CustomEvent<{ section?: string }>).detail;
-      setAppSettingsFocus(detail?.section);
-      setAppSettingsOpen(true);
-    };
-    const onOpenGuide = () => setGuideStudioOpen(true);
+      const detail = (event as CustomEvent<{ section?: string }>).detail
+      setAppSettingsFocus(detail?.section)
+      setAppSettingsOpen(true)
+    }
+    const onOpenGuide = () => setGuideStudioOpen(true)
     const onOpenGithubStudio = (event: Event) => {
       const detail = (
         event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
-      ).detail;
-      setGithubStudioSession(detail?.sessionId ?? null);
-      setGithubStudioPrNumber(detail?.prNumber ?? null);
-      setGithubStudioThreadId(detail?.threadId ?? null);
-      setGithubStudioOpen(true);
-    };
+      ).detail
+      setGithubStudioSession(detail?.sessionId ?? null)
+      setGithubStudioPrNumber(detail?.prNumber ?? null)
+      setGithubStudioThreadId(detail?.threadId ?? null)
+      setGithubStudioOpen(true)
+    }
     const onOpenPlanStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId; planId?: PlanId }>).detail;
+      const detail = (event as CustomEvent<{ sessionId?: SessionId; planId?: PlanId }>).detail
       if (!detail?.sessionId) {
-        return;
+        return
       }
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      const state = useAppStore.getState();
-      state.setFocusedPlanId(detail.sessionId, detail.planId ?? null);
-      state.setActiveLens(detail.sessionId, 'plans');
-    };
+      setNewSessionOpen(false)
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setSessionSettingsOpen(false)
+      const state = useAppStore.getState()
+      state.setFocusedPlanId(detail.sessionId, detail.planId ?? null)
+      state.setActiveLens(detail.sessionId, 'plans')
+    }
     const onOpenDiffViewer = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail;
+      const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail
       if (!detail?.sessionId) {
-        return;
+        return
       }
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      useAppStore.getState().setActiveLens(detail.sessionId, 'files');
-    };
+      setNewSessionOpen(false)
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setSessionSettingsOpen(false)
+      useAppStore.getState().setActiveLens(detail.sessionId, 'files')
+    }
     const onOpenProviderStudio = (event: Event) => {
       const detail = (
         event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
-      ).detail;
-      setProviderStudioFocus(detail?.providerId ?? null);
-      setProviderStudioAction(detail?.action ?? null);
-      setProviderStudioOpen(true);
-    };
+      ).detail
+      setProviderStudioFocus(detail?.providerId ?? null)
+      setProviderStudioAction(detail?.action ?? null)
+      setProviderStudioOpen(true)
+    }
     const onOpenBudgetStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
-      setBudgetStudioScope(detail?.scope);
-      setBudgetStudioOpen(true);
-    };
+      const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail
+      setBudgetStudioScope(detail?.scope)
+      setBudgetStudioOpen(true)
+    }
     const onOpenLinearStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setLinearStudioFocus(detail?.issueExternalId ?? null);
-      setLinearStudioOpen(true);
-    };
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail
+      setLinearStudioFocus(detail?.issueExternalId ?? null)
+      setLinearStudioOpen(true)
+    }
     const onOpenSentryStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setSentryStudioFocus(detail?.issueExternalId ?? null);
-      setSentryStudioOpen(true);
-    };
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail
+      setSentryStudioFocus(detail?.issueExternalId ?? null)
+      setSentryStudioOpen(true)
+    }
     const onOpenGitlabStudio = (event: Event) => {
-      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setGitlabStudioFocus(detail?.issueExternalId ?? null);
-      setGitlabStudioOpen(true);
-    };
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail
+      setGitlabStudioFocus(detail?.issueExternalId ?? null)
+      setGitlabStudioOpen(true)
+    }
     const onRevealChat = () => {
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      const state = useAppStore.getState();
-      const sid = state.currentSessionId;
+      setNewSessionOpen(false)
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setSessionSettingsOpen(false)
+      const state = useAppStore.getState()
+      const sid = state.currentSessionId
       if (sid) {
-        state.setSessionStudio(sid, null);
+        state.setSessionStudio(sid, null)
       }
-    };
-    const onAddWorkspace = () => setAddWorkspaceOpen(true);
-    const onOpenSwitcher = () => setSwitcherOpen(true);
-    const onPairDevice = () => setCompanionOpen(true);
+    }
+    const onAddWorkspace = () => setAddWorkspaceOpen(true)
+    const onOpenSwitcher = () => setSwitcherOpen(true)
+    const onPairDevice = () => setCompanionOpen(true)
 
-    window.addEventListener('goodboy:open-settings', onOpenSettings);
-    window.addEventListener('goodboy:open-guide', onOpenGuide);
-    window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
-    window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
-    window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
-    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-    window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
-    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
-    window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
-    window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-    window.addEventListener('goodboy:reveal-chat', onRevealChat);
-    window.addEventListener('goodboy:add-workspace', onAddWorkspace);
-    window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
-    window.addEventListener('goodboy:open-pair-device', onPairDevice);
+    window.addEventListener('goodboy:open-settings', onOpenSettings)
+    window.addEventListener('goodboy:open-guide', onOpenGuide)
+    window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio)
+    window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio)
+    window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer)
+    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio)
+    window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio)
+    window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio)
+    window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio)
+    window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio)
+    window.addEventListener('goodboy:reveal-chat', onRevealChat)
+    window.addEventListener('goodboy:add-workspace', onAddWorkspace)
+    window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher)
+    window.addEventListener('goodboy:open-pair-device', onPairDevice)
     return () => {
-      window.removeEventListener('goodboy:open-settings', onOpenSettings);
-      window.removeEventListener('goodboy:open-guide', onOpenGuide);
-      window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
-      window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
-      window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
-      window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
-      window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
-      window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
-      window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
-      window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
-      window.removeEventListener('goodboy:reveal-chat', onRevealChat);
-      window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
-      window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
-      window.removeEventListener('goodboy:open-pair-device', onPairDevice);
-    };
-  }, []);
+      window.removeEventListener('goodboy:open-settings', onOpenSettings)
+      window.removeEventListener('goodboy:open-guide', onOpenGuide)
+      window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio)
+      window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio)
+      window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer)
+      window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio)
+      window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio)
+      window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio)
+      window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio)
+      window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio)
+      window.removeEventListener('goodboy:reveal-chat', onRevealChat)
+      window.removeEventListener('goodboy:add-workspace', onAddWorkspace)
+      window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher)
+      window.removeEventListener('goodboy:open-pair-device', onPairDevice)
+    }
+  }, [])
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ section?: string }>).detail;
+      const detail = (event as CustomEvent<{ section?: string }>).detail
       if (workspaceSettingsOpen && detail?.section === undefined) {
-        setWorkspaceSettingsOpen(false);
-        setWorkspaceSettingsFocus(undefined);
-        return;
+        setWorkspaceSettingsOpen(false)
+        setWorkspaceSettingsFocus(undefined)
+        return
       }
-      setWorkspaceSettingsFocus(detail?.section);
-      setSessionSettingsOpen(false);
-      setNewSessionOpen(false);
-      clearSessionStudio();
-      setWorkspaceSettingsOpen(true);
-    };
-    window.addEventListener('goodboy:open-workspace-settings', handler);
-    return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
-  }, [workspaceSettingsOpen, clearSessionStudio]);
+      setWorkspaceSettingsFocus(detail?.section)
+      setSessionSettingsOpen(false)
+      setNewSessionOpen(false)
+      clearSessionStudio()
+      setWorkspaceSettingsOpen(true)
+    }
+    window.addEventListener('goodboy:open-workspace-settings', handler)
+    return () => window.removeEventListener('goodboy:open-workspace-settings', handler)
+  }, [workspaceSettingsOpen, clearSessionStudio])
 
   useEffect(() => {
     const handler = () => {
       if (sessionSettingsOpen) {
-        setSessionSettingsOpen(false);
-        return;
+        setSessionSettingsOpen(false)
+        return
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setNewSessionOpen(false);
-      clearSessionStudio();
-      setSessionSettingsOpen(true);
-    };
-    window.addEventListener('goodboy:open-session-settings', handler);
-    return () => window.removeEventListener('goodboy:open-session-settings', handler);
-  }, [sessionSettingsOpen, clearSessionStudio]);
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setNewSessionOpen(false)
+      clearSessionStudio()
+      setSessionSettingsOpen(true)
+    }
+    window.addEventListener('goodboy:open-session-settings', handler)
+    return () => window.removeEventListener('goodboy:open-session-settings', handler)
+  }, [sessionSettingsOpen, clearSessionStudio])
 
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (
         event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
-      ).detail;
+      ).detail
       if (!detail?.sessionId) {
-        return;
+        return
       }
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
+      setNewSessionOpen(false)
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setSessionSettingsOpen(false)
       setSessionStudio(detail.sessionId, {
         kind: 'github',
         prNumber: detail.prNumber,
         threadId: detail.threadId,
-      });
-    };
-    window.addEventListener('goodboy:open-github-session', handler);
-    return () => window.removeEventListener('goodboy:open-github-session', handler);
-  }, [setSessionStudio]);
+      })
+    }
+    window.addEventListener('goodboy:open-github-session', handler)
+    return () => window.removeEventListener('goodboy:open-github-session', handler)
+  }, [setSessionStudio])
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail
       if (!detail?.sessionId) {
-        return;
+        return
       }
-      setNewSessionOpen(false);
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      setSessionStudio(detail.sessionId, { kind: 'mr' });
-    };
-    window.addEventListener('goodboy:open-gitlab-mr', handler);
-    return () => window.removeEventListener('goodboy:open-gitlab-mr', handler);
-  }, [setSessionStudio]);
+      setNewSessionOpen(false)
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setSessionSettingsOpen(false)
+      setSessionStudio(detail.sessionId, { kind: 'mr' })
+    }
+    window.addEventListener('goodboy:open-gitlab-mr', handler)
+    return () => window.removeEventListener('goodboy:open-gitlab-mr', handler)
+  }, [setSessionStudio])
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail
       if (detail?.sessionId) {
-        setWorkspaceSettingsOpen(false);
-        setWorkspaceSettingsFocus(undefined);
-        setSessionSettingsOpen(false);
-        setNewSessionOpen(false);
-        setSessionStudio(detail.sessionId, { kind: 'workflow' });
+        setWorkspaceSettingsOpen(false)
+        setWorkspaceSettingsFocus(undefined)
+        setSessionSettingsOpen(false)
+        setNewSessionOpen(false)
+        setSessionStudio(detail.sessionId, { kind: 'workflow' })
       }
-    };
-    window.addEventListener('goodboy:open-workflow-builder', handler);
-    return () => window.removeEventListener('goodboy:open-workflow-builder', handler);
-  }, [setSessionStudio]);
+    }
+    window.addEventListener('goodboy:open-workflow-builder', handler)
+    return () => window.removeEventListener('goodboy:open-workflow-builder', handler)
+  }, [setSessionStudio])
 
   useEffect(() => {
     const handler = () => {
       if (!currentWorkspace) {
-        return;
+        return
       }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
-      clearSessionStudio();
-      setNewSessionOpen(true);
-    };
-    window.addEventListener('goodboy:new-session', handler);
-    return () => window.removeEventListener('goodboy:new-session', handler);
-  }, [currentWorkspace, clearSessionStudio]);
+      setWorkspaceSettingsOpen(false)
+      setWorkspaceSettingsFocus(undefined)
+      setSessionSettingsOpen(false)
+      clearSessionStudio()
+      setNewSessionOpen(true)
+    }
+    window.addEventListener('goodboy:new-session', handler)
+    return () => window.removeEventListener('goodboy:new-session', handler)
+  }, [currentWorkspace, clearSessionStudio])
 
   useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
+    let off: (() => void) | undefined
+    let cancelled = false
     void listenBridgeCommands().then((fn) => {
       if (cancelled) {
-        fn();
-        return;
+        fn()
+        return
       }
-      off = fn;
-    });
+      off = fn
+    })
     return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
+      cancelled = true
+      off?.()
+    }
+  }, [])
 
   useEffect(() => {
-    setKeepAliveIds([]);
-  }, [currentWorkspace?.id]);
+    setKeepAliveIds([])
+  }, [currentWorkspace?.id])
 
   useEffect(() => {
-    setSessionSettingsOpen(false);
-  }, [currentSession?.id]);
+    setSessionSettingsOpen(false)
+  }, [currentSession?.id])
 
   useEffect(() => {
-    setWorkspaceSettingsOpen(false);
-    setNewSessionOpen(false);
-  }, [currentWorkspace?.id]);
+    setWorkspaceSettingsOpen(false)
+    setNewSessionOpen(false)
+  }, [currentWorkspace?.id])
 
   useEffect(() => {
-    const id = currentSession?.id ?? null;
+    const id = currentSession?.id ?? null
     if (!id) {
-      return;
+      return
     }
     setKeepAliveIds((prev) => {
       if (prev[prev.length - 1] === id) {
-        return prev;
+        return prev
       }
-      const filtered = prev.filter((x) => x !== id);
-      const next = [...filtered, id];
-      return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
-    });
-  }, [currentSession?.id]);
+      const filtered = prev.filter((x) => x !== id)
+      const next = [...filtered, id]
+      return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next
+    })
+  }, [currentSession?.id])
 
   const openSettings = useCallback(() => {
-    clearSessionStudio();
-    setAppSettingsFocus(undefined);
-    setAppSettingsOpen(true);
-  }, [clearSessionStudio]);
+    clearSessionStudio()
+    setAppSettingsFocus(undefined)
+    setAppSettingsOpen(true)
+  }, [clearSessionStudio])
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
-      setDeleteOpen(true);
+      setDeleteOpen(true)
     }
-  }, [currentSession]);
+  }, [currentSession])
   const openArchiveSession = useCallback(() => {
     if (currentSession) {
-      setArchiveOpen(true);
+      setArchiveOpen(true)
     }
-  }, [currentSession]);
+  }, [currentSession])
 
   useEffect(() => {
     const handler = () => {
       if (currentSession) {
-        setDeleteOpen(true);
+        setDeleteOpen(true)
       }
-    };
-    window.addEventListener('goodboy:delete-session', handler);
-    return () => window.removeEventListener('goodboy:delete-session', handler);
-  }, [currentSession]);
+    }
+    window.addEventListener('goodboy:delete-session', handler)
+    return () => window.removeEventListener('goodboy:delete-session', handler)
+  }, [currentSession])
 
   useEffect(() => {
     const handler = () => {
       if (currentSession) {
-        setArchiveOpen(true);
+        setArchiveOpen(true)
       }
-    };
-    window.addEventListener('goodboy:archive-session', handler);
-    return () => window.removeEventListener('goodboy:archive-session', handler);
-  }, [currentSession]);
+    }
+    window.addEventListener('goodboy:archive-session', handler)
+    return () => window.removeEventListener('goodboy:archive-session', handler)
+  }, [currentSession])
   const openShortcutHelp = useCallback(() => {
-    setAppSettingsFocus('shortcuts');
-    setAppSettingsOpen(true);
-  }, []);
+    setAppSettingsFocus('shortcuts')
+    setAppSettingsOpen(true)
+  }, [])
   const openPalette = useCallback((prefix = '') => {
-    setPalettePrefix(prefix);
-    setPaletteOpen(true);
-    markStepComplete('palette');
-  }, []);
+    setPalettePrefix(prefix)
+    setPaletteOpen(true)
+    markStepComplete('palette')
+  }, [])
   const toggleLeftSidebar = useCallback(() => {
     setLeftCollapsed((v) => {
-      const next = !v;
+      const next = !v
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('goodboy:left-sidebar-collapsed', next ? '1' : '0');
+        localStorage.setItem('goodboy:left-sidebar-collapsed', next ? '1' : '0')
       }
-      return next;
-    });
-  }, []);
+      return next
+    })
+  }, [])
 
   // The NotificationCenter (the only listener for goodboy:open-notifications) lives
   // in the expanded sidebar footer; when the sidebar is collapsed it isn't mounted,
@@ -456,148 +456,148 @@ export const App = () => {
   // expanded, do nothing — NotificationCenter handles the original event itself.
   useEffect(() => {
     const handler = () => {
-      let wasCollapsed = false;
+      let wasCollapsed = false
       setLeftCollapsed((v) => {
-        wasCollapsed = v;
+        wasCollapsed = v
         if (v && typeof localStorage !== 'undefined') {
-          localStorage.setItem('goodboy:left-sidebar-collapsed', '0');
+          localStorage.setItem('goodboy:left-sidebar-collapsed', '0')
         }
-        return false;
-      });
+        return false
+      })
       if (wasCollapsed) {
         requestAnimationFrame(() => {
-          window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
-        });
+          window.dispatchEvent(new CustomEvent('goodboy:open-notifications'))
+        })
       }
-    };
-    window.addEventListener('goodboy:open-notifications', handler);
-    return () => window.removeEventListener('goodboy:open-notifications', handler);
-  }, []);
+    }
+    window.addEventListener('goodboy:open-notifications', handler)
+    return () => window.removeEventListener('goodboy:open-notifications', handler)
+  }, [])
 
-  const openWorkspace = useAppStore((s) => s.openWorkspace);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const lensGo = useAppStore((s) => s.lensGo);
-  const currentWorkspaceSessions = useSessions();
+  const openWorkspace = useAppStore((s) => s.openWorkspace)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const lensGo = useAppStore((s) => s.lensGo)
+  const currentWorkspaceSessions = useSessions()
 
   const selectWorkspaceByIndex = useCallback(
     (idx: number) => {
-      const w = workspaces[idx];
+      const w = workspaces[idx]
       if (w) {
-        void openWorkspace(w.id, w.name);
+        void openWorkspace(w.id, w.name)
       }
     },
     [workspaces, openWorkspace],
-  );
+  )
 
   const navigateSession = useCallback(
     (delta: number) => {
-      const list = currentWorkspaceSessions;
+      const list = currentWorkspaceSessions
       if (list.length === 0) {
-        return;
+        return
       }
       if (!currentSession) {
-        const target = delta >= 0 ? list[0] : list[list.length - 1];
+        const target = delta >= 0 ? list[0] : list[list.length - 1]
         if (target) {
-          void setCurrentSession(target.id);
+          void setCurrentSession(target.id)
         }
-        return;
+        return
       }
-      const idx = list.findIndex((s) => s.id === currentSession.id);
+      const idx = list.findIndex((s) => s.id === currentSession.id)
       if (idx === -1) {
-        return;
+        return
       }
-      const next = list[idx + delta];
+      const next = list[idx + delta]
       if (next) {
-        void setCurrentSession(next.id);
+        void setCurrentSession(next.id)
       }
     },
     [currentWorkspaceSessions, currentSession, setCurrentSession],
-  );
+  )
 
   const navigateLens = useCallback(
     (delta: number) => {
       if (currentSession) {
-        lensGo(currentSession.id, delta);
+        lensGo(currentSession.id, delta)
       }
     },
     [currentSession, lensGo],
-  );
+  )
 
   const openNewSession = useCallback(() => {
     if (!currentWorkspace) {
-      return;
+      return
     }
-    window.dispatchEvent(new CustomEvent('goodboy:new-session'));
-  }, [currentWorkspace]);
+    window.dispatchEvent(new CustomEvent('goodboy:new-session'))
+  }, [currentWorkspace])
 
   const openModelPicker = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-model-picker'));
-  }, []);
+    window.dispatchEvent(new CustomEvent('goodboy:open-model-picker'))
+  }, [])
 
   const openPermissionPicker = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
-  }, []);
+    window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'))
+  }, [])
 
-  const currentSessionId = useAppStore((s) => s.currentSessionId);
-  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
+  const currentSessionId = useAppStore((s) => s.currentSessionId)
+  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees)
 
   const commitDiffLoader = useCallback(async () => {
     if (!commitDiff) {
-      return '';
+      return ''
     }
-    const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null;
+    const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null
     if (worktree) {
       try {
-        return await worktreeDiffCommit(worktree, commitDiff.sha);
+        return await worktreeDiffCommit(worktree, commitDiff.sha)
       } catch {
-        void 0;
+        void 0
       }
     }
-    return ghCommitDiff(commitDiff.repo, commitDiff.sha);
-  }, [commitDiff, currentSessionId, sessionWorktrees]);
+    return ghCommitDiff(commitDiff.repo, commitDiff.sha)
+  }, [commitDiff, currentSessionId, sessionWorktrees])
 
-  useKeyboardShortcut('cmd+,', openSettings);
-  useKeyboardShortcut('cmd+/', openShortcutHelp);
-  useKeyboardShortcut('cmd+.', openDeleteSession);
-  useKeyboardShortcut('cmd+shift+a', openArchiveSession);
-  useKeyboardShortcut('cmd+k', () => openPalette());
-  useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
-  useKeyboardShortcut('cmd+b', toggleLeftSidebar);
-  useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+[', () => navigateSession(-1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+]', () => navigateSession(1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+k', openModelPicker);
-  useKeyboardShortcut('cmd+shift+p', openPermissionPicker);
-  useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+4', () => selectWorkspaceByIndex(3), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+5', () => selectWorkspaceByIndex(4), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+6', () => selectWorkspaceByIndex(5), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+7', () => selectWorkspaceByIndex(6), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+,', openSettings)
+  useKeyboardShortcut('cmd+/', openShortcutHelp)
+  useKeyboardShortcut('cmd+.', openDeleteSession)
+  useKeyboardShortcut('cmd+shift+a', openArchiveSession)
+  useKeyboardShortcut('cmd+k', () => openPalette())
+  useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true))
+  useKeyboardShortcut('cmd+b', toggleLeftSidebar)
+  useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+shift+[', () => navigateSession(-1), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+shift+]', () => navigateSession(1), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+shift+k', openModelPicker)
+  useKeyboardShortcut('cmd+shift+p', openPermissionPicker)
+  useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+4', () => selectWorkspaceByIndex(3), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+5', () => selectWorkspaceByIndex(4), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+6', () => selectWorkspaceByIndex(5), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+7', () => selectWorkspaceByIndex(6), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false })
+  useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false })
   // Hidden pairing surface — undocumented on purpose, no menu/help entry.
   useKeyboardShortcut('cmd+ctrl+shift+m', () => setCompanionOpen((v) => !v), {
     ignoreInInputs: false,
-  });
+  })
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
-    const cid = currentSession?.id ?? null;
+    const cid = currentSession?.id ?? null
     if (!cid) {
-      return keepAliveIds;
+      return keepAliveIds
     }
     if (keepAliveIds.includes(cid)) {
-      return keepAliveIds;
+      return keepAliveIds
     }
-    const merged = [...keepAliveIds, cid];
-    return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged;
-  }, [keepAliveIds, currentSession?.id]);
+    const merged = [...keepAliveIds, cid]
+    return merged.length > KEEP_ALIVE_CAP ? merged.slice(merged.length - KEEP_ALIVE_CAP) : merged
+  }, [keepAliveIds, currentSession?.id])
 
-  const deferredRenderedIds = useDeferredValue(renderedSessionIds);
-  const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
+  const deferredRenderedIds = useDeferredValue(renderedSessionIds)
+  const deferredActiveId = useDeferredValue(currentSession?.id ?? null)
 
   if (!hydrated || !splashFinished) {
     return (
@@ -607,7 +607,7 @@ export const App = () => {
         onRetry={() => void hydrate()}
         onFinished={() => setSplashFinished(true)}
       />
-    );
+    )
   }
 
   if (hasWorkspaces && !currentWorkspace && isMainWindow() && !addWorkspaceOpen) {
@@ -617,7 +617,7 @@ export const App = () => {
         <WorkspaceLauncher />
         {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
       </ToastProvider>
-    );
+    )
   }
 
   return (
@@ -633,29 +633,29 @@ export const App = () => {
               onOpenPalette={openPalette}
               onOpenWorkflows={() => setWorkflowStudioOpen(true)}
               onOpenLinear={() => {
-                setLinearStudioFocus(null);
-                setLinearStudioOpen(true);
+                setLinearStudioFocus(null)
+                setLinearStudioOpen(true)
               }}
               onOpenSentry={() => {
-                setSentryStudioFocus(null);
-                setSentryStudioOpen(true);
+                setSentryStudioFocus(null)
+                setSentryStudioOpen(true)
               }}
               onOpenGitlab={() => {
-                setGitlabStudioFocus(null);
-                setGitlabStudioOpen(true);
+                setGitlabStudioFocus(null)
+                setGitlabStudioOpen(true)
               }}
               onOpenProviders={() => {
-                setProviderStudioFocus(null);
-                setProviderStudioAction(null);
-                setProviderStudioOpen(true);
+                setProviderStudioFocus(null)
+                setProviderStudioAction(null)
+                setProviderStudioOpen(true)
               }}
               onOpenGithub={() => {
-                setGithubStudioSession(currentSession?.id ?? null);
-                setGithubStudioOpen(true);
+                setGithubStudioSession(currentSession?.id ?? null)
+                setGithubStudioOpen(true)
               }}
               onOpenBudget={() => {
-                setBudgetStudioScope({ kind: 'overview' });
-                setBudgetStudioOpen(true);
+                setBudgetStudioScope({ kind: 'overview' })
+                setBudgetStudioOpen(true)
               }}
               collapsed={leftCollapsed}
               onToggleCollapse={toggleLeftSidebar}
@@ -696,8 +696,8 @@ export const App = () => {
               workspaceId={currentWorkspace.id}
               onClose={() => setNewSessionOpen(false)}
               onOpenSettings={() => {
-                setNewSessionOpen(false);
-                openSettings();
+                setNewSessionOpen(false)
+                openSettings()
               }}
             />
           ) : workspaceSettingsOpen && currentWorkspace ? (
@@ -706,8 +706,8 @@ export const App = () => {
               workspaceName={currentWorkspace.name}
               initialSection={workspaceSettingsFocus}
               onClose={() => {
-                setWorkspaceSettingsOpen(false);
-                setWorkspaceSettingsFocus(undefined);
+                setWorkspaceSettingsOpen(false)
+                setWorkspaceSettingsFocus(undefined)
               }}
             />
           ) : sessionSettingsOpen && currentSession ? (
@@ -723,8 +723,8 @@ export const App = () => {
         <SettingsStudio
           initialFocus={appSettingsFocus}
           onClose={() => {
-            setAppSettingsOpen(false);
-            setAppSettingsFocus(undefined);
+            setAppSettingsOpen(false)
+            setAppSettingsFocus(undefined)
           }}
         />
       ) : null}
@@ -734,13 +734,13 @@ export const App = () => {
           initialQuery={palettePrefix}
           onClose={() => setPaletteOpen(false)}
           onOpenSettings={() => {
-            openSettings();
-            setPaletteOpen(false);
+            openSettings()
+            setPaletteOpen(false)
           }}
           onNewSession={() => setPaletteOpen(false)}
           onOpenShortcutHelp={() => {
-            openShortcutHelp();
-            setPaletteOpen(false);
+            openShortcutHelp()
+            setPaletteOpen(false)
           }}
         />
       ) : null}
@@ -769,8 +769,8 @@ export const App = () => {
           initialFocus={providerStudioFocus}
           initialAction={providerStudioAction}
           onClose={() => {
-            setProviderStudioOpen(false);
-            setProviderStudioAction(null);
+            setProviderStudioOpen(false)
+            setProviderStudioAction(null)
           }}
         />
       ) : null}
@@ -825,5 +825,5 @@ export const App = () => {
 
       <OnboardingWizard />
     </ToastProvider>
-  );
-};
+  )
+}

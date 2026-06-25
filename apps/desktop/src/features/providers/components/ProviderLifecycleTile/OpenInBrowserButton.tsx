@@ -1,9 +1,9 @@
-import { ExternalLink } from 'lucide-react';
-import { openUrl } from '../../../../shared/lib/editor';
+import { ExternalLink } from 'lucide-react'
+import { openUrl } from '../../../../shared/lib/editor'
 
 type Props = {
-  readonly url: string;
-};
+  readonly url: string
+}
 
 export const OpenInBrowserButton = ({ url }: Props) => {
   return (
@@ -16,5 +16,5 @@ export const OpenInBrowserButton = ({ url }: Props) => {
       <ExternalLink size={12} aria-hidden />
       <span>Open in browser</span>
     </button>
-  );
-};
+  )
+}

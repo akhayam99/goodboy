@@ -1,89 +1,89 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Check, SlidersHorizontal } from 'lucide-react';
-import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
-import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
-import { useAppStore, useSessionViewPrefs } from '../../../../../store';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Check, SlidersHorizontal } from 'lucide-react'
+import { Divider, Popover, Tooltip, cn } from '@goodboy/ui'
+import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types'
+import { useAppStore, useSessionViewPrefs } from '../../../../../store'
 
 type SortOption = {
-  readonly key: SessionSortKey;
-  readonly label: string;
-  readonly hint: string;
-};
+  readonly key: SessionSortKey
+  readonly label: string
+  readonly hint: string
+}
 
 type GroupOption = {
-  readonly key: SessionGroupKey;
-  readonly label: string;
-  readonly hint: string;
-};
+  readonly key: SessionGroupKey
+  readonly label: string
+  readonly hint: string
+}
 
 const SORT_OPTIONS: ReadonlyArray<SortOption> = [
   { key: 'updatedAt', label: 'Recent', hint: 'Last active first' },
   { key: 'createdAt', label: 'Oldest', hint: 'First created first' },
   { key: 'goal', label: 'A–Z', hint: 'By session goal' },
-];
+]
 
 const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
   { key: 'stage', label: 'Stage', hint: 'Needs you, running, review…' },
   { key: 'pr', label: 'Pull request', hint: 'Draft, review, merged…' },
   { key: 'none', label: 'None', hint: 'Flat list' },
-];
+]
 
-const MENU_WIDTH = 200;
-const VIEWPORT_MARGIN = 8;
+const MENU_WIDTH = 200
+const VIEWPORT_MARGIN = 8
 
 type SessionViewMenuProps = {
-  readonly workspaceId: WorkspaceId;
-};
+  readonly workspaceId: WorkspaceId
+}
 
 export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
-  const prefs = useSessionViewPrefs(workspaceId);
-  const setSessionSort = useAppStore((s) => s.setSessionSort);
-  const setSessionGroup = useAppStore((s) => s.setSessionGroup);
+  const prefs = useSessionViewPrefs(workspaceId)
+  const setSessionSort = useAppStore((s) => s.setSessionSort)
+  const setSessionGroup = useAppStore((s) => s.setSessionGroup)
 
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
 
   useLayoutEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const updatePosition = () => {
-      const el = triggerRef.current;
+      const el = triggerRef.current
       if (!el) {
-        return;
+        return
       }
-      const rect = el.getBoundingClientRect();
-      const desiredLeft = rect.left;
-      const maxLeft = window.innerWidth - MENU_WIDTH - VIEWPORT_MARGIN;
-      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      const top = rect.bottom + 6;
-      setCoords({ top, left });
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
+      const rect = el.getBoundingClientRect()
+      const desiredLeft = rect.left
+      const maxLeft = window.innerWidth - MENU_WIDTH - VIEWPORT_MARGIN
+      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft)
+      const top = rect.bottom + 6
+      setCoords({ top, left })
+    }
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
     return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open]);
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.preventDefault();
-        setOpen(false);
-        triggerRef.current?.focus();
+        e.preventDefault()
+        setOpen(false)
+        triggerRef.current?.focus()
       }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
     <>
@@ -124,7 +124,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
                       hint={opt.hint}
                       selected={prefs.sort === opt.key}
                       onClick={() => {
-                        setSessionSort(workspaceId, opt.key);
+                        setSessionSort(workspaceId, opt.key)
                       }}
                     />
                   ))}
@@ -138,7 +138,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
                       hint={opt.hint}
                       selected={prefs.group === opt.key}
                       onClick={() => {
-                        setSessionGroup(workspaceId, opt.key);
+                        setSessionGroup(workspaceId, opt.key)
                       }}
                     />
                   ))}
@@ -149,13 +149,13 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
           )
         : null}
     </>
-  );
-};
+  )
+}
 
 type MenuSectionProps = {
-  readonly title: string;
-  readonly children: React.ReactNode;
-};
+  readonly title: string
+  readonly children: React.ReactNode
+}
 
 function MenuSection({ title, children }: MenuSectionProps) {
   return (
@@ -165,15 +165,15 @@ function MenuSection({ title, children }: MenuSectionProps) {
       </p>
       <div className="flex flex-col">{children}</div>
     </div>
-  );
+  )
 }
 
 type MenuItemProps = {
-  readonly label: string;
-  readonly hint: string;
-  readonly selected: boolean;
-  readonly onClick: () => void;
-};
+  readonly label: string
+  readonly hint: string
+  readonly selected: boolean
+  readonly onClick: () => void
+}
 
 function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
   return (
@@ -197,5 +197,5 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
         <span className="truncate text-2xs text-muted-foreground/60">{hint}</span>
       </span>
     </button>
-  );
+  )
 }

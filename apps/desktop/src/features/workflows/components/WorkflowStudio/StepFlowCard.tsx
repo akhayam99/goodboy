@@ -1,23 +1,23 @@
-import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
-import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react';
-import type { DefinitionForm } from '../../form';
-import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
-import { shortModel } from '../../../session/agent-row-format';
+import type { ReactNode } from 'react'
+import { cn } from '@goodboy/ui'
+import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react'
+import type { DefinitionForm } from '../../form'
+import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind'
+import { shortModel } from '../../../session/agent-row-format'
 
 type Props = {
-  readonly def: DefinitionForm;
-  readonly ordinal: number;
-  readonly total: number;
-  readonly selected: boolean;
-  readonly isDragging: boolean;
-  readonly onSelect: () => void;
-  readonly onStartDrag: (e: React.PointerEvent) => void;
-  readonly onRemove: () => void;
-  readonly onMoveLeft: () => void;
-  readonly onMoveRight: () => void;
-  readonly editor?: ReactNode;
-};
+  readonly def: DefinitionForm
+  readonly ordinal: number
+  readonly total: number
+  readonly selected: boolean
+  readonly isDragging: boolean
+  readonly onSelect: () => void
+  readonly onStartDrag: (e: React.PointerEvent) => void
+  readonly onRemove: () => void
+  readonly onMoveLeft: () => void
+  readonly onMoveRight: () => void
+  readonly editor?: ReactNode
+}
 
 export const StepFlowCard = ({
   def,
@@ -32,8 +32,8 @@ export const StepFlowCard = ({
   onMoveRight,
   editor,
 }: Props) => {
-  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
-  const modelLabel = def.modelOverride ? shortModel(def.modelOverride) : 'auto';
+  const kind = ROLE_TO_KIND[def.role] ?? 'generic'
+  const modelLabel = def.modelOverride ? shortModel(def.modelOverride) : 'auto'
 
   return (
     <div
@@ -51,11 +51,11 @@ export const StepFlowCard = ({
           onPointerDown={onStartDrag}
           onKeyDown={(e) => {
             if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              onMoveLeft();
+              e.preventDefault()
+              onMoveLeft()
             } else if (e.key === 'ArrowDown') {
-              e.preventDefault();
-              onMoveRight();
+              e.preventDefault()
+              onMoveRight()
             }
           }}
           title="drag to reorder (or arrow keys)"
@@ -130,5 +130,5 @@ export const StepFlowCard = ({
 
       {selected && editor ? <div className="px-2 pb-3 pt-0">{editor}</div> : null}
     </div>
-  );
-};
+  )
+}

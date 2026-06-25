@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -7,24 +7,24 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
+const runTurnSpy = vi.fn()
+const cancelTurnSpy = vi.fn()
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
-const permissionRuleListSpy = vi.fn();
-const permissionAuditInsertSpy = vi.fn();
-const auditRetryEnqueueSpy = vi.fn();
-const auditRetryDrainSpy = vi.fn();
-const auditRetryUpdateSpy = vi.fn();
-const auditRetryDeleteSpy = vi.fn();
+const permissionRuleListSpy = vi.fn()
+const permissionAuditInsertSpy = vi.fn()
+const auditRetryEnqueueSpy = vi.fn()
+const auditRetryDrainSpy = vi.fn()
+const auditRetryUpdateSpy = vi.fn()
+const auditRetryDeleteSpy = vi.fn()
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
@@ -35,20 +35,20 @@ vi.mock('../features/permissions/permissions', () => ({
     auditRetryUpdateSpy(id, attempts, err),
   invokeAuditRetryDelete: (id: string) => auditRetryDeleteSpy(id),
   useEffectivePermissionRules: () => [],
-}));
+}))
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
-}));
+}))
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -90,7 +90,7 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -99,7 +99,7 @@ vi.mock('../features/providers/providers', () => ({
   getCodexStatus: vi.fn(),
   getGeminiStatus: vi.fn(),
   getProviderStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -107,7 +107,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
-}));
+}))
 
 vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -118,7 +118,7 @@ vi.mock('../features/budget/budget', () => ({
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
   invokeCheckProviderBudget: vi.fn(),
-}));
+}))
 
 vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
@@ -126,7 +126,7 @@ vi.mock('../features/skills/skills', () => ({
   invokeSkillDelete: vi.fn(),
   invokeSkillRescan: vi.fn(),
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
 vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
@@ -135,26 +135,26 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/provider-pricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
   refreshPricingTable: vi.fn(() => Promise.resolve()),
-}));
+}))
 
-const SESSION_ID = 'session-1' as SessionId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const NOW: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
+const SESSION_ID = 'session-1' as SessionId
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId
+const NOW: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime
 
 function buildSession(): Session {
   return {
@@ -170,7 +170,7 @@ function buildSession(): Session {
     workflowRuns: [],
     createdAt: NOW,
     updatedAt: NOW,
-  };
+  }
 }
 
 function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts?: number }) {
@@ -194,34 +194,34 @@ function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts
     lastError: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  };
+  }
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
 describe('audit retry queue, sendTurn enqueue on failure', () => {
   beforeEach(() => {
-    runTurnSpy.mockReset();
-    cancelTurnSpy.mockReset();
-    permissionRuleListSpy.mockReset();
-    permissionAuditInsertSpy.mockReset();
-    auditRetryEnqueueSpy.mockReset();
-    auditRetryDrainSpy.mockReset();
-    auditRetryUpdateSpy.mockReset();
-    auditRetryDeleteSpy.mockReset();
+    runTurnSpy.mockReset()
+    cancelTurnSpy.mockReset()
+    permissionRuleListSpy.mockReset()
+    permissionAuditInsertSpy.mockReset()
+    auditRetryEnqueueSpy.mockReset()
+    auditRetryDrainSpy.mockReset()
+    auditRetryUpdateSpy.mockReset()
+    auditRetryDeleteSpy.mockReset()
 
-    permissionRuleListSpy.mockResolvedValue([]);
-    auditRetryEnqueueSpy.mockResolvedValue(undefined);
-    auditRetryDrainSpy.mockResolvedValue([]);
-  });
+    permissionRuleListSpy.mockResolvedValue([])
+    auditRetryEnqueueSpy.mockResolvedValue(undefined)
+    auditRetryDrainSpy.mockResolvedValue([])
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   async function importStore() {
-    const mod = await import('./store');
-    return mod.useAppStore;
+    const mod = await import('./store')
+    return mod.useAppStore
   }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
@@ -231,7 +231,7 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
       ordinal: 0,
       name: 'agent 1',
       status: 'pending',
-    };
+    }
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -260,11 +260,11 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
           updatedAt: NOW,
         },
       ],
-    });
+    })
   }
 
   it('enqueues to retry queue when audit insert fails', async () => {
-    permissionAuditInsertSpy.mockRejectedValue(new Error('db locked'));
+    permissionAuditInsertSpy.mockRejectedValue(new Error('db locked'))
 
     async function* toolStream(): AsyncIterable<TurnEvent> {
       yield {
@@ -273,25 +273,25 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
         toolName: 'Edit',
         input: { path: '/tmp/x' },
         at: NOW,
-      } as TurnEvent;
+      } as TurnEvent
     }
-    runTurnSpy.mockImplementation(() => toolStream());
+    runTurnSpy.mockImplementation(() => toolStream())
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' })
 
-    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
-    expect(auditRetryEnqueueSpy).toHaveBeenCalledTimes(1);
-    const [enqueuedId, enqueuedPayload] = auditRetryEnqueueSpy.mock.calls[0] as [string, string];
-    expect(typeof enqueuedId).toBe('string');
-    const parsed = JSON.parse(enqueuedPayload) as Record<string, unknown>;
-    expect(parsed.toolName).toBe('Edit');
-    expect(typeof parsed.decision).toBe('string');
-  });
+    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1)
+    expect(auditRetryEnqueueSpy).toHaveBeenCalledTimes(1)
+    const [enqueuedId, enqueuedPayload] = auditRetryEnqueueSpy.mock.calls[0] as [string, string]
+    expect(typeof enqueuedId).toBe('string')
+    const parsed = JSON.parse(enqueuedPayload) as Record<string, unknown>
+    expect(parsed.toolName).toBe('Edit')
+    expect(typeof parsed.decision).toBe('string')
+  })
 
   it('does NOT enqueue when audit insert succeeds', async () => {
-    permissionAuditInsertSpy.mockResolvedValue({});
+    permissionAuditInsertSpy.mockResolvedValue({})
 
     async function* toolStream(): AsyncIterable<TurnEvent> {
       yield {
@@ -300,41 +300,41 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
         toolName: 'Read',
         input: {},
         at: NOW,
-      } as TurnEvent;
+      } as TurnEvent
     }
-    runTurnSpy.mockImplementation(() => toolStream());
+    runTurnSpy.mockImplementation(() => toolStream())
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' })
 
-    expect(auditRetryEnqueueSpy).not.toHaveBeenCalled();
-  });
-});
+    expect(auditRetryEnqueueSpy).not.toHaveBeenCalled()
+  })
+})
 
 describe('audit retry queue, drain worker (happy path)', () => {
   beforeEach(() => {
-    runTurnSpy.mockImplementation(() => emptyStream());
-    permissionRuleListSpy.mockResolvedValue([]);
-    auditRetryEnqueueSpy.mockResolvedValue(undefined);
-    auditRetryUpdateSpy.mockResolvedValue(undefined);
-    auditRetryDeleteSpy.mockResolvedValue(undefined);
-  });
+    runTurnSpy.mockImplementation(() => emptyStream())
+    permissionRuleListSpy.mockResolvedValue([])
+    auditRetryEnqueueSpy.mockResolvedValue(undefined)
+    auditRetryUpdateSpy.mockResolvedValue(undefined)
+    auditRetryDeleteSpy.mockResolvedValue(undefined)
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-    auditRetryDrainSpy.mockReset();
-    auditRetryDeleteSpy.mockReset();
-    auditRetryUpdateSpy.mockReset();
-    permissionAuditInsertSpy.mockReset();
-  });
+    vi.clearAllMocks()
+    auditRetryDrainSpy.mockReset()
+    auditRetryDeleteSpy.mockReset()
+    auditRetryUpdateSpy.mockReset()
+    permissionAuditInsertSpy.mockReset()
+  })
 
   async function runHydrate() {
-    const { runDbMigrations } = await import('../shared/lib/db');
-    (runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const { runDbMigrations } = await import('../shared/lib/db')
+    ;(runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
 
-    const { getSetting } = await import('@goodboy/db');
-    (getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const { getSetting } = await import('@goodboy/db')
+    ;(getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null)
 
     const {
       getProviderStatus,
@@ -342,135 +342,135 @@ describe('audit retry queue, drain worker (happy path)', () => {
       getCodexStatus,
       getGeminiStatus,
       checkProviderAuth,
-    } = await import('../features/providers/providers');
-    (getProviderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+    } = await import('../features/providers/providers')
+    ;(getProviderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
-    });
-    (getCursorStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+    })
+    ;(getCursorStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
-    });
-    (getCodexStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+    })
+    ;(getCodexStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
-    });
-    (getGeminiStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+    })
+    ;(getGeminiStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
-    });
-    (checkProviderAuth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    })
+    ;(checkProviderAuth as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',
-    });
+    })
 
-    const mod = await import('./store');
-    await mod.useAppStore.getState().hydrate();
-    await Promise.resolve();
+    const mod = await import('./store')
+    await mod.useAppStore.getState().hydrate()
+    await Promise.resolve()
   }
 
   it('drain happy path: retries insert, deletes on success', async () => {
-    const entry = { ...makeRetryEntry({ id: 'retry-happy', attempts: 2 }), updatedAt: 0 };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
-    permissionAuditInsertSpy.mockResolvedValue({});
+    const entry = { ...makeRetryEntry({ id: 'retry-happy', attempts: 2 }), updatedAt: 0 }
+    auditRetryDrainSpy.mockResolvedValue([entry])
+    permissionAuditInsertSpy.mockResolvedValue({})
 
-    await runHydrate();
+    await runHydrate()
 
-    expect(auditRetryDrainSpy).toHaveBeenCalledWith(50);
-    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
-    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-happy');
-    expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
-  });
+    expect(auditRetryDrainSpy).toHaveBeenCalledWith(50)
+    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1)
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-happy')
+    expect(auditRetryUpdateSpy).not.toHaveBeenCalled()
+  })
 
   it('drain failure path: increments attempts when insert still fails', async () => {
-    const entry = { ...makeRetryEntry({ id: 'retry-fail', attempts: 3 }), updatedAt: 0 };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
-    permissionAuditInsertSpy.mockRejectedValue(new Error('still locked'));
+    const entry = { ...makeRetryEntry({ id: 'retry-fail', attempts: 3 }), updatedAt: 0 }
+    auditRetryDrainSpy.mockResolvedValue([entry])
+    permissionAuditInsertSpy.mockRejectedValue(new Error('still locked'))
 
-    await runHydrate();
+    await runHydrate()
 
-    expect(auditRetryUpdateSpy).toHaveBeenCalledWith('retry-fail', 4, 'still locked');
-    expect(auditRetryDeleteSpy).not.toHaveBeenCalled();
-  });
+    expect(auditRetryUpdateSpy).toHaveBeenCalledWith('retry-fail', 4, 'still locked')
+    expect(auditRetryDeleteSpy).not.toHaveBeenCalled()
+  })
 
   it('max-attempts boundary: deletes entry at attempt 5', async () => {
-    const entry = { ...makeRetryEntry({ id: 'retry-max', attempts: 4 }), updatedAt: 0 };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
-    permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
+    const entry = { ...makeRetryEntry({ id: 'retry-max', attempts: 4 }), updatedAt: 0 }
+    auditRetryDrainSpy.mockResolvedValue([entry])
+    permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'))
 
-    await runHydrate();
+    await runHydrate()
 
-    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-max');
-    expect(auditRetryUpdateSpy).not.toHaveBeenCalled();
-  });
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-max')
+    expect(auditRetryUpdateSpy).not.toHaveBeenCalled()
+  })
 
   it('max-attempts exhausted: emits system alert', async () => {
-    const entry = { ...makeRetryEntry({ id: 'retry-exhausted', attempts: 4 }), updatedAt: 0 };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
-    permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
+    const entry = { ...makeRetryEntry({ id: 'retry-exhausted', attempts: 4 }), updatedAt: 0 }
+    auditRetryDrainSpy.mockResolvedValue([entry])
+    permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'))
 
-    const mod = await import('./store');
-    await runHydrate();
+    const mod = await import('./store')
+    await runHydrate()
 
-    const { systemAlerts } = mod.useAppStore.getState();
-    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-exhausted');
-    expect(alert).toBeDefined();
-    expect(alert?.kind).toBe('audit-retry-exhausted');
-    expect(alert?.message).toContain('5 attempts');
-  });
+    const { systemAlerts } = mod.useAppStore.getState()
+    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-exhausted')
+    expect(alert).toBeDefined()
+    expect(alert?.kind).toBe('audit-retry-exhausted')
+    expect(alert?.message).toContain('5 attempts')
+  })
 
   it('drain skips rows with invalid JSON payload (deletes them)', async () => {
     const entry = {
       ...makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' }),
       updatedAt: 0,
-    };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
+    }
+    auditRetryDrainSpy.mockResolvedValue([entry])
 
-    await runHydrate();
+    await runHydrate()
 
-    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-bad-json');
-    expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
-  });
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-bad-json')
+    expect(permissionAuditInsertSpy).not.toHaveBeenCalled()
+  })
 
   it('corrupt payload: emits system alert', async () => {
     const entry = {
       ...makeRetryEntry({ id: 'retry-bad-json', payloadJson: 'not-json' }),
       updatedAt: 0,
-    };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
+    }
+    auditRetryDrainSpy.mockResolvedValue([entry])
 
-    const mod = await import('./store');
-    await runHydrate();
+    const mod = await import('./store')
+    await runHydrate()
 
-    const { systemAlerts } = mod.useAppStore.getState();
-    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-corrupt');
-    expect(alert).toBeDefined();
-    expect(alert?.kind).toBe('audit-retry-corrupt');
-    expect(alert?.message).toContain('corrupt payload');
-  });
+    const { systemAlerts } = mod.useAppStore.getState()
+    const alert = systemAlerts.find((a) => a.kind === 'audit-retry-corrupt')
+    expect(alert).toBeDefined()
+    expect(alert?.kind).toBe('audit-retry-corrupt')
+    expect(alert?.message).toContain('corrupt payload')
+  })
 
   it('backoff: skips entry whose updatedAt is too recent for attempt count', async () => {
     const entry = {
       ...makeRetryEntry({ id: 'retry-backoff', attempts: 0 }),
       updatedAt: Date.now(),
-    };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
-    permissionAuditInsertSpy.mockResolvedValue({});
+    }
+    auditRetryDrainSpy.mockResolvedValue([entry])
+    permissionAuditInsertSpy.mockResolvedValue({})
 
-    await runHydrate();
+    await runHydrate()
 
-    expect(permissionAuditInsertSpy).not.toHaveBeenCalled();
-    expect(auditRetryDeleteSpy).not.toHaveBeenCalled();
-  });
+    expect(permissionAuditInsertSpy).not.toHaveBeenCalled()
+    expect(auditRetryDeleteSpy).not.toHaveBeenCalled()
+  })
 
   it('backoff: processes entry whose updatedAt is old enough', async () => {
-    const entry = { ...makeRetryEntry({ id: 'retry-old', attempts: 0 }), updatedAt: 0 };
-    auditRetryDrainSpy.mockResolvedValue([entry]);
-    permissionAuditInsertSpy.mockResolvedValue({});
+    const entry = { ...makeRetryEntry({ id: 'retry-old', attempts: 0 }), updatedAt: 0 }
+    auditRetryDrainSpy.mockResolvedValue([entry])
+    permissionAuditInsertSpy.mockResolvedValue({})
 
-    await runHydrate();
+    await runHydrate()
 
-    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
-    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-old');
-  });
-});
+    expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1)
+    expect(auditRetryDeleteSpy).toHaveBeenCalledWith('retry-old')
+  })
+})

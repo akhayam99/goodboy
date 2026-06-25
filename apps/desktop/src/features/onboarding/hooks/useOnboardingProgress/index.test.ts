@@ -1,16 +1,16 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OnboardingStepId } from '../../onboarding-store';
+import { renderHook, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { OnboardingStepId } from '../../onboarding-store'
 
-let completed: Array<OnboardingStepId> = [];
-const workspaces: Array<{ id: string }> = [];
-let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
-let sessions: Array<unknown> = [];
+let completed: Array<OnboardingStepId> = []
+const workspaces: Array<{ id: string }> = []
+let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {}
+let sessions: Array<unknown> = []
 
 const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
   markStepCompleteMock: vi.fn(),
   ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
-}));
+}))
 
 vi.mock('../../onboarding-store', () => ({
   ONBOARDING_STEPS: new Array(7).fill({ id: 'x', title: 'x', why: 'x' }),
@@ -18,19 +18,19 @@ vi.mock('../../onboarding-store', () => ({
   isCollapsed: () => false,
   isFinished: () => false,
   markStepComplete: markStepCompleteMock,
-}));
+}))
 
 vi.mock('../../../github/github', () => ({
   ghStatus: ghStatusMock,
-}));
+}))
 
 vi.mock('../../../../store', () => ({
   useAppStore: (
     selector: (s: {
-      sessions: typeof sessions;
-      sessionPhaseRuns: Record<string, unknown[]>;
-      sessionPlans: Record<string, unknown[]>;
-      workspaceIntegrations: typeof workspaceIntegrations;
+      sessions: typeof sessions
+      sessionPhaseRuns: Record<string, unknown[]>
+      sessionPlans: Record<string, unknown[]>
+      workspaceIntegrations: typeof workspaceIntegrations
     }) => unknown,
   ) =>
     selector({
@@ -41,73 +41,73 @@ vi.mock('../../../../store', () => ({
     }),
   useCurrentSession: () => null,
   useWorkspaces: () => workspaces,
-}));
+}))
 
 function reset() {
-  completed = [];
-  workspaces.length = 0;
-  workspaceIntegrations = {};
-  sessions = [];
-  markStepCompleteMock.mockReset();
-  ghStatusMock.mockReset();
-  ghStatusMock.mockResolvedValue({ scoped: false });
+  completed = []
+  workspaces.length = 0
+  workspaceIntegrations = {}
+  sessions = []
+  markStepCompleteMock.mockReset()
+  ghStatusMock.mockReset()
+  ghStatusMock.mockResolvedValue({ scoped: false })
 }
 
-import { useOnboardingProgress } from './index';
+import { useOnboardingProgress } from './index'
 
 describe('useOnboardingProgress auto-mark', () => {
-  beforeEach(reset);
-  afterEach(reset);
+  beforeEach(reset)
+  afterEach(reset)
 
   it('marks codeHost when GitLab is connected for the workspace', () => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost');
-  });
+    workspaces.push({ id: 'w1' })
+    workspaceIntegrations = { w1: [{ provider: 'gitlab' }] }
+    renderHook(() => useOnboardingProgress())
+    expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost')
+  })
 
   it('marks codeHost once gh status reports a scoped token', async () => {
-    workspaces.push({ id: 'w1' });
-    ghStatusMock.mockResolvedValue({ scoped: true });
-    renderHook(() => useOnboardingProgress());
-    await waitFor(() => expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost'));
-  });
+    workspaces.push({ id: 'w1' })
+    ghStatusMock.mockResolvedValue({ scoped: true })
+    renderHook(() => useOnboardingProgress())
+    await waitFor(() => expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost'))
+  })
 
   it('marks tools when Linear is connected for the workspace', () => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'linear' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
-  });
+    workspaces.push({ id: 'w1' })
+    workspaceIntegrations = { w1: [{ provider: 'linear' }] }
+    renderHook(() => useOnboardingProgress())
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools')
+  })
 
   it('marks tools when Sentry is connected for the workspace', () => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'sentry' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
-  });
+    workspaces.push({ id: 'w1' })
+    workspaceIntegrations = { w1: [{ provider: 'sentry' }] }
+    renderHook(() => useOnboardingProgress())
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools')
+  })
 
   it('does not mark codeHost or tools when no workspace exists', () => {
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('codeHost');
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools');
-  });
+    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] }
+    renderHook(() => useOnboardingProgress())
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('codeHost')
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools')
+  })
 
   it('skips already-completed steps and never re-queries gh status', () => {
-    completed = ['workspace', 'codeHost', 'tools'];
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalled();
-    expect(ghStatusMock).not.toHaveBeenCalled();
-  });
+    completed = ['workspace', 'codeHost', 'tools']
+    workspaces.push({ id: 'w1' })
+    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] }
+    renderHook(() => useOnboardingProgress())
+    expect(markStepCompleteMock).not.toHaveBeenCalled()
+    expect(ghStatusMock).not.toHaveBeenCalled()
+  })
 
   it('reports completed count and total from the store', () => {
-    completed = ['workspace', 'codeHost'];
-    const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.completedCount).toBe(2);
-    expect(result.current.totalCount).toBe(7);
-    expect(result.current.isDone).toBe(false);
-  });
-});
+    completed = ['workspace', 'codeHost']
+    const { result } = renderHook(() => useOnboardingProgress())
+    expect(result.current.completedCount).toBe(2)
+    expect(result.current.totalCount).toBe(7)
+    expect(result.current.isDone).toBe(false)
+  })
+})

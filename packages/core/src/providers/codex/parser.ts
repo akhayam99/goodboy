@@ -1,11 +1,11 @@
-import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
-import { devWarn } from '../../dev-log';
+import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types'
+import { devWarn } from '../../dev-log'
 
 export type ParseContext = {
-  readonly runId: ProviderRunId;
-  readonly now: () => IsoDateTime;
-  readonly onUnknown?: (type: string, payload: unknown) => void;
-};
+  readonly runId: ProviderRunId
+  readonly now: () => IsoDateTime
+  readonly onUnknown?: (type: string, payload: unknown) => void
+}
 
 const KNOWN_TYPES = new Set([
   'thread.started',
@@ -14,53 +14,53 @@ const KNOWN_TYPES = new Set([
   'item.completed',
   'turn.completed',
   'error',
-]);
+])
 
 type UsagePayload = {
-  readonly input_tokens?: number;
-  readonly cached_input_tokens?: number;
-  readonly output_tokens?: number;
-  readonly reasoning_output_tokens?: number;
-};
+  readonly input_tokens?: number
+  readonly cached_input_tokens?: number
+  readonly output_tokens?: number
+  readonly reasoning_output_tokens?: number
+}
 
 type CommandItem = {
-  readonly id: string;
-  readonly type: 'command_execution';
-  readonly command?: string;
-  readonly aggregated_output?: string;
-  readonly exit_code?: number | null;
-  readonly status?: string;
-};
+  readonly id: string
+  readonly type: 'command_execution'
+  readonly command?: string
+  readonly aggregated_output?: string
+  readonly exit_code?: number | null
+  readonly status?: string
+}
 
 type AgentMessageItem = {
-  readonly id: string;
-  readonly type: 'agent_message';
-  readonly text?: string;
-};
+  readonly id: string
+  readonly type: 'agent_message'
+  readonly text?: string
+}
 
 type ApplyPatchItem = {
-  readonly id: string;
-  readonly type: 'apply_patch' | 'file_change';
+  readonly id: string
+  readonly type: 'apply_patch' | 'file_change'
   readonly changes?: ReadonlyArray<{
-    readonly path?: string;
-    readonly kind?: 'create' | 'modify' | 'delete' | string;
-  }>;
-};
+    readonly path?: string
+    readonly kind?: 'create' | 'modify' | 'delete' | string
+  }>
+}
 
 type CodexItem =
   | CommandItem
   | AgentMessageItem
   | ApplyPatchItem
-  | { readonly id: string; readonly type: string; readonly [k: string]: unknown };
+  | { readonly id: string; readonly type: string; readonly [k: string]: unknown }
 
 function isCommandItem(item: CodexItem): item is CommandItem {
-  return item.type === 'command_execution';
+  return item.type === 'command_execution'
 }
 function isAgentMessageItem(item: CodexItem): item is AgentMessageItem {
-  return item.type === 'agent_message';
+  return item.type === 'agent_message'
 }
 function isApplyPatchItem(item: CodexItem): item is ApplyPatchItem {
-  return item.type === 'apply_patch' || item.type === 'file_change';
+  return item.type === 'apply_patch' || item.type === 'file_change'
 }
 
 function commandToTurnEvents(
@@ -70,7 +70,7 @@ function commandToTurnEvents(
   at: IsoDateTime,
 ): ReadonlyArray<TurnEvent> {
   if (!item.id) {
-    return [];
+    return []
   }
   if (phase === 'start') {
     return [
@@ -82,7 +82,7 @@ function commandToTurnEvents(
         input: { command: item.command ?? '' },
         at,
       },
-    ];
+    ]
   }
   return [
     {
@@ -96,7 +96,7 @@ function commandToTurnEvents(
       isError: typeof item.exit_code === 'number' && item.exit_code !== 0,
       at,
     },
-  ];
+  ]
 }
 
 function applyPatchToTurnEvents(
@@ -105,7 +105,7 @@ function applyPatchToTurnEvents(
   at: IsoDateTime,
 ): ReadonlyArray<TurnEvent> {
   if (!item.id) {
-    return [];
+    return []
   }
   const events: TurnEvent[] = [
     {
@@ -116,57 +116,57 @@ function applyPatchToTurnEvents(
       isError: false,
       at,
     },
-  ];
+  ]
   for (const change of item.changes ?? []) {
     if (typeof change.path !== 'string') {
-      continue;
+      continue
     }
     const editType: 'create' | 'modify' | 'delete' =
-      change.kind === 'create' || change.kind === 'delete' ? change.kind : 'modify';
+      change.kind === 'create' || change.kind === 'delete' ? change.kind : 'modify'
     events.push({
       kind: 'file_edit',
       runId: ctx.runId,
       path: change.path,
       editType,
       at,
-    });
+    })
   }
-  return events;
+  return events
 }
 
 function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
-  const inputTokens = raw?.input_tokens ?? 0;
-  const cachedInputTokens = raw?.cached_input_tokens ?? 0;
-  const outputTokens = (raw?.output_tokens ?? 0) + (raw?.reasoning_output_tokens ?? 0);
+  const inputTokens = raw?.input_tokens ?? 0
+  const cachedInputTokens = raw?.cached_input_tokens ?? 0
+  const outputTokens = (raw?.output_tokens ?? 0) + (raw?.reasoning_output_tokens ?? 0)
   return {
     inputTokens,
     outputTokens,
     cachedInputTokens,
     estimatedCostUsd: 0,
-  };
+  }
 }
 
 export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
-  const trimmed = line.trim();
+  const trimmed = line.trim()
   if (trimmed.length === 0) {
-    return [];
+    return []
   }
 
-  let payload: { type?: string } & Record<string, unknown>;
+  let payload: { type?: string } & Record<string, unknown>
   try {
-    payload = JSON.parse(trimmed) as { type?: string } & Record<string, unknown>;
+    payload = JSON.parse(trimmed) as { type?: string } & Record<string, unknown>
   } catch {
-    return [];
+    return []
   }
 
-  const at = ctx.now();
-  const type = payload.type;
+  const at = ctx.now()
+  const type = payload.type
 
   switch (type) {
     case 'thread.started': {
-      const threadId = payload['thread_id'];
+      const threadId = payload['thread_id']
       if (typeof threadId !== 'string' || threadId.length === 0) {
-        return [];
+        return []
       }
       return [
         {
@@ -175,57 +175,57 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
           providerSessionId: threadId,
           at,
         },
-      ];
+      ]
     }
 
     case 'turn.started':
-      return [];
+      return []
 
     case 'item.started': {
-      const item = payload['item'] as CodexItem | undefined;
+      const item = payload['item'] as CodexItem | undefined
       if (!item || typeof item.id !== 'string') {
-        return [];
+        return []
       }
       if (isCommandItem(item)) {
-        return commandToTurnEvents(item, 'start', ctx, at);
+        return commandToTurnEvents(item, 'start', ctx, at)
       }
-      return [];
+      return []
     }
 
     case 'item.completed': {
-      const item = payload['item'] as CodexItem | undefined;
+      const item = payload['item'] as CodexItem | undefined
       if (!item || typeof item.id !== 'string') {
-        return [];
+        return []
       }
       if (isCommandItem(item)) {
-        return commandToTurnEvents(item, 'end', ctx, at);
+        return commandToTurnEvents(item, 'end', ctx, at)
       }
       if (isAgentMessageItem(item) && typeof item.text === 'string' && item.text.length > 0) {
-        return [{ kind: 'assistant_text', runId: ctx.runId, delta: item.text, at }];
+        return [{ kind: 'assistant_text', runId: ctx.runId, delta: item.text, at }]
       }
       if (isApplyPatchItem(item)) {
-        return applyPatchToTurnEvents(item, ctx, at);
+        return applyPatchToTurnEvents(item, ctx, at)
       }
-      return [];
+      return []
     }
 
     case 'turn.completed': {
-      const usage = buildUsage(payload['usage'] as UsagePayload | undefined);
-      return [{ kind: 'usage', runId: ctx.runId, usage, at }];
+      const usage = buildUsage(payload['usage'] as UsagePayload | undefined)
+      return [{ kind: 'usage', runId: ctx.runId, usage, at }]
     }
 
     case 'error': {
       const msg =
         typeof payload['message'] === 'string'
           ? (payload['message'] as string)
-          : JSON.stringify(payload);
-      return [{ kind: 'error', runId: ctx.runId, message: msg, at }];
+          : JSON.stringify(payload)
+      return [{ kind: 'error', runId: ctx.runId, message: msg, at }]
     }
 
     default:
       if (typeof type === 'string' && !KNOWN_TYPES.has(type)) {
-        devWarn(`[codex-adapter] unknown json payload type: ${type}`);
-        ctx.onUnknown?.(type, payload);
+        devWarn(`[codex-adapter] unknown json payload type: ${type}`)
+        ctx.onUnknown?.(type, payload)
         return [
           {
             kind: 'unknown_payload',
@@ -235,8 +235,8 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
             raw: payload,
             at,
           },
-        ];
+        ]
       }
-      return [];
+      return []
   }
-};
+}

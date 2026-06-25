@@ -1,37 +1,37 @@
-import { useEffect, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { Trash2 } from 'lucide-react';
-import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { agentHasUnread } from '../../../../../store';
-import { formatCost } from '../../../../../features/session/agent-row-format';
-import { AGENT_KIND_PALETTE, type AgentKind } from '../../../../../features/session/agent-kind';
-import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
+import { useEffect, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import { Trash2 } from 'lucide-react'
+import type { Agent, TelemetryRecord } from '@goodboy/types'
+import { agentHasUnread } from '../../../../../store'
+import { formatCost } from '../../../../../features/session/agent-row-format'
+import { AGENT_KIND_PALETTE, type AgentKind } from '../../../../../features/session/agent-kind'
+import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip'
 import {
   AgentMetricsBlock,
   type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderGlyph } from './ProviderGlyph';
-import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import { AgentLifetime } from './AgentLifetime';
+} from '../../../../../features/session/components/AgentMetricsBlock'
+import { ProviderGlyph } from './ProviderGlyph'
+import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar'
+import { AgentLifetime } from './AgentLifetime'
 
 type AgentRowProps = {
-  readonly run: Agent;
-  readonly kind: AgentKind;
-  readonly index: number;
-  readonly telemetry: TelemetryRecord | null;
-  readonly aggregate: AgentAggregate | null;
-  readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
-  readonly turns: number;
-  readonly turnsLoading: boolean;
-  readonly isSelected: boolean;
-  readonly isTaskActive: boolean;
-  readonly isEditing: boolean;
-  readonly onClick: () => void;
-  readonly onRenameStart: () => void;
-  readonly onRenameCommit: (name: string) => void;
-  readonly onRenameCancel: () => void;
-  readonly onDelete: () => void;
-};
+  readonly run: Agent
+  readonly kind: AgentKind
+  readonly index: number
+  readonly telemetry: TelemetryRecord | null
+  readonly aggregate: AgentAggregate | null
+  readonly contextUsage: ReadonlyArray<ProviderContextUsage>
+  readonly turns: number
+  readonly turnsLoading: boolean
+  readonly isSelected: boolean
+  readonly isTaskActive: boolean
+  readonly isEditing: boolean
+  readonly onClick: () => void
+  readonly onRenameStart: () => void
+  readonly onRenameCommit: (name: string) => void
+  readonly onRenameCancel: () => void
+  readonly onDelete: () => void
+}
 
 export function AgentRow({
   run,
@@ -51,7 +51,7 @@ export function AgentRow({
   onRenameCancel,
   onDelete,
 }: AgentRowProps) {
-  const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
+  const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null
   const titleParts = [
     `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
@@ -61,20 +61,20 @@ export function AgentRow({
     total !== null
       ? `last turn: ${total} tokens · ${formatCost(telemetry!.estimatedCostUsd)}`
       : null,
-  ].filter((p): p is string => p !== null);
+  ].filter((p): p is string => p !== null)
 
-  const [draft, setDraft] = useState(run.name);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [draft, setDraft] = useState(run.name)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   useEffect(() => {
     if (isEditing) {
-      setDraft(run.name);
+      setDraft(run.name)
     }
-  }, [isEditing, run.name]);
+  }, [isEditing, run.name])
   useEffect(() => {
     if (isEditing) {
-      setConfirmingDelete(false);
+      setConfirmingDelete(false)
     }
-  }, [isEditing]);
+  }, [isEditing])
 
   return (
     <li
@@ -85,11 +85,11 @@ export function AgentRow({
       onDoubleClick={isEditing ? undefined : onRenameStart}
       onKeyDown={(e) => {
         if (isEditing) {
-          return;
+          return
         }
         if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
+          e.preventDefault()
+          onClick()
         }
       }}
       className={cn(
@@ -124,13 +124,13 @@ export function AgentRow({
             onClick={(e) => e.stopPropagation()}
             onDoubleClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
               if (e.key === 'Enter') {
-                e.preventDefault();
-                onRenameCommit(draft);
+                e.preventDefault()
+                onRenameCommit(draft)
               } else if (e.key === 'Escape') {
-                e.preventDefault();
-                onRenameCancel();
+                e.preventDefault()
+                onRenameCancel()
               }
             }}
             onBlur={() => onRenameCommit(draft)}
@@ -161,8 +161,8 @@ export function AgentRow({
               <button
                 type="button"
                 onClick={() => {
-                  setConfirmingDelete(false);
-                  onDelete();
+                  setConfirmingDelete(false)
+                  onDelete()
                 }}
                 className="rounded px-1 py-0.5 text-2xs font-medium text-danger transition-colors hover:bg-danger/10"
                 title="confirm delete"
@@ -179,8 +179,8 @@ export function AgentRow({
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmingDelete(true);
+                  e.stopPropagation()
+                  setConfirmingDelete(true)
                 }}
                 className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-danger"
                 title="delete agent (double-click row to rename)"
@@ -212,5 +212,5 @@ export function AgentRow({
         </div>
       </div>
     </li>
-  );
+  )
 }

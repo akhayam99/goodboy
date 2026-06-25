@@ -1,30 +1,30 @@
-import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { WorkspaceScriptId } from '@goodboy/types';
+import { invoke } from '@tauri-apps/api/core'
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import type { WorkspaceScriptId } from '@goodboy/types'
 
 export type ScriptRunResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number;
-};
+  readonly stdout: string
+  readonly stderr: string
+  readonly exitCode: number
+}
 
-export type ScriptRunStatus = 'idle' | 'pending' | 'ok' | 'error' | 'cancelled';
+export type ScriptRunStatus = 'idle' | 'pending' | 'ok' | 'error' | 'cancelled'
 
 export type ScriptRunRecord = {
-  readonly status: ScriptRunStatus;
-  readonly result: ScriptRunResult | null;
-  readonly runId: string;
-};
+  readonly status: ScriptRunStatus
+  readonly result: ScriptRunResult | null
+  readonly runId: string
+}
 
 export type ScriptOutputPayload = {
-  readonly runId: string;
-  readonly data: string;
-};
+  readonly runId: string
+  readonly data: string
+}
 
 export type ScriptExitPayload = {
-  readonly runId: string;
-  readonly exitCode: number;
-};
+  readonly runId: string
+  readonly exitCode: number
+}
 
 export const invokeScriptRun = (
   scriptId: WorkspaceScriptId,
@@ -33,21 +33,21 @@ export const invokeScriptRun = (
   cols: number,
   rows: number,
 ): Promise<void> => {
-  return invoke<void>('workspace_script_run', { scriptId, runId, cwd, cols, rows });
-};
+  return invoke<void>('workspace_script_run', { scriptId, runId, cwd, cols, rows })
+}
 
 export const invokeScriptCancel = (runId: string): Promise<void> => {
-  return invoke<void>('workspace_script_cancel', { runId });
-};
+  return invoke<void>('workspace_script_cancel', { runId })
+}
 
 export const listenScriptOutput = (
   handler: (payload: ScriptOutputPayload) => void,
 ): Promise<UnlistenFn> => {
-  return listen<ScriptOutputPayload>('script-output', (e) => handler(e.payload));
-};
+  return listen<ScriptOutputPayload>('script-output', (e) => handler(e.payload))
+}
 
 export const listenScriptExit = (
   handler: (payload: ScriptExitPayload) => void,
 ): Promise<UnlistenFn> => {
-  return listen<ScriptExitPayload>('script-exit', (e) => handler(e.payload));
-};
+  return listen<ScriptExitPayload>('script-exit', (e) => handler(e.payload))
+}

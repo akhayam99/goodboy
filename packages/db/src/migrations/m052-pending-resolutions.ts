@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS pending_resolutions (
 
 CREATE INDEX IF NOT EXISTS idx_pending_resolutions_session
   ON pending_resolutions(session_id);
-`;
+`

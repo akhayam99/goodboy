@@ -1,20 +1,20 @@
-import { invoke } from '@tauri-apps/api/core';
-import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
-import { serializeSkillMarkdown, SkillExecutor } from '@goodboy/core';
-import type { SkillScriptRunner } from '@goodboy/core';
+import { invoke } from '@tauri-apps/api/core'
+import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types'
+import { serializeSkillMarkdown, SkillExecutor } from '@goodboy/core'
+import type { SkillScriptRunner } from '@goodboy/core'
 
 export type ResolveSkillInvocationArgs = {
-  readonly skill: Skill;
-  readonly args: ReadonlyArray<string>;
-  readonly workingDir: string;
-  readonly workspaceRoot: string;
-};
+  readonly skill: Skill
+  readonly args: ReadonlyArray<string>
+  readonly workingDir: string
+  readonly workspaceRoot: string
+}
 
 export type ResolveSkillInvocationResult = {
-  readonly resolvedPrompt: string;
-  readonly skillName: string;
-  readonly args: ReadonlyArray<string>;
-};
+  readonly resolvedPrompt: string
+  readonly skillName: string
+  readonly args: ReadonlyArray<string>
+}
 
 export const resolveSkillInvocation = async (
   input: ResolveSkillInvocationArgs,
@@ -24,21 +24,21 @@ export const resolveSkillInvocation = async (
     args: input.args,
     workingDir: input.workingDir,
     workspaceRoot: input.workspaceRoot,
-  });
-  return { resolvedPrompt, skillName: input.skill.name, args: input.args };
-};
+  })
+  return { resolvedPrompt, skillName: input.skill.name, args: input.args }
+}
 
 type RawSkillRow = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly name: string;
-  readonly description: string;
-  readonly filePath: string;
-  readonly body: string;
-  readonly frontmatterJson: string;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
+  readonly id: string
+  readonly workspaceId: string
+  readonly name: string
+  readonly description: string
+  readonly filePath: string
+  readonly body: string
+  readonly frontmatterJson: string
+  readonly createdAt: string
+  readonly updatedAt: string
+}
 
 function rowToSkill(row: RawSkillRow): Skill {
   return {
@@ -51,25 +51,25 @@ function rowToSkill(row: RawSkillRow): Skill {
     frontmatter: JSON.parse(row.frontmatterJson) as SkillFrontmatter,
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
-  };
+  }
 }
 
 export const invokeSkillList = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
-  const rows = await invoke<RawSkillRow[]>('skill_list', { workspaceId });
-  return rows.map(rowToSkill);
-};
+  const rows = await invoke<RawSkillRow[]>('skill_list', { workspaceId })
+  return rows.map(rowToSkill)
+}
 
 export type SkillUpsertArgs = {
-  readonly workspaceId: WorkspaceId;
-  readonly name: string;
-  readonly description: string;
-  readonly frontmatter: SkillFrontmatter;
-  readonly body: string;
-  readonly filePath?: string;
-};
+  readonly workspaceId: WorkspaceId
+  readonly name: string
+  readonly description: string
+  readonly frontmatter: SkillFrontmatter
+  readonly body: string
+  readonly filePath?: string
+}
 
 export const invokeSkillUpsert = async (args: SkillUpsertArgs): Promise<Skill> => {
-  const markdown = serializeSkillMarkdown(args.frontmatter, args.body);
+  const markdown = serializeSkillMarkdown(args.frontmatter, args.body)
   const row = await invoke<RawSkillRow>('skill_upsert', {
     input: {
       workspaceId: args.workspaceId,
@@ -80,37 +80,37 @@ export const invokeSkillUpsert = async (args: SkillUpsertArgs): Promise<Skill> =
       markdown,
       filePath: args.filePath ?? null,
     },
-  });
-  return rowToSkill(row);
-};
+  })
+  return rowToSkill(row)
+}
 
 export const invokeSkillDelete = async (skillId: SkillId): Promise<void> => {
-  return invoke<void>('skill_delete', { skillId });
-};
+  return invoke<void>('skill_delete', { skillId })
+}
 
 export const invokeSkillRescan = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
-  const rows = await invoke<RawSkillRow[]>('skill_rescan', { workspaceId });
-  return rows.map(rowToSkill);
-};
+  const rows = await invoke<RawSkillRow[]>('skill_rescan', { workspaceId })
+  return rows.map(rowToSkill)
+}
 
 type SkillInvokeArgs = {
-  readonly skillId: SkillId;
-  readonly args: ReadonlyArray<string>;
-  readonly workingDir: string;
-  readonly workspaceRoot: string;
-};
+  readonly skillId: SkillId
+  readonly args: ReadonlyArray<string>
+  readonly workingDir: string
+  readonly workspaceRoot: string
+}
 
 type SkillInvokeResult = {
-  readonly resolvedPrompt: string;
-};
+  readonly resolvedPrompt: string
+}
 
 async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResult> {
-  const rawRow = await invoke<RawSkillRow | null>('skill_get', { skillId: args.skillId });
+  const rawRow = await invoke<RawSkillRow | null>('skill_get', { skillId: args.skillId })
   if (!rawRow) {
-    throw new Error(`skill not found: ${args.skillId}`);
+    throw new Error(`skill not found: ${args.skillId}`)
   }
 
-  const frontmatter: SkillFrontmatter = JSON.parse(rawRow.frontmatterJson);
+  const frontmatter: SkillFrontmatter = JSON.parse(rawRow.frontmatterJson)
   const skill: Skill = {
     id: rawRow.id as SkillId,
     workspaceId: rawRow.workspaceId as WorkspaceId,
@@ -121,9 +121,9 @@ async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResu
     frontmatter,
     createdAt: rawRow.createdAt as IsoDateTime,
     updatedAt: rawRow.updatedAt as IsoDateTime,
-  };
+  }
 
-  const workspaceRoot = args.workspaceRoot;
+  const workspaceRoot = args.workspaceRoot
 
   const tauriRunner: SkillScriptRunner = {
     async runScript(
@@ -138,18 +138,18 @@ async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResu
           workingDir: cwd,
           workspaceRoot,
         },
-      });
-      return result.stdout;
+      })
+      return result.stdout
     },
-  };
+  }
 
-  const executor = new SkillExecutor();
+  const executor = new SkillExecutor()
   const resolvedPrompt = await executor.resolve({
     skill,
     args: args.args,
     workingDir: args.workingDir,
     runner: tauriRunner,
-  });
+  })
 
-  return { resolvedPrompt };
+  return { resolvedPrompt }
 }

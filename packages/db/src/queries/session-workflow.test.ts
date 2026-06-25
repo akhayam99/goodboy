@@ -1,67 +1,61 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import type {
-  IsoDateTime,
-  SessionId,
-  WorkflowId,
-  WorkflowRunId,
-  WorkspaceId,
-} from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
-import type { Database } from '../client';
+import { beforeEach, describe, expect, it } from 'vitest'
+import type { IsoDateTime, SessionId, WorkflowId, WorkflowRunId, WorkspaceId } from '@goodboy/types'
+import { makeTestDatabase } from '../test-helpers/test-db'
+import { migrate } from '../migrations/runner'
+import type { Database } from '../client'
 import {
   attachWorkflowToSession,
   discardWorkflowInSession,
   listWorkflowsForSession,
   updateSessionWorkflowTriggerMode,
   updateWorkflowOrder,
-} from './session-workflow';
+} from './session-workflow'
 
-const workspaceId = 'ws-1' as WorkspaceId;
-const sessionId = 'ses-1' as SessionId;
-const workflowId = 'wf-1' as WorkflowId;
-const workflowId2 = 'wf-2' as WorkflowId;
-const NOW = '2026-06-12T00:00:00.000Z' as IsoDateTime;
+const workspaceId = 'ws-1' as WorkspaceId
+const sessionId = 'ses-1' as SessionId
+const workflowId = 'wf-1' as WorkflowId
+const workflowId2 = 'wf-2' as WorkflowId
+const NOW = '2026-06-12T00:00:00.000Z' as IsoDateTime
 
 async function seed(): Promise<Database> {
-  const db = makeTestDatabase();
-  await migrate(db);
-  const now = Date.now();
+  const db = makeTestDatabase()
+  await migrate(db)
+  const now = Date.now()
   await db.execute(
     'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'ws', '/tmp/ws', now, now],
-  );
+  )
   await db.execute(
     'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
     [sessionId, workspaceId, 'goal', 'idle', now, now],
-  );
+  )
   await db.execute(
     'INSERT INTO workflows (id, workspace_id, name, description) VALUES (?, ?, ?, ?)',
     [workflowId, workspaceId, 'Workflow 1', ''],
-  );
+  )
   await db.execute(
     'INSERT INTO workflows (id, workspace_id, name, description) VALUES (?, ?, ?, ?)',
     [workflowId2, workspaceId, 'Workflow 2', ''],
-  );
-  return db;
+  )
+  return db
 }
 
 describe('session_workflows trigger-mode queries', () => {
-  let db: Database;
+  let db: Database
 
   beforeEach(async () => {
-    db = await seed();
-  });
+    db = await seed()
+  })
 
   describe('attachWorkflowToSession + toWorkflowRun mapping', () => {
     it('defaults trigger_mode to immediate and omits chainAfterId when none given', async () => {
-      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs).toHaveLength(1);
-      expect(runs[0]!.triggerMode).toBe('immediate');
-      expect(runs[0]!.chainAfterId).toBeUndefined();
-      expect(runs[0]!.autoRun).toBe(true);
-    });
+      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW)
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs).toHaveLength(1)
+      expect(runs[0]!.triggerMode).toBe('immediate')
+      expect(runs[0]!.chainAfterId).toBeUndefined()
+      expect(runs[0]!.autoRun).toBe(true)
+    })
 
     it('persists manual trigger mode', async () => {
       await attachWorkflowToSession(
@@ -73,14 +67,14 @@ describe('session_workflows trigger-mode queries', () => {
         NOW,
         undefined,
         'manual',
-      );
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs[0]!.triggerMode).toBe('manual');
-      expect(runs[0]!.autoRun).toBe(false);
-    });
+      )
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs[0]!.triggerMode).toBe('manual')
+      expect(runs[0]!.autoRun).toBe(false)
+    })
 
     it('persists after_run mode with chain_after_run_id round-trip', async () => {
-      await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW)
       await attachWorkflowToSession(
         db,
         sessionId,
@@ -91,34 +85,34 @@ describe('session_workflows trigger-mode queries', () => {
         undefined,
         'after_run',
         'pred' as WorkflowRunId,
-      );
-      const runs = await listWorkflowsForSession(db, sessionId);
-      const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId));
-      expect(chained!.triggerMode).toBe('after_run');
-      expect(chained!.chainAfterId).toBe('pred');
-    });
+      )
+      const runs = await listWorkflowsForSession(db, sessionId)
+      const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId))
+      expect(chained!.triggerMode).toBe('after_run')
+      expect(chained!.chainAfterId).toBe('pred')
+    })
 
     it('auto-increments ordinal across attaches', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.ordinal)).toEqual([0, 1]);
-    });
-  });
+      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW)
+      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW)
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs.map((r) => r.ordinal)).toEqual([0, 1])
+    })
+  })
 
   describe('listWorkflowsForSession ordering', () => {
     it('returns runs ordered by ordinal ascending', async () => {
-      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
-      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.id)).toEqual(['r0', 'r1']);
-    });
+      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW)
+      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW)
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs.map((r) => r.id)).toEqual(['r0', 'r1'])
+    })
 
     it('returns empty for a session with no workflows', async () => {
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs).toEqual([]);
-    });
-  });
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs).toEqual([])
+    })
+  })
 
   describe('updateSessionWorkflowTriggerMode', () => {
     it('flips an after_run run to immediate', async () => {
@@ -132,17 +126,17 @@ describe('session_workflows trigger-mode queries', () => {
         undefined,
         'after_run',
         'pred' as WorkflowRunId,
-      );
+      )
       await updateSessionWorkflowTriggerMode(
         db,
         sessionId,
         'run-1' as WorkflowRunId,
         'immediate',
         NOW,
-      );
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs[0]!.triggerMode).toBe('immediate');
-    });
+      )
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs[0]!.triggerMode).toBe('immediate')
+    })
 
     it('flips a chained run to manual without clearing chain_after_run_id', async () => {
       await attachWorkflowToSession(
@@ -155,23 +149,17 @@ describe('session_workflows trigger-mode queries', () => {
         undefined,
         'after_run',
         'pred' as WorkflowRunId,
-      );
-      await updateSessionWorkflowTriggerMode(
-        db,
-        sessionId,
-        'run-1' as WorkflowRunId,
-        'manual',
-        NOW,
-      );
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs[0]!.triggerMode).toBe('manual');
-      expect(runs[0]!.chainAfterId).toBe('pred');
-    });
-  });
+      )
+      await updateSessionWorkflowTriggerMode(db, sessionId, 'run-1' as WorkflowRunId, 'manual', NOW)
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs[0]!.triggerMode).toBe('manual')
+      expect(runs[0]!.chainAfterId).toBe('pred')
+    })
+  })
 
   describe('updateWorkflowOrder preserves chain metadata', () => {
     it('keeps trigger_mode and chain_after_run_id after reorder', async () => {
-      await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW)
       await attachWorkflowToSession(
         db,
         sessionId,
@@ -182,40 +170,40 @@ describe('session_workflows trigger-mode queries', () => {
         undefined,
         'after_run',
         'pred' as WorkflowRunId,
-      );
+      )
       await updateWorkflowOrder(
         db,
         sessionId,
         ['chained' as WorkflowRunId, 'pred' as WorkflowRunId],
         NOW,
-      );
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.id)).toEqual(['chained', 'pred']);
-      const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId));
-      expect(chained!.triggerMode).toBe('after_run');
-      expect(chained!.chainAfterId).toBe('pred');
-      expect(chained!.autoRun).toBe(false);
-    });
-  });
+      )
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs.map((r) => r.id)).toEqual(['chained', 'pred'])
+      const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId))
+      expect(chained!.triggerMode).toBe('after_run')
+      expect(chained!.chainAfterId).toBe('pred')
+      expect(chained!.autoRun).toBe(false)
+    })
+  })
 
   describe('discardWorkflowInSession', () => {
     it('sets discarded_at and maps it through', async () => {
-      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);
-      await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs[0]!.discardedAt).toBe(NOW);
-    });
-  });
+      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW)
+      await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW)
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs[0]!.discardedAt).toBe(NOW)
+    })
+  })
 
   describe('migration m060 backfill', () => {
     it('existing rows without explicit trigger_mode default to immediate, null chain', async () => {
       await db.execute(
         'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run) VALUES (?, ?, ?, ?, ?, ?)',
         ['legacy', sessionId, workflowId, 0, 0, 1],
-      );
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs[0]!.triggerMode).toBe('immediate');
-      expect(runs[0]!.chainAfterId).toBeUndefined();
-    });
-  });
-});
+      )
+      const runs = await listWorkflowsForSession(db, sessionId)
+      expect(runs[0]!.triggerMode).toBe('immediate')
+      expect(runs[0]!.chainAfterId).toBeUndefined()
+    })
+  })
+})

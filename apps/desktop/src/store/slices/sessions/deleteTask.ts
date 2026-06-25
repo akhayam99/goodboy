@@ -1,9 +1,9 @@
-import type { ProviderRunId, SessionId } from '@goodboy/types';
-import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelTurn } from '../../../features/chat/turn';
-import { removeWorktree } from '../../../features/worktree/worktree';
-import type { GetFn, SetFn } from './types';
+import type { ProviderRunId, SessionId } from '@goodboy/types'
+import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db'
+import { tauriDatabase } from '../../../shared/lib/db'
+import { cancelTurn } from '../../../features/chat/turn'
+import { removeWorktree } from '../../../features/worktree/worktree'
+import type { GetFn, SetFn } from './types'
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
@@ -11,74 +11,74 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       get().sessions.find((s) => s.id === sessionId) ??
       Object.values(get().archivedSessions)
         .flat()
-        .find((s) => s.id === sessionId);
+        .find((s) => s.id === sessionId)
     if (!session) {
-      throw new Error(`session not found: ${sessionId}`);
+      throw new Error(`session not found: ${sessionId}`)
     }
-    get().closeSessionTerminals(sessionId);
+    get().closeSessionTerminals(sessionId)
     if (session.state.kind === 'running') {
       await cancelTurn((session.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
         () => undefined,
-      );
+      )
     }
-    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
-    let paths = worktreePaths;
+    const worktreePaths = get().sessionWorktrees[sessionId] ?? []
+    let paths = worktreePaths
     if (paths.length === 0) {
       try {
-        const rows = await listWorktreesForSession(tauriDatabase, sessionId);
-        paths = rows.map((r) => r.worktreePath);
+        const rows = await listWorktreesForSession(tauriDatabase, sessionId)
+        paths = rows.map((r) => r.worktreePath)
       } catch {
-        paths = [];
+        paths = []
       }
     }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId)
     if (workspace) {
       for (const worktreePath of paths) {
         try {
-          await removeWorktree(workspace.rootPath, worktreePath);
+          await removeWorktree(workspace.rootPath, worktreePath)
         } catch {
           // worktree may already be gone
         }
       }
     }
-    const sessionGoal = session.goal;
-    const sessionWorkspaceId = session.workspaceId;
-    await deleteSessionFromDb(tauriDatabase, sessionId);
+    const sessionGoal = session.goal
+    const sessionWorkspaceId = session.workspaceId
+    await deleteSessionFromDb(tauriDatabase, sessionId)
     set((state) => {
-      const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
-      const nextTranscripts = { ...state.transcripts };
-      const nextMessages = { ...state.messages };
+      const phaseRuns = state.sessionPhaseRuns[sessionId] ?? []
+      const nextTranscripts = { ...state.transcripts }
+      const nextMessages = { ...state.messages }
       for (const agent of phaseRuns) {
-        delete nextTranscripts[agent.id];
-        delete nextMessages[agent.id];
+        delete nextTranscripts[agent.id]
+        delete nextMessages[agent.id]
       }
-      const nextWorktrees = { ...state.sessionWorktrees };
-      delete nextWorktrees[sessionId];
-      const nextBranches = { ...state.sessionBranches };
-      delete nextBranches[sessionId];
-      const nextPhaseRuns = { ...state.sessionPhaseRuns };
-      delete nextPhaseRuns[sessionId];
-      const nextGithub = { ...state.sessionGithub };
-      delete nextGithub[sessionId];
-      const nextLoading = { ...state.sessionLoading };
-      delete nextLoading[sessionId];
-      const nextSelected = { ...state.selectedAgentId };
-      delete nextSelected[sessionId];
-      const nextConflicts = { ...state.sessionMergeConflicts };
-      delete nextConflicts[sessionId];
-      const nextOpenQs = { ...state.sessionOpenQuestions };
-      delete nextOpenQs[sessionId];
-      const nextWorkflows = { ...state.sessionWorkflows };
-      delete nextWorkflows[sessionId];
-      const nextWorkflowDrafts = { ...state.workflowDrafts };
-      delete nextWorkflowDrafts[sessionId];
-      const cachedArchived = state.archivedSessions[sessionWorkspaceId];
+      const nextWorktrees = { ...state.sessionWorktrees }
+      delete nextWorktrees[sessionId]
+      const nextBranches = { ...state.sessionBranches }
+      delete nextBranches[sessionId]
+      const nextPhaseRuns = { ...state.sessionPhaseRuns }
+      delete nextPhaseRuns[sessionId]
+      const nextGithub = { ...state.sessionGithub }
+      delete nextGithub[sessionId]
+      const nextLoading = { ...state.sessionLoading }
+      delete nextLoading[sessionId]
+      const nextSelected = { ...state.selectedAgentId }
+      delete nextSelected[sessionId]
+      const nextConflicts = { ...state.sessionMergeConflicts }
+      delete nextConflicts[sessionId]
+      const nextOpenQs = { ...state.sessionOpenQuestions }
+      delete nextOpenQs[sessionId]
+      const nextWorkflows = { ...state.sessionWorkflows }
+      delete nextWorkflows[sessionId]
+      const nextWorkflowDrafts = { ...state.workflowDrafts }
+      delete nextWorkflowDrafts[sessionId]
+      const cachedArchived = state.archivedSessions[sessionWorkspaceId]
       const nextArchived = cachedArchived
         ? {
             ...state.archivedSessions,
             [sessionWorkspaceId]: cachedArchived.filter((s) => s.id !== sessionId),
           }
-        : state.archivedSessions;
+        : state.archivedSessions
       return {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
         archivedSessions: nextArchived,
@@ -95,14 +95,14 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessionOpenQuestions: nextOpenQs,
         sessionWorkflows: nextWorkflows,
         workflowDrafts: nextWorkflowDrafts,
-      };
-    });
+      }
+    })
     void get().emitNotification(
       'session-deleted',
       'info',
       `session deleted: ${sessionGoal}`,
       undefined,
       { workspaceId: sessionWorkspaceId },
-    );
-  };
-};
+    )
+  }
+}

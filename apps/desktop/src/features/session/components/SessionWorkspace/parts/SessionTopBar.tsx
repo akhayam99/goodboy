@@ -1,10 +1,10 @@
-import { Divider } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
-import { SessionDetailPanel } from '../../../../workspace/components/SessionDetailPanel';
+import { Divider } from '@goodboy/ui'
+import type { Session } from '@goodboy/types'
+import { SessionDetailPanel } from '../../../../workspace/components/SessionDetailPanel'
 
 type SessionTopBarProps = {
-  readonly session: Session;
-};
+  readonly session: Session
+}
 
 export const SessionTopBar = ({ session }: SessionTopBarProps) => {
   return (
@@ -21,5 +21,5 @@ export const SessionTopBar = ({ session }: SessionTopBarProps) => {
       </div>
       <Divider />
     </>
-  );
-};
+  )
+}

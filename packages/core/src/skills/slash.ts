@@ -1,69 +1,69 @@
-import type { SlashCommand } from '@goodboy/types';
+import type { SlashCommand } from '@goodboy/types'
 
-const NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
+const NAME_PATTERN = /^[a-z][a-z0-9-]*$/
 
 function tokenize(argsStr: string): ReadonlyArray<string> {
-  const tokens: string[] = [];
-  let i = 0;
-  const s = argsStr.trim();
+  const tokens: string[] = []
+  let i = 0
+  const s = argsStr.trim()
 
   while (i < s.length) {
     if (s[i] === ' ' || s[i] === '\t') {
-      i++;
-      continue;
+      i++
+      continue
     }
 
     if (s[i] === '"' || s[i] === "'") {
-      const quote = s[i];
-      i++;
-      let token = '';
+      const quote = s[i]
+      i++
+      let token = ''
       while (i < s.length && s[i] !== quote) {
-        token += s[i];
-        i++;
+        token += s[i]
+        i++
       }
-      i++;
-      tokens.push(token);
+      i++
+      tokens.push(token)
     } else {
-      let token = '';
+      let token = ''
       while (i < s.length && s[i] !== ' ' && s[i] !== '\t') {
-        token += s[i];
-        i++;
+        token += s[i]
+        i++
       }
-      tokens.push(token);
+      tokens.push(token)
     }
   }
 
-  return tokens;
+  return tokens
 }
 
 export const parseSlashCommand = (input: string): SlashCommand | null => {
-  const lines = input.split('\n');
-  const firstNonEmpty = lines.find((l) => l.trim().length > 0);
+  const lines = input.split('\n')
+  const firstNonEmpty = lines.find((l) => l.trim().length > 0)
 
   if (firstNonEmpty === undefined) {
-    return null;
+    return null
   }
 
-  const trimmed = firstNonEmpty.trim();
+  const trimmed = firstNonEmpty.trim()
 
   if (!trimmed.startsWith('/')) {
-    return null;
+    return null
   }
 
-  const rest = trimmed.slice(1);
+  const rest = trimmed.slice(1)
   if (rest.length === 0) {
-    return null;
+    return null
   }
 
-  const spaceIdx = rest.search(/[\s]/);
-  const name = spaceIdx === -1 ? rest : rest.slice(0, spaceIdx);
+  const spaceIdx = rest.search(/[\s]/)
+  const name = spaceIdx === -1 ? rest : rest.slice(0, spaceIdx)
 
   if (!NAME_PATTERN.test(name)) {
-    return null;
+    return null
   }
 
-  const argsStr = spaceIdx === -1 ? '' : rest.slice(spaceIdx);
-  const args = argsStr.trim().length === 0 ? [] : tokenize(argsStr);
+  const argsStr = spaceIdx === -1 ? '' : rest.slice(spaceIdx)
+  const args = argsStr.trim().length === 0 ? [] : tokenize(argsStr)
 
-  return { name, args, raw: trimmed };
-};
+  return { name, args, raw: trimmed }
+}

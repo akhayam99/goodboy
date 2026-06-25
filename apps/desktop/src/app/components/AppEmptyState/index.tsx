@@ -1,8 +1,8 @@
-import { DogMascot } from '../../../shared/components/DogMascot';
+import { DogMascot } from '../../../shared/components/DogMascot'
 
 type Props = {
-  readonly onAddWorkspace: () => void;
-};
+  readonly onAddWorkspace: () => void
+}
 
 export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
   return (
@@ -40,5 +40,5 @@ export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,9 +1,9 @@
-import { cancelScript } from './cancelScript';
-import { deleteScript } from './deleteScript';
-import { loadScripts } from './loadScripts';
-import { runScript } from './runScript';
-import { saveScript } from './saveScript';
-import type { GetFn, SetFn } from './types';
+import { cancelScript } from './cancelScript'
+import { deleteScript } from './deleteScript'
+import { loadScripts } from './loadScripts'
+import { runScript } from './runScript'
+import { saveScript } from './saveScript'
+import type { GetFn, SetFn } from './types'
 
 export const createScriptsSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -12,5 +12,5 @@ export const createScriptsSlice = (set: SetFn, get: GetFn) => {
     deleteScript: deleteScript(set),
     runScript: runScript(set, get),
     cancelScript: cancelScript(set, get),
-  };
-};
+  }
+}

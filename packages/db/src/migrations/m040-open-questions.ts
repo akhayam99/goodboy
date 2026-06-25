@@ -20,4 +20,4 @@ CREATE INDEX idx_open_questions_workflow ON open_questions(workflow_id, owned_by
 CREATE UNIQUE INDEX idx_open_questions_session_text_open
   ON open_questions(session_id, text)
   WHERE status = 'open';
-`;
+`

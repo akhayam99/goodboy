@@ -50,4 +50,4 @@ CREATE TABLE IF NOT EXISTS plan_consumptions (
 
 CREATE INDEX IF NOT EXISTS idx_plan_consumptions_plan ON plan_consumptions(plan_id, consumed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_plan_consumptions_agent ON plan_consumptions(agent_id);
-`;
+`

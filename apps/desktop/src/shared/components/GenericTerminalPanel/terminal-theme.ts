@@ -1,4 +1,4 @@
-import type { ITheme } from '@xterm/xterm';
+import type { ITheme } from '@xterm/xterm'
 
 /**
  * xterm palettes. background / foreground / cursor are anchored to the app's
@@ -26,7 +26,7 @@ export const LIGHT_THEME: ITheme = {
   brightMagenta: '#a626a4',
   brightCyan: '#0184bc',
   brightWhite: '#ffffff',
-};
+}
 
 export const DARK_THEME: ITheme = {
   background: '#1a1a1f',
@@ -49,12 +49,12 @@ export const DARK_THEME: ITheme = {
   brightMagenta: '#d2a8ff',
   brightCyan: '#79c0ff',
   brightWhite: '#ffffff',
-};
+}
 
 const readToken = (styles: CSSStyleDeclaration, token: string): string | null => {
-  const value = styles.getPropertyValue(token).trim();
-  return value.length > 0 ? value : null;
-};
+  const value = styles.getPropertyValue(token).trim()
+  return value.length > 0 ? value : null
+}
 
 /**
  * Returns the palette for the active theme with its surface colors
@@ -64,18 +64,18 @@ const readToken = (styles: CSSStyleDeclaration, token: string): string | null =>
  * (e.g. SSR or a detached node).
  */
 export const resolveTerminalTheme = (theme: 'dark' | 'light'): ITheme => {
-  const base = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+  const base = theme === 'dark' ? DARK_THEME : LIGHT_THEME
   if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return base;
+    return base
   }
-  const styles = window.getComputedStyle(document.documentElement);
-  const background = readToken(styles, '--color-background');
-  const foreground = readToken(styles, '--color-foreground');
-  const cursor = readToken(styles, '--color-primary');
+  const styles = window.getComputedStyle(document.documentElement)
+  const background = readToken(styles, '--color-background')
+  const foreground = readToken(styles, '--color-foreground')
+  const cursor = readToken(styles, '--color-primary')
   return {
     ...base,
     ...(background ? { background } : {}),
     ...(foreground ? { foreground } : {}),
     ...(cursor ? { cursor } : {}),
-  };
-};
+  }
+}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { StatusDot, cn } from '@goodboy/ui';
+import { useState } from 'react'
+import { StatusDot, cn } from '@goodboy/ui'
 import {
   ArrowUpRight,
   ChevronDown,
@@ -7,51 +7,51 @@ import {
   MessageSquareReply,
   Play,
   Upload,
-} from 'lucide-react';
-import type { Agent, AgentId, DiffComment, PrComment, SessionId } from '@goodboy/types';
-import { agentHasUnread } from '../../../../../store';
-import { openUrl } from '../../../../../shared/lib/editor';
+} from 'lucide-react'
+import type { Agent, AgentId, DiffComment, PrComment, SessionId } from '@goodboy/types'
+import { agentHasUnread } from '../../../../../store'
+import { openUrl } from '../../../../../shared/lib/editor'
 import {
   ResolverStateBadge,
   resolverBadgeState,
-} from '../../../../session/components/ResolverStateBadge';
-import { CommentSnippet } from '../../../../session/components/CommentSnippet';
-import { resolverStatus, type ResolverState, type ResolverStatus } from '../lib';
+} from '../../../../session/components/ResolverStateBadge'
+import { CommentSnippet } from '../../../../session/components/CommentSnippet'
+import { resolverStatus, type ResolverState, type ResolverStatus } from '../lib'
 
 type ResolveClusterProps = {
-  readonly agents: ReadonlyArray<Agent>;
-  readonly sessionId: SessionId;
-  readonly isTaskActive: boolean;
-  readonly prNumber: number | null;
-  readonly resolvedThreadIds: ReadonlySet<string>;
-  readonly pendingThreadIds: ReadonlySet<string>;
-  readonly resolverState: Readonly<Record<string, ResolverState>>;
-  readonly commentByThreadId: ReadonlyMap<string, PrComment>;
-  readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>;
-  readonly selectedAgentId: AgentId | null;
-  readonly expanded: boolean;
-  readonly onToggle: () => void;
-  readonly onSelect: (id: AgentId) => void;
-  readonly onForceNext: () => void;
-  readonly onResolveThread: (threadId: string) => Promise<void> | void;
-};
+  readonly agents: ReadonlyArray<Agent>
+  readonly sessionId: SessionId
+  readonly isTaskActive: boolean
+  readonly prNumber: number | null
+  readonly resolvedThreadIds: ReadonlySet<string>
+  readonly pendingThreadIds: ReadonlySet<string>
+  readonly resolverState: Readonly<Record<string, ResolverState>>
+  readonly commentByThreadId: ReadonlyMap<string, PrComment>
+  readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>
+  readonly selectedAgentId: AgentId | null
+  readonly expanded: boolean
+  readonly onToggle: () => void
+  readonly onSelect: (id: AgentId) => void
+  readonly onForceNext: () => void
+  readonly onResolveThread: (threadId: string) => Promise<void> | void
+}
 
 const diffLocation = (comment: DiffComment): string => {
   if (comment.anchor == null) {
-    return comment.filePath;
+    return comment.filePath
   }
-  return `${comment.filePath}:${comment.anchor.lineNumber}`;
-};
+  return `${comment.filePath}:${comment.anchor.lineNumber}`
+}
 
 const commentLocation = (comment: PrComment): string | null => {
   if (comment.source === 'issue') {
-    return 'conversation';
+    return 'conversation'
   }
   if (comment.path == null) {
-    return null;
+    return null
   }
-  return comment.line != null ? `${comment.path}:${comment.line}` : comment.path;
-};
+  return comment.line != null ? `${comment.path}:${comment.line}` : comment.path
+}
 
 export function ResolveCluster({
   agents,
@@ -71,32 +71,32 @@ export function ResolveCluster({
   onResolveThread,
 }: ResolveClusterProps) {
   const statusOf = (a: Agent): ResolverStatus =>
-    resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id]);
-  const resolvedCount = agents.filter((a) => statusOf(a) === 'resolved').length;
-  const anyRunning = agents.some((a) => a.status === 'running');
-  const queuedCount = agents.filter((a) => a.status === 'pending').length;
-  const stalled = !anyRunning && queuedCount > 0;
+    resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id])
+  const resolvedCount = agents.filter((a) => statusOf(a) === 'resolved').length
+  const anyRunning = agents.some((a) => a.status === 'running')
+  const queuedCount = agents.filter((a) => a.status === 'pending').length
+  const stalled = !anyRunning && queuedCount > 0
   const jump = (agent: Agent) => {
     if (agent.sourceThreadId != null && prNumber != null) {
       window.dispatchEvent(
         new CustomEvent('goodboy:open-github-session', {
           detail: { sessionId, prNumber, threadId: agent.sourceThreadId },
         }),
-      );
+      )
     } else if (agent.sourceCommentUrl != null) {
-      void openUrl(agent.sourceCommentUrl);
+      void openUrl(agent.sourceCommentUrl)
     }
-  };
+  }
   const openResolveBoard = () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
+    window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }))
   const openPr = () => {
     if (prNumber == null) {
-      return;
+      return
     }
     window.dispatchEvent(
       new CustomEvent('goodboy:open-github-session', { detail: { sessionId, prNumber } }),
-    );
-  };
+    )
+  }
   return (
     <div className="flex flex-col gap-0.5 pl-2">
       <div className="flex items-center gap-1 pr-1">
@@ -147,11 +147,11 @@ export function ResolveCluster({
             const diffComment =
               agent.sourceThreadId == null && agent.sourceCommentUrl == null
                 ? (diffCommentByAgentId.get(agent.id) ?? null)
-                : null;
+                : null
             const threadComment =
               agent.sourceThreadId != null
                 ? (commentByThreadId.get(agent.sourceThreadId) ?? null)
-                : null;
+                : null
             return (
               <ResolveClusterRow
                 key={agent.id}
@@ -168,7 +168,7 @@ export function ResolveCluster({
                 onJump={() => jump(agent)}
                 onResolveThread={onResolveThread}
               />
-            );
+            )
           })}
           <button
             type="button"
@@ -182,23 +182,23 @@ export function ResolveCluster({
         </>
       ) : null}
     </div>
-  );
+  )
 }
 
 type ResolveClusterRowProps = {
-  readonly agent: Agent;
-  readonly index: number;
-  readonly total: number;
-  readonly status: ResolverStatus;
-  readonly threadComment: PrComment | null;
-  readonly diffComment: DiffComment | null;
-  readonly isSelected: boolean;
-  readonly isTaskActive: boolean;
-  readonly canJump: boolean;
-  readonly onSelect: () => void;
-  readonly onJump: () => void;
-  readonly onResolveThread: (threadId: string) => Promise<void> | void;
-};
+  readonly agent: Agent
+  readonly index: number
+  readonly total: number
+  readonly status: ResolverStatus
+  readonly threadComment: PrComment | null
+  readonly diffComment: DiffComment | null
+  readonly isSelected: boolean
+  readonly isTaskActive: boolean
+  readonly canJump: boolean
+  readonly onSelect: () => void
+  readonly onJump: () => void
+  readonly onResolveThread: (threadId: string) => Promise<void> | void
+}
 
 function ResolveClusterRow({
   agent,
@@ -214,20 +214,20 @@ function ResolveClusterRow({
   onJump,
   onResolveThread,
 }: ResolveClusterRowProps) {
-  const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
-  const [pushing, setPushing] = useState(false);
-  const canPush = agent.sourceThreadId != null && (status === 'committed' || status === 'wontfix');
+  const hasUnread = agentHasUnread(agent, isSelected && isTaskActive)
+  const [pushing, setPushing] = useState(false)
+  const canPush = agent.sourceThreadId != null && (status === 'committed' || status === 'wontfix')
   const onPush = async () => {
     if (pushing || agent.sourceThreadId == null) {
-      return;
+      return
     }
-    setPushing(true);
+    setPushing(true)
     try {
-      await onResolveThread(agent.sourceThreadId);
+      await onResolveThread(agent.sourceThreadId)
     } finally {
-      setPushing(false);
+      setPushing(false)
     }
-  };
+  }
   const snippet = threadComment ? (
     <CommentSnippet
       author={threadComment.author}
@@ -236,7 +236,7 @@ function ResolveClusterRow({
     />
   ) : diffComment ? (
     <CommentSnippet location={diffLocation(diffComment)} body={diffComment.body} />
-  ) : null;
+  ) : null
   return (
     <div
       className={cn(
@@ -298,5 +298,5 @@ function ResolveClusterRow({
         </div>
       ) : null}
     </div>
-  );
+  )
 }

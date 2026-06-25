@@ -1,23 +1,23 @@
-import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@goodboy/types';
+import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@goodboy/types'
 
 export type ResolveSettingsInput = {
-  readonly global: GlobalSettings;
-  readonly workspaceOverride?: OverrideSettings | null;
-  readonly sessionOverride?: OverrideSettings | null;
-};
+  readonly global: GlobalSettings
+  readonly workspaceOverride?: OverrideSettings | null
+  readonly sessionOverride?: OverrideSettings | null
+}
 
 export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings => {
-  const { global: g, workspaceOverride: ws, sessionOverride: sess } = input;
+  const { global: g, workspaceOverride: ws, sessionOverride: sess } = input
 
   const resolvedWorkflowId = (() => {
     if (sess?.defaultWorkflowId !== undefined) {
-      return sess.defaultWorkflowId;
+      return sess.defaultWorkflowId
     }
     if (ws?.defaultWorkflowId !== undefined) {
-      return ws.defaultWorkflowId;
+      return ws.defaultWorkflowId
     }
-    return g.defaultWorkflowId;
-  })();
+    return g.defaultWorkflowId
+  })()
 
   return {
     defaultProviderId: sess?.defaultProviderId ?? ws?.defaultProviderId ?? g.defaultProviderId,
@@ -26,5 +26,5 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
       sess?.defaultBranchPrefix ?? ws?.defaultBranchPrefix ?? g.defaultBranchPrefix,
     parallelEnabled: sess?.parallelEnabled ?? ws?.parallelEnabled ?? g.parallelEnabled,
     defaultVerbosity: sess?.defaultVerbosity ?? ws?.defaultVerbosity ?? g.defaultVerbosity,
-  };
-};
+  }
+}

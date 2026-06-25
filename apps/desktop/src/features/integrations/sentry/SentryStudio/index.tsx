@@ -1,46 +1,46 @@
-import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
-import { RefreshCw, X } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
-import { useStudioOverlay } from '../../../../shared/hooks/useStudioOverlay';
-import { IssueInbox } from './IssueInbox';
-import { IssueDetailPanel } from './IssueDetailPanel';
-import { useSentryIssues } from './useSentryIssues';
-import type { SentryIssue } from '../client';
+import { useEffect, useMemo, useState } from 'react'
+import { cn, Divider } from '@goodboy/ui'
+import { RefreshCw, X } from 'lucide-react'
+import type { WorkspaceId } from '@goodboy/types'
+import { useStudioOverlay } from '../../../../shared/hooks/useStudioOverlay'
+import { IssueInbox } from './IssueInbox'
+import { IssueDetailPanel } from './IssueDetailPanel'
+import { useSentryIssues } from './useSentryIssues'
+import type { SentryIssue } from '../client'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
-  readonly initialIssueId?: string | null;
-  readonly onClose: () => void;
-};
+  readonly workspaceId: WorkspaceId
+  readonly workspaceName: string
+  readonly initialIssueId?: string | null
+  readonly onClose: () => void
+}
 
 export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
-  const { rows, loadMore, hasMore, loading, error, refetch } = useSentryIssues(workspaceId);
-  const [focused, setFocused] = useState<SentryIssue | null>(null);
-  const { closing, requestClose } = useStudioOverlay(onClose);
+  const { rows, loadMore, hasMore, loading, error, refetch } = useSentryIssues(workspaceId)
+  const [focused, setFocused] = useState<SentryIssue | null>(null)
+  const { closing, requestClose } = useStudioOverlay(onClose)
 
   useEffect(() => {
     if (focused !== null) {
-      return;
+      return
     }
     if (initialIssueId) {
-      const match = rows.find((r) => r.issue.id === initialIssueId);
+      const match = rows.find((r) => r.issue.id === initialIssueId)
       if (match) {
-        setFocused(match.issue);
-        return;
+        setFocused(match.issue)
+        return
       }
     }
-    const first = rows[0]?.issue ?? null;
+    const first = rows[0]?.issue ?? null
     if (first) {
-      setFocused(first);
+      setFocused(first)
     }
-  }, [focused, rows, initialIssueId]);
+  }, [focused, rows, initialIssueId])
 
   const focusedRow = useMemo(
     () => (focused ? (rows.find((r) => r.issue.id === focused.id) ?? null) : null),
     [focused, rows],
-  );
+  )
 
   return (
     <div
@@ -118,5 +118,5 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

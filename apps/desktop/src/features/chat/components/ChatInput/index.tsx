@@ -6,39 +6,39 @@ import {
   useMemo,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
-} from 'react';
-import { ClipboardCheck, Paperclip, Send, Square, Telescope } from 'lucide-react';
-import { Divider, Textarea, cn } from '@goodboy/ui';
-import type { IsoDateTime, ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core';
-import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
-import { tauriDatabase } from '../../../../shared/lib/db';
-import { useShallow } from 'zustand/react/shallow';
-import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
-import { RoutingIndicator } from '../RoutingIndicator';
-import { useToast } from '../../../../app/components/Toast';
-import { QuickActionsPopover } from '../../../quick-actions';
-import { type VerbosityLevel } from '../../../../features/settings/verbosity';
+} from 'react'
+import { ClipboardCheck, Paperclip, Send, Square, Telescope } from 'lucide-react'
+import { Divider, Textarea, cn } from '@goodboy/ui'
+import type { IsoDateTime, ProviderId, Session, TurnProviderOverride } from '@goodboy/types'
+import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core'
+import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db'
+import { tauriDatabase } from '../../../../shared/lib/db'
+import { useShallow } from 'zustand/react/shallow'
+import { useAppStore } from '../../../../store'
+import { formatError } from '../../../../shared/lib/errors'
+import { RoutingIndicator } from '../RoutingIndicator'
+import { useToast } from '../../../../app/components/Toast'
+import { QuickActionsPopover } from '../../../quick-actions'
+import { type VerbosityLevel } from '../../../../features/settings/verbosity'
 import {
   type EffortLevel,
   clampEffort,
   suggestHeavierModel,
   suggestLighterModel,
-} from '../../utils/chat-constants';
-import { ProviderUsagePill } from '../ProviderUsagePill';
-import { ModelPicker } from '../ModelPicker';
-import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
-import { RightSizeCard } from '../RightSizeCard';
-import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
-import { NudgeCard } from '../NudgeCard';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
+} from '../../utils/chat-constants'
+import { ProviderUsagePill } from '../ProviderUsagePill'
+import { ModelPicker } from '../ModelPicker'
+import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker'
+import { RightSizeCard } from '../RightSizeCard'
+import { ATTACHMENT_ACCEPT } from '../../attachment-kinds'
+import { NudgeCard } from '../NudgeCard'
+import { SESSION_FEATURES } from '../../../../shared/lib/features'
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind,
-} from '../../../session/agent-kind';
-import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-mismatch';
+} from '../../../session/agent-kind'
+import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-mismatch'
 import {
   CHAT_PLACEHOLDER,
   RUNNING_KINDS,
@@ -49,99 +49,99 @@ import {
   toastMessageForAlert,
   type PendingAttachment,
   type QueuedTurn,
-} from './lib';
-import { useAttachments } from './hooks/useAttachments';
-import { useChatPrefix } from './hooks/useChatPrefix';
-import { useMessageQueue } from './hooks/useMessageQueue';
-import { AttachmentChip } from './parts/AttachmentChip';
-import { QueuedMessages } from './parts/QueuedMessages';
-import { SuggestionStack } from './parts/SuggestionStack';
+} from './lib'
+import { useAttachments } from './hooks/useAttachments'
+import { useChatPrefix } from './hooks/useChatPrefix'
+import { useMessageQueue } from './hooks/useMessageQueue'
+import { AttachmentChip } from './parts/AttachmentChip'
+import { QueuedMessages } from './parts/QueuedMessages'
+import { SuggestionStack } from './parts/SuggestionStack'
 
 type Props = {
-  readonly session: Session;
-  readonly providerDisconnected?: boolean;
-};
+  readonly session: Session
+  readonly providerDisconnected?: boolean
+}
 
 export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
-  const sendTurn = useAppStore((s) => s.sendTurn);
-  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
-  const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
-  const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
-  const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
-  const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
+  const sendTurn = useAppStore((s) => s.sendTurn)
+  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn)
+  const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity)
+  const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig)
+  const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig)
+  const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride)
   const workspaceDefaultVerbosity = useAppStore(
     (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
-  );
-  const sessionNudge = useAppStore((s) => s.sessionNudges[session.id] ?? null);
-  const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
-  const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+  )
+  const sessionNudge = useAppStore((s) => s.sessionNudges[session.id] ?? null)
+  const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge)
+  const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null)
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
-  );
+  )
   const selectedAgentName = useAppStore((s) => {
     if (!selectedAgentId) {
-      return null;
+      return null
     }
-    const runs = s.sessionPhaseRuns[session.id] ?? [];
-    return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
-  });
+    const runs = s.sessionPhaseRuns[session.id] ?? []
+    return runs.find((r) => r.id === selectedAgentId)?.name ?? null
+  })
   const activeAgentKind: AgentKind | null =
-    agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null);
+    agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null)
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
-  );
-  const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
-  const loadScripts = useAppStore((s) => s.loadScripts);
-  const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
-  const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
+  )
+  const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null)
+  const loadScripts = useAppStore((s) => s.loadScripts)
+  const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates)
+  const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession)
 
-  const { showToast } = useToast();
-  const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
-  const setAgentDraft = useAppStore((s) => s.setAgentDraft);
-  const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
+  const { showToast } = useToast()
+  const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''))
+  const setAgentDraft = useAppStore((s) => s.setAgentDraft)
+  const clearAgentDraft = useAppStore((s) => s.clearAgentDraft)
   const setValue = useCallback(
     (next: string) => {
       if (!selectedAgentId) {
-        return;
+        return
       }
       if (next.length === 0) {
-        clearAgentDraft(selectedAgentId);
+        clearAgentDraft(selectedAgentId)
       } else {
-        setAgentDraft(selectedAgentId, next);
+        setAgentDraft(selectedAgentId, next)
       }
     },
     [selectedAgentId, setAgentDraft, clearAgentDraft],
-  );
+  )
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null)
   type FailedTurn = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-    readonly override: TurnProviderOverride | undefined;
-  };
-  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+    readonly content: string
+    readonly attachments: ReadonlyArray<PendingAttachment>
+    readonly override: TurnProviderOverride | undefined
+  }
+  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
     asProvider(session.providerOverride),
-  );
+  )
   const [selectedModel, setSelectedModelState] = useState<string | null>(
     () => session.modelOverride ?? null,
-  );
+  )
   const [effort, setEffortState] = useState<EffortLevel>(
     () => asEffortLevel(session.effort) ?? 'medium',
-  );
+  )
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
-    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
+    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null
+    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? []
     const agentRow = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
-      : null;
+      : null
     return (
       (agentRow?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? 'normal'
-    );
-  });
+    )
+  })
 
   const {
     attachments,
@@ -159,7 +159,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     sessionWorktree,
     providerDisconnected,
     showToast,
-  });
+  })
 
   const {
     onValueChange,
@@ -168,127 +168,127 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     quickEmptyHint,
     onQuickActionSelect,
     dismissPopover,
-  } = useChatPrefix({ session, value, setValue, sessionWorktree, showToast, wrapperRef });
+  } = useChatPrefix({ session, value, setValue, sessionWorktree, showToast, wrapperRef })
 
   const selectedAgentState = useAppStore((s) =>
     selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
-  );
+  )
   const agentModelOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
-  );
+  )
   const isFirstTurnForAgent = useAppStore((s) =>
     selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
-  );
-  const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
+  )
+  const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind)
 
-  const currentProviderRef = useRef(selectedProvider);
-  currentProviderRef.current = selectedProvider;
-  const currentModelRef = useRef(selectedModel);
-  currentModelRef.current = selectedModel;
-  const currentEffortRef = useRef(effort);
-  currentEffortRef.current = effort;
+  const currentProviderRef = useRef(selectedProvider)
+  currentProviderRef.current = selectedProvider
+  const currentModelRef = useRef(selectedModel)
+  currentModelRef.current = selectedModel
+  const currentEffortRef = useRef(effort)
+  currentEffortRef.current = effort
 
   type RightSizePending = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-  };
-  const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null);
-  const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
+    readonly content: string
+    readonly attachments: ReadonlyArray<PendingAttachment>
+  }
+  const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null)
+  const [rightSizeDismissed, setRightSizeDismissed] = useState(false)
   type ScopePending = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-    readonly mismatch: ScopeMismatch;
-  };
-  const [scopePending, setScopePending] = useState<ScopePending | null>(null);
-  const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
-  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
-  const allowOverride = session.providerPreference.allowTurnOverride;
-  const defaultProvider = session.providerPreference.defaultProvider;
+    readonly content: string
+    readonly attachments: ReadonlyArray<PendingAttachment>
+    readonly mismatch: ScopeMismatch
+  }
+  const [scopePending, setScopePending] = useState<ScopePending | null>(null)
+  const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null)
+  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0)
+  const allowOverride = session.providerPreference.allowTurnOverride
+  const defaultProvider = session.providerPreference.defaultProvider
 
-  const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider;
+  const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider
   const defaultModel =
     agentModelOverride ??
     session.providerPreference.defaultModel ??
-    getDefaultTurnModel(defaultProvider);
+    getDefaultTurnModel(defaultProvider)
   const effectiveModel =
     selectedModel ??
-    (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider));
-  const effectiveEffort = clampEffort(effectiveModel, effort);
+    (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider))
+  const effectiveEffort = clampEffort(effectiveModel, effort)
 
-  const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
+  const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models
 
-  const providerChanged = selectedProvider !== null && selectedProvider !== defaultProvider;
-  const modelChanged = selectedModel !== null && selectedModel !== defaultModel;
+  const providerChanged = selectedProvider !== null && selectedProvider !== defaultProvider
+  const modelChanged = selectedModel !== null && selectedModel !== defaultModel
   const routingOverride: TurnProviderOverride | undefined =
     allowOverride && (providerChanged || modelChanged)
       ? {
           providerId: effectiveProvider,
           ...(modelChanged ? { model: effectiveModel } : {}),
         }
-      : undefined;
+      : undefined
 
-  const connectedProviderIds = connectedProviders.map((p) => p.id);
+  const connectedProviderIds = connectedProviders.map((p) => p.id)
 
   const setEffort = (level: EffortLevel) => {
-    setEffortState(level);
-    void storeSetSessionConfig(session.id, { effort: level });
+    setEffortState(level)
+    void storeSetSessionConfig(session.id, { effort: level })
     if (selectedAgentId) {
-      void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
-      storeSetAgentEffortOverride(selectedAgentId, level);
+      void storeSetAgentConfig(session.id, selectedAgentId, { effort: level })
+      storeSetAgentEffortOverride(selectedAgentId, level)
     }
-  };
+  }
 
   const setVerbosity = (level: VerbosityLevel) => {
-    setVerbosityState(level);
+    setVerbosityState(level)
     if (selectedAgentId) {
-      void storeSetAgentVerbosity(session.id, selectedAgentId, level);
+      void storeSetAgentVerbosity(session.id, selectedAgentId, level)
     }
-  };
+  }
 
   const setSelectedProvider = (id: ProviderId | null) => {
-    setSelectedProviderState(id);
-    void storeSetSessionConfig(session.id, { providerOverride: id });
+    setSelectedProviderState(id)
+    void storeSetSessionConfig(session.id, { providerOverride: id })
     if (selectedAgentId) {
-      void storeSetAgentConfig(session.id, selectedAgentId, { providerOverride: id });
+      void storeSetAgentConfig(session.id, selectedAgentId, { providerOverride: id })
     }
-  };
+  }
 
   const setSelectedModel = (id: string | null) => {
-    setSelectedModelState(id);
-    void storeSetSessionConfig(session.id, { modelOverride: id });
+    setSelectedModelState(id)
+    void storeSetSessionConfig(session.id, { modelOverride: id })
     if (selectedAgentId) {
-      void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
+      void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id })
     }
-  };
+  }
 
   const onSelectProvider = (id: ProviderId) => {
     if (!connectedProviderIds.includes(id)) {
       window.dispatchEvent(
         new CustomEvent('goodboy:open-provider-studio', { detail: { providerId: id } }),
-      );
-      return;
+      )
+      return
     }
     if (!allowOverride || isRunning) {
-      return;
+      return
     }
-    setSelectedProvider(id);
-    setSelectedModel(null);
-  };
+    setSelectedProvider(id)
+    setSelectedModel(null)
+  }
 
   const onSelectModel = (id: string) => {
     if (!allowOverride || isRunning) {
-      return;
+      return
     }
-    setSelectedModel(id);
-  };
+    setSelectedModel(id)
+  }
 
   const onResetTurnOverride = () => {
     if (!allowOverride || isRunning) {
-      return;
+      return
     }
-    setSelectedProvider(null);
-    setSelectedModel(null);
-  };
+    setSelectedProvider(null)
+    setSelectedModel(null)
+  }
 
   const dispatchTurn = useCallback(
     async (
@@ -304,68 +304,68 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           override,
           onNewAlerts: (alerts) => {
             if (!SESSION_FEATURES.budget) {
-              return;
+              return
             }
             for (const alert of alerts) {
-              showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
+              showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert))
             }
           },
-        });
-        setLastFailedTurn(null);
-        cleanupSentAttachments(atts);
+        })
+        setLastFailedTurn(null)
+        cleanupSentAttachments(atts)
       } catch (err) {
-        setError(formatError(err));
-        setLastFailedTurn({ content, attachments: atts, override });
+        setError(formatError(err))
+        setLastFailedTurn({ content, attachments: atts, override })
       }
     },
     [sendTurn, session.id, showToast, cleanupSentAttachments],
-  );
+  )
 
   const onEditQueued = useCallback(
     (item: QueuedTurn) => {
-      setValue(item.content);
-      setAttachments(item.attachments);
-      wrapperRef.current?.querySelector('textarea')?.focus();
+      setValue(item.content)
+      setAttachments(item.attachments)
+      wrapperRef.current?.querySelector('textarea')?.focus()
     },
     [setValue, setAttachments],
-  );
+  )
 
   const { queue, enqueue, removeQueued, editQueued, clearQueue } = useMessageQueue({
     isRunning,
     dispatchTurn,
     onEdit: onEditQueued,
-  });
+  })
 
   const sendWith = async (
     content: string,
     atts: ReadonlyArray<PendingAttachment>,
     modelOverrideId: string | null,
   ) => {
-    const useModel = modelOverrideId ?? (modelChanged ? effectiveModel : null);
+    const useModel = modelOverrideId ?? (modelChanged ? effectiveModel : null)
     const override: TurnProviderOverride | undefined =
       allowOverride && (providerChanged || useModel !== null)
         ? {
             providerId: effectiveProvider,
             ...(useModel !== null ? { model: useModel } : {}),
           }
-        : undefined;
+        : undefined
 
     if (isRunning) {
-      enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
-      return;
+      enqueue({ id: crypto.randomUUID(), content, attachments: atts, override })
+      return
     }
 
-    await dispatchTurn(content, atts, override);
-  };
+    await dispatchTurn(content, atts, override)
+  }
 
   const onSend = async () => {
-    const content = value.trim();
-    const atts = attachments;
+    const content = value.trim()
+    const atts = attachments
     if ((!content && atts.length === 0) || providerDisconnected) {
-      return;
+      return
     }
-    setError(null);
-    setLastFailedTurn(null);
+    setError(null)
+    setLastFailedTurn(null)
 
     if (
       !isRunning &&
@@ -373,9 +373,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       activeAgentKind !== null &&
       session.workflowRuns.length === 0
     ) {
-      const mismatch = detectScopeMismatch(content, activeAgentKind);
+      const mismatch = detectScopeMismatch(content, activeAgentKind)
       if (mismatch) {
-        const id = crypto.randomUUID();
+        const id = crypto.randomUUID()
         try {
           await insertNudgeEvent(tauriDatabase, {
             id,
@@ -389,29 +389,29 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             }),
             outcome: null,
             outcomeTs: null,
-          });
+          })
         } catch {
           // telemetry is best-effort
         }
-        setScopeNudgeEventId(id);
-        setScopePending({ content, attachments: atts, mismatch });
-        return;
+        setScopeNudgeEventId(id)
+        setScopePending({ content, attachments: atts, mismatch })
+        return
       }
     }
 
     if (allowOverride && !isRunning && rightSizeSuggestion !== null && rightSizePending === null) {
-      setRightSizePending({ content, attachments: atts });
-      return;
+      setRightSizePending({ content, attachments: atts })
+      return
     }
 
-    setValue('');
-    setAttachments([]);
-    await sendWith(content, atts, null);
-  };
+    setValue('')
+    setAttachments([])
+    await sendWith(content, atts, null)
+  }
 
   const recordScopeOutcome = async (outcome: NudgeOutcome) => {
     if (!scopeNudgeEventId) {
-      return;
+      return
     }
     try {
       await updateNudgeEventOutcome(
@@ -419,95 +419,95 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         scopeNudgeEventId,
         outcome,
         new Date().toISOString() as IsoDateTime,
-      );
+      )
     } catch {
       // best-effort
     }
-    setScopeNudgeEventId(null);
-  };
+    setScopeNudgeEventId(null)
+  }
 
   const onScopeSpawn = async () => {
     if (!scopePending) {
-      return;
+      return
     }
-    const target = scopePending.mismatch.suggestedAgentKind;
-    const content = scopePending.content;
-    setScopePending(null);
-    setValue(content);
-    await recordScopeOutcome('accepted');
+    const target = scopePending.mismatch.suggestedAgentKind
+    const content = scopePending.content
+    setScopePending(null)
+    setValue(content)
+    await recordScopeOutcome('accepted')
     try {
-      await spawnAgent(session.id, { kindOverride: target });
+      await spawnAgent(session.id, { kindOverride: target })
     } catch {
       // ignore, user will see standard error path elsewhere
     }
-  };
+  }
 
   const onScopeSendAnyway = async () => {
     if (!scopePending) {
-      return;
+      return
     }
-    const content = scopePending.content;
-    const atts = scopePending.attachments;
-    setScopePending(null);
-    setValue('');
-    setAttachments([]);
-    await recordScopeOutcome('overridden');
-    await sendWith(content, atts, null);
-  };
+    const content = scopePending.content
+    const atts = scopePending.attachments
+    setScopePending(null)
+    setValue('')
+    setAttachments([])
+    await recordScopeOutcome('overridden')
+    await sendWith(content, atts, null)
+  }
 
   const onScopeDismiss = async () => {
-    setScopePending(null);
-    await recordScopeOutcome('dismissed');
-  };
+    setScopePending(null)
+    await recordScopeOutcome('dismissed')
+  }
 
   const onUseSuggested = async () => {
-    const pending = rightSizePending;
+    const pending = rightSizePending
     if (pending === null) {
-      return;
+      return
     }
-    const suggested = rightSizeSuggestion?.model ?? null;
-    setRightSizePending(null);
-    setRightSizeDismissed(true);
-    setValue('');
-    setAttachments([]);
+    const suggested = rightSizeSuggestion?.model ?? null
+    setRightSizePending(null)
+    setRightSizeDismissed(true)
+    setValue('')
+    setAttachments([])
     if (suggested !== null) {
-      setSelectedModel(suggested);
+      setSelectedModel(suggested)
     }
-    await sendWith(pending.content, pending.attachments, suggested);
-  };
+    await sendWith(pending.content, pending.attachments, suggested)
+  }
 
   const onKeepCurrent = async () => {
-    const pending = rightSizePending;
+    const pending = rightSizePending
     if (pending === null) {
-      return;
+      return
     }
-    setRightSizePending(null);
-    setRightSizeDismissed(true);
-    setValue('');
-    setAttachments([]);
-    await sendWith(pending.content, pending.attachments, null);
-  };
+    setRightSizePending(null)
+    setRightSizeDismissed(true)
+    setValue('')
+    setAttachments([])
+    await sendWith(pending.content, pending.attachments, null)
+  }
 
   const onChangeModel = () => {
-    setRightSizePending(null);
-    setRightSizeDismissed(true);
-  };
+    setRightSizePending(null)
+    setRightSizeDismissed(true)
+  }
 
-  const lastAgentIdRef = useRef(selectedAgentId);
+  const lastAgentIdRef = useRef(selectedAgentId)
 
   useEffect(() => {
     if (lastAgentIdRef.current === selectedAgentId) {
-      return;
+      return
     }
-    const outgoingAgentId = lastAgentIdRef.current;
-    lastAgentIdRef.current = selectedAgentId;
+    const outgoingAgentId = lastAgentIdRef.current
+    lastAgentIdRef.current = selectedAgentId
 
     if (outgoingAgentId !== null) {
       void storeSetAgentConfig(session.id, outgoingAgentId, {
         providerOverride: currentProviderRef.current,
         modelOverride: currentModelRef.current,
         effort: currentEffortRef.current,
-      });
+      })
     }
 
     const restoredAgent =
@@ -515,106 +515,97 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         ? (useAppStore.getState().sessionPhaseRuns[session.id] ?? []).find(
             (r) => r.id === selectedAgentId,
           )
-        : null;
-    const restoredProvider = asProvider(restoredAgent?.providerOverride);
-    const restoredModel = restoredAgent?.modelOverride ?? null;
-    const restoredEffort = asEffortLevel(restoredAgent?.effort);
+        : null
+    const restoredProvider = asProvider(restoredAgent?.providerOverride)
+    const restoredModel = restoredAgent?.modelOverride ?? null
+    const restoredEffort = asEffortLevel(restoredAgent?.effort)
     const restoredVerbosity =
-      (restoredAgent?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? null;
+      (restoredAgent?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? null
 
-    setSelectedProviderState(restoredProvider);
-    setSelectedModelState(restoredModel);
+    setSelectedProviderState(restoredProvider)
+    setSelectedModelState(restoredModel)
     if (restoredEffort !== null) {
-      setEffortState(restoredEffort);
+      setEffortState(restoredEffort)
     }
     if (restoredVerbosity !== null) {
-      setVerbosityState(restoredVerbosity);
+      setVerbosityState(restoredVerbosity)
     }
 
-    clearQueue();
-    setRightSizePending(null);
-    setRightSizeDismissed(false);
-    setScopePending(null);
-    setScopeNudgeEventId(null);
-  }, [selectedAgentId]);
+    clearQueue()
+    setRightSizePending(null)
+    setRightSizeDismissed(false)
+    setScopePending(null)
+    setScopeNudgeEventId(null)
+  }, [selectedAgentId])
 
   useEffect(() => {
-    void loadScripts(session.workspaceId);
-    void loadPhaseTemplates(session.workspaceId);
-  }, [session.workspaceId, loadScripts, loadPhaseTemplates]);
+    void loadScripts(session.workspaceId)
+    void loadPhaseTemplates(session.workspaceId)
+  }, [session.workspaceId, loadScripts, loadPhaseTemplates])
 
   useEffect(() => {
-    void loadPhaseRunsForSession(session.id);
-  }, [session.id, loadPhaseRunsForSession]);
+    void loadPhaseRunsForSession(session.id)
+  }, [session.id, loadPhaseRunsForSession])
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
       popoverOpen &&
       (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Tab')
     ) {
-      event.preventDefault();
-      return;
+      event.preventDefault()
+      return
     }
     if (event.key === 'Enter' && !event.shiftKey && !popoverOpen) {
-      event.preventDefault();
-      void onSend();
+      event.preventDefault()
+      void onSend()
     }
-  };
+  }
 
-  const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined;
-  const overrideDisabledTitle = !allowOverride
-    ? 'override disabled in session settings'
-    : undefined;
+  const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined
+  const overrideDisabledTitle = !allowOverride ? 'override disabled in session settings' : undefined
 
-  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini']
 
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
-    const ids = new Set(providerModels.map((m) => m.id));
+    const ids = new Set(providerModels.map((m) => m.id))
     if (effectiveModel) {
-      ids.add(effectiveModel);
+      ids.add(effectiveModel)
     }
-    return Array.from(ids);
-  }, [providerModels, effectiveModel]);
+    return Array.from(ids)
+  }, [providerModels, effectiveModel])
 
   const rightSizeSuggestion = useMemo<{
-    readonly direction: 'lighter' | 'heavier';
-    readonly model: string;
-    readonly kind: 'strong' | 'optional';
-    readonly costMultiplier: number | null;
+    readonly direction: 'lighter' | 'heavier'
+    readonly model: string
+    readonly kind: 'strong' | 'optional'
+    readonly costMultiplier: number | null
   } | null>(() => {
     if (!isFirstTurnForAgent || rightSizeDismissed) {
-      return null;
+      return null
     }
-    const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
+    const weight = assessTurnWeight(value, { attachmentCount: attachments.length })
     if (weight === 'light') {
-      const s = suggestLighterModel(effectiveModel, modelCandidates);
+      const s = suggestLighterModel(effectiveModel, modelCandidates)
       return s
         ? { direction: 'lighter', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
-        : null;
+        : null
     }
     if (weight === 'heavy') {
-      const s = suggestHeavierModel(effectiveModel, modelCandidates);
+      const s = suggestHeavierModel(effectiveModel, modelCandidates)
       return s
         ? { direction: 'heavier', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
-        : null;
+        : null
     }
-    return null;
-  }, [
-    isFirstTurnForAgent,
-    rightSizeDismissed,
-    value,
-    effectiveModel,
-    modelCandidates,
-    attachments,
-  ]);
+    return null
+  }, [isFirstTurnForAgent, rightSizeDismissed, value, effectiveModel, modelCandidates, attachments])
 
   useEffect(() => {
     if (rightSizePending !== null && rightSizeSuggestion === null) {
-      setRightSizePending(null);
+      setRightSizePending(null)
     }
-  }, [rightSizePending, rightSizeSuggestion]);
+  }, [rightSizePending, rightSizeSuggestion])
 
-  const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
+  const suggestions: { readonly key: string; readonly node: ReactNode }[] = []
   if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
     suggestions.push({
       key: 'plan-ready',
@@ -643,7 +634,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
         />
       ),
-    });
+    })
   }
   if (sessionNudge?.kind === 'scout-fanout-suggested') {
     suggestions.push({
@@ -668,8 +659,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 new CustomEvent('goodboy:open-workspace-settings', {
                   detail: { section: 'scout' },
                 }),
-              );
-              void dismissSessionNudge(session.id, 'accepted');
+              )
+              void dismissSessionNudge(session.id, 'accepted')
             },
             testId: 'scout-fanout-enable',
           }}
@@ -681,7 +672,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
         />
       ),
-    });
+    })
   }
   if (scopePending !== null && activeAgentKind !== null) {
     suggestions.push({
@@ -721,7 +712,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           onDismiss={() => void onScopeDismiss()}
         />
       ),
-    });
+    })
   }
   if (rightSizePending !== null && rightSizeSuggestion !== null) {
     suggestions.push({
@@ -738,7 +729,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           onChangeModel={onChangeModel}
         />
       ),
-    });
+    })
   }
 
   return (
@@ -864,8 +855,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <button
                 type="button"
                 onClick={() => {
-                  onValueChange('$');
-                  wrapperRef.current?.querySelector('textarea')?.focus();
+                  onValueChange('$')
+                  wrapperRef.current?.querySelector('textarea')?.focus()
                 }}
                 disabled={providerDisconnected}
                 title="run a workspace script"
@@ -905,12 +896,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <button
                 type="button"
                 onClick={() => {
-                  setError(null);
+                  setError(null)
                   void dispatchTurn(
                     lastFailedTurn.content,
                     lastFailedTurn.attachments,
                     lastFailedTurn.override,
-                  );
+                  )
                 }}
                 className="shrink-0 rounded border border-danger/30 bg-danger/5 px-2 py-0.5 text-xs font-medium text-danger hover:bg-danger/15"
               >
@@ -921,5 +912,5 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         ) : null}
       </div>
     </div>
-  );
-};
+  )
+}

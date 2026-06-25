@@ -1,21 +1,21 @@
-import { ChevronsUpDown, Settings } from 'lucide-react';
-import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
-import { workspaceAccent } from '../../color';
+import { ChevronsUpDown, Settings } from 'lucide-react'
+import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store'
+import { workspaceAccent } from '../../color'
 
-const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
+const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?'
 
-const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/').pop() || path;
+const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/').pop() || path
 
 export const WorkspaceHeader = () => {
-  const currentWorkspace = useCurrentWorkspace();
-  const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
+  const currentWorkspace = useCurrentWorkspace()
+  const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null)
 
   if (!currentWorkspace) {
-    return null;
+    return null
   }
-  const accent = workspaceAccent(currentWorkspace.id);
-  const memberCount = currentWorkspace.members?.length ?? 0;
-  const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath);
+  const accent = workspaceAccent(currentWorkspace.id)
+  const memberCount = currentWorkspace.members?.length ?? 0
+  const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath)
 
   return (
     <div className="flex shrink-0 items-center gap-1 px-2.5 py-2.5" data-tauri-drag-region="false">
@@ -68,5 +68,5 @@ export const WorkspaceHeader = () => {
         <Settings size={14} aria-hidden />
       </button>
     </div>
-  );
-};
+  )
+}

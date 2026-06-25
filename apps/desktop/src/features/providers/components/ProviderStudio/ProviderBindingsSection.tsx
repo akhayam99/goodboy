@@ -1,31 +1,31 @@
-import { useMemo } from 'react';
-import { SectionHeader, Select } from '@goodboy/ui';
-import { FolderGit2 } from 'lucide-react';
-import { CLI_CREDENTIAL, type ProviderId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useMemo } from 'react'
+import { SectionHeader, Select } from '@goodboy/ui'
+import { FolderGit2 } from 'lucide-react'
+import { CLI_CREDENTIAL, type ProviderId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly providerId: ProviderId;
-  readonly cliIdentity: string | null;
-};
+  readonly providerId: ProviderId
+  readonly cliIdentity: string | null
+}
 
 export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
-  const credentials = useAppStore((s) => s.providerCredentials);
-  const workspaces = useAppStore((s) => s.workspaces);
-  const workspaceOverrides = useAppStore((s) => s.workspaceOverrides);
-  const setWorkspaceProviderBinding = useAppStore((s) => s.setWorkspaceProviderBinding);
+  const credentials = useAppStore((s) => s.providerCredentials)
+  const workspaces = useAppStore((s) => s.workspaces)
+  const workspaceOverrides = useAppStore((s) => s.workspaceOverrides)
+  const setWorkspaceProviderBinding = useAppStore((s) => s.setWorkspaceProviderBinding)
 
   const mine = useMemo(
     () => credentials.filter((c) => c.providerId === providerId),
     [credentials, providerId],
-  );
-  const connected = useMemo(() => workspaces.filter((w) => !w.disconnectedAt), [workspaces]);
+  )
+  const connected = useMemo(() => workspaces.filter((w) => !w.disconnectedAt), [workspaces])
 
   if (mine.length === 0 || connected.length === 0) {
-    return null;
+    return null
   }
 
-  const cliLabel = cliIdentity ? `CLI login (${cliIdentity})` : 'CLI login';
+  const cliLabel = cliIdentity ? `CLI login (${cliIdentity})` : 'CLI login'
 
   return (
     <section className="flex flex-col gap-2">
@@ -35,8 +35,8 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
       />
       <ul className="flex flex-col gap-2">
         {connected.map((ws) => {
-          const bound = workspaceOverrides[ws.id]?.providerBindings?.[providerId] ?? CLI_CREDENTIAL;
-          const usingKey = bound !== CLI_CREDENTIAL;
+          const bound = workspaceOverrides[ws.id]?.providerBindings?.[providerId] ?? CLI_CREDENTIAL
+          const usingKey = bound !== CLI_CREDENTIAL
           return (
             <li
               key={ws.id}
@@ -59,12 +59,12 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
                 size="sm"
                 value={bound}
                 onChange={(e) => {
-                  const next = e.target.value;
+                  const next = e.target.value
                   void setWorkspaceProviderBinding(
                     ws.id,
                     providerId,
                     next === CLI_CREDENTIAL ? null : next,
-                  );
+                  )
                 }}
               >
                 <option value={CLI_CREDENTIAL}>{cliLabel}</option>
@@ -75,9 +75,9 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
                 ))}
               </Select>
             </li>
-          );
+          )
         })}
       </ul>
     </section>
-  );
-};
+  )
+}

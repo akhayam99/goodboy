@@ -9,4 +9,4 @@ export const m042OpenQuestionsCreatedBy = /* sql */ `
 -- orphan (clusters fall back to the "ungrouped" bucket).
 ALTER TABLE open_questions ADD COLUMN created_by_agent_id TEXT REFERENCES agents(id) ON DELETE SET NULL;
 CREATE INDEX idx_open_questions_created_by_agent ON open_questions(created_by_agent_id);
-`;
+`

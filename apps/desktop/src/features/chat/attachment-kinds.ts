@@ -1,6 +1,6 @@
-import { File, FileCode, FileJson, FileSpreadsheet, FileText, type LucideIcon } from 'lucide-react';
+import { File, FileCode, FileJson, FileSpreadsheet, FileText, type LucideIcon } from 'lucide-react'
 
-const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp']);
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'])
 
 const DOC_MIME_BY_EXTENSION: Readonly<Record<string, string>> = {
   pdf: 'application/pdf',
@@ -16,63 +16,63 @@ const DOC_MIME_BY_EXTENSION: Readonly<Record<string, string>> = {
   yml: 'application/yaml',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-};
+}
 
 export const ATTACHMENT_ACCEPT = [
   'image/*',
   ...Object.keys(DOC_MIME_BY_EXTENSION).map((e) => `.${e}`),
-].join(',');
+].join(',')
 
 function extensionOf(fileName: string): string {
-  const dot = fileName.lastIndexOf('.');
-  return dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : '';
+  const dot = fileName.lastIndexOf('.')
+  return dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : ''
 }
 
 export const attachmentKindFor = (mimeType: string): 'image' | 'file' => {
-  return mimeType.startsWith('image/') ? 'image' : 'file';
-};
+  return mimeType.startsWith('image/') ? 'image' : 'file'
+}
 
 export const isAllowedAttachment = (file: {
-  readonly name: string;
-  readonly type: string;
+  readonly name: string
+  readonly type: string
 }): boolean => {
   if (file.type.startsWith('image/')) {
-    return true;
+    return true
   }
-  const ext = extensionOf(file.name);
-  return IMAGE_EXTENSIONS.has(ext) || ext in DOC_MIME_BY_EXTENSION;
-};
+  const ext = extensionOf(file.name)
+  return IMAGE_EXTENSIONS.has(ext) || ext in DOC_MIME_BY_EXTENSION
+}
 
 export const resolveAttachmentMime = (file: {
-  readonly name: string;
-  readonly type: string;
+  readonly name: string
+  readonly type: string
 }): string => {
   if (file.type.length > 0) {
-    return file.type;
+    return file.type
   }
-  return DOC_MIME_BY_EXTENSION[extensionOf(file.name)] ?? 'application/octet-stream';
-};
+  return DOC_MIME_BY_EXTENSION[extensionOf(file.name)] ?? 'application/octet-stream'
+}
 
 export const fileIconFor = (mimeType: string): LucideIcon => {
   if (mimeType === 'application/json') {
-    return FileJson;
+    return FileJson
   }
   if (
     mimeType === 'text/csv' ||
     mimeType === 'text/tab-separated-values' ||
     mimeType.includes('spreadsheetml')
   ) {
-    return FileSpreadsheet;
+    return FileSpreadsheet
   }
   if (mimeType === 'application/xml' || mimeType === 'application/yaml') {
-    return FileCode;
+    return FileCode
   }
   if (
     mimeType === 'application/pdf' ||
     mimeType.startsWith('text/') ||
     mimeType.includes('wordprocessingml')
   ) {
-    return FileText;
+    return FileText
   }
-  return File;
-};
+  return File
+}

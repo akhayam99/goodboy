@@ -1,28 +1,28 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { OpenQuestion, Session, SessionStageInfo, Workspace } from '@goodboy/types';
-import type { FilesTouched } from '../../../../store';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { OpenQuestion, Session, SessionStageInfo, Workspace } from '@goodboy/types'
+import type { FilesTouched } from '../../../../store'
 
 type Store = {
-  sessionBranches: Record<string, string>;
-  spawnAgent: ReturnType<typeof vi.fn>;
-  sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
-  scriptRuns: Record<string, Record<string, { status: string }>>;
-  sessionGithub: Record<string, { pr?: unknown }>;
-  sessionGitlabMr: Record<string, { mr?: unknown }>;
-  setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
-  activateWorkflowAgent: ReturnType<typeof vi.fn>;
-  phaseTemplates: Record<string, ReadonlyArray<unknown>>;
-  sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
-};
+  sessionBranches: Record<string, string>
+  spawnAgent: ReturnType<typeof vi.fn>
+  sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>
+  scriptRuns: Record<string, Record<string, { status: string }>>
+  sessionGithub: Record<string, { pr?: unknown }>
+  sessionGitlabMr: Record<string, { mr?: unknown }>
+  setFocusedWorkflowRun: ReturnType<typeof vi.fn>
+  activateWorkflowAgent: ReturnType<typeof vi.fn>
+  phaseTemplates: Record<string, ReadonlyArray<unknown>>
+  sessionWorkflows: Record<string, ReadonlyArray<unknown>>
+}
 
 type Runs = {
-  lanes: ReadonlyArray<unknown>;
-  freeAgents: ReadonlyArray<unknown>;
-  resolveQueue: ReadonlyArray<unknown>;
-};
+  lanes: ReadonlyArray<unknown>
+  freeAgents: ReadonlyArray<unknown>
+  resolveQueue: ReadonlyArray<unknown>
+}
 
 const { store, hooks, runs } = vi.hoisted(() => ({
   store: {
@@ -44,7 +44,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     stage: { stage: 'building', reason: '' } as SessionStageInfo,
   },
   runs: { lanes: [], freeAgents: [], resolveQueue: [] } as Runs,
-}));
+}))
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
@@ -53,40 +53,40 @@ vi.mock('../../../../store', () => ({
   useSessionOpenQuestions: () => hooks.openQuestions,
   useSessionPlans: () => hooks.plans,
   useSessionStageInfo: () => hooks.stage,
-}));
+}))
 
 vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({
   useWorkspaceRuns: () => runs,
-}));
+}))
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  const actual = await importOriginal<typeof import('@goodboy/ui')>()
   return {
     ...actual,
     ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  };
-});
+  }
+})
 
 vi.mock('../../../workspace/components/SessionDetailPanel/SummarizerBadge', () => ({
   SummarizerBadge: () => <span data-testid="summarizer-badge" />,
-}));
+}))
 
 vi.mock('./BranchChip', () => ({
   BranchChip: ({ branch }: { branch: string }) => <span data-testid="branch-chip">{branch}</span>,
-}));
+}))
 
 vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
-}));
+}))
 
-import { SessionOverviewPane } from './index';
+import { SessionOverviewPane } from './index'
 
 const standaloneAgent = (status = 'running') => ({
   parentAgentId: null,
   workflowRunId: null,
   stepId: null,
   status,
-});
+})
 
 const spawnNode = (over: Record<string, unknown> = {}) => ({
   id: 'node-1',
@@ -98,7 +98,7 @@ const spawnNode = (over: Record<string, unknown> = {}) => ({
   children: [],
   isSelected: false,
   ...over,
-});
+})
 
 const baseSession = (over: Partial<Session> = {}): Session =>
   ({
@@ -107,9 +107,9 @@ const baseSession = (over: Partial<Session> = {}): Session =>
     createdAt: '2026-06-22T10:00:00.000Z',
     workflowRuns: [],
     ...over,
-  }) as unknown as Session;
+  }) as unknown as Session
 
-const files: FilesTouched = { count: 3 } as unknown as FilesTouched;
+const files: FilesTouched = { count: 3 } as unknown as FilesTouched
 
 const renderPane = (session = baseSession(), onSelectLens = vi.fn(), filesTouched = files) => {
   render(
@@ -118,226 +118,226 @@ const renderPane = (session = baseSession(), onSelectLens = vi.fn(), filesTouche
       filesTouched={filesTouched}
       onSelectLens={onSelectLens}
     />,
-  );
-  return onSelectLens;
-};
+  )
+  return onSelectLens
+}
 
 beforeEach(() => {
-  store.sessionBranches = {};
-  store.spawnAgent.mockReset();
-  store.spawnAgent.mockResolvedValue(undefined);
-  store.sessionPhaseRuns = {};
-  store.scriptRuns = {};
-  store.sessionGithub = {};
-  store.sessionGitlabMr = {};
-  store.setFocusedWorkflowRun.mockReset();
-  store.activateWorkflowAgent.mockReset();
-  store.activateWorkflowAgent.mockResolvedValue(undefined);
-  store.phaseTemplates = {};
-  store.sessionWorkflows = {};
-  hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
-  hooks.openQuestions = [];
-  hooks.plans = [];
-  hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
-  runs.lanes = [];
-  runs.freeAgents = [];
-  runs.resolveQueue = [];
-});
-afterEach(cleanup);
+  store.sessionBranches = {}
+  store.spawnAgent.mockReset()
+  store.spawnAgent.mockResolvedValue(undefined)
+  store.sessionPhaseRuns = {}
+  store.scriptRuns = {}
+  store.sessionGithub = {}
+  store.sessionGitlabMr = {}
+  store.setFocusedWorkflowRun.mockReset()
+  store.activateWorkflowAgent.mockReset()
+  store.activateWorkflowAgent.mockResolvedValue(undefined)
+  store.phaseTemplates = {}
+  store.sessionWorkflows = {}
+  hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace
+  hooks.openQuestions = []
+  hooks.plans = []
+  hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo
+  runs.lanes = []
+  runs.freeAgents = []
+  runs.resolveQueue = []
+})
+afterEach(cleanup)
 
 describe('SessionOverviewPane header meta (cluster A)', () => {
   it('renders the goal, stage label and workspace name', () => {
-    hooks.stage = { stage: 'building', reason: 'agents are working' } as SessionStageInfo;
-    renderPane();
-    expect(screen.getByRole('heading', { name: /refactor auth/i })).toBeDefined();
-    expect(screen.getByText('Building')).toBeDefined();
-    expect(screen.getByText('agents are working')).toBeDefined();
-    expect(screen.getByText('My workspace')).toBeDefined();
-  });
+    hooks.stage = { stage: 'building', reason: 'agents are working' } as SessionStageInfo
+    renderPane()
+    expect(screen.getByRole('heading', { name: /refactor auth/i })).toBeDefined()
+    expect(screen.getByText('Building')).toBeDefined()
+    expect(screen.getByText('agents are working')).toBeDefined()
+    expect(screen.getByText('My workspace')).toBeDefined()
+  })
 
   it('falls back to Untitled session when the goal is blank', () => {
-    renderPane(baseSession({ goal: '' }));
-    expect(screen.getByRole('heading', { name: /untitled session/i })).toBeDefined();
-  });
+    renderPane(baseSession({ goal: '' }))
+    expect(screen.getByRole('heading', { name: /untitled session/i })).toBeDefined()
+  })
 
   it('shows the branch chip, cost chip, summarizer and session age', () => {
-    store.sessionBranches = { 'sess-1': 'ak/feat-thing' };
-    renderPane();
-    expect(screen.getByTestId('branch-chip').textContent).toBe('ak/feat-thing');
-    expect(screen.getByTestId('cost-chip')).toBeDefined();
-    expect(screen.getByTestId('summarizer-badge')).toBeDefined();
-    expect(screen.getByText(/ago$/)).toBeDefined();
-  });
+    store.sessionBranches = { 'sess-1': 'ak/feat-thing' }
+    renderPane()
+    expect(screen.getByTestId('branch-chip').textContent).toBe('ak/feat-thing')
+    expect(screen.getByTestId('cost-chip')).toBeDefined()
+    expect(screen.getByTestId('summarizer-badge')).toBeDefined()
+    expect(screen.getByText(/ago$/)).toBeDefined()
+  })
 
   it('omits the branch chip when no branch is known', () => {
-    renderPane();
-    expect(screen.queryByTestId('branch-chip')).toBeNull();
-  });
-});
+    renderPane()
+    expect(screen.queryByTestId('branch-chip')).toBeNull()
+  })
+})
 
 describe('SessionOverviewPane start row (cluster B)', () => {
   it('always shows the start entry cards and hides the metrics strip when fresh', () => {
-    renderPane();
-    expect(screen.getByText('Start')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New agent' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
-    expect(screen.queryByText('At a glance')).toBeNull();
-  });
+    renderPane()
+    expect(screen.getByText('Start')).toBeDefined()
+    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'New agent' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined()
+    expect(screen.queryByText('At a glance')).toBeNull()
+  })
 
   it('opens the workflow builder directly from the new-workflow card', () => {
-    const handler = vi.fn();
-    window.addEventListener('goodboy:open-workflow-builder', handler);
-    renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'New workflow' }));
-    expect(handler).toHaveBeenCalledOnce();
-    expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({ sessionId: 'sess-1' });
-    window.removeEventListener('goodboy:open-workflow-builder', handler);
-  });
+    const handler = vi.fn()
+    window.addEventListener('goodboy:open-workflow-builder', handler)
+    renderPane()
+    fireEvent.click(screen.getByRole('button', { name: 'New workflow' }))
+    expect(handler).toHaveBeenCalledOnce()
+    expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({ sessionId: 'sess-1' })
+    window.removeEventListener('goodboy:open-workflow-builder', handler)
+  })
 
   it('spawns an agent directly from the new-agent card', () => {
-    renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'New agent' }));
-    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', {});
-  });
+    renderPane()
+    fireEvent.click(screen.getByRole('button', { name: 'New agent' }))
+    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', {})
+  })
 
   it('routes the resolve card to the resolve lens', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
-    expect(onSelectLens).toHaveBeenCalledWith('resolve');
-  });
+    const onSelectLens = renderPane()
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }))
+    expect(onSelectLens).toHaveBeenCalledWith('resolve')
+  })
 
   it('keeps the start cards once work exists', () => {
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
-    renderPane();
-    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
-  });
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] }
+    renderPane()
+    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined()
+  })
 
   it('treats discarded workflow runs as not active for freshness', () => {
     renderPane(
       baseSession({
         workflowRuns: [{ discardedAt: '2026-06-22T11:00:00.000Z' }],
       } as unknown as Partial<Session>),
-    );
-    expect(screen.queryByText('At a glance')).toBeNull();
-  });
-});
+    )
+    expect(screen.queryByText('At a glance')).toBeNull()
+  })
+})
 
 describe('SessionOverviewPane at-a-glance strip', () => {
   beforeEach(() => {
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
-  });
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] }
+  })
 
   it('renders the metrics strip and hides the get-started CTAs once work exists', () => {
-    renderPane();
-    expect(screen.getByText('At a glance')).toBeDefined();
-    expect(screen.queryByText('Get started')).toBeNull();
-  });
+    renderPane()
+    expect(screen.getByText('At a glance')).toBeDefined()
+    expect(screen.queryByText('Get started')).toBeNull()
+  })
 
   it('reports running agents as a ratio', () => {
-    renderPane();
-    expect(screen.getByText('1/1')).toBeDefined();
-    expect(screen.getByText('running')).toBeDefined();
-  });
+    renderPane()
+    expect(screen.getByText('1/1')).toBeDefined()
+    expect(screen.getByText('running')).toBeDefined()
+  })
 
   it('uses the singular files label for a single change', () => {
-    renderPane(baseSession(), vi.fn(), { count: 1 } as unknown as FilesTouched);
-    expect(screen.getByText('file')).toBeDefined();
-  });
+    renderPane(baseSession(), vi.fn(), { count: 1 } as unknown as FilesTouched)
+    expect(screen.getByText('file')).toBeDefined()
+  })
 
   it('selects the lens when a metric is clicked', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByText('files'));
-    expect(onSelectLens).toHaveBeenCalledWith('files');
-  });
-});
+    const onSelectLens = renderPane()
+    fireEvent.click(screen.getByText('files'))
+    expect(onSelectLens).toHaveBeenCalledWith('files')
+  })
+})
 
 describe('SessionOverviewPane nudges', () => {
   it('surfaces open questions with the first line as detail', () => {
     hooks.openQuestions = [
       { status: 'open', text: 'why this approach?\nmore detail' },
-    ] as unknown as ReadonlyArray<OpenQuestion>;
-    const onSelectLens = renderPane();
-    expect(screen.getByText('1 open question')).toBeDefined();
-    expect(screen.getByText('why this approach?')).toBeDefined();
-    fireEvent.click(screen.getByText('1 open question'));
-    expect(onSelectLens).toHaveBeenCalledWith('questions');
-  });
+    ] as unknown as ReadonlyArray<OpenQuestion>
+    const onSelectLens = renderPane()
+    expect(screen.getByText('1 open question')).toBeDefined()
+    expect(screen.getByText('why this approach?')).toBeDefined()
+    fireEvent.click(screen.getByText('1 open question'))
+    expect(onSelectLens).toHaveBeenCalledWith('questions')
+  })
 
   it('omits the needs-you section when nothing needs the user', () => {
-    renderPane();
-    expect(screen.queryByText('Needs you')).toBeNull();
-  });
+    renderPane()
+    expect(screen.queryByText('Needs you')).toBeNull()
+  })
 
   it('raises an attention nudge for a pull request', () => {
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
-    hooks.stage = { stage: 'attention', reason: 'PR needs review' } as SessionStageInfo;
-    renderPane();
-    expect(screen.getByText(/pull request needs you/i)).toBeDefined();
-  });
-});
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] }
+    hooks.stage = { stage: 'attention', reason: 'PR needs review' } as SessionStageInfo
+    renderPane()
+    expect(screen.getByText(/pull request needs you/i)).toBeDefined()
+  })
+})
 
 describe('SessionOverviewPane pipeline agent cards', () => {
   it('renders one card per free agent with its name', () => {
     runs.freeAgents = [
       spawnNode({ id: 'a', name: 'scout the repo' }),
       spawnNode({ id: 'b', name: 'implement feature' }),
-    ];
-    renderPane();
-    expect(screen.getByText('scout the repo')).toBeDefined();
-    expect(screen.getByText('implement feature')).toBeDefined();
-  });
+    ]
+    renderPane()
+    expect(screen.getByText('scout the repo')).toBeDefined()
+    expect(screen.getByText('implement feature')).toBeDefined()
+  })
 
   it('shows the output summary line when present', () => {
-    runs.freeAgents = [spawnNode({ outputSummary: 'found the bug in auth' })];
-    renderPane();
-    expect(screen.getByText('found the bug in auth')).toBeDefined();
-  });
+    runs.freeAgents = [spawnNode({ outputSummary: 'found the bug in auth' })]
+    renderPane()
+    expect(screen.getByText('found the bug in auth')).toBeDefined()
+  })
 
   it('omits the summary line when outputSummary is null', () => {
-    runs.freeAgents = [spawnNode({ name: 'lonely agent', outputSummary: null })];
-    renderPane();
-    expect(screen.getByText('lonely agent')).toBeDefined();
-    expect(screen.queryByText('found the bug in auth')).toBeNull();
-  });
+    runs.freeAgents = [spawnNode({ name: 'lonely agent', outputSummary: null })]
+    renderPane()
+    expect(screen.getByText('lonely agent')).toBeDefined()
+    expect(screen.queryByText('found the bug in auth')).toBeNull()
+  })
 
   it('routes an agent card click to the agents lens', () => {
-    runs.freeAgents = [spawnNode({ name: 'clickable agent' })];
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByText('clickable agent'));
-    expect(onSelectLens).toHaveBeenCalledWith('agents');
-  });
+    runs.freeAgents = [spawnNode({ name: 'clickable agent' })]
+    const onSelectLens = renderPane()
+    fireEvent.click(screen.getByText('clickable agent'))
+    expect(onSelectLens).toHaveBeenCalledWith('agents')
+  })
 
   it('renders the resolve-queue summary separately from agent cards', () => {
-    runs.freeAgents = [spawnNode({ name: 'free agent' })];
-    runs.resolveQueue = [spawnNode({ id: 'r', name: 'resolver' })];
-    const onSelectLens = renderPane();
-    expect(screen.getByText('free agent')).toBeDefined();
-    expect(screen.getByText('1 in resolve queue')).toBeDefined();
-    fireEvent.click(screen.getByText('1 in resolve queue'));
-    expect(onSelectLens).toHaveBeenCalledWith('resolve');
-  });
+    runs.freeAgents = [spawnNode({ name: 'free agent' })]
+    runs.resolveQueue = [spawnNode({ id: 'r', name: 'resolver' })]
+    const onSelectLens = renderPane()
+    expect(screen.getByText('free agent')).toBeDefined()
+    expect(screen.getByText('1 in resolve queue')).toBeDefined()
+    fireEvent.click(screen.getByText('1 in resolve queue'))
+    expect(onSelectLens).toHaveBeenCalledWith('resolve')
+  })
 
   it('hides the activity section entirely when no lanes, agents or resolvers', () => {
-    renderPane();
-    expect(screen.queryByText('Activity')).toBeNull();
-  });
-});
+    renderPane()
+    expect(screen.queryByText('Activity')).toBeNull()
+  })
+})
 
 describe('SessionOverviewPane jump-to links', () => {
   it('selects the goal lens from the jump-to row', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /^goal$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('goal');
-  });
-});
+    const onSelectLens = renderPane()
+    fireEvent.click(screen.getByRole('button', { name: /^goal$/i }))
+    expect(onSelectLens).toHaveBeenCalledWith('goal')
+  })
+})
 
 describe('SessionOverviewPane pipeline lane next-step badge', () => {
-  const STEP_ID = 'step-1';
-  const RUN_ID = 'run-1';
-  const WF_ID = 'wf-1';
-  const AGENT_ID = 'agent-1';
+  const STEP_ID = 'step-1'
+  const RUN_ID = 'run-1'
+  const WF_ID = 'wf-1'
+  const AGENT_ID = 'agent-1'
 
   const lane = (steps?: ReadonlyArray<unknown>) => ({
     runId: RUN_ID,
@@ -358,7 +358,7 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
       },
     ],
     costUsd: 0,
-  });
+  })
 
   const workflow = {
     id: WF_ID,
@@ -368,7 +368,7 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
     steps: [{ id: STEP_ID, workflowId: WF_ID, ordinal: 0, name: 'Execute', promptPrefix: '' }],
     createdAt: '2026-06-22T10:00:00.000Z',
     updatedAt: '2026-06-22T10:00:00.000Z',
-  };
+  }
 
   const pendingAgent = (status = 'pending') => ({
     id: AGENT_ID,
@@ -379,46 +379,46 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
     ordinal: 0,
     name: 'Execute',
     status,
-  });
+  })
 
   const sessionWithRun = () =>
     baseSession({
       workflowRuns: [{ id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: false }],
-    } as unknown as Partial<Session>);
+    } as unknown as Partial<Session>)
 
   beforeEach(() => {
-    runs.lanes = [lane()];
-    store.phaseTemplates = { 'ws-1': [workflow] };
-    store.sessionPhaseRuns = { 'sess-1': [pendingAgent()] };
-  });
+    runs.lanes = [lane()]
+    store.phaseTemplates = { 'ws-1': [workflow] }
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent()] }
+  })
 
   it('clicking the next-step badge starts the step without navigating', () => {
-    const onSelectLens = renderPane(sessionWithRun());
-    fireEvent.click(screen.getByTitle(/^start execute$/i));
-    expect(store.activateWorkflowAgent).toHaveBeenCalledWith('sess-1', AGENT_ID, undefined, false);
-    expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled();
-    expect(onSelectLens).not.toHaveBeenCalledWith('workflows');
-  });
+    const onSelectLens = renderPane(sessionWithRun())
+    fireEvent.click(screen.getByTitle(/^start execute$/i))
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith('sess-1', AGENT_ID, undefined, false)
+    expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled()
+    expect(onSelectLens).not.toHaveBeenCalledWith('workflows')
+  })
 
   it('clicking the card body navigates to the workflow without starting the step', () => {
-    const onSelectLens = renderPane(sessionWithRun());
-    fireEvent.click(screen.getByRole('button', { name: /ship it/i }));
-    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', RUN_ID);
-    expect(onSelectLens).toHaveBeenCalledWith('workflows');
-    expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
-  });
+    const onSelectLens = renderPane(sessionWithRun())
+    fireEvent.click(screen.getByRole('button', { name: /ship it/i }))
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', RUN_ID)
+    expect(onSelectLens).toHaveBeenCalledWith('workflows')
+    expect(store.activateWorkflowAgent).not.toHaveBeenCalled()
+  })
 
   it('open questions suppress the start badge so no step can be launched', () => {
     hooks.openQuestions = [
       { status: 'open', text: 'blocked?', workflowRunId: RUN_ID },
-    ] as unknown as ReadonlyArray<OpenQuestion>;
-    renderPane(sessionWithRun());
-    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
-  });
+    ] as unknown as ReadonlyArray<OpenQuestion>
+    renderPane(sessionWithRun())
+    expect(screen.queryByTitle(/^start execute$/i)).toBeNull()
+  })
 
   it('does not start a step whose agent is no longer pending', () => {
-    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('completed')] };
-    renderPane(sessionWithRun());
-    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
-  });
-});
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('completed')] }
+    renderPane(sessionWithRun())
+    expect(screen.queryByTitle(/^start execute$/i)).toBeNull()
+  })
+})

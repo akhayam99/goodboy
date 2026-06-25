@@ -1,56 +1,56 @@
-import { useEffect } from 'react';
-import { useAppStore } from '../../../store/store';
+import { useEffect } from 'react'
+import { useAppStore } from '../../../store/store'
 
-const DEBOUNCE_MS = 500;
-const REFRESH_TTL_MS = 60_000;
+const DEBOUNCE_MS = 500
+const REFRESH_TTL_MS = 60_000
 
 export const useProviderRefreshOnFocus = (): void => {
-  const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const refreshProviders = useAppStore((s) => s.refreshProviders)
 
   useEffect(() => {
-    let timer: number | null = null;
-    let lastRunAt = 0;
+    let timer: number | null = null
+    let lastRunAt = 0
 
     const schedule = (): void => {
       if (timer !== null) {
-        window.clearTimeout(timer);
+        window.clearTimeout(timer)
       }
       timer = window.setTimeout(() => {
-        timer = null;
-        const elapsed = Date.now() - lastRunAt;
+        timer = null
+        const elapsed = Date.now() - lastRunAt
         if (elapsed < REFRESH_TTL_MS) {
-          return;
+          return
         }
 
-        const lifecycle = useAppStore.getState().providerLifecycle;
+        const lifecycle = useAppStore.getState().providerLifecycle
         const inFlight = Object.values(lifecycle).some(
           (l) =>
             l.phase === 'installing' || l.phase === 'connecting' || l.phase === 'disconnecting',
-        );
+        )
         if (inFlight) {
-          return;
+          return
         }
 
-        lastRunAt = Date.now();
-        void refreshProviders();
-      }, DEBOUNCE_MS);
-    };
+        lastRunAt = Date.now()
+        void refreshProviders()
+      }, DEBOUNCE_MS)
+    }
 
-    const onFocus = (): void => schedule();
+    const onFocus = (): void => schedule()
     const onVisibility = (): void => {
       if (document.visibilityState === 'visible') {
-        schedule();
+        schedule()
       }
-    };
+    }
 
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
     return () => {
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
       if (timer !== null) {
-        window.clearTimeout(timer);
+        window.clearTimeout(timer)
       }
-    };
-  }, [refreshProviders]);
-};
+    }
+  }, [refreshProviders])
+}

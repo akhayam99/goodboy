@@ -1,22 +1,22 @@
-import type { AgentId, SessionId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
-import { ChevronRight, Layers } from 'lucide-react';
-import { useState } from 'react';
-import { MARKER_ACCENT } from '../marker-accents';
-import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
-import type { ClusterDashboardItem } from './clusterDashboard';
+import type { AgentId, SessionId } from '@goodboy/types'
+import { cn } from '@goodboy/ui'
+import { ChevronRight, Layers } from 'lucide-react'
+import { useState } from 'react'
+import { MARKER_ACCENT } from '../marker-accents'
+import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList'
+import type { ClusterDashboardItem } from './clusterDashboard'
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly items: ReadonlyArray<ClusterDashboardItem>;
-  readonly completed: number;
-  readonly total: number;
-  readonly selectedAgentId: AgentId | undefined;
-  readonly onSelect: (agentId: AgentId) => void;
-  readonly onAdvance: (childAgentId: AgentId) => void;
-};
+  readonly sessionId: SessionId
+  readonly items: ReadonlyArray<ClusterDashboardItem>
+  readonly completed: number
+  readonly total: number
+  readonly selectedAgentId: AgentId | undefined
+  readonly onSelect: (agentId: AgentId) => void
+  readonly onAdvance: (childAgentId: AgentId) => void
+}
 
-const accent = MARKER_ACCENT.clusters;
+const accent = MARKER_ACCENT.clusters
 
 export const ClusterProgressDashboard = ({
   sessionId,
@@ -27,8 +27,8 @@ export const ClusterProgressDashboard = ({
   onSelect,
   onAdvance,
 }: Props) => {
-  const [confirming, setConfirming] = useState(false);
-  const current = items.find((item) => item.agent.status !== 'completed');
+  const [confirming, setConfirming] = useState(false)
+  const current = items.find((item) => item.agent.status !== 'completed')
   const listItems: ReadonlyArray<SpawnedAgentItem> = items.map(
     ({ agent, index, instructions }) => ({
       key: agent.id,
@@ -39,7 +39,7 @@ export const ClusterProgressDashboard = ({
       status: agent.status,
       agentId: agent.id,
     }),
-  );
+  )
   return (
     <div
       className="mx-auto flex w-full max-w-[640px] flex-col gap-3 py-10"
@@ -64,11 +64,11 @@ export const ClusterProgressDashboard = ({
           data-testid="cluster-advance-button"
           onClick={() => {
             if (!confirming) {
-              setConfirming(true);
-              return;
+              setConfirming(true)
+              return
             }
-            setConfirming(false);
-            onAdvance(current.agent.id);
+            setConfirming(false)
+            onAdvance(current.agent.id)
           }}
           onBlur={() => setConfirming(false)}
           className={cn(
@@ -83,5 +83,5 @@ export const ClusterProgressDashboard = ({
         </button>
       ) : null}
     </div>
-  );
-};
+  )
+}

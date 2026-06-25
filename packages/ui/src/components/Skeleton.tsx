@@ -1,10 +1,10 @@
-import type { CSSProperties } from 'react';
-import { cn } from '../cn';
+import type { CSSProperties } from 'react'
+import { cn } from '../cn'
 
 type SkeletonProps = {
-  className?: string;
-  style?: CSSProperties;
-};
+  className?: string
+  style?: CSSProperties
+}
 
 export const Skeleton = ({ className, style }: SkeletonProps) => {
   return (
@@ -13,12 +13,12 @@ export const Skeleton = ({ className, style }: SkeletonProps) => {
       style={style}
       aria-hidden
     />
-  );
-};
+  )
+}
 
 type SkeletonRowProps = {
-  className?: string;
-};
+  className?: string
+}
 
 export const SkeletonRow = ({ className }: SkeletonRowProps) => {
   return (
@@ -29,12 +29,12 @@ export const SkeletonRow = ({ className }: SkeletonRowProps) => {
         <Skeleton className="h-3 w-2/3 rounded" />
       </div>
     </div>
-  );
-};
+  )
+}
 
 type SkeletonCardProps = {
-  className?: string;
-};
+  className?: string
+}
 
 export const SkeletonCard = ({ className }: SkeletonCardProps) => {
   return (
@@ -47,13 +47,13 @@ export const SkeletonCard = ({ className }: SkeletonCardProps) => {
         <Skeleton className="h-5 w-20 rounded-full" />
       </div>
     </div>
-  );
-};
+  )
+}
 
 type SkeletonTextProps = {
-  className?: string;
-  lines?: number;
-};
+  className?: string
+  lines?: number
+}
 
 export const SkeletonText = ({ className, lines = 3 }: SkeletonTextProps) => {
   return (
@@ -62,5 +62,5 @@ export const SkeletonText = ({ className, lines = 3 }: SkeletonTextProps) => {
         <Skeleton key={i} className={cn('h-3 rounded', i === lines - 1 ? 'w-2/3' : 'w-full')} />
       ))}
     </div>
-  );
-};
+  )
+}

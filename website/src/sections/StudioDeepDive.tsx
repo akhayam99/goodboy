@@ -1,5 +1,5 @@
-import { Section } from '../components/Section';
-import { StudioComposeSnapshot } from '../mockups/Snapshots';
+import { Section } from '../components/Section'
+import { StudioComposeSnapshot } from '../mockups/Snapshots'
 
 export function StudioDeepDive() {
   return (
@@ -22,5 +22,5 @@ export function StudioDeepDive() {
     >
       <StudioComposeSnapshot />
     </Section>
-  );
+  )
 }

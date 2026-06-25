@@ -1,12 +1,12 @@
-import { cn } from '@goodboy/ui';
-import { ArrowDown, Plus } from 'lucide-react';
+import { cn } from '@goodboy/ui'
+import { ArrowDown, Plus } from 'lucide-react'
 
 type Props = {
-  readonly index: number;
-  readonly interior: boolean;
-  readonly dragging: boolean;
-  readonly active: boolean;
-};
+  readonly index: number
+  readonly interior: boolean
+  readonly dragging: boolean
+  readonly active: boolean
+}
 
 export const StepFlowConnector = ({ index, interior, dragging, active }: Props) => {
   return (
@@ -40,5 +40,5 @@ export const StepFlowConnector = ({ index, interior, dragging, active }: Props) 
         <ArrowDown size={16} className="text-muted-foreground/40" aria-hidden />
       ) : null}
     </div>
-  );
-};
+  )
+}

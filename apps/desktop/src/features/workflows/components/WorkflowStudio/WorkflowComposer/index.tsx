@@ -1,50 +1,50 @@
-import { Fragment } from 'react';
-import { Button, Divider, FieldRow, Input, SectionHeader, cn } from '@goodboy/ui';
-import { Check, Plus, Sparkles, X } from 'lucide-react';
-import { ScrollFade } from '@goodboy/ui';
-import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
-import type { StepDefUpsertArgs } from '../../../workflows';
-import type { DefinitionForm, TemplateForm } from '../../../form';
-import { StepFlowCard } from '../StepFlowCard';
-import { StepFlowConnector } from '../StepFlowConnector';
-import { StepEditor } from '../StepEditor';
-import { StepLibraryPalette } from '../StepLibraryPalette';
-import { EmptyGuide } from '../EmptyGuide';
+import { Fragment } from 'react'
+import { Button, Divider, FieldRow, Input, SectionHeader, cn } from '@goodboy/ui'
+import { Check, Plus, Sparkles, X } from 'lucide-react'
+import { ScrollFade } from '@goodboy/ui'
+import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types'
+import type { StepDefUpsertArgs } from '../../../workflows'
+import type { DefinitionForm, TemplateForm } from '../../../form'
+import { StepFlowCard } from '../StepFlowCard'
+import { StepFlowConnector } from '../StepFlowConnector'
+import { StepEditor } from '../StepEditor'
+import { StepLibraryPalette } from '../StepLibraryPalette'
+import { EmptyGuide } from '../EmptyGuide'
 
 type Props = {
-  readonly open: boolean;
-  readonly isNew: boolean;
-  readonly approved: boolean;
-  readonly onToggleApproved: (next: boolean) => void;
-  readonly hasPresets: boolean;
-  readonly form: TemplateForm;
-  readonly workspaceId: WorkspaceId;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly library: ReadonlyArray<StepDef>;
-  readonly expandedIdx: number | null;
-  readonly saving: boolean;
-  readonly error: string | null;
-  readonly formatting: boolean;
-  readonly canFormat: boolean;
-  readonly onOpenFormat: () => void;
-  readonly dragging: boolean;
-  readonly dropIndex: number | null;
-  readonly onNew: () => void;
+  readonly open: boolean
+  readonly isNew: boolean
+  readonly approved: boolean
+  readonly onToggleApproved: (next: boolean) => void
+  readonly hasPresets: boolean
+  readonly form: TemplateForm
+  readonly workspaceId: WorkspaceId
+  readonly connectedProviders: ReadonlyArray<ProviderId>
+  readonly library: ReadonlyArray<StepDef>
+  readonly expandedIdx: number | null
+  readonly saving: boolean
+  readonly error: string | null
+  readonly formatting: boolean
+  readonly canFormat: boolean
+  readonly onOpenFormat: () => void
+  readonly dragging: boolean
+  readonly dropIndex: number | null
+  readonly onNew: () => void
   readonly onChangeMeta: (
     patch: Partial<Pick<TemplateForm, 'name' | 'description' | 'goal'>>,
-  ) => void;
-  readonly onAddBlank: () => void;
-  readonly onToggleExpand: (idx: number) => void;
-  readonly onUpdateStep: (idx: number, patch: Partial<DefinitionForm>) => void;
-  readonly onRemoveStep: (idx: number) => void;
-  readonly onMoveStep: (idx: number, dir: -1 | 1) => void;
-  readonly draggingStepIdx: number | null;
-  readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
-  readonly onStartStepDrag: (fromIndex: number, label: string, e: React.PointerEvent) => void;
-  readonly onSaveDef: (args: StepDefUpsertArgs) => void;
-  readonly onDeleteDef: (id: StepDefId) => void;
-  readonly onClose: () => void;
-};
+  ) => void
+  readonly onAddBlank: () => void
+  readonly onToggleExpand: (idx: number) => void
+  readonly onUpdateStep: (idx: number, patch: Partial<DefinitionForm>) => void
+  readonly onRemoveStep: (idx: number) => void
+  readonly onMoveStep: (idx: number, dir: -1 | 1) => void
+  readonly draggingStepIdx: number | null
+  readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void
+  readonly onStartStepDrag: (fromIndex: number, label: string, e: React.PointerEvent) => void
+  readonly onSaveDef: (args: StepDefUpsertArgs) => void
+  readonly onDeleteDef: (id: StepDefId) => void
+  readonly onClose: () => void
+}
 
 export const WorkflowComposer = ({
   open,
@@ -83,20 +83,20 @@ export const WorkflowComposer = ({
       <section className="flex min-w-0 flex-1 flex-col">
         <EmptyGuide onNew={onNew} hasPresets={hasPresets} />
       </section>
-    );
+    )
   }
 
-  const stepCount = form.steps.length;
-  const title = form.name.trim() || (isNew ? 'New workflow' : 'Untitled workflow');
+  const stepCount = form.steps.length
+  const title = form.name.trim() || (isNew ? 'New workflow' : 'Untitled workflow')
   const subtitle = [`${stepCount} ${stepCount === 1 ? 'step' : 'steps'}`, form.description.trim()]
     .filter(Boolean)
-    .join('  ·  ');
+    .join('  ·  ')
   const selectedStep =
     expandedIdx !== null && expandedIdx >= 0 && expandedIdx < stepCount
       ? form.steps[expandedIdx]
-      : null;
+      : null
 
-  const savedHint = saving ? 'Saving…' : 'Saved';
+  const savedHint = saving ? 'Saving…' : 'Saved'
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
@@ -263,5 +263,5 @@ export const WorkflowComposer = ({
         </ScrollFade>
       </aside>
     </div>
-  );
-};
+  )
+}

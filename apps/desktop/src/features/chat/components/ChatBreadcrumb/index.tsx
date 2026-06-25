@@ -1,113 +1,113 @@
-import { useMemo } from 'react';
-import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react';
-import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
-import { Divider } from '@goodboy/ui';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useMemo } from 'react'
+import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react'
+import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types'
+import { Divider } from '@goodboy/ui'
+import { EMPTY_ARRAY, useAppStore } from '../../../../store'
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
   type AgentKind,
-} from '../../../session/agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+} from '../../../session/agent-kind'
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar'
 
 type Props = {
-  readonly session: Session;
-};
+  readonly session: Session
+}
 
 type WorkflowProgress = {
-  readonly workflow: Workflow;
-  readonly currentOrdinal: number;
-  readonly total: number;
-};
+  readonly workflow: Workflow
+  readonly currentOrdinal: number
+  readonly total: number
+}
 
-const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
+const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = []
 
 export const ChatBreadcrumb = ({ session }: Props) => {
   const workspace = useAppStore((s) =>
     s.workspaces.find((w) => w.id === (session.workspaceId as WorkspaceId)),
-  );
+  )
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
-  ) as AgentId | null;
+  ) as AgentId | null
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_WORKFLOWS);
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  )
+  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_WORKFLOWS)
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride)
+  const selectAgent = useAppStore((s) => s.selectAgent)
 
   const workflowProgress: WorkflowProgress | null = useMemo(() => {
     if (session.workflowRuns.length === 0) {
-      return null;
+      return null
     }
-    const selected = selectedAgentId ? phaseRuns.find((a) => a.id === selectedAgentId) : undefined;
+    const selected = selectedAgentId ? phaseRuns.find((a) => a.id === selectedAgentId) : undefined
     const activeRun =
       (selected?.workflowRunId
         ? session.workflowRuns.find((r) => r.id === selected.workflowRunId)
         : undefined) ??
       session.workflowRuns.find((r) => !r.discardedAt) ??
-      null;
+      null
     if (!activeRun) {
-      return null;
+      return null
     }
-    const workflow = sessionWorkflows.find((w) => w.id === activeRun.workflowId);
+    const workflow = sessionWorkflows.find((w) => w.id === activeRun.workflowId)
     if (!workflow) {
-      return null;
+      return null
     }
-    const total = workflow.steps.length;
+    const total = workflow.steps.length
     if (total === 0) {
-      return null;
+      return null
     }
-    const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
-    const runAgents = phaseRuns.filter((r) => r.workflowRunId === activeRun.id);
-    let currentOrdinal = 0;
+    const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal)
+    const runAgents = phaseRuns.filter((r) => r.workflowRunId === activeRun.id)
+    let currentOrdinal = 0
     for (let i = 0; i < sorted.length; i += 1) {
-      const step = sorted[i]!;
-      const agent = runAgents.find((r) => r.stepId === step.id);
+      const step = sorted[i]!
+      const agent = runAgents.find((r) => r.stepId === step.id)
       if (agent && agent.status !== 'pending') {
-        currentOrdinal = i + 1;
+        currentOrdinal = i + 1
       }
     }
     if (currentOrdinal === 0) {
-      currentOrdinal = 1;
+      currentOrdinal = 1
     }
-    return { workflow, currentOrdinal, total };
-  }, [session.workflowRuns, sessionWorkflows, phaseRuns, selectedAgentId]);
+    return { workflow, currentOrdinal, total }
+  }, [session.workflowRuns, sessionWorkflows, phaseRuns, selectedAgentId])
 
   const selectedAgent: Agent | null = useMemo(() => {
     if (!selectedAgentId) {
-      return null;
+      return null
     }
-    return phaseRuns.find((a) => a.id === selectedAgentId) ?? null;
-  }, [selectedAgentId, phaseRuns]);
+    return phaseRuns.find((a) => a.id === selectedAgentId) ?? null
+  }, [selectedAgentId, phaseRuns])
 
   const parentAgent: Agent | null = useMemo(() => {
     if (!selectedAgent?.parentAgentId) {
-      return null;
+      return null
     }
-    return phaseRuns.find((a) => a.id === selectedAgent.parentAgentId) ?? null;
-  }, [selectedAgent, phaseRuns]);
+    return phaseRuns.find((a) => a.id === selectedAgent.parentAgentId) ?? null
+  }, [selectedAgent, phaseRuns])
 
   const onPickParent = () => {
     if (!parentAgent) {
-      return;
+      return
     }
-    void selectAgent(session.id, parentAgent.id);
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-  };
+    void selectAgent(session.id, parentAgent.id)
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))
+  }
 
   const agentKind: AgentKind | null = useMemo(() => {
     if (!selectedAgent) {
-      return null;
+      return null
     }
-    const override = agentKindOverride[selectedAgent.id];
+    const override = agentKindOverride[selectedAgent.id]
     if (override) {
-      return override;
+      return override
     }
-    return inferAgentKindFromName(selectedAgent.name);
-  }, [selectedAgent, agentKindOverride]);
+    return inferAgentKindFromName(selectedAgent.name)
+  }, [selectedAgent, agentKindOverride])
 
-  const sessionLabel = session.goal.trim() || 'untitled session';
+  const sessionLabel = session.goal.trim() || 'untitled session'
 
   return (
     <>
@@ -172,9 +172,9 @@ export const ChatBreadcrumb = ({ session }: Props) => {
       </nav>
       <Divider className="shrink-0" />
     </>
-  );
-};
+  )
+}
 
 function Separator() {
-  return <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />;
+  return <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
 }

@@ -1,31 +1,31 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types'
 import {
   currentWindowLabel,
   focusWindow,
   setWindowTitle,
   spawnWorkspaceWindow,
-} from '../../../features/workspace/window';
-import type { GetFn } from './types';
+} from '../../../features/workspace/window'
+import type { GetFn } from './types'
 
 export const openWorkspace = (get: GetFn) => {
   return async (id: WorkspaceId, title: string): Promise<void> => {
-    const presence = get().windowPresence;
-    const myLabel = currentWindowLabel();
-    const shownLabel = Object.entries(presence).find(([, ws]) => ws === id)?.[0] ?? null;
+    const presence = get().windowPresence
+    const myLabel = currentWindowLabel()
+    const shownLabel = Object.entries(presence).find(([, ws]) => ws === id)?.[0] ?? null
 
     if (shownLabel === myLabel) {
-      return;
+      return
     }
     if (shownLabel) {
       if (await focusWindow(shownLabel)) {
-        return;
+        return
       }
     }
     if (get().currentWorkspaceId === null) {
-      await get().setCurrentWorkspace(id);
-      void setWindowTitle(title);
-      return;
+      await get().setCurrentWorkspace(id)
+      void setWindowTitle(title)
+      return
     }
-    await spawnWorkspaceWindow(id, title);
-  };
-};
+    await spawnWorkspaceWindow(id, title)
+  }
+}

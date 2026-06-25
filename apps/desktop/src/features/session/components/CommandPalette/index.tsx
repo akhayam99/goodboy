@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Divider, ScrollFade } from '@goodboy/ui'
+import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types'
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -8,27 +8,27 @@ import {
   useCurrentWorkspace,
   useSessions,
   useWorkspaces,
-} from '../../../../store';
+} from '../../../../store'
 import {
   AGENT_KIND_META,
   AGENT_KIND_PALETTE,
   inferAgentKindFromName,
   type AgentKind,
-} from '../../agent-kind';
-import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
-import { useToast } from '../../../../app/components/Toast';
+} from '../../agent-kind'
+import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions'
+import { useToast } from '../../../../app/components/Toast'
 
-type PaletteGroup = QuickActionGroup | 'recents';
+type PaletteGroup = QuickActionGroup | 'recents'
 
 type PaletteItem = {
-  readonly id: string;
-  readonly label: string;
-  readonly sublabel?: string;
-  readonly group: PaletteGroup;
-  readonly accent?: string;
-  readonly icon?: string;
-  readonly onSelect: () => void;
-};
+  readonly id: string
+  readonly label: string
+  readonly sublabel?: string
+  readonly group: PaletteGroup
+  readonly accent?: string
+  readonly icon?: string
+  readonly onSelect: () => void
+}
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
   recents: 'Recents',
@@ -40,7 +40,7 @@ const GROUP_LABELS: Record<PaletteGroup, string> = {
   script: 'Scripts',
   action: 'Actions',
   help: 'Help',
-};
+}
 
 const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'recents',
@@ -52,33 +52,33 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'script',
   'action',
   'help',
-];
+]
 
 function fuzzyScore(query: string, text: string): number {
   if (query.length === 0) {
-    return 1;
+    return 1
   }
-  const q = query.toLowerCase();
-  const t = text.toLowerCase();
+  const q = query.toLowerCase()
+  const t = text.toLowerCase()
   if (t.startsWith(q)) {
-    return 3;
+    return 3
   }
   if (t.includes(` ${q}`)) {
-    return 2;
+    return 2
   }
   if (t.includes(q)) {
-    return 1;
+    return 1
   }
-  return 0;
+  return 0
 }
 
 export type Props = {
-  onClose: () => void;
-  onOpenSettings?: () => void;
-  onNewSession?: () => void;
-  onOpenShortcutHelp?: () => void;
-  initialQuery?: string;
-};
+  onClose: () => void
+  onOpenSettings?: () => void
+  onNewSession?: () => void
+  onOpenShortcutHelp?: () => void
+  initialQuery?: string
+}
 
 export const CommandPalette = ({
   onClose,
@@ -87,41 +87,41 @@ export const CommandPalette = ({
   onOpenShortcutHelp,
   initialQuery = '',
 }: Props) => {
-  const [query, setQuery] = useState(initialQuery);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const [query, setQuery] = useState(initialQuery)
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
 
-  const workspaces = useWorkspaces();
-  const sessions = useSessions();
-  const currentWorkspace = useCurrentWorkspace();
-  const currentSession = useCurrentSession();
-  const openWorkspace = useAppStore((s) => s.openWorkspace);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const workspaces = useWorkspaces()
+  const sessions = useSessions()
+  const currentWorkspace = useCurrentWorkspace()
+  const currentSession = useCurrentSession()
+  const openWorkspace = useAppStore((s) => s.openWorkspace)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const selectAgent = useAppStore((s) => s.selectAgent)
   const skills = useAppStore((s) =>
     currentWorkspace ? (s.skills[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Skill>;
+  ) as ReadonlyArray<Skill>
   const workflows = useAppStore((s) =>
     currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Workflow>;
+  ) as ReadonlyArray<Workflow>
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.workspaceScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<WorkspaceScript>;
+  ) as ReadonlyArray<WorkspaceScript>
   const agents = useAppStore((s) =>
     currentSession ? (s.sessionPhaseRuns[currentSession.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Agent>;
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const runScript = useAppStore((s) => s.runScript);
+  ) as ReadonlyArray<Agent>
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride)
+  const runScript = useAppStore((s) => s.runScript)
   const sessionWorktree = useAppStore((s) =>
     currentSession ? (s.sessionWorktrees[currentSession.id]?.[0] ?? null) : null,
-  );
-  const { showToast } = useToast();
+  )
+  const { showToast } = useToast()
 
-  const parsed = useMemo(() => parseQuery(query), [query]);
+  const parsed = useMemo(() => parseQuery(query), [query])
 
   const items = useMemo<ReadonlyArray<PaletteItem>>(() => {
-    const out: PaletteItem[] = [];
+    const out: PaletteItem[] = []
 
     for (const w of workspaces) {
       out.push({
@@ -130,27 +130,26 @@ export const CommandPalette = ({
         sublabel: w.rootPath,
         group: 'workspace',
         onSelect: () => void openWorkspace(w.id, w.name),
-      });
+      })
     }
 
     for (const s of sessions) {
       if (s.archivedAt) {
-        continue;
+        continue
       }
-      const ws = workspaces.find((w) => w.id === s.workspaceId);
+      const ws = workspaces.find((w) => w.id === s.workspaceId)
       out.push({
         id: `session:${s.id}`,
         label: s.goal || 'untitled session',
         sublabel: ws?.name,
         group: 'session',
         onSelect: () => void setCurrentSession(s.id),
-      });
+      })
     }
 
     if (currentSession) {
       for (const a of agents) {
-        const kind: AgentKind =
-          agentKindOverride[a.id as AgentId] ?? inferAgentKindFromName(a.name);
+        const kind: AgentKind = agentKindOverride[a.id as AgentId] ?? inferAgentKindFromName(a.name)
         out.push({
           id: `agent:${a.id}`,
           label: a.name,
@@ -158,7 +157,7 @@ export const CommandPalette = ({
           group: 'agent',
           accent: AGENT_KIND_PALETTE[kind].bg,
           onSelect: () => void selectAgent(currentSession.id, a.id as AgentId),
-        });
+        })
       }
     }
 
@@ -172,7 +171,7 @@ export const CommandPalette = ({
           /* skill invocation lives in chat input, palette can only navigate.
              Surface as a hint until we wire a deep-link into ChatInput. */
         },
-      });
+      })
     }
 
     for (const wf of workflows) {
@@ -186,9 +185,9 @@ export const CommandPalette = ({
             new CustomEvent('goodboy:open-workspace-settings', {
               detail: { section: 'phases' },
             }),
-          );
+          )
         },
-      });
+      })
     }
 
     for (const sc of scripts) {
@@ -199,17 +198,17 @@ export const CommandPalette = ({
         group: 'script',
         onSelect: () => {
           if (!currentSession || !sessionWorktree) {
-            showToast('warning', `${sc.name}, open a session worktree to run scripts`);
-            return;
+            showToast('warning', `${sc.name}, open a session worktree to run scripts`)
+            return
           }
           void runScript(currentSession.id, sc.id, sessionWorktree).then((result) => {
             showToast(
               result.exitCode === 0 ? 'success' : 'error',
               result.exitCode === 0 ? `${sc.name}, done` : `${sc.name}, exited ${result.exitCode}`,
-            );
-          });
+            )
+          })
         },
-      });
+      })
     }
 
     if (onOpenSettings) {
@@ -219,7 +218,7 @@ export const CommandPalette = ({
         sublabel: '⌘,',
         group: 'action',
         onSelect: () => onOpenSettings(),
-      });
+      })
     }
     if (onNewSession) {
       out.push({
@@ -227,7 +226,7 @@ export const CommandPalette = ({
         label: 'New session',
         group: 'action',
         onSelect: () => onNewSession(),
-      });
+      })
     }
 
     if (onOpenShortcutHelp) {
@@ -237,10 +236,10 @@ export const CommandPalette = ({
         sublabel: '⌘/',
         group: 'help',
         onSelect: () => onOpenShortcutHelp(),
-      });
+      })
     }
 
-    return out;
+    return out
   }, [
     workspaces,
     sessions,
@@ -259,13 +258,13 @@ export const CommandPalette = ({
     onOpenSettings,
     onNewSession,
     onOpenShortcutHelp,
-  ]);
+  ])
 
   const filtered = useMemo(() => {
-    const { prefix, query: q } = parsed;
-    const scope = prefix ? items.filter((it) => it.group === prefix.group) : items;
+    const { prefix, query: q } = parsed
+    const scope = prefix ? items.filter((it) => it.group === prefix.group) : items
     if (q.length === 0) {
-      return prefix ? scope.slice(0, 50) : scope.slice(0, 30);
+      return prefix ? scope.slice(0, 50) : scope.slice(0, 30)
     }
     return scope
       .map((item) => ({
@@ -278,53 +277,53 @@ export const CommandPalette = ({
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
       .map(({ item }) => item)
-      .slice(0, 30);
-  }, [items, parsed]);
+      .slice(0, 30)
+  }, [items, parsed])
 
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [filtered.length, query]);
+    setSelectedIndex(0)
+  }, [filtered.length, query])
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    inputRef.current?.focus()
+  }, [])
 
   useEffect(() => {
-    const el = listRef.current?.children[selectedIndex] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex]);
+    const el = listRef.current?.children[selectedIndex] as HTMLElement | undefined
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [selectedIndex])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
+      e.preventDefault()
+      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1))
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((i) => Math.max(i - 1, 0));
+      e.preventDefault()
+      setSelectedIndex((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Enter') {
-      e.preventDefault();
-      filtered[selectedIndex]?.onSelect();
-      onClose();
+      e.preventDefault()
+      filtered[selectedIndex]?.onSelect()
+      onClose()
     } else if (e.key === 'Escape') {
-      e.preventDefault();
-      onClose();
+      e.preventDefault()
+      onClose()
     } else if (e.key === 'Tab' && query.length === 0) {
-      e.preventDefault();
-      const first = PREFIXES[0]!;
-      setQuery(first.symbol);
+      e.preventDefault()
+      const first = PREFIXES[0]!
+      setQuery(first.symbol)
     }
-  };
+  }
 
   const placeholder = parsed.prefix
     ? `Search ${parsed.prefix.hint}…`
-    : 'Search anything, or type @ # : / ~ $ > ? to filter';
+    : 'Search anything, or type @ # : / ~ $ > ? to filter'
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-[20vh]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          onClose()
         }
       }}
     >
@@ -349,9 +348,9 @@ export const CommandPalette = ({
                   key={p.symbol}
                   type="button"
                   onMouseDown={(e) => {
-                    e.preventDefault();
-                    setQuery(p.symbol);
-                    inputRef.current?.focus();
+                    e.preventDefault()
+                    setQuery(p.symbol)
+                    inputRef.current?.focus()
                   }}
                   aria-label={`filter by ${p.hint}`}
                   className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/5 hover:text-foreground"
@@ -372,9 +371,9 @@ export const CommandPalette = ({
               <li className="px-4 py-6 text-center text-sm text-muted-foreground">no results</li>
             ) : (
               GROUP_ORDER.flatMap((group) => {
-                const itemsInGroup = filtered.filter((it) => it.group === group);
+                const itemsInGroup = filtered.filter((it) => it.group === group)
                 if (itemsInGroup.length === 0) {
-                  return [];
+                  return []
                 }
                 return [
                   <li
@@ -384,7 +383,7 @@ export const CommandPalette = ({
                     {GROUP_LABELS[group]}
                   </li>,
                   ...itemsInGroup.map((item) => {
-                    const idx = filtered.indexOf(item);
+                    const idx = filtered.indexOf(item)
                     return (
                       <li
                         key={item.id}
@@ -393,9 +392,9 @@ export const CommandPalette = ({
                         }`}
                         onMouseEnter={() => setSelectedIndex(idx)}
                         onMouseDown={(e) => {
-                          e.preventDefault();
-                          item.onSelect();
-                          onClose();
+                          e.preventDefault()
+                          item.onSelect()
+                          onClose()
                         }}
                       >
                         {item.accent ? (
@@ -413,14 +412,14 @@ export const CommandPalette = ({
                           ) : null}
                         </div>
                       </li>
-                    );
+                    )
                   }),
-                ];
+                ]
               })
             )}
           </ul>
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}

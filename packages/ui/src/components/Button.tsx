@@ -1,14 +1,14 @@
-import type { ComponentProps } from 'react';
-import { cn } from '../cn';
+import type { ComponentProps } from 'react'
+import { cn } from '../cn'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
-export type ButtonSize = 'sm' | 'md';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning'
+export type ButtonSize = 'sm' | 'md'
 
 export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  type?: 'button' | 'submit' | 'reset';
-};
+  variant?: ButtonVariant
+  size?: ButtonSize
+  type?: 'button' | 'submit' | 'reset'
+}
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
@@ -16,12 +16,12 @@ const variantClasses: Record<ButtonVariant, string> = {
   ghost: 'border-0 text-foreground hover:bg-muted',
   danger: 'bg-danger text-danger-foreground hover:bg-danger/90',
   warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
-};
+}
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'h-7 px-2.5 text-xs',
   md: 'h-8 px-3 text-sm',
-};
+}
 
 export const Button = ({
   variant = 'primary',
@@ -41,5 +41,5 @@ export const Button = ({
       )}
       {...rest}
     />
-  );
-};
+  )
+}

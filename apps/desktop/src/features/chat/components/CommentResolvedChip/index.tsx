@@ -1,79 +1,79 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, CheckCheck, Clock, GitCommit, Upload, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowUpRight, CheckCheck, Clock, GitCommit, Upload, X } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import { extractCommentResolved, isReviewThreadId } from '@goodboy/core'
+import type { SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly assistantText: string;
-  readonly sessionId: SessionId;
-};
+  readonly assistantText: string
+  readonly sessionId: SessionId
+}
 
 type ChipState =
   | { kind: 'idle' }
   | { kind: 'resolving' }
   | { kind: 'resolved' }
-  | { kind: 'dismissed' };
+  | { kind: 'dismissed' }
 
-const DISMISS_PREFIX = 'goodboy:comment-dismissed:';
+const DISMISS_PREFIX = 'goodboy:comment-dismissed:'
 
 function readDismissed(threadId: string | undefined): boolean {
   if (!threadId) {
-    return false;
+    return false
   }
   try {
-    return localStorage.getItem(DISMISS_PREFIX + threadId) === '1';
+    return localStorage.getItem(DISMISS_PREFIX + threadId) === '1'
   } catch {
-    return false;
+    return false
   }
 }
 
 function persistDismissed(threadId: string) {
   try {
-    localStorage.setItem(DISMISS_PREFIX + threadId, '1');
+    localStorage.setItem(DISMISS_PREFIX + threadId, '1')
   } catch {
-    void 0;
+    void 0
   }
 }
 
 export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
-  const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText]);
-  const threadId = marker?.threadId;
+  const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText])
+  const threadId = marker?.threadId
 
-  const queueResolution = useAppStore((s) => s.queueResolution);
-  const dequeueResolution = useAppStore((s) => s.dequeueResolution);
-  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
-  const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const queueResolution = useAppStore((s) => s.queueResolution)
+  const dequeueResolution = useAppStore((s) => s.dequeueResolution)
+  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread)
+  const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions)
+  const setActiveLens = useAppStore((s) => s.setActiveLens)
 
-  const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
+  const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null)
   const resolvedOnGithub = useAppStore((s) =>
     threadId
       ? (s.sessionGithub[sessionId]?.detail?.comments?.some(
           (c) => c.threadId === threadId && c.resolved === true,
         ) ?? false)
       : false,
-  );
+  )
   const queued = useAppStore((s) =>
     threadId
       ? (s.sessionPendingResolutions[sessionId]?.some((r) => r.threadId === threadId) ?? false)
       : false,
-  );
+  )
 
   const [state, setState] = useState<ChipState>(() =>
     readDismissed(threadId) ? { kind: 'dismissed' } : { kind: 'idle' },
-  );
+  )
 
   useEffect(() => {
-    void loadPendingResolutions(sessionId);
-  }, [sessionId, loadPendingResolutions]);
+    void loadPendingResolutions(sessionId)
+  }, [sessionId, loadPendingResolutions])
 
   if (!marker || !isReviewThreadId(marker.threadId)) {
-    return null;
+    return null
   }
 
-  const shaShort = marker.commitSha.slice(0, 7);
+  const shaShort = marker.commitSha.slice(0, 7)
 
   if (state.kind === 'resolved' || resolvedOnGithub) {
     return (
@@ -84,39 +84,39 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
         <GitCommit size={10} aria-hidden className="text-muted-foreground/80" />
         <span className="font-mono text-muted-foreground/80">{shaShort}</span>
       </div>
-    );
+    )
   }
 
   if (state.kind === 'dismissed' && !queued) {
-    return null;
+    return null
   }
 
   const pushNow = async () => {
     if (state.kind === 'resolving') {
-      return;
+      return
     }
-    setState({ kind: 'resolving' });
+    setState({ kind: 'resolving' })
     const ok = await resolveGithubThread(sessionId, marker.threadId, {
       commitSha: marker.commitSha,
-    });
+    })
     if (ok && queued) {
-      await dequeueResolution(sessionId, marker.threadId);
+      await dequeueResolution(sessionId, marker.threadId)
     }
-    setState(ok ? { kind: 'resolved' } : { kind: 'idle' });
-  };
+    setState(ok ? { kind: 'resolved' } : { kind: 'idle' })
+  }
 
   const queue = () => {
     if (prNumber === null) {
-      return;
+      return
     }
     void queueResolution(sessionId, {
       threadId: marker.threadId,
       commitSha: marker.commitSha,
       prNumber,
-    });
-  };
+    })
+  }
 
-  const busy = state.kind === 'resolving';
+  const busy = state.kind === 'resolving'
 
   if (queued) {
     return (
@@ -162,7 +162,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -204,8 +204,8 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
         <button
           type="button"
           onClick={() => {
-            persistDismissed(marker.threadId);
-            setState({ kind: 'dismissed' });
+            persistDismissed(marker.threadId)
+            setState({ kind: 'dismissed' })
           }}
           disabled={busy}
           title="keep the conversation open on GitHub"
@@ -216,5 +216,5 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,16 +1,16 @@
-import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
-import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
-import { issuePullRequests, type LinearIssue } from '../client';
-import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues';
+import { useMemo, useState } from 'react'
+import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui'
+import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react'
+import { issuePullRequests, type LinearIssue } from '../client'
+import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues'
 
 type Props = {
-  readonly groups: ReadonlyArray<LinearIssueGroup>;
-  readonly focusedIssueId: string | null;
-  readonly onSelect: (issue: LinearIssue) => void;
-  readonly loading: boolean;
-  readonly error: string | null;
-};
+  readonly groups: ReadonlyArray<LinearIssueGroup>
+  readonly focusedIssueId: string | null
+  readonly onSelect: (issue: LinearIssue) => void
+  readonly loading: boolean
+  readonly error: string | null
+}
 
 const STATE_DOT: Record<LinearGroupKey, string> = {
   started: 'bg-primary',
@@ -18,15 +18,15 @@ const STATE_DOT: Record<LinearGroupKey, string> = {
   backlog: 'bg-muted-foreground/50',
   triage: 'bg-warning',
   other: 'bg-muted-foreground/40',
-};
+}
 
 export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }: Props) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim().toLowerCase()
     if (!q) {
-      return groups;
+      return groups
     }
     return groups
       .map((g) => ({
@@ -36,8 +36,8 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
             r.issue.identifier.toLowerCase().includes(q) || r.issue.title.toLowerCase().includes(q),
         ),
       }))
-      .filter((g) => g.rows.length > 0);
-  }, [groups, query]);
+      .filter((g) => g.rows.length > 0)
+  }, [groups, query])
 
   return (
     <div className="flex h-full flex-col">
@@ -98,7 +98,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                 />
                 <ul className="flex flex-col gap-0.5">
                   {group.rows.map((row) => {
-                    const active = row.issue.id === focusedIssueId;
+                    const active = row.issue.id === focusedIssueId
                     return (
                       <li key={row.issue.id}>
                         <button
@@ -137,7 +137,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                           ) : null}
                         </button>
                       </li>
-                    );
+                    )
                   })}
                 </ul>
               </div>
@@ -146,5 +146,5 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
         </ScrollFade>
       )}
     </div>
-  );
-};
+  )
+}

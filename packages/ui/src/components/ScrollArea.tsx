@@ -1,10 +1,10 @@
-import type { ComponentProps } from 'react';
-import { ScrollFade } from './ScrollFade';
+import type { ComponentProps } from 'react'
+import { ScrollFade } from './ScrollFade'
 
 export type ScrollAreaProps = ComponentProps<'div'> & {
   /** class applied to the inner scrolling viewport (where overflow lives) */
-  viewportClassName?: string;
-};
+  viewportClassName?: string
+}
 
 /**
  * Thin alias over {@link ScrollFade}: same import name + props, but the raw
@@ -17,5 +17,5 @@ export const ScrollArea = ({ className, viewportClassName, children }: ScrollAre
     <ScrollFade className={className} viewportClassName={viewportClassName}>
       {children}
     </ScrollFade>
-  );
-};
+  )
+}

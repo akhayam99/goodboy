@@ -1,6 +1,6 @@
-import { Fragment, useCallback, useMemo, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { SectionHeader, cn } from '@goodboy/ui';
+import { Fragment, useCallback, useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { SectionHeader, cn } from '@goodboy/ui'
 import {
   ArrowUpRight,
   Ban,
@@ -16,9 +16,9 @@ import {
   Workflow as WorkflowIcon,
   Zap,
   ZapOff,
-} from 'lucide-react';
-import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
-import { DogMascot } from '../../../../../shared/components/DogMascot';
+} from 'lucide-react'
+import { ScriptsSection } from '../../../../scripts/components/ScriptsSection'
+import { DogMascot } from '../../../../../shared/components/DogMascot'
 import type {
   Agent,
   AgentId,
@@ -31,114 +31,114 @@ import type {
   Workflow,
   WorkflowRun,
   WorkflowRunId,
-} from '@goodboy/types';
-import type { ProviderContextUsage } from './ContextWindowBar';
+} from '@goodboy/types'
+import type { ProviderContextUsage } from './ContextWindowBar'
 import {
   EMPTY_ARRAY,
   agentHasUnread,
   useAppStore,
   useSessionLoading,
   useSessionOpenQuestions,
-} from '../../../../../store';
-import { classifyWorkflowChain } from '@goodboy/core';
+} from '../../../../../store'
+import { classifyWorkflowChain } from '@goodboy/core'
 import {
   WorkflowNextStepCta,
   pickNextWorkflowStep,
-} from '../../../../../features/workflows/components/WorkflowNextStepCta';
-import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
-import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
-import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip';
-import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format';
+} from '../../../../../features/workflows/components/WorkflowNextStepCta'
+import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate'
+import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip'
+import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip'
+import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format'
 import {
   AGENT_KIND_DEFAULTS,
   type AgentKind,
   inferAgentKindFromName,
   resolveAgentKind,
-} from '../../../../../features/session/agent-kind';
-import { formatError } from '../../../../../shared/lib/errors';
-import { SectionToggle } from './SectionToggle';
-import { PlanReadySuggestion } from './PlanReadySuggestion';
-import { AgentRow } from './AgentRow';
-import { WorkflowStepRow } from './WorkflowStepRow';
-import { ResolveCluster } from './ResolveCluster';
-import { ScoutSubtree } from './ScoutSubtree';
-import { ClusterChildRow } from './ClusterChildRow';
-import { SpawnAgentControl } from './SpawnAgentControl';
-import { WorkflowKillButton } from './WorkflowKillButton';
-import { WorkflowStartButton } from './WorkflowStartButton';
-import { CollapsedSummary } from './CollapsedSummary';
-import { pluralize, workflowKindName, type WorkflowBlockReason } from '../lib';
+} from '../../../../../features/session/agent-kind'
+import { formatError } from '../../../../../shared/lib/errors'
+import { SectionToggle } from './SectionToggle'
+import { PlanReadySuggestion } from './PlanReadySuggestion'
+import { AgentRow } from './AgentRow'
+import { WorkflowStepRow } from './WorkflowStepRow'
+import { ResolveCluster } from './ResolveCluster'
+import { ScoutSubtree } from './ScoutSubtree'
+import { ClusterChildRow } from './ClusterChildRow'
+import { SpawnAgentControl } from './SpawnAgentControl'
+import { WorkflowKillButton } from './WorkflowKillButton'
+import { WorkflowStartButton } from './WorkflowStartButton'
+import { CollapsedSummary } from './CollapsedSummary'
+import { pluralize, workflowKindName, type WorkflowBlockReason } from '../lib'
 
 type AgentsSectionProps = {
-  task: Session;
-  only?: 'workflows' | 'agents' | 'scripts' | 'resolve';
-};
+  task: Session
+  only?: 'workflows' | 'agents' | 'scripts' | 'resolve'
+}
 
 export function AgentsSection({ task, only }: AgentsSectionProps) {
-  const showWorkflows = only == null || only === 'workflows';
-  const showAgents = only == null || only === 'agents';
-  const showScripts = only == null || only === 'scripts';
-  const showResolve = only == null || only === 'resolve';
-  const forceExpanded = only != null;
-  const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
+  const showWorkflows = only == null || only === 'workflows'
+  const showAgents = only == null || only === 'agents'
+  const showScripts = only == null || only === 'scripts'
+  const showResolve = only == null || only === 'resolve'
+  const forceExpanded = only != null
+  const isTaskActive = useAppStore((s) => s.currentSessionId === task.id)
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
+  )
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
-  const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
+  )
+  const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY)
   const agentRunHistory = useAppStore(
     useShallow((s) => {
-      const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      const runs = s.sessionPhaseRuns[task.id];
+      const out: Record<string, ReadonlyArray<ProviderRunId>> = {}
+      const runs = s.sessionPhaseRuns[task.id]
       if (!runs) {
-        return out;
+        return out
       }
       for (const run of runs) {
-        const history = s.agentRunHistory[run.id];
+        const history = s.agentRunHistory[run.id]
         if (history) {
-          out[run.id] = history;
+          out[run.id] = history
         }
       }
-      return out;
+      return out
     }),
-  );
+  )
   const agentKindOverride = useAppStore(
     useShallow((s) => {
-      const out: Record<string, AgentKind> = {};
-      const runs = s.sessionPhaseRuns[task.id];
+      const out: Record<string, AgentKind> = {}
+      const runs = s.sessionPhaseRuns[task.id]
       if (!runs) {
-        return out;
+        return out
       }
       for (const run of runs) {
-        const kind = s.agentKindOverride[run.id];
+        const kind = s.agentKindOverride[run.id]
         if (kind) {
-          out[run.id] = kind;
+          out[run.id] = kind
         }
       }
-      return out;
+      return out
     }),
-  );
+  )
   const agentModelOverride = useAppStore(
     useShallow((s) => {
-      const out: Record<string, string> = {};
-      const runs = s.sessionPhaseRuns[task.id];
+      const out: Record<string, string> = {}
+      const runs = s.sessionPhaseRuns[task.id]
       if (!runs) {
-        return out;
+        return out
       }
       for (const run of runs) {
-        const model = s.agentModelOverride[run.id];
+        const model = s.agentModelOverride[run.id]
         if (model) {
-          out[run.id] = model;
+          out[run.id] = model
         }
       }
-      return out;
+      return out
     }),
-  );
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
-  const worktreePath = useAppStore((s) => (s.sessionWorktrees[task.id] ?? [])[0] ?? null);
-  const prNumber = useAppStore((s) => s.sessionGithub[task.id]?.pr?.number ?? null);
+  )
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null)
+  const worktreePath = useAppStore((s) => (s.sessionWorktrees[task.id] ?? [])[0] ?? null)
+  const prNumber = useAppStore((s) => s.sessionGithub[task.id]?.pr?.number ?? null)
   const resolvedThreadIds = useAppStore(
     useShallow(
       (s) =>
@@ -148,236 +148,236 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
             .map((c) => c.threadId as string),
         ),
     ),
-  );
+  )
   const pendingThreadIds = useAppStore(
     useShallow((s) => new Set((s.sessionPendingResolutions[task.id] ?? []).map((r) => r.threadId))),
-  );
+  )
   const resolverState = useAppStore(
     useShallow((s) => {
-      const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
-      const runs = s.sessionPhaseRuns[task.id];
+      const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {}
+      const runs = s.sessionPhaseRuns[task.id]
       if (!runs) {
-        return out;
+        return out
       }
       for (const run of runs) {
-        const st = s.resolverState[run.id];
+        const st = s.resolverState[run.id]
         if (st) {
-          out[run.id] = st;
+          out[run.id] = st
         }
       }
-      return out;
+      return out
     }),
-  );
+  )
   const prComments = useAppStore(
     (s) => s.sessionGithub[task.id]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
-  );
+  )
   const diffComments = useAppStore(
     (s) => s.diffComments[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<DiffComment>),
-  );
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
-  const activateNextResolver = useAppStore((s) => s.activateNextResolver);
-  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
-  const dequeueResolution = useAppStore((s) => s.dequeueResolution);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
-  const forceAdvanceWorkflowStep = useAppStore((s) => s.forceAdvanceWorkflowStep);
-  const renameAgent = useAppStore((s) => s.renameAgent);
-  const deleteAgent = useAppStore((s) => s.deleteAgent);
+  )
+  const selectAgent = useAppStore((s) => s.selectAgent)
+  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll)
+  const activateNextResolver = useAppStore((s) => s.activateNextResolver)
+  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread)
+  const dequeueResolution = useAppStore((s) => s.dequeueResolution)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent)
+  const forceAdvanceWorkflowStep = useAppStore((s) => s.forceAdvanceWorkflowStep)
+  const renameAgent = useAppStore((s) => s.renameAgent)
+  const deleteAgent = useAppStore((s) => s.deleteAgent)
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
+  )
   const sessionWorkflows = useAppStore(
     (s) => s.sessionWorkflows[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
+  )
   const attachedRuns = useMemo<ReadonlyArray<{ run: WorkflowRun; workflow: Workflow }>>(() => {
-    const byId = new Map<string, Workflow>();
-    for (const w of phaseTemplates) byId.set(w.id, w);
-    for (const w of sessionWorkflows) byId.set(w.id, w);
+    const byId = new Map<string, Workflow>()
+    for (const w of phaseTemplates) byId.set(w.id, w)
+    for (const w of sessionWorkflows) byId.set(w.id, w)
     return [...task.workflowRuns]
       .sort((a, b) => a.ordinal - b.ordinal)
       .map((run) => {
-        const workflow = byId.get(run.workflowId);
-        return workflow ? { run, workflow } : null;
+        const workflow = byId.get(run.workflowId)
+        return workflow ? { run, workflow } : null
       })
-      .filter((e): e is { run: WorkflowRun; workflow: Workflow } => e !== null);
-  }, [task.workflowRuns, phaseTemplates, sessionWorkflows]);
-  const discardWorkflow = useAppStore((s) => s.discardWorkflow);
-  const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
-  const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
-  const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
+      .filter((e): e is { run: WorkflowRun; workflow: Workflow } => e !== null)
+  }, [task.workflowRuns, phaseTemplates, sessionWorkflows])
+  const discardWorkflow = useAppStore((s) => s.discardWorkflow)
+  const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows)
+  const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun)
+  const startWorkflowRun = useAppStore((s) => s.startWorkflowRun)
   const workflowNameByRunId = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, string>()
     for (const { run, workflow } of attachedRuns) {
-      map.set(run.id, workflowKindName(workflow));
+      map.set(run.id, workflowKindName(workflow))
     }
-    return map;
-  }, [attachedRuns]);
-  const openQuestions = useSessionOpenQuestions(task.id);
-  const loading = useSessionLoading(task.id);
-  const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
-  const [spawnError, setSpawnError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<AgentId | null>(null);
-  const workflowExpand = useAppStore((s) => s.workflowExpand[task.id]);
-  const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId?.[task.id] ?? null);
-  const toggleWorkflowExpand = useAppStore((s) => s.toggleWorkflowExpand);
-  const [resolveExpanded, setResolveExpanded] = useState(true);
-  const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
-  const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
-  const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
+    return map
+  }, [attachedRuns])
+  const openQuestions = useSessionOpenQuestions(task.id)
+  const loading = useSessionLoading(task.id)
+  const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running')
+  const [spawnError, setSpawnError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<AgentId | null>(null)
+  const workflowExpand = useAppStore((s) => s.workflowExpand[task.id])
+  const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId?.[task.id] ?? null)
+  const toggleWorkflowExpand = useAppStore((s) => s.toggleWorkflowExpand)
+  const [resolveExpanded, setResolveExpanded] = useState(true)
+  const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded)
+  const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true)
+  const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map())
   const toggleClusterExpand = useCallback((id: string) => {
     setClusterExpand((prev) => {
-      const next = new Map(prev);
-      next.set(id, !(prev.get(id) ?? false));
-      return next;
-    });
-  }, []);
+      const next = new Map(prev)
+      next.set(id, !(prev.get(id) ?? false))
+      return next
+    })
+  }, [])
 
-  const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
+  const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns])
   const agentsByRunId = useMemo(() => {
-    const map = new Map<string, Agent[]>();
+    const map = new Map<string, Agent[]>()
     for (const r of sorted) {
       if (r.stepId == null || r.workflowRunId == null) {
-        continue;
+        continue
       }
-      const bucket = map.get(r.workflowRunId) ?? [];
-      bucket.push(r);
-      map.set(r.workflowRunId, bucket);
+      const bucket = map.get(r.workflowRunId) ?? []
+      bucket.push(r)
+      map.set(r.workflowRunId, bucket)
     }
-    return map;
-  }, [sorted]);
+    return map
+  }, [sorted])
   const childrenByParentId = useMemo(() => {
-    const map = new Map<string, Agent[]>();
+    const map = new Map<string, Agent[]>()
     for (const r of sorted) {
       if (r.parentAgentId == null) {
-        continue;
+        continue
       }
-      const bucket = map.get(r.parentAgentId) ?? [];
-      bucket.push(r);
-      map.set(r.parentAgentId, bucket);
+      const bucket = map.get(r.parentAgentId) ?? []
+      bucket.push(r)
+      map.set(r.parentAgentId, bucket)
     }
-    return map;
-  }, [sorted]);
+    return map
+  }, [sorted])
   const adHocAgents = useMemo(
     () =>
       sorted.filter(
         (r) => r.parentAgentId == null && !(r.workflowRunId != null && r.stepId != null),
       ),
     [sorted],
-  );
+  )
   const countUnread = useCallback(
     (agentsList: ReadonlyArray<Agent>): number => {
-      let n = 0;
+      let n = 0
       const visit = (a: Agent) => {
         if (agentHasUnread(a, a.id === selectedAgentId && isTaskActive)) {
-          n += 1;
+          n += 1
         }
         for (const c of childrenByParentId.get(a.id) ?? EMPTY_ARRAY) {
-          visit(c);
+          visit(c)
         }
-      };
-      for (const a of agentsList) {
-        visit(a);
       }
-      return n;
+      for (const a of agentsList) {
+        visit(a)
+      }
+      return n
     },
     [childrenByParentId, selectedAgentId, isTaskActive],
-  );
+  )
   const actionableStepIdByRunId = useMemo(() => {
-    const map = new Map<string, string | null>();
+    const map = new Map<string, string | null>()
     for (const { run, workflow } of attachedRuns) {
       if (run.discardedAt) {
-        map.set(run.id, null);
-        continue;
+        map.set(run.id, null)
+        continue
       }
-      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
-      map.set(run.id, pickNextWorkflowStep(workflow, runAgents)?.id ?? null);
+      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY
+      map.set(run.id, pickNextWorkflowStep(workflow, runAgents)?.id ?? null)
     }
-    return map;
-  }, [attachedRuns, agentsByRunId]);
+    return map
+  }, [attachedRuns, agentsByRunId])
   const blockReasonByRunId = useMemo(() => {
-    const map = new Map<string, WorkflowBlockReason | null>();
+    const map = new Map<string, WorkflowBlockReason | null>()
     for (const { run, workflow } of attachedRuns) {
-      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
+      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY
       const reason: WorkflowBlockReason | null = workflowRunHasOpenQuestions(openQuestions, run.id)
         ? 'questions'
         : summarizerBusy
           ? 'summarizer'
           : classifyWorkflowChain(workflow, runAgents).kind === 'blocked'
             ? 'failed-step'
-            : null;
-      map.set(run.id, reason);
+            : null
+      map.set(run.id, reason)
     }
-    return map;
-  }, [attachedRuns, agentsByRunId, openQuestions, summarizerBusy]);
+    return map
+  }, [attachedRuns, agentsByRunId, openQuestions, summarizerBusy])
 
   const onDiscardWorkflow = useCallback(
     async (runId: WorkflowRunId) => {
       try {
-        await discardWorkflow(task.id, runId);
+        await discardWorkflow(task.id, runId)
       } catch (err) {
-        setSpawnError(formatError(err));
+        setSpawnError(formatError(err))
       }
     },
     [discardWorkflow, task.id],
-  );
+  )
 
   const onReorderWorkflow = useCallback(
     async (runId: WorkflowRunId, direction: 'up' | 'down') => {
-      const ids = [...task.workflowRuns].sort((a, b) => a.ordinal - b.ordinal).map((r) => r.id);
-      const idx = ids.indexOf(runId);
+      const ids = [...task.workflowRuns].sort((a, b) => a.ordinal - b.ordinal).map((r) => r.id)
+      const idx = ids.indexOf(runId)
       if (idx === -1) {
-        return;
+        return
       }
-      const swap = direction === 'up' ? idx - 1 : idx + 1;
+      const swap = direction === 'up' ? idx - 1 : idx + 1
       if (swap < 0 || swap >= ids.length) {
-        return;
+        return
       }
-      [ids[idx], ids[swap]] = [ids[swap]!, ids[idx]!];
+      ;[ids[idx], ids[swap]] = [ids[swap]!, ids[idx]!]
       try {
-        await reorderSessionWorkflows(task.id, ids);
+        await reorderSessionWorkflows(task.id, ids)
       } catch (err) {
-        setSpawnError(formatError(err));
+        setSpawnError(formatError(err))
       }
     },
     [reorderSessionWorkflows, task.id, task.workflowRuns],
-  );
+  )
 
   const telemetryByRunId = useMemo(() => {
-    const map = new Map<string, TelemetryRecord>();
+    const map = new Map<string, TelemetryRecord>()
     for (const rec of telemetry) {
-      const existing = map.get(rec.runId);
+      const existing = map.get(rec.runId)
       if (!existing || existing.recordedAt < rec.recordedAt) {
-        map.set(rec.runId, rec);
+        map.set(rec.runId, rec)
       }
     }
-    return map;
-  }, [telemetry]);
+    return map
+  }, [telemetry])
 
   const turnsByAgentId = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, number>()
     for (const m of messages) {
       if (m.role !== 'user') {
-        continue;
+        continue
       }
-      map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
+      map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1)
     }
-    return map;
-  }, [messages]);
+    return map
+  }, [messages])
 
   const firstUserTextByAgentId = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, string>()
     for (const m of messages) {
       if (m.role !== 'user') {
-        continue;
+        continue
       }
       if (map.has(m.agentId)) {
-        continue;
+        continue
       }
-      map.set(m.agentId, m.content);
+      map.set(m.agentId, m.content)
     }
-    return map;
-  }, [messages]);
+    return map
+  }, [messages])
 
   const resolverAgents = useMemo(
     () =>
@@ -392,153 +392,153 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           ) === 'resolver',
       ),
     [sorted, firstUserTextByAgentId, agentKindOverride],
-  );
-  const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
+  )
+  const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents])
   const commentByThreadId = useMemo(() => {
-    const map = new Map<string, PrComment>();
+    const map = new Map<string, PrComment>()
     for (const c of prComments) {
       if (c.threadId == null || c.inReplyToId != null) {
-        continue;
+        continue
       }
       if (!map.has(c.threadId)) {
-        map.set(c.threadId, c);
+        map.set(c.threadId, c)
       }
     }
-    return map;
-  }, [prComments]);
+    return map
+  }, [prComments])
   const diffCommentByAgentId = useMemo(() => {
-    const map = new Map<AgentId, DiffComment>();
+    const map = new Map<AgentId, DiffComment>()
     for (const c of diffComments) {
       if (c.consumedByAgentId != null) {
-        map.set(c.consumedByAgentId, c);
+        map.set(c.consumedByAgentId, c)
       }
     }
-    return map;
-  }, [diffComments]);
+    return map
+  }, [diffComments])
   const onResolveThread = useCallback(
     async (threadId: string) => {
-      const ok = await resolveGithubThread(task.id, threadId);
+      const ok = await resolveGithubThread(task.id, threadId)
       if (ok) {
-        await dequeueResolution(task.id, threadId);
+        await dequeueResolution(task.id, threadId)
       }
     },
     [resolveGithubThread, dequeueResolution, task.id],
-  );
+  )
   const standaloneAgentCount = useMemo(
     () => adHocAgents.filter((r) => !resolverIds.has(r.id)).length,
     [adHocAgents, resolverIds],
-  );
+  )
   const agentsExpanded = useAppStore(
     (s) => s.sessionPanelExpanded[task.id]?.agents ?? standaloneAgentCount > 0,
-  );
+  )
 
   const aggregatesByAgentId = useMemo(() => {
     const map = new Map<
       string,
       { inputTokens: number; outputTokens: number; estimatedCostUsd: number; turns: number }
-    >();
-    const telemetryByRun = new Map<string, TelemetryRecord>();
+    >()
+    const telemetryByRun = new Map<string, TelemetryRecord>()
     for (const rec of telemetry) {
       if (rec.kind !== 'turn') {
-        continue;
+        continue
       }
-      const existing = telemetryByRun.get(rec.runId);
+      const existing = telemetryByRun.get(rec.runId)
       if (!existing || existing.recordedAt < rec.recordedAt) {
-        telemetryByRun.set(rec.runId, rec);
+        telemetryByRun.set(rec.runId, rec)
       }
     }
     for (const run of phaseRuns) {
-      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
-      let inputTokens = 0;
-      let outputTokens = 0;
-      let estimatedCostUsd = 0;
-      let turns = 0;
+      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : [])
+      let inputTokens = 0
+      let outputTokens = 0
+      let estimatedCostUsd = 0
+      let turns = 0
       for (const rid of runIds) {
-        const rec = telemetryByRun.get(rid);
+        const rec = telemetryByRun.get(rid)
         if (!rec) {
-          continue;
+          continue
         }
-        inputTokens += rec.inputTokens;
-        outputTokens += rec.outputTokens;
-        estimatedCostUsd += rec.estimatedCostUsd;
-        turns += 1;
+        inputTokens += rec.inputTokens
+        outputTokens += rec.outputTokens
+        estimatedCostUsd += rec.estimatedCostUsd
+        turns += 1
       }
-      map.set(run.id, { inputTokens, outputTokens, estimatedCostUsd, turns });
+      map.set(run.id, { inputTokens, outputTokens, estimatedCostUsd, turns })
     }
-    const childIds = new Map<string, string[]>();
+    const childIds = new Map<string, string[]>()
     for (const run of phaseRuns) {
       if (run.parentAgentId == null) {
-        continue;
+        continue
       }
-      const bucket = childIds.get(run.parentAgentId) ?? [];
-      bucket.push(run.id);
-      childIds.set(run.parentAgentId, bucket);
+      const bucket = childIds.get(run.parentAgentId) ?? []
+      bucket.push(run.id)
+      childIds.set(run.parentAgentId, bucket)
     }
-    const rolled = new Set<string>();
+    const rolled = new Set<string>()
     const rollup = (id: string) => {
       if (rolled.has(id)) {
-        return;
+        return
       }
-      rolled.add(id);
-      const self = map.get(id);
+      rolled.add(id)
+      const self = map.get(id)
       if (!self) {
-        return;
+        return
       }
       for (const cid of childIds.get(id) ?? []) {
-        rollup(cid);
-        const child = map.get(cid);
+        rollup(cid)
+        const child = map.get(cid)
         if (!child) {
-          continue;
+          continue
         }
-        self.inputTokens += child.inputTokens;
-        self.outputTokens += child.outputTokens;
-        self.estimatedCostUsd += child.estimatedCostUsd;
-        self.turns += child.turns;
+        self.inputTokens += child.inputTokens
+        self.outputTokens += child.outputTokens
+        self.estimatedCostUsd += child.estimatedCostUsd
+        self.turns += child.turns
       }
-    };
-    for (const run of phaseRuns) rollup(run.id);
-    return map;
-  }, [telemetry, phaseRuns, agentRunHistory]);
+    }
+    for (const run of phaseRuns) rollup(run.id)
+    return map
+  }, [telemetry, phaseRuns, agentRunHistory])
 
   const providerUsageByAgentId = useMemo(() => {
     type Entry = {
-      provider: ProviderName;
-      model: string;
-      recordedAt: string;
-      inputTokens: number;
-      outputTokens: number;
-    };
+      provider: ProviderName
+      model: string
+      recordedAt: string
+      inputTokens: number
+      outputTokens: number
+    }
     const merge = (target: Map<ProviderName, Entry>, rec: Entry) => {
-      const e = target.get(rec.provider);
+      const e = target.get(rec.provider)
       if (!e) {
-        target.set(rec.provider, { ...rec });
-        return;
+        target.set(rec.provider, { ...rec })
+        return
       }
-      e.inputTokens += rec.inputTokens;
-      e.outputTokens += rec.outputTokens;
+      e.inputTokens += rec.inputTokens
+      e.outputTokens += rec.outputTokens
       if (e.recordedAt < rec.recordedAt) {
-        e.recordedAt = rec.recordedAt;
-        e.model = rec.model;
-      }
-    };
-    const telemetryByRun = new Map<string, TelemetryRecord>();
-    for (const rec of telemetry) {
-      if (rec.kind !== 'turn') {
-        continue;
-      }
-      const existing = telemetryByRun.get(rec.runId);
-      if (!existing || existing.recordedAt < rec.recordedAt) {
-        telemetryByRun.set(rec.runId, rec);
+        e.recordedAt = rec.recordedAt
+        e.model = rec.model
       }
     }
-    const map = new Map<string, Map<ProviderName, Entry>>();
+    const telemetryByRun = new Map<string, TelemetryRecord>()
+    for (const rec of telemetry) {
+      if (rec.kind !== 'turn') {
+        continue
+      }
+      const existing = telemetryByRun.get(rec.runId)
+      if (!existing || existing.recordedAt < rec.recordedAt) {
+        telemetryByRun.set(rec.runId, rec)
+      }
+    }
+    const map = new Map<string, Map<ProviderName, Entry>>()
     for (const run of phaseRuns) {
-      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
-      const byProvider = new Map<ProviderName, Entry>();
+      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : [])
+      const byProvider = new Map<ProviderName, Entry>()
       for (const rid of runIds) {
-        const rec = telemetryByRun.get(rid);
+        const rec = telemetryByRun.get(rid)
         if (!rec) {
-          continue;
+          continue
         }
         merge(byProvider, {
           provider: rec.provider,
@@ -546,42 +546,42 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           recordedAt: rec.recordedAt,
           inputTokens: rec.inputTokens,
           outputTokens: rec.outputTokens,
-        });
+        })
       }
-      map.set(run.id, byProvider);
+      map.set(run.id, byProvider)
     }
-    const childIds = new Map<string, string[]>();
+    const childIds = new Map<string, string[]>()
     for (const run of phaseRuns) {
       if (run.parentAgentId == null) {
-        continue;
+        continue
       }
-      const bucket = childIds.get(run.parentAgentId) ?? [];
-      bucket.push(run.id);
-      childIds.set(run.parentAgentId, bucket);
+      const bucket = childIds.get(run.parentAgentId) ?? []
+      bucket.push(run.id)
+      childIds.set(run.parentAgentId, bucket)
     }
-    const rolled = new Set<string>();
+    const rolled = new Set<string>()
     const rollup = (id: string) => {
       if (rolled.has(id)) {
-        return;
+        return
       }
-      rolled.add(id);
-      const self = map.get(id);
+      rolled.add(id)
+      const self = map.get(id)
       if (!self) {
-        return;
+        return
       }
       for (const cid of childIds.get(id) ?? []) {
-        rollup(cid);
-        const child = map.get(cid);
+        rollup(cid)
+        const child = map.get(cid)
         if (!child) {
-          continue;
+          continue
         }
         for (const ce of child.values()) {
-          merge(self, ce);
+          merge(self, ce)
         }
       }
-    };
-    for (const run of phaseRuns) rollup(run.id);
-    const result = new Map<string, ReadonlyArray<ProviderContextUsage>>();
+    }
+    for (const run of phaseRuns) rollup(run.id)
+    const result = new Map<string, ReadonlyArray<ProviderContextUsage>>()
     for (const [id, byProvider] of map) {
       const list = [...byProvider.values()]
         .map((e) => ({
@@ -590,80 +590,80 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           inputTokens: e.inputTokens,
           outputTokens: e.outputTokens,
         }))
-        .sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens));
-      result.set(id, list);
+        .sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens))
+      result.set(id, list)
     }
-    return result;
-  }, [telemetry, phaseRuns, agentRunHistory]);
+    return result
+  }, [telemetry, phaseRuns, agentRunHistory])
 
   const latestTelemetryByAgentId = useMemo(
     () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
     [telemetryByRunId, phaseRuns, agentRunHistory],
-  );
+  )
 
   const onPickAgent = (sid: AgentId) => {
     if (sid === selectedAgentId) {
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-      return;
+      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))
+      return
     }
-    void selectAgent(task.id, sid);
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-  };
+    void selectAgent(task.id, sid)
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))
+  }
 
   const onResolveFirstForRun = (run: WorkflowRun) => {
     const q = openQuestions.find(
       (oq) => oq.status === 'open' && (!oq.workflowRunId || oq.workflowRunId === run.id),
-    );
+    )
     if (!q || !q.createdByAgentId) {
-      return;
+      return
     }
-    void selectAgent(task.id, q.createdByAgentId);
-    requestOpenQuestionScroll({ agentId: q.createdByAgentId, questionId: q.id });
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-  };
+    void selectAgent(task.id, q.createdByAgentId)
+    requestOpenQuestionScroll({ agentId: q.createdByAgentId, questionId: q.id })
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))
+  }
 
   const onStartStepAgent = async (agent: Agent, model?: string) => {
-    setSpawnError(null);
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    setSpawnError(null)
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))
     try {
       if (agent.status === 'pending') {
-        await activateWorkflowAgent(task.id, agent.id);
-        return;
+        await activateWorkflowAgent(task.id, agent.id)
+        return
       }
       await spawnAgent(task.id, {
         ...(agent.stepId != null && { stepId: agent.stepId }),
         ...(agent.workflowRunId != null && { workflowRunId: agent.workflowRunId }),
         ...(model !== undefined && { model }),
-      });
+      })
     } catch (err) {
-      setSpawnError(formatError(err));
+      setSpawnError(formatError(err))
     }
-  };
+  }
 
   const onRenameCommit = async (id: AgentId, name: string) => {
-    setEditingId(null);
+    setEditingId(null)
     try {
-      await renameAgent(task.id, id, name);
+      await renameAgent(task.id, id, name)
     } catch (err) {
-      setSpawnError(formatError(err));
+      setSpawnError(formatError(err))
     }
-  };
+  }
 
   const onDeleteAgent = async (id: AgentId) => {
     try {
-      await deleteAgent(task.id, id);
+      await deleteAgent(task.id, id)
     } catch (err) {
-      setSpawnError(formatError(err));
+      setSpawnError(formatError(err))
     }
-  };
+  }
 
   const renderAdHocRow = (run: Agent, index: number) => {
     const kind = resolveAgentKind(
       run.name,
       firstUserTextByAgentId.get(run.id) ?? null,
       agentKindOverride[run.id] ?? null,
-    );
-    const scoutChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
+    )
+    const scoutChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY
     return (
       <Fragment key={run.id}>
         <AgentRow
@@ -700,36 +700,36 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           </li>
         )}
       </Fragment>
-    );
-  };
+    )
+  }
 
-  const hasAnyWorkflow = attachedRuns.length > 0;
+  const hasAnyWorkflow = attachedRuns.length > 0
   const renderWorkflowRow = (
     { run, workflow }: { run: WorkflowRun; workflow: Workflow },
     idx: number,
   ) => {
-    const workflowRun = run;
-    const isDiscarded = run.discardedAt != null;
-    const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
-    const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
-    const wfBlockReason = blockReasonByRunId.get(run.id) ?? null;
-    const canMoveUp = idx > 0;
-    const canMoveDown = idx < attachedRuns.length - 1;
-    const name = workflowKindName(workflow);
-    const total = workflow.steps.length;
-    const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
-    const isCompleted = !isDiscarded && total > 0 && done >= total;
-    const unreadCount = countUnread(wfAgents);
+    const workflowRun = run
+    const isDiscarded = run.discardedAt != null
+    const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY
+    const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null
+    const wfBlockReason = blockReasonByRunId.get(run.id) ?? null
+    const canMoveUp = idx > 0
+    const canMoveDown = idx < attachedRuns.length - 1
+    const name = workflowKindName(workflow)
+    const total = workflow.steps.length
+    const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length
+    const isCompleted = !isDiscarded && total > 0 && done >= total
+    const unreadCount = countUnread(wfAgents)
     const expanded =
       focusedWorkflowRunId != null
         ? run.id === focusedWorkflowRunId
-        : (workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0)));
-    const hasStarted = wfAgents.length > 0;
-    const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
-    const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
+        : (workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0)))
+    const hasStarted = wfAgents.length > 0
+    const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted
+    const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted
     const predecessorName = run.chainAfterId
       ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
-      : 'previous';
+      : 'previous'
     return (
       <div
         key={run.id}
@@ -854,20 +854,20 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           wfAgents.length > 0 ? (
             <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
               {wfAgents.map((run, index) => {
-                const isActionable = run.stepId === actionableStepId && run.status === 'pending';
-                const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+                const isActionable = run.stepId === actionableStepId && run.status === 'pending'
+                const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name)
                 const stepModel =
                   run.stepId != null
                     ? workflow.steps.find((s) => s.id === run.stepId)?.modelOverride
-                    : undefined;
+                    : undefined
                 const resolvedModel =
                   stepModel ??
                   agentModelOverride[run.id] ??
                   run.modelOverride ??
-                  AGENT_KIND_DEFAULTS[kind].model;
-                const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
-                const clustersExpanded = clusterExpand.get(run.id) ?? false;
-                const clusterUnread = countUnread(clusterChildren);
+                  AGENT_KIND_DEFAULTS[kind].model
+                const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY
+                const clustersExpanded = clusterExpand.get(run.id) ?? false
+                const clusterUnread = countUnread(clusterChildren)
                 return (
                   <Fragment key={run.id}>
                     <WorkflowStepRow
@@ -950,7 +950,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                       </div>
                     )}
                   </Fragment>
-                );
+                )
               })}
             </div>
           ) : (
@@ -975,11 +975,11 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
           </div>
         ) : null}
       </div>
-    );
-  };
+    )
+  }
 
-  const wfExpanded = forceExpanded || workflowExpanded;
-  const agExpanded = forceExpanded || agentsExpanded;
+  const wfExpanded = forceExpanded || workflowExpanded
+  const agExpanded = forceExpanded || agentsExpanded
 
   return (
     <section className="flex flex-col">
@@ -1179,5 +1179,5 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
         ) : null
       ) : null}
     </section>
-  );
+  )
 }

@@ -1,84 +1,84 @@
-import type { IsoDateTime, Skill, SkillId, WorkspaceId } from '@goodboy/types';
-import type { Database as SqlDatabase } from '@goodboy/db';
-import { listSkillsForWorkspace, upsertSkill, deleteSkill } from '@goodboy/db';
-import { parseSkillMarkdown, SkillParseError } from './parser';
+import type { IsoDateTime, Skill, SkillId, WorkspaceId } from '@goodboy/types'
+import type { Database as SqlDatabase } from '@goodboy/db'
+import { listSkillsForWorkspace, upsertSkill, deleteSkill } from '@goodboy/db'
+import { parseSkillMarkdown, SkillParseError } from './parser'
 
 export type SkillFs = {
-  readDir(path: string): Promise<string[]>;
-  readFile(path: string): Promise<string>;
-  stat(path: string): Promise<{ exists: boolean }>;
-};
+  readDir(path: string): Promise<string[]>
+  readFile(path: string): Promise<string>
+  stat(path: string): Promise<{ exists: boolean }>
+}
 
 export type SkillRegistryDeps = {
-  readonly fs: SkillFs;
-  readonly now: () => IsoDateTime;
-};
+  readonly fs: SkillFs
+  readonly now: () => IsoDateTime
+}
 
 export class SkillRegistryError extends Error {
   constructor(
     message: string,
     public override readonly cause?: unknown,
   ) {
-    super(message);
-    this.name = 'SkillRegistryError';
+    super(message)
+    this.name = 'SkillRegistryError'
   }
 }
 
 type SkillCandidate = {
-  filePath: string;
-};
+  filePath: string
+}
 
 export class SkillRegistry {
-  private readonly fs: SkillFs;
-  private readonly now: () => IsoDateTime;
+  private readonly fs: SkillFs
+  private readonly now: () => IsoDateTime
 
   constructor(deps: SkillRegistryDeps) {
-    this.fs = deps.fs;
-    this.now = deps.now;
+    this.fs = deps.fs
+    this.now = deps.now
   }
 
   private async collectKaySkills(rootPath: string): Promise<SkillCandidate[]> {
-    const skillsDir = `${rootPath}/.kay/skills`;
-    let filenames: string[];
+    const skillsDir = `${rootPath}/.kay/skills`
+    let filenames: string[]
     try {
-      filenames = await this.fs.readDir(skillsDir);
+      filenames = await this.fs.readDir(skillsDir)
     } catch (err) {
-      const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }));
+      const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }))
       if (!exists) {
-        return [];
+        return []
       }
-      throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err);
+      throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err)
     }
     return filenames
       .filter((f) => f.endsWith('.md'))
-      .map((f) => ({ filePath: `${skillsDir}/${f}` }));
+      .map((f) => ({ filePath: `${skillsDir}/${f}` }))
   }
 
   private async collectClaudeSkills(rootPath: string): Promise<SkillCandidate[]> {
-    return this.collectNestedSkills(`${rootPath}/.claude/skills`);
+    return this.collectNestedSkills(`${rootPath}/.claude/skills`)
   }
 
   private async collectNestedSkills(skillsDir: string): Promise<SkillCandidate[]> {
-    let entries: string[];
+    let entries: string[]
     try {
-      entries = await this.fs.readDir(skillsDir);
+      entries = await this.fs.readDir(skillsDir)
     } catch (err) {
-      const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }));
+      const { exists } = await this.fs.stat(skillsDir).catch(() => ({ exists: false }))
       if (!exists) {
-        return [];
+        return []
       }
-      throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err);
+      throw new SkillRegistryError(`failed to read skills directory: ${skillsDir}`, err)
     }
 
-    const candidates: SkillCandidate[] = [];
+    const candidates: SkillCandidate[] = []
     for (const entry of entries) {
-      const skillFilePath = `${skillsDir}/${entry}/SKILL.md`;
-      const { exists } = await this.fs.stat(skillFilePath).catch(() => ({ exists: false }));
+      const skillFilePath = `${skillsDir}/${entry}/SKILL.md`
+      const { exists } = await this.fs.stat(skillFilePath).catch(() => ({ exists: false }))
       if (exists) {
-        candidates.push({ filePath: skillFilePath });
+        candidates.push({ filePath: skillFilePath })
       }
     }
-    return candidates;
+    return candidates
   }
 
   async scanWorkspace(
@@ -89,39 +89,39 @@ export class SkillRegistry {
     const [kaySkills, claudeSkills] = await Promise.all([
       this.collectKaySkills(rootPath),
       this.collectClaudeSkills(rootPath),
-    ]);
+    ])
 
-    const candidates = [...kaySkills, ...claudeSkills];
+    const candidates = [...kaySkills, ...claudeSkills]
 
-    const existing = await listSkillsForWorkspace(db, workspaceId);
-    const existingByPath = new Map<string, Skill>(existing.map((s) => [s.filePath, s]));
+    const existing = await listSkillsForWorkspace(db, workspaceId)
+    const existingByPath = new Map<string, Skill>(existing.map((s) => [s.filePath, s]))
 
-    const scannedPaths = new Set<string>();
-    const result: Skill[] = [];
+    const scannedPaths = new Set<string>()
+    const result: Skill[] = []
 
     for (const { filePath } of candidates) {
-      scannedPaths.add(filePath);
+      scannedPaths.add(filePath)
 
-      let raw: string;
+      let raw: string
       try {
-        raw = await this.fs.readFile(filePath);
+        raw = await this.fs.readFile(filePath)
       } catch (err) {
-        throw new SkillRegistryError(`failed to read skill file: ${filePath}`, err);
+        throw new SkillRegistryError(`failed to read skill file: ${filePath}`, err)
       }
 
-      let parsed: ReturnType<typeof parseSkillMarkdown>;
+      let parsed: ReturnType<typeof parseSkillMarkdown>
       try {
-        parsed = parseSkillMarkdown(raw);
+        parsed = parseSkillMarkdown(raw)
       } catch (err) {
         if (err instanceof SkillParseError) {
-          throw new SkillRegistryError(`malformed skill file ${filePath}: ${err.message}`, err);
+          throw new SkillRegistryError(`malformed skill file ${filePath}: ${err.message}`, err)
         }
-        throw err;
+        throw err
       }
 
-      const { frontmatter, body } = parsed;
-      const existing_ = existingByPath.get(filePath);
-      const now = this.now();
+      const { frontmatter, body } = parsed
+      const existing_ = existingByPath.get(filePath)
+      const now = this.now()
 
       const skill: Skill = {
         id: existing_?.id ?? (crypto.randomUUID() as SkillId),
@@ -133,23 +133,23 @@ export class SkillRegistry {
         frontmatter,
         createdAt: existing_?.createdAt ?? now,
         updatedAt: now,
-      };
+      }
 
-      await upsertSkill(db, skill);
-      result.push(skill);
+      await upsertSkill(db, skill)
+      result.push(skill)
     }
 
     for (const s of existing) {
       if (!scannedPaths.has(s.filePath)) {
-        await deleteSkill(db, s.id);
+        await deleteSkill(db, s.id)
       }
     }
 
-    return result;
+    return result
   }
 
   async listSkills(workspaceId: WorkspaceId, db: SqlDatabase): Promise<ReadonlyArray<Skill>> {
-    return listSkillsForWorkspace(db, workspaceId);
+    return listSkillsForWorkspace(db, workspaceId)
   }
 
   async getSkillByName(
@@ -157,7 +157,7 @@ export class SkillRegistry {
     name: string,
     db: SqlDatabase,
   ): Promise<Skill | null> {
-    const skills = await listSkillsForWorkspace(db, workspaceId);
-    return skills.find((s) => s.name === name) ?? null;
+    const skills = await listSkillsForWorkspace(db, workspaceId)
+    return skills.find((s) => s.name === name) ?? null
   }
 }

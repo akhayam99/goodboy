@@ -87,4 +87,4 @@ CREATE INDEX idx_messages_task_id ON messages(task_id);
 CREATE INDEX idx_messages_task_created ON messages(task_id, created_at);
 CREATE INDEX idx_messages_agent_id ON messages(agent_id);
 CREATE INDEX idx_messages_agent_created ON messages(agent_id, created_at);
-`;
+`

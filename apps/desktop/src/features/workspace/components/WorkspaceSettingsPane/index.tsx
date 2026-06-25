@@ -1,16 +1,16 @@
-import { useEffect } from 'react';
-import { Settings2 } from 'lucide-react';
-import { Divider } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
-import { WorkspaceScopePanel } from '../../../settings/components/SettingsStudio/WorkspaceScopePanel';
-import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
+import { useEffect } from 'react'
+import { Settings2 } from 'lucide-react'
+import { Divider } from '@goodboy/ui'
+import type { WorkspaceId } from '@goodboy/types'
+import { WorkspaceScopePanel } from '../../../settings/components/SettingsStudio/WorkspaceScopePanel'
+import { OverlayHeader } from '../../../../shared/components/OverlayHeader'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
-  readonly initialSection?: string;
-  readonly onClose: () => void;
-};
+  readonly workspaceId: WorkspaceId
+  readonly workspaceName: string
+  readonly initialSection?: string
+  readonly onClose: () => void
+}
 
 export const WorkspaceSettingsPane = ({
   workspaceId,
@@ -21,14 +21,14 @@ export const WorkspaceSettingsPane = ({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
       }
-    };
-    window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [onClose]);
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
+  }, [onClose])
 
   return (
     <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
@@ -48,5 +48,5 @@ export const WorkspaceSettingsPane = ({
         />
       </div>
     </div>
-  );
-};
+  )
+}

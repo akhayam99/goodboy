@@ -1,11 +1,11 @@
-import { Bug, FolderGit2 } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
-import { SentryFormBody } from '../../../integrations/sentry/SentryFormBody';
+import { Bug, FolderGit2 } from 'lucide-react'
+import { Button } from '@goodboy/ui'
+import type { WorkspaceId } from '@goodboy/types'
+import { SentryFormBody } from '../../../integrations/sentry/SentryFormBody'
 
 type Props = {
-  readonly workspaceId: WorkspaceId | null;
-};
+  readonly workspaceId: WorkspaceId | null
+}
 
 export const SentryStep = ({ workspaceId }: Props) => {
   return (
@@ -51,5 +51,5 @@ export const SentryStep = ({ workspaceId }: Props) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

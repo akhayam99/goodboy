@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }))
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }))
+vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }))
 vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
-}));
+}))
 
 vi.mock('../../store', () => ({
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
@@ -101,8 +101,8 @@ vi.mock('../../store', () => ({
       loadBudgetRules: vi.fn(),
       saveBudgetRule: vi.fn(),
       deleteBudgetRule: vi.fn(),
-    };
-    return selector(state);
+    }
+    return selector(state)
   }),
   useCurrentSession: vi.fn().mockReturnValue(null),
   useCurrentWorkspace: vi.fn().mockReturnValue(null),
@@ -111,29 +111,29 @@ vi.mock('../../store', () => ({
   useSessionSlots: vi.fn().mockReturnValue([]),
   useHasUnreadElsewhere: vi.fn().mockReturnValue(false),
   EMPTY_ARRAY: [] as never[],
-}));
+}))
 
 vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
   invokePermissionRuleList: vi.fn().mockResolvedValue([]),
   invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),
   invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
-}));
+}))
 
 vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
-}));
+}))
 
 vi.mock('../../routing', () => ({
   resolveProviderForTurn: vi.fn().mockResolvedValue('anthropic'),
-}));
+}))
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
-import type { AppStore } from '../../store/store';
-import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../store';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render } from '@testing-library/react'
+import type { AppStore } from '../../store/store'
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types'
+import { useAppStore } from '../../store'
 
 const IDLE_LIFECYCLE = {
   phase: 'idle' as const,
@@ -144,35 +144,35 @@ const IDLE_LIFECYCLE = {
   startedAt: null,
   errorTail: null,
   detectedAuthUrl: null,
-};
+}
 
 const DEFAULT_LIFECYCLE_MAP = {
   anthropic: IDLE_LIFECYCLE,
   cursor: IDLE_LIFECYCLE,
   codex: IDLE_LIFECYCLE,
   gemini: IDLE_LIFECYCLE,
-};
+}
 
 function mockStore(partial: Partial<AppStore>): void {
   vi.mocked(useAppStore).mockImplementation((selector: (state: AppStore) => unknown) =>
     selector({ providerLifecycle: DEFAULT_LIFECYCLE_MAP, ...partial } as AppStore),
-  );
+  )
 }
-import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
-import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
-import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
-import { BootSplash } from '../../app/components/BootSplash';
-import { NewSessionView } from '../../features/session/components/NewSessionView';
-import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
-import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { QuickActionsPopover } from '../../features/quick-actions';
-import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
-import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
-import { ToastProvider } from '../../app/components/Toast';
+import { NoWorkspaceScreen } from '../../app/components/AppEmptyState'
+import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState'
+import { NotificationCenter } from '../../features/notifications/components/NotificationCenter'
+import { BootSplash } from '../../app/components/BootSplash'
+import { NewSessionView } from '../../features/session/components/NewSessionView'
+import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog'
+import { SkillsPanel } from '../../features/skills/components/SkillsPanel'
+import { QuickActionsPopover } from '../../features/quick-actions'
+import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar'
+import { TranscriptCard } from '../../features/chat/components/TranscriptCards'
+import { ToastProvider } from '../../app/components/Toast'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
-const WS_ID = 'ws-test' as WorkspaceId;
+const WS_ID = 'ws-test' as WorkspaceId
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -184,14 +184,14 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     state: { kind: 'idle' },
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
     ...overrides,
-  } as Session;
+  } as Session
 }
 
 describe('snapshot, empty states', () => {
   it('SkillsPanel: no skills', () => {
-    const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    const { container } = render(<SkillsPanel workspaceId={WS_ID} />)
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('QuickActionsPopover: no skills / empty items', () => {
     const { container } = render(
@@ -201,9 +201,9 @@ describe('snapshot, empty states', () => {
         onSelect={vi.fn()}
         onDismiss={vi.fn()}
       />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    )
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('WorkspacesSidebar: no workspace selected', () => {
     const { container } = render(
@@ -219,29 +219,29 @@ describe('snapshot, empty states', () => {
         onOpenBudget={vi.fn()}
         onToggleCollapse={vi.fn()}
       />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    )
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('NewSessionView: no workflows', () => {
     const { container } = render(
       <ToastProvider>
         <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    )
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('NotificationCenter: no notifications', () => {
-    const { container } = render(<NotificationCenter />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    const { container } = render(<NotificationCenter />)
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('NoWorkspaceScreen: no workspace, add-workspace CTA', () => {
-    const { container, getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />);
-    expect(getByRole('button', { name: /add workspace/i })).toBeTruthy();
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    const { container, getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />)
+    expect(getByRole('button', { name: /add workspace/i })).toBeTruthy()
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {
     const { container, getByRole } = render(
@@ -251,17 +251,17 @@ describe('snapshot, empty states', () => {
         phaseRuns={[]}
         hasWorkflow={false}
       />,
-    );
-    expect(getByRole('button', { name: /set up a workflow/i })).toBeTruthy();
-    expect(container.firstChild).toMatchSnapshot();
-  });
-});
+    )
+    expect(getByRole('button', { name: /set up a workflow/i })).toBeTruthy()
+    expect(container.firstChild).toMatchSnapshot()
+  })
+})
 
 describe('snapshot, error states', () => {
   it('App init error, BootSplash with error message', () => {
-    const { container } = render(<BootSplash phase="error" error="database migration failed" />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    const { container } = render(<BootSplash phase="error" error="database migration failed" />)
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('NewSessionView: form error', () => {
     mockStore({
@@ -274,29 +274,29 @@ describe('snapshot, error states', () => {
       loadSetting: vi.fn().mockResolvedValue(null),
       createSession: vi.fn().mockRejectedValue(new Error('workspace git repo not found')),
       setSessionBudget: vi.fn(),
-    });
+    })
     const { container } = render(
       <ToastProvider>
         <NewSessionView onClose={vi.fn()} workspaceId={WS_ID} onOpenSettings={vi.fn()} />
       </ToastProvider>,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    )
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('DeleteSessionDialog: error state', () => {
     mockStore({
       deleteTask: vi.fn().mockRejectedValue(new Error('session not found')),
-    });
+    })
     const { container } = render(
       <DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    )
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('BootSplash: boot-error phase', () => {
-    const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />);
-    expect(container.firstChild).toMatchSnapshot();
-  });
+    const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />)
+    expect(container.firstChild).toMatchSnapshot()
+  })
 
   it('TranscriptCard: turn error item', () => {
     const { container } = render(
@@ -307,7 +307,7 @@ describe('snapshot, error states', () => {
           message: 'provider failed to respond',
         }}
       />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-});
+    )
+    expect(container.firstChild).toMatchSnapshot()
+  })
+})

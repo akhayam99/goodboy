@@ -1,23 +1,23 @@
-import { clearGithubToken } from './clearGithubToken';
-import { closePr } from './closePr';
-import { convertPrToDraft } from './convertPrToDraft';
-import { createPrForSession } from './createPrForSession';
-import { editPr } from './editPr';
-import { markPrReady } from './markPrReady';
-import { mergePr } from './mergePr';
-import { reopenPr } from './reopenPr';
-import { requestReview } from './requestReview';
-import { refreshGithubStatus } from './refreshGithubStatus';
-import { refreshSessionPr } from './refreshSessionPr';
-import { refreshSessionPrDetail } from './refreshSessionPrDetail';
-import { resolveGithubThread } from './resolveGithubThread';
-import { queueResolution } from './queueResolution';
-import { dequeueResolution } from './dequeueResolution';
-import { loadPendingResolutions } from './loadPendingResolutions';
-import { pushAllResolutions } from './pushAllResolutions';
-import { setGithubPat } from './setGithubPat';
-import { sweepGithub } from './sweepGithub';
-import type { GetFn, SetFn } from './types';
+import { clearGithubToken } from './clearGithubToken'
+import { closePr } from './closePr'
+import { convertPrToDraft } from './convertPrToDraft'
+import { createPrForSession } from './createPrForSession'
+import { editPr } from './editPr'
+import { markPrReady } from './markPrReady'
+import { mergePr } from './mergePr'
+import { reopenPr } from './reopenPr'
+import { requestReview } from './requestReview'
+import { refreshGithubStatus } from './refreshGithubStatus'
+import { refreshSessionPr } from './refreshSessionPr'
+import { refreshSessionPrDetail } from './refreshSessionPrDetail'
+import { resolveGithubThread } from './resolveGithubThread'
+import { queueResolution } from './queueResolution'
+import { dequeueResolution } from './dequeueResolution'
+import { loadPendingResolutions } from './loadPendingResolutions'
+import { pushAllResolutions } from './pushAllResolutions'
+import { setGithubPat } from './setGithubPat'
+import { sweepGithub } from './sweepGithub'
+import type { GetFn, SetFn } from './types'
 
 export const createGithubSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -40,5 +40,5 @@ export const createGithubSlice = (set: SetFn, get: GetFn) => {
     editPr: editPr(set, get),
     requestReview: requestReview(set, get),
     sweepGithub: sweepGithub(set, get),
-  };
-};
+  }
+}

@@ -1,17 +1,17 @@
-import { FileDiff } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { useCurrentWorkspace } from '../../../../../store';
-import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
-import { PaneShell } from './PaneShell';
+import { FileDiff } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { useCurrentWorkspace } from '../../../../../store'
+import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog'
+import { PaneShell } from './PaneShell'
 
 type FilesPaneProps = {
-  readonly sessionId: SessionId;
-  readonly workingDir: string | null;
-  readonly onClose: () => void;
-};
+  readonly sessionId: SessionId
+  readonly workingDir: string | null
+  readonly onClose: () => void
+}
 
 export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) => {
-  const workspaceName = useCurrentWorkspace()?.name ?? '';
+  const workspaceName = useCurrentWorkspace()?.name ?? ''
 
   if (!workingDir) {
     return (
@@ -29,7 +29,7 @@ export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) =>
           </p>
         </div>
       </PaneShell>
-    );
+    )
   }
 
   return (
@@ -40,5 +40,5 @@ export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) =>
       worktreePath={workingDir}
       onClose={onClose}
     />
-  );
-};
+  )
+}

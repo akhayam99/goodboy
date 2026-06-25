@@ -1,82 +1,82 @@
-import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
-import type { PullRequestState, SessionId } from '@goodboy/types';
-import { cn, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
-import { Check, ImagePlus, Pencil, X } from 'lucide-react';
-import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
+import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react'
+import type { PullRequestState, SessionId } from '@goodboy/types'
+import { cn, Markdown, SectionHeader, Textarea } from '@goodboy/ui'
+import { Check, ImagePlus, Pencil, X } from 'lucide-react'
+import { useAppStore } from '../../../../store'
+import { formatError } from '../../../../shared/lib/errors'
 
 type Props = {
-  readonly pr: PullRequestState;
-  readonly sessionId: SessionId;
-  readonly onMutated: () => void;
-};
+  readonly pr: PullRequestState
+  readonly sessionId: SessionId
+  readonly onMutated: () => void
+}
 
-type Editing = 'title' | 'body' | null;
+type Editing = 'title' | 'body' | null
 
 const IMG_URL_RE =
-  /^https?:\/\/\S+(?:\.(?:png|jpe?g|gif|webp|svg)(?:\?\S*)?|\/user-attachments\/\S+|githubusercontent\.com\/\S+)$/i;
+  /^https?:\/\/\S+(?:\.(?:png|jpe?g|gif|webp|svg)(?:\?\S*)?|\/user-attachments\/\S+|githubusercontent\.com\/\S+)$/i
 
 export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
-  const editPr = useAppStore((s) => s.editPr);
-  const [editing, setEditing] = useState<Editing>(null);
-  const [titleDraft, setTitleDraft] = useState(pr.title);
-  const [bodyDraft, setBodyDraft] = useState(pr.body);
-  const [busy, setBusy] = useState<Editing>(null);
-  const [error, setError] = useState<string | null>(null);
+  const editPr = useAppStore((s) => s.editPr)
+  const [editing, setEditing] = useState<Editing>(null)
+  const [titleDraft, setTitleDraft] = useState(pr.title)
+  const [bodyDraft, setBodyDraft] = useState(pr.body)
+  const [busy, setBusy] = useState<Editing>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setEditing(null);
-    setTitleDraft(pr.title);
-    setBodyDraft(pr.body);
-    setError(null);
-  }, [pr.number, pr.title, pr.body]);
+    setEditing(null)
+    setTitleDraft(pr.title)
+    setBodyDraft(pr.body)
+    setError(null)
+  }, [pr.number, pr.title, pr.body])
 
   const save = async (field: 'title' | 'body') => {
     if (busy) {
-      return;
+      return
     }
-    setBusy(field);
-    setError(null);
+    setBusy(field)
+    setError(null)
     try {
       await editPr(
         sessionId,
         pr.number,
         field === 'title' ? { title: titleDraft } : { body: bodyDraft },
-      );
-      setEditing(null);
-      onMutated();
+      )
+      setEditing(null)
+      onMutated()
     } catch (e) {
-      setError(formatError(e));
+      setError(formatError(e))
     } finally {
-      setBusy(null);
+      setBusy(null)
     }
-  };
+  }
 
   const cancel = () => {
-    setTitleDraft(pr.title);
-    setBodyDraft(pr.body);
-    setEditing(null);
-    setError(null);
-  };
+    setTitleDraft(pr.title)
+    setBodyDraft(pr.body)
+    setEditing(null)
+    setError(null)
+  }
 
   const onPasteBody = (e: ClipboardEvent<HTMLTextAreaElement>) => {
-    const text = e.clipboardData.getData('text').trim();
+    const text = e.clipboardData.getData('text').trim()
     if (!IMG_URL_RE.test(text)) {
-      return;
+      return
     }
-    e.preventDefault();
-    const el = e.currentTarget;
-    const start = el.selectionStart ?? bodyDraft.length;
-    const end = el.selectionEnd ?? bodyDraft.length;
-    setBodyDraft(bodyDraft.slice(0, start) + `![](${text})` + bodyDraft.slice(end));
-  };
+    e.preventDefault()
+    const el = e.currentTarget
+    const start = el.selectionStart ?? bodyDraft.length
+    const end = el.selectionEnd ?? bodyDraft.length
+    setBodyDraft(bodyDraft.slice(0, start) + `![](${text})` + bodyDraft.slice(end))
+  }
 
   const onDescClick = (e: MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('a, img, button')) {
-      return;
+      return
     }
-    setEditing('body');
-  };
+    setEditing('body')
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-8 py-6">
@@ -88,10 +88,10 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               onChange={(e) => setTitleDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  void save('title');
+                  void save('title')
                 }
                 if (e.key === 'Escape') {
-                  cancel();
+                  cancel()
                 }
               }}
               autoFocus
@@ -186,17 +186,17 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
         {error ? <p className="text-xs text-danger">{error}</p> : null}
       </div>
     </div>
-  );
-};
+  )
+}
 
 function SaveCancel({
   busy,
   onSave,
   onCancel,
 }: {
-  busy: boolean;
-  onSave: () => void;
-  onCancel: () => void;
+  busy: boolean
+  onSave: () => void
+  onCancel: () => void
 }) {
   return (
     <div className="flex shrink-0 items-center gap-1">
@@ -224,5 +224,5 @@ function SaveCancel({
         <X size={14} aria-hidden />
       </button>
     </div>
-  );
+  )
 }

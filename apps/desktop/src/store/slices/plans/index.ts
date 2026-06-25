@@ -1,11 +1,11 @@
-import { deletePlan } from './deletePlan';
-import { loadConsumptionsForPlan } from './loadConsumptionsForPlan';
-import { loadSessionPlans } from './loadSessionPlans';
-import { restorePlan } from './restorePlan';
-import { runPlan } from './runPlan';
-import { setPlanStatus } from './setPlanStatus';
-import { updatePlanBody } from './updatePlanBody';
-import type { GetFn, SetFn } from './types';
+import { deletePlan } from './deletePlan'
+import { loadConsumptionsForPlan } from './loadConsumptionsForPlan'
+import { loadSessionPlans } from './loadSessionPlans'
+import { restorePlan } from './restorePlan'
+import { runPlan } from './runPlan'
+import { setPlanStatus } from './setPlanStatus'
+import { updatePlanBody } from './updatePlanBody'
+import type { GetFn, SetFn } from './types'
 
 export const createPlansSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -16,5 +16,5 @@ export const createPlansSlice = (set: SetFn, get: GetFn) => {
     restorePlan: restorePlan(set),
     loadConsumptionsForPlan: loadConsumptionsForPlan(set),
     runPlan: runPlan(get),
-  };
-};
+  }
+}

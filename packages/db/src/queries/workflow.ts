@@ -10,35 +10,35 @@ import type {
   Workflow,
   WorkflowId,
   WorkspaceId,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type WorkflowRow = {
-  id: string;
-  workspace_id: string;
-  name: string;
-  description: string;
-  goal: string | null;
-  created_at: string;
-  updated_at: string;
-  is_preset: number | null;
-  deleted_at: number | null;
-};
+  id: string
+  workspace_id: string
+  name: string
+  description: string
+  goal: string | null
+  created_at: string
+  updated_at: string
+  is_preset: number | null
+  deleted_at: number | null
+}
 
 type StepRow = {
-  id: string;
-  workflow_id: string;
-  library_step_id: string | null;
-  role: string | null;
-  ordinal: number;
-  name: string;
-  prompt_prefix: string;
-  provider_override: string | null;
-  model_override: string | null;
-  effort: string | null;
-  verbosity: string | null;
-  parallel_group: number | null;
-};
+  id: string
+  workflow_id: string
+  library_step_id: string | null
+  role: string | null
+  ordinal: number
+  name: string
+  prompt_prefix: string
+  provider_override: string | null
+  model_override: string | null
+  effort: string | null
+  verbosity: string | null
+  parallel_group: number | null
+}
 
 function toStep(row: StepRow): Step {
   return {
@@ -54,7 +54,7 @@ function toStep(row: StepRow): Step {
     ...(row.effort && { effort: row.effort as AgentEffort }),
     ...(row.verbosity && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.parallel_group != null && { parallelGroup: row.parallel_group }),
-  };
+  }
 }
 
 function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
@@ -71,7 +71,7 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
     }),
     createdAt: row.created_at as IsoDateTime,
     updatedAt: row.updated_at as IsoDateTime,
-  };
+  }
 }
 
 export const listWorkflows = async (
@@ -81,34 +81,34 @@ export const listWorkflows = async (
   const rows = await db.select<WorkflowRow>(
     'SELECT * FROM workflows WHERE workspace_id = ? AND deleted_at IS NULL ORDER BY created_at ASC',
     [workspaceId],
-  );
+  )
 
-  const workflows: Workflow[] = [];
+  const workflows: Workflow[] = []
   for (const row of rows) {
     const stepRows = await db.select<StepRow>(
       'SELECT * FROM steps WHERE workflow_id = ? AND deleted_at IS NULL ORDER BY ordinal ASC',
       [row.id],
-    );
-    workflows.push(toWorkflow(row, stepRows.map(toStep)));
+    )
+    workflows.push(toWorkflow(row, stepRows.map(toStep)))
   }
 
-  return workflows;
-};
+  return workflows
+}
 
 export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflow | null> => {
-  const rows = await db.select<WorkflowRow>('SELECT * FROM workflows WHERE id = ?', [id]);
-  const row = rows[0];
+  const rows = await db.select<WorkflowRow>('SELECT * FROM workflows WHERE id = ?', [id])
+  const row = rows[0]
   if (!row) {
-    return null;
+    return null
   }
 
   const stepRows = await db.select<StepRow>(
     'SELECT * FROM steps WHERE workflow_id = ? AND deleted_at IS NULL ORDER BY ordinal ASC',
     [row.id],
-  );
+  )
 
-  return toWorkflow(row, stepRows.map(toStep));
-};
+  return toWorkflow(row, stepRows.map(toStep))
+}
 
 export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
   await db.execute(
@@ -131,7 +131,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       workflow.updatedAt,
       workflow.isPreset === false ? 0 : 1,
     ],
-  );
+  )
 
   for (const step of workflow.steps) {
     await db.execute(
@@ -166,10 +166,10 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
         step.verbosity ?? null,
         step.parallelGroup ?? null,
       ],
-    );
+    )
   }
-};
+}
 
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
-  await db.execute("UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?", [id]);
-};
+  await db.execute("UPDATE workflows SET deleted_at = strftime('%s','now') WHERE id = ?", [id])
+}

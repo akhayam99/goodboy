@@ -1,55 +1,55 @@
-import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
-import { RefreshCw } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { IssueInbox } from './IssueInbox';
-import { IssueDetailPanel } from './IssueDetailPanel';
-import { useGitlabIssues } from './useGitlabIssues';
-import type { GitlabIssue } from '../client';
+import { useEffect, useMemo, useState } from 'react'
+import { cn, Divider } from '@goodboy/ui'
+import { RefreshCw } from 'lucide-react'
+import type { WorkspaceId } from '@goodboy/types'
+import { StudioShell } from '../../../../shared/components/StudioShell'
+import { IssueInbox } from './IssueInbox'
+import { IssueDetailPanel } from './IssueDetailPanel'
+import { useGitlabIssues } from './useGitlabIssues'
+import type { GitlabIssue } from '../client'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
-  readonly initialIssueId?: string | null;
-  readonly onClose: () => void;
-};
+  readonly workspaceId: WorkspaceId
+  readonly workspaceName: string
+  readonly initialIssueId?: string | null
+  readonly onClose: () => void
+}
 
 export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
-  const { groups, loading, error, refetch } = useGitlabIssues(workspaceId);
-  const [focused, setFocused] = useState<GitlabIssue | null>(null);
+  const { groups, loading, error, refetch } = useGitlabIssues(workspaceId)
+  const [focused, setFocused] = useState<GitlabIssue | null>(null)
 
   useEffect(() => {
     if (focused !== null) {
-      return;
+      return
     }
     if (initialIssueId) {
       for (const group of groups) {
-        const row = group.rows.find((r) => String(r.issue.id) === initialIssueId);
+        const row = group.rows.find((r) => String(r.issue.id) === initialIssueId)
         if (row) {
-          setFocused(row.issue);
-          return;
+          setFocused(row.issue)
+          return
         }
       }
     }
-    const first = groups[0]?.rows[0]?.issue ?? null;
+    const first = groups[0]?.rows[0]?.issue ?? null
     if (first) {
-      setFocused(first);
+      setFocused(first)
     }
-  }, [focused, groups, initialIssueId]);
+  }, [focused, groups, initialIssueId])
 
   const focusedRow = useMemo(() => {
     if (!focused) {
-      return null;
+      return null
     }
     for (const group of groups) {
-      const row = group.rows.find((r) => r.issue.id === focused.id);
+      const row = group.rows.find((r) => r.issue.id === focused.id)
       if (row) {
-        return row;
+        return row
       }
     }
-    return null;
-  }, [focused, groups]);
+    return null
+  }, [focused, groups])
 
   return (
     <StudioShell
@@ -104,5 +104,5 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
         </>
       )}
     </StudioShell>
-  );
-};
+  )
+}

@@ -1,132 +1,132 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, Skeleton } from '@goodboy/ui';
-import { ChevronDown, ExternalLink } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
-import { linearFetchAssignedIssues, type LinearIssue } from './client';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { cn, Skeleton } from '@goodboy/ui'
+import { ChevronDown, ExternalLink } from 'lucide-react'
+import type { WorkspaceId } from '@goodboy/types'
+import { linearFetchAssignedIssues, type LinearIssue } from './client'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  value: LinearIssue | null;
-  onPick: (issue: LinearIssue) => void;
-  onClear: () => void;
-  disabled?: boolean;
-};
+  workspaceId: WorkspaceId
+  value: LinearIssue | null
+  onPick: (issue: LinearIssue) => void
+  onClear: () => void
+  disabled?: boolean
+}
 
 export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: Props) => {
-  const [issues, setIssues] = useState<ReadonlyArray<LinearIssue>>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const [highlightIdx, setHighlightIdx] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const [issues, setIssues] = useState<ReadonlyArray<LinearIssue>>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [highlightIdx, setHighlightIdx] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
 
   useEffect(() => {
     if (!value) {
-      setQuery('');
+      setQuery('')
     } else {
-      setQuery(`${value.identifier} ${value.title}`);
+      setQuery(`${value.identifier} ${value.title}`)
     }
-  }, [value]);
+  }, [value])
 
   const fetchIssues = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const rows = await linearFetchAssignedIssues(workspaceId);
-      setIssues(rows);
-      setLoaded(true);
+      const rows = await linearFetchAssignedIssues(workspaceId)
+      setIssues(rows)
+      setLoaded(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [workspaceId]);
+  }, [workspaceId])
 
   const openPanel = () => {
-    setOpen(true);
+    setOpen(true)
     if (!loaded && !loading) {
-      void fetchIssues();
+      void fetchIssues()
     }
-  };
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) {
-      return issues;
+      return issues
     }
-    const q = query.toLowerCase();
+    const q = query.toLowerCase()
     return issues.filter(
       (i) => i.identifier.toLowerCase().includes(q) || i.title.toLowerCase().includes(q),
-    );
-  }, [issues, query]);
+    )
+  }, [issues, query])
 
   const select = useCallback(
     (issue: LinearIssue) => {
-      onPick(issue);
-      setQuery(`${issue.identifier} ${issue.title}`);
-      setOpen(false);
+      onPick(issue)
+      setQuery(`${issue.identifier} ${issue.title}`)
+      setOpen(false)
     },
     [onPick],
-  );
+  )
 
   useEffect(() => {
-    setHighlightIdx(0);
-  }, [query]);
+    setHighlightIdx(0)
+  }, [query])
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   useEffect(() => {
     if (!open || !listRef.current) {
-      return;
+      return
     }
-    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [highlightIdx, open]);
+    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [highlightIdx, open])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      openPanel();
-      e.preventDefault();
-      return;
+      openPanel()
+      e.preventDefault()
+      return
     }
     if (!open) {
-      return;
+      return
     }
     switch (e.key) {
       case 'ArrowDown':
-        e.preventDefault();
-        setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
-        break;
+        e.preventDefault()
+        setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1))
+        break
       case 'ArrowUp':
-        e.preventDefault();
-        setHighlightIdx((i) => Math.max(i - 1, 0));
-        break;
+        e.preventDefault()
+        setHighlightIdx((i) => Math.max(i - 1, 0))
+        break
       case 'Enter':
-        e.preventDefault();
+        e.preventDefault()
         if (filtered[highlightIdx]) {
-          select(filtered[highlightIdx]);
+          select(filtered[highlightIdx])
         }
-        break;
+        break
       case 'Escape':
-        e.preventDefault();
-        setOpen(false);
-        break;
+        e.preventDefault()
+        setOpen(false)
+        break
     }
-  };
+  }
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -149,10 +149,10 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
           autoComplete="off"
           className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
           onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
+            setQuery(e.target.value)
+            setOpen(true)
             if (!e.target.value) {
-              onClear();
+              onClear()
             }
           }}
           onFocus={openPanel}
@@ -176,14 +176,14 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
           tabIndex={-1}
           onClick={() => {
             if (disabled) {
-              return;
+              return
             }
             if (open) {
-              setOpen(false);
+              setOpen(false)
             } else {
-              openPanel();
+              openPanel()
             }
-            inputRef.current?.focus();
+            inputRef.current?.focus()
           }}
           aria-label={open ? 'Close issue list' : 'Open issue list'}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -231,8 +231,8 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
               aria-selected={highlightIdx === i}
               onMouseEnter={() => setHighlightIdx(i)}
               onMouseDown={(e) => {
-                e.preventDefault();
-                select(issue);
+                e.preventDefault()
+                select(issue)
               }}
               className={cn(
                 'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
@@ -257,5 +257,5 @@ export const IssuePicker = ({ workspaceId, value, onPick, onClear, disabled }: P
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

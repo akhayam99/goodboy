@@ -1,96 +1,96 @@
-import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
-import { CURSOR_AUTO_MODEL } from '@goodboy/core';
-import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
-import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
-import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
-import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { invoke } from '@tauri-apps/api/core'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui'
+import { AlertTriangle, GitBranch, Paperclip, Plus, Target, Wand2 } from 'lucide-react'
+import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types'
+import { CURSOR_AUTO_MODEL } from '@goodboy/core'
+import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip'
+import { toAttachmentInput } from '../../../chat/components/ChatInput/lib'
+import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments'
+import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds'
+import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
 import {
   listLocalBranches,
   removeWorktree,
   type LocalBranchInfo,
-} from '../../../../features/worktree/worktree';
-import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
-import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
-import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
-import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
-import type { LinearIssue } from '../../../../features/integrations/linear/client';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
-import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
-import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { isMissingBaseRefError } from '../../../../shared/lib/errors';
+} from '../../../../features/worktree/worktree'
+import { useBranchConflict } from '../../../../features/worktree/useBranchConflict'
+import { BranchCombobox } from '../../../../features/worktree/BranchCombobox'
+import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker'
+import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue'
+import type { LinearIssue } from '../../../../features/integrations/linear/client'
+import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch'
+import { OverlayHeader } from '../../../../shared/components/OverlayHeader'
+import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide'
+import { isMissingBaseRefError } from '../../../../shared/lib/errors'
 
 type Props = {
-  onClose: () => void;
-  workspaceId: WorkspaceId;
-  onOpenSettings: () => void;
-};
+  onClose: () => void
+  workspaceId: WorkspaceId
+  onOpenSettings: () => void
+}
 
 const PROVIDER_LABELS: Record<ProviderId, string> = {
   anthropic: 'Claude Code',
   cursor: 'cursor-agent',
   codex: 'OpenAI Codex',
   gemini: 'Google Gemini',
-};
+}
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
-    return err.message;
+    return err.message
   }
   if (typeof err === 'string') {
-    return err;
+    return err
   }
   if (err && typeof err === 'object') {
-    const maybe = err as { message?: unknown };
+    const maybe = err as { message?: unknown }
     if (typeof maybe.message === 'string') {
-      return maybe.message;
+      return maybe.message
     }
     try {
-      return JSON.stringify(err);
+      return JSON.stringify(err)
     } catch {
-      return 'unknown error';
+      return 'unknown error'
     }
   }
-  return String(err);
+  return String(err)
 }
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini']
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {
     if (connectedIds.has(id)) {
-      return id;
+      return id
     }
   }
-  return 'anthropic';
+  return 'anthropic'
 }
 
 type SummarizeTaskResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
+  readonly stdout: string
+  readonly stderr: string
+  readonly exitCode: number | null
+}
 
 function getCheapModel(providerId: ProviderId): string {
   switch (providerId) {
     case 'anthropic':
-      return 'claude-haiku-4-5';
+      return 'claude-haiku-4-5'
     case 'cursor':
-      return CURSOR_AUTO_MODEL;
+      return CURSOR_AUTO_MODEL
     case 'codex':
-      return 'gpt-5.4-mini';
+      return 'gpt-5.4-mini'
     case 'gemini':
-      return 'gemini-2.5-flash';
+      return 'gemini-2.5-flash'
     default: {
-      const _exhaustive: never = providerId;
-      void _exhaustive;
-      return 'claude-haiku-4-5';
+      const _exhaustive: never = providerId
+      void _exhaustive
+      return 'claude-haiku-4-5'
     }
   }
 }
@@ -98,22 +98,22 @@ function getCheapModel(providerId: ProviderId): string {
 function getDefaultBinary(providerId: ProviderId): string {
   switch (providerId) {
     case 'anthropic':
-      return 'claude';
+      return 'claude'
     case 'cursor':
-      return 'cursor-agent';
+      return 'cursor-agent'
     case 'codex':
-      return 'codex';
+      return 'codex'
     case 'gemini':
-      return 'gemini';
+      return 'gemini'
     default: {
-      const _exhaustive: never = providerId;
-      void _exhaustive;
-      return 'claude';
+      const _exhaustive: never = providerId
+      void _exhaustive
+      return 'claude'
     }
   }
 }
 
-const SLUG_MAX_LEN = 48;
+const SLUG_MAX_LEN = 48
 
 function slugifyLive(input: string): string {
   return input
@@ -123,7 +123,7 @@ function slugifyLive(input: string): string {
     .replace(/[\s_]+/g, '-')
     .replace(/-+/g, '-')
     .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
+    .replace(/-+$/, '')
 }
 
 function sanitizeBranchSlug(input: string): string {
@@ -131,7 +131,7 @@ function sanitizeBranchSlug(input: string): string {
     .replace(/[^a-zA-Z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
+    .slice(0, SLUG_MAX_LEN)
 }
 
 function sanitizePrefix(input: string): string {
@@ -139,23 +139,23 @@ function sanitizePrefix(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '')
     .replace(/^-+/, '')
-    .slice(0, 16);
+    .slice(0, 16)
 }
 
-const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
+const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = []
 
 function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
+  const s = slug.trim()
   if (!s) {
-    return false;
+    return false
   }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..')
 }
 
 async function generateBranchSlug(goal: string, providerId: ProviderId): Promise<string> {
   const systemPrompt =
-    'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.';
-  const userMessage = `Goal: ${goal}`;
+    'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.'
+  const userMessage = `Goal: ${goal}`
   const result = await invoke<SummarizeTaskResult>('summarize_session', {
     args: {
       providerId,
@@ -164,19 +164,19 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
       userMessage,
       systemPrompt,
     },
-  });
+  })
   if ((result.exitCode ?? 0) !== 0) {
-    throw new Error(`branch generation failed: ${result.stderr}`);
+    throw new Error(`branch generation failed: ${result.stderr}`)
   }
-  const raw = result.stdout.trim();
-  let text = raw;
+  const raw = result.stdout.trim()
+  let text = raw
   try {
-    const parsed = JSON.parse(raw) as { result?: string };
+    const parsed = JSON.parse(raw) as { result?: string }
     if (typeof parsed.result === 'string') {
-      text = parsed.result;
+      text = parsed.result
     }
   } catch {
-    text = raw;
+    text = raw
   }
   return text
     .toLowerCase()
@@ -185,38 +185,38 @@ async function generateBranchSlug(goal: string, providerId: ProviderId): Promise
     .split('-')
     .filter(Boolean)
     .slice(0, 5)
-    .join('-');
+    .join('-')
 }
 
 export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) => {
-  const createSession = useAppStore((s) => s.createSession);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const loadSetting = useAppStore((s) => s.loadSetting);
-  const providers = useAppStore((s) => s.providers);
-  const { showToast } = useToast();
-  const settingKey = settingBranchPrefix(workspaceId);
-  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
+  const createSession = useAppStore((s) => s.createSession)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const loadSetting = useAppStore((s) => s.loadSetting)
+  const providers = useAppStore((s) => s.providers)
+  const { showToast } = useToast()
+  const settingKey = settingBranchPrefix(workspaceId)
+  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId))
 
-  const [goal, setGoal] = useState('');
-  const [branchSlug, setBranchSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [slugGenerating, setSlugGenerating] = useState(false);
-  const [branchMode, setBranchMode] = useState<'new' | 'existing'>('new');
-  const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
-  const [existingBranch, setExistingBranch] = useState<string>('');
-  const [branchesLoading, setBranchesLoading] = useState(false);
-  const [branchesLoaded, setBranchesLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null);
+  const [goal, setGoal] = useState('')
+  const [branchSlug, setBranchSlug] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [slugGenerating, setSlugGenerating] = useState(false)
+  const [branchMode, setBranchMode] = useState<'new' | 'existing'>('new')
+  const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([])
+  const [existingBranch, setExistingBranch] = useState<string>('')
+  const [branchesLoading, setBranchesLoading] = useState(false)
+  const [branchesLoaded, setBranchesLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null)
   const [setupWorkflow, setSetupWorkflow] = useState(() => {
     try {
-      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
+      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0'
     } catch {
-      return true;
+      return true
     }
-  });
+  })
 
   const {
     attachments,
@@ -225,113 +225,113 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     fileInputRef,
     onFileInputChange,
     removeAttachment,
-  } = usePendingAttachments({ showToast });
+  } = usePendingAttachments({ showToast })
 
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
-  );
+  )
 
-  const connectedProviders = providers.filter((p) => p.connection === 'connected');
-  const noProviderConnected = providers.length > 0 && connectedProviders.length === 0;
-  const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)));
+  const connectedProviders = providers.filter((p) => p.connection === 'connected')
+  const noProviderConnected = providers.length > 0 && connectedProviders.length === 0
+  const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)))
 
   useEffect(() => {
     void loadSetting(settingKey).then((value) => {
-      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
-    });
-  }, [settingKey, loadSetting]);
+      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX)
+    })
+  }, [settingKey, loadSetting])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !busy) {
-        e.preventDefault();
-        onClose();
+        e.preventDefault()
+        onClose()
       }
-    };
-    window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [busy, onClose]);
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
+  }, [busy, onClose])
 
   const onPickLinearIssue = (issue: LinearIssue) => {
-    setLinearIssue(issue);
-    setGoal(goalFromIssue(issue));
-    setSlugTouched(false);
-  };
+    setLinearIssue(issue)
+    setGoal(goalFromIssue(issue))
+    setSlugTouched(false)
+  }
 
   useEffect(() => {
-    setExistingBranches(EMPTY_LOCAL_BRANCHES);
-    setBranchesLoaded(false);
-  }, [workspaceId]);
+    setExistingBranches(EMPTY_LOCAL_BRANCHES)
+    setBranchesLoaded(false)
+  }, [workspaceId])
 
   useEffect(() => {
     if (branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
-      return;
+      return
     }
-    setBranchesLoading(true);
+    setBranchesLoading(true)
     listLocalBranches(workspace.rootPath)
       .then(setExistingBranches)
       .catch(() => setExistingBranches([]))
       .finally(() => {
-        setBranchesLoading(false);
-        setBranchesLoaded(true);
-      });
-  }, [branchMode, branchesLoaded, workspace?.rootPath]);
+        setBranchesLoading(false)
+        setBranchesLoaded(true)
+      })
+  }, [branchMode, branchesLoaded, workspace?.rootPath])
 
   useEffect(() => {
     if (slugTouched) {
-      return;
+      return
     }
-    setBranchSlug(slugifyLive(goal));
-  }, [goal, slugTouched]);
+    setBranchSlug(slugifyLive(goal))
+  }, [goal, slugTouched])
 
   const handleGenerateSlug = () => {
-    const trimmed = goal.trim();
+    const trimmed = goal.trim()
     if (!trimmed || slugGenerating) {
-      return;
+      return
     }
-    setSlugGenerating(true);
+    setSlugGenerating(true)
     generateBranchSlug(trimmed, defaultProvider)
       .then((slug) => {
-        setBranchSlug(slug);
-        setSlugTouched(true);
+        setBranchSlug(slug)
+        setSlugTouched(true)
       })
       .catch(() => undefined)
       .finally(() => {
-        setSlugGenerating(false);
-      });
-  };
+        setSlugGenerating(false)
+      })
+  }
 
   const conflict = useBranchConflict(
     branchMode === 'existing' ? existingBranch.trim() || null : null,
     workspace?.rootPath ?? null,
-  );
-  const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
-  const conflictWorktreePath = conflict?.kind === 'worktree' ? conflict.path : null;
+  )
+  const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null
+  const conflictWorktreePath = conflict?.kind === 'worktree' ? conflict.path : null
 
   const branchReady =
-    branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0;
-  const goalReady = goal.trim().length > 0;
+    branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0
+  const goalReady = goal.trim().length > 0
   const canCreate =
     goalReady &&
     branchReady &&
     !busy &&
     !noProviderConnected &&
     conflictSessionId === null &&
-    conflictWorktreePath === null;
+    conflictWorktreePath === null
 
   const onOpenConflictSession = (id: SessionId) => {
-    void setCurrentSession(id);
-    onClose();
-  };
+    void setCurrentSession(id)
+    onClose()
+  }
 
   const onCreate = async (eraseWorktreePath?: string) => {
-    setError(null);
-    setBusy(true);
+    setError(null)
+    setBusy(true)
     try {
       if (eraseWorktreePath && workspace?.rootPath) {
-        await removeWorktree(workspace.rootPath, eraseWorktreePath);
+        await removeWorktree(workspace.rootPath, eraseWorktreePath)
       }
-      const useExisting = branchMode === 'existing' && existingBranch.trim().length > 0;
+      const useExisting = branchMode === 'existing' && existingBranch.trim().length > 0
       const { session } = await createSession({
         workspaceId,
         goal,
@@ -350,30 +350,30 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             }
           : {}),
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
-      });
+      })
       if (setupWorkflow) {
         window.dispatchEvent(
           new CustomEvent('goodboy:open-workflow-builder', {
             detail: { sessionId: session.id },
           }),
-        );
+        )
       }
-      onClose();
+      onClose()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onToggleSetupWorkflow = (next: boolean) => {
-    setSetupWorkflow(next);
+    setSetupWorkflow(next)
     try {
-      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
+      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0')
     } catch {
-      return;
+      return
     }
-  };
+  }
 
   return (
     <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
@@ -521,8 +521,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                     <Input
                       value={branchSlug}
                       onChange={(e) => {
-                        setBranchSlug(sanitizeBranchSlug(e.target.value));
-                        setSlugTouched(true);
+                        setBranchSlug(sanitizeBranchSlug(e.target.value))
+                        setSlugTouched(true)
                       }}
                       placeholder="branch-slug"
                       className="h-8 flex-1 font-mono text-sm"
@@ -631,15 +631,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         )}
       </footer>
     </div>
-  );
-};
+  )
+}
 
-type Tone = 'primary' | 'success';
+type Tone = 'primary' | 'success'
 
 const TONE_BG: Record<Tone, string> = {
   primary: 'bg-primary/10',
   success: 'bg-success/10',
-};
+}
 
 function Section({
   icon,
@@ -648,11 +648,11 @@ function Section({
   subtitle,
   children,
 }: {
-  icon: ReactNode;
-  tone: Tone;
-  title: string;
-  subtitle: string;
-  children: ReactNode;
+  icon: ReactNode
+  tone: Tone
+  title: string
+  subtitle: string
+  children: ReactNode
 }) {
   return (
     <section className="flex flex-col gap-2">
@@ -672,7 +672,7 @@ function Section({
       </header>
       {children}
     </section>
-  );
+  )
 }
 
 function BranchModeToggle({
@@ -680,14 +680,14 @@ function BranchModeToggle({
   onChange,
   disabled,
 }: {
-  mode: 'new' | 'existing';
-  onChange: (next: 'new' | 'existing') => void;
-  disabled: boolean;
+  mode: 'new' | 'existing'
+  onChange: (next: 'new' | 'existing') => void
+  disabled: boolean
 }) {
   const modes: ReadonlyArray<{ id: 'new' | 'existing'; label: string }> = [
     { id: 'new', label: 'New' },
     { id: 'existing', label: 'Existing' },
-  ];
+  ]
   return (
     <div
       role="tablist"
@@ -695,7 +695,7 @@ function BranchModeToggle({
       className="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
     >
       {modes.map((m) => {
-        const active = mode === m.id;
+        const active = mode === m.id
         return (
           <button
             key={m.id}
@@ -714,8 +714,8 @@ function BranchModeToggle({
           >
             {m.label}
           </button>
-        );
+        )
       })}
     </div>
-  );
+  )
 }

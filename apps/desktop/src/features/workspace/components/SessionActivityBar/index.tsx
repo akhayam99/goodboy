@@ -1,6 +1,6 @@
-import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, Check, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import { Button, cn, ScrollArea, StatusDot } from '@goodboy/ui';
+import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { Archive, Check, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { Button, cn, ScrollArea, StatusDot } from '@goodboy/ui'
 import type {
   Session,
   SessionGroupKey,
@@ -8,25 +8,25 @@ import type {
   SessionStage,
   TelemetryRecord,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionStageInfo,
   useSessionViewPrefs,
   useSortedGroupedSessions,
-} from '../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../../../features/session/session-stage';
-import { CostBadge } from '../../../../features/providers/components/CostBadge';
+} from '../../../../store'
+import { SESSION_STAGE_META, STAGE_TONE } from '../../../../features/session/session-stage'
+import { CostBadge } from '../../../../features/providers/components/CostBadge'
 import {
   PullRequestChip,
   pullRequestMeta,
-} from '../../../../features/github/components/PullRequestChip';
-import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
-import { BulkDeleteSessionsDialog } from '../../../session/components/BulkDeleteSessionsDialog';
-import { SessionViewMenu } from './SessionViewMenu';
+} from '../../../../features/github/components/PullRequestChip'
+import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip'
+import { BulkDeleteSessionsDialog } from '../../../session/components/BulkDeleteSessionsDialog'
+import { SessionViewMenu } from './SessionViewMenu'
 
-type ActivityTab = 'active' | 'archived';
+type ActivityTab = 'active' | 'archived'
 
 const PR_GROUP_LABELS: Record<string, string> = {
   'not-open': 'no PR',
@@ -35,29 +35,29 @@ const PR_GROUP_LABELS: Record<string, string> = {
   reviewed: 'approved',
   closed: 'closed',
   merged: 'merged',
-};
+}
 
-const COLLAPSED_BY_DEFAULT: ReadonlyArray<string> = ['done', 'merged', 'closed'];
+const COLLAPSED_BY_DEFAULT: ReadonlyArray<string> = ['done', 'merged', 'closed']
 
 function groupLabel(key: string, groupMode: SessionGroupKey): string {
   if (groupMode === 'stage') {
-    return SESSION_STAGE_META[key as SessionStage]?.label ?? key;
+    return SESSION_STAGE_META[key as SessionStage]?.label ?? key
   }
   if (groupMode === 'pr') {
-    return PR_GROUP_LABELS[key] ?? key;
+    return PR_GROUP_LABELS[key] ?? key
   }
-  return key;
+  return key
 }
 
 type SessionActivityBarProps = {
-  workspaceId: WorkspaceId;
-  sessions: ReadonlyArray<Session>;
-  archivedSessions: ReadonlyArray<Session>;
-  currentSessionId: SessionId | null;
-  onSelectSession: (id: SessionId) => void;
-  onNewSession: () => void;
-  onArchivedTabOpen?: () => void;
-};
+  workspaceId: WorkspaceId
+  sessions: ReadonlyArray<Session>
+  archivedSessions: ReadonlyArray<Session>
+  currentSessionId: SessionId | null
+  onSelectSession: (id: SessionId) => void
+  onNewSession: () => void
+  onArchivedTabOpen?: () => void
+}
 
 export const SessionActivityBar = ({
   workspaceId,
@@ -68,62 +68,62 @@ export const SessionActivityBar = ({
   onNewSession,
   onArchivedTabOpen,
 }: SessionActivityBarProps) => {
-  const [tab, setTab] = useState<ActivityTab>('active');
+  const [tab, setTab] = useState<ActivityTab>('active')
   const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
     new Map(),
-  );
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<SessionId>>(new Set());
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const bulkUnarchiveTask = useAppStore((s) => s.bulkUnarchiveTask);
+  )
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<SessionId>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const bulkUnarchiveTask = useAppStore((s) => s.bulkUnarchiveTask)
 
-  const prefs = useSessionViewPrefs(workspaceId);
+  const prefs = useSessionViewPrefs(workspaceId)
 
-  const groupedActive = useSortedGroupedSessions(workspaceId, sessions);
-  const groupedArchived = useSortedGroupedSessions(workspaceId, archivedSessions);
+  const groupedActive = useSortedGroupedSessions(workspaceId, sessions)
+  const groupedArchived = useSortedGroupedSessions(workspaceId, archivedSessions)
 
-  const displayGroups = tab === 'active' ? groupedActive : groupedArchived;
-  const isGrouped = prefs.group !== 'none';
-  const isArchivedView = tab === 'archived';
-  const totalVisible = displayGroups.reduce((n, g) => n + g.sessions.length, 0);
+  const displayGroups = tab === 'active' ? groupedActive : groupedArchived
+  const isGrouped = prefs.group !== 'none'
+  const isArchivedView = tab === 'archived'
+  const totalVisible = displayGroups.reduce((n, g) => n + g.sessions.length, 0)
 
   const selectedSessions = useMemo(
     () => archivedSessions.filter((s) => selectedIds.has(s.id as SessionId)),
     [archivedSessions, selectedIds],
-  );
+  )
 
   const onToggleSelect = useCallback((id: SessionId) => {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(id)) {
-        next.delete(id);
+        next.delete(id)
       } else {
-        next.add(id);
+        next.add(id)
       }
-      return next;
-    });
-  }, []);
+      return next
+    })
+  }, [])
 
   const onBulkRestore = async () => {
-    await bulkUnarchiveTask(selectedSessions.map((s) => s.id as SessionId));
-    setSelectedIds(new Set());
-  };
+    await bulkUnarchiveTask(selectedSessions.map((s) => s.id as SessionId))
+    setSelectedIds(new Set())
+  }
 
   useEffect(() => {
     if (tab !== 'archived') {
-      setSelectedIds(new Set());
+      setSelectedIds(new Set())
     }
-  }, [tab]);
+  }, [tab])
 
   const isCollapsed = (key: string): boolean =>
-    expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key);
+    expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key)
 
   const toggleGroup = (key: string): void => {
     setExpandedOverrides((prev) => {
-      const next = new Map(prev);
-      next.set(key, !isCollapsed(key));
-      return next;
-    });
-  };
+      const next = new Map(prev)
+      next.set(key, !isCollapsed(key))
+      return next
+    })
+  }
 
   return (
     <div className="flex h-full w-full shrink-0 flex-col">
@@ -151,9 +151,9 @@ export const SessionActivityBar = ({
           )}
 
           {displayGroups.map((group) => {
-            const collapsed = isGrouped && isCollapsed(group.key);
+            const collapsed = isGrouped && isCollapsed(group.key)
             const stageMeta =
-              prefs.group === 'stage' ? SESSION_STAGE_META[group.key as SessionStage] : undefined;
+              prefs.group === 'stage' ? SESSION_STAGE_META[group.key as SessionStage] : undefined
             return (
               <Fragment key={group.key}>
                 {isGrouped && group.sessions.length > 0 && (
@@ -200,7 +200,7 @@ export const SessionActivityBar = ({
                     />
                   ))}
               </Fragment>
-            );
+            )
           })}
 
           {!isArchivedView && totalVisible === 0 && (
@@ -256,11 +256,11 @@ export const SessionActivityBar = ({
         <button
           type="button"
           onClick={() => {
-            const next: ActivityTab = isArchivedView ? 'active' : 'archived';
+            const next: ActivityTab = isArchivedView ? 'active' : 'archived'
             if (next === 'archived') {
-              onArchivedTabOpen?.();
+              onArchivedTabOpen?.()
             }
-            setTab(next);
+            setTab(next)
           }}
           aria-pressed={isArchivedView}
           className={cn(
@@ -285,18 +285,18 @@ export const SessionActivityBar = ({
         />
       )}
     </div>
-  );
-};
+  )
+}
 
 type SessionActivityItemProps = {
-  session: Session;
-  isActive: boolean;
-  dimmed?: boolean;
-  selectable?: boolean;
-  selected?: boolean;
-  onToggleSelect?: (id: SessionId) => void;
-  onClick: () => void;
-};
+  session: Session
+  isActive: boolean
+  dimmed?: boolean
+  selectable?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: SessionId) => void
+  onClick: () => void
+}
 
 const SessionActivityItem = memo(function SessionActivityItem({
   session,
@@ -307,30 +307,28 @@ const SessionActivityItem = memo(function SessionActivityItem({
   onToggleSelect,
   onClick,
 }: SessionActivityItemProps) {
-  const { stage, reason } = useSessionStageInfo(session);
+  const { stage, reason } = useSessionStageInfo(session)
   const isAutoMode =
-    stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
-  const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
-  const prMeta = prState ? pullRequestMeta(prState) : null;
-  const externalTask = useAppStore(
-    (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
-  );
+    stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt)
+  const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null)
+  const prMeta = prState ? pullRequestMeta(prState) : null
+  const externalTask = useAppStore((s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null)
 
   const telemetry = useAppStore(
     (s) =>
       s.sessionTelemetry[session.id as SessionId] ??
       (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
+  )
   const sessionCost = useMemo(() => {
-    let sum = 0;
+    let sum = 0
     for (const rec of telemetry) {
       if (rec.kind === 'summarizer') {
-        continue;
+        continue
       }
-      sum += rec.estimatedCostUsd;
+      sum += rec.estimatedCostUsd
     }
-    return sum;
-  }, [telemetry]);
+    return sum
+  }, [telemetry])
 
   const body = (
     <button
@@ -380,10 +378,10 @@ const SessionActivityItem = memo(function SessionActivityItem({
         )}
       </span>
     </button>
-  );
+  )
 
   if (!selectable) {
-    return body;
+    return body
   }
 
   return (
@@ -405,5 +403,5 @@ const SessionActivityItem = memo(function SessionActivityItem({
       </button>
       <span className="min-w-0 flex-1">{body}</span>
     </div>
-  );
-});
+  )
+})

@@ -1,30 +1,30 @@
-import { useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
-import { Check, ChevronDown, Sparkles } from 'lucide-react';
-import { shortModelWithVersion } from '../../agent-row-format';
-import { MODEL_COST_DOT, POPUP_BASE, POPUP_DOWN, POPUP_UP, modelCostTier } from '../dropdown-utils';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
+import { useRef, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import type { ProviderId } from '@goodboy/types'
+import { PROVIDER_CAPABILITIES } from '@goodboy/core'
+import { Check, ChevronDown, Sparkles } from 'lucide-react'
+import { shortModelWithVersion } from '../../agent-row-format'
+import { MODEL_COST_DOT, POPUP_BASE, POPUP_DOWN, POPUP_UP, modelCostTier } from '../dropdown-utils'
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside'
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection'
 
 type Props = {
-  provider: ProviderId;
-  value: string;
-  onChange: (model: string) => void;
-  disabled: boolean;
-  allowAuto?: boolean;
-};
+  provider: ProviderId
+  value: string
+  onChange: (model: string) => void
+  disabled: boolean
+  allowAuto?: boolean
+}
 
 export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: Props) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useClickOutside(containerRef, () => setOpen(false))
+  const direction = useDropdownDirection(containerRef, open)
 
-  const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
-  const isAuto = allowAuto === true && value === '';
-  const tier = modelCostTier(value);
+  const models = [...PROVIDER_CAPABILITIES[provider].models].reverse()
+  const isAuto = allowAuto === true && value === ''
+  const tier = modelCostTier(value)
 
   return (
     <div ref={containerRef} className="relative">
@@ -68,8 +68,8 @@ export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: 
             <button
               type="button"
               onClick={() => {
-                onChange('');
-                setOpen(false);
+                onChange('')
+                setOpen(false)
               }}
               className={cn(
                 'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs font-mono transition-colors',
@@ -84,15 +84,15 @@ export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: 
             </button>
           ) : null}
           {models.map((m) => {
-            const active = value === m.id;
-            const t = modelCostTier(m.id);
+            const active = value === m.id
+            const t = modelCostTier(m.id)
             return (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => {
-                  onChange(m.id);
-                  setOpen(false);
+                  onChange(m.id)
+                  setOpen(false)
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs font-mono transition-colors',
@@ -108,10 +108,10 @@ export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: 
                 <span className="flex-1 truncate">{shortModelWithVersion(m.id)}</span>
                 {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
-            );
+            )
           })}
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

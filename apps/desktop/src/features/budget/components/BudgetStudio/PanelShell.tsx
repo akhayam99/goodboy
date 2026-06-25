@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
-import { Divider, ScrollFade, cn } from '@goodboy/ui';
+import type { ReactNode } from 'react'
+import { Divider, ScrollFade, cn } from '@goodboy/ui'
 
 type Props = {
-  readonly icon?: ReactNode;
-  readonly title: string;
-  readonly subtitle?: string;
-  readonly action?: ReactNode;
-  readonly maxWidthClass?: string;
-  readonly children: ReactNode;
-};
+  readonly icon?: ReactNode
+  readonly title: string
+  readonly subtitle?: string
+  readonly action?: ReactNode
+  readonly maxWidthClass?: string
+  readonly children: ReactNode
+}
 
 export const PanelShell = ({
   icon,
@@ -41,5 +41,5 @@ export const PanelShell = ({
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}

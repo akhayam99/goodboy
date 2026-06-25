@@ -1,20 +1,20 @@
-import { useEffect, useState } from 'react';
-import { Button, Input, Textarea } from '@goodboy/ui';
-import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useEffect, useState } from 'react'
+import { Button, Input, Textarea } from '@goodboy/ui'
+import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types'
+import { formatError } from '../../../../shared/lib/errors'
+import { EMPTY_ARRAY, useAppStore } from '../../../../store'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-};
+  readonly workspaceId: WorkspaceId
+}
 
 type EditorForm = {
-  name: string;
-  description: string;
-  args: string;
-  scripts: string;
-  body: string;
-};
+  name: string
+  description: string
+  args: string
+  scripts: string
+  body: string
+}
 
 const emptyForm = (): EditorForm => ({
   name: '',
@@ -22,7 +22,7 @@ const emptyForm = (): EditorForm => ({
   args: '',
   scripts: '',
   body: '',
-});
+})
 
 function skillToForm(skill: Skill): EditorForm {
   return {
@@ -31,10 +31,10 @@ function skillToForm(skill: Skill): EditorForm {
     args: skill.frontmatter.args?.join(', ') ?? '',
     scripts: skill.frontmatter.scripts?.join(', ') ?? '',
     body: skill.body,
-  };
+  }
 }
 
-const KEBAB_RE = /^[a-z][a-z0-9-]*$/;
+const KEBAB_RE = /^[a-z][a-z0-9-]*$/
 
 function validateName(
   name: string,
@@ -42,68 +42,68 @@ function validateName(
   editingId?: string,
 ): string | null {
   if (!name.trim()) {
-    return 'name is required';
+    return 'name is required'
   }
   if (!KEBAB_RE.test(name)) {
-    return 'name must be kebab-case (lowercase letters, numbers, hyphens)';
+    return 'name must be kebab-case (lowercase letters, numbers, hyphens)'
   }
-  const collision = existing.find((s) => s.name === name && s.id !== editingId);
+  const collision = existing.find((s) => s.name === name && s.id !== editingId)
   if (collision) {
-    return 'name already in use';
+    return 'name already in use'
   }
-  return null;
+  return null
 }
 
 function parseChips(raw: string): ReadonlyArray<string> {
   return raw
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean);
+    .filter(Boolean)
 }
 
 export const SkillsPanel = ({ workspaceId }: Props) => {
-  const skills = useAppStore((s) => s.skills[workspaceId] ?? EMPTY_ARRAY);
-  const loadSkills = useAppStore((s) => s.loadSkills);
-  const saveSkill = useAppStore((s) => s.saveSkill);
-  const deleteSkill = useAppStore((s) => s.deleteSkill);
-  const rescanSkills = useAppStore((s) => s.rescanSkills);
+  const skills = useAppStore((s) => s.skills[workspaceId] ?? EMPTY_ARRAY)
+  const loadSkills = useAppStore((s) => s.loadSkills)
+  const saveSkill = useAppStore((s) => s.saveSkill)
+  const deleteSkill = useAppStore((s) => s.deleteSkill)
+  const rescanSkills = useAppStore((s) => s.rescanSkills)
 
-  const [editingSkill, setEditingSkill] = useState<Skill | null | 'new'>(null);
-  const [form, setForm] = useState<EditorForm>(emptyForm());
-  const [saving, setSaving] = useState(false);
-  const [rescanning, setRescanning] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [editingSkill, setEditingSkill] = useState<Skill | null | 'new'>(null)
+  const [form, setForm] = useState<EditorForm>(emptyForm())
+  const [saving, setSaving] = useState(false)
+  const [rescanning, setRescanning] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
-    void loadSkills(workspaceId);
-  }, [loadSkills, workspaceId]);
+    void loadSkills(workspaceId)
+  }, [loadSkills, workspaceId])
 
   const openNew = () => {
-    setEditingSkill('new');
-    setForm(emptyForm());
-    setFormError(null);
-  };
+    setEditingSkill('new')
+    setForm(emptyForm())
+    setFormError(null)
+  }
 
   const openEdit = (skill: Skill) => {
-    setEditingSkill(skill);
-    setForm(skillToForm(skill));
-    setFormError(null);
-  };
+    setEditingSkill(skill)
+    setForm(skillToForm(skill))
+    setFormError(null)
+  }
 
   const cancelEdit = () => {
-    setEditingSkill(null);
-    setFormError(null);
-  };
+    setEditingSkill(null)
+    setFormError(null)
+  }
 
   const onSave = async () => {
     const nameErr = validateName(
       form.name,
       skills,
       editingSkill !== 'new' && editingSkill ? editingSkill.id : undefined,
-    );
+    )
     if (nameErr) {
-      setFormError(nameErr);
-      return;
+      setFormError(nameErr)
+      return
     }
 
     const frontmatter: SkillFrontmatter = {
@@ -111,10 +111,10 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
       description: form.description,
       ...(parseChips(form.args).length > 0 ? { args: parseChips(form.args) } : {}),
       ...(parseChips(form.scripts).length > 0 ? { scripts: parseChips(form.scripts) } : {}),
-    };
+    }
 
-    setSaving(true);
-    setFormError(null);
+    setSaving(true)
+    setFormError(null)
     try {
       await saveSkill({
         workspaceId,
@@ -123,27 +123,27 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
         frontmatter,
         body: form.body,
         filePath: editingSkill !== 'new' && editingSkill ? editingSkill.filePath : undefined,
-      });
-      setEditingSkill(null);
+      })
+      setEditingSkill(null)
     } catch (err) {
-      setFormError(formatError(err));
+      setFormError(formatError(err))
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const onDelete = async (skill: Skill) => {
-    await deleteSkill(skill.id, workspaceId);
-  };
+    await deleteSkill(skill.id, workspaceId)
+  }
 
   const onRescan = async () => {
-    setRescanning(true);
+    setRescanning(true)
     try {
-      await rescanSkills(workspaceId);
+      await rescanSkills(workspaceId)
     } finally {
-      setRescanning(false);
+      setRescanning(false)
     }
-  };
+  }
 
   if (editingSkill !== null) {
     return (
@@ -156,7 +156,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
         error={formError}
         isNew={editingSkill === 'new'}
       />
-    );
+    )
   }
 
   return (
@@ -190,17 +190,17 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
         </ul>
       )}
     </div>
-  );
-};
+  )
+}
 
 function SkillRow({
   skill,
   onEdit,
   onDelete,
 }: {
-  skill: Skill;
-  onEdit: () => void;
-  onDelete: () => void;
+  skill: Skill
+  onEdit: () => void
+  onDelete: () => void
 }) {
   return (
     <li className="flex items-start gap-3 px-3 py-2.5 text-xs">
@@ -228,7 +228,7 @@ function SkillRow({
         </button>
       </div>
     </li>
-  );
+  )
 }
 
 function SkillEditor({
@@ -240,13 +240,13 @@ function SkillEditor({
   error,
   isNew,
 }: {
-  form: EditorForm;
-  onChange: (f: EditorForm) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  saving: boolean;
-  error: string | null;
-  isNew: boolean;
+  form: EditorForm
+  onChange: (f: EditorForm) => void
+  onSave: () => void
+  onCancel: () => void
+  saving: boolean
+  error: string | null
+  isNew: boolean
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -317,5 +317,5 @@ function SkillEditor({
         </div>
       </div>
     </div>
-  );
+  )
 }

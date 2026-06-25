@@ -1,9 +1,9 @@
-import { invokeBudgetRuleList } from '../../../features/budget/budget';
-import type { SetFn } from './types';
+import { invokeBudgetRuleList } from '../../../features/budget/budget'
+import type { SetFn } from './types'
 
 export const loadBudgetRules = (set: SetFn) => {
   return async () => {
-    const rules = await invokeBudgetRuleList();
-    set({ budgetRules: rules });
-  };
-};
+    const rules = await invokeBudgetRuleList()
+    set({ budgetRules: rules })
+  }
+}

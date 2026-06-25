@@ -12,20 +12,20 @@ import type {
   WorkflowRunId,
   WorkflowTriggerMode,
   WorkspaceId,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type SessionWorkflowRow = {
-  workflow_run_id: string;
-  workflow_id: string;
-  ordinal: number;
-  current_step_ordinal: number;
-  auto_run: number;
-  trigger_mode: string;
-  chain_after_run_id: string | null;
-  goal: string | null;
-  discarded_at: string | null;
-};
+  workflow_run_id: string
+  workflow_id: string
+  ordinal: number
+  current_step_ordinal: number
+  auto_run: number
+  trigger_mode: string
+  chain_after_run_id: string | null
+  goal: string | null
+  discarded_at: string | null
+}
 
 function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   return {
@@ -40,56 +40,56 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
-  };
+  }
 }
 
 type SessionRow = {
-  id: string;
-  workspace_id: string;
-  goal: string;
-  state_kind: TurnState['kind'];
-  state_payload: string;
-  provider_default: string;
-  provider_allow_override: number;
-  provider_enabled: string | null;
-  permission_mode: string | null;
-  auto_run: number;
-  title_user_edited: number;
-  archived_at: number | null;
-  deleted_at: number | null;
-  verbosity: string | null;
-  effort: string | null;
-  model_override: string | null;
-  provider_override: string | null;
-  created_at: number;
-  updated_at: number;
-};
-
-function toState(kind: TurnState['kind'], payload: string): TurnState {
-  const data = JSON.parse(payload) as Record<string, unknown>;
-  return { kind, ...data } as TurnState;
+  id: string
+  workspace_id: string
+  goal: string
+  state_kind: TurnState['kind']
+  state_payload: string
+  provider_default: string
+  provider_allow_override: number
+  provider_enabled: string | null
+  permission_mode: string | null
+  auto_run: number
+  title_user_edited: number
+  archived_at: number | null
+  deleted_at: number | null
+  verbosity: string | null
+  effort: string | null
+  model_override: string | null
+  provider_override: string | null
+  created_at: number
+  updated_at: number
 }
 
-const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex', 'gemini']);
+function toState(kind: TurnState['kind'], payload: string): TurnState {
+  const data = JSON.parse(payload) as Record<string, unknown>
+  return { kind, ...data } as TurnState
+}
+
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex', 'gemini'])
 
 function serializeEnabledProviders(
   providers: ReadonlyArray<ProviderId> | undefined,
 ): string | null {
   if (!providers || providers.length === 0) {
-    return null;
+    return null
   }
-  return providers.join(',');
+  return providers.join(',')
 }
 
 function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | undefined {
   if (raw === null) {
-    return undefined;
+    return undefined
   }
   const parsed = raw
     .split(',')
     .map((id) => id.trim())
-    .filter((id) => VALID_PROVIDER_IDS.has(id)) as ProviderId[];
-  return parsed.length > 0 ? parsed : undefined;
+    .filter((id) => VALID_PROVIDER_IDS.has(id)) as ProviderId[]
+  return parsed.length > 0 ? parsed : undefined
 }
 
 const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
@@ -98,25 +98,25 @@ const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
   'bypassPermissions',
   'dontAsk',
   'plan',
-]);
+])
 
 function toPermissionMode(raw: string | null): ClaudePermissionMode {
   if (raw !== null && VALID_PERMISSION_MODES.has(raw)) {
-    return raw as ClaudePermissionMode;
+    return raw as ClaudePermissionMode
   }
-  return 'bypassPermissions';
+  return 'bypassPermissions'
 }
 
 function toProviderPreference(row: SessionRow): SessionProviderPreference {
   const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
     ? (row.provider_default as ProviderId)
-    : 'anthropic';
-  const enabledProviders = parseEnabledProviders(row.provider_enabled);
+    : 'anthropic'
+  const enabledProviders = parseEnabledProviders(row.provider_enabled)
   return {
     defaultProvider,
     allowTurnOverride: row.provider_allow_override !== 0,
     ...(enabledProviders && { enabledProviders }),
-  };
+  }
 }
 
 function toDomain(
@@ -149,7 +149,7 @@ function toDomain(
     ...(row.provider_override && { providerOverride: row.provider_override }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  };
+  }
 }
 
 async function loadWorkflowsForSession(
@@ -159,66 +159,66 @@ async function loadWorkflowsForSession(
   const rows = await db.select<SessionWorkflowRow>(
     'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
-  );
-  return rows.map(toWorkflowRun);
+  )
+  return rows.map(toWorkflowRun)
 }
 
 export type SessionConfigUpdate = {
-  verbosity?: 'brief' | 'normal' | 'verbose' | null;
-  effort?: ModelEffort | null;
-  modelOverride?: string | null;
-  providerOverride?: string | null;
-  defaultProvider?: ProviderId | null;
-  enabledProviders?: ReadonlyArray<ProviderId> | null;
-};
+  verbosity?: 'brief' | 'normal' | 'verbose' | null
+  effort?: ModelEffort | null
+  modelOverride?: string | null
+  providerOverride?: string | null
+  defaultProvider?: ProviderId | null
+  enabledProviders?: ReadonlyArray<ProviderId> | null
+}
 
 export const updateSessionConfig = async (
   db: Database,
   id: SessionId,
   fields: SessionConfigUpdate,
 ): Promise<void> => {
-  const updates: string[] = [];
-  const values: unknown[] = [];
+  const updates: string[] = []
+  const values: unknown[] = []
   if (fields.verbosity !== undefined) {
-    updates.push('verbosity = ?');
-    values.push(fields.verbosity);
+    updates.push('verbosity = ?')
+    values.push(fields.verbosity)
   }
   if (fields.effort !== undefined) {
-    updates.push('effort = ?');
-    values.push(fields.effort);
+    updates.push('effort = ?')
+    values.push(fields.effort)
   }
   if (fields.modelOverride !== undefined) {
-    updates.push('model_override = ?');
-    values.push(fields.modelOverride);
+    updates.push('model_override = ?')
+    values.push(fields.modelOverride)
   }
   if (fields.providerOverride !== undefined) {
-    updates.push('provider_override = ?');
-    values.push(fields.providerOverride);
+    updates.push('provider_override = ?')
+    values.push(fields.providerOverride)
   }
   if (fields.defaultProvider !== undefined && fields.defaultProvider !== null) {
-    updates.push('provider_default = ?');
-    values.push(fields.defaultProvider);
-    updates.push('provider_override = ?');
-    values.push(null);
+    updates.push('provider_default = ?')
+    values.push(fields.defaultProvider)
+    updates.push('provider_override = ?')
+    values.push(null)
   }
   if (fields.enabledProviders !== undefined) {
-    updates.push('provider_enabled = ?');
-    values.push(serializeEnabledProviders(fields.enabledProviders ?? undefined));
+    updates.push('provider_enabled = ?')
+    values.push(serializeEnabledProviders(fields.enabledProviders ?? undefined))
   }
   if (updates.length === 0) {
-    return;
+    return
   }
-  values.push(id);
-  await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
-};
+  values.push(id)
+  await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values)
+}
 
 function splitState(state: TurnState): { kind: TurnState['kind']; payload: string } {
-  const { kind, ...rest } = state;
-  return { kind, payload: JSON.stringify(rest) };
+  const { kind, ...rest } = state
+  return { kind, payload: JSON.stringify(rest) }
 }
 
 export const insertSession = async (db: Database, session: Session): Promise<void> => {
-  const { kind, payload } = splitState(session.state);
+  const { kind, payload } = splitState(session.state)
   await db.execute(
     `INSERT INTO sessions
       (id, workspace_id, goal, state_kind, state_payload, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, created_at, updated_at)
@@ -238,7 +238,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
       Date.parse(session.createdAt),
       Date.parse(session.updatedAt),
     ],
-  );
+  )
   for (const run of session.workflowRuns) {
     await db.execute(
       'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -252,9 +252,9 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.goal ?? null,
         run.discardedAt ?? null,
       ],
-    );
+    )
   }
-};
+}
 
 export const updateSessionAutoRun = async (
   db: Database,
@@ -266,8 +266,8 @@ export const updateSessionAutoRun = async (
     autoRun ? 1 : 0,
     Date.parse(updatedAt),
     id,
-  ]);
-};
+  ])
+}
 
 export const updateSessionTitleUserEdited = async (
   db: Database,
@@ -279,8 +279,8 @@ export const updateSessionTitleUserEdited = async (
     titleUserEdited ? 1 : 0,
     Date.parse(updatedAt),
     id,
-  ]);
-};
+  ])
+}
 
 export const updateSessionState = async (
   db: Database,
@@ -288,12 +288,12 @@ export const updateSessionState = async (
   state: TurnState,
   updatedAt: IsoDateTime,
 ): Promise<void> => {
-  const { kind, payload } = splitState(state);
+  const { kind, payload } = splitState(state)
   await db.execute(
     'UPDATE sessions SET state_kind = ?, state_payload = ?, updated_at = ? WHERE id = ?',
     [kind, payload, Date.parse(updatedAt), id],
-  );
-};
+  )
+}
 
 export const updateSessionPermissionMode = async (
   db: Database,
@@ -305,41 +305,41 @@ export const updateSessionPermissionMode = async (
     permissionMode,
     Date.parse(updatedAt),
     id,
-  ]);
-};
+  ])
+}
 
 export const getSessionById = async (db: Database, id: SessionId): Promise<Session | null> => {
-  const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id]);
-  const row = rows[0];
+  const rows = await db.select<SessionRow>('SELECT * FROM sessions WHERE id = ?', [id])
+  const row = rows[0]
   if (!row) {
-    return null;
+    return null
   }
-  const workflowRuns = await loadWorkflowsForSession(db, id);
-  return toDomain(row, [], workflowRuns);
-};
+  const workflowRuns = await loadWorkflowsForSession(db, id)
+  return toDomain(row, [], workflowRuns)
+}
 
 async function hydrateSessions(
   db: Database,
   rows: ReadonlyArray<SessionRow>,
 ): Promise<ReadonlyArray<Session>> {
   if (rows.length === 0) {
-    return [];
+    return []
   }
-  const sessionIds = rows.map((r) => r.id);
-  const placeholders = sessionIds.map(() => '?').join(', ');
+  const sessionIds = rows.map((r) => r.id)
+  const placeholders = sessionIds.map(() => '?').join(', ')
   const workflowRows = await db.select<SessionWorkflowRow & { session_id: string }>(
     `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
-  );
+  )
 
-  const runsBySession = new Map<string, WorkflowRun[]>();
+  const runsBySession = new Map<string, WorkflowRun[]>()
   for (const r of workflowRows) {
-    const arr = runsBySession.get(r.session_id) ?? [];
-    arr.push(toWorkflowRun(r));
-    runsBySession.set(r.session_id, arr);
+    const arr = runsBySession.get(r.session_id) ?? []
+    arr.push(toWorkflowRun(r))
+    runsBySession.set(r.session_id, arr)
   }
 
-  return rows.map((row) => toDomain(row, [], runsBySession.get(row.id) ?? []));
+  return rows.map((row) => toDomain(row, [], runsBySession.get(row.id) ?? []))
 }
 
 export const listSessionsForWorkspace = async (
@@ -349,9 +349,9 @@ export const listSessionsForWorkspace = async (
   const rows = await db.select<SessionRow>(
     'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NULL AND deleted_at IS NULL ORDER BY updated_at DESC',
     [workspaceId],
-  );
-  return hydrateSessions(db, rows);
-};
+  )
+  return hydrateSessions(db, rows)
+}
 
 export const listArchivedSessionsForWorkspace = async (
   db: Database,
@@ -360,9 +360,9 @@ export const listArchivedSessionsForWorkspace = async (
   const rows = await db.select<SessionRow>(
     'SELECT * FROM sessions WHERE workspace_id = ? AND archived_at IS NOT NULL AND deleted_at IS NULL ORDER BY archived_at DESC',
     [workspaceId],
-  );
-  return hydrateSessions(db, rows);
-};
+  )
+  return hydrateSessions(db, rows)
+}
 
 export const renameSession = async (
   db: Database,
@@ -374,25 +374,25 @@ export const renameSession = async (
   await db.execute(
     'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ?',
     [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id],
-  );
-};
+  )
+}
 
 export const deleteSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
-};
+  await db.execute('DELETE FROM sessions WHERE id = ?', [id])
+}
 
 export const softDeleteSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
+  await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id])
+}
 
 export const restoreSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET deleted_at = NULL WHERE id = ?', [id]);
-};
+  await db.execute('UPDATE sessions SET deleted_at = NULL WHERE id = ?', [id])
+}
 
 export const archiveSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET archived_at = ? WHERE id = ?', [Date.now(), id]);
-};
+  await db.execute('UPDATE sessions SET archived_at = ? WHERE id = ?', [Date.now(), id])
+}
 
 export const unarchiveSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET archived_at = NULL WHERE id = ?', [id]);
-};
+  await db.execute('UPDATE sessions SET archived_at = NULL WHERE id = ?', [id])
+}

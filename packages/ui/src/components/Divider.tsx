@@ -1,9 +1,9 @@
-import { cn } from '../cn';
+import { cn } from '../cn'
 
 export type DividerProps = {
-  readonly className?: string;
-  readonly orientation?: 'horizontal' | 'vertical';
-};
+  readonly className?: string
+  readonly orientation?: 'horizontal' | 'vertical'
+}
 
 export const Divider = ({ className, orientation = 'horizontal' }: DividerProps) => {
   return (
@@ -17,5 +17,5 @@ export const Divider = ({ className, orientation = 'horizontal' }: DividerProps)
         className,
       )}
     />
-  );
-};
+  )
+}

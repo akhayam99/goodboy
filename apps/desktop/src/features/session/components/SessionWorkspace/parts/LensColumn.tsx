@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react'
 import {
   Activity,
   Bot,
@@ -12,80 +12,80 @@ import {
   SquareTerminal,
   Target,
   Terminal,
-} from 'lucide-react';
-import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
-import type { Tone } from '@goodboy/ui';
-import type { Agent, Session, SessionId } from '@goodboy/types';
-import { type AgentKind, inferAgentKindFromName } from '../../../../session/agent-kind';
+} from 'lucide-react'
+import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui'
+import type { Tone } from '@goodboy/ui'
+import type { Agent, Session, SessionId } from '@goodboy/types'
+import { type AgentKind, inferAgentKindFromName } from '../../../../session/agent-kind'
 import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionStageInfo,
-} from '../../../../../store';
-import type { LensKind } from '../../../../../store';
+} from '../../../../../store'
+import type { LensKind } from '../../../../../store'
 import {
   isStandaloneAgent,
   resolveAttentionLens,
   selectOpenQuestions,
-} from '../../SessionOverviewPane/lib';
+} from '../../SessionOverviewPane/lib'
 
 const isResolverAgent = (agent: Agent, override: AgentKind | null): boolean =>
-  isStandaloneAgent(agent) && (override ?? inferAgentKindFromName(agent.name)) === 'resolver';
+  isStandaloneAgent(agent) && (override ?? inferAgentKindFromName(agent.name)) === 'resolver'
 
 type LensColumnProps = {
-  readonly session: Session;
-  readonly activeLens: LensKind | null;
-  readonly onSelect: (lens: LensKind) => void;
-  readonly filesCount: number;
-};
+  readonly session: Session
+  readonly activeLens: LensKind | null
+  readonly onSelect: (lens: LensKind) => void
+  readonly filesCount: number
+}
 
 type LensRow = {
-  readonly kind: LensKind;
-  readonly label: string;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly count?: number;
-  readonly dot?: 'attention' | 'running';
-  readonly secondaryDot?: boolean;
-};
+  readonly kind: LensKind
+  readonly label: string
+  readonly icon: LucideIcon
+  readonly tone: Tone
+  readonly count?: number
+  readonly dot?: 'attention' | 'running'
+  readonly secondaryDot?: boolean
+}
 
 type LensGroup = {
-  readonly label: string;
-  readonly rows: ReadonlyArray<LensRow>;
-};
+  readonly label: string
+  readonly rows: ReadonlyArray<LensRow>
+}
 
 export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
-  const sessionId = session.id as SessionId;
-  const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
+  const sessionId = session.id as SessionId
+  const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length
   const hasStandaloneAgent = useAppStore((s) =>
     (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(isStandaloneAgent),
-  );
+  )
   const hasRunningAgent = useAppStore((s) =>
     (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(
       (a) => a.status === 'running' && isStandaloneAgent(a),
     ),
-  );
-  const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
+  )
+  const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length
   const attentionLens = resolveAttentionLens(useSessionStageInfo(session), {
     hasStandalone: hasStandaloneAgent,
     hasWorkflow: activeWorkflows > 0,
-  });
-  const activePlans = useSessionPlans(sessionId).filter((p) => p.status === 'active').length;
+  })
+  const activePlans = useSessionPlans(sessionId).filter((p) => p.status === 'active').length
   const runningScripts = useAppStore((s) => {
-    const runs = s.scriptRuns[sessionId];
+    const runs = s.scriptRuns[sessionId]
     if (!runs) {
-      return 0;
+      return 0
     }
-    return Object.values(runs).filter((r) => r.status === 'pending').length;
-  });
-  const terminalOpen = useAppStore((s) => s.terminalSessions[sessionId] === 'open');
+    return Object.values(runs).filter((r) => r.status === 'pending').length
+  })
+  const terminalOpen = useAppStore((s) => s.terminalSessions[sessionId] === 'open')
   const hasPr = useAppStore(
     (s) => s.sessionGithub[sessionId]?.pr != null || s.sessionGitlabMr[sessionId]?.mr != null,
-  );
+  )
   const openResolvers = useAppStore((s) => {
-    const runs = s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY;
+    const runs = s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY
     return runs.reduce(
       (n, r) =>
         n +
@@ -94,11 +94,11 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           ? 1
           : 0),
       0,
-    );
-  });
+    )
+  })
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
-  );
+  )
 
   const contextRows: ReadonlyArray<LensRow> = [
     { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
@@ -118,7 +118,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
       tone: 'warning',
       count: openCount,
     },
-  ];
+  ]
 
   const groups: ReadonlyArray<LensGroup> = [
     {
@@ -173,7 +173,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
         },
       ],
     },
-  ];
+  ]
 
   return (
     <ScrollFade className="min-h-0 flex-1">
@@ -184,7 +184,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
               {group.label}
             </span>
             {group.rows.map((row) => {
-              const active = activeLens === row.kind;
+              const active = activeLens === row.kind
               return (
                 <button
                   key={row.kind}
@@ -238,11 +238,11 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
                     <StatusDot tone="accent" size="sm" />
                   ) : null}
                 </button>
-              );
+              )
             })}
           </div>
         ))}
       </nav>
     </ScrollFade>
-  );
-};
+  )
+}

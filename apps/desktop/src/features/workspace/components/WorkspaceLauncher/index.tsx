@@ -1,56 +1,56 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
-import { useAppStore, useWorkspaces } from '../../../../store';
-import { DogMascot } from '../../../../shared/components/DogMascot';
-import { SETTING_REOPEN_LAST } from '../../../settings/settings';
-import { WorkspaceRow } from '../WorkspaceRow';
-import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Plus, Search } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { Workspace } from '@goodboy/types'
+import { useAppStore, useWorkspaces } from '../../../../store'
+import { DogMascot } from '../../../../shared/components/DogMascot'
+import { SETTING_REOPEN_LAST } from '../../../settings/settings'
+import { WorkspaceRow } from '../WorkspaceRow'
+import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent'
 
 export const WorkspaceLauncher = () => {
-  const workspaces = useWorkspaces();
-  const openWorkspace = useAppStore((s) => s.openWorkspace);
-  const saveSetting = useAppStore((s) => s.saveSetting);
-  const reopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
-  const [activeIndex, setActiveIndex] = useState(0);
+  const workspaces = useWorkspaces()
+  const openWorkspace = useAppStore((s) => s.openWorkspace)
+  const saveSetting = useAppStore((s) => s.saveSetting)
+  const reopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [query, setQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    inputRef.current?.focus()
+  }, [])
 
   const filtered = useMemo(
     () => filterWorkspaces(sortWorkspacesByRecent(workspaces), query),
     [workspaces, query],
-  );
+  )
 
   useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
+    setActiveIndex(0)
+  }, [query])
 
   const select = (workspace: Workspace) => {
-    void openWorkspace(workspace.id, workspace.name);
-  };
+    void openWorkspace(workspace.id, workspace.name)
+  }
 
-  const addWorkspace = () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
+  const addWorkspace = () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'))
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
+      e.preventDefault()
+      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1))
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, 0));
+      e.preventDefault()
+      setActiveIndex((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const picked = filtered[activeIndex];
+      e.preventDefault()
+      const picked = filtered[activeIndex]
       if (picked) {
-        select(picked);
+        select(picked)
       }
     }
-  };
+  }
 
   return (
     <div className="flex h-full w-full items-center justify-center overflow-y-auto bg-background px-6 py-10">
@@ -118,5 +118,5 @@ export const WorkspaceLauncher = () => {
         </label>
       </div>
     </div>
-  );
-};
+  )
+}

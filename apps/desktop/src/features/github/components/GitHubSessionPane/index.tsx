@@ -1,15 +1,15 @@
-import { GitPullRequest } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { PrDetailPanel } from '../GitHubStudio/PrDetailPanel';
-import { StudioShell } from '../../../../shared/components/StudioShell';
+import { GitPullRequest } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { PrDetailPanel } from '../GitHubStudio/PrDetailPanel'
+import { StudioShell } from '../../../../shared/components/StudioShell'
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly workspaceName: string;
-  readonly initialPrNumber?: number | null;
-  readonly initialThreadId?: string | null;
-  readonly onClose: () => void;
-};
+  readonly sessionId: SessionId
+  readonly workspaceName: string
+  readonly initialPrNumber?: number | null
+  readonly initialThreadId?: string | null
+  readonly onClose: () => void
+}
 
 export const GitHubSessionPane = ({
   sessionId,
@@ -37,4 +37,4 @@ export const GitHubSessionPane = ({
       </div>
     )}
   </StudioShell>
-);
+)

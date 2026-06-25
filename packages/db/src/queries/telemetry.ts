@@ -7,21 +7,21 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
   WorkspaceId,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type TelemetryRow = {
-  id: string;
-  run_id: string;
-  session_id: string;
-  kind: TelemetryKind;
-  provider: ProviderName;
-  model: string;
-  input_tokens: number;
-  output_tokens: number;
-  estimated_cost_usd: number;
-  recorded_at: number;
-};
+  id: string
+  run_id: string
+  session_id: string
+  kind: TelemetryKind
+  provider: ProviderName
+  model: string
+  input_tokens: number
+  output_tokens: number
+  estimated_cost_usd: number
+  recorded_at: number
+}
 
 function toDomain(row: TelemetryRow): TelemetryRecord {
   return {
@@ -35,7 +35,7 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
     outputTokens: row.output_tokens,
     estimatedCostUsd: row.estimated_cost_usd,
     recordedAt: new Date(row.recorded_at).toISOString() as IsoDateTime,
-  };
+  }
 }
 
 export const insertTelemetry = async (db: Database, record: TelemetryRecord): Promise<void> => {
@@ -55,8 +55,8 @@ export const insertTelemetry = async (db: Database, record: TelemetryRecord): Pr
       record.estimatedCostUsd,
       Date.parse(record.recordedAt),
     ],
-  );
-};
+  )
+}
 
 export const listTelemetryForSession = async (
   db: Database,
@@ -65,30 +65,30 @@ export const listTelemetryForSession = async (
   const rows = await db.select<TelemetryRow>(
     'SELECT * FROM telemetry_records WHERE session_id = ? ORDER BY recorded_at ASC',
     [sessionId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export type TelemetrySummary = {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly estimatedCostUsd: number;
-  readonly recordCount: number;
-};
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly estimatedCostUsd: number
+  readonly recordCount: number
+}
 
 type SummaryRow = {
-  input: number | null;
-  output: number | null;
-  cost: number | null;
-  count: number;
-};
+  input: number | null
+  output: number | null
+  cost: number | null
+  count: number
+}
 
 const SUMMARY_SELECT = `
   COALESCE(SUM(input_tokens), 0) AS input,
   COALESCE(SUM(output_tokens), 0) AS output,
   COALESCE(SUM(estimated_cost_usd), 0) AS cost,
   COUNT(*) AS count
-`;
+`
 
 function toSummary(row: SummaryRow | undefined): TelemetrySummary {
   return {
@@ -96,7 +96,7 @@ function toSummary(row: SummaryRow | undefined): TelemetrySummary {
     outputTokens: row?.output ?? 0,
     estimatedCostUsd: row?.cost ?? 0,
     recordCount: row?.count ?? 0,
-  };
+  }
 }
 
 export const summarizeSessionTelemetry = async (
@@ -106,9 +106,9 @@ export const summarizeSessionTelemetry = async (
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE session_id = ?`,
     [sessionId],
-  );
-  return toSummary(rows[0]);
-};
+  )
+  return toSummary(rows[0])
+}
 
 export const summarizeWorkspaceTelemetry = async (
   db: Database,
@@ -120,9 +120,9 @@ export const summarizeWorkspaceTelemetry = async (
        INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?`,
     [workspaceId],
-  );
-  return toSummary(rows[0]);
-};
+  )
+  return toSummary(rows[0])
+}
 
 export const summarizeProviderTelemetry = async (
   db: Database,
@@ -131,19 +131,19 @@ export const summarizeProviderTelemetry = async (
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE provider = ?`,
     [provider],
-  );
-  return toSummary(rows[0]);
-};
+  )
+  return toSummary(rows[0])
+}
 
 export type ProviderTelemetrySummary = {
-  readonly provider: ProviderName;
-  readonly estimatedCostUsd: number;
-};
+  readonly provider: ProviderName
+  readonly estimatedCostUsd: number
+}
 
 type ProviderSummaryRow = {
-  provider: ProviderName;
-  cost: number | null;
-};
+  provider: ProviderName
+  cost: number | null
+}
 
 export const summarizeWorkspaceProviderTelemetry = async (
   db: Database,
@@ -157,6 +157,6 @@ export const summarizeWorkspaceProviderTelemetry = async (
       GROUP BY t.provider
       ORDER BY cost DESC`,
     [workspaceId],
-  );
-  return rows.map((r) => ({ provider: r.provider, estimatedCostUsd: r.cost ?? 0 }));
-};
+  )
+  return rows.map((r) => ({ provider: r.provider, estimatedCostUsd: r.cost ?? 0 }))
+}

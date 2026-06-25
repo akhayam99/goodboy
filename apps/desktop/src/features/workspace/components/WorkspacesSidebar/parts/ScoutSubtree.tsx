@@ -1,21 +1,21 @@
-import { Fragment } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { Agent, AgentId } from '@goodboy/types';
-import { EMPTY_ARRAY, agentHasUnread } from '../../../../../store';
-import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock';
-import { ClusterChildRow } from './ClusterChildRow';
+import { Fragment } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import type { Agent, AgentId } from '@goodboy/types'
+import { EMPTY_ARRAY, agentHasUnread } from '../../../../../store'
+import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock'
+import { ClusterChildRow } from './ClusterChildRow'
 
 type ScoutSubtreeProps = {
-  readonly containerId: AgentId;
-  readonly depth: number;
-  readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
-  readonly aggregatesByAgentId: ReadonlyMap<string, AgentAggregate>;
-  readonly selectedAgentId: AgentId | null;
-  readonly isTaskActive: boolean;
-  readonly expandState: ReadonlyMap<string, boolean>;
-  readonly onToggle: (id: string) => void;
-  readonly onSelect: (id: AgentId) => void;
-};
+  readonly containerId: AgentId
+  readonly depth: number
+  readonly childrenByParentId: ReadonlyMap<string, Agent[]>
+  readonly aggregatesByAgentId: ReadonlyMap<string, AgentAggregate>
+  readonly selectedAgentId: AgentId | null
+  readonly isTaskActive: boolean
+  readonly expandState: ReadonlyMap<string, boolean>
+  readonly onToggle: (id: string) => void
+  readonly onSelect: (id: AgentId) => void
+}
 
 export function ScoutSubtree({
   containerId,
@@ -28,27 +28,27 @@ export function ScoutSubtree({
   onToggle,
   onSelect,
 }: ScoutSubtreeProps) {
-  const children = childrenByParentId.get(containerId) ?? EMPTY_ARRAY;
+  const children = childrenByParentId.get(containerId) ?? EMPTY_ARRAY
   if (children.length === 0 || depth > 4) {
-    return null;
+    return null
   }
-  const expanded = expandState.get(containerId) ?? false;
+  const expanded = expandState.get(containerId) ?? false
   const doneCount = children.filter(
     (c) => c.status === 'completed' || c.status === 'skipped',
-  ).length;
+  ).length
   const unreadCount = (() => {
-    let n = 0;
+    let n = 0
     const visit = (id: AgentId) => {
       for (const c of childrenByParentId.get(id) ?? EMPTY_ARRAY) {
         if (agentHasUnread(c, c.id === selectedAgentId && isTaskActive)) {
-          n += 1;
+          n += 1
         }
-        visit(c.id);
+        visit(c.id)
       }
-    };
-    visit(containerId);
-    return n;
-  })();
+    }
+    visit(containerId)
+    return n
+  })()
   return (
     <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
       <button
@@ -101,5 +101,5 @@ export function ScoutSubtree({
           ))
         : null}
     </div>
-  );
+  )
 }

@@ -1,10 +1,10 @@
-import { refreshUnreadWorkspaces } from './refreshUnreadWorkspaces';
-import { setPanelSectionExpanded } from './setPanelSectionExpanded';
-import { setSidebarProviderFilter } from './setSidebarProviderFilter';
-import { setSidebarSessionSearch } from './setSidebarSessionSearch';
-import { setSidebarStateFilter } from './setSidebarStateFilter';
-import { setSidebarWorkspaceSearch } from './setSidebarWorkspaceSearch';
-import type { GetFn, SetFn } from './types';
+import { refreshUnreadWorkspaces } from './refreshUnreadWorkspaces'
+import { setPanelSectionExpanded } from './setPanelSectionExpanded'
+import { setSidebarProviderFilter } from './setSidebarProviderFilter'
+import { setSidebarSessionSearch } from './setSidebarSessionSearch'
+import { setSidebarStateFilter } from './setSidebarStateFilter'
+import { setSidebarWorkspaceSearch } from './setSidebarWorkspaceSearch'
+import type { GetFn, SetFn } from './types'
 
 export const createSidebarSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -14,5 +14,5 @@ export const createSidebarSlice = (set: SetFn, get: GetFn) => {
     setSidebarStateFilter: setSidebarStateFilter(set),
     setSidebarProviderFilter: setSidebarProviderFilter(set),
     setPanelSectionExpanded: setPanelSectionExpanded(set, get),
-  };
-};
+  }
+}

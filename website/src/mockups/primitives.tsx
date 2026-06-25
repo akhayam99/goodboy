@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { AgentAvatar, type AgentKind } from '../components/AgentAvatar';
+import type { ReactNode } from 'react'
+import { AgentAvatar, type AgentKind } from '../components/AgentAvatar'
 
 export const KIND = {
   scout: { bg: 'bg-sky-400', label: 'scout', kind: 'scout' as AgentKind },
@@ -10,12 +10,12 @@ export const KIND = {
   test: { bg: 'bg-teal-400', label: 'test', kind: 'tester' as AgentKind },
   docs: { bg: 'bg-orange-400', label: 'docs', kind: 'docs' as AgentKind },
   generic: { bg: 'bg-rose-400', label: 'agent', kind: 'generic' as AgentKind },
-} as const;
+} as const
 
-export type KindKey = keyof typeof KIND;
+export type KindKey = keyof typeof KIND
 
 export function KindBadge({ kind, muted }: { kind: KindKey; muted?: boolean }) {
-  const k = KIND[kind];
+  const k = KIND[kind]
   return (
     <span
       className={[
@@ -30,15 +30,15 @@ export function KindBadge({ kind, muted }: { kind: KindKey; muted?: boolean }) {
       />
       <span>{k.label}</span>
     </span>
-  );
+  )
 }
 
 export function SnapshotFrame({
   children,
   className,
 }: {
-  children: ReactNode;
-  className?: string;
+  children: ReactNode
+  className?: string
 }) {
   return (
     <div
@@ -49,7 +49,7 @@ export function SnapshotFrame({
     >
       {children}
     </div>
-  );
+  )
 }
 
 export function FrameHeader({ label, right }: { label: string; right?: ReactNode }) {
@@ -60,5 +60,5 @@ export function FrameHeader({ label, right }: { label: string; right?: ReactNode
       </span>
       {right}
     </div>
-  );
+  )
 }

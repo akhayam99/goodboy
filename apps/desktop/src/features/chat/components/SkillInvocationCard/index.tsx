@@ -1,8 +1,8 @@
-import type { TranscriptItem } from '../../utils/transcript-items';
+import type { TranscriptItem } from '../../utils/transcript-items'
 
 type Props = {
-  readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>;
-};
+  readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>
+}
 
 export const SkillInvocationCard = ({ item }: Props) => {
   return (
@@ -20,5 +20,5 @@ export const SkillInvocationCard = ({ item }: Props) => {
         </span>
       ))}
     </div>
-  );
-};
+  )
+}

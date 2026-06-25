@@ -1,24 +1,24 @@
-import { useMemo } from 'react';
-import { StatCard, formatUsdPrecise } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { CapEditor } from './CapEditor';
-import { ModelTable } from './ModelTable';
-import { PanelShell } from './PanelShell';
-import { Sparkline } from './Sparkline';
-import { TurnsTable } from './TurnsTable';
-import { Widget } from './Widget';
-import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
+import { useMemo } from 'react'
+import { StatCard, formatUsdPrecise } from '@goodboy/ui'
+import type { SessionId } from '@goodboy/types'
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton'
+import { CapEditor } from './CapEditor'
+import { ModelTable } from './ModelTable'
+import { PanelShell } from './PanelShell'
+import { Sparkline } from './Sparkline'
+import { TurnsTable } from './TurnsTable'
+import { Widget } from './Widget'
+import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib'
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly goal: string;
-  readonly isCurrent: boolean;
-  readonly turns: ReadonlyArray<WorkspaceTurn>;
-  readonly softCapUsd: number | null;
-  readonly onSaveCap: (capUsd: number) => Promise<void>;
-  readonly onOpened: () => void;
-};
+  readonly sessionId: SessionId
+  readonly goal: string
+  readonly isCurrent: boolean
+  readonly turns: ReadonlyArray<WorkspaceTurn>
+  readonly softCapUsd: number | null
+  readonly onSaveCap: (capUsd: number) => Promise<void>
+  readonly onOpened: () => void
+}
 
 export const SessionPanel = ({
   sessionId,
@@ -29,20 +29,20 @@ export const SessionPanel = ({
   onSaveCap,
   onOpened,
 }: Props) => {
-  const records = useMemo(() => turns.map((t) => t.record), [turns]);
-  const models = useMemo(() => buildModelBreakdown(records), [records]);
-  const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
+  const records = useMemo(() => turns.map((t) => t.record), [turns])
+  const models = useMemo(() => buildModelBreakdown(records), [records])
+  const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records])
 
   const sessionCost = records.reduce(
     (sum, r) => (r.kind === 'turn' ? sum + r.estimatedCostUsd : sum),
     0,
-  );
+  )
   const summarizer = records.reduce(
     (sum, r) => (r.kind === 'summarizer' ? sum + r.estimatedCostUsd : sum),
     0,
-  );
-  const turnCount = records.filter((r) => r.kind === 'turn').length;
-  const providerCount = new Set(records.map((r) => r.provider)).size;
+  )
+  const turnCount = records.filter((r) => r.kind === 'turn').length
+  const providerCount = new Set(records.map((r) => r.provider)).size
 
   return (
     <PanelShell
@@ -73,5 +73,5 @@ export const SessionPanel = ({
 
       <TurnsTable turns={turns} showProvider={providerCount >= 2} showSession={false} />
     </PanelShell>
-  );
-};
+  )
+}

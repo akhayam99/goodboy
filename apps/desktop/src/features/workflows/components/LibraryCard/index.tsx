@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { Check, GripVertical, Pencil, Trash2, X } from 'lucide-react';
-import type { StepDef } from '@goodboy/types';
-import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { useState } from 'react'
+import { cn } from '@goodboy/ui'
+import { Check, GripVertical, Pencil, Trash2, X } from 'lucide-react'
+import type { StepDef } from '@goodboy/types'
+import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind'
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar'
 
 type Props = {
-  readonly def: StepDef;
-  readonly dragDisabled: boolean;
-  readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void;
-  readonly onEdit: () => void;
-  readonly onDelete: () => void;
-};
+  readonly def: StepDef
+  readonly dragDisabled: boolean
+  readonly onStartDrag: (def: StepDef, e: React.PointerEvent) => void
+  readonly onEdit: () => void
+  readonly onDelete: () => void
+}
 
 export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }: Props) => {
-  const [confirming, setConfirming] = useState(false);
-  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
-  const isGlobal = def.workspaceId === null;
+  const [confirming, setConfirming] = useState(false)
+  const kind = ROLE_TO_KIND[def.role] ?? 'generic'
+  const isGlobal = def.workspaceId === null
   return (
     <li
       onPointerDown={(e) => {
         if (dragDisabled) {
-          return;
+          return
         }
-        onStartDrag(def, e);
+        onStartDrag(def, e)
       }}
       className={cn(
         'group relative flex touch-none select-none items-start gap-2.5 rounded-md px-1.5 py-2.5 motion-safe:transition-colors hover:bg-muted/30',
@@ -65,8 +65,8 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
             <button
               type="button"
               onClick={() => {
-                setConfirming(false);
-                onDelete();
+                setConfirming(false)
+                onDelete()
               }}
               title="confirm delete"
               aria-label={`confirm delete ${def.name}`}
@@ -112,5 +112,5 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
         )}
       </div>
     </li>
-  );
-};
+  )
+}

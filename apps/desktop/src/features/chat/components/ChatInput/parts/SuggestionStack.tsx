@@ -1,18 +1,18 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react'
 
 export function SuggestionStack({
   items,
 }: {
-  items: ReadonlyArray<{ readonly key: string; readonly node: ReactNode }>;
+  items: ReadonlyArray<{ readonly key: string; readonly node: ReactNode }>
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false)
 
   if (items.length === 0) {
-    return null;
+    return null
   }
-  const [top, ...rest] = items;
+  const [top, ...rest] = items
   if (!top) {
-    return null;
+    return null
   }
 
   return (
@@ -31,5 +31,5 @@ export function SuggestionStack({
         </button>
       )}
     </div>
-  );
+  )
 }

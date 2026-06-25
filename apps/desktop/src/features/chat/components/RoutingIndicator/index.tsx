@@ -1,20 +1,20 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import type {
   ProviderId,
   RoutingDecision,
   SessionProviderPreference,
   TurnProviderOverride,
-} from '@goodboy/types';
-import { resolveProviderForTurn } from '../../../../features/providers/routing';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
+} from '@goodboy/types'
+import { resolveProviderForTurn } from '../../../../features/providers/routing'
+import { SESSION_FEATURES } from '../../../../shared/lib/features'
 
 type Props = {
-  readonly sessionPreference: SessionProviderPreference;
-  readonly turnOverride: TurnProviderOverride | undefined;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onSendAnyway?: () => void;
-};
+  readonly sessionPreference: SessionProviderPreference
+  readonly turnOverride: TurnProviderOverride | undefined
+  readonly connectedProviders: ReadonlyArray<ProviderId>
+  readonly onSendAnyway?: () => void
+}
 
 export const RoutingIndicator = ({
   sessionPreference,
@@ -22,25 +22,25 @@ export const RoutingIndicator = ({
   connectedProviders,
   onSendAnyway,
 }: Props) => {
-  const [decision, setDecision] = useState<RoutingDecision | null>(null);
+  const [decision, setDecision] = useState<RoutingDecision | null>(null)
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     resolveProviderForTurn(sessionPreference, turnOverride, [...connectedProviders]).then((d) => {
       if (!cancelled) {
-        setDecision(d);
+        setDecision(d)
       }
-    });
+    })
     return () => {
-      cancelled = true;
-    };
-  }, [sessionPreference, turnOverride, connectedProviders]);
+      cancelled = true
+    }
+  }, [sessionPreference, turnOverride, connectedProviders])
 
   if (!decision) {
-    return null;
+    return null
   }
   if (!SESSION_FEATURES.budget) {
-    return null;
+    return null
   }
 
   if (decision.reason === 'all-exceeded') {
@@ -58,21 +58,21 @@ export const RoutingIndicator = ({
           </button>
         ) : null}
       </div>
-    );
+    )
   }
 
   const isFallback =
-    decision.reason === 'fallback-budget' || decision.reason === 'fallback-disconnected';
+    decision.reason === 'fallback-budget' || decision.reason === 'fallback-disconnected'
   if (!isFallback || !decision.fallbackFrom) {
-    return null;
+    return null
   }
 
-  const label = decision.selectedProvider === 'anthropic' ? 'claude' : decision.selectedProvider;
-  const fromLabel = decision.fallbackFrom === 'anthropic' ? 'claude' : decision.fallbackFrom;
+  const label = decision.selectedProvider === 'anthropic' ? 'claude' : decision.selectedProvider
+  const fromLabel = decision.fallbackFrom === 'anthropic' ? 'claude' : decision.fallbackFrom
   const cause =
     decision.reason === 'fallback-budget'
       ? `budget exceeded for ${fromLabel}`
-      : `${fromLabel} disconnected`;
+      : `${fromLabel} disconnected`
 
   return (
     <div className="flex w-fit items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-xs text-warning">
@@ -81,5 +81,5 @@ export const RoutingIndicator = ({
         fallback: {label} / {decision.selectedModel} ({cause})
       </span>
     </div>
-  );
-};
+  )
+}

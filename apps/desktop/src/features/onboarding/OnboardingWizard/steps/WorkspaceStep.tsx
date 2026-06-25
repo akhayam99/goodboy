@@ -1,5 +1,5 @@
-import { Check, FolderGit2 } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Check, FolderGit2 } from 'lucide-react'
+import { Button } from '@goodboy/ui'
 
 export const WorkspaceStep = ({ hasWorkspace }: { hasWorkspace: boolean }) => {
   return (
@@ -31,5 +31,5 @@ export const WorkspaceStep = ({ hasWorkspace }: { hasWorkspace: boolean }) => {
         </Button>
       )}
     </div>
-  );
-};
+  )
+}

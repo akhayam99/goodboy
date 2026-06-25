@@ -1,25 +1,25 @@
-import { Sparkles } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
-import { NudgeCard } from '../NudgeCard';
+import { Sparkles } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants'
+import { NudgeCard } from '../NudgeCard'
 
 export type Props = {
-  readonly direction: 'lighter' | 'heavier';
-  readonly kind: 'strong' | 'optional';
-  readonly costMultiplier: number | null;
-  readonly currentModel: string;
-  readonly suggestedModel: string;
-  readonly onUseSuggested: () => void;
-  readonly onKeepCurrent: () => void;
-  readonly onChangeModel: () => void;
-};
+  readonly direction: 'lighter' | 'heavier'
+  readonly kind: 'strong' | 'optional'
+  readonly costMultiplier: number | null
+  readonly currentModel: string
+  readonly suggestedModel: string
+  readonly onUseSuggested: () => void
+  readonly onKeepCurrent: () => void
+  readonly onChangeModel: () => void
+}
 
 const lead = (direction: Props['direction'], kind: Props['kind']): string => {
   if (direction === 'lighter') {
-    return 'This looks light.';
+    return 'This looks light.'
   }
-  return kind === 'optional' ? 'This might run heavy.' : 'This looks heavy.';
-};
+  return kind === 'optional' ? 'This might run heavy.' : 'This looks heavy.'
+}
 
 const costLine = (
   direction: Props['direction'],
@@ -27,13 +27,13 @@ const costLine = (
   costMultiplier: number | null,
 ): string | null => {
   if (direction === 'lighter') {
-    return costMultiplier !== null ? `About ${costMultiplier}x cheaper.` : null;
+    return costMultiplier !== null ? `About ${costMultiplier}x cheaper.` : null
   }
   if (kind === 'optional') {
-    return costMultiplier !== null ? `Optional, about ${costMultiplier}x cost.` : 'Optional.';
+    return costMultiplier !== null ? `Optional, about ${costMultiplier}x cost.` : 'Optional.'
   }
-  return 'Current model looks underpowered for this.';
-};
+  return 'Current model looks underpowered for this.'
+}
 
 export const RightSizeCard = ({
   direction,
@@ -45,7 +45,7 @@ export const RightSizeCard = ({
   onKeepCurrent,
   onChangeModel,
 }: Props) => {
-  const body = costLine(direction, kind, costMultiplier);
+  const body = costLine(direction, kind, costMultiplier)
   return (
     <NudgeCard
       severity="info"
@@ -83,5 +83,5 @@ export const RightSizeCard = ({
         testId: 'right-size-change-model',
       }}
     />
-  );
-};
+  )
+}

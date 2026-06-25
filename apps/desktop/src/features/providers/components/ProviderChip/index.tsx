@@ -1,17 +1,17 @@
-import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
-import { PROVIDER_BRAND, brandColor } from '../provider-brand';
+import type { ReactNode } from 'react'
+import { cn } from '@goodboy/ui'
+import type { ProviderId } from '@goodboy/types'
+import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants'
+import { PROVIDER_BRAND, brandColor } from '../provider-brand'
 
 type ProviderChipProps = {
-  readonly id: ProviderId;
-  readonly selected: boolean;
-  readonly disabled: boolean;
-  readonly onClick: () => void;
-  readonly trailing?: ReactNode;
-  readonly title?: string;
-};
+  readonly id: ProviderId
+  readonly selected: boolean
+  readonly disabled: boolean
+  readonly onClick: () => void
+  readonly trailing?: ReactNode
+  readonly title?: string
+}
 
 export const ProviderChip = ({
   id,
@@ -21,7 +21,7 @@ export const ProviderChip = ({
   trailing,
   title,
 }: ProviderChipProps) => {
-  const Icon = PROVIDER_BRAND[id].icon;
+  const Icon = PROVIDER_BRAND[id].icon
   return (
     <button
       type="button"
@@ -41,5 +41,5 @@ export const ProviderChip = ({
       {PROVIDER_LABEL[id]}
       {trailing}
     </button>
-  );
-};
+  )
+}

@@ -1,9 +1,9 @@
-import type { ModelTier } from '@goodboy/types';
-import { CURSOR_CHEAP_MODEL } from './cost';
+import type { ModelTier } from '@goodboy/types'
+import { CURSOR_CHEAP_MODEL } from './cost'
 
-export const CURSOR_DEFAULT_MODEL = 'composer-2';
+export const CURSOR_DEFAULT_MODEL = 'composer-2'
 
-export const CURSOR_AUTO_MODEL = 'auto';
+export const CURSOR_AUTO_MODEL = 'auto'
 
 export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
   {
@@ -114,4 +114,4 @@ export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
     weight: 20,
     effort: null,
   },
-];
+]

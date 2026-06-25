@@ -1,41 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import type { SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import type { SessionId, TelemetryRecord } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore } from '../../../../store'
 
 export const SessionCostChip = ({ sessionId }: { sessionId: SessionId }) => {
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
+  )
   const sessionCost = useMemo(() => {
-    let sum = 0;
+    let sum = 0
     for (const rec of telemetry) {
       if (rec.kind === 'summarizer') {
-        continue;
+        continue
       }
-      sum += rec.estimatedCostUsd;
+      sum += rec.estimatedCostUsd
     }
-    return sum;
-  }, [telemetry]);
-  const label = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
+    return sum
+  }, [telemetry])
+  const label = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`
 
-  const [pulse, setPulse] = useState(false);
-  const prevCostRef = useRef(sessionCost);
-  const prevSessionIdRef = useRef(sessionId);
+  const [pulse, setPulse] = useState(false)
+  const prevCostRef = useRef(sessionCost)
+  const prevSessionIdRef = useRef(sessionId)
 
   useEffect(() => {
     if (prevSessionIdRef.current !== sessionId) {
-      prevSessionIdRef.current = sessionId;
-      prevCostRef.current = sessionCost;
-      setPulse(false);
-      return;
+      prevSessionIdRef.current = sessionId
+      prevCostRef.current = sessionCost
+      setPulse(false)
+      return
     }
     if (prevCostRef.current === sessionCost) {
-      return;
+      return
     }
-    prevCostRef.current = sessionCost;
-    setPulse(true);
-  }, [sessionCost, sessionId]);
+    prevCostRef.current = sessionCost
+    setPulse(true)
+  }, [sessionCost, sessionId])
 
   return (
     <button
@@ -56,5 +56,5 @@ export const SessionCostChip = ({ sessionId }: { sessionId: SessionId }) => {
     >
       {label}
     </button>
-  );
-};
+  )
+}

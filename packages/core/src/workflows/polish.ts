@@ -1,5 +1,5 @@
-import type { ProviderId } from '@goodboy/types';
-import { getCheapModel, getDefaultBinary } from '../summarizer/client';
+import type { ProviderId } from '@goodboy/types'
+import { getCheapModel, getDefaultBinary } from '../summarizer/client'
 
 const GOAL_POLISH_SYSTEM_PROMPT = `You polish goal statements for AI coding workflows.
 
@@ -17,27 +17,27 @@ Output ONLY a single marker block, nothing before or after:
 the polished goal text
 <</goal>>
 
-Plain text inside the block. No markdown, no quotes, no trailing prose.`;
+Plain text inside the block. No markdown, no quotes, no trailing prose.`
 
 export type GoalPolishDeps = {
-  readonly providerId: ProviderId;
-  readonly binary?: string;
-  readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-};
+  readonly providerId: ProviderId
+  readonly binary?: string
+  readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>
+}
 
 type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
+  readonly stdout: string
+  readonly stderr: string
+  readonly exitCode: number | null
+}
 
 export const polishWorkflowGoal = async (
   deps: GoalPolishDeps,
   goal: string,
 ): Promise<string | null> => {
-  const trimmed = goal.trim();
+  const trimmed = goal.trim()
   if (trimmed.length === 0) {
-    return null;
+    return null
   }
 
   const result = await deps.invokeFn<OneShotResult>('summarize_session', {
@@ -48,53 +48,53 @@ export const polishWorkflowGoal = async (
       userMessage: `GOAL (rough draft):\n${trimmed}\n\nRewrite it as the single <<goal>> marker block.`,
       systemPrompt: GOAL_POLISH_SYSTEM_PROMPT,
     },
-  });
+  })
   if ((result.exitCode ?? 0) !== 0) {
-    return null;
+    return null
   }
 
-  const text = extractText(deps.providerId, result.stdout);
-  return parsePolishedGoal(text);
-};
+  const text = extractText(deps.providerId, result.stdout)
+  return parsePolishedGoal(text)
+}
 
-const GOAL_MARKER_OPEN = '<<goal>>';
-const GOAL_MARKER_CLOSE = '<</goal>>';
+const GOAL_MARKER_OPEN = '<<goal>>'
+const GOAL_MARKER_CLOSE = '<</goal>>'
 
 export const parsePolishedGoal = (text: string): string | null => {
-  let body: string | null = null;
-  let from = 0;
+  let body: string | null = null
+  let from = 0
   for (;;) {
-    const open = text.indexOf(GOAL_MARKER_OPEN, from);
+    const open = text.indexOf(GOAL_MARKER_OPEN, from)
     if (open === -1) {
-      break;
+      break
     }
-    const contentStart = open + GOAL_MARKER_OPEN.length;
-    const close = text.indexOf(GOAL_MARKER_CLOSE, contentStart);
+    const contentStart = open + GOAL_MARKER_OPEN.length
+    const close = text.indexOf(GOAL_MARKER_CLOSE, contentStart)
     if (close === -1) {
-      break;
+      break
     }
-    const inner = text.slice(contentStart, close).trim();
+    const inner = text.slice(contentStart, close).trim()
     if (inner.length > 0) {
-      body = inner;
+      body = inner
     }
-    from = close + GOAL_MARKER_CLOSE.length;
+    from = close + GOAL_MARKER_CLOSE.length
   }
   if (body !== null) {
-    return body;
+    return body
   }
-  const fallback = text.trim();
-  return fallback.length > 0 && !fallback.includes(GOAL_MARKER_OPEN) ? fallback : null;
-};
+  const fallback = text.trim()
+  return fallback.length > 0 && !fallback.includes(GOAL_MARKER_OPEN) ? fallback : null
+}
 
 function extractText(providerId: ProviderId, stdout: string): string {
-  const trimmed = stdout.trim();
+  const trimmed = stdout.trim()
   if (providerId === 'anthropic') {
     try {
-      const parsed = JSON.parse(trimmed) as { result?: string };
-      return (parsed.result ?? '').trim();
+      const parsed = JSON.parse(trimmed) as { result?: string }
+      return (parsed.result ?? '').trim()
     } catch {
-      return trimmed;
+      return trimmed
     }
   }
-  return trimmed;
+  return trimmed
 }

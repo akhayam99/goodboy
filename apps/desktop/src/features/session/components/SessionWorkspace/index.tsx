@@ -1,25 +1,25 @@
-import { useEffect } from 'react';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
-import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { Divider, ScrollFade, cn } from '@goodboy/ui';
-import { ChatView } from '../../../chat/components/ChatView';
-import { TerminalDock } from '../../../terminal/components/TerminalDock';
-import { PlanStudio } from '../../../plans/components/PlanStudio';
-import { ScriptsPanel } from '../../../scripts';
-import { readPersistedLens, useAppStore, useFilesTouched } from '../../../../store';
-import type { LensKind } from '../../../../store';
-import { worktreeStatus } from '../../../worktree/worktree';
-import { AgentsSection } from '../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
-import { SessionOverviewPane } from '../SessionOverviewPane';
-import { SessionStudioLayer } from './parts/SessionStudioLayer';
-import { SessionTopBar } from './parts/SessionTopBar';
-import { LensColumn } from './parts/LensColumn';
-import { QuestionsPane } from './parts/QuestionsPane';
-import { SlotPane } from './parts/SlotPane';
-import { PrPane } from './parts/PrPane';
-import { FilesPane } from './parts/FilesPane';
-import { PaneShell } from './parts/PaneShell';
-import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
+import { useEffect } from 'react'
+import { ArrowLeft, ChevronRight } from 'lucide-react'
+import type { AgentId, Session, SessionId } from '@goodboy/types'
+import { Divider, ScrollFade, cn } from '@goodboy/ui'
+import { ChatView } from '../../../chat/components/ChatView'
+import { TerminalDock } from '../../../terminal/components/TerminalDock'
+import { PlanStudio } from '../../../plans/components/PlanStudio'
+import { ScriptsPanel } from '../../../scripts'
+import { readPersistedLens, useAppStore, useFilesTouched } from '../../../../store'
+import type { LensKind } from '../../../../store'
+import { worktreeStatus } from '../../../worktree/worktree'
+import { AgentsSection } from '../../../workspace/components/WorkspacesSidebar/parts/AgentsSection'
+import { SessionOverviewPane } from '../SessionOverviewPane'
+import { SessionStudioLayer } from './parts/SessionStudioLayer'
+import { SessionTopBar } from './parts/SessionTopBar'
+import { LensColumn } from './parts/LensColumn'
+import { QuestionsPane } from './parts/QuestionsPane'
+import { SlotPane } from './parts/SlotPane'
+import { PrPane } from './parts/PrPane'
+import { FilesPane } from './parts/FilesPane'
+import { PaneShell } from './parts/PaneShell'
+import { useSelectedAgentHome } from './hooks/useSelectedAgentHome'
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -34,72 +34,70 @@ const LENS_LABEL: Record<LensKind, string> = {
   last_output_summary: 'Last output',
   pr: 'Pull request',
   files: 'Diff',
-};
+}
 
 type SessionWorkspaceProps = {
-  readonly session: Session;
-  readonly isActive: boolean;
-};
+  readonly session: Session
+  readonly isActive: boolean
+}
 
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
-  const sessionId = session.id as SessionId;
-  const activeLens = useAppStore((s) => s.activeLens[sessionId]);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
-  const selectedAgentId = useAppStore(
-    (s) => s.selectedAgentId[sessionId] ?? null,
-  ) as AgentId | null;
-  const agentHome = useSelectedAgentHome(sessionId);
-  const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
-  const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
-  const setSessionStudio = useAppStore((s) => s.setSessionStudio);
-  const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
-  const filesTouched = useFilesTouched(sessionId, isActive);
+  const sessionId = session.id as SessionId
+  const activeLens = useAppStore((s) => s.activeLens[sessionId])
+  const setActiveLens = useAppStore((s) => s.setActiveLens)
+  const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null)
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null) as AgentId | null
+  const agentHome = useSelectedAgentHome(sessionId)
+  const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null)
+  const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null)
+  const setSessionStudio = useAppStore((s) => s.setSessionStudio)
+  const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch)
+  const filesTouched = useFilesTouched(sessionId, isActive)
 
   useEffect(() => {
     if (activeLens === undefined) {
-      setActiveLens(sessionId, readPersistedLens(sessionId));
+      setActiveLens(sessionId, readPersistedLens(sessionId))
     }
-  }, [activeLens, sessionId, setActiveLens]);
+  }, [activeLens, sessionId, setActiveLens])
 
   useEffect(() => {
-    if (!isActive || !workingDir) return;
-    let cancelled = false;
+    if (!isActive || !workingDir) return
+    let cancelled = false
     worktreeStatus(workingDir)
       .then((status) => {
         if (!cancelled && status.branch) {
-          void reconcileSessionBranch(sessionId, status.branch);
+          void reconcileSessionBranch(sessionId, status.branch)
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
     return () => {
-      cancelled = true;
-    };
-  }, [isActive, workingDir, sessionId, filesTouched.count, reconcileSessionBranch]);
+      cancelled = true
+    }
+  }, [isActive, workingDir, sessionId, filesTouched.count, reconcileSessionBranch])
 
-  const lens: LensKind | null = activeLens ?? null;
+  const lens: LensKind | null = activeLens ?? null
   const onSelectLens = (next: LensKind) => {
-    setActiveLens(sessionId, next);
-  };
+    setActiveLens(sessionId, next)
+  }
   const onSelectOverview = () => {
-    setActiveLens(sessionId, null);
-  };
-  const showStudio = studio != null;
-  const showAgentOverlay = selectedAgentId != null && !showStudio;
-  const showLens = selectedAgentId == null && !showStudio;
-  const onBareOverview = showLens && lens === null;
-  const overlayHome = agentHome ?? 'agents';
+    setActiveLens(sessionId, null)
+  }
+  const showStudio = studio != null
+  const showAgentOverlay = selectedAgentId != null && !showStudio
+  const showLens = selectedAgentId == null && !showStudio
+  const onBareOverview = showLens && lens === null
+  const overlayHome = agentHome ?? 'agents'
 
   useEffect(() => {
-    if (!showAgentOverlay) return;
+    if (!showAgentOverlay) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      event.preventDefault();
-      setActiveLens(sessionId, overlayHome);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showAgentOverlay, sessionId, overlayHome, setActiveLens]);
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      setActiveLens(sessionId, overlayHome)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showAgentOverlay, sessionId, overlayHome, setActiveLens])
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -247,16 +245,16 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 type PaneProps = {
-  readonly visible: boolean;
-  readonly children: React.ReactNode;
-};
+  readonly visible: boolean
+  readonly children: React.ReactNode
+}
 
 const Pane = ({ visible, children }: PaneProps) => (
   <div hidden={!visible} className={cn('absolute inset-0', !visible && 'pointer-events-none')}>
     {children}
   </div>
-);
+)

@@ -1,25 +1,25 @@
-import { activateWorkflowAgent } from './activateWorkflowAgent';
-import { advanceClusterImplementation } from './clusterImplementation';
-import { attachWorkflowToSession } from './attachWorkflowToSession';
-import { deleteStepDef } from './deleteStepDef';
-import { deleteWorkflow } from './deleteWorkflow';
-import { detachWorkflowFromSession } from './detachWorkflowFromSession';
-import { discardWorkflow } from './discardWorkflow';
-import { finalizeWorkflowStep } from './finalizeWorkflowStep';
-import { forceAdvanceWorkflowStep } from './forceAdvanceWorkflowStep';
-import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
-import { loadPhaseTemplates } from './loadPhaseTemplates';
-import { loadStepLibrary } from './loadStepLibrary';
-import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
-import { reorderSessionWorkflows } from './reorderSessionWorkflows';
-import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
-import { resetWorkflows } from './resetWorkflows';
-import { savePhaseTemplate } from './savePhaseTemplate';
-import { saveStepDef } from './saveStepDef';
-import { advanceScoutTree } from './scoutTree';
-import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
-import { startWorkflowRun } from './startWorkflowRun';
-import type { GetFn, SetFn } from './types';
+import { activateWorkflowAgent } from './activateWorkflowAgent'
+import { advanceClusterImplementation } from './clusterImplementation'
+import { attachWorkflowToSession } from './attachWorkflowToSession'
+import { deleteStepDef } from './deleteStepDef'
+import { deleteWorkflow } from './deleteWorkflow'
+import { detachWorkflowFromSession } from './detachWorkflowFromSession'
+import { discardWorkflow } from './discardWorkflow'
+import { finalizeWorkflowStep } from './finalizeWorkflowStep'
+import { forceAdvanceWorkflowStep } from './forceAdvanceWorkflowStep'
+import { loadPhaseRunsForSession } from './loadPhaseRunsForSession'
+import { loadPhaseTemplates } from './loadPhaseTemplates'
+import { loadStepLibrary } from './loadStepLibrary'
+import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow'
+import { reorderSessionWorkflows } from './reorderSessionWorkflows'
+import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow'
+import { resetWorkflows } from './resetWorkflows'
+import { savePhaseTemplate } from './savePhaseTemplate'
+import { saveStepDef } from './saveStepDef'
+import { advanceScoutTree } from './scoutTree'
+import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun'
+import { startWorkflowRun } from './startWorkflowRun'
+import type { GetFn, SetFn } from './types'
 
 export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -44,5 +44,5 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     forceAdvanceWorkflowStep: forceAdvanceWorkflowStep(set, get),
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
-  };
-};
+  }
+}

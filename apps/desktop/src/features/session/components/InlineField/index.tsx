@@ -1,12 +1,12 @@
-import { Pencil } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Pencil } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 
 type Props = {
-  label: string;
-  children: React.ReactNode;
-  onEdit?: () => void;
-  editLabel?: string;
-};
+  label: string
+  children: React.ReactNode
+  onEdit?: () => void
+  editLabel?: string
+}
 
 export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
   return (
@@ -33,5 +33,5 @@ export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
       </div>
       {children}
     </div>
-  );
-};
+  )
+}

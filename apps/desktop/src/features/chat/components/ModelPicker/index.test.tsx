@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ProviderId } from '@goodboy/types';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { ProviderId } from '@goodboy/types'
 
-import { ModelPicker } from './index';
+import { ModelPicker } from './index'
 
 const baseProps = {
   providers: ['anthropic'] as ReadonlyArray<ProviderId>,
@@ -22,23 +22,23 @@ const baseProps = {
   onSelectEffort: vi.fn(),
   onSelectVerbosity: vi.fn(),
   onResetToDefault: vi.fn(),
-};
+}
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 describe('ModelPicker', () => {
   it('renders a trigger button with aria-haspopup dialog', () => {
-    render(<ModelPicker {...baseProps} />);
-    const btn = screen.getByRole('button', { name: /claude/i });
-    expect(btn.getAttribute('aria-haspopup')).toBe('dialog');
-  });
+    render(<ModelPicker {...baseProps} />)
+    const btn = screen.getByRole('button', { name: /claude/i })
+    expect(btn.getAttribute('aria-haspopup')).toBe('dialog')
+  })
 
   it('disables the trigger when the disabled prop is true', () => {
-    render(<ModelPicker {...baseProps} disabled disabledTitle="locked" />);
-    const btns = screen.getAllByRole('button');
-    const trigger = btns.find((b) => (b as HTMLButtonElement).disabled);
-    expect(trigger).toBeDefined();
-  });
+    render(<ModelPicker {...baseProps} disabled disabledTitle="locked" />)
+    const btns = screen.getAllByRole('button')
+    const trigger = btns.find((b) => (b as HTMLButtonElement).disabled)
+    expect(trigger).toBeDefined()
+  })
 
   const codexProps = {
     ...baseProps,
@@ -56,23 +56,23 @@ describe('ModelPicker', () => {
     connectedProviders: ['codex'] as ReadonlyArray<ProviderId>,
     defaultProvider: 'codex' as ProviderId,
     defaultModel: 'gpt-5.5',
-  };
+  }
 
   it('maps the codex model id to its registry label in the trigger', () => {
-    render(<ModelPicker {...codexProps} />);
-    const trigger = screen.getByRole('button', { name: /codex/i });
-    expect(trigger.textContent).toContain('GPT-5.5');
-  });
+    render(<ModelPicker {...codexProps} />)
+    const trigger = screen.getByRole('button', { name: /codex/i })
+    expect(trigger.textContent).toContain('GPT-5.5')
+  })
 
   it('clusters codex versions into GPT-5 / Codex / Mini subfamily rows with effort', () => {
-    render(<ModelPicker {...codexProps} />);
-    fireEvent.click(screen.getByRole('button', { name: /codex/i }));
-    const dialog = screen.getByRole('dialog', { name: /model picker/i });
+    render(<ModelPicker {...codexProps} />)
+    fireEvent.click(screen.getByRole('button', { name: /codex/i }))
+    const dialog = screen.getByRole('dialog', { name: /model picker/i })
     for (const label of ['GPT-5', 'Codex', 'Mini']) {
-      expect(dialog.textContent).toContain(label);
+      expect(dialog.textContent).toContain(label)
     }
-    expect(dialog.textContent).toContain('5.3 spark');
-    expect(dialog.textContent).toContain('Minimal');
-    expect(dialog.textContent).toContain('High');
-  });
-});
+    expect(dialog.textContent).toContain('5.3 spark')
+    expect(dialog.textContent).toContain('Minimal')
+    expect(dialog.textContent).toContain('High')
+  })
+})

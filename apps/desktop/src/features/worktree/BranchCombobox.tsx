@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { ChevronDown } from 'lucide-react';
-import type { LocalBranchInfo } from './worktree';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import { ChevronDown } from 'lucide-react'
+import type { LocalBranchInfo } from './worktree'
 
 type Props = {
-  readonly branches: ReadonlyArray<LocalBranchInfo>;
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-  readonly disabled: boolean;
-  readonly loading: boolean;
-  readonly excludeNames?: ReadonlyArray<string>;
-  readonly openDirection?: 'down' | 'up';
-};
+  readonly branches: ReadonlyArray<LocalBranchInfo>
+  readonly value: string
+  readonly onChange: (v: string) => void
+  readonly disabled: boolean
+  readonly loading: boolean
+  readonly excludeNames?: ReadonlyArray<string>
+  readonly openDirection?: 'down' | 'up'
+}
 
 export const BranchCombobox = ({
   branches,
@@ -22,14 +22,14 @@ export const BranchCombobox = ({
   excludeNames,
   openDirection = 'down',
 }: Props) => {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const [highlightIdx, setHighlightIdx] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [highlightIdx, setHighlightIdx] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
 
-  const excludeSet = useMemo(() => new Set(excludeNames ?? []), [excludeNames]);
+  const excludeSet = useMemo(() => new Set(excludeNames ?? []), [excludeNames])
 
   const filtered = useMemo(
     () =>
@@ -37,89 +37,89 @@ export const BranchCombobox = ({
         (b) => !excludeSet.has(b.name) && b.name.toLowerCase().includes(query.toLowerCase()),
       ),
     [branches, excludeSet, query],
-  );
+  )
 
   const select = useCallback(
     (name: string) => {
-      onChange(name);
-      setQuery(name);
-      setOpen(false);
+      onChange(name)
+      setQuery(name)
+      setOpen(false)
     },
     [onChange],
-  );
+  )
 
   useEffect(() => {
     if (value && !query) {
-      setQuery(value);
+      setQuery(value)
     }
-  }, [value, query]);
+  }, [value, query])
 
   useEffect(() => {
-    setHighlightIdx(0);
-  }, [query]);
+    setHighlightIdx(0)
+  }, [query])
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   useEffect(() => {
     if (!open || !listRef.current) {
-      return;
+      return
     }
-    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [highlightIdx, open]);
+    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [highlightIdx, open])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      setOpen(true);
-      e.preventDefault();
-      return;
+      setOpen(true)
+      e.preventDefault()
+      return
     }
     if (!open) {
-      return;
+      return
     }
     switch (e.key) {
       case 'ArrowDown':
-        e.preventDefault();
-        setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
-        break;
+        e.preventDefault()
+        setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1))
+        break
       case 'ArrowUp':
-        e.preventDefault();
-        setHighlightIdx((i) => Math.max(i - 1, 0));
-        break;
+        e.preventDefault()
+        setHighlightIdx((i) => Math.max(i - 1, 0))
+        break
       case 'Enter':
-        e.preventDefault();
+        e.preventDefault()
         if (filtered[highlightIdx]) {
-          select(filtered[highlightIdx].name);
+          select(filtered[highlightIdx].name)
         }
-        break;
+        break
       case 'Escape':
-        e.preventDefault();
-        setOpen(false);
-        break;
+        e.preventDefault()
+        setOpen(false)
+        break
     }
-  };
+  }
 
   const placeholder = loading
     ? 'Loading…'
     : branches.length === 0
       ? 'No local branches'
-      : 'Search branch…';
+      : 'Search branch…'
 
   const popupClass = cn(
     'absolute left-0 z-50 w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg',
     openDirection === 'up' ? 'bottom-full mb-1 max-h-48' : 'top-full mt-1 max-h-56',
-  );
+  )
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -142,10 +142,10 @@ export const BranchCombobox = ({
           autoComplete="off"
           className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
           onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
+            setQuery(e.target.value)
+            setOpen(true)
             if (!e.target.value) {
-              onChange('');
+              onChange('')
             }
           }}
           onFocus={() => setOpen(true)}
@@ -156,10 +156,10 @@ export const BranchCombobox = ({
           tabIndex={-1}
           onClick={() => {
             if (disabled || branches.length === 0) {
-              return;
+              return
             }
-            setOpen((v) => !v);
-            inputRef.current?.focus();
+            setOpen((v) => !v)
+            inputRef.current?.focus()
           }}
           aria-label={open ? 'Close branch list' : 'Open branch list'}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -180,8 +180,8 @@ export const BranchCombobox = ({
               aria-selected={highlightIdx === i}
               onMouseEnter={() => setHighlightIdx(i)}
               onMouseDown={(e) => {
-                e.preventDefault();
-                select(b.name);
+                e.preventDefault()
+                select(b.name)
               }}
               className={cn(
                 'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
@@ -203,5 +203,5 @@ export const BranchCombobox = ({
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

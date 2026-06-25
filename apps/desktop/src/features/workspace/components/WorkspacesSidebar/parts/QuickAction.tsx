@@ -1,13 +1,13 @@
-import { type ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { type ReactNode } from 'react'
+import { cn } from '@goodboy/ui'
 
 type Props = {
-  icon: ReactNode;
-  label: string;
-  title?: string;
-  onClick: () => void;
-  pulse?: boolean;
-};
+  icon: ReactNode
+  label: string
+  title?: string
+  onClick: () => void
+  pulse?: boolean
+}
 
 export const QuickAction = ({ icon, label, title, onClick, pulse }: Props) => {
   return (
@@ -25,5 +25,5 @@ export const QuickAction = ({ icon, label, title, onClick, pulse }: Props) => {
       {icon}
       <span className="min-w-0 truncate">{label}</span>
     </button>
-  );
-};
+  )
+}

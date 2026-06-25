@@ -63,4 +63,4 @@ CREATE INDEX idx_open_questions_run_id ON open_questions(workflow_run_id, owned_
 
 PRAGMA foreign_key_check;
 PRAGMA foreign_keys = ON;
-`;
+`

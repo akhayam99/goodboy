@@ -1,4 +1,4 @@
-import type { PlannerInput } from './types';
+import type { PlannerInput } from './types'
 
 export const PLANNER_SYSTEM_PROMPT = `You are a planning agent for an AI coding workspace.
 
@@ -39,13 +39,13 @@ Rules:
 - Names should be short (1-3 words), in title case.
 - Do not include preamble, apologies, or explanations outside the JSON object.
 - The user may write in any language. Always respond with the JSON object regardless of input language.
-  Match the language of the user's process description for all JSON field values (workflowName, names, reasoning, promptPrefix, expectedOutput): if the process is written in Italian, write those values in Italian; same for any other language. Keep the JSON structure and role values unchanged.`;
+  Match the language of the user's process description for all JSON field values (workflowName, names, reasoning, promptPrefix, expectedOutput): if the process is written in Italian, write those values in Italian; same for any other language. Keep the JSON structure and role values unchanged.`
 
 export const buildPlannerUserPrompt = (input: PlannerInput): string => {
-  const parts = ['Process:', input.process];
+  const parts = ['Process:', input.process]
   if (input.repoContext && input.repoContext.trim().length > 0) {
-    parts.push('', 'Repository context:', input.repoContext.trim());
+    parts.push('', 'Repository context:', input.repoContext.trim())
   }
-  parts.push('', 'Return the JSON object now.');
-  return parts.join('\n');
-};
+  parts.push('', 'Return the JSON object now.')
+  return parts.join('\n')
+}

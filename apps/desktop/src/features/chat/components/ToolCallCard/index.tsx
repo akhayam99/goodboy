@@ -1,24 +1,24 @@
-import { useState } from 'react';
-import { ChevronRight, Wrench } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { TranscriptItem } from '../../utils/transcript-items';
-import { MARKER_ACCENT } from '../marker-accents';
-import { StructuredData } from './StructuredData';
+import { useState } from 'react'
+import { ChevronRight, Wrench } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { TranscriptItem } from '../../utils/transcript-items'
+import { MARKER_ACCENT } from '../marker-accents'
+import { StructuredData } from './StructuredData'
 
 type Props = {
-  readonly item: Extract<TranscriptItem, { kind: 'tool_call' }>;
-};
+  readonly item: Extract<TranscriptItem, { kind: 'tool_call' }>
+}
 
 export const ToolCallCard = ({ item }: Props) => {
-  const [open, setOpen] = useState(false);
-  const [rawMode, setRawMode] = useState(false);
-  const running = !item.ended;
+  const [open, setOpen] = useState(false)
+  const [rawMode, setRawMode] = useState(false)
+  const running = !item.ended
 
   const iconColor = item.isError
     ? MARKER_ACCENT.error.icon
     : running
       ? 'text-muted-foreground/60'
-      : MARKER_ACCENT.operations.icon;
+      : MARKER_ACCENT.operations.icon
 
   return (
     <div className="group">
@@ -89,5 +89,5 @@ export const ToolCallCard = ({ item }: Props) => {
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

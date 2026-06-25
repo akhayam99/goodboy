@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
-import { GitPullRequest } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { InboxList } from './InboxList';
-import { PrDetailPanel } from './PrDetailPanel';
-import { useGithubInbox } from './useGithubInbox';
-import { StudioShell } from '../../../../shared/components/StudioShell';
+import { useEffect, useState } from 'react'
+import { Divider, ScrollFade } from '@goodboy/ui'
+import { GitPullRequest } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { InboxList } from './InboxList'
+import { PrDetailPanel } from './PrDetailPanel'
+import { useGithubInbox } from './useGithubInbox'
+import { StudioShell } from '../../../../shared/components/StudioShell'
 
 type Props = {
-  readonly workspaceName: string;
-  readonly initialSessionId: SessionId | null;
-  readonly initialPrNumber?: number | null;
-  readonly initialThreadId?: string | null;
-  readonly onClose: () => void;
-};
+  readonly workspaceName: string
+  readonly initialSessionId: SessionId | null
+  readonly initialPrNumber?: number | null
+  readonly initialThreadId?: string | null
+  readonly onClose: () => void
+}
 
 export const GitHubStudio = ({
   workspaceName,
@@ -22,20 +22,20 @@ export const GitHubStudio = ({
   initialThreadId = null,
   onClose,
 }: Props) => {
-  const groups = useGithubInbox();
-  const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
+  const groups = useGithubInbox()
+  const [focused, setFocused] = useState<SessionId | null>(initialSessionId)
 
   useEffect(() => {
     if (focused !== null) {
-      return;
+      return
     }
-    const first = groups[0]?.rows[0]?.session.id ?? null;
+    const first = groups[0]?.rows[0]?.session.id ?? null
     if (first) {
-      setFocused(first);
+      setFocused(first)
     }
-  }, [focused, groups]);
+  }, [focused, groups])
 
-  const onInitialSession = focused === initialSessionId;
+  const onInitialSession = focused === initialSessionId
 
   return (
     <StudioShell
@@ -62,5 +62,5 @@ export const GitHubStudio = ({
         </>
       )}
     </StudioShell>
-  );
-};
+  )
+}

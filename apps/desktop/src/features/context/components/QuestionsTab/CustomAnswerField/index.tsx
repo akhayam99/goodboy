@@ -1,13 +1,13 @@
-import { Pencil } from 'lucide-react';
-import { Textarea, cn } from '@goodboy/ui';
+import { Pencil } from 'lucide-react'
+import { Textarea, cn } from '@goodboy/ui'
 
 type Props = {
-  value: string;
-  open: boolean;
-  onToggle: () => void;
-  onChange: (value: string) => void;
-  placeholder?: string;
-};
+  value: string
+  open: boolean
+  onToggle: () => void
+  onChange: (value: string) => void
+  placeholder?: string
+}
 
 export const CustomAnswerField = ({
   value,
@@ -32,7 +32,7 @@ export const CustomAnswerField = ({
         <Pencil size={10} />
         other
       </button>
-    );
+    )
   }
 
   return (
@@ -49,5 +49,5 @@ export const CustomAnswerField = ({
         className="rounded-md border-border-soft bg-subtle text-xs shadow-none"
       />
     </div>
-  );
-};
+  )
+}

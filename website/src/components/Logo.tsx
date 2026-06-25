@@ -1,4 +1,4 @@
-import { DogMascot } from './DogMascot';
+import { DogMascot } from './DogMascot'
 
 export function Logo({ size = 28 }: { size?: number }) {
   return (
@@ -6,5 +6,5 @@ export function Logo({ size = 28 }: { size?: number }) {
       <DogMascot size={size} className="text-[oklch(0.78_0.13_200)]" />
       <span className="text-[17px] font-semibold tracking-tight">Goodboy</span>
     </div>
-  );
+  )
 }

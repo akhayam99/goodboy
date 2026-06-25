@@ -1,7 +1,7 @@
-import { insertDiffComment, listDiffCommentsForSession } from '@goodboy/db';
-import type { DiffCommentAnchor, SessionId } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import { insertDiffComment, listDiffCommentsForSession } from '@goodboy/db'
+import type { DiffCommentAnchor, SessionId } from '@goodboy/types'
+import { tauriDatabase } from '../../../shared/lib/db'
+import type { SetFn } from './types'
 
 export const addDiffComment = (set: SetFn) => {
   return async (
@@ -10,11 +10,11 @@ export const addDiffComment = (set: SetFn) => {
     body: string,
     anchor?: DiffCommentAnchor,
   ) => {
-    const id = crypto.randomUUID();
-    await insertDiffComment(tauriDatabase, id, sessionId, filePath, body, anchor);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
+    const id = crypto.randomUUID()
+    await insertDiffComment(tauriDatabase, id, sessionId, filePath, body, anchor)
+    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId)
     set((state) => ({
       diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
-  };
-};
+    }))
+  }
+}

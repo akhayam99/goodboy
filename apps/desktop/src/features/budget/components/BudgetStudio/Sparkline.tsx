@@ -1,8 +1,8 @@
-import { formatUsdPrecise } from '@goodboy/ui';
+import { formatUsdPrecise } from '@goodboy/ui'
 
 type Props = {
-  readonly values: ReadonlyArray<number>;
-};
+  readonly values: ReadonlyArray<number>
+}
 
 export const Sparkline = ({ values }: Props) => {
   if (values.length < 2) {
@@ -10,18 +10,18 @@ export const Sparkline = ({ values }: Props) => {
       <div className="flex h-20 items-center justify-center rounded-lg border border-border-soft bg-muted/10 text-2xs text-muted-foreground/70">
         not enough turns to chart
       </div>
-    );
+    )
   }
 
-  const max = Math.max(...values, 0);
-  const w = 100;
-  const h = 100;
-  const top = 6;
-  const step = w / (values.length - 1);
-  const y = (v: number) => (max === 0 ? h : h - (v / max) * (h - top));
-  const points = values.map((v, i) => `${(i * step).toFixed(2)},${y(v).toFixed(2)}`);
-  const line = points.join(' ');
-  const area = `0,${h} ${line} ${w},${h}`;
+  const max = Math.max(...values, 0)
+  const w = 100
+  const h = 100
+  const top = 6
+  const step = w / (values.length - 1)
+  const y = (v: number) => (max === 0 ? h : h - (v / max) * (h - top))
+  const points = values.map((v, i) => `${(i * step).toFixed(2)},${y(v).toFixed(2)}`)
+  const line = points.join(' ')
+  const area = `0,${h} ${line} ${w},${h}`
 
   return (
     <div className="relative h-24 w-full rounded-lg border border-border-soft bg-muted/10">
@@ -56,5 +56,5 @@ export const Sparkline = ({ values }: Props) => {
         />
       </svg>
     </div>
-  );
-};
+  )
+}

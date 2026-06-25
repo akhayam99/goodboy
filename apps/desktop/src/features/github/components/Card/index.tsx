@@ -1,35 +1,35 @@
-import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { PrComment, PrDetail, PullRequestState } from '@goodboy/types';
-import { pickSmartTab, TAB_ICON_BTN, TAB_KEYS, TAB_LABEL, type GithubTabKey } from './lib';
-import { computeTabStatus } from './status';
-import { AnimatedTabBody } from './parts/AnimatedTabBody';
-import { DetailSkeleton } from './parts/DetailSkeleton';
-import { ErrorRow } from './parts/ErrorRow';
-import { StaleCaption } from './parts/StaleCaption';
-import { TabBadge } from './parts/TabBadge';
-import { CiPane } from './panes/CiPane';
-import { CommentsPane } from './panes/CommentsPane';
-import { ReviewPane } from './panes/ReviewPane';
+import { useEffect, useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { PrComment, PrDetail, PullRequestState } from '@goodboy/types'
+import { pickSmartTab, TAB_ICON_BTN, TAB_KEYS, TAB_LABEL, type GithubTabKey } from './lib'
+import { computeTabStatus } from './status'
+import { AnimatedTabBody } from './parts/AnimatedTabBody'
+import { DetailSkeleton } from './parts/DetailSkeleton'
+import { ErrorRow } from './parts/ErrorRow'
+import { StaleCaption } from './parts/StaleCaption'
+import { TabBadge } from './parts/TabBadge'
+import { CiPane } from './panes/CiPane'
+import { CommentsPane } from './panes/CommentsPane'
+import { ReviewPane } from './panes/ReviewPane'
 
-export { pickSmartTab } from './lib';
-export { computeTabStatus } from './status';
-export { TabBadge } from './parts/TabBadge';
-export type { GithubTabKey } from './lib';
+export { pickSmartTab } from './lib'
+export { computeTabStatus } from './status'
+export { TabBadge } from './parts/TabBadge'
+export type { GithubTabKey } from './lib'
 
 type Props = {
-  readonly pr: PullRequestState;
-  readonly detail: PrDetail | null;
-  readonly detailLoading: boolean;
-  readonly detailError: string | null;
-  readonly detailFetchedAt: string | null;
-  readonly branchLastActivity: string | null;
-  readonly onOpenUrl: (url: string) => void;
-  readonly onRefresh: () => void;
-  readonly onSpawnFromComment?: (comment: PrComment) => void;
-  readonly onSpawnFromReviewChanges?: () => void;
-};
+  readonly pr: PullRequestState
+  readonly detail: PrDetail | null
+  readonly detailLoading: boolean
+  readonly detailError: string | null
+  readonly detailFetchedAt: string | null
+  readonly branchLastActivity: string | null
+  readonly onOpenUrl: (url: string) => void
+  readonly onRefresh: () => void
+  readonly onSpawnFromComment?: (comment: PrComment) => void
+  readonly onSpawnFromReviewChanges?: () => void
+}
 
 export const GithubCard = ({
   pr,
@@ -46,23 +46,23 @@ export const GithubCard = ({
   const smartDefault = useMemo(
     () => pickSmartTab(pr, detail, branchLastActivity),
     [pr, detail, branchLastActivity],
-  );
-  const [active, setActive] = useState<GithubTabKey>(smartDefault);
-  const [userSelectedPr, setUserSelectedPr] = useState<number | null>(null);
-  const isUserPick = userSelectedPr === pr.number;
+  )
+  const [active, setActive] = useState<GithubTabKey>(smartDefault)
+  const [userSelectedPr, setUserSelectedPr] = useState<number | null>(null)
+  const isUserPick = userSelectedPr === pr.number
 
   useEffect(() => {
     if (!isUserPick) {
-      setActive(smartDefault);
+      setActive(smartDefault)
     }
-  }, [smartDefault, isUserPick]);
+  }, [smartDefault, isUserPick])
 
   const selectTab = (k: GithubTabKey) => {
-    setUserSelectedPr(pr.number);
-    setActive(k);
-  };
+    setUserSelectedPr(pr.number)
+    setActive(k)
+  }
 
-  const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
+  const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail])
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -73,8 +73,8 @@ export const GithubCard = ({
           aria-label="GitHub card view"
         >
           {TAB_KEYS.map((k) => {
-            const isActive = k === active;
-            const status = tabStatus[k];
+            const isActive = k === active
+            const status = tabStatus[k]
             return (
               <button
                 key={k}
@@ -93,7 +93,7 @@ export const GithubCard = ({
                 <span>{TAB_LABEL[k]}</span>
                 {status ? <TabBadge status={status} dim={!isActive} /> : null}
               </button>
-            );
+            )
           })}
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -136,5 +136,5 @@ export const GithubCard = ({
         )}
       </AnimatedTabBody>
     </div>
-  );
-};
+  )
+}

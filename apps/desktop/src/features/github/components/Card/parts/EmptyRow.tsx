@@ -1,11 +1,11 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react'
 
 type Props = {
-  readonly text: string;
-  readonly actionUrl: string;
-  readonly actionLabel: string;
-  readonly onOpenUrl: (url: string) => void;
-};
+  readonly text: string
+  readonly actionUrl: string
+  readonly actionLabel: string
+  readonly onOpenUrl: (url: string) => void
+}
 
 export const EmptyRow = ({ text, actionUrl, actionLabel, onOpenUrl }: Props) => {
   return (
@@ -20,5 +20,5 @@ export const EmptyRow = ({ text, actionUrl, actionLabel, onOpenUrl }: Props) => 
         <ExternalLink size={9} aria-hidden />
       </button>
     </div>
-  );
-};
+  )
+}

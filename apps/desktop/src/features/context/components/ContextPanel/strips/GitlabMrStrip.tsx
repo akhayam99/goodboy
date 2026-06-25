@@ -1,24 +1,24 @@
-import { ArrowUpRight, GitMerge, RefreshCw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
-import { useAppStore } from '../../../../../store';
+import { ArrowUpRight, GitMerge, RefreshCw } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { SessionId } from '@goodboy/types'
+import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind'
+import { useAppStore } from '../../../../../store'
 
 export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
   const workspaceId = useAppStore(
     (s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId ?? null,
-  );
-  const remoteKind = useRemoteHostKind(workspaceId);
-  const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId]);
-  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
-  const mr = mrState?.mr ?? null;
-  const loading = mrState?.loading ?? false;
-  const error = mrState?.error ?? null;
+  )
+  const remoteKind = useRemoteHostKind(workspaceId)
+  const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId])
+  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr)
+  const mr = mrState?.mr ?? null
+  const loading = mrState?.loading ?? false
+  const error = mrState?.error ?? null
   const openPane = () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-mr', { detail: { sessionId } }));
+    window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-mr', { detail: { sessionId } }))
 
   if (remoteKind !== 'gitlab') {
-    return null;
+    return null
   }
 
   return (
@@ -72,5 +72,5 @@ export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
         </span>
       ) : null}
     </div>
-  );
+  )
 }

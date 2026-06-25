@@ -1,39 +1,39 @@
-import { cn } from '@goodboy/ui';
-import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
-import type { ProviderInfo } from '../../../../features/providers/providers';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
+import { cn } from '@goodboy/ui'
+import type { ProviderConnectionState, ProviderId } from '@goodboy/types'
+import type { ProviderInfo } from '../../../../features/providers/providers'
+import { brandColor, PROVIDER_BRAND } from '../provider-brand'
 
 type Props = {
-  readonly providers: ReadonlyArray<ProviderInfo>;
-  readonly focusedId: ProviderId | null;
-  readonly onSelect: (id: ProviderId) => void;
-};
+  readonly providers: ReadonlyArray<ProviderInfo>
+  readonly focusedId: ProviderId | null
+  readonly onSelect: (id: ProviderId) => void
+}
 
 const STATUS_DOT: Record<ProviderConnectionState, string> = {
   connected: 'bg-success',
   installed_disconnected: 'bg-warning',
   missing: 'bg-muted-foreground/40',
   error: 'bg-danger',
-};
+}
 
 const STATUS_LABEL: Record<ProviderConnectionState, string> = {
   connected: 'connected',
   installed_disconnected: 'installed',
   missing: 'not installed',
   error: 'error',
-};
+}
 
 export const ProvidersRail = ({ providers, focusedId, onSelect }: Props) => {
   return (
     <div className="flex flex-col gap-0.5 p-2">
       {providers.map((p) => {
-        const id = p.id as ProviderId;
-        const Icon = PROVIDER_BRAND[id].icon;
-        const active = id === focusedId;
+        const id = p.id as ProviderId
+        const Icon = PROVIDER_BRAND[id].icon
+        const active = id === focusedId
         const subtitle =
           p.connection === 'connected'
             ? (p.identity ?? STATUS_LABEL.connected)
-            : STATUS_LABEL[p.connection];
+            : STATUS_LABEL[p.connection]
         return (
           <button
             key={id}
@@ -67,8 +67,8 @@ export const ProvidersRail = ({ providers, focusedId, onSelect }: Props) => {
               aria-hidden
             />
           </button>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

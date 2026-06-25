@@ -1,5 +1,5 @@
-import { Section } from '../components/Section';
-import { LinearStudioSnapshot } from '../mockups/Snapshots';
+import { Section } from '../components/Section'
+import { LinearStudioSnapshot } from '../mockups/Snapshots'
 
 export function LinearDeepDive() {
   return (
@@ -23,5 +23,5 @@ export function LinearDeepDive() {
     >
       <LinearStudioSnapshot />
     </Section>
-  );
+  )
 }

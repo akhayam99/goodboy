@@ -1,5 +1,5 @@
-import type { SetFn } from './types';
+import type { SetFn } from './types'
 
 export const setSidebarSessionSearch = (set: SetFn) => {
-  return (query: string) => set({ sidebarSessionSearch: query });
-};
+  return (query: string) => set({ sidebarSessionSearch: query })
+}

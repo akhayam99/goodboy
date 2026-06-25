@@ -1,22 +1,22 @@
-import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
-import { markOpenQuestionAnswered } from '@goodboy/db';
-import { removeQuestionsFromSlot, wrapOpenQuestionAnswers } from '@goodboy/core';
-import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn } from './types';
+import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types'
+import { markOpenQuestionAnswered } from '@goodboy/db'
+import { removeQuestionsFromSlot, wrapOpenQuestionAnswers } from '@goodboy/core'
+import { tauriDatabase } from '../../../shared/lib/db'
+import type { GetFn } from './types'
 
 type AnswerPair = {
-  readonly id: OpenQuestionId;
-  readonly text: string;
-  readonly answer: string;
-};
+  readonly id: OpenQuestionId
+  readonly text: string
+  readonly answer: string
+}
 
 function buildBatchPrompt(pairs: ReadonlyArray<AnswerPair>): string {
-  const lines = ['Answers to open questions:'];
+  const lines = ['Answers to open questions:']
   for (const { text, answer } of pairs) {
-    lines.push(`\n- Q: ${text}`);
-    lines.push(`  A: ${answer}`);
+    lines.push(`\n- Q: ${text}`)
+    lines.push(`  A: ${answer}`)
   }
-  return lines.join('\n');
+  return lines.join('\n')
 }
 
 export const answerOpenQuestions = (get: GetFn) => {
@@ -25,27 +25,27 @@ export const answerOpenQuestions = (get: GetFn) => {
     pairs: ReadonlyArray<AnswerPair>,
     targetAgentId: AgentId | null,
   ) => {
-    const valid = pairs.filter((p) => p.answer.trim().length > 0);
+    const valid = pairs.filter((p) => p.answer.trim().length > 0)
     if (valid.length === 0) {
-      return;
+      return
     }
 
-    await Promise.all(valid.map((p) => markOpenQuestionAnswered(tauriDatabase, p.id, p.answer)));
+    await Promise.all(valid.map((p) => markOpenQuestionAnswered(tauriDatabase, p.id, p.answer)))
     const slotChanged = await removeQuestionsFromSlot(
       tauriDatabase,
       sessionId,
       valid.map((p) => p.text),
-    );
-    await get().loadSessionOpenQuestions(sessionId);
-    await get().loadSessionAnsweredQuestions(sessionId);
+    )
+    await get().loadSessionOpenQuestions(sessionId)
+    await get().loadSessionAnsweredQuestions(sessionId)
     if (slotChanged) {
-      await get().loadSessionSlots(sessionId);
+      await get().loadSessionSlots(sessionId)
     }
 
     await get().sendTurn({
       sessionId,
       content: wrapOpenQuestionAnswers(buildBatchPrompt(valid)),
       agentId: targetAgentId ?? undefined,
-    });
-  };
-};
+    })
+  }
+}

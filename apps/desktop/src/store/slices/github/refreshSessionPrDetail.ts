@@ -1,40 +1,40 @@
-import { detectRepoSlug, fetchPrDetail } from '@goodboy/core';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
-import { formatError } from '../../../shared/lib/errors';
-import type { GetFn, SetFn } from './types';
+import { detectRepoSlug, fetchPrDetail } from '@goodboy/core'
+import type { IsoDateTime, SessionId } from '@goodboy/types'
+import { tauriGhRunner } from '../../../features/github/github'
+import { formatError } from '../../../shared/lib/errors'
+import type { GetFn, SetFn } from './types'
 
 type Params = {
-  force?: boolean;
-  silent?: boolean;
-  retries?: number;
-};
+  force?: boolean
+  silent?: boolean
+  retries?: number
+}
 
-const DETAIL_TTL_MS = 30_000;
+const DETAIL_TTL_MS = 30_000
 
 export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
-    const existing = get().sessionGithub[sessionId];
-    const pr = existing?.pr ?? null;
+    const existing = get().sessionGithub[sessionId]
+    const pr = existing?.pr ?? null
     if (!pr) {
-      return;
+      return
     }
     if (!opts?.force && existing?.detailLoading) {
-      return;
+      return
     }
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === sessionId)
     if (!session) {
-      return;
+      return
     }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    const workspace = get().workspaces.find((w) => w.id === session.workspaceId)
     if (!workspace) {
-      return;
+      return
     }
     const fresh = existing?.detailFetchedAt
       ? Date.now() - new Date(existing.detailFetchedAt).getTime()
-      : Number.POSITIVE_INFINITY;
+      : Number.POSITIVE_INFINITY
     if (!opts?.force && existing?.detail && fresh < DETAIL_TTL_MS) {
-      return;
+      return
     }
     set((state) => ({
       sessionGithub: {
@@ -51,12 +51,12 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           detailError: null,
         },
       },
-    }));
-    const maxAttempts = (opts?.retries ?? 0) + 1;
-    let lastErr: unknown = null;
+    }))
+    const maxAttempts = (opts?.retries ?? 0) + 1
+    let lastErr: unknown = null
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, session.workspaceId);
+        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, session.workspaceId)
         if (!slug) {
           set((state) => ({
             sessionGithub: {
@@ -73,13 +73,13 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
                 detailError: null,
               },
             },
-          }));
-          return;
+          }))
+          return
         }
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
           cwd: workspace.rootPath,
           workspaceId: session.workspaceId,
-        });
+        })
         set((state) => ({
           sessionGithub: {
             ...state.sessionGithub,
@@ -95,10 +95,10 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
               detailError: null,
             },
           },
-        }));
-        return;
+        }))
+        return
       } catch (err) {
-        lastErr = err;
+        lastErr = err
       }
     }
     set((state) => ({
@@ -116,6 +116,6 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           detailError: opts?.silent ? null : formatError(lastErr),
         },
       },
-    }));
-  };
-};
+    }))
+  }
+}

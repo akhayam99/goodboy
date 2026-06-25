@@ -8,25 +8,25 @@ import type {
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceIntegrationProvider,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 // TODO (@ak): mobile-origin session registry. The permission-mode clamp that
 // read this set was removed (desktop + mobile both run bypassPermissions).
 // Retained as the origin signal for the pending sandbox-exec confinement of
 // mobile-origin spawns; sticky until the desktop revokes via
 // clearMobileSharedSessions.
-const mobileSharedSessions = new Set<SessionId>();
+const mobileSharedSessions = new Set<SessionId>()
 
 export const markSessionMobileShared = (sessionId: SessionId): void => {
-  mobileSharedSessions.add(sessionId);
-};
+  mobileSharedSessions.add(sessionId)
+}
 
 export const isSessionMobileShared = (sessionId: SessionId): boolean =>
-  mobileSharedSessions.has(sessionId);
+  mobileSharedSessions.has(sessionId)
 
 export const clearMobileSharedSessions = (): void => {
-  mobileSharedSessions.clear();
-};
+  mobileSharedSessions.clear()
+}
 
 // ---------------------------------------------------------------------------
 // Mobile merge-PR gate (write path).
@@ -40,12 +40,12 @@ export const clearMobileSharedSessions = (): void => {
 // ---------------------------------------------------------------------------
 
 /** The merge methods the phone may name. The closed set the bridge accepts. */
-const MERGE_METHODS: ReadonlySet<string> = new Set<PrMergeMethod>(['squash', 'merge', 'rebase']);
+const MERGE_METHODS: ReadonlySet<string> = new Set<PrMergeMethod>(['squash', 'merge', 'rebase'])
 
 export const isMergeMethod = (v: unknown): v is PrMergeMethod =>
-  typeof v === 'string' && MERGE_METHODS.has(v);
+  typeof v === 'string' && MERGE_METHODS.has(v)
 
-export type MergeGate = { readonly ok: true } | { readonly ok: false; readonly reason: string };
+export type MergeGate = { readonly ok: true } | { readonly ok: false; readonly reason: string }
 
 /**
  * Decide whether a mobile client may merge `pr` with `method`, using only the
@@ -62,34 +62,34 @@ export const evaluateMobileMerge = (
   method: string,
 ): MergeGate => {
   if (!isMergeMethod(method)) {
-    return { ok: false, reason: `unsupported merge method: ${String(method)}` };
+    return { ok: false, reason: `unsupported merge method: ${String(method)}` }
   }
   if (!pr) {
-    return { ok: false, reason: 'no PR is associated with this session' };
+    return { ok: false, reason: 'no PR is associated with this session' }
   }
   if (pr.isDraft) {
-    return { ok: false, reason: 'PR is a draft — mark it ready before merging' };
+    return { ok: false, reason: 'PR is a draft — mark it ready before merging' }
   }
   if (pr.state === 'merged' || pr.state === 'closed') {
-    return { ok: false, reason: `PR is already ${pr.state}` };
+    return { ok: false, reason: `PR is already ${pr.state}` }
   }
   if (pr.state === 'queued') {
-    return { ok: false, reason: 'PR is already in the merge queue' };
+    return { ok: false, reason: 'PR is already in the merge queue' }
   }
   if (pr.reviewDecision !== 'approved') {
-    return { ok: false, reason: 'PR is not approved' };
+    return { ok: false, reason: 'PR is not approved' }
   }
   if (pr.checks !== 'success') {
     return {
       ok: false,
       reason: pr.checks === 'failure' ? 'CI checks are failing' : 'CI checks are not green yet',
-    };
+    }
   }
   if (pr.mergeable === false) {
-    return { ok: false, reason: 'PR has conflicts — resolve them first' };
+    return { ok: false, reason: 'PR has conflicts — resolve them first' }
   }
-  return { ok: true };
-};
+  return { ok: true }
+}
 
 // ---------------------------------------------------------------------------
 // Mobile create-session-from-issue gate (write path).
@@ -111,22 +111,22 @@ const CREATE_SESSION_PROVIDERS: ReadonlySet<string> = new Set<WorkspaceIntegrati
   'linear',
   'sentry',
   'gitlab',
-]);
+])
 
 export const isCreateSessionProvider = (v: unknown): v is WorkspaceIntegrationProvider =>
-  typeof v === 'string' && CREATE_SESSION_PROVIDERS.has(v);
+  typeof v === 'string' && CREATE_SESSION_PROVIDERS.has(v)
 
 export type CreateSessionGate =
   | {
-      readonly ok: true;
-      readonly workspaceId: WorkspaceId;
-      readonly provider: WorkspaceIntegrationProvider;
+      readonly ok: true
+      readonly workspaceId: WorkspaceId
+      readonly provider: WorkspaceIntegrationProvider
       // The reserved rate slot. The caller MUST `commit()` once the create lands
       // or `release()` if it fails/aborts. The slot is already counted against
       // the cap, so concurrent commands in the same tick can't bypass the limit.
-      readonly reservation: MobileCreateReservation;
+      readonly reservation: MobileCreateReservation
     }
-  | { readonly ok: false; readonly reason: string };
+  | { readonly ok: false; readonly reason: string }
 
 // Rate guard: a sliding window over recent mobile-origin session launches.
 // Sticky module state (same rationale as `mobileSharedSessions`) so it can't be
@@ -143,18 +143,18 @@ export type CreateSessionGate =
 // alongside the completed-launch timestamps. The reservation is later either
 // committed (becomes a timestamp) or released (e.g. the create failed), via the
 // caller's synchronous commit/release call.
-const MOBILE_CREATE_WINDOW_MS = 60_000;
-const MOBILE_CREATE_MAX_IN_WINDOW = 5;
-const mobileCreateTimestamps: number[] = [];
+const MOBILE_CREATE_WINDOW_MS = 60_000
+const MOBILE_CREATE_MAX_IN_WINDOW = 5
+const mobileCreateTimestamps: number[] = []
 // In-flight reservations: count of creates that passed the gate but haven't yet
 // resolved. Counted toward the cap so concurrent commands can't all slip through
 // the same empty window.
-let mobileCreatePending = 0;
+let mobileCreatePending = 0
 
 export const clearMobileCreateRateState = (): void => {
-  mobileCreateTimestamps.length = 0;
-  mobileCreatePending = 0;
-};
+  mobileCreateTimestamps.length = 0
+  mobileCreatePending = 0
+}
 
 /**
  * A reservation handed back by the gate when it passes. The caller MUST call
@@ -164,20 +164,20 @@ export const clearMobileCreateRateState = (): void => {
  */
 export type MobileCreateReservation = {
   /** Convert this reservation into a completed launch within the window. */
-  readonly commit: (now?: number) => void;
+  readonly commit: (now?: number) => void
   /** Release the reservation without recording a launch (create failed/abandoned). */
-  readonly release: () => void;
-};
+  readonly release: () => void
+}
 
 const pruneExpired = (now: number): void => {
-  const cutoff = now - MOBILE_CREATE_WINDOW_MS;
+  const cutoff = now - MOBILE_CREATE_WINDOW_MS
   // Drop expired entries so the window slides and memory stays bounded.
-  let head = mobileCreateTimestamps[0];
+  let head = mobileCreateTimestamps[0]
   while (head !== undefined && head < cutoff) {
-    mobileCreateTimestamps.shift();
-    head = mobileCreateTimestamps[0];
+    mobileCreateTimestamps.shift()
+    head = mobileCreateTimestamps[0]
   }
-};
+}
 
 /**
  * Record an accepted launch directly (no reservation). Retained for callers that
@@ -187,15 +187,15 @@ const pruneExpired = (now: number): void => {
  * window so concurrent commands can't bypass the cap.
  */
 export const noteMobileSessionCreated = (now: number = Date.now()): void => {
-  mobileCreateTimestamps.push(now);
-};
+  mobileCreateTimestamps.push(now)
+}
 
 const isRateLimited = (now: number): boolean => {
-  pruneExpired(now);
+  pruneExpired(now)
   // Count both completed launches AND in-flight reservations against the cap, so
   // a burst of concurrent creates can't all pass before any of them records.
-  return mobileCreateTimestamps.length + mobileCreatePending >= MOBILE_CREATE_MAX_IN_WINDOW;
-};
+  return mobileCreateTimestamps.length + mobileCreatePending >= MOBILE_CREATE_MAX_IN_WINDOW
+}
 
 /**
  * Atomically (relative to the event loop) reserve a rate slot. Returns a
@@ -204,26 +204,26 @@ const isRateLimited = (now: number): boolean => {
  * is what makes the check-and-record atomic across concurrent commands.
  */
 const reserveSlot = (): MobileCreateReservation | null => {
-  mobileCreatePending += 1;
-  let settled = false;
+  mobileCreatePending += 1
+  let settled = false
   return {
     commit: (now: number = Date.now()) => {
       if (settled) {
-        return;
+        return
       }
-      settled = true;
-      mobileCreatePending = Math.max(0, mobileCreatePending - 1);
-      mobileCreateTimestamps.push(now);
+      settled = true
+      mobileCreatePending = Math.max(0, mobileCreatePending - 1)
+      mobileCreateTimestamps.push(now)
     },
     release: () => {
       if (settled) {
-        return;
+        return
       }
-      settled = true;
-      mobileCreatePending = Math.max(0, mobileCreatePending - 1);
+      settled = true
+      mobileCreatePending = Math.max(0, mobileCreatePending - 1)
     },
-  };
-};
+  }
+}
 
 /**
  * Decide whether a mobile client may create a session in `workspaceId` from a
@@ -237,46 +237,46 @@ const reserveSlot = (): MobileCreateReservation | null => {
  * a human-readable reason. Also enforces the create rate limit.
  */
 export const evaluateMobileCreateSession = (args: {
-  readonly workspaceId: unknown;
-  readonly provider: unknown;
-  readonly workspaces: ReadonlyArray<Pick<Workspace, 'id'>>;
-  readonly integrations: ReadonlyArray<Pick<WorkspaceIntegration, 'provider'>>;
-  readonly now?: number;
+  readonly workspaceId: unknown
+  readonly provider: unknown
+  readonly workspaces: ReadonlyArray<Pick<Workspace, 'id'>>
+  readonly integrations: ReadonlyArray<Pick<WorkspaceIntegration, 'provider'>>
+  readonly now?: number
 }): CreateSessionGate => {
-  const { workspaceId, provider, workspaces, integrations } = args;
-  const now = args.now ?? Date.now();
+  const { workspaceId, provider, workspaces, integrations } = args
+  const now = args.now ?? Date.now()
 
   if (typeof workspaceId !== 'string' || workspaceId.length === 0) {
-    return { ok: false, reason: 'missing workspaceId' };
+    return { ok: false, reason: 'missing workspaceId' }
   }
   if (!isCreateSessionProvider(provider)) {
-    return { ok: false, reason: `unsupported provider: ${String(provider)}` };
+    return { ok: false, reason: `unsupported provider: ${String(provider)}` }
   }
   // (1) Validate the workspace against the desktop's OWN list — never the claim.
-  const known = workspaces.some((w) => w.id === workspaceId);
+  const known = workspaces.some((w) => w.id === workspaceId)
   if (!known) {
-    return { ok: false, reason: `unknown workspace: ${workspaceId}` };
+    return { ok: false, reason: `unknown workspace: ${workspaceId}` }
   }
   // (2) The provider must be connected FOR THIS WORKSPACE (caller passes only
   // that workspace's integration rows). A phone can't launch from an integration
   // that isn't wired up — the desktop has no credential to resolve the issue.
-  const connected = integrations.some((i) => i.provider === provider);
+  const connected = integrations.some((i) => i.provider === provider)
   if (!connected) {
-    return { ok: false, reason: `${provider} is not connected for this workspace` };
+    return { ok: false, reason: `${provider} is not connected for this workspace` }
   }
   // (3) Abuse guard. Check AND reserve atomically — no await between the
   // isRateLimited() read and reserveSlot() — so a pipelined burst of creates
   // arriving in the same tick can't all pass the (empty) window. The reservation
   // is counted against the cap immediately; the caller commits/releases it.
   if (isRateLimited(now)) {
-    return { ok: false, reason: 'too many session launches — slow down and retry shortly' };
+    return { ok: false, reason: 'too many session launches — slow down and retry shortly' }
   }
-  const reservation = reserveSlot();
+  const reservation = reserveSlot()
   if (!reservation) {
-    return { ok: false, reason: 'too many session launches — slow down and retry shortly' };
+    return { ok: false, reason: 'too many session launches — slow down and retry shortly' }
   }
-  return { ok: true, workspaceId: workspaceId as WorkspaceId, provider, reservation };
-};
+  return { ok: true, workspaceId: workspaceId as WorkspaceId, provider, reservation }
+}
 
 // ---------------------------------------------------------------------------
 // Mobile spawn-workflow gate (write path).
@@ -295,11 +295,11 @@ export const evaluateMobileCreateSession = (args: {
 
 export type SpawnWorkflowGate =
   | {
-      readonly ok: true;
-      readonly sessionId: SessionId;
-      readonly workflowId: WorkflowId;
+      readonly ok: true
+      readonly sessionId: SessionId
+      readonly workflowId: WorkflowId
     }
-  | { readonly ok: false; readonly reason: string };
+  | { readonly ok: false; readonly reason: string }
 
 /**
  * Decide whether a mobile client may attach `workflowId` to `sessionId`, using
@@ -314,29 +314,29 @@ export type SpawnWorkflowGate =
  * human-readable reason.
  */
 export const evaluateMobileSpawnWorkflow = (args: {
-  readonly sessionId: unknown;
-  readonly workflowId: unknown;
-  readonly sessions: ReadonlyArray<{ readonly id: SessionId; readonly workspaceId: WorkspaceId }>;
-  readonly workflowsForWorkspace: ReadonlyArray<Pick<Workflow, 'id'>>;
+  readonly sessionId: unknown
+  readonly workflowId: unknown
+  readonly sessions: ReadonlyArray<{ readonly id: SessionId; readonly workspaceId: WorkspaceId }>
+  readonly workflowsForWorkspace: ReadonlyArray<Pick<Workflow, 'id'>>
 }): SpawnWorkflowGate => {
-  const { sessionId, workflowId, sessions, workflowsForWorkspace } = args;
+  const { sessionId, workflowId, sessions, workflowsForWorkspace } = args
 
   if (typeof sessionId !== 'string' || sessionId.length === 0) {
-    return { ok: false, reason: 'missing sessionId' };
+    return { ok: false, reason: 'missing sessionId' }
   }
   if (typeof workflowId !== 'string' || workflowId.length === 0) {
-    return { ok: false, reason: 'missing workflowId' };
+    return { ok: false, reason: 'missing workflowId' }
   }
   // (1) Validate the session against the desktop's OWN list — never the claim.
-  const session = sessions.find((s) => s.id === sessionId);
+  const session = sessions.find((s) => s.id === sessionId)
   if (!session) {
-    return { ok: false, reason: `unknown session: ${sessionId}` };
+    return { ok: false, reason: `unknown session: ${sessionId}` }
   }
   // (2) The workflow must belong to the SESSION'S workspace (caller passes only
   // that workspace's templates). A phone can't attach a foreign workflow.
-  const known = workflowsForWorkspace.some((w) => w.id === workflowId);
+  const known = workflowsForWorkspace.some((w) => w.id === workflowId)
   if (!known) {
-    return { ok: false, reason: `unknown workflow for this session: ${workflowId}` };
+    return { ok: false, reason: `unknown workflow for this session: ${workflowId}` }
   }
-  return { ok: true, sessionId: sessionId as SessionId, workflowId: workflowId as WorkflowId };
-};
+  return { ok: true, sessionId: sessionId as SessionId, workflowId: workflowId as WorkflowId }
+}

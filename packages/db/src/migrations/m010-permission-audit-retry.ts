@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS permission_audit_retry (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_permission_audit_retry_created ON permission_audit_retry(created_at);
-`;
+`

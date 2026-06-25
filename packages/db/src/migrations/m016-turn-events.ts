@@ -34,4 +34,4 @@ SELECT
   m.created_at
 FROM messages m
 WHERE m.role IN ('user', 'assistant');
-`;
+`

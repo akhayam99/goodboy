@@ -7,8 +7,8 @@ import {
   getProviderStatus,
   type ProviderAuthResults,
   type ProviderStatuses,
-} from '../../../features/providers/providers';
-import type { SetFn } from './types';
+} from '../../../features/providers/providers'
+import type { SetFn } from './types'
 
 export const refreshProviders = (set: SetFn) => {
   return async () => {
@@ -17,25 +17,25 @@ export const refreshProviders = (set: SetFn) => {
       getCursorStatus(),
       getCodexStatus(),
       getGeminiStatus(),
-    ]);
+    ])
     const statuses: ProviderStatuses = {
       anthropic: providerStatus,
       cursor: cursorStatus,
       codex: codexStatus,
       gemini: geminiStatus,
-    };
+    }
     const [anthropicAuth, cursorAuth, codexAuth, geminiAuth] = await Promise.all([
       checkProviderAuth('anthropic'),
       checkProviderAuth('cursor'),
       checkProviderAuth('codex'),
       checkProviderAuth('gemini'),
-    ]);
+    ])
     const authResults: ProviderAuthResults = {
       anthropic: anthropicAuth,
       cursor: cursorAuth,
       codex: codexAuth,
       gemini: geminiAuth,
-    };
+    }
     set({
       providerStatus,
       cursorStatus,
@@ -43,6 +43,6 @@ export const refreshProviders = (set: SetFn) => {
       geminiStatus,
       authResults,
       providers: buildProviderList(statuses, authResults),
-    });
-  };
-};
+    })
+  }
+}

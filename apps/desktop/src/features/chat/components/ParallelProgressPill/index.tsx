@@ -1,11 +1,11 @@
-import { cn } from '@goodboy/ui';
-import type { AgentStatus, ProviderRunId } from '@goodboy/types';
+import { cn } from '@goodboy/ui'
+import type { AgentStatus, ProviderRunId } from '@goodboy/types'
 
 type Props = {
-  parallelRunIds: ReadonlyArray<ProviderRunId>;
-  runStatuses: Readonly<Record<ProviderRunId, AgentStatus>>;
-  onSelectRun: (runId: ProviderRunId) => void;
-};
+  parallelRunIds: ReadonlyArray<ProviderRunId>
+  runStatuses: Readonly<Record<ProviderRunId, AgentStatus>>
+  onSelectRun: (runId: ProviderRunId) => void
+}
 
 const BADGE_CLASSES: Record<AgentStatus, string> = {
   running: 'bg-info motion-safe:animate-pulse',
@@ -13,17 +13,17 @@ const BADGE_CLASSES: Record<AgentStatus, string> = {
   failed: 'bg-danger',
   skipped: 'bg-muted-foreground/40',
   pending: 'bg-muted-foreground/25',
-};
+}
 
 export const ParallelProgressPill = ({ parallelRunIds, runStatuses, onSelectRun }: Props) => {
   if (parallelRunIds.length === 0) {
-    return null;
+    return null
   }
 
   return (
     <div className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-subtle px-2 py-0.5">
       {parallelRunIds.map((runId, i) => {
-        const status: AgentStatus = runStatuses[runId] ?? 'pending';
+        const status: AgentStatus = runStatuses[runId] ?? 'pending'
         return (
           <button
             key={runId}
@@ -36,8 +36,8 @@ export const ParallelProgressPill = ({ parallelRunIds, runStatuses, onSelectRun 
               BADGE_CLASSES[status],
             )}
           />
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

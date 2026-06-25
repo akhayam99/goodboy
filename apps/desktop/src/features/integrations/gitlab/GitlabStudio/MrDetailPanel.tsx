@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Button, Divider, EmptyState, Input, SectionHeader, Textarea, cn } from '@goodboy/ui';
+import { useEffect, useState } from 'react'
+import { Button, Divider, EmptyState, Input, SectionHeader, Textarea, cn } from '@goodboy/ui'
 import {
   AlertTriangle,
   ArrowRight,
@@ -9,62 +9,62 @@ import {
   MousePointerClick,
   RefreshCw,
   Sparkles,
-} from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
-import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
-import { formatError } from '../../../../shared/lib/errors';
-import { humanizeMergeStatus, type GitlabMergeStatusTone } from '../client';
+} from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { ScrollFade } from '@goodboy/ui'
+import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
+import { formatError } from '../../../../shared/lib/errors'
+import { humanizeMergeStatus, type GitlabMergeStatusTone } from '../client'
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly onClose: () => void;
-};
+  readonly sessionId: SessionId
+  readonly onClose: () => void
+}
 
 const STATE_STYLE: Record<string, string> = {
   opened: 'bg-success/15 text-success',
   merged: 'bg-info/15 text-info',
   closed: 'bg-danger/15 text-danger',
   locked: 'bg-muted text-muted-foreground',
-};
+}
 
 const MERGE_STATUS_STYLE: Record<GitlabMergeStatusTone, string> = {
   success: 'bg-success/15 text-success',
   danger: 'bg-danger/15 text-danger',
   muted: 'bg-muted text-muted-foreground',
-};
+}
 
 export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
-  const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId]);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
-  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
-  const createMrForSession = useAppStore((s) => s.createMrForSession);
-  const mergeMrForSession = useAppStore((s) => s.mergeMrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const { showToast } = useToast();
+  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null)
+  const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId])
+  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null)
+  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr)
+  const createMrForSession = useAppStore((s) => s.createMrForSession)
+  const mergeMrForSession = useAppStore((s) => s.mergeMrForSession)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const selectAgent = useAppStore((s) => s.selectAgent)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const { showToast } = useToast()
 
-  const mr = mrState?.mr ?? null;
-  const loading = mrState?.loading ?? false;
-  const error = mrState?.error ?? null;
+  const mr = mrState?.mr ?? null
+  const loading = mrState?.loading ?? false
+  const error = mrState?.error ?? null
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [targetBranch, setTargetBranch] = useState('main');
-  const [draft, setDraft] = useState(true);
-  const [busy, setBusy] = useState<'create' | 'ai' | 'merge' | null>(null);
-
-  useEffect(() => {
-    void refreshSessionMr(sessionId, { silent: true });
-  }, [sessionId, refreshSessionMr]);
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [targetBranch, setTargetBranch] = useState('main')
+  const [draft, setDraft] = useState(true)
+  const [busy, setBusy] = useState<'create' | 'ai' | 'merge' | null>(null)
 
   useEffect(() => {
-    setTitle(session?.goal ?? '');
-  }, [session?.goal]);
+    void refreshSessionMr(sessionId, { silent: true })
+  }, [sessionId, refreshSessionMr])
+
+  useEffect(() => {
+    setTitle(session?.goal ?? '')
+  }, [session?.goal])
 
   if (!session) {
     return (
@@ -75,34 +75,34 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
           description="Pick a session to manage its merge request."
         />
       </div>
-    );
+    )
   }
 
   const onCreate = async () => {
     if (busy !== null || title.trim().length === 0) {
-      return;
+      return
     }
-    setBusy('create');
+    setBusy('create')
     try {
       await createMrForSession(sessionId, {
         title: title.trim(),
         description,
         targetBranch: targetBranch.trim() || 'main',
         draft,
-      });
-      showToast('success', 'Merge request created');
+      })
+      showToast('success', 'Merge request created')
     } catch (err) {
-      showToast('error', formatError(err));
+      showToast('error', formatError(err))
     } finally {
-      setBusy(null);
+      setBusy(null)
     }
-  };
+  }
 
   const onCreateWithAi = async () => {
     if (busy !== null) {
-      return;
+      return
     }
-    setBusy('ai');
+    setBusy('ai')
     try {
       const prompt = [
         `Open a GitLab merge request for this session's branch.`,
@@ -112,37 +112,37 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
         `- If this project defines an MR-creation skill, command, or template (look under .claude/), follow it.`,
         `- Open it as a ${draft ? 'draft' : 'ready-for-review'} merge request.`,
         `Then open it with \`glab mr create\` (or the GitLab REST API if glab is unavailable) and report the MR URL.`,
-      ].join('\n');
+      ].join('\n')
       const agentId = await spawnAgent(sessionId, {
         name: 'open merge request',
         initialPrompt: prompt,
         model: AGENT_KIND_DEFAULTS.generic.model,
         effort: AGENT_KIND_DEFAULTS.generic.effort,
-      });
-      await setCurrentSession(sessionId);
-      await selectAgent(sessionId, agentId);
-      onClose();
+      })
+      await setCurrentSession(sessionId)
+      await selectAgent(sessionId, agentId)
+      onClose()
     } catch (err) {
-      showToast('error', formatError(err));
-      setBusy(null);
+      showToast('error', formatError(err))
+      setBusy(null)
     }
-  };
+  }
 
   const onMerge = async () => {
     if (busy !== null) {
-      return;
+      return
     }
-    setBusy('merge');
+    setBusy('merge')
     try {
-      await mergeMrForSession(sessionId);
-      showToast('success', 'Merge request merged');
-      onClose();
+      await mergeMrForSession(sessionId)
+      showToast('success', 'Merge request merged')
+      onClose()
     } catch (err) {
-      showToast('error', formatError(err));
+      showToast('error', formatError(err))
     } finally {
-      setBusy(null);
+      setBusy(null)
     }
-  };
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -219,7 +219,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
               {mr.state === 'opened' ? (
                 <div className="flex items-center gap-3">
                   {(() => {
-                    const status = humanizeMergeStatus(mr.mergeStatus);
+                    const status = humanizeMergeStatus(mr.mergeStatus)
                     return status ? (
                       <span
                         className={cn(
@@ -229,7 +229,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                       >
                         {status.label}
                       </span>
-                    ) : null;
+                    ) : null
                   })()}
                   <span className="flex-1" />
                   <Button
@@ -333,5 +333,5 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}

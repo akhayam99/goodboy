@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS goal_attachments (
 
 CREATE INDEX IF NOT EXISTS idx_goal_attachments_owner
   ON goal_attachments(owner_type, owner_id);
-`;
+`

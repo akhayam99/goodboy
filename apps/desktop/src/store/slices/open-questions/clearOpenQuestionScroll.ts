@@ -1,7 +1,7 @@
-import type { SetFn } from './types';
+import type { SetFn } from './types'
 
 export const clearOpenQuestionScroll = (set: SetFn) => {
   return () => {
-    set(() => ({ openQuestionScrollTarget: null }));
-  };
-};
+    set(() => ({ openQuestionScrollTarget: null }))
+  }
+}

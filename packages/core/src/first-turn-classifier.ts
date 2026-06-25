@@ -7,7 +7,7 @@ export type AgentKindLabel =
   | 'docs'
   | 'reviewer'
   | 'resolver'
-  | 'generic';
+  | 'generic'
 
 const PATTERNS: ReadonlyArray<readonly [AgentKindLabel, RegExp]> = [
   ['planner', /\b(pianifica|plan|design)\b/i],
@@ -17,17 +17,17 @@ const PATTERNS: ReadonlyArray<readonly [AgentKindLabel, RegExp]> = [
   ['tester', /\b(test)\b/i],
   ['docs', /\b(docs|readme)\b/i],
   ['reviewer', /\b(review|audit)\b/i],
-];
+]
 
 export const classifyFirstTurn = (text: string): AgentKindLabel => {
-  const trimmed = text.trim();
+  const trimmed = text.trim()
   if (trimmed.length === 0) {
-    return 'generic';
+    return 'generic'
   }
   for (const [kind, regex] of PATTERNS) {
     if (regex.test(trimmed)) {
-      return kind;
+      return kind
     }
   }
-  return 'generic';
-};
+  return 'generic'
+}

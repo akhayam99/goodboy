@@ -1,65 +1,65 @@
-import { useMemo } from 'react';
+import { useMemo } from 'react'
 import {
   GenericTerminalPanel,
   type TerminalDriver,
-} from '../../../../shared/components/GenericTerminalPanel';
+} from '../../../../shared/components/GenericTerminalPanel'
 import {
   invokeProviderLifecycleResize,
   invokeProviderLifecycleWrite,
   listenLifecycleExit,
   listenLifecycleOutput,
-} from '../../provider-lifecycle';
+} from '../../provider-lifecycle'
 
 function base64ToBytes(b64: string): Uint8Array {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+    bytes[i] = binary.charCodeAt(i)
   }
-  return bytes;
+  return bytes
 }
 
 function stringToBase64(s: string): string {
-  const bytes = new TextEncoder().encode(s);
-  let binary = '';
+  const bytes = new TextEncoder().encode(s)
+  let binary = ''
   for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
+    binary += String.fromCharCode(byte)
   }
-  return btoa(binary);
+  return btoa(binary)
 }
 
 type Props = {
-  readonly runId: string;
-  readonly isActive: boolean;
-  readonly heightClass?: string;
-};
+  readonly runId: string
+  readonly isActive: boolean
+  readonly heightClass?: string
+}
 
 export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props) => {
   const driver = useMemo<TerminalDriver>(
     () => ({
       write: (data) => {
-        void invokeProviderLifecycleWrite(runId, stringToBase64(data));
+        void invokeProviderLifecycleWrite(runId, stringToBase64(data))
       },
       resize: (cols, rows) => {
-        void invokeProviderLifecycleResize(runId, cols, rows);
+        void invokeProviderLifecycleResize(runId, cols, rows)
       },
       onOutput: (handler) =>
         listenLifecycleOutput((payload) => {
           if (payload.runId !== runId) {
-            return;
+            return
           }
-          handler(base64ToBytes(payload.data));
+          handler(base64ToBytes(payload.data))
         }),
       onExit: (handler) =>
         listenLifecycleExit((payload) => {
           if (payload.runId !== runId) {
-            return;
+            return
           }
-          handler(payload.exitCode);
+          handler(payload.exitCode)
         }),
     }),
     [runId],
-  );
+  )
 
   return (
     <div
@@ -67,5 +67,5 @@ export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props)
     >
       <GenericTerminalPanel terminalId={runId} driver={driver} isActive={isActive} exitMessage="" />
     </div>
-  );
-};
+  )
+}

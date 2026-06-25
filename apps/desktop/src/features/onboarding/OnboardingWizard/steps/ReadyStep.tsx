@@ -1,5 +1,5 @@
-import { CheckCircle2 } from 'lucide-react';
-import { KbdPill } from '@goodboy/ui';
+import { CheckCircle2 } from 'lucide-react'
+import { KbdPill } from '@goodboy/ui'
 
 export const ReadyStep = () => {
   return (
@@ -33,5 +33,5 @@ export const ReadyStep = () => {
         </span>
       </p>
     </div>
-  );
-};
+  )
+}

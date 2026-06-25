@@ -1,8 +1,8 @@
-import { useInView } from '../components/Reveal';
+import { useInView } from '../components/Reveal'
 
 interface Row {
-  readonly stack: string;
-  readonly goodboy: string;
+  readonly stack: string
+  readonly goodboy: string
 }
 
 /* A real before/after. Left: life with a drawer full of separate tools.
@@ -29,7 +29,7 @@ const rows: ReadonlyArray<Row> = [
     stack: 'Your code and keys move through someone else’s cloud',
     goodboy: 'Everything runs on your machine, always',
   },
-];
+]
 
 function Cross() {
   return (
@@ -44,7 +44,7 @@ function Cross() {
         />
       </svg>
     </span>
-  );
+  )
 }
 
 function Check() {
@@ -61,11 +61,11 @@ function Check() {
         />
       </svg>
     </span>
-  );
+  )
 }
 
 export function Comparison() {
-  const { ref, inView } = useInView<HTMLElement>();
+  const { ref, inView } = useInView<HTMLElement>()
   return (
     <section
       id="compare"
@@ -119,5 +119,5 @@ export function Comparison() {
         </div>
       </div>
     </section>
-  );
+  )
 }

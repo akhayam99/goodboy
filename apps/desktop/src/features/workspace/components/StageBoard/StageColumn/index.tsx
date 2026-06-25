@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
-import type { Session, SessionStage } from '@goodboy/types';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
-import { StageBoardCard } from '../StageBoardCard';
-import type { BoardNavigation } from '../useBoardNavigation';
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui'
+import type { Session, SessionStage } from '@goodboy/types'
+import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage'
+import { StageBoardCard } from '../StageBoardCard'
+import type { BoardNavigation } from '../useBoardNavigation'
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   attention: 'nothing needs you',
@@ -13,19 +13,19 @@ const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   building: 'nothing building',
   done: 'nothing done yet',
   archived: 'nothing archived',
-};
+}
 
 export type ColumnSpec =
   | { readonly kind: 'stage'; readonly stage: SessionStage }
-  | { readonly kind: 'archived' };
+  | { readonly kind: 'archived' }
 
 type ColumnView = {
-  readonly key: SessionStage | 'archived';
-  readonly label: string;
-  readonly tone: Tone;
-  readonly collapsible: boolean;
-  readonly archived: boolean;
-};
+  readonly key: SessionStage | 'archived'
+  readonly label: string
+  readonly tone: Tone
+  readonly collapsible: boolean
+  readonly archived: boolean
+}
 
 const viewFor = (spec: ColumnSpec): ColumnView => {
   if (spec.kind === 'archived') {
@@ -35,7 +35,7 @@ const viewFor = (spec: ColumnSpec): ColumnView => {
       tone: 'neutral',
       collapsible: true,
       archived: true,
-    };
+    }
   }
   return {
     key: spec.stage,
@@ -43,17 +43,17 @@ const viewFor = (spec: ColumnSpec): ColumnView => {
     tone: STAGE_TONE[spec.stage],
     collapsible: spec.stage === 'done',
     archived: false,
-  };
-};
+  }
+}
 
 type StageColumnProps = {
-  readonly spec: ColumnSpec;
-  readonly sessions: ReadonlyArray<Session>;
-  readonly nav: BoardNavigation;
-  readonly onArchive: (session: Session) => void;
-  readonly onDelete: (session: Session) => void;
-  readonly onRestore: (session: Session) => void;
-};
+  readonly spec: ColumnSpec
+  readonly sessions: ReadonlyArray<Session>
+  readonly nav: BoardNavigation
+  readonly onArchive: (session: Session) => void
+  readonly onDelete: (session: Session) => void
+  readonly onRestore: (session: Session) => void
+}
 
 export const StageColumn = ({
   spec,
@@ -63,16 +63,16 @@ export const StageColumn = ({
   onDelete,
   onRestore,
 }: StageColumnProps) => {
-  const view = viewFor(spec);
-  const [collapsed, setCollapsed] = useState(view.collapsible);
-  const empty = sessions.length === 0;
+  const view = viewFor(spec)
+  const [collapsed, setCollapsed] = useState(view.collapsible)
+  const empty = sessions.length === 0
 
   const header = (
     <span className="flex items-center gap-1.5">
       <Eyebrow label={view.label} tone={view.tone} badge muted={empty} />
       <span className="text-2xs tabular-nums text-muted-foreground/60">{sessions.length}</span>
     </span>
-  );
+  )
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -122,5 +122,5 @@ export const StageColumn = ({
         </ScrollFade>
       )}
     </div>
-  );
-};
+  )
+}

@@ -6,54 +6,54 @@ import type {
   RoutingDecision,
   SessionProviderPreference,
   TurnProviderOverride,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 export type ResolveProviderInput = {
-  sessionPreference: SessionProviderPreference;
-  turnOverride?: TurnProviderOverride;
-  connectedProviders: ProviderId[];
+  sessionPreference: SessionProviderPreference
+  turnOverride?: TurnProviderOverride
+  connectedProviders: ProviderId[]
   budgetChecker: {
     checkProviderBudget: (
       provider: ProviderName,
       period: BudgetPeriod,
-    ) => Promise<BudgetCheckResult>;
-  };
-  getDefaultModel: (provider: ProviderId) => string;
-};
+    ) => Promise<BudgetCheckResult>
+  }
+  getDefaultModel: (provider: ProviderId) => string
+}
 
 const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
   anthropic: 'anthropic',
   cursor: 'cursor',
   codex: 'openai',
   gemini: 'gemini',
-};
+}
 
 export const resolveProvider = async (input: ResolveProviderInput): Promise<RoutingDecision> => {
   const { sessionPreference, turnOverride, connectedProviders, budgetChecker, getDefaultModel } =
-    input;
+    input
 
-  const useOverride = turnOverride !== undefined && sessionPreference.allowTurnOverride;
+  const useOverride = turnOverride !== undefined && sessionPreference.allowTurnOverride
 
-  const enabled = sessionPreference.enabledProviders;
-  const enabledSet = enabled && enabled.length > 0 ? new Set<ProviderId>(enabled) : null;
+  const enabled = sessionPreference.enabledProviders
+  const enabledSet = enabled && enabled.length > 0 ? new Set<ProviderId>(enabled) : null
   const isEnabled = (provider: ProviderId): boolean =>
-    enabledSet === null || enabledSet.has(provider);
+    enabledSet === null || enabledSet.has(provider)
 
   const preferredProvider: ProviderId = useOverride
     ? turnOverride!.providerId
-    : sessionPreference.defaultProvider;
+    : sessionPreference.defaultProvider
 
   const preferredModel =
     useOverride && turnOverride!.model !== undefined
       ? turnOverride!.model
       : preferredProvider === sessionPreference.defaultProvider
         ? (sessionPreference.defaultModel ?? getDefaultModel(preferredProvider))
-        : getDefaultModel(preferredProvider);
+        : getDefaultModel(preferredProvider)
 
-  const preferredName = PROVIDER_ID_TO_NAME[preferredProvider];
-  const preferredConnected = connectedProviders.includes(preferredProvider);
-  const preferredAllowed = useOverride || isEnabled(preferredProvider);
-  const preferredResult = await budgetChecker.checkProviderBudget(preferredName, 'monthly');
+  const preferredName = PROVIDER_ID_TO_NAME[preferredProvider]
+  const preferredConnected = connectedProviders.includes(preferredProvider)
+  const preferredAllowed = useOverride || isEnabled(preferredProvider)
+  const preferredResult = await budgetChecker.checkProviderBudget(preferredName, 'monthly')
 
   if (preferredConnected && preferredAllowed && !preferredResult.exceeded) {
     return {
@@ -61,19 +61,19 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
       selectedModel: preferredModel,
       reason: useOverride ? 'override' : 'preferred',
       fallbackUsed: false,
-    };
+    }
   }
 
   for (const candidate of connectedProviders) {
     if (candidate === preferredProvider) {
-      continue;
+      continue
     }
     if (!isEnabled(candidate)) {
-      continue;
+      continue
     }
 
-    const candidateName = PROVIDER_ID_TO_NAME[candidate];
-    const candidateResult = await budgetChecker.checkProviderBudget(candidateName, 'monthly');
+    const candidateName = PROVIDER_ID_TO_NAME[candidate]
+    const candidateResult = await budgetChecker.checkProviderBudget(candidateName, 'monthly')
 
     if (!candidateResult.exceeded) {
       return {
@@ -83,7 +83,7 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
           preferredConnected && preferredAllowed ? 'fallback-budget' : 'fallback-disconnected',
         fallbackUsed: true,
         fallbackFrom: preferredProvider,
-      };
+      }
     }
   }
 
@@ -93,7 +93,7 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
       selectedModel: preferredModel,
       reason: useOverride ? 'override' : 'preferred',
       fallbackUsed: false,
-    };
+    }
   }
 
   return {
@@ -101,5 +101,5 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
     selectedModel: preferredModel,
     reason: 'all-exceeded',
     fallbackUsed: false,
-  };
-};
+  }
+}

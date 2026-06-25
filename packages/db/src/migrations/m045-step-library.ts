@@ -106,4 +106,4 @@ INSERT OR IGNORE INTO step_library (id, workspace_id, role, name, prompt_prefix)
 
 PRAGMA foreign_key_check;
 PRAGMA foreign_keys = ON;
-`;
+`

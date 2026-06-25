@@ -1,5 +1,5 @@
-import { Section } from '../components/Section';
-import { GithubStudioSnapshot } from '../mockups/Snapshots';
+import { Section } from '../components/Section'
+import { GithubStudioSnapshot } from '../mockups/Snapshots'
 
 export function GithubDeepDive() {
   return (
@@ -25,5 +25,5 @@ export function GithubDeepDive() {
     >
       <GithubStudioSnapshot />
     </Section>
-  );
+  )
 }

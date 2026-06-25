@@ -10,4 +10,4 @@ CREATE TABLE IF NOT EXISTS notifications (
   workspace_id TEXT,
   read INTEGER NOT NULL DEFAULT 0
 );
-`;
+`

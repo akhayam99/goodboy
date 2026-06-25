@@ -1,7 +1,7 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react'
 
-const TOKEN_CREATE_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=Goodboy';
-const TOKEN_LIST_URL = 'https://github.com/settings/tokens';
+const TOKEN_CREATE_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=Goodboy'
+const TOKEN_LIST_URL = 'https://github.com/settings/tokens'
 
 export const CreateTokenLink = () => {
   return (
@@ -25,5 +25,5 @@ export const CreateTokenLink = () => {
       </a>{' '}
       if your org requires it.
     </p>
-  );
-};
+  )
+}

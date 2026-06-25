@@ -12,8 +12,8 @@ import type {
   WorkflowRunId,
   WorkspaceId,
   WorkspaceMember,
-} from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
+} from '@goodboy/types'
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types'
 import {
   insertSession,
   insertSessionWorktree,
@@ -21,23 +21,20 @@ import {
   setSessionExternalTask,
   setSetting as dbSetSetting,
   upsertContextSlot,
-} from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { createWorktree, type CreatedWorktree } from '../../../features/worktree/worktree';
-import { invokeAgentInsert } from '../../../features/workflows/workflows';
+} from '@goodboy/db'
+import { tauriDatabase } from '../../../shared/lib/db'
+import { createWorktree, type CreatedWorktree } from '../../../features/worktree/worktree'
+import { invokeAgentInsert } from '../../../features/workflows/workflows'
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   ROLE_TO_KIND,
   inferAgentKindFromName,
   type AgentKind,
-} from '../../../features/session/agent-kind';
-import {
-  SETTING_LAST_SESSION_ID,
-  DEFAULT_BRANCH_PREFIX,
-} from '../../../features/settings/settings';
-import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
-import type { GetFn, SetFn } from './types';
+} from '../../../features/session/agent-kind'
+import { SETTING_LAST_SESSION_ID, DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings'
+import { markSessionMobileShared } from '../../../features/companion/mobileConfinement'
+import type { GetFn, SetFn } from './types'
 
 const slugifyDir = (raw: string): string =>
   raw
@@ -45,32 +42,32 @@ const slugifyDir = (raw: string): string =>
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 40) || 'session';
+    .slice(0, 40) || 'session'
 
 type Input = {
-  workspaceId: WorkspaceId;
-  goal: string;
-  branchPrefix?: string;
-  branchSlug?: string;
-  existingBranch?: string;
-  providerPreference?: SessionProviderPreference;
-  workflowId?: WorkflowId;
-  autoRun?: boolean;
-  firstAgentKind?: AgentKind;
-  firstAgentModel?: string;
+  workspaceId: WorkspaceId
+  goal: string
+  branchPrefix?: string
+  branchSlug?: string
+  existingBranch?: string
+  providerPreference?: SessionProviderPreference
+  workflowId?: WorkflowId
+  autoRun?: boolean
+  firstAgentKind?: AgentKind
+  firstAgentModel?: string
   externalTask?: {
-    provider: SessionExternalTaskProvider;
-    externalId: string;
-    identifier: string;
-    url: string;
-    title: string;
-  };
-  attachmentInputs?: ReadonlyArray<AttachmentInput>;
+    provider: SessionExternalTaskProvider
+    externalId: string
+    identifier: string
+    url: string
+    title: string
+  }
+  attachmentInputs?: ReadonlyArray<AttachmentInput>
   // TODO (@ak): origin marker for the pending sandbox-exec confinement. Marked
   // synchronously before any async kickoff so a turn fired during creation is
   // already tagged mobile-origin. No longer affects permission mode.
-  mobileShared?: boolean;
-};
+  mobileShared?: boolean
+}
 
 export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
@@ -88,30 +85,29 @@ export const createSession = (set: SetFn, get: GetFn) => {
     attachmentInputs,
     mobileShared = false,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
-    const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
+    const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId)
     if (!workspace) {
-      throw new Error(`workspace not found: ${workspaceId}`);
+      throw new Error(`workspace not found: ${workspaceId}`)
     }
 
-    const prefix = branchPrefix?.trim() || DEFAULT_BRANCH_PREFIX;
-    const slugSeed =
-      branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
-    const trimmedExisting = existingBranch?.trim();
-    const sessionId = crypto.randomUUID() as SessionId;
+    const prefix = branchPrefix?.trim() || DEFAULT_BRANCH_PREFIX
+    const slugSeed = branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`)
+    const trimmedExisting = existingBranch?.trim()
+    const sessionId = crypto.randomUUID() as SessionId
     if (mobileShared) {
-      markSessionMobileShared(sessionId);
+      markSessionMobileShared(sessionId)
     }
-    const isComposite = workspace.kind === 'composite';
-    const members = isComposite ? (workspace.members ?? []) : [];
+    const isComposite = workspace.kind === 'composite'
+    const members = isComposite ? (workspace.members ?? []) : []
     if (isComposite && members.length < 2) {
-      throw new Error(`multi-project workspace has no linked repos: ${workspaceId}`);
+      throw new Error(`multi-project workspace has no linked repos: ${workspaceId}`)
     }
 
-    let worktree: CreatedWorktree;
-    const memberWorktrees: Array<{ member: WorkspaceMember; worktree: CreatedWorktree }> = [];
+    let worktree: CreatedWorktree
+    const memberWorktrees: Array<{ member: WorkspaceMember; worktree: CreatedWorktree }> = []
     if (isComposite) {
-      const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
-      const compositeDir = `${workspace.rootPath}/${dirSlug}`;
+      const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`
+      const compositeDir = `${workspace.rootPath}/${dirSlug}`
       for (const member of members) {
         const wt = await createWorktree({
           repoPath: member.rootPath,
@@ -120,38 +116,38 @@ export const createSession = (set: SetFn, get: GetFn) => {
           parentDir: compositeDir,
           dirName: member.mountName,
           ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
-        });
-        memberWorktrees.push({ member, worktree: wt });
+        })
+        memberWorktrees.push({ member, worktree: wt })
       }
-      const branchName = memberWorktrees[0]?.worktree.branchName ?? `${prefix}/${dirSlug}`;
-      worktree = { worktreePath: compositeDir, branchName, slug: dirSlug, reused: false };
+      const branchName = memberWorktrees[0]?.worktree.branchName ?? `${prefix}/${dirSlug}`
+      worktree = { worktreePath: compositeDir, branchName, slug: dirSlug, reused: false }
     } else {
       worktree = await createWorktree({
         repoPath: workspace.rootPath,
         branchPrefix: prefix,
         slug: slugSeed,
         ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
-      });
+      })
     }
 
     if (!get().workspaceOverrides[workspaceId]) {
       try {
-        await get().loadWorkspaceOverrides(workspaceId);
+        await get().loadWorkspaceOverrides(workspaceId)
       } catch {
         // best-effort: missing overrides just means we fall back to global default
       }
     }
     const workspaceDefaultProvider =
-      get().workspaceOverrides[workspaceId]?.defaultProviderId ?? null;
+      get().workspaceOverrides[workspaceId]?.defaultProviderId ?? null
     const inheritedPreference: SessionProviderPreference = workspaceDefaultProvider
       ? { ...DEFAULT_SESSION_PROVIDER_PREFERENCE, defaultProvider: workspaceDefaultProvider }
-      : DEFAULT_SESSION_PROVIDER_PREFERENCE;
+      : DEFAULT_SESSION_PROVIDER_PREFERENCE
 
-    const now = new Date().toISOString() as IsoDateTime;
-    const initialState: TurnState = { kind: 'draft' };
-    const runAutoRun = autoRun === true && workflowId !== undefined;
+    const now = new Date().toISOString() as IsoDateTime
+    const initialState: TurnState = { kind: 'draft' }
+    const runAutoRun = autoRun === true && workflowId !== undefined
     const workflowRunId =
-      workflowId !== undefined ? (crypto.randomUUID() as WorkflowRunId) : undefined;
+      workflowId !== undefined ? (crypto.randomUUID() as WorkflowRunId) : undefined
     const session: Session = {
       id: sessionId,
       workspaceId,
@@ -177,9 +173,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
       titleUserEdited: false,
       createdAt: now,
       updatedAt: now,
-    };
-    await insertSession(tauriDatabase, session);
-    let externalTaskRow: SessionExternalTask | null = null;
+    }
+    await insertSession(tauriDatabase, session)
+    let externalTaskRow: SessionExternalTask | null = null
     if (externalTask) {
       externalTaskRow = {
         sessionId: session.id,
@@ -189,11 +185,11 @@ export const createSession = (set: SetFn, get: GetFn) => {
         url: externalTask.url,
         title: externalTask.title,
         createdAt: now,
-      };
+      }
       try {
-        await setSessionExternalTask(tauriDatabase, externalTaskRow);
+        await setSessionExternalTask(tauriDatabase, externalTaskRow)
       } catch {
-        externalTaskRow = null;
+        externalTaskRow = null
       }
     }
     await insertSessionWorktree(tauriDatabase, {
@@ -203,9 +199,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
       branch: worktree.branchName,
       parallelIndex: 0,
       createdAt: Date.now(),
-    });
+    })
     for (let i = 0; i < memberWorktrees.length; i += 1) {
-      const { member, worktree: wt } = memberWorktrees[i]!;
+      const { member, worktree: wt } = memberWorktrees[i]!
       await insertSessionWorktree(tauriDatabase, {
         id: crypto.randomUUID(),
         sessionId: session.id,
@@ -215,35 +211,35 @@ export const createSession = (set: SetFn, get: GetFn) => {
         mountWorkspaceId: member.workspaceId,
         mountName: member.mountName,
         createdAt: Date.now(),
-      });
+      })
     }
 
-    const goalText = session.goal.trim();
+    const goalText = session.goal.trim()
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
         key: 'goal',
         value: goalText,
         enabled: true,
-      });
+      })
     }
 
-    let prespawnedRuns: ReadonlyArray<Agent>;
-    let firstStepPromptPrefix = '';
-    const agentModelOverrides: Record<string, string> = {};
-    const agentKindOverrides: Record<string, string> = {};
+    let prespawnedRuns: ReadonlyArray<Agent>
+    let firstStepPromptPrefix = ''
+    const agentModelOverrides: Record<string, string> = {}
+    const agentKindOverrides: Record<string, string> = {}
 
     const workspaceVerbositySeed =
-      get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
+      get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined
 
     if (workflowId) {
-      const templates = get().phaseTemplates[workspaceId] ?? [];
-      const template = templates.find((t) => t.id === workflowId) ?? null;
-      const sortedSteps = template ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal) : [];
+      const templates = get().phaseTemplates[workspaceId] ?? []
+      const template = templates.find((t) => t.id === workflowId) ?? null
+      const sortedSteps = template ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal) : []
 
       if (sortedSteps.length > 0) {
-        const allAgents: Agent[] = [];
+        const allAgents: Agent[] = []
         for (const step of sortedSteps) {
-          const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
+          const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name)
           const agent = await invokeAgentInsert({
             sessionId: session.id,
             stepId: step.id,
@@ -253,13 +249,13 @@ export const createSession = (set: SetFn, get: GetFn) => {
             status: 'pending',
             kind,
             ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-          });
-          agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
-          agentKindOverrides[agent.id] = kind;
-          allAgents.push(agent);
+          })
+          agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model
+          agentKindOverrides[agent.id] = kind
+          allAgents.push(agent)
         }
-        firstStepPromptPrefix = sortedSteps[0]!.promptPrefix;
-        prespawnedRuns = allAgents;
+        firstStepPromptPrefix = sortedSteps[0]!.promptPrefix
+        prespawnedRuns = allAgents
       } else {
         const fallback = await invokeAgentInsert({
           sessionId: session.id,
@@ -268,12 +264,12 @@ export const createSession = (set: SetFn, get: GetFn) => {
           name: 'agent 1',
           status: 'pending',
           ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-        });
-        prespawnedRuns = [fallback];
+        })
+        prespawnedRuns = [fallback]
       }
     } else if (firstAgentKind !== undefined) {
-      const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
-      const model = requestedModel ?? AGENT_KIND_DEFAULTS[firstAgentKind].model;
+      const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase()
+      const model = requestedModel ?? AGENT_KIND_DEFAULTS[firstAgentKind].model
       const singleAgent = await invokeAgentInsert({
         sessionId: session.id,
         ordinal: 0,
@@ -281,22 +277,22 @@ export const createSession = (set: SetFn, get: GetFn) => {
         status: 'pending',
         kind: firstAgentKind,
         ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-      });
+      })
       if (model !== null) {
-        agentModelOverrides[singleAgent.id] = model;
+        agentModelOverrides[singleAgent.id] = model
       }
-      agentKindOverrides[singleAgent.id] = firstAgentKind;
-      prespawnedRuns = [singleAgent];
+      agentKindOverrides[singleAgent.id] = firstAgentKind
+      prespawnedRuns = [singleAgent]
     } else {
-      prespawnedRuns = [];
+      prespawnedRuns = []
     }
 
-    const firstAgent = prespawnedRuns[0] ?? null;
-    const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
-    const turnStateEntries: Record<string, { kind: 'draft' }> = {};
+    const firstAgent = prespawnedRuns[0] ?? null
+    const transcriptEntries: Record<string, ReadonlyArray<never>> = {}
+    const turnStateEntries: Record<string, { kind: 'draft' }> = {}
     for (const agent of prespawnedRuns) {
-      transcriptEntries[agent.id] = [];
-      turnStateEntries[agent.id] = { kind: 'draft' };
+      transcriptEntries[agent.id] = []
+      turnStateEntries[agent.id] = { kind: 'draft' }
     }
 
     set((state) => ({
@@ -327,9 +323,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
         ? {
             ...state.sessionWorkflows,
             [session.id]: (() => {
-              const templates = state.phaseTemplates[workspaceId] ?? [];
-              const tpl = templates.find((t) => t.id === workflowId);
-              return tpl ? [tpl] : [];
+              const templates = state.phaseTemplates[workspaceId] ?? []
+              const tpl = templates.find((t) => t.id === workflowId)
+              return tpl ? [tpl] : []
             })(),
           }
         : state.sessionWorkflows,
@@ -341,21 +337,21 @@ export const createSession = (set: SetFn, get: GetFn) => {
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
       agentModelOverride: { ...get().agentModelOverride, ...agentModelOverrides },
       agentKindOverride: { ...get().agentKindOverride, ...agentKindOverrides },
-    }));
-    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
+    }))
+    await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id)
 
     if (attachmentInputs && attachmentInputs.length > 0) {
-      await get().addGoalAttachments({ type: 'session', id: session.id }, attachmentInputs);
+      await get().addGoalAttachments({ type: 'session', id: session.id }, attachmentInputs)
     }
 
     if (workflowId) {
-      void get().reprocessGoalForWorkflow(session.id);
+      void get().reprocessGoalForWorkflow(session.id)
     }
 
     if (firstStepPromptPrefix.length > 0) {
-      void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
+      void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix })
     } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
-      void get().sendTurn({ sessionId: session.id, content: goalText });
+      void get().sendTurn({ sessionId: session.id, content: goalText })
     }
 
     void get().emitNotification(
@@ -364,8 +360,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
       `session created: ${session.goal}`,
       undefined,
       { sessionId: session.id, workspaceId: session.workspaceId },
-    );
+    )
 
-    return { session, worktree };
-  };
-};
+    return { session, worktree }
+  }
+}

@@ -1,10 +1,10 @@
-import type { ModelEffort, ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
-import { CURSOR_AUTO_MODEL, CURSOR_MODELS } from './cursor/models';
-import { CODEX_MODELS } from './codex/constants';
-import { GEMINI_MODELS } from './gemini/constants';
+import type { ModelEffort, ProviderId, ProviderRegistryCapabilities } from '@goodboy/types'
+import { CURSOR_AUTO_MODEL, CURSOR_MODELS } from './cursor/models'
+import { CODEX_MODELS } from './codex/constants'
+import { GEMINI_MODELS } from './gemini/constants'
 
-const OPUS_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high', 'extra-high', 'max'];
-const SONNET_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high'];
+const OPUS_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high', 'extra-high', 'max']
+const SONNET_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high']
 
 export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
   anthropic: {
@@ -116,16 +116,16 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
     supportsStream: true,
     supportsCheapModel: true,
   },
-};
+}
 
 export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities => {
-  return PROVIDER_CAPABILITIES[id];
-};
+  return PROVIDER_CAPABILITIES[id]
+}
 
 export const getDefaultTurnModel = (id: ProviderId): string => {
   if (id === 'cursor') {
-    return CURSOR_AUTO_MODEL;
+    return CURSOR_AUTO_MODEL
   }
-  const caps = PROVIDER_CAPABILITIES[id];
-  return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
-};
+  const caps = PROVIDER_CAPABILITIES[id]
+  return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id
+}

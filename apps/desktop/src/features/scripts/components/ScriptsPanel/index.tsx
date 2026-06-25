@@ -1,100 +1,100 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Button, Input, StatusDot, Textarea, cn, type StatusDotProps } from '@goodboy/ui';
-import type { SessionId, WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
-import { Check, Copy, Pencil, Play, Plus, ScrollText, Square, Trash2 } from 'lucide-react';
-import { formatError } from '../../../../shared/lib/errors';
-import { useAppStore } from '../../../../store';
-import type { ScriptRunStatus } from '../../scripts';
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { Button, Input, StatusDot, Textarea, cn, type StatusDotProps } from '@goodboy/ui'
+import type { SessionId, WorkspaceId, WorkspaceScriptId } from '@goodboy/types'
+import { Check, Copy, Pencil, Play, Plus, ScrollText, Square, Trash2 } from 'lucide-react'
+import { formatError } from '../../../../shared/lib/errors'
+import { useAppStore } from '../../../../store'
+import type { ScriptRunStatus } from '../../scripts'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly sessionId?: SessionId;
-  readonly worktreePath?: string | null;
-};
+  readonly workspaceId: WorkspaceId
+  readonly sessionId?: SessionId
+  readonly worktreePath?: string | null
+}
 
-type Draft = { id: WorkspaceScriptId | null; name: string; body: string };
+type Draft = { id: WorkspaceScriptId | null; name: string; body: string }
 
 export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
-  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
-  const loadScripts = useAppStore((s) => s.loadScripts);
-  const saveScript = useAppStore((s) => s.saveScript);
-  const deleteScript = useAppStore((s) => s.deleteScript);
-  const runScript = useAppStore((s) => s.runScript);
-  const cancelScript = useAppStore((s) => s.cancelScript);
-  const runs = useAppStore((s) => (sessionId ? s.scriptRuns[sessionId] : undefined));
+  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId])
+  const loadScripts = useAppStore((s) => s.loadScripts)
+  const saveScript = useAppStore((s) => s.saveScript)
+  const deleteScript = useAppStore((s) => s.deleteScript)
+  const runScript = useAppStore((s) => s.runScript)
+  const cancelScript = useAppStore((s) => s.cancelScript)
+  const runs = useAppStore((s) => (sessionId ? s.scriptRuns[sessionId] : undefined))
 
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [logId, setLogId] = useState<WorkspaceScriptId | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [logId, setLogId] = useState<WorkspaceScriptId | null>(null)
 
-  const runnable = sessionId != null;
+  const runnable = sessionId != null
 
   useEffect(() => {
-    void loadScripts(workspaceId);
-  }, [workspaceId, loadScripts]);
+    void loadScripts(workspaceId)
+  }, [workspaceId, loadScripts])
 
   const onCopy = useCallback((id: string, body: string) => {
     void navigator.clipboard
       .writeText(body)
       .then(() => {
-        setCopiedId(id);
-        window.setTimeout(() => setCopiedId((curr) => (curr === id ? null : curr)), 1200);
+        setCopiedId(id)
+        window.setTimeout(() => setCopiedId((curr) => (curr === id ? null : curr)), 1200)
       })
-      .catch(() => undefined);
-  }, []);
+      .catch(() => undefined)
+  }, [])
 
   const onSaveDraft = useCallback(async () => {
     if (!draft) {
-      return;
+      return
     }
-    const name = draft.name.trim();
-    const body = draft.body.trim();
+    const name = draft.name.trim()
+    const body = draft.body.trim()
     if (!name || !body) {
-      setError('name and script body are required');
-      return;
+      setError('name and script body are required')
+      return
     }
-    setError(null);
+    setError(null)
     try {
-      await saveScript({ workspaceId, id: draft.id ?? undefined, name, body });
-      setDraft(null);
+      await saveScript({ workspaceId, id: draft.id ?? undefined, name, body })
+      setDraft(null)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     }
-  }, [draft, saveScript, workspaceId]);
+  }, [draft, saveScript, workspaceId])
 
   const onDelete = useCallback(
     async (id: WorkspaceScriptId) => {
       try {
-        await deleteScript(id, workspaceId);
+        await deleteScript(id, workspaceId)
       } catch (err) {
-        setError(formatError(err));
+        setError(formatError(err))
       }
     },
     [deleteScript, workspaceId],
-  );
+  )
 
   const onRun = useCallback(
     (id: WorkspaceScriptId) => {
       if (!sessionId || !worktreePath) {
-        return;
+        return
       }
-      void runScript(sessionId, id, worktreePath);
+      void runScript(sessionId, id, worktreePath)
     },
     [runScript, sessionId, worktreePath],
-  );
+  )
 
   const onCancel = useCallback(
     (id: WorkspaceScriptId) => {
       if (!sessionId) {
-        return;
+        return
       }
-      void cancelScript(sessionId, id);
+      void cancelScript(sessionId, id)
     },
     [cancelScript, sessionId],
-  );
+  )
 
-  const list = scripts ?? [];
+  const list = scripts ?? []
 
   return (
     <div className="flex flex-col gap-3">
@@ -123,7 +123,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
 
       <ul className="flex flex-col gap-2">
         {list.map((script) => {
-          const isEditing = draft?.id === script.id;
+          const isEditing = draft?.id === script.id
           if (isEditing && draft) {
             return (
               <li key={script.id}>
@@ -132,18 +132,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                   setDraft={setDraft}
                   onSave={() => void onSaveDraft()}
                   onCancel={() => {
-                    setDraft(null);
-                    setError(null);
+                    setDraft(null)
+                    setError(null)
                   }}
                 />
               </li>
-            );
+            )
           }
-          const run = runs?.[script.id] ?? null;
-          const status: ScriptRunStatus = run?.status ?? 'idle';
-          const isPending = status === 'pending';
-          const result = run?.result ?? null;
-          const logOpen = logId === script.id;
+          const run = runs?.[script.id] ?? null
+          const status: ScriptRunStatus = run?.status ?? 'idle'
+          const isPending = status === 'pending'
+          const result = run?.result ?? null
+          const logOpen = logId === script.id
           return (
             <li
               key={script.id}
@@ -220,7 +220,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                 </pre>
               )}
             </li>
-          );
+          )
         })}
 
         {draft && draft.id === null ? (
@@ -230,16 +230,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
               setDraft={setDraft}
               onSave={() => void onSaveDraft()}
               onCancel={() => {
-                setDraft(null);
-                setError(null);
+                setDraft(null)
+                setError(null)
               }}
             />
           </li>
         ) : null}
       </ul>
     </div>
-  );
-};
+  )
+}
 
 function RowAction({
   icon,
@@ -248,11 +248,11 @@ function RowAction({
   disabled,
   tone,
 }: {
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  tone?: 'danger';
+  icon: ReactNode
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  tone?: 'danger'
 }) {
   return (
     <button
@@ -269,7 +269,7 @@ function RowAction({
     >
       {icon}
     </button>
-  );
+  )
 }
 
 function RunStatusDot({ status }: { readonly status: ScriptRunStatus }) {
@@ -280,8 +280,8 @@ function RunStatusDot({ status }: { readonly status: ScriptRunStatus }) {
         ? 'danger'
         : status === 'pending'
           ? 'info'
-          : 'neutral';
-  return <StatusDot tone={tone} pulsing={status === 'pending'} />;
+          : 'neutral'
+  return <StatusDot tone={tone} pulsing={status === 'pending'} />
 }
 
 function ScriptEditor({
@@ -290,10 +290,10 @@ function ScriptEditor({
   onSave,
   onCancel,
 }: {
-  draft: Draft;
-  setDraft: (d: Draft) => void;
-  onSave: () => void;
-  onCancel: () => void;
+  draft: Draft
+  setDraft: (d: Draft) => void
+  onSave: () => void
+  onCancel: () => void
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-primary/40 bg-subtle/50 p-2.5">
@@ -323,5 +323,5 @@ function ScriptEditor({
         </Button>
       </div>
     </div>
-  );
+  )
 }

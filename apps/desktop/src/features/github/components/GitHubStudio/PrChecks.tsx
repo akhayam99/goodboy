@@ -1,5 +1,5 @@
-import type { PrCheckConclusion, PrCheckRun, PullRequestState } from '@goodboy/types';
-import { Button, EmptyState } from '@goodboy/ui';
+import type { PrCheckConclusion, PrCheckRun, PullRequestState } from '@goodboy/types'
+import { Button, EmptyState } from '@goodboy/ui'
 import {
   AlertCircle,
   Check,
@@ -10,13 +10,13 @@ import {
   ListChecks,
   MinusCircle,
   XCircle,
-} from 'lucide-react';
+} from 'lucide-react'
 
 type Props = {
-  readonly checks: ReadonlyArray<PrCheckRun>;
-  readonly pr: PullRequestState;
-  readonly onOpenUrl: (url: string) => void;
-};
+  readonly checks: ReadonlyArray<PrCheckRun>
+  readonly pr: PullRequestState
+  readonly onOpenUrl: (url: string) => void
+}
 
 export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
   if (checks.length === 0) {
@@ -33,7 +33,7 @@ export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
           </Button>
         }
       />
-    );
+    )
   }
 
   return (
@@ -55,44 +55,44 @@ export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
         </li>
       ))}
     </ul>
-  );
-};
+  )
+}
 
 function ConclusionIcon({ conclusion }: { conclusion: PrCheckConclusion }) {
-  const props = { size: 15, 'aria-hidden': true } as const;
+  const props = { size: 15, 'aria-hidden': true } as const
   if (conclusion === 'success') {
-    return <Check {...props} className="shrink-0 text-success" />;
+    return <Check {...props} className="shrink-0 text-success" />
   }
   if (conclusion === 'failure') {
-    return <XCircle {...props} className="shrink-0 text-danger" />;
+    return <XCircle {...props} className="shrink-0 text-danger" />
   }
   if (conclusion === 'pending') {
-    return <Clock {...props} className="shrink-0 text-warning" />;
+    return <Clock {...props} className="shrink-0 text-warning" />
   }
   if (conclusion === 'cancelled' || conclusion === 'timed_out') {
-    return <CircleSlash {...props} className="shrink-0 text-muted-foreground" />;
+    return <CircleSlash {...props} className="shrink-0 text-muted-foreground" />
   }
   if (conclusion === 'skipped' || conclusion === 'neutral' || conclusion === 'stale') {
-    return <MinusCircle {...props} className="shrink-0 text-muted-foreground" />;
+    return <MinusCircle {...props} className="shrink-0 text-muted-foreground" />
   }
   if (conclusion === 'action_required') {
-    return <AlertCircle {...props} className="shrink-0 text-warning" />;
+    return <AlertCircle {...props} className="shrink-0 text-warning" />
   }
-  return <HelpCircle {...props} className="shrink-0 text-muted-foreground" />;
+  return <HelpCircle {...props} className="shrink-0 text-muted-foreground" />
 }
 
 function formatDuration(ms: number | null): string {
   if (ms === null) {
-    return '';
+    return ''
   }
   if (ms < 1_000) {
-    return `${ms}ms`;
+    return `${ms}ms`
   }
-  const s = Math.round(ms / 1_000);
+  const s = Math.round(ms / 1_000)
   if (s < 60) {
-    return `${s}s`;
+    return `${s}s`
   }
-  const m = Math.floor(s / 60);
-  const rs = s % 60;
-  return rs > 0 ? `${m}m ${rs}s` : `${m}m`;
+  const m = Math.floor(s / 60)
+  const rs = s % 60
+  return rs > 0 ? `${m}m ${rs}s` : `${m}m`
 }

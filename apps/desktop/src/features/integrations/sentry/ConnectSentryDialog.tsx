@@ -1,12 +1,12 @@
-import type { WorkspaceId } from '@goodboy/types';
-import { Button, Dialog } from '@goodboy/ui';
-import { SentryFormBody } from './SentryFormBody';
+import type { WorkspaceId } from '@goodboy/types'
+import { Button, Dialog } from '@goodboy/ui'
+import { SentryFormBody } from './SentryFormBody'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  open: boolean;
-  onClose: () => void;
-};
+  workspaceId: WorkspaceId
+  open: boolean
+  onClose: () => void
+}
 
 export const ConnectSentryDialog = ({ workspaceId, open, onClose }: Props) => (
   <Dialog
@@ -23,4 +23,4 @@ export const ConnectSentryDialog = ({ workspaceId, open, onClose }: Props) => (
   >
     {open ? <SentryFormBody workspaceId={workspaceId} /> : null}
   </Dialog>
-);
+)

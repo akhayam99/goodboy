@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { DogMascot } from '../components/DogMascot';
+import { useEffect, useState } from 'react'
+import { DogMascot } from '../components/DogMascot'
 
 const links = [
   { href: '#sessions', label: 'Sessions' },
@@ -8,7 +8,7 @@ const links = [
   { href: '#github', label: 'GitHub' },
   { href: '#linear', label: 'Linear' },
   { href: '#compare', label: 'Compare' },
-];
+]
 
 /* A floating navigation pill, apple.com-style. The top-of-page Nav scrolls
    away with the hero; once the user has scrolled past it, this pill fades in
@@ -16,18 +16,18 @@ const links = [
    header chrome on every scroll-stop.
 */
 export function FloatingNav() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     // Threshold roughly equals the header height (h-14 = 56px) plus a buffer.
     // Below that, the original Nav is still visible; above, the pill takes
     // over.
-    const threshold = 200;
-    const onScroll = () => setVisible(window.scrollY > threshold);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    const threshold = 200
+    const onScroll = () => setVisible(window.scrollY > threshold)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
     <div
@@ -83,5 +83,5 @@ export function FloatingNav() {
         </a>
       </nav>
     </div>
-  );
+  )
 }

@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS workspace_integrations (
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_workspace_integrations_workspace_id ON workspace_integrations(workspace_id);
-`;
+`

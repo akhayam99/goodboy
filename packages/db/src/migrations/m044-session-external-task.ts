@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS session_external_tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_session_external_tasks_provider_external
   ON session_external_tasks(provider, external_id);
-`;
+`

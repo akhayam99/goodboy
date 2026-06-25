@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { Check, ChevronRight, Copy } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { useToast } from '../../../../../app/components/Toast';
-import { STATUS_COLOR, STATUS_GLYPH, type ReviewState } from '../lib';
-import type { TreeNode } from './tree';
+import { useState } from 'react'
+import { Check, ChevronRight, Copy } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import { useToast } from '../../../../../app/components/Toast'
+import { STATUS_COLOR, STATUS_GLYPH, type ReviewState } from '../lib'
+import type { TreeNode } from './tree'
 
 type Props = {
-  node: TreeNode;
-  depth: number;
-  activePath: string | null;
-  onSelect: (path: string) => void;
-  selectedRef: React.RefObject<HTMLButtonElement | null>;
-  reviewStateByPath: Map<string, ReviewState>;
-  commentCounts: Map<string, number>;
-};
+  node: TreeNode
+  depth: number
+  activePath: string | null
+  onSelect: (path: string) => void
+  selectedRef: React.RefObject<HTMLButtonElement | null>
+  reviewStateByPath: Map<string, ReviewState>
+  commentCounts: Map<string, number>
+}
 
 export const TreeNodeView = ({
   node,
@@ -24,30 +24,30 @@ export const TreeNodeView = ({
   reviewStateByPath,
   commentCounts,
 }: Props) => {
-  const [expanded, setExpanded] = useState(true);
-  const [pathCopied, setPathCopied] = useState(false);
-  const { showToast } = useToast();
-  const indent = depth * 10;
+  const [expanded, setExpanded] = useState(true)
+  const [pathCopied, setPathCopied] = useState(false)
+  const { showToast } = useToast()
+  const indent = depth * 10
 
   const copyPath = (path: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation()
     navigator.clipboard.writeText(path).then(
       () => {
-        setPathCopied(true);
-        showToast('success', 'path copied');
-        window.setTimeout(() => setPathCopied(false), 1500);
+        setPathCopied(true)
+        showToast('success', 'path copied')
+        window.setTimeout(() => setPathCopied(false), 1500)
       },
       () => {
-        showToast('error', 'failed to copy path');
+        showToast('error', 'failed to copy path')
       },
-    );
-  };
+    )
+  }
 
   if (node.kind === 'file') {
-    const { file } = node;
-    const isSelected = file.path === activePath;
-    const noteCount = commentCounts.get(file.path) ?? 0;
-    const reviewState = reviewStateByPath.get(file.path) ?? 'none';
+    const { file } = node
+    const isSelected = file.path === activePath
+    const noteCount = commentCounts.get(file.path) ?? 0
+    const reviewState = reviewStateByPath.get(file.path) ?? 'none'
     return (
       <div
         className={cn(
@@ -108,7 +108,7 @@ export const TreeNodeView = ({
           {pathCopied ? <Check size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -152,5 +152,5 @@ export const TreeNodeView = ({
           ))
         : null}
     </>
-  );
-};
+  )
+}

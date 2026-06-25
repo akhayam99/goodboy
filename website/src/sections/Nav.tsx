@@ -1,5 +1,5 @@
-import { Logo } from '../components/Logo';
-import { LinkButton } from '../components/ui';
+import { Logo } from '../components/Logo'
+import { LinkButton } from '../components/ui'
 
 const links = [
   { href: '#sessions', label: 'Sessions' },
@@ -8,7 +8,7 @@ const links = [
   { href: '#github', label: 'GitHub' },
   { href: '#linear', label: 'Linear' },
   { href: '#compare', label: 'Compare' },
-];
+]
 
 /* Top-of-page nav. Not sticky: scrolls away with the hero. The floating pill
    (FloatingNav.tsx) takes over once you scroll past it, in the same spirit as
@@ -46,5 +46,5 @@ export function Nav() {
         </LinkButton>
       </div>
     </header>
-  );
+  )
 }

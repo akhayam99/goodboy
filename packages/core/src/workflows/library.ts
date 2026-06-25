@@ -1,17 +1,17 @@
 export type WorkflowLibraryStep = {
-  readonly name: string;
-  readonly role: string;
-  readonly promptPrefix: string;
-  readonly expectedOutput: string;
-};
+  readonly name: string
+  readonly role: string
+  readonly promptPrefix: string
+  readonly expectedOutput: string
+}
 
 export type WorkflowLibraryEntry = {
-  readonly slug: string;
-  readonly name: string;
-  readonly description: string;
-  readonly goal?: string;
-  readonly steps: ReadonlyArray<WorkflowLibraryStep>;
-};
+  readonly slug: string
+  readonly name: string
+  readonly description: string
+  readonly goal?: string
+  readonly steps: ReadonlyArray<WorkflowLibraryStep>
+}
 
 export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
   {
@@ -171,4 +171,4 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
       },
     ],
   },
-];
+]

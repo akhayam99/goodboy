@@ -1,4 +1,4 @@
-import { Skeleton } from '@goodboy/ui';
+import { Skeleton } from '@goodboy/ui'
 
 export const DetailSkeleton = () => {
   return (
@@ -7,5 +7,5 @@ export const DetailSkeleton = () => {
       <Skeleton className="h-2.5 w-1/2" />
       <Skeleton className="h-2.5 w-2/3" />
     </div>
-  );
-};
+  )
+}

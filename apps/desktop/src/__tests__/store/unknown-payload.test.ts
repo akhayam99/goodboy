@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types'
 
 vi.mock('../../turn', () => ({
   runTurn: vi.fn(),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
 vi.mock('../../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -16,15 +16,15 @@ vi.mock('../../features/permissions/permissions', () => ({
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
   invokeAuditRetryDelete: vi.fn(async () => undefined),
   useEffectivePermissionRules: () => [],
-}));
+}))
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }))
 
 vi.mock('../../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -59,7 +59,7 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
+}))
 
 vi.mock('../../providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -67,7 +67,7 @@ vi.mock('../../providers', () => ({
   getCursorStatus: vi.fn(),
   getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../../routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -75,7 +75,7 @@ vi.mock('../../routing', () => ({
     selectedModel: 'claude-opus-4-7',
     reason: 'preference',
   })),
-}));
+}))
 
 vi.mock('../../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -86,7 +86,7 @@ vi.mock('../../features/budget/budget', () => ({
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
   invokeCheckProviderBudget: vi.fn(),
-}));
+}))
 
 vi.mock('../../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
@@ -94,7 +94,7 @@ vi.mock('../../features/skills/skills', () => ({
   invokeSkillDelete: vi.fn(),
   invokeSkillRescan: vi.fn(),
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
 vi.mock('../../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
@@ -103,46 +103,46 @@ vi.mock('../../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
-}));
+}))
 
-vi.mock('../../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
+vi.mock('../../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }))
 
 vi.mock('../../provider-pricing', () => ({
   parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
   refreshPricingTable: vi.fn(() => Promise.resolve()),
-}));
+}))
 
-const SESSION_ID = 'sess-1' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
-const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
+const SESSION_ID = 'sess-1' as SessionId
+const AGENT_ID = 'agent-1' as AgentId
+const RUN_ID = 'run-1' as ProviderRunId
+const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime
 
 describe('store unknownPayloadCounts', () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  let useAppStore: (typeof import('../../store/store'))['useAppStore'];
+  let useAppStore: (typeof import('../../store/store'))['useAppStore']
 
   beforeEach(async () => {
-    vi.resetModules();
-    ({ useAppStore } = await import('../../store/store'));
-  });
+    vi.resetModules()
+    ;({ useAppStore } = await import('../../store/store'))
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   it('starts at empty object', () => {
-    const counts = useAppStore.getState().unknownPayloadCounts;
-    expect(counts).toEqual({});
-  });
+    const counts = useAppStore.getState().unknownPayloadCounts
+    expect(counts).toEqual({})
+  })
 
   it('increments counter keyed by adapter:payloadType on first unknown_payload', () => {
-    const { appendTurnEvent } = useAppStore.getState();
+    const { appendTurnEvent } = useAppStore.getState()
     appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
@@ -150,12 +150,12 @@ describe('store unknownPayloadCounts', () => {
       payloadType: 'ping',
       raw: { type: 'ping' },
       at: AT,
-    });
-    expect(useAppStore.getState().unknownPayloadCounts['anthropic:ping']).toBe(1);
-  });
+    })
+    expect(useAppStore.getState().unknownPayloadCounts['anthropic:ping']).toBe(1)
+  })
 
   it('accumulates multiple events of the same key', () => {
-    const { appendTurnEvent } = useAppStore.getState();
+    const { appendTurnEvent } = useAppStore.getState()
     for (let i = 0; i < 3; i++) {
       appendTurnEvent(AGENT_ID, SESSION_ID, {
         kind: 'unknown_payload',
@@ -164,13 +164,13 @@ describe('store unknownPayloadCounts', () => {
         payloadType: 'debug_trace',
         raw: {},
         at: AT,
-      });
+      })
     }
-    expect(useAppStore.getState().unknownPayloadCounts['cursor:debug_trace']).toBe(3);
-  });
+    expect(useAppStore.getState().unknownPayloadCounts['cursor:debug_trace']).toBe(3)
+  })
 
   it('tracks different adapter/payloadType keys independently', () => {
-    const { appendTurnEvent } = useAppStore.getState();
+    const { appendTurnEvent } = useAppStore.getState()
     appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
@@ -178,7 +178,7 @@ describe('store unknownPayloadCounts', () => {
       payloadType: 'ping',
       raw: {},
       at: AT,
-    });
+    })
     appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'unknown_payload',
       runId: RUN_ID,
@@ -186,20 +186,20 @@ describe('store unknownPayloadCounts', () => {
       payloadType: 'ping',
       raw: {},
       at: AT,
-    });
-    const counts = useAppStore.getState().unknownPayloadCounts;
-    expect(counts['anthropic:ping']).toBe(1);
-    expect(counts['codex:ping']).toBe(1);
-  });
+    })
+    const counts = useAppStore.getState().unknownPayloadCounts
+    expect(counts['anthropic:ping']).toBe(1)
+    expect(counts['codex:ping']).toBe(1)
+  })
 
   it('does not increment counter for non-unknown_payload events', () => {
-    const { appendTurnEvent } = useAppStore.getState();
+    const { appendTurnEvent } = useAppStore.getState()
     appendTurnEvent(AGENT_ID, SESSION_ID, {
       kind: 'assistant_text',
       runId: RUN_ID,
       delta: 'hello',
       at: AT,
-    });
-    expect(useAppStore.getState().unknownPayloadCounts).toEqual({});
-  });
-});
+    })
+    expect(useAppStore.getState().unknownPayloadCounts).toEqual({})
+  })
+})

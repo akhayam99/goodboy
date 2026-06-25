@@ -1,17 +1,17 @@
-import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
-import type { Database } from '../client';
+import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types'
+import type { Database } from '../client'
 
 type SkillRow = {
-  id: string;
-  workspace_id: string;
-  name: string;
-  description: string;
-  file_path: string;
-  body: string;
-  frontmatter_json: string;
-  created_at: string;
-  updated_at: string;
-};
+  id: string
+  workspace_id: string
+  name: string
+  description: string
+  file_path: string
+  body: string
+  frontmatter_json: string
+  created_at: string
+  updated_at: string
+}
 
 function toSkill(row: SkillRow): Skill {
   return {
@@ -24,7 +24,7 @@ function toSkill(row: SkillRow): Skill {
     frontmatter: JSON.parse(row.frontmatter_json) as SkillFrontmatter,
     createdAt: row.created_at as IsoDateTime,
     updatedAt: row.updated_at as IsoDateTime,
-  };
+  }
 }
 
 export const listSkillsForWorkspace = async (
@@ -34,14 +34,14 @@ export const listSkillsForWorkspace = async (
   const rows = await db.select<SkillRow>(
     'SELECT * FROM skills WHERE workspace_id = ? ORDER BY created_at ASC',
     [workspaceId],
-  );
-  return rows.map(toSkill);
-};
+  )
+  return rows.map(toSkill)
+}
 
 export const getSkillById = async (db: Database, skillId: SkillId): Promise<Skill | null> => {
-  const rows = await db.select<SkillRow>('SELECT * FROM skills WHERE id = ?', [skillId]);
-  return rows[0] ? toSkill(rows[0]) : null;
-};
+  const rows = await db.select<SkillRow>('SELECT * FROM skills WHERE id = ?', [skillId])
+  return rows[0] ? toSkill(rows[0]) : null
+}
 
 export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => {
   await db.execute(
@@ -66,16 +66,16 @@ export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => 
       skill.createdAt,
       skill.updatedAt,
     ],
-  );
-};
+  )
+}
 
 export const deleteSkill = async (db: Database, skillId: SkillId): Promise<void> => {
-  await db.execute('DELETE FROM skills WHERE id = ?', [skillId]);
-};
+  await db.execute('DELETE FROM skills WHERE id = ?', [skillId])
+}
 
 export const deleteSkillsForWorkspace = async (
   db: Database,
   workspaceId: WorkspaceId,
 ): Promise<void> => {
-  await db.execute('DELETE FROM skills WHERE workspace_id = ?', [workspaceId]);
-};
+  await db.execute('DELETE FROM skills WHERE workspace_id = ?', [workspaceId])
+}

@@ -1,11 +1,11 @@
-import type { Tone } from '@goodboy/ui';
-import type { SessionStage } from '@goodboy/types';
+import type { Tone } from '@goodboy/ui'
+import type { SessionStage } from '@goodboy/types'
 
 type SessionStageEntry = {
-  readonly label: string;
-  readonly dotClassName: string;
-  readonly textClassName: string;
-};
+  readonly label: string
+  readonly dotClassName: string
+  readonly textClassName: string
+}
 
 export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   attention: {
@@ -33,7 +33,7 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
     dotClassName: 'bg-success',
     textClassName: 'text-success',
   },
-};
+}
 
 export const STAGE_TONE: Record<SessionStage, Tone> = {
   attention: 'warning',
@@ -41,4 +41,4 @@ export const STAGE_TONE: Record<SessionStage, Tone> = {
   review: 'neutral',
   building: 'neutral',
   done: 'success',
-};
+}

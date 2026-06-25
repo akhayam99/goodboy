@@ -1,39 +1,39 @@
-import { useCallback, useState } from 'react';
-import { Divider } from '@goodboy/ui';
-import { DollarSign, HelpCircle, Moon, PanelLeftClose, Settings, Sun } from 'lucide-react';
-import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter';
-import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
-import { OnboardingChip } from '../../../onboarding/OnboardingCard';
-import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { useCallback, useState } from 'react'
+import { Divider } from '@goodboy/ui'
+import { DollarSign, HelpCircle, Moon, PanelLeftClose, Settings, Sun } from 'lucide-react'
+import { NotificationCenter } from '../../../../features/notifications/components/NotificationCenter'
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features'
+import { OnboardingChip } from '../../../onboarding/OnboardingCard'
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types'
 import {
   EMPTY_ARRAY,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
   useSessions,
-} from '../../../../store';
-import { useThemeStore } from '../../../../shared/lib/theme';
-import { WorkspaceHeader } from '../WorkspaceHeader';
-import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
-import { SessionActivityBar } from '../SessionActivityBar';
-import { FOOTER_ICON_BTN } from './lib';
-import { CollapsedSidebarRail } from './parts/CollapsedSidebarRail';
-import { QuickActionsRow } from './parts/QuickActionsRow';
-import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
+} from '../../../../store'
+import { useThemeStore } from '../../../../shared/lib/theme'
+import { WorkspaceHeader } from '../WorkspaceHeader'
+import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog'
+import { SessionActivityBar } from '../SessionActivityBar'
+import { FOOTER_ICON_BTN } from './lib'
+import { CollapsedSidebarRail } from './parts/CollapsedSidebarRail'
+import { QuickActionsRow } from './parts/QuickActionsRow'
+import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty'
 
 type WorkspacesSidebarProps = {
-  onOpenSettings: () => void;
-  onOpenPalette: (initialQuery?: string) => void;
-  onOpenWorkflows: () => void;
-  onOpenLinear: () => void;
-  onOpenSentry: () => void;
-  onOpenGitlab: () => void;
-  onOpenProviders: () => void;
-  onOpenGithub: () => void;
-  onOpenBudget: () => void;
-  collapsed?: boolean;
-  onToggleCollapse: () => void;
-};
+  onOpenSettings: () => void
+  onOpenPalette: (initialQuery?: string) => void
+  onOpenWorkflows: () => void
+  onOpenLinear: () => void
+  onOpenSentry: () => void
+  onOpenGitlab: () => void
+  onOpenProviders: () => void
+  onOpenGithub: () => void
+  onOpenBudget: () => void
+  collapsed?: boolean
+  onToggleCollapse: () => void
+}
 
 export const WorkspacesSidebar = ({
   onOpenSettings,
@@ -48,50 +48,50 @@ export const WorkspacesSidebar = ({
   collapsed = false,
   onToggleCollapse,
 }: WorkspacesSidebarProps) => {
-  const currentWorkspace = useCurrentWorkspace();
-  const sessions = useSessions();
+  const currentWorkspace = useCurrentWorkspace()
+  const sessions = useSessions()
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
     ),
-  );
+  )
   const hasSentry = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'sentry',
     ),
-  );
+  )
   const hasGitlab = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'gitlab',
     ),
-  );
-  const currentSession = useCurrentSession();
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  )
+  const currentSession = useCurrentSession()
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
   const onSelectSession = useCallback(
     (id: SessionId) => {
-      void setCurrentSession(id);
+      void setCurrentSession(id)
     },
     [setCurrentSession],
-  );
-  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  )
+  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false)
 
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const theme = useThemeStore((s) => s.theme)
+  const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
-  const activeSessions = sessions;
+  const activeSessions = sessions
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Session>;
-  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
+  ) as ReadonlyArray<Session>
+  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions)
   const onArchivedTabOpen = useCallback(() => {
     if (!currentWorkspace) {
-      return;
+      return
     }
-    void loadArchivedSessions(currentWorkspace.id);
-  }, [currentWorkspace, loadArchivedSessions]);
+    void loadArchivedSessions(currentWorkspace.id)
+  }, [currentWorkspace, loadArchivedSessions])
 
   if (collapsed) {
-    return <CollapsedSidebarRail onExpand={onToggleCollapse} />;
+    return <CollapsedSidebarRail onExpand={onToggleCollapse} />
   }
 
   return (
@@ -200,5 +200,5 @@ export const WorkspacesSidebar = ({
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
       ) : null}
     </div>
-  );
-};
+  )
+}

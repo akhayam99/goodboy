@@ -1,4 +1,4 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types'
 
 export const WORKSPACE_ACCENTS = [
   '#5ec8c0',
@@ -9,16 +9,16 @@ export const WORKSPACE_ACCENTS = [
   '#7bc96f',
   '#e57373',
   '#4fb6e0',
-] as const;
+] as const
 
 function hashId(id: string): number {
-  let h = 0;
+  let h = 0
   for (let i = 0; i < id.length; i += 1) {
-    h = (h * 31 + id.charCodeAt(i)) | 0;
+    h = (h * 31 + id.charCodeAt(i)) | 0
   }
-  return Math.abs(h);
+  return Math.abs(h)
 }
 
 export const workspaceAccent = (id: WorkspaceId): string => {
-  return WORKSPACE_ACCENTS[hashId(id) % WORKSPACE_ACCENTS.length] ?? WORKSPACE_ACCENTS[0];
-};
+  return WORKSPACE_ACCENTS[hashId(id) % WORKSPACE_ACCENTS.length] ?? WORKSPACE_ACCENTS[0]
+}

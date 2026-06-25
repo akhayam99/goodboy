@@ -1,20 +1,20 @@
-import type { ProviderId } from './provider-registry';
+import type { ProviderId } from './provider-registry'
 
-export type ProviderLifecycleAction = 'install' | 'login' | 'logout';
+export type ProviderLifecycleAction = 'install' | 'login' | 'logout'
 
-export type ProviderPlatform = 'darwin' | 'linux' | 'win32';
+export type ProviderPlatform = 'darwin' | 'linux' | 'win32'
 
 export type ProviderPlatformCommands = {
-  readonly darwin: string;
-  readonly linux: string;
-  readonly win32: string;
-};
+  readonly darwin: string
+  readonly linux: string
+  readonly win32: string
+}
 
 export type ProviderLifecycleCommands = {
-  readonly install: ProviderPlatformCommands;
-  readonly login: string;
-  readonly logout: string;
-};
+  readonly install: ProviderPlatformCommands
+  readonly login: string
+  readonly logout: string
+}
 
 export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCommands> = {
   anthropic: {
@@ -53,4 +53,4 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
     login: 'gemini',
     logout: 'rm -f ~/.gemini/oauth_creds.json && echo "gemini credentials removed"',
   },
-};
+}

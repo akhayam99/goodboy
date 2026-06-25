@@ -1,13 +1,13 @@
-import type { CredentialId, IsoDateTime, ProviderCredential, ProviderId } from '@goodboy/types';
-import type { Database } from '../client';
+import type { CredentialId, IsoDateTime, ProviderCredential, ProviderId } from '@goodboy/types'
+import type { Database } from '../client'
 
 type ProviderCredentialRow = {
-  id: string;
-  provider_id: string;
-  label: string;
-  hint: string;
-  created_at: number;
-};
+  id: string
+  provider_id: string
+  label: string
+  hint: string
+  created_at: number
+}
 
 function toDomain(row: ProviderCredentialRow): ProviderCredential {
   return {
@@ -16,7 +16,7 @@ function toDomain(row: ProviderCredentialRow): ProviderCredential {
     label: row.label,
     hint: row.hint,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-  };
+  }
 }
 
 export const listProviderCredentials = async (
@@ -24,9 +24,9 @@ export const listProviderCredentials = async (
 ): Promise<ReadonlyArray<ProviderCredential>> => {
   const rows = await db.select<ProviderCredentialRow>(
     'SELECT * FROM provider_credentials ORDER BY created_at ASC',
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const insertProviderCredential = async (
   db: Database,
@@ -42,17 +42,17 @@ export const insertProviderCredential = async (
       credential.hint,
       Date.parse(credential.createdAt),
     ],
-  );
-};
+  )
+}
 
 export const renameProviderCredential = async (
   db: Database,
   id: CredentialId,
   label: string,
 ): Promise<void> => {
-  await db.execute('UPDATE provider_credentials SET label = ? WHERE id = ?', [label, id]);
-};
+  await db.execute('UPDATE provider_credentials SET label = ? WHERE id = ?', [label, id])
+}
 
 export const deleteProviderCredential = async (db: Database, id: CredentialId): Promise<void> => {
-  await db.execute('DELETE FROM provider_credentials WHERE id = ?', [id]);
-};
+  await db.execute('DELETE FROM provider_credentials WHERE id = ?', [id])
+}

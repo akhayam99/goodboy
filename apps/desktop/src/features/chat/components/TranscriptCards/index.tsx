@@ -1,41 +1,41 @@
-import { memo, useEffect, useState } from 'react';
-import { ArrowUpRight, Check, Copy, FileEdit, ImageOff } from 'lucide-react';
-import { CopyButton, Divider, Markdown, Skeleton, cn, formatUsd } from '@goodboy/ui';
-import type { AgentId, MessageAttachment, ProviderId, SessionId } from '@goodboy/types';
-import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
-import type { TranscriptItem } from '../../utils/transcript-items';
-import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
-import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
-import { readAttachment } from '../../turn';
-import { fileIconFor } from '../../attachment-kinds';
-import { AuthRequiredCallout } from '../AuthRequiredCallout';
-import { ImageLightbox } from '../ImageLightbox';
-import { SkillInvocationCard } from '../SkillInvocationCard';
-import { PhaseTransitionCard } from '../PhaseTransitionCard';
-import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
-import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
-import { displayPath } from '../../../../shared/utils/display-path';
-import { HandoffChip } from '../HandoffChip';
-import { CommentResolvedChip } from '../CommentResolvedChip';
-import { CommentWontfixChip } from '../CommentWontfixChip';
-import { PlanChip } from '../PlanChip';
-import { ClustersCard } from '../ClustersCard';
-import { ToolCallCard } from '../ToolCallCard';
+import { memo, useEffect, useState } from 'react'
+import { ArrowUpRight, Check, Copy, FileEdit, ImageOff } from 'lucide-react'
+import { CopyButton, Divider, Markdown, Skeleton, cn, formatUsd } from '@goodboy/ui'
+import type { AgentId, MessageAttachment, ProviderId, SessionId } from '@goodboy/types'
+import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core'
+import type { TranscriptItem } from '../../utils/transcript-items'
+import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand'
+import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants'
+import { readAttachment } from '../../turn'
+import { fileIconFor } from '../../attachment-kinds'
+import { AuthRequiredCallout } from '../AuthRequiredCallout'
+import { ImageLightbox } from '../ImageLightbox'
+import { SkillInvocationCard } from '../SkillInvocationCard'
+import { PhaseTransitionCard } from '../PhaseTransitionCard'
+import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard'
+import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard'
+import { displayPath } from '../../../../shared/utils/display-path'
+import { HandoffChip } from '../HandoffChip'
+import { CommentResolvedChip } from '../CommentResolvedChip'
+import { CommentWontfixChip } from '../CommentWontfixChip'
+import { PlanChip } from '../PlanChip'
+import { ClustersCard } from '../ClustersCard'
+import { ToolCallCard } from '../ToolCallCard'
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
   modify: 'modified',
   delete: 'deleted',
-};
+}
 
 type TranscriptCardProps = {
-  readonly item: TranscriptItem;
-  readonly sessionId?: SessionId | null;
-  readonly agentId?: AgentId | null;
-  readonly workingDir?: string | null;
-  readonly onRefreshAuth?: () => void;
-  readonly onOpenDiff?: (filePath: string) => void;
-};
+  readonly item: TranscriptItem
+  readonly sessionId?: SessionId | null
+  readonly agentId?: AgentId | null
+  readonly workingDir?: string | null
+  readonly onRefreshAuth?: () => void
+  readonly onOpenDiff?: (filePath: string) => void
+}
 
 function TranscriptCardImpl({
   item,
@@ -56,11 +56,11 @@ function TranscriptCardImpl({
           model={item.model}
           workingDir={workingDir}
         />
-      );
+      )
     case 'assistant_text':
-      return <AssistantText text={item.text} sessionId={sessionId} />;
+      return <AssistantText text={item.text} sessionId={sessionId} />
     case 'tool_call':
-      return <ToolCallCard item={item} />;
+      return <ToolCallCard item={item} />
     case 'file_edit':
       return (
         <FileEditBlock
@@ -69,15 +69,15 @@ function TranscriptCardImpl({
           workingDir={workingDir}
           onOpenDiff={onOpenDiff}
         />
-      );
+      )
     case 'usage':
-      return <UsageRow usage={item.usage} />;
+      return <UsageRow usage={item.usage} />
     case 'error':
       return (
         <div className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           {item.message}
         </div>
-      );
+      )
     case 'auth_required':
       return (
         <AuthRequiredCallout
@@ -85,36 +85,36 @@ function TranscriptCardImpl({
           identity={item.identity}
           onRefresh={onRefreshAuth ?? (() => undefined)}
         />
-      );
+      )
     case 'skill_invocation':
-      return <SkillInvocationCard item={item} />;
+      return <SkillInvocationCard item={item} />
     case 'step_transition':
-      return <PhaseTransitionCard item={item} />;
+      return <PhaseTransitionCard item={item} />
     case 'oq_answer':
-      return null;
+      return null
     case 'done':
-      return <Divider />;
+      return <Divider />
     case 'permission_request':
-      return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
+      return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />
     case 'permission_decision':
-      return <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />;
+      return <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />
   }
 }
 
 function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
   if (a === b) {
-    return true;
+    return true
   }
   if (a.kind !== b.kind || a.key !== b.key) {
-    return false;
+    return false
   }
   if (a.kind === 'tool_call' && b.kind === 'tool_call') {
-    return a.ended === b.ended && a.isError === b.isError && a.output === b.output;
+    return a.ended === b.ended && a.isError === b.isError && a.output === b.output
   }
   if (a.kind === 'assistant_text' && b.kind === 'assistant_text') {
-    return a.text === b.text;
+    return a.text === b.text
   }
-  return true;
+  return true
 }
 
 export const TranscriptCard = memo(
@@ -126,17 +126,17 @@ export const TranscriptCard = memo(
     prev.workingDir === next.workingDir &&
     prev.onRefreshAuth === next.onRefreshAuth &&
     prev.onOpenDiff === next.onOpenDiff,
-);
+)
 
 type FileEditBlockProps = {
-  path: string;
-  editType: 'create' | 'modify' | 'delete';
-  workingDir?: string | null;
-  onOpenDiff?: (filePath: string) => void;
-};
+  path: string
+  editType: 'create' | 'modify' | 'delete'
+  workingDir?: string | null
+  onOpenDiff?: (filePath: string) => void
+}
 
 function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlockProps) {
-  const rel = displayPath(path, workingDir);
+  const rel = displayPath(path, workingDir)
   const inner = (
     <>
       <FileEdit size={11} aria-hidden className="shrink-0 text-muted-foreground" />
@@ -152,7 +152,7 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
         />
       ) : null}
     </>
-  );
+  )
 
   if (onOpenDiff) {
     return (
@@ -165,24 +165,24 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
       >
         {inner}
       </button>
-    );
+    )
   }
 
   return (
     <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/30 bg-info/5 px-2 py-1">
       {inner}
     </div>
-  );
+  )
 }
 
 function formatTokens(n: number): string {
   if (n < 1000) {
-    return String(n);
+    return String(n)
   }
   if (n < 10_000) {
-    return `${(n / 1000).toFixed(1)}k`;
+    return `${(n / 1000).toFixed(1)}k`
   }
-  return `${Math.round(n / 1000)}k`;
+  return `${Math.round(n / 1000)}k`
 }
 
 function UsageStat({ value, label }: { value: string; label: string }) {
@@ -191,7 +191,7 @@ function UsageStat({ value, label }: { value: string; label: string }) {
       <span className="tabular-nums text-foreground/70">{value}</span>
       <span className="text-2xs uppercase tracking-wide text-muted-foreground/50">{label}</span>
     </span>
-  );
+  )
 }
 
 function UsageRow({ usage }: { usage: Extract<TranscriptItem, { kind: 'usage' }>['usage'] }) {
@@ -221,14 +221,14 @@ function UsageRow({ usage }: { usage: Extract<TranscriptItem, { kind: 'usage' }>
         </>
       ) : null}
     </div>
-  );
+  )
 }
 
 function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId | null }) {
-  const displayText = stripControlMarkers(text);
-  const resolvedMarker = extractCommentResolved(text);
+  const displayText = stripControlMarkers(text)
+  const resolvedMarker = extractCommentResolved(text)
   const hasCommentResolvedMarker =
-    resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
+    resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId)
   return (
     <div className="group relative rounded-md bg-subtle/40 px-3 py-2 text-[13px]">
       {hasCommentResolvedMarker ? null : (
@@ -247,31 +247,31 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
         </div>
       ) : null}
     </div>
-  );
+  )
 }
 
 function formatHHMM(iso: string): string {
-  const d = new Date(iso);
+  const d = new Date(iso)
   if (Number.isNaN(d.getTime())) {
-    return '';
+    return ''
   }
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
 }
 
 function InlineCopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
   const onCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation()
     try {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(value)
     } catch {
-      return;
+      return
     }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
-  };
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1200)
+  }
   return (
     <button
       type="button"
@@ -282,56 +282,56 @@ function InlineCopyButton({ value }: { value: string }) {
     >
       {copied ? <Check size={11} aria-hidden /> : <Copy size={11} aria-hidden />}
     </button>
-  );
+  )
 }
 
 function AttachmentThumb({
   attachment,
   workingDir,
 }: {
-  attachment: MessageAttachment;
-  workingDir: string | null;
+  attachment: MessageAttachment
+  workingDir: string | null
 }) {
   if (attachment.kind === 'file') {
-    return <AttachmentFileCard attachment={attachment} workingDir={workingDir} />;
+    return <AttachmentFileCard attachment={attachment} workingDir={workingDir} />
   }
-  return <AttachmentImage attachment={attachment} workingDir={workingDir} />;
+  return <AttachmentImage attachment={attachment} workingDir={workingDir} />
 }
 
 function AttachmentImage({
   attachment,
   workingDir,
 }: {
-  attachment: MessageAttachment;
-  workingDir: string | null;
+  attachment: MessageAttachment
+  workingDir: string | null
 }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [src, setSrc] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     if (!workingDir) {
-      setFailed(true);
-      return;
+      setFailed(true)
+      return
     }
-    let alive = true;
-    setFailed(false);
-    setSrc(null);
+    let alive = true
+    setFailed(false)
+    setSrc(null)
     readAttachment(workingDir, attachment.relPath)
       .then((dataUrl) => {
         if (alive) {
-          setSrc(dataUrl);
+          setSrc(dataUrl)
         }
       })
       .catch(() => {
         if (alive) {
-          setFailed(true);
+          setFailed(true)
         }
-      });
+      })
     return () => {
-      alive = false;
-    };
-  }, [workingDir, attachment.relPath]);
+      alive = false
+    }
+  }, [workingDir, attachment.relPath])
 
   if (failed) {
     return (
@@ -342,11 +342,11 @@ function AttachmentImage({
         <ImageOff size={16} aria-hidden />
         <span className="max-w-[6.5rem] truncate px-1 text-2xs">{attachment.fileName}</span>
       </div>
-    );
+    )
   }
 
   if (src === null) {
-    return <Skeleton className="h-28 w-28 rounded-lg" />;
+    return <Skeleton className="h-28 w-28 rounded-lg" />
   }
 
   return (
@@ -368,39 +368,39 @@ function AttachmentImage({
         <ImageLightbox src={src} alt={attachment.fileName} onClose={() => setPreviewOpen(false)} />
       ) : null}
     </>
-  );
+  )
 }
 
 function AttachmentFileCard({
   attachment,
   workingDir,
 }: {
-  attachment: MessageAttachment;
-  workingDir: string | null;
+  attachment: MessageAttachment
+  workingDir: string | null
 }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const Icon = fileIconFor(attachment.mimeType);
-  const isPdf = attachment.mimeType === 'application/pdf';
+  const [src, setSrc] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const Icon = fileIconFor(attachment.mimeType)
+  const isPdf = attachment.mimeType === 'application/pdf'
 
   const openPreview = () => {
     if (!isPdf || !workingDir) {
-      return;
+      return
     }
     if (src !== null) {
-      setPreviewOpen(true);
-      return;
+      setPreviewOpen(true)
+      return
     }
-    setLoading(true);
+    setLoading(true)
     readAttachment(workingDir, attachment.relPath)
       .then((dataUrl) => {
-        setSrc(dataUrl);
-        setPreviewOpen(true);
+        setSrc(dataUrl)
+        setPreviewOpen(true)
       })
       .catch(() => undefined)
-      .finally(() => setLoading(false));
-  };
+      .finally(() => setLoading(false))
+  }
 
   return (
     <>
@@ -427,7 +427,7 @@ function AttachmentFileCard({
         />
       ) : null}
     </>
-  );
+  )
 }
 
 function UserText({
@@ -438,14 +438,14 @@ function UserText({
   model,
   workingDir = null,
 }: {
-  text: string;
-  at: string;
-  attachments?: ReadonlyArray<MessageAttachment>;
-  provider?: ProviderId;
-  model?: string;
-  workingDir?: string | null;
+  text: string
+  at: string
+  attachments?: ReadonlyArray<MessageAttachment>
+  provider?: ProviderId
+  model?: string
+  workingDir?: string | null
 }) {
-  const atts = attachments ?? [];
+  const atts = attachments ?? []
   return (
     <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
       {atts.length > 0 && (
@@ -466,12 +466,12 @@ function UserText({
         {text.length > 0 && <InlineCopyButton value={text} />}
       </div>
     </div>
-  );
+  )
 }
 
 function ProviderFootnote({ provider, model }: { provider: ProviderId; model?: string }) {
-  const Icon = PROVIDER_BRAND[provider].icon;
-  const label = PROVIDER_LABEL[provider];
+  const Icon = PROVIDER_BRAND[provider].icon
+  const label = PROVIDER_LABEL[provider]
   return (
     <span
       className="mr-auto inline-flex items-center gap-1 text-foreground/45"
@@ -481,5 +481,5 @@ function ProviderFootnote({ provider, model }: { provider: ProviderId; model?: s
       <span>{label}</span>
       {model ? <span className="text-foreground/35">· {modelLabel(model)}</span> : null}
     </span>
-  );
+  )
 }

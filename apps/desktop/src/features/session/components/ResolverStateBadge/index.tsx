@@ -1,6 +1,6 @@
-import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Ban, Check, CheckCheck, Clock, GitCommit } from 'lucide-react';
-import type { ResolverStatus } from '../../resolver-linkage';
+import { StatusDot, cn } from '@goodboy/ui'
+import { AlertTriangle, Ban, Check, CheckCheck, Clock, GitCommit } from 'lucide-react'
+import type { ResolverStatus } from '../../resolver-linkage'
 
 export type ResolverBadgeState =
   | 'none'
@@ -10,33 +10,33 @@ export type ResolverBadgeState =
   | 'resolved'
   | 'wontfix'
   | 'awaiting'
-  | 'failed';
+  | 'failed'
 
 export const resolverBadgeState = (status: ResolverStatus): ResolverBadgeState => {
   switch (status) {
     case 'running':
-      return 'running';
+      return 'running'
     case 'pending':
-      return 'queued';
+      return 'queued'
     case 'committed':
-      return 'committed';
+      return 'committed'
     case 'resolved':
-      return 'resolved';
+      return 'resolved'
     case 'wontfix':
-      return 'wontfix';
+      return 'wontfix'
     case 'awaiting':
-      return 'awaiting';
+      return 'awaiting'
     case 'failed':
-      return 'failed';
+      return 'failed'
     default:
-      return 'none';
+      return 'none'
   }
-};
+}
 
 type ResolverStateBadgeProps = {
-  readonly state: ResolverBadgeState;
-  readonly className?: string;
-};
+  readonly state: ResolverBadgeState
+  readonly className?: string
+}
 
 const COPY: Record<ResolverBadgeState, string> = {
   none: 'done',
@@ -47,7 +47,7 @@ const COPY: Record<ResolverBadgeState, string> = {
   wontfix: 'explained',
   awaiting: 'needs you',
   failed: 'failed',
-};
+}
 
 export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps) => {
   const icon =
@@ -67,7 +67,7 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
       <AlertTriangle size={10} className="text-warning" aria-hidden />
     ) : (
       <Check size={10} className="text-muted-foreground/70" aria-hidden />
-    );
+    )
   return (
     <span
       className={cn(
@@ -87,5 +87,5 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
       {icon}
       {COPY[state]}
     </span>
-  );
-};
+  )
+}

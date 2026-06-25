@@ -42,4 +42,4 @@ CREATE INDEX IF NOT EXISTS idx_phase_runs_session_id ON session_phase_runs(sessi
 
 ALTER TABLE sessions ADD COLUMN phase_template_id TEXT;
 ALTER TABLE sessions ADD COLUMN current_phase_ordinal INTEGER;
-`;
+`

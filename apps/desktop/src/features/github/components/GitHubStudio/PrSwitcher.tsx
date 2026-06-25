@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import type { PullRequestState } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
-import { Check, ChevronDown } from 'lucide-react';
-import { PullRequestChip } from '../PullRequestChip';
+import { useState } from 'react'
+import type { PullRequestState } from '@goodboy/types'
+import { cn } from '@goodboy/ui'
+import { Check, ChevronDown } from 'lucide-react'
+import { PullRequestChip } from '../PullRequestChip'
 
 type Props = {
-  readonly prs: ReadonlyArray<PullRequestState>;
-  readonly selected: number | null;
-  readonly onSelect: (prNumber: number) => void;
-};
+  readonly prs: ReadonlyArray<PullRequestState>
+  readonly selected: number | null
+  readonly onSelect: (prNumber: number) => void
+}
 
 export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
-  const [open, setOpen] = useState(false);
-  const current = prs.find((p) => p.number === selected) ?? prs[0];
+  const [open, setOpen] = useState(false)
+  const current = prs.find((p) => p.number === selected) ?? prs[0]
   if (!current) {
-    return null;
+    return null
   }
 
   return (
@@ -46,8 +46,8 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
                   role="option"
                   aria-selected={p.number === selected}
                   onClick={() => {
-                    onSelect(p.number);
-                    setOpen(false);
+                    onSelect(p.number)
+                    setOpen(false)
                   }}
                   className={cn(
                     'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
@@ -67,5 +67,5 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
         </>
       ) : null}
     </div>
-  );
-};
+  )
+}

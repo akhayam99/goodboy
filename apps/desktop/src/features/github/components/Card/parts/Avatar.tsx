@@ -1,7 +1,7 @@
 type Props = {
-  readonly url: string | null;
-  readonly alt: string;
-};
+  readonly url: string | null
+  readonly alt: string
+}
 
 export const Avatar = ({ url, alt }: Props) => {
   if (!url) {
@@ -12,7 +12,7 @@ export const Avatar = ({ url, alt }: Props) => {
       >
         {alt.slice(0, 1).toUpperCase()}
       </span>
-    );
+    )
   }
-  return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />;
-};
+  return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />
+}

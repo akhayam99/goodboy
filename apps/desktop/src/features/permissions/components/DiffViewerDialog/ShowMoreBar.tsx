@@ -1,12 +1,12 @@
-import { ChevronsDown } from 'lucide-react';
-import { Divider } from '@goodboy/ui';
+import { ChevronsDown } from 'lucide-react'
+import { Divider } from '@goodboy/ui'
 
 type Props = {
-  step: number;
-  rendered: number;
-  total: number;
-  onShowMore: () => void;
-};
+  step: number
+  rendered: number
+  total: number
+  onShowMore: () => void
+}
 
 export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
   return (
@@ -26,5 +26,5 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
         </span>
       </div>
     </>
-  );
-};
+  )
+}

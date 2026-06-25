@@ -1,35 +1,35 @@
-import { Input, Textarea } from '@goodboy/ui';
-import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
-import type { DefinitionForm } from '../../form';
-import { modelEffortLevels } from '../../../chat/utils/chat-constants';
-import { RoleSelect } from '../../../session/components/RoleSelect';
-import { InlineField } from '../../../session/components/InlineField';
-import { ModelSelect } from '../../../session/components/ModelSelect';
-import { EffortSelect } from '../../../session/components/EffortSelect';
-import { VerbositySelect } from '../../../session/components/VerbositySelect';
-import { ProviderSelect } from '../../../session/components/ProviderSelect';
+import { Input, Textarea } from '@goodboy/ui'
+import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core'
+import type { ProviderId } from '@goodboy/types'
+import type { DefinitionForm } from '../../form'
+import { modelEffortLevels } from '../../../chat/utils/chat-constants'
+import { RoleSelect } from '../../../session/components/RoleSelect'
+import { InlineField } from '../../../session/components/InlineField'
+import { ModelSelect } from '../../../session/components/ModelSelect'
+import { EffortSelect } from '../../../session/components/EffortSelect'
+import { VerbositySelect } from '../../../session/components/VerbositySelect'
+import { ProviderSelect } from '../../../session/components/ProviderSelect'
 
 type Props = {
-  readonly def: DefinitionForm;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onUpdate: (patch: Partial<DefinitionForm>) => void;
-};
+  readonly def: DefinitionForm
+  readonly connectedProviders: ReadonlyArray<ProviderId>
+  readonly onUpdate: (patch: Partial<DefinitionForm>) => void
+}
 
 export const StepEditor = ({ def, connectedProviders, onUpdate }: Props) => {
   const effProvider: ProviderId =
-    (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic';
-  const autoModel = autoModelForRole(def.role, connectedProviders)?.model;
-  const effortModel = def.modelOverride || autoModel || getDefaultTurnModel(effProvider);
+    (def.providerOverride as ProviderId) || connectedProviders[0] || 'anthropic'
+  const autoModel = autoModelForRole(def.role, connectedProviders)?.model
+  const effortModel = def.modelOverride || autoModel || getDefaultTurnModel(effProvider)
 
   const onModelChange = (model: string) => {
-    const levels = modelEffortLevels(model);
-    const patch: Partial<DefinitionForm> = { modelOverride: model };
+    const levels = modelEffortLevels(model)
+    const patch: Partial<DefinitionForm> = { modelOverride: model }
     if (levels && !levels.includes(def.effort)) {
-      patch.effort = levels[0]!;
+      patch.effort = levels[0]!
     }
-    onUpdate(patch);
-  };
+    onUpdate(patch)
+  }
 
   return (
     <div className="flex flex-col gap-3 rounded-md bg-muted/20 p-3">
@@ -91,5 +91,5 @@ export const StepEditor = ({ def, connectedProviders, onUpdate }: Props) => {
         </InlineField>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,33 +1,33 @@
-import { useEffect, useState } from 'react';
-import { ImageOff, Paperclip, X } from 'lucide-react';
-import { Eyebrow, Skeleton } from '@goodboy/ui';
-import type { GoalAttachment, GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { fileIconFor } from '../../../../chat/attachment-kinds';
-import { readAttachment } from '../../../../chat/turn';
-import { ImageLightbox } from '../../../../chat/components/ImageLightbox';
-import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
+import { useEffect, useState } from 'react'
+import { ImageOff, Paperclip, X } from 'lucide-react'
+import { Eyebrow, Skeleton } from '@goodboy/ui'
+import type { GoalAttachment, GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store'
+import { fileIconFor } from '../../../../chat/attachment-kinds'
+import { readAttachment } from '../../../../chat/turn'
+import { ImageLightbox } from '../../../../chat/components/ImageLightbox'
+import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing'
 
 export function GoalAttachmentsStrip({ owner }: { readonly owner: GoalAttachmentOwner }) {
-  const loadGoalAttachments = useAppStore((s) => s.loadGoalAttachments);
-  const removeGoalAttachment = useAppStore((s) => s.removeGoalAttachment);
+  const loadGoalAttachments = useAppStore((s) => s.loadGoalAttachments)
+  const removeGoalAttachment = useAppStore((s) => s.removeGoalAttachment)
   const attachments = useAppStore((s) =>
     owner.type === 'session'
       ? (s.sessionAttachments[owner.id as SessionId] ?? EMPTY_ARRAY)
       : (s.workflowRunAttachments[owner.id as WorkflowRunId] ?? EMPTY_ARRAY),
-  );
+  )
   const workingDir = useAppStore((s) => {
-    const sessionId = owner.type === 'session' ? (owner.id as SessionId) : s.currentSessionId;
-    return sessionId ? ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null) : null;
-  });
+    const sessionId = owner.type === 'session' ? (owner.id as SessionId) : s.currentSessionId
+    return sessionId ? ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null) : null
+  })
 
-  const ownerType = owner.type;
-  const ownerId = owner.id;
+  const ownerType = owner.type
+  const ownerId = owner.id
   useEffect(() => {
-    void loadGoalAttachments({ type: ownerType, id: ownerId });
-  }, [ownerType, ownerId, loadGoalAttachments]);
+    void loadGoalAttachments({ type: ownerType, id: ownerId })
+  }, [ownerType, ownerId, loadGoalAttachments])
 
-  if (attachments.length === 0) return null;
+  if (attachments.length === 0) return null
 
   return (
     <div className="flex flex-col gap-2">
@@ -48,7 +48,7 @@ export function GoalAttachmentsStrip({ owner }: { readonly owner: GoalAttachment
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 function AttachmentChip({
@@ -56,12 +56,12 @@ function AttachmentChip({
   workingDir,
   onRemove,
 }: {
-  readonly attachment: GoalAttachment;
-  readonly workingDir: string | null;
-  readonly onRemove: () => void;
+  readonly attachment: GoalAttachment
+  readonly workingDir: string | null
+  readonly onRemove: () => void
 }) {
-  const readers = ATTACHMENT_KIND_ROUTING[attachment.kind].join(', ');
-  const title = `${attachment.fileName}\nread by: ${readers}`;
+  const readers = ATTACHMENT_KIND_ROUTING[attachment.kind].join(', ')
+  const title = `${attachment.fileName}\nread by: ${readers}`
   const removeButton = (
     <button
       type="button"
@@ -72,7 +72,7 @@ function AttachmentChip({
     >
       <X size={10} aria-hidden />
     </button>
-  );
+  )
 
   if (attachment.kind === 'image') {
     return (
@@ -83,10 +83,10 @@ function AttachmentChip({
         <ImageThumb attachment={attachment} workingDir={workingDir} />
         {removeButton}
       </div>
-    );
+    )
   }
 
-  const Icon = fileIconFor(attachment.mimeType);
+  const Icon = fileIconFor(attachment.mimeType)
   return (
     <div
       className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background/60 py-2 pl-2.5 pr-6 ring-1 ring-border-soft"
@@ -96,50 +96,50 @@ function AttachmentChip({
       <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
       {removeButton}
     </div>
-  );
+  )
 }
 
 function ImageThumb({
   attachment,
   workingDir,
 }: {
-  readonly attachment: GoalAttachment;
-  readonly workingDir: string | null;
+  readonly attachment: GoalAttachment
+  readonly workingDir: string | null
 }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [src, setSrc] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     if (!workingDir) {
-      setFailed(true);
-      return;
+      setFailed(true)
+      return
     }
-    let alive = true;
-    setFailed(false);
-    setSrc(null);
+    let alive = true
+    setFailed(false)
+    setSrc(null)
     readAttachment(workingDir, attachment.relPath)
       .then((dataUrl) => {
-        if (alive) setSrc(dataUrl);
+        if (alive) setSrc(dataUrl)
       })
       .catch(() => {
-        if (alive) setFailed(true);
-      });
+        if (alive) setFailed(true)
+      })
     return () => {
-      alive = false;
-    };
-  }, [workingDir, attachment.relPath]);
+      alive = false
+    }
+  }, [workingDir, attachment.relPath])
 
   if (failed) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-foreground/5 text-muted-foreground">
         <ImageOff size={14} aria-hidden />
       </div>
-    );
+    )
   }
 
   if (src === null) {
-    return <Skeleton className="h-full w-full rounded-none" />;
+    return <Skeleton className="h-full w-full rounded-none" />
   }
 
   return (
@@ -157,5 +157,5 @@ function ImageThumb({
         <ImageLightbox src={src} alt={attachment.fileName} onClose={() => setPreviewOpen(false)} />
       ) : null}
     </>
-  );
+  )
 }

@@ -1,37 +1,37 @@
-import { useCallback, useMemo } from 'react';
-import { ArrowRight, Bot, CircleCheck } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../store';
-import { QuestionCard } from '../../../../context/components/QuestionsTab/QuestionCard';
+import { useCallback, useMemo } from 'react'
+import { ArrowRight, Bot, CircleCheck } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../store'
+import { QuestionCard } from '../../../../context/components/QuestionsTab/QuestionCard'
 import {
   buildQuestionClusters,
   type QuestionCluster,
-} from '../../../../context/components/QuestionsTab/clusters';
+} from '../../../../context/components/QuestionsTab/clusters'
 import {
   deriveDraftAnswer,
   useOpenQuestions,
-} from '../../../../context/components/QuestionsTab/useOpenQuestions';
-import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
-import { PaneShell } from './PaneShell';
+} from '../../../../context/components/QuestionsTab/useOpenQuestions'
+import { selectOpenQuestions } from '../../SessionOverviewPane/lib'
+import { PaneShell } from './PaneShell'
 
-type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
+type AnswerPair = { id: OpenQuestionId; text: string; answer: string }
 
 type QuestionsPaneProps = {
-  readonly session: Session;
-};
+  readonly session: Session
+}
 
 type ClusterSectionProps = {
-  readonly cluster: QuestionCluster;
-  readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts'];
-  readonly justAnswered: ReadonlyArray<OpenQuestionId>;
-  readonly onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
-  readonly onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
-  readonly onToggleCustomField: (questionId: OpenQuestionId) => void;
-  readonly onClearJustAnswered: (id: OpenQuestionId) => void;
-  readonly onDismiss: (question: OpenQuestion) => void;
-  readonly onSubmit: (pairs: ReadonlyArray<AnswerPair>, ownerAgentId: AgentId | null) => void;
-};
+  readonly cluster: QuestionCluster
+  readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts']
+  readonly justAnswered: ReadonlyArray<OpenQuestionId>
+  readonly onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void
+  readonly onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void
+  readonly onToggleCustomField: (questionId: OpenQuestionId) => void
+  readonly onClearJustAnswered: (id: OpenQuestionId) => void
+  readonly onDismiss: (question: OpenQuestion) => void
+  readonly onSubmit: (pairs: ReadonlyArray<AnswerPair>, ownerAgentId: AgentId | null) => void
+}
 
 const ClusterSection = ({
   cluster,
@@ -46,7 +46,7 @@ const ClusterSection = ({
 }: ClusterSectionProps) => {
   const pendingPairs = cluster.questions
     .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }))
-    .filter((pair) => pair.answer.length > 0);
+    .filter((pair) => pair.answer.length > 0)
 
   return (
     <div className="flex flex-col gap-2">
@@ -96,39 +96,39 @@ const ClusterSection = ({
         </button>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
-  const sessionId = session.id as SessionId;
-  const open = selectOpenQuestions(useSessionOpenQuestions(sessionId));
-  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const workflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY);
-  const drafts = useOpenQuestions((s) => s.drafts);
-  const justAnswered = useOpenQuestions((s) => s.justAnswered);
-  const toggleSuggestion = useOpenQuestions((s) => s.toggleSuggestion);
-  const setCustomAnswer = useOpenQuestions((s) => s.setCustomAnswer);
-  const toggleCustomField = useOpenQuestions((s) => s.toggleCustomField);
-  const clearJustAnswered = useOpenQuestions((s) => s.clearJustAnswered);
-  const flashAnswered = useOpenQuestions((s) => s.flashAnswered);
-  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
-  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
+  const sessionId = session.id as SessionId
+  const open = selectOpenQuestions(useSessionOpenQuestions(sessionId))
+  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY)
+  const workflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY)
+  const drafts = useOpenQuestions((s) => s.drafts)
+  const justAnswered = useOpenQuestions((s) => s.justAnswered)
+  const toggleSuggestion = useOpenQuestions((s) => s.toggleSuggestion)
+  const setCustomAnswer = useOpenQuestions((s) => s.setCustomAnswer)
+  const toggleCustomField = useOpenQuestions((s) => s.toggleCustomField)
+  const clearJustAnswered = useOpenQuestions((s) => s.clearJustAnswered)
+  const flashAnswered = useOpenQuestions((s) => s.flashAnswered)
+  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions)
+  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion)
 
   const clusters = useMemo(
     () => buildQuestionClusters({ questions: open, agents, workflows }),
     [open, agents, workflows],
-  );
+  )
 
   const handleSubmit = useCallback(
     async (pairs: ReadonlyArray<AnswerPair>, ownerAgentId: AgentId | null) => {
       if (pairs.length === 0) {
-        return;
+        return
       }
-      flashAnswered(pairs.map((pair) => pair.id));
-      await answerOpenQuestions(sessionId, pairs, ownerAgentId);
+      flashAnswered(pairs.map((pair) => pair.id))
+      await answerOpenQuestions(sessionId, pairs, ownerAgentId)
     },
     [flashAnswered, answerOpenQuestions, sessionId],
-  );
+  )
 
   if (open.length === 0) {
     return (
@@ -146,7 +146,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
           </p>
         </div>
       </PaneShell>
-    );
+    )
   }
 
   return (
@@ -171,5 +171,5 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         ))}
       </div>
     </PaneShell>
-  );
-};
+  )
+}

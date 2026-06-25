@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -30,37 +30,35 @@ import type {
   WorkspaceIntegrationId,
   WorkspaceScript,
   WorkspaceScriptId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
-}));
+}))
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async () => () => undefined),
-}));
+}))
 
-const dbSetSettingSpy = vi.fn(async () => undefined);
+const dbSetSettingSpy = vi.fn(async () => undefined)
 const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
   async () => null,
-);
-const insertNotificationSpy = vi.fn(async () => undefined);
-const insertNudgeEventSpy = vi.fn(async () => undefined);
-const updateNudgeOutcomeSpy = vi.fn(async () => undefined);
-const insertDiffCommentSpy = vi.fn(async () => undefined);
-const listDiffCommentsSpy = vi.fn(async () => [] as ReadonlyArray<DiffComment>);
-const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
-const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
-const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
-const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listIntegrationsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<WorkspaceIntegration>,
-);
-const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
-const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
-const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
-const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+)
+const insertNotificationSpy = vi.fn(async () => undefined)
+const insertNudgeEventSpy = vi.fn(async () => undefined)
+const updateNudgeOutcomeSpy = vi.fn(async () => undefined)
+const insertDiffCommentSpy = vi.fn(async () => undefined)
+const listDiffCommentsSpy = vi.fn(async () => [] as ReadonlyArray<DiffComment>)
+const resolveDiffCommentDbSpy = vi.fn(async () => undefined)
+const reopenDiffCommentDbSpy = vi.fn(async () => undefined)
+const consumeDiffCommentsDbSpy = vi.fn(async () => undefined)
+const deleteDiffCommentDbSpy = vi.fn(async () => undefined)
+const upsertWorkspaceIntegrationSpy = vi.fn(async () => undefined)
+const listIntegrationsForWorkspaceSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceIntegration>)
+const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined)
+const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>)
+const upsertWorkspaceScriptSpy = vi.fn(async () => undefined)
+const deleteWorkspaceScriptSpy = vi.fn(async () => undefined)
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -141,21 +139,21 @@ vi.mock('@goodboy/db', () => ({
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),
   deleteGithubPrCache: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../shared/lib/db', () => ({
   runDbMigrations: vi.fn(async () => undefined),
   wipeDb: vi.fn(async () => undefined),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('../../../shared/lib/ls-to-db-migration', () => ({
   migrateLsToDb: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/onboarding/onboarding-store', () => ({
   hydrateOnboardingFromDb: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -163,7 +161,7 @@ vi.mock('../../../features/chat/turn', () => ({
   writeAttachment: vi.fn(async () => 'rel/path'),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
 vi.mock('../../../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -173,7 +171,7 @@ vi.mock('../../../features/permissions/permissions', () => ({
   invokeAuditRetryDrain: vi.fn(async () => []),
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
   invokeAuditRetryDelete: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -181,7 +179,7 @@ vi.mock('../../../features/providers/providers', () => ({
   getCursorStatus: vi.fn(async () => null),
   getCodexStatus: vi.fn(async () => null),
   getProviderStatus: vi.fn(async () => null),
-}));
+}))
 
 vi.mock('../../../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -189,15 +187,15 @@ vi.mock('../../../features/providers/routing', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
-}));
+}))
 
-const invokeBudgetRuleListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetRule>);
-const invokeBudgetRuleUpsertSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
-const invokeBudgetRuleDeleteSpy = vi.fn(async () => undefined);
-const invokeBudgetAlertsListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetAlert>);
-const invokeBudgetAlertDismissSpy = vi.fn(async () => undefined);
-const invokeSessionBudgetGetSpy: ReturnType<typeof vi.fn> = vi.fn(async () => null);
-const invokeSessionBudgetSetSpy = vi.fn(async () => undefined);
+const invokeBudgetRuleListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetRule>)
+const invokeBudgetRuleUpsertSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined)
+const invokeBudgetRuleDeleteSpy = vi.fn(async () => undefined)
+const invokeBudgetAlertsListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetAlert>)
+const invokeBudgetAlertDismissSpy = vi.fn(async () => undefined)
+const invokeSessionBudgetGetSpy: ReturnType<typeof vi.fn> = vi.fn(async () => null)
+const invokeSessionBudgetSetSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/budget/budget', () => ({
   invokeBudgetRuleList: invokeBudgetRuleListSpy,
@@ -208,12 +206,12 @@ vi.mock('../../../features/budget/budget', () => ({
   invokeSessionBudgetGet: invokeSessionBudgetGetSpy,
   invokeSessionBudgetSet: invokeSessionBudgetSetSpy,
   invokeCheckProviderBudget: vi.fn(async () => undefined),
-}));
+}))
 
-const invokeSkillListSpy = vi.fn(async () => [] as ReadonlyArray<Skill>);
-const invokeSkillUpsertSpy = vi.fn(async () => undefined);
-const invokeSkillDeleteSpy = vi.fn(async () => undefined);
-const invokeSkillRescanSpy = vi.fn(async () => [] as ReadonlyArray<Skill>);
+const invokeSkillListSpy = vi.fn(async () => [] as ReadonlyArray<Skill>)
+const invokeSkillUpsertSpy = vi.fn(async () => undefined)
+const invokeSkillDeleteSpy = vi.fn(async () => undefined)
+const invokeSkillRescanSpy = vi.fn(async () => [] as ReadonlyArray<Skill>)
 
 vi.mock('../../../features/skills/skills', () => ({
   invokeSkillList: invokeSkillListSpy,
@@ -221,19 +219,19 @@ vi.mock('../../../features/skills/skills', () => ({
   invokeSkillDelete: invokeSkillDeleteSpy,
   invokeSkillRescan: invokeSkillRescanSpy,
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
-const invokeWorkflowListSpy = vi.fn(async () => [] as ReadonlyArray<Workflow>);
-const invokeWorkflowUpsertSpy = vi.fn(async () => undefined);
-const invokeWorkflowDeleteSpy = vi.fn(async () => undefined);
-const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>);
-const invokeAgentInsertSpy = vi.fn();
-const invokeAgentUpdateStatusSpy = vi.fn();
-const invokeAgentSetKindSpy = vi.fn(async () => undefined);
-const invokeAgentSetVerbositySpy = vi.fn(async () => undefined);
-const invokeAgentMarkViewedSpy = vi.fn(async () => undefined);
-const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined);
-const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>);
+const invokeWorkflowListSpy = vi.fn(async () => [] as ReadonlyArray<Workflow>)
+const invokeWorkflowUpsertSpy = vi.fn(async () => undefined)
+const invokeWorkflowDeleteSpy = vi.fn(async () => undefined)
+const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>)
+const invokeAgentInsertSpy = vi.fn()
+const invokeAgentUpdateStatusSpy = vi.fn()
+const invokeAgentSetKindSpy = vi.fn(async () => undefined)
+const invokeAgentSetVerbositySpy = vi.fn(async () => undefined)
+const invokeAgentMarkViewedSpy = vi.fn(async () => undefined)
+const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined)
+const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>)
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: invokeWorkflowListSpy,
@@ -247,33 +245,33 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentMarkViewed: invokeAgentMarkViewedSpy,
   invokeAgentSetProviderSessionId: invokeAgentSetProviderSessionIdSpy,
   invokeWorkspacesWithUnread: invokeWorkspacesWithUnreadSpy,
-}));
+}))
 
-const createWorktreeSpy = vi.fn();
-const removeWorktreeSpy = vi.fn(async () => undefined);
-const changeWorktreeBranchSpy = vi.fn(async () => undefined);
+const createWorktreeSpy = vi.fn()
+const removeWorktreeSpy = vi.fn(async () => undefined)
+const changeWorktreeBranchSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
   worktreeChangedFiles: vi.fn(async () => []),
-}));
+}))
 
 vi.mock('../../../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
-}));
+}))
 
 vi.mock('../../../shared/lib/editor', () => ({
   detectEditors: vi.fn(async () => []),
-}));
+}))
 
-const invokePlanListSpy = vi.fn(async () => [] as ReadonlyArray<PlanWithCount>);
-const invokeUpsertPlanSpy = vi.fn();
-const invokeSetPlanStatusSpy = vi.fn(async () => undefined);
-const invokeSetPlanBodySpy = vi.fn(async () => undefined);
-const invokeAddPlanConsumptionSpy = vi.fn(async () => undefined);
-const invokeListConsumptionsForPlanSpy = vi.fn(async () => [] as ReadonlyArray<PlanConsumption>);
+const invokePlanListSpy = vi.fn(async () => [] as ReadonlyArray<PlanWithCount>)
+const invokeUpsertPlanSpy = vi.fn()
+const invokeSetPlanStatusSpy = vi.fn(async () => undefined)
+const invokeSetPlanBodySpy = vi.fn(async () => undefined)
+const invokeAddPlanConsumptionSpy = vi.fn(async () => undefined)
+const invokeListConsumptionsForPlanSpy = vi.fn(async () => [] as ReadonlyArray<PlanConsumption>)
 
 vi.mock('../../../features/plans/plans', () => ({
   listPlansForSession: invokePlanListSpy,
@@ -282,23 +280,23 @@ vi.mock('../../../features/plans/plans', () => ({
   setPlanBody: invokeSetPlanBodySpy,
   addPlanConsumption: invokeAddPlanConsumptionSpy,
   listConsumptionsForPlan: invokeListConsumptionsForPlanSpy,
-}));
+}))
 
-const linearConnectSpy = vi.fn();
-const linearDisconnectSpy = vi.fn(async () => undefined);
+const linearConnectSpy = vi.fn()
+const linearDisconnectSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/integrations/linear/client', () => ({
   linearConnect: linearConnectSpy,
   linearDisconnect: linearDisconnectSpy,
-}));
+}))
 
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
   available: true,
   mode: 'gh-cli',
   scopes: [],
-}));
-const ghSetTokenSpy = vi.fn();
-const ghClearTokenSpy = vi.fn(async () => undefined);
+}))
+const ghSetTokenSpy = vi.fn()
+const ghClearTokenSpy = vi.fn(async () => undefined)
 
 vi.mock('../../../features/github/github', () => ({
   ghStatus: ghStatusSpy,
@@ -306,10 +304,10 @@ vi.mock('../../../features/github/github', () => ({
   ghClearToken: ghClearTokenSpy,
   tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
   createTauriPrCacheStore: () => ({ get: vi.fn(), upsert: vi.fn(), delete: vi.fn() }),
-}));
+}))
 
 vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
+  const actual = await importOriginal<Record<string, unknown>>()
   return {
     ...actual,
     detectRepoSlug: vi.fn(async () => null),
@@ -319,41 +317,41 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     resolveReviewThread: vi.fn(async () => undefined),
     addReviewThreadReply: vi.fn(async () => undefined),
     seedWorkflowLibrary: vi.fn(async () => undefined),
-  };
-});
+  }
+})
 
 vi.mock('../../../features/scripts/scripts', () => ({
   invokeScriptRun: vi.fn(async () => undefined),
   invokeScriptCancel: vi.fn(async () => undefined),
   listenScriptOutput: vi.fn(async () => () => undefined),
   listenScriptExit: vi.fn(async () => () => undefined),
-}));
+}))
 
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
   invokeTerminalClose: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', () => ({
   useOpenQuestions: {
     getState: () => ({ loadQuestions: vi.fn(async () => undefined) }),
   },
-}));
+}))
 
 vi.mock('../../../features/settings/config-export', () => ({
   exportConfigToFile: vi.fn(async () => '/tmp/export.json'),
   importConfigFromFile: vi.fn(async () => null),
-}));
+}))
 
-const WS_ID = 'workspace-1' as WorkspaceId;
-const WS_ID_2 = 'workspace-2' as WorkspaceId;
-const SESSION_ID = 'session-1' as SessionId;
-const SESSION_ID_2 = 'session-2' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const AGENT_ID_2 = 'agent-2' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
-const PLAN_ID = 'plan-1' as PlanId;
-const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
+const WS_ID = 'workspace-1' as WorkspaceId
+const WS_ID_2 = 'workspace-2' as WorkspaceId
+const SESSION_ID = 'session-1' as SessionId
+const SESSION_ID_2 = 'session-2' as SessionId
+const AGENT_ID = 'agent-1' as AgentId
+const AGENT_ID_2 = 'agent-2' as AgentId
+const RUN_ID = 'run-1' as ProviderRunId
+const PLAN_ID = 'plan-1' as PlanId
+const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
@@ -364,7 +362,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     updatedAt: NOW,
     lastAccessedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 function buildSession(overrides: Partial<Session> = {}): Session {
@@ -382,7 +380,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
@@ -392,7 +390,7 @@ function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
     name: 'agent 1',
     status: 'pending',
     ...overrides,
-  };
+  }
 }
 
 function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
@@ -407,38 +405,38 @@ function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 async function getStore() {
-  const mod = await import('../../store');
-  return mod.useAppStore;
+  const mod = await import('../../store')
+  return mod.useAppStore
 }
 
-let resetState: Record<string, unknown> | null = null;
+let resetState: Record<string, unknown> | null = null
 
 describe('store contract', () => {
   beforeEach(async () => {
-    vi.clearAllMocks();
-    invokeBudgetRuleListSpy.mockResolvedValue([]);
-    invokeBudgetAlertsListSpy.mockResolvedValue([]);
-    invokeSessionBudgetGetSpy.mockResolvedValue(null);
-    invokeWorkflowListSpy.mockResolvedValue([]);
-    invokeAgentListSpy.mockResolvedValue([]);
-    invokeSkillListSpy.mockResolvedValue([]);
-    invokeSkillRescanSpy.mockResolvedValue([]);
-    invokePlanListSpy.mockResolvedValue([]);
-    invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
-    invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listWorkspaceScriptsSpy.mockResolvedValue([]);
-    listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
-    listDiffCommentsSpy.mockResolvedValue([]);
-    dbGetSettingSpy.mockResolvedValue(null);
-    ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
+    vi.clearAllMocks()
+    invokeBudgetRuleListSpy.mockResolvedValue([])
+    invokeBudgetAlertsListSpy.mockResolvedValue([])
+    invokeSessionBudgetGetSpy.mockResolvedValue(null)
+    invokeWorkflowListSpy.mockResolvedValue([])
+    invokeAgentListSpy.mockResolvedValue([])
+    invokeSkillListSpy.mockResolvedValue([])
+    invokeSkillRescanSpy.mockResolvedValue([])
+    invokePlanListSpy.mockResolvedValue([])
+    invokeListConsumptionsForPlanSpy.mockResolvedValue([])
+    invokeWorkspacesWithUnreadSpy.mockResolvedValue([])
+    listWorkspaceScriptsSpy.mockResolvedValue([])
+    listIntegrationsForWorkspaceSpy.mockResolvedValue([])
+    listDiffCommentsSpy.mockResolvedValue([])
+    dbGetSettingSpy.mockResolvedValue(null)
+    ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] })
 
-    const store = await getStore();
+    const store = await getStore()
     if (!resetState) {
-      const snap = store.getState();
+      const snap = store.getState()
       resetState = {
         workspaces: [],
         workspaceIntegrations: {},
@@ -506,197 +504,197 @@ describe('store contract', () => {
         sessionLoading: {},
         sessionViewPrefs: {},
         terminalSessions: {},
-      };
+      }
     }
-    store.setState(resetState as never);
+    store.setState(resetState as never)
     if (typeof globalThis.localStorage !== 'undefined') {
-      globalThis.localStorage.clear();
+      globalThis.localStorage.clear()
     }
-  });
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   describe('sessions', () => {
     it('refreshSessions overwrites sessions from DB', async () => {
-      const store = await getStore();
-      const { listSessionsForWorkspace } = await import('@goodboy/db');
-      (listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      const store = await getStore()
+      const { listSessionsForWorkspace } = await import('@goodboy/db')
+      ;(listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildSession({ id: SESSION_ID }),
         buildSession({ id: SESSION_ID_2, goal: 'two' }),
-      ]);
-      await store.getState().refreshSessions(WS_ID);
-      const ss = store.getState().sessions;
-      expect(ss).toHaveLength(2);
-      expect(ss[0]?.id).toBe(SESSION_ID);
-      expect(ss[1]?.goal).toBe('two');
-    });
+      ])
+      await store.getState().refreshSessions(WS_ID)
+      const ss = store.getState().sessions
+      expect(ss).toHaveLength(2)
+      expect(ss[0]?.id).toBe(SESSION_ID)
+      expect(ss[1]?.goal).toBe('two')
+    })
 
     it('renameTask updates goal and stamps titleUserEdited', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession()] });
-      await store.getState().renameTask(SESSION_ID, '  fresh name  ');
-      const s = store.getState().sessions.find((x) => x.id === SESSION_ID);
-      expect(s?.goal).toBe('fresh name');
-      expect(s?.titleUserEdited).toBe(true);
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession()] })
+      await store.getState().renameTask(SESSION_ID, '  fresh name  ')
+      const s = store.getState().sessions.find((x) => x.id === SESSION_ID)
+      expect(s?.goal).toBe('fresh name')
+      expect(s?.titleUserEdited).toBe(true)
+    })
 
     it('renameTask rejects empty names', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession()] });
-      await expect(store.getState().renameTask(SESSION_ID, '   ')).rejects.toThrow();
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession()] })
+      await expect(store.getState().renameTask(SESSION_ID, '   ')).rejects.toThrow()
+    })
 
     it('autoTitleSession is a no-op when titleUserEdited is true', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession({ titleUserEdited: true, goal: 'kept' })] });
-      await store.getState().autoTitleSession(SESSION_ID, 'auto');
-      expect(store.getState().sessions[0]?.goal).toBe('kept');
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession({ titleUserEdited: true, goal: 'kept' })] })
+      await store.getState().autoTitleSession(SESSION_ID, 'auto')
+      expect(store.getState().sessions[0]?.goal).toBe('kept')
+    })
 
     it('autoTitleSession sets goal when the user has not edited the title', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession({ titleUserEdited: false, goal: 'old' })] });
-      await store.getState().autoTitleSession(SESSION_ID, 'auto');
-      expect(store.getState().sessions[0]?.goal).toBe('auto');
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession({ titleUserEdited: false, goal: 'old' })] })
+      await store.getState().autoTitleSession(SESSION_ID, 'auto')
+      expect(store.getState().sessions[0]?.goal).toBe('auto')
+    })
 
     it('setSessionPermissionMode mutates the session row', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession()] });
-      await store.getState().setSessionPermissionMode(SESSION_ID, 'default');
-      expect(store.getState().sessions[0]?.permissionMode).toBe('default');
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession()] })
+      await store.getState().setSessionPermissionMode(SESSION_ID, 'default')
+      expect(store.getState().sessions[0]?.permissionMode).toBe('default')
+    })
 
     it('setSessionAutoRun toggles the flag', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession({ autoRun: false })] });
-      await store.getState().setSessionAutoRun(SESSION_ID, true);
-      expect(store.getState().sessions[0]?.autoRun).toBe(true);
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession({ autoRun: false })] })
+      await store.getState().setSessionAutoRun(SESSION_ID, true)
+      expect(store.getState().sessions[0]?.autoRun).toBe(true)
+    })
 
     it('archiveTask removes the session from active list and clears currentSessionId if it was current', async () => {
-      const store = await getStore();
+      const store = await getStore()
       store.setState({
         sessions: [buildSession()],
         currentSessionId: SESSION_ID,
-      });
-      await store.getState().archiveTask(SESSION_ID);
-      const s = store.getState();
-      expect(s.sessions).toEqual([]);
-      expect(s.currentSessionId).toBeNull();
-    });
+      })
+      await store.getState().archiveTask(SESSION_ID)
+      const s = store.getState()
+      expect(s.sessions).toEqual([])
+      expect(s.currentSessionId).toBeNull()
+    })
 
     it('unarchiveTask restores a session from archived cache to active when in same workspace', async () => {
-      const store = await getStore();
+      const store = await getStore()
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
-      } as Session;
+      } as Session
       store.setState({
         workspaces: [buildWorkspace()],
         currentWorkspaceId: WS_ID,
         archivedSessions: { [WS_ID]: [archived] },
-      });
-      await store.getState().unarchiveTask(SESSION_ID);
-      const s = store.getState();
-      expect(s.sessions.find((x) => x.id === SESSION_ID)).toBeDefined();
-      expect(s.archivedSessions[WS_ID]).toEqual([]);
-    });
+      })
+      await store.getState().unarchiveTask(SESSION_ID)
+      const s = store.getState()
+      expect(s.sessions.find((x) => x.id === SESSION_ID)).toBeDefined()
+      expect(s.archivedSessions[WS_ID]).toEqual([])
+    })
 
     it('deleteTask removes an archived session from the archived cache', async () => {
-      const store = await getStore();
+      const store = await getStore()
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
-      } as Session;
+      } as Session
       store.setState({
         workspaces: [buildWorkspace()],
         currentWorkspaceId: WS_ID,
         currentSessionId: SESSION_ID,
         archivedSessions: { [WS_ID]: [archived] },
-      });
-      await store.getState().deleteTask(SESSION_ID);
-      const s = store.getState();
-      expect(s.archivedSessions[WS_ID]).toEqual([]);
-      expect(s.currentSessionId).toBeNull();
-    });
+      })
+      await store.getState().deleteTask(SESSION_ID)
+      const s = store.getState()
+      expect(s.archivedSessions[WS_ID]).toEqual([])
+      expect(s.currentSessionId).toBeNull()
+    })
 
     describe('bulk archived ops', () => {
       function buildArchived(id: SessionId, goal: string): Session {
         return {
           ...buildSession({ id, goal }),
           archivedAt: NOW,
-        } as Session;
+        } as Session
       }
 
       it('bulkUnarchiveTask restores every selected session into the active list', async () => {
-        const store = await getStore();
+        const store = await getStore()
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
           archivedSessions: {
             [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
           },
-        });
-        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2]);
-        const s = store.getState();
-        expect(s.sessions.map((x) => x.id).sort()).toEqual([SESSION_ID, SESSION_ID_2].sort());
-        expect(s.archivedSessions[WS_ID]).toEqual([]);
-      });
+        })
+        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2])
+        const s = store.getState()
+        expect(s.sessions.map((x) => x.id).sort()).toEqual([SESSION_ID, SESSION_ID_2].sort())
+        expect(s.archivedSessions[WS_ID]).toEqual([])
+      })
 
       it('bulkUnarchiveTask keeps restoring after one session fails and reports the failure', async () => {
-        const store = await getStore();
-        const { unarchiveSession } = await import('@goodboy/db');
-        (unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        const store = await getStore()
+        const { unarchiveSession } = await import('@goodboy/db')
+        ;(unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
           new Error('db down'),
-        );
+        )
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
           archivedSessions: {
             [WS_ID]: [buildArchived(SESSION_ID, 'bad'), buildArchived(SESSION_ID_2, 'good')],
           },
-        });
-        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2]);
-        const s = store.getState();
-        expect(s.sessions.map((x) => x.id)).toEqual([SESSION_ID_2]);
-        expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID]);
-        expect(insertNotificationSpy).toHaveBeenCalled();
-      });
+        })
+        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2])
+        const s = store.getState()
+        expect(s.sessions.map((x) => x.id)).toEqual([SESSION_ID_2])
+        expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID])
+        expect(insertNotificationSpy).toHaveBeenCalled()
+      })
 
       it('bulkDeleteTask removes every selected session from the archived cache', async () => {
-        const store = await getStore();
+        const store = await getStore()
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
           archivedSessions: {
             [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
           },
-        });
-        await store.getState().bulkDeleteTask([SESSION_ID, SESSION_ID_2]);
-        expect(store.getState().archivedSessions[WS_ID]).toEqual([]);
-      });
+        })
+        await store.getState().bulkDeleteTask([SESSION_ID, SESSION_ID_2])
+        expect(store.getState().archivedSessions[WS_ID]).toEqual([])
+      })
 
       it('bulkDeleteTask keeps deleting after one session throws', async () => {
-        const store = await getStore();
-        const MISSING = 'session-missing' as SessionId;
+        const store = await getStore()
+        const MISSING = 'session-missing' as SessionId
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
           archivedSessions: {
             [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
           },
-        });
-        await store.getState().bulkDeleteTask([MISSING, SESSION_ID, SESSION_ID_2]);
-        expect(store.getState().archivedSessions[WS_ID]).toEqual([]);
-      });
+        })
+        await store.getState().bulkDeleteTask([MISSING, SESSION_ID, SESSION_ID_2])
+        expect(store.getState().archivedSessions[WS_ID]).toEqual([])
+      })
 
       it('bulkDeleteTask reports the exact failed-of-total count when a delete throws', async () => {
-        const store = await getStore();
-        const MISSING = 'session-missing' as SessionId;
-        const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined);
+        const store = await getStore()
+        const MISSING = 'session-missing' as SessionId
+        const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined)
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
@@ -704,53 +702,53 @@ describe('store contract', () => {
             [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
           },
           emitNotification: emitSpy as never,
-        });
-        await store.getState().bulkDeleteTask([MISSING, SESSION_ID]);
-        expect(store.getState().archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2]);
+        })
+        await store.getState().bulkDeleteTask([MISSING, SESSION_ID])
+        expect(store.getState().archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2])
         const summary = emitSpy.mock.calls.find((c) =>
           String((c as unknown[])[2]).startsWith('failed to delete'),
-        );
-        expect(summary?.[2]).toBe('failed to delete 1 of 2 sessions');
-      });
+        )
+        expect(summary?.[2]).toBe('failed to delete 1 of 2 sessions')
+      })
 
       it('bulkDeleteTask deletes sequentially in the given id order', async () => {
-        const store = await getStore();
-        const { deleteSession } = await import('@goodboy/db');
-        const spy = deleteSession as unknown as ReturnType<typeof vi.fn>;
+        const store = await getStore()
+        const { deleteSession } = await import('@goodboy/db')
+        const spy = deleteSession as unknown as ReturnType<typeof vi.fn>
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
           archivedSessions: {
             [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
           },
-        });
-        await store.getState().bulkDeleteTask([SESSION_ID_2, SESSION_ID]);
-        expect(spy.mock.calls.map((c) => c[1])).toEqual([SESSION_ID_2, SESSION_ID]);
-      });
+        })
+        await store.getState().bulkDeleteTask([SESSION_ID_2, SESSION_ID])
+        expect(spy.mock.calls.map((c) => c[1])).toEqual([SESSION_ID_2, SESSION_ID])
+      })
 
       it('bulkDeleteTask is a no-op and emits no notification for an empty selection', async () => {
-        const store = await getStore();
-        const { deleteSession } = await import('@goodboy/db');
-        await store.getState().bulkDeleteTask([]);
-        expect(deleteSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
-        expect(insertNotificationSpy).not.toHaveBeenCalled();
-      });
+        const store = await getStore()
+        const { deleteSession } = await import('@goodboy/db')
+        await store.getState().bulkDeleteTask([])
+        expect(deleteSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+        expect(insertNotificationSpy).not.toHaveBeenCalled()
+      })
 
       it('bulkUnarchiveTask is a no-op and emits no notification for an empty selection', async () => {
-        const store = await getStore();
-        const { unarchiveSession } = await import('@goodboy/db');
-        await store.getState().bulkUnarchiveTask([]);
-        expect(unarchiveSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
-        expect(insertNotificationSpy).not.toHaveBeenCalled();
-      });
+        const store = await getStore()
+        const { unarchiveSession } = await import('@goodboy/db')
+        await store.getState().bulkUnarchiveTask([])
+        expect(unarchiveSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+        expect(insertNotificationSpy).not.toHaveBeenCalled()
+      })
 
       it('bulkUnarchiveTask reports failed-of-total when every restore fails', async () => {
-        const store = await getStore();
-        const { unarchiveSession } = await import('@goodboy/db');
-        (unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+        const store = await getStore()
+        const { unarchiveSession } = await import('@goodboy/db')
+        ;(unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error('db down'),
-        );
-        const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined);
+        )
+        const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined)
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
@@ -758,20 +756,20 @@ describe('store contract', () => {
             [WS_ID]: [buildArchived(SESSION_ID, 'one'), buildArchived(SESSION_ID_2, 'two')],
           },
           emitNotification: emitSpy as never,
-        });
-        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2]);
-        const s = store.getState();
-        expect(s.sessions).toEqual([]);
+        })
+        await store.getState().bulkUnarchiveTask([SESSION_ID, SESSION_ID_2])
+        const s = store.getState()
+        expect(s.sessions).toEqual([])
         expect(s.archivedSessions[WS_ID]?.map((x) => x.id).sort()).toEqual(
           [SESSION_ID, SESSION_ID_2].sort(),
-        );
+        )
         const summary = emitSpy.mock.calls.find((c) =>
           String((c as unknown[])[2]).startsWith('failed to restore'),
-        );
-        expect(summary?.[2]).toBe('failed to restore 2 of 2 sessions');
-      });
-    });
-  });
+        )
+        expect(summary?.[2]).toBe('failed to restore 2 of 2 sessions')
+      })
+    })
+  })
 
   describe('createSession external task', () => {
     const GITLAB_TASK = {
@@ -780,90 +778,90 @@ describe('store contract', () => {
       identifier: 'acme/web#7',
       url: 'https://gitlab.com/acme/web/-/issues/7',
       title: 'Fix the thing',
-    };
+    }
 
     async function primeWorktree() {
-      const { listWorkspaces } = await import('@goodboy/db');
-      (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      const { listWorkspaces } = await import('@goodboy/db')
+      ;(listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildWorkspace(),
-      ]);
+      ])
       createWorktreeSpy.mockResolvedValueOnce({
         worktreePath: '/tmp/repo/wt',
         branchName: 'kay/101-fix-the-thing',
         slug: '101-fix-the-thing',
         reused: false,
-      });
+      })
     }
 
     it('persists a gitlab external task and caches it on the session', async () => {
-      const store = await getStore();
-      store.setState({ currentWorkspaceId: WS_ID });
-      await primeWorktree();
-      const { setSessionExternalTask } = await import('@goodboy/db');
-      const spy = setSessionExternalTask as unknown as ReturnType<typeof vi.fn>;
+      const store = await getStore()
+      store.setState({ currentWorkspaceId: WS_ID })
+      await primeWorktree()
+      const { setSessionExternalTask } = await import('@goodboy/db')
+      const spy = setSessionExternalTask as unknown as ReturnType<typeof vi.fn>
 
       const { session } = await store
         .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
+        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK })
 
-      expect(spy).toHaveBeenCalledTimes(1);
-      const cached = store.getState().sessionExternalTasks[session.id];
-      expect(cached?.provider).toBe('gitlab');
-      expect(cached?.externalId).toBe('101');
-      expect(cached?.sessionId).toBe(session.id);
-    });
+      expect(spy).toHaveBeenCalledTimes(1)
+      const cached = store.getState().sessionExternalTasks[session.id]
+      expect(cached?.provider).toBe('gitlab')
+      expect(cached?.externalId).toBe('101')
+      expect(cached?.sessionId).toBe(session.id)
+    })
 
     it('still creates the session but caches no task when persistence fails', async () => {
-      const store = await getStore();
-      store.setState({ currentWorkspaceId: WS_ID });
-      await primeWorktree();
-      const { setSessionExternalTask } = await import('@goodboy/db');
-      (setSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      const store = await getStore()
+      store.setState({ currentWorkspaceId: WS_ID })
+      await primeWorktree()
+      const { setSessionExternalTask } = await import('@goodboy/db')
+      ;(setSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error('db down'),
-      );
+      )
 
       const { session } = await store
         .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK });
+        .createSession({ workspaceId: WS_ID, goal: 'do gitlab work', externalTask: GITLAB_TASK })
 
-      expect(session.id).toBeDefined();
-      expect(store.getState().sessionExternalTasks[session.id]).toBeUndefined();
-    });
-  });
+      expect(session.id).toBeDefined()
+      expect(store.getState().sessionExternalTasks[session.id]).toBeUndefined()
+    })
+  })
 
   describe('config', () => {
     it('setSessionConfig writes verbosity through', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession()] });
-      await store.getState().setSessionConfig(SESSION_ID, { verbosity: 'brief' });
-      expect(store.getState().sessions[0]?.verbosity).toBe('brief');
-    });
+      const store = await getStore()
+      store.setState({ sessions: [buildSession()] })
+      await store.getState().setSessionConfig(SESSION_ID, { verbosity: 'brief' })
+      expect(store.getState().sessions[0]?.verbosity).toBe('brief')
+    })
 
     it('setAgentConfig writes verbosity through', async () => {
-      const store = await getStore();
-      const agent = buildAgent({ id: AGENT_ID });
-      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
-      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { verbosity: 'normal' });
-      const updated = store.getState().sessionPhaseRuns[SESSION_ID]?.find((r) => r.id === AGENT_ID);
-      expect(updated?.verbosity).toBe('normal');
-    });
+      const store = await getStore()
+      const agent = buildAgent({ id: AGENT_ID })
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } })
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { verbosity: 'normal' })
+      const updated = store.getState().sessionPhaseRuns[SESSION_ID]?.find((r) => r.id === AGENT_ID)
+      expect(updated?.verbosity).toBe('normal')
+    })
 
     it('setAgentConfig syncs provider and model pins used by turn routing', async () => {
-      const store = await getStore();
-      const agent = buildAgent({ id: AGENT_ID });
-      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+      const store = await getStore()
+      const agent = buildAgent({ id: AGENT_ID })
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } })
       await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, {
         providerOverride: 'cursor',
         modelOverride: 'cursor-auto',
-      });
-      expect(store.getState().agentProviderOverride[AGENT_ID]).toBe('cursor');
-      expect(store.getState().agentModelOverride[AGENT_ID]).toBe('cursor-auto');
+      })
+      expect(store.getState().agentProviderOverride[AGENT_ID]).toBe('cursor')
+      expect(store.getState().agentModelOverride[AGENT_ID]).toBe('cursor-auto')
       await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, {
         providerOverride: null,
         modelOverride: null,
-      });
-      expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
-      expect(store.getState().agentModelOverride[AGENT_ID]).toBeUndefined();
-    });
-  });
-});
+      })
+      expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined()
+      expect(store.getState().agentModelOverride[AGENT_ID]).toBeUndefined()
+    })
+  })
+})

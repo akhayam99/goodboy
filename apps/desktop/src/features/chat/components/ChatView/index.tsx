@@ -6,11 +6,11 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { ArrowDown } from 'lucide-react';
-import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
-import { Divider, ScrollFade } from '@goodboy/ui';
+} from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { ArrowDown } from 'lucide-react'
+import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types'
+import { Divider, ScrollFade } from '@goodboy/ui'
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -18,89 +18,86 @@ import {
   useSessionLoading,
   useSessionOpenQuestions,
   useTranscript,
-} from '../../../../store';
-import { detectParallelRunIds, reduceTranscript } from '../../utils/transcript-items';
-import { clusterOperations } from '../../utils/cluster-operations';
-import { classifyThinkingContext } from '../../utils/thinking-context';
-import { ThinkingIndicator } from '../ThinkingIndicator';
-import { TranscriptCard } from '../TranscriptCards';
-import { OperationsCluster } from '../OperationsCluster';
-import { AuthRequiredCallout } from '../AuthRequiredCallout';
-import { ChatBreadcrumb } from '../ChatBreadcrumb';
-import { ChatInput } from '../ChatInput';
+} from '../../../../store'
+import { detectParallelRunIds, reduceTranscript } from '../../utils/transcript-items'
+import { clusterOperations } from '../../utils/cluster-operations'
+import { classifyThinkingContext } from '../../utils/thinking-context'
+import { ThinkingIndicator } from '../ThinkingIndicator'
+import { TranscriptCard } from '../TranscriptCards'
+import { OperationsCluster } from '../OperationsCluster'
+import { AuthRequiredCallout } from '../AuthRequiredCallout'
+import { ChatBreadcrumb } from '../ChatBreadcrumb'
+import { ChatInput } from '../ChatInput'
 import {
   MergeDialog,
   type MergeConflict,
   type MergeResolution,
   type RunMeta,
-} from '../../../../features/permissions/components/MergeDialog';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
-import { worktreeDiff } from '../../../../features/worktree/worktree';
-import { OpenQuestionCluster } from './OpenQuestionCluster';
-import { ChatEmptyState } from './ChatEmptyState';
-import { ClusterProgressDashboard } from './ClusterProgressDashboard';
-import { selectClusterDashboard } from './clusterDashboard';
-import { ParallelColumn } from './ParallelColumn';
-import { useScrollPin } from './useScrollPin';
-import { dayKey, formatDayLabel } from './lib';
-import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
+} from '../../../../features/permissions/components/MergeDialog'
+import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog'
+import { worktreeDiff } from '../../../../features/worktree/worktree'
+import { OpenQuestionCluster } from './OpenQuestionCluster'
+import { ChatEmptyState } from './ChatEmptyState'
+import { ClusterProgressDashboard } from './ClusterProgressDashboard'
+import { selectClusterDashboard } from './clusterDashboard'
+import { ParallelColumn } from './ParallelColumn'
+import { useScrollPin } from './useScrollPin'
+import { dayKey, formatDayLabel } from './lib'
+import { TranscriptSkeleton } from './parts/TranscriptSkeleton'
 
 type ChatViewProps = {
-  session: Session;
-  isActive?: boolean;
-};
+  session: Session
+  isActive?: boolean
+}
 
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
+const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled'])
 
 export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
-  ) as AgentId | null;
-  const events = useTranscript(selectedAgentId);
-  const items = useMemo(() => reduceTranscript(events), [events]);
-  const taggedItems = useMemo(
-    () => ({ agentId: selectedAgentId, items }),
-    [selectedAgentId, items],
-  );
-  const deferredTagged = useDeferredValue(taggedItems);
-  const transcriptStale = deferredTagged.agentId !== selectedAgentId;
-  const deferredItems = deferredTagged.items;
-  const rows = useMemo(() => clusterOperations(deferredItems), [deferredItems]);
-  const loading = useSessionLoading(session.id);
+  ) as AgentId | null
+  const events = useTranscript(selectedAgentId)
+  const items = useMemo(() => reduceTranscript(events), [events])
+  const taggedItems = useMemo(() => ({ agentId: selectedAgentId, items }), [selectedAgentId, items])
+  const deferredTagged = useDeferredValue(taggedItems)
+  const transcriptStale = deferredTagged.agentId !== selectedAgentId
+  const deferredItems = deferredTagged.items
+  const rows = useMemo(() => clusterOperations(deferredItems), [deferredItems])
+  const loading = useSessionLoading(session.id)
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
-  );
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const advanceClusterImplementation = useAppStore((s) => s.advanceClusterImplementation);
-  const markAgentViewed = useAppStore((s) => s.markAgentViewed);
+  )
+  const selectAgent = useAppStore((s) => s.selectAgent)
+  const advanceClusterImplementation = useAppStore((s) => s.advanceClusterImplementation)
+  const markAgentViewed = useAppStore((s) => s.markAgentViewed)
   const selectedAgentLastFinishedAt = useAppStore((s) =>
     selectedAgentId
       ? (s.sessionPhaseRuns[session.id]?.find((r) => r.id === selectedAgentId)?.lastFinishedAt ??
         null)
       : null,
-  );
+  )
   const selectedAgentLastViewedAt = useAppStore((s) =>
     selectedAgentId
       ? (s.sessionPhaseRuns[session.id]?.find((r) => r.id === selectedAgentId)?.lastViewedAt ??
         null)
       : null,
-  );
+  )
 
   useEffect(() => {
     if (!isActive || !selectedAgentId || transcriptCached) {
-      return;
+      return
     }
-    void selectAgent(session.id, selectedAgentId);
-  }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
+    void selectAgent(session.id, selectedAgentId)
+  }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id])
 
   useEffect(() => {
     if (!isActive || !selectedAgentId || !selectedAgentLastFinishedAt) {
-      return;
+      return
     }
     if (selectedAgentLastViewedAt && selectedAgentLastViewedAt >= selectedAgentLastFinishedAt) {
-      return;
+      return
     }
-    void markAgentViewed(session.id, selectedAgentId);
+    void markAgentViewed(session.id, selectedAgentId)
   }, [
     isActive,
     selectedAgentId,
@@ -108,165 +105,165 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
     selectedAgentLastViewedAt,
     markAgentViewed,
     session.id,
-  ]);
+  ])
 
-  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
-  const authResults = useAppStore((s) => s.authResults);
-  const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
-  const { scrollerRef, pinned, onScroll } = useScrollPin([deferredItems], selectedAgentId);
-  const fadeHostRef = useRef<HTMLDivElement>(null);
+  const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null)
+  const authResults = useAppStore((s) => s.authResults)
+  const refreshProviders = useAppStore((s) => s.refreshProviders)
+  const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true')
+  const { scrollerRef, pinned, onScroll } = useScrollPin([deferredItems], selectedAgentId)
+  const fadeHostRef = useRef<HTMLDivElement>(null)
 
-  const provider = session.providerPreference.defaultProvider;
-  const providerAuthState = authResults?.[provider]?.state ?? null;
-  const providerIdentity = authResults?.[provider]?.identity ?? null;
-  const isProviderDisconnected = providerAuthState === 'disconnected';
+  const provider = session.providerPreference.defaultProvider
+  const providerAuthState = authResults?.[provider]?.state ?? null
+  const providerIdentity = authResults?.[provider]?.identity ?? null
+  const isProviderDisconnected = providerAuthState === 'disconnected'
 
   const agentState = useAppStore((s) => {
-    return selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null;
-  });
-  const agentKind = agentState?.kind ?? session.state.kind;
-  const isEnded = agentKind === 'ended';
-  const lastItem = items[items.length - 1];
-  const lastRow = rows[rows.length - 1];
+    return selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null
+  })
+  const agentKind = agentState?.kind ?? session.state.kind
+  const isEnded = agentKind === 'ended'
+  const lastItem = items[items.length - 1]
+  const lastRow = rows[rows.length - 1]
   const lastClusterRunning =
-    lastRow?.kind === 'operations' && lastRow.items.some((i) => i.kind === 'tool_call' && !i.ended);
+    lastRow?.kind === 'operations' && lastRow.items.some((i) => i.kind === 'tool_call' && !i.ended)
   const isThinking =
     agentKind === 'running' &&
     (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
-    !lastClusterRunning;
-  const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
+    !lastClusterRunning
+  const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem])
 
   const parallelRunIds = useMemo<ReadonlyArray<ProviderRunId>>(
     () => (flagOn ? detectParallelRunIds(events) : []),
     [events, flagOn],
-  );
+  )
 
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const sessionPlans = useAppStore((s) => s.sessionPlans[session.id] ?? EMPTY_ARRAY);
-  const agentTurnState = useAppStore(useShallow((s) => s.agentTurnState));
-  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY)
+  const sessionPlans = useAppStore((s) => s.sessionPlans[session.id] ?? EMPTY_ARRAY)
+  const agentTurnState = useAppStore(useShallow((s) => s.agentTurnState))
+  const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY)
 
   const clusterDashboard = useMemo(() => {
-    const base = selectClusterDashboard(phaseRuns, selectedAgentId ?? undefined, sessionPlans);
+    const base = selectClusterDashboard(phaseRuns, selectedAgentId ?? undefined, sessionPlans)
     if (!base) {
-      return null;
+      return null
     }
     const items = base.items.map((item) =>
       agentTurnState[item.agent.id]?.kind === 'running' && item.agent.status !== 'running'
         ? { ...item, agent: { ...item.agent, status: 'running' as const } }
         : item,
-    );
-    return { ...base, items };
-  }, [phaseRuns, selectedAgentId, sessionPlans, agentTurnState]);
-  const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
-  const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
+    )
+    return { ...base, items }
+  }, [phaseRuns, selectedAgentId, sessionPlans, agentTurnState])
+  const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY)
+  const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts)
 
   const allParallelTerminal = useMemo(() => {
     if (parallelRunIds.length === 0) {
-      return false;
+      return false
     }
     return parallelRunIds.every((rid) => {
-      const run = phaseRuns.find((r) => r.runId === rid);
-      return run ? TERMINAL_STATUSES.has(run.status) : false;
-    });
-  }, [parallelRunIds, phaseRuns]);
+      const run = phaseRuns.find((r) => r.runId === rid)
+      return run ? TERMINAL_STATUSES.has(run.status) : false
+    })
+  }, [parallelRunIds, phaseRuns])
 
-  const isSplitView = flagOn && parallelRunIds.length > 1;
+  const isSplitView = flagOn && parallelRunIds.length > 1
 
   useLayoutEffect(() => {
     if (isSplitView) {
-      return;
+      return
     }
-    const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto');
+    const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto')
     if (!viewport) {
-      return;
+      return
     }
-    scrollerRef.current = viewport;
-    viewport.addEventListener('scroll', onScroll, { passive: true });
-    return () => viewport.removeEventListener('scroll', onScroll);
-  }, [scrollerRef, onScroll, isSplitView]);
+    scrollerRef.current = viewport
+    viewport.addEventListener('scroll', onScroll, { passive: true })
+    return () => viewport.removeEventListener('scroll', onScroll)
+  }, [scrollerRef, onScroll, isSplitView])
 
   const onSelectRun = (runId: ProviderRunId) => {
     document
       .querySelector(`[data-run-column="${runId}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
-  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
-  const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false)
+  const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null)
   const diffLoader = useMemo(
     () => (worktreePath ? () => worktreeDiff(worktreePath) : undefined),
     [worktreePath],
-  );
+  )
 
   const handleOpenDiff = useCallback((filePath: string) => {
-    setDiffJumpFile(filePath);
-  }, []);
+    setDiffJumpFile(filePath)
+  }, [])
   const handleRefreshAuth = useCallback(() => {
-    void refreshProviders();
-  }, [refreshProviders]);
+    void refreshProviders()
+  }, [refreshProviders])
 
-  const openQuestions = useSessionOpenQuestions(session.id);
-  const answeredQuestions = useSessionAnsweredQuestions(session.id);
-  const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
-  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
-  const openQuestionScrollTarget = useAppStore((s) => s.openQuestionScrollTarget);
-  const clearOpenQuestionScroll = useAppStore((s) => s.clearOpenQuestionScroll);
-
-  useEffect(() => {
-    void loadSessionOpenQuestions(session.id);
-  }, [session.id, loadSessionOpenQuestions]);
+  const openQuestions = useSessionOpenQuestions(session.id)
+  const answeredQuestions = useSessionAnsweredQuestions(session.id)
+  const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions)
+  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions)
+  const openQuestionScrollTarget = useAppStore((s) => s.openQuestionScrollTarget)
+  const clearOpenQuestionScroll = useAppStore((s) => s.clearOpenQuestionScroll)
 
   useEffect(() => {
-    void loadSessionAnsweredQuestions(session.id);
-  }, [session.id, loadSessionAnsweredQuestions]);
+    void loadSessionOpenQuestions(session.id)
+  }, [session.id, loadSessionOpenQuestions])
+
+  useEffect(() => {
+    void loadSessionAnsweredQuestions(session.id)
+  }, [session.id, loadSessionAnsweredQuestions])
 
   const oqByTurnOrdinal = useMemo(() => {
-    const map = new Map<number, OpenQuestion[]>();
+    const map = new Map<number, OpenQuestion[]>()
     for (const q of [...openQuestions, ...answeredQuestions]) {
       if (q.createdByAgentId !== selectedAgentId || q.turnOrdinal == null) {
-        continue;
+        continue
       }
-      const bucket = map.get(q.turnOrdinal);
+      const bucket = map.get(q.turnOrdinal)
       if (bucket) {
-        bucket.push(q);
+        bucket.push(q)
       } else {
-        map.set(q.turnOrdinal, [q]);
+        map.set(q.turnOrdinal, [q])
       }
     }
     for (const bucket of map.values()) {
-      bucket.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      bucket.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     }
-    return map;
-  }, [openQuestions, answeredQuestions, selectedAgentId]);
+    return map
+  }, [openQuestions, answeredQuestions, selectedAgentId])
 
   useEffect(() => {
-    const target = openQuestionScrollTarget;
+    const target = openQuestionScrollTarget
     if (!target || target.agentId !== selectedAgentId || transcriptStale) {
-      return;
+      return
     }
-    const node = document.querySelector(`[data-oq-anchor="${target.questionId}"]`);
+    const node = document.querySelector(`[data-oq-anchor="${target.questionId}"]`)
     if (node) {
-      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      clearOpenQuestionScroll();
-      return;
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      clearOpenQuestionScroll()
+      return
     }
-    let hasOrdinalBearing = false;
+    let hasOrdinalBearing = false
     for (const cards of oqByTurnOrdinal.values()) {
       if (cards.some((q) => q.id === target.questionId)) {
-        hasOrdinalBearing = true;
-        break;
+        hasOrdinalBearing = true
+        break
       }
     }
     if (hasOrdinalBearing) {
-      return;
+      return
     }
-    const el = scrollerRef.current;
+    const el = scrollerRef.current
     if (el) {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }
-    clearOpenQuestionScroll();
+    clearOpenQuestionScroll()
   }, [
     openQuestionScrollTarget,
     selectedAgentId,
@@ -275,33 +272,33 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
     oqByTurnOrdinal,
     clearOpenQuestionScroll,
     scrollerRef,
-  ]);
+  ])
 
   const mergeConflicts = useMemo<ReadonlyArray<MergeConflict>>(
     () => rawMergeConflicts as ReadonlyArray<MergeConflict>,
     [rawMergeConflicts],
-  );
+  )
 
   const mergeRunMeta = useMemo<ReadonlyMap<ProviderRunId, RunMeta>>(() => {
-    const map = new Map<ProviderRunId, RunMeta>();
-    const stepNameById = new Map<string, string>();
+    const map = new Map<ProviderRunId, RunMeta>()
+    const stepNameById = new Map<string, string>()
     for (const workflow of sessionWorkflows ?? EMPTY_ARRAY) {
       for (const step of workflow.steps) {
-        stepNameById.set(step.id, step.name);
+        stepNameById.set(step.id, step.name)
       }
     }
     for (const run of phaseRuns) {
       if (!run.runId) {
-        continue;
+        continue
       }
-      const stepName = run.stepId ? stepNameById.get(run.stepId) : undefined;
+      const stepName = run.stepId ? stepNameById.get(run.stepId) : undefined
       map.set(run.runId as ProviderRunId, {
         agentName: run.name,
         ...(stepName ? { stepName } : {}),
-      });
+      })
     }
-    return map;
-  }, [phaseRuns, sessionWorkflows]);
+    return map
+  }, [phaseRuns, sessionWorkflows])
 
   const terminalRunStatuses = useMemo(
     () =>
@@ -313,18 +310,18 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
           status: r.status,
         })),
     [phaseRuns],
-  );
+  )
 
   const onMergeResolve = (picks: Record<string, MergeResolution>) => {
-    const resolvedPicks: Record<string, string> = {};
+    const resolvedPicks: Record<string, string> = {}
     for (const [file, pick] of Object.entries(picks)) {
       if (pick !== '__skip__') {
-        resolvedPicks[file] = pick;
+        resolvedPicks[file] = pick
       }
     }
-    void resolveMergeConflicts(session.id, resolvedPicks, terminalRunStatuses);
-    setMergeDialogOpen(false);
-  };
+    void resolveMergeConflicts(session.id, resolvedPicks, terminalRunStatuses)
+    setMergeDialogOpen(false)
+  }
 
   if (isSplitView) {
     return (
@@ -389,7 +386,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
           jumpToFile={diffJumpFile ?? undefined}
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -443,40 +440,40 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
               aria-relevant="additions"
             >
               {(() => {
-                const out: React.ReactNode[] = [];
-                let lastDay: string | null = null;
-                let userTurnOrdinal = 0;
+                const out: React.ReactNode[] = []
+                let lastDay: string | null = null
+                let userTurnOrdinal = 0
 
                 const flushOrdinal = (ordinal: number) => {
-                  const cards = oqByTurnOrdinal.get(ordinal);
+                  const cards = oqByTurnOrdinal.get(ordinal)
                   if (!cards || cards.length === 0) {
-                    return;
+                    return
                   }
                   out.push(
                     <li key={`oq-${ordinal}`}>
                       <OpenQuestionCluster questions={cards} sessionId={session.id} />
                     </li>,
-                  );
-                };
+                  )
+                }
 
                 rows.forEach((row, idx) => {
                   if (row.kind === 'item' && row.item.kind === 'oq_answer') {
-                    flushOrdinal(userTurnOrdinal);
-                    userTurnOrdinal += 1;
-                    return;
+                    flushOrdinal(userTurnOrdinal)
+                    userTurnOrdinal += 1
+                    return
                   }
                   if (row.kind === 'item' && row.item.kind === 'user_text') {
-                    flushOrdinal(userTurnOrdinal);
-                    userTurnOrdinal += 1;
-                    const at = row.item.at;
-                    const day = dayKey(at);
-                    const dayChanged = day !== lastDay;
+                    flushOrdinal(userTurnOrdinal)
+                    userTurnOrdinal += 1
+                    const at = row.item.at
+                    const day = dayKey(at)
+                    const dayChanged = day !== lastDay
                     if (idx > 0 && !dayChanged) {
                       out.push(
                         <li key={`turn-${row.key}`}>
                           <Divider />
                         </li>,
-                      );
+                      )
                     }
                     if (dayChanged) {
                       out.push(
@@ -485,8 +482,8 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                             {formatDayLabel(at)}
                           </span>
                         </li>,
-                      );
-                      lastDay = day;
+                      )
+                      lastDay = day
                     }
                   }
                   out.push(
@@ -514,11 +511,11 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
                         />
                       )}
                     </li>,
-                  );
-                });
+                  )
+                })
 
-                flushOrdinal(userTurnOrdinal);
-                return out;
+                flushOrdinal(userTurnOrdinal)
+                return out
               })()}
               {isThinking ? (
                 <li>
@@ -535,8 +532,8 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
             title="jump to latest"
             className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
-              const el = scrollerRef.current;
-              el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+              const el = scrollerRef.current
+              el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
             }}
           >
             <ArrowDown size={14} aria-hidden />
@@ -564,5 +561,5 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
         jumpToFile={diffJumpFile ?? undefined}
       />
     </div>
-  );
-};
+  )
+}

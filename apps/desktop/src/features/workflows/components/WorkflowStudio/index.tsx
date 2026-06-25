@@ -1,13 +1,13 @@
-import { Layers } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
-import { WorkflowsPanel } from '../WorkflowsPanel';
-import { StudioShell } from '../../../../shared/components/StudioShell';
+import { Layers } from 'lucide-react'
+import type { WorkspaceId } from '@goodboy/types'
+import { WorkflowsPanel } from '../WorkflowsPanel'
+import { StudioShell } from '../../../../shared/components/StudioShell'
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
-  readonly onClose: () => void;
-};
+  readonly workspaceId: WorkspaceId
+  readonly workspaceName: string
+  readonly onClose: () => void
+}
 
 export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) => {
   return (
@@ -24,5 +24,5 @@ export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) =
         </div>
       )}
     </StudioShell>
-  );
-};
+  )
+}

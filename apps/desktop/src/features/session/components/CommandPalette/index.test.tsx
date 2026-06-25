@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
@@ -17,7 +17,7 @@ const { state, toastMock } = vi.hoisted(() => ({
     runScript: vi.fn(async () => ({ exitCode: 0 })),
   },
   toastMock: vi.fn(),
-}));
+}))
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
@@ -26,33 +26,33 @@ vi.mock('../../../../store', () => ({
   useSessions: () => [],
   useCurrentWorkspace: () => null,
   useCurrentSession: () => null,
-}));
+}))
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
-}));
+}))
 
-import { CommandPalette } from './index';
+import { CommandPalette } from './index'
 
 beforeEach(() => {
-  state.skills = {};
-  state.phaseTemplates = {};
-  state.workspaceScripts = {};
-  state.sessionPhaseRuns = {};
-  state.sessionWorktrees = {};
-  state.agentKindOverride = {};
-  toastMock.mockReset();
-});
-afterEach(cleanup);
+  state.skills = {}
+  state.phaseTemplates = {}
+  state.workspaceScripts = {}
+  state.sessionPhaseRuns = {}
+  state.sessionWorktrees = {}
+  state.agentKindOverride = {}
+  toastMock.mockReset()
+})
+afterEach(cleanup)
 
 describe('CommandPalette', () => {
   it('renders the search input with the default placeholder', () => {
-    render(<CommandPalette onClose={vi.fn()} />);
-    expect(screen.getByLabelText(/command palette search/i)).toBeDefined();
-  });
+    render(<CommandPalette onClose={vi.fn()} />)
+    expect(screen.getByLabelText(/command palette search/i)).toBeDefined()
+  })
 
   it('shows the no-results row when nothing matches the query', () => {
-    render(<CommandPalette onClose={vi.fn()} initialQuery="zzzz" />);
-    expect(screen.getByText(/no results/i)).toBeDefined();
-  });
-});
+    render(<CommandPalette onClose={vi.fn()} initialQuery="zzzz" />)
+    expect(screen.getByText(/no results/i)).toBeDefined()
+  })
+})

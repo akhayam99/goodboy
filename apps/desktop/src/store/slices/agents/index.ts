@@ -1,17 +1,17 @@
-import { activateNextResolver } from './activateNextResolver';
-import { clearAgentAttachments } from './clearAgentAttachments';
-import { clearAgentDraft } from './clearAgentDraft';
-import { deleteAgent } from './deleteAgent';
-import { deselectAgent } from './deselectAgent';
-import { markAgentViewed } from './markAgentViewed';
-import { renameAgent } from './renameAgent';
-import { selectAgent } from './selectAgent';
-import { setAgentAttachments } from './setAgentAttachments';
-import { setAgentDraft } from './setAgentDraft';
-import { setAgentEffortOverride } from './setAgentEffortOverride';
-import { setAgentKind } from './setAgentKind';
-import { spawnAgent } from './spawnAgent';
-import type { GetFn, SetFn } from './types';
+import { activateNextResolver } from './activateNextResolver'
+import { clearAgentAttachments } from './clearAgentAttachments'
+import { clearAgentDraft } from './clearAgentDraft'
+import { deleteAgent } from './deleteAgent'
+import { deselectAgent } from './deselectAgent'
+import { markAgentViewed } from './markAgentViewed'
+import { renameAgent } from './renameAgent'
+import { selectAgent } from './selectAgent'
+import { setAgentAttachments } from './setAgentAttachments'
+import { setAgentDraft } from './setAgentDraft'
+import { setAgentEffortOverride } from './setAgentEffortOverride'
+import { setAgentKind } from './setAgentKind'
+import { spawnAgent } from './spawnAgent'
+import type { GetFn, SetFn } from './types'
 
 export const createAgentsSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -28,5 +28,5 @@ export const createAgentsSlice = (set: SetFn, get: GetFn) => {
     spawnAgent: spawnAgent(set, get),
     deleteAgent: deleteAgent(set, get),
     activateNextResolver: activateNextResolver(set, get),
-  };
-};
+  }
+}

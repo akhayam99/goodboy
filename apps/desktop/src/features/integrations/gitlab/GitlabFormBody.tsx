@@ -1,96 +1,96 @@
-import { useEffect, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
-import { useAppStore } from '../../../store';
-import { ghClearToken, ghStatus } from '../../github/github';
-import { formatError } from '../../../shared/lib/errors';
+import { useEffect, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types'
+import { Button, Input } from '@goodboy/ui'
+import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react'
+import { useAppStore } from '../../../store'
+import { ghClearToken, ghStatus } from '../../github/github'
+import { formatError } from '../../../shared/lib/errors'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  onConnected?: () => void;
-};
+  workspaceId: WorkspaceId
+  onConnected?: () => void
+}
 
-const DEFAULT_HOST = 'https://gitlab.com';
+const DEFAULT_HOST = 'https://gitlab.com'
 
 function normalizeHost(input: string): string {
-  const trimmed = input.trim().replace(/\/+$/, '');
+  const trimmed = input.trim().replace(/\/+$/, '')
   if (trimmed === '') {
-    return DEFAULT_HOST;
+    return DEFAULT_HOST
   }
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
   try {
-    const url = new URL(withScheme);
+    const url = new URL(withScheme)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return DEFAULT_HOST;
+      return DEFAULT_HOST
     }
-    return `${url.protocol}//${url.host}`;
+    return `${url.protocol}//${url.host}`
   } catch {
-    return DEFAULT_HOST;
+    return DEFAULT_HOST
   }
 }
 
 export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []))
   const gitlab =
-    integrations.find((i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab') ?? null;
-  const config = gitlab ? gitlab.config : null;
-  const connectGitlab = useAppStore((s) => s.connectGitlab);
-  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
+    integrations.find((i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab') ?? null
+  const config = gitlab ? gitlab.config : null
+  const connectGitlab = useAppStore((s) => s.connectGitlab)
+  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab)
 
-  const [host, setHost] = useState(DEFAULT_HOST);
-  const [token, setToken] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [githubScoped, setGithubScoped] = useState(false);
+  const [host, setHost] = useState(DEFAULT_HOST)
+  const [token, setToken] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [githubScoped, setGithubScoped] = useState(false)
 
   useEffect(() => {
     void ghStatus(workspaceId)
       .then((status) => setGithubScoped(status.scoped ?? false))
-      .catch(() => setGithubScoped(false));
-  }, [workspaceId]);
+      .catch(() => setGithubScoped(false))
+  }, [workspaceId])
 
   const onConnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await connectGitlab(workspaceId, normalizeHost(host), token.trim());
-      setToken('');
-      onConnected?.();
+      await connectGitlab(workspaceId, normalizeHost(host), token.trim())
+      setToken('')
+      onConnected?.()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onDisconnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await disconnectGitlab(workspaceId);
+      await disconnectGitlab(workspaceId)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onDisconnectGithub = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await ghClearToken(workspaceId);
-      setGithubScoped(false);
+      await ghClearToken(workspaceId)
+      setGithubScoped(false)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
-  const tokenUrl = `${normalizeHost(host)}/-/profile/personal_access_tokens`;
+  const tokenUrl = `${normalizeHost(host)}/-/profile/personal_access_tokens`
 
   return (
     <div className="flex flex-col gap-5">
@@ -189,5 +189,5 @@ export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

@@ -1,12 +1,12 @@
-import { Plus } from 'lucide-react';
+import { Plus } from 'lucide-react'
 
 type Props = {
-  readonly ghost: { label: string; x: number; y: number } | null;
-};
+  readonly ghost: { label: string; x: number; y: number } | null
+}
 
 export const DragGhost = ({ ghost }: Props) => {
   if (!ghost) {
-    return null;
+    return null
   }
   return (
     <div
@@ -16,5 +16,5 @@ export const DragGhost = ({ ghost }: Props) => {
       <Plus size={11} className="text-primary" aria-hidden />
       {ghost.label}
     </div>
-  );
-};
+  )
+}

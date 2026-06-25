@@ -1,9 +1,9 @@
-import { addWorkspace } from './addWorkspace';
-import { addCompositeWorkspace } from './addCompositeWorkspace';
-import { deleteWorkspace } from './deleteWorkspace';
-import { setCurrentWorkspace } from './setCurrentWorkspace';
-import { wipeLocalDatabase } from './wipeLocalDatabase';
-import type { GetFn, SetFn } from './types';
+import { addWorkspace } from './addWorkspace'
+import { addCompositeWorkspace } from './addCompositeWorkspace'
+import { deleteWorkspace } from './deleteWorkspace'
+import { setCurrentWorkspace } from './setCurrentWorkspace'
+import { wipeLocalDatabase } from './wipeLocalDatabase'
+import type { GetFn, SetFn } from './types'
 
 export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -12,5 +12,5 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     deleteWorkspace: deleteWorkspace(set, get),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
     wipeLocalDatabase: wipeLocalDatabase(set, get),
-  };
-};
+  }
+}

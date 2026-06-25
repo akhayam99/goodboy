@@ -6,16 +6,16 @@ export type Tone =
   | 'primary'
   | 'accent'
   | 'merged'
-  | 'neutral';
+  | 'neutral'
 
 export type TintClasses = {
-  readonly bg: string;
-  readonly ring: string;
-  readonly border: string;
-  readonly text: string;
-  readonly icon: string;
-  readonly dot: string;
-};
+  readonly bg: string
+  readonly ring: string
+  readonly border: string
+  readonly text: string
+  readonly icon: string
+  readonly dot: string
+}
 
 const TINT: Record<Tone, TintClasses> = {
   success: {
@@ -82,6 +82,6 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-muted-foreground',
     dot: 'bg-muted-foreground',
   },
-};
+}
 
-export const tintClasses = (tone: Tone): TintClasses => TINT[tone];
+export const tintClasses = (tone: Tone): TintClasses => TINT[tone]

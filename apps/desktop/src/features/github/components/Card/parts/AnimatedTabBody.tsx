@@ -1,33 +1,33 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 type Props = {
-  readonly activeKey: string;
-  readonly children: ReactNode;
-};
+  readonly activeKey: string
+  readonly children: ReactNode
+}
 
 export const AnimatedTabBody = ({ activeKey, children }: Props) => {
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | null>(null);
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number | null>(null)
 
   useLayoutEffect(() => {
-    const el = innerRef.current;
+    const el = innerRef.current
     if (!el) {
-      return;
+      return
     }
-    setHeight(el.offsetHeight);
+    setHeight(el.offsetHeight)
     const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
+      const entry = entries[0]
       if (!entry) {
-        return;
+        return
       }
-      const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+      const h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height
       if (h != null) {
-        setHeight(h);
+        setHeight(h)
       }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [activeKey]);
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [activeKey])
 
   return (
     <div
@@ -38,5 +38,5 @@ export const AnimatedTabBody = ({ activeKey, children }: Props) => {
         {children}
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }))
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }))
+vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }))
 vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
-}));
+}))
 
 vi.mock('../../store', () => ({
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
@@ -57,8 +57,8 @@ vi.mock('../../store', () => ({
       loadBudgetRules: vi.fn(),
       saveBudgetRule: vi.fn(),
       deleteBudgetRule: vi.fn(),
-    };
-    return selector(state);
+    }
+    return selector(state)
   }),
   useCurrentSession: vi.fn().mockReturnValue(null),
   useCurrentWorkspace: vi.fn().mockReturnValue(null),
@@ -66,44 +66,44 @@ vi.mock('../../store', () => ({
   useSessions: vi.fn().mockReturnValue([]),
   useSessionSlots: vi.fn().mockReturnValue([]),
   EMPTY_ARRAY: [] as never[],
-}));
+}))
 
 vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
   invokePermissionRuleList: vi.fn().mockResolvedValue([]),
   invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),
   invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
-}));
+}))
 
 vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
-}));
+}))
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
-import { runA11yCheck } from './utils';
-import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
-import { BootSplash } from '../../app/components/BootSplash';
-import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
-import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
-import { StatusBar } from '../../app/components/StatusBar';
-import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { QuickActionsPopover } from '../../features/quick-actions';
-import { ToastProvider } from '../../app/components/Toast';
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render } from '@testing-library/react'
+import type { WorkspaceId } from '@goodboy/types'
+import { runA11yCheck } from './utils'
+import { NotificationCenter } from '../../features/notifications/components/NotificationCenter'
+import { BootSplash } from '../../app/components/BootSplash'
+import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel'
+import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar'
+import { StatusBar } from '../../app/components/StatusBar'
+import { SkillsPanel } from '../../features/skills/components/SkillsPanel'
+import { QuickActionsPopover } from '../../features/quick-actions'
+import { ToastProvider } from '../../app/components/Toast'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
-const WS_ID = 'ws-test' as WorkspaceId;
+const WS_ID = 'ws-test' as WorkspaceId
 
 describe('a11y smoke, NotificationCenter', () => {
   it('no violations (empty state)', async () => {
-    const { container } = render(<NotificationCenter />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    const { container } = render(<NotificationCenter />)
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, Toast / ToastProvider', () => {
   it('no violations (empty toast stack)', async () => {
@@ -111,25 +111,25 @@ describe('a11y smoke, Toast / ToastProvider', () => {
       <ToastProvider>
         <div />
       </ToastProvider>,
-    );
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    )
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, BootSplash', () => {
   it('no violations (loading phase)', async () => {
-    const { container } = render(<BootSplash phase="loading-settings" error={null} />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
+    const { container } = render(<BootSplash phase="loading-settings" error={null} />)
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
 
   it('no violations (boot error)', async () => {
-    const { container } = render(<BootSplash phase="error" error="failed to connect" />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    const { container } = render(<BootSplash phase="error" error="failed to connect" />)
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, WorkspacesSidebar', () => {
   it('no violations (no workspace selected)', async () => {
@@ -146,11 +146,11 @@ describe('a11y smoke, WorkspacesSidebar', () => {
         onOpenBudget={vi.fn()}
         onToggleCollapse={vi.fn()}
       />,
-    );
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    )
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, StatusBar', () => {
   it('no violations (idle, no session)', async () => {
@@ -158,19 +158,19 @@ describe('a11y smoke, StatusBar', () => {
       <ToastProvider>
         <StatusBar />
       </ToastProvider>,
-    );
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    )
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, SkillsPanel', () => {
   it('no violations (no skills)', async () => {
-    const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    const { container } = render(<SkillsPanel workspaceId={WS_ID} />)
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, QuickActionsPopover', () => {
   it('no violations (empty items)', async () => {
@@ -181,19 +181,19 @@ describe('a11y smoke, QuickActionsPopover', () => {
         onSelect={vi.fn()}
         onDismiss={vi.fn()}
       />,
-    );
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
+    )
+    const { violations } = await runA11yCheck(container)
+    expect(violations).toHaveLength(0)
+  })
+})
 
 describe('a11y smoke, SettingsStudio app scope', () => {
-  const KNOWN_VIOLATIONS = ['label'];
+  const KNOWN_VIOLATIONS = ['label']
 
   it('no new violations beyond whitelisted (panel open)', async () => {
-    const { container } = render(<AppScopePanel requestClose={vi.fn()} />);
-    const { violations } = await runA11yCheck(container);
-    const unexpected = violations.filter((v) => !KNOWN_VIOLATIONS.includes(v.id));
-    expect(unexpected).toHaveLength(0);
-  });
-});
+    const { container } = render(<AppScopePanel requestClose={vi.fn()} />)
+    const { violations } = await runA11yCheck(container)
+    const unexpected = violations.filter((v) => !KNOWN_VIOLATIONS.includes(v.id))
+    expect(unexpected).toHaveLength(0)
+  })
+})

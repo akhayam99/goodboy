@@ -1,32 +1,32 @@
-import { useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import { Check, ChevronDown } from 'lucide-react';
-import { PROVIDER_LABEL, PROVIDER_DOT } from '../../../chat/utils/chat-constants';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
+import { useRef, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import type { ProviderId } from '@goodboy/types'
+import { Check, ChevronDown } from 'lucide-react'
+import { PROVIDER_LABEL, PROVIDER_DOT } from '../../../chat/utils/chat-constants'
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils'
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside'
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection'
 
-type Value = ProviderId | '';
+type Value = ProviderId | ''
 
 type Props = {
-  value: Value;
-  providers: ReadonlyArray<ProviderId>;
-  onChange: (value: Value) => void;
-  disabled: boolean;
-};
+  value: Value
+  providers: ReadonlyArray<ProviderId>
+  onChange: (value: Value) => void
+  disabled: boolean
+}
 
 function label(value: Value): string {
-  return value === '' ? 'Default' : PROVIDER_LABEL[value];
+  return value === '' ? 'Default' : PROVIDER_LABEL[value]
 }
 
 export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useClickOutside(containerRef, () => setOpen(false))
+  const direction = useDropdownDirection(containerRef, open)
 
-  const options: ReadonlyArray<Value> = ['', ...providers];
+  const options: ReadonlyArray<Value> = ['', ...providers]
 
   return (
     <div ref={containerRef} className="relative">
@@ -60,14 +60,14 @@ export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) 
       {open ? (
         <div className={cn(POPUP_BASE, 'min-w-[9rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
           {options.map((opt) => {
-            const active = value === opt;
+            const active = value === opt
             return (
               <button
                 key={opt === '' ? '__default' : opt}
                 type="button"
                 onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
+                  onChange(opt)
+                  setOpen(false)
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
@@ -90,10 +90,10 @@ export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) 
                 <span className="flex-1 truncate">{label(opt)}</span>
                 {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
-            );
+            )
           })}
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

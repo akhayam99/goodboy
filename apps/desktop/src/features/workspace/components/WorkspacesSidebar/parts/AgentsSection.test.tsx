@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type {
   Agent,
   AgentId,
@@ -11,19 +11,19 @@ import type {
   StepId,
   WorkflowRunId,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 const h = vi.hoisted(() => {
-  const state: Record<string, unknown> = {};
+  const state: Record<string, unknown> = {}
   const setPanelSectionExpanded = vi.fn((sessionId: string, section: string, expanded: boolean) => {
-    const prev = (state.sessionPanelExpanded ?? {}) as Record<string, Record<string, boolean>>;
+    const prev = (state.sessionPanelExpanded ?? {}) as Record<string, Record<string, boolean>>
     state.sessionPanelExpanded = {
       ...prev,
       [sessionId]: { ...prev[sessionId], [section]: expanded },
-    };
-  });
-  return { state, setPanelSectionExpanded };
-});
+    }
+  })
+  return { state, setPanelSectionExpanded }
+})
 
 vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
@@ -33,11 +33,11 @@ vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: [] as never[],
   agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean): boolean => {
     if (isCurrentlyViewed || agent.status === 'skipped' || !agent.lastFinishedAt) {
-      return false;
+      return false
     }
-    return !agent.lastViewedAt || agent.lastFinishedAt > agent.lastViewedAt;
+    return !agent.lastViewedAt || agent.lastFinishedAt > agent.lastViewedAt
   },
-}));
+}))
 
 vi.mock('@goodboy/ui', () => ({
   SectionHeader: ({ label, action }: { label: string; action?: unknown }) => (
@@ -47,7 +47,7 @@ vi.mock('@goodboy/ui', () => ({
     </div>
   ),
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
-}));
+}))
 
 vi.mock('./SectionToggle', () => ({
   SectionToggle: ({
@@ -55,68 +55,68 @@ vi.mock('./SectionToggle', () => ({
     label,
     onToggle,
   }: {
-    expanded: boolean;
-    label: string;
-    onToggle: () => void;
+    expanded: boolean
+    label: string
+    onToggle: () => void
   }) => (
     <button data-testid={`toggle-${label}`} onClick={onToggle}>
       {expanded ? 'expanded' : 'collapsed'}
     </button>
   ),
-}));
+}))
 
 vi.mock('./PlanReadySuggestion', () => ({
   PlanReadySuggestion: () => <div data-testid="plan-ready" />,
-}));
-vi.mock('./SpawnAgentControl', () => ({ SpawnAgentControl: () => <div data-testid="spawn" /> }));
+}))
+vi.mock('./SpawnAgentControl', () => ({ SpawnAgentControl: () => <div data-testid="spawn" /> }))
 vi.mock('./CollapsedSummary', () => ({
   CollapsedSummary: ({ text }: { text: string }) => <div data-testid="collapsed">{text}</div>,
-}));
+}))
 vi.mock('./AgentRow', () => ({
   AgentRow: ({ run, onClick }: { run: Agent; onClick?: () => void }) => (
     <li data-testid="agent-row">
       <button onClick={onClick}>{run.name}</button>
     </li>
   ),
-}));
+}))
 vi.mock('./WorkflowStartButton', () => ({
   WorkflowStartButton: () => <div data-testid="wf-start" />,
-}));
-vi.mock('./WorkflowStepRow', () => ({ WorkflowStepRow: () => null }));
-vi.mock('./ResolveCluster', () => ({ ResolveCluster: () => null }));
-vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }));
-vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
-vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
+}))
+vi.mock('./WorkflowStepRow', () => ({ WorkflowStepRow: () => null }))
+vi.mock('./ResolveCluster', () => ({ ResolveCluster: () => null }))
+vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }))
+vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }))
+vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }))
 vi.mock('../../../../scripts/components/ScriptsSection', () => ({
   ScriptsSection: () => <div data-testid="scripts" />,
-}));
+}))
 vi.mock(
   '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip',
   () => ({ GoalAttachmentsStrip: () => null }),
-);
-vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
+)
+vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }))
 
 vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
   pickNextWorkflowStep: () => null,
-}));
+}))
 vi.mock('../../../../../features/context/openQuestionsGate', () => ({
   workflowRunHasOpenQuestions: () => false,
-}));
+}))
 vi.mock('../../../../../features/session/agent-row-format', () => ({
   computeLatestTelemetryByAgentId: () => new Map(),
-}));
+}))
 vi.mock('../../../../../features/session/agent-kind', () => ({
   AGENT_KIND_DEFAULTS: new Proxy({}, { get: () => ({ model: 'm' }) }),
   inferAgentKindFromName: () => 'implementer',
   resolveAgentKind: () => 'implementer',
-}));
-vi.mock('../../../../../shared/lib/errors', () => ({ formatError: (e: unknown) => String(e) }));
+}))
+vi.mock('../../../../../shared/lib/errors', () => ({ formatError: (e: unknown) => String(e) }))
 
-import { AgentsSection } from './AgentsSection';
+import { AgentsSection } from './AgentsSection'
 
-const WS_ID = 'ws-1' as WorkspaceId;
-const SESSION_ID = 'session-1' as SessionId;
-const NOW = '2026-06-16T00:00:00.000Z' as IsoDateTime;
+const WS_ID = 'ws-1' as WorkspaceId
+const SESSION_ID = 'session-1' as SessionId
+const NOW = '2026-06-16T00:00:00.000Z' as IsoDateTime
 
 function buildSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -133,7 +133,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
-  };
+  }
 }
 
 function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
@@ -143,11 +143,11 @@ function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
     name: 'agent one',
     status: 'pending',
     ...overrides,
-  };
+  }
 }
 
 function reset() {
-  Object.keys(h.state).forEach((k) => delete h.state[k]);
+  Object.keys(h.state).forEach((k) => delete h.state[k])
   Object.assign(h.state, {
     currentSessionId: null,
     sessionPhaseRuns: {},
@@ -181,47 +181,47 @@ function reset() {
     sessionPanelExpanded: {},
     workflowExpand: {},
     toggleWorkflowExpand: vi.fn(),
-  });
+  })
 }
 
 describe('AgentsSection collapse defaults', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    reset();
-  });
+    vi.clearAllMocks()
+    reset()
+  })
 
   afterEach(() => {
-    cleanup();
-  });
+    cleanup()
+  })
 
   it('empty session: workflow expanded, agents collapsed with no-agents summary', () => {
-    render(<AgentsSection task={buildSession()} />);
+    render(<AgentsSection task={buildSession()} />)
 
-    expect(screen.getByTestId('toggle-workflow').textContent).toBe('expanded');
-    expect(screen.queryByTestId('wf-start')).not.toBeNull();
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
-    expect(screen.getByTestId('collapsed').textContent).toBe('No agents yet');
-    expect(screen.queryByTestId('spawn')).toBeNull();
-  });
+    expect(screen.getByTestId('toggle-workflow').textContent).toBe('expanded')
+    expect(screen.queryByTestId('wf-start')).not.toBeNull()
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed')
+    expect(screen.getByTestId('collapsed').textContent).toBe('No agents yet')
+    expect(screen.queryByTestId('spawn')).toBeNull()
+  })
 
   it('renders PlanReadySuggestion even when agents collapsed', () => {
-    render(<AgentsSection task={buildSession()} />);
+    render(<AgentsSection task={buildSession()} />)
 
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
-    expect(screen.queryByTestId('plan-ready')).not.toBeNull();
-  });
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed')
+    expect(screen.queryByTestId('plan-ready')).not.toBeNull()
+  })
 
   it('with agents present, agents section defaults expanded', () => {
-    h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] };
-    render(<AgentsSection task={buildSession()} />);
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] }
+    render(<AgentsSection task={buildSession()} />)
 
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded');
-    expect(screen.getByTestId('agent-row').textContent).toBe('agent one');
-    expect(screen.queryByTestId('spawn')).not.toBeNull();
-  });
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded')
+    expect(screen.getByTestId('agent-row').textContent).toBe('agent one')
+    expect(screen.queryByTestId('spawn')).not.toBeNull()
+  })
 
   it('agent count excludes workflow-step and child agents', () => {
-    h.state.sessionPanelExpanded = { [SESSION_ID]: { agents: false } };
+    h.state.sessionPanelExpanded = { [SESSION_ID]: { agents: false } }
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [
         buildAgent({ id: 'agent-1' as AgentId }),
@@ -232,15 +232,15 @@ describe('AgentsSection collapse defaults', () => {
         }),
         buildAgent({ id: 'child-1' as AgentId, parentAgentId: 'agent-1' as AgentId }),
       ],
-    };
-    render(<AgentsSection task={buildSession()} />);
+    }
+    render(<AgentsSection task={buildSession()} />)
 
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
-    expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
-  });
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed')
+    expect(screen.getByTestId('collapsed').textContent).toBe('1 agent')
+  })
 
   it('workflow unread badge counts step agents and their cluster children', () => {
-    const RUN_ID = 'run-1' as WorkflowRunId;
+    const RUN_ID = 'run-1' as WorkflowRunId
     const workflow = {
       id: 'wf-def-1',
       workspaceId: WS_ID,
@@ -248,8 +248,8 @@ describe('AgentsSection collapse defaults', () => {
       steps: [{ id: 'step-1' as StepId, name: 'implement' }],
       createdAt: NOW,
       updatedAt: NOW,
-    };
-    h.state.sessionWorkflows = { [SESSION_ID]: [workflow] };
+    }
+    h.state.sessionWorkflows = { [SESSION_ID]: [workflow] }
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [
         buildAgent({
@@ -266,7 +266,7 @@ describe('AgentsSection collapse defaults', () => {
           lastFinishedAt: NOW,
         }),
       ],
-    };
+    }
     render(
       <AgentsSection
         task={buildSession({
@@ -281,13 +281,13 @@ describe('AgentsSection collapse defaults', () => {
           ],
         })}
       />,
-    );
+    )
 
-    expect(screen.getByTitle('2 agent replies to review').textContent).toContain('2');
-  });
+    expect(screen.getByTitle('2 agent replies to review').textContent).toContain('2')
+  })
 
   function renderWorkflowWith(children: ReadonlyArray<Agent>) {
-    const RUN_ID = 'run-1' as WorkflowRunId;
+    const RUN_ID = 'run-1' as WorkflowRunId
     h.state.sessionWorkflows = {
       [SESSION_ID]: [
         {
@@ -299,7 +299,7 @@ describe('AgentsSection collapse defaults', () => {
           updatedAt: NOW,
         },
       ],
-    };
+    }
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [
         buildAgent({
@@ -311,7 +311,7 @@ describe('AgentsSection collapse defaults', () => {
         }),
         ...children,
       ],
-    };
+    }
     render(
       <AgentsSection
         task={buildSession({
@@ -326,7 +326,7 @@ describe('AgentsSection collapse defaults', () => {
           ],
         })}
       />,
-    );
+    )
   }
 
   it('workflow unread badge excludes skipped children', () => {
@@ -337,15 +337,15 @@ describe('AgentsSection collapse defaults', () => {
         status: 'skipped',
         lastFinishedAt: NOW,
       }),
-    ]);
+    ])
 
-    expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull();
-    expect(screen.queryByTitle('2 agent replies to review')).toBeNull();
-  });
+    expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull()
+    expect(screen.queryByTitle('2 agent replies to review')).toBeNull()
+  })
 
   it('workflow unread badge excludes the currently-viewed selected child', () => {
-    h.state.currentSessionId = SESSION_ID;
-    h.state.selectedAgentId = { [SESSION_ID]: 'child-1' as AgentId };
+    h.state.currentSessionId = SESSION_ID
+    h.state.selectedAgentId = { [SESSION_ID]: 'child-1' as AgentId }
     renderWorkflowWith([
       buildAgent({
         id: 'child-1' as AgentId,
@@ -353,11 +353,11 @@ describe('AgentsSection collapse defaults', () => {
         status: 'completed',
         lastFinishedAt: NOW,
       }),
-    ]);
+    ])
 
-    expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull();
-    expect(screen.queryByTitle('2 agent replies to review')).toBeNull();
-  });
+    expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull()
+    expect(screen.queryByTitle('2 agent replies to review')).toBeNull()
+  })
 
   it('workflow unread badge counts nested grandchildren', () => {
     renderWorkflowWith([
@@ -373,37 +373,37 @@ describe('AgentsSection collapse defaults', () => {
         status: 'completed',
         lastFinishedAt: NOW,
       }),
-    ]);
+    ])
 
-    expect(screen.getByTitle('3 agent replies to review').textContent).toContain('3');
-  });
+    expect(screen.getByTitle('3 agent replies to review').textContent).toContain('3')
+  })
 
   it('picking an agent selects it and reveals the chat (full-width swap trigger)', () => {
-    const selectAgent = vi.fn();
-    h.state.selectAgent = selectAgent;
-    h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] };
-    const reveal = vi.fn();
-    window.addEventListener('goodboy:reveal-chat', reveal);
-    render(<AgentsSection task={buildSession()} />);
+    const selectAgent = vi.fn()
+    h.state.selectAgent = selectAgent
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] }
+    const reveal = vi.fn()
+    window.addEventListener('goodboy:reveal-chat', reveal)
+    render(<AgentsSection task={buildSession()} />)
 
-    fireEvent.click(screen.getByText('agent one'));
+    fireEvent.click(screen.getByText('agent one'))
 
-    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
-    expect(reveal).toHaveBeenCalled();
-    window.removeEventListener('goodboy:reveal-chat', reveal);
-  });
+    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1')
+    expect(reveal).toHaveBeenCalled()
+    window.removeEventListener('goodboy:reveal-chat', reveal)
+  })
 
   it('agents toggle persists across remount', () => {
-    const { unmount } = render(<AgentsSection task={buildSession()} />);
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
+    const { unmount } = render(<AgentsSection task={buildSession()} />)
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed')
 
-    fireEvent.click(screen.getByTestId('toggle-agents'));
-    expect(h.setPanelSectionExpanded).toHaveBeenCalledWith(SESSION_ID, 'agents', true);
+    fireEvent.click(screen.getByTestId('toggle-agents'))
+    expect(h.setPanelSectionExpanded).toHaveBeenCalledWith(SESSION_ID, 'agents', true)
 
-    unmount();
-    render(<AgentsSection task={buildSession()} />);
+    unmount()
+    render(<AgentsSection task={buildSession()} />)
 
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded');
-    expect(screen.queryByTestId('spawn')).not.toBeNull();
-  });
-});
+    expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded')
+    expect(screen.queryByTestId('spawn')).not.toBeNull()
+  })
+})

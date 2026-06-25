@@ -1,14 +1,14 @@
-import type { IsoDateTime } from '@goodboy/types';
-import { invokeBudgetAlertDismiss } from '../../../features/budget/budget';
-import type { SetFn } from './types';
+import type { IsoDateTime } from '@goodboy/types'
+import { invokeBudgetAlertDismiss } from '../../../features/budget/budget'
+import type { SetFn } from './types'
 
 export const dismissBudgetAlert = (set: SetFn) => {
   return async (id: string) => {
-    await invokeBudgetAlertDismiss(id);
+    await invokeBudgetAlertDismiss(id)
     set((state) => ({
       budgetAlerts: state.budgetAlerts.map((a) =>
         a.id === id ? { ...a, dismissedAt: new Date().toISOString() as IsoDateTime } : a,
       ),
-    }));
-  };
-};
+    }))
+  }
+}

@@ -1,46 +1,46 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { useEffect, useRef, type ReactNode } from 'react'
+import { X } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 
-type NudgeSeverity = 'info' | 'warning' | 'success';
+type NudgeSeverity = 'info' | 'warning' | 'success'
 
 type NudgeAction = {
-  readonly label: string;
-  readonly onClick: () => void;
-  readonly testId?: string;
-};
+  readonly label: string
+  readonly onClick: () => void
+  readonly testId?: string
+}
 
 export type Props = {
-  readonly severity: NudgeSeverity;
-  readonly icon?: ReactNode;
-  readonly title: ReactNode;
-  readonly body?: ReactNode;
-  readonly primary?: NudgeAction;
-  readonly secondary?: NudgeAction;
-  readonly tertiary?: NudgeAction;
-  readonly onDismiss?: () => void;
-  readonly ariaLabel: string;
-  readonly testId?: string;
-  readonly autoFocusPrimary?: boolean;
-};
+  readonly severity: NudgeSeverity
+  readonly icon?: ReactNode
+  readonly title: ReactNode
+  readonly body?: ReactNode
+  readonly primary?: NudgeAction
+  readonly secondary?: NudgeAction
+  readonly tertiary?: NudgeAction
+  readonly onDismiss?: () => void
+  readonly ariaLabel: string
+  readonly testId?: string
+  readonly autoFocusPrimary?: boolean
+}
 
 const SEVERITY_FRAME: Record<NudgeSeverity, string> = {
   info: 'border-info/30 bg-info/5',
   warning: 'border-warning/30 bg-warning/5',
   success: 'border-success/30 bg-success/5',
-};
+}
 
 const SEVERITY_PRIMARY: Record<NudgeSeverity, string> = {
   info: 'bg-info text-info-foreground',
   warning: 'bg-warning text-warning-foreground',
   success: 'bg-success text-success-foreground',
-};
+}
 
 const SEVERITY_ICON: Record<NudgeSeverity, string> = {
   info: 'text-info',
   warning: 'text-warning',
   success: 'text-success',
-};
+}
 
 export const NudgeCard = ({
   severity,
@@ -55,23 +55,23 @@ export const NudgeCard = ({
   testId,
   autoFocusPrimary = false,
 }: Props) => {
-  const primaryBtnRef = useRef<HTMLButtonElement>(null);
+  const primaryBtnRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     if (!autoFocusPrimary) {
-      return;
+      return
     }
     const activeIsInput =
       typeof document !== 'undefined' &&
       document.activeElement instanceof HTMLElement &&
-      /^(input|textarea)$/i.test(document.activeElement.tagName);
+      /^(input|textarea)$/i.test(document.activeElement.tagName)
     if (activeIsInput) {
-      return;
+      return
     }
     const handle = window.setTimeout(() => {
-      primaryBtnRef.current?.focus();
-    }, 300);
-    return () => window.clearTimeout(handle);
-  }, [autoFocusPrimary]);
+      primaryBtnRef.current?.focus()
+    }, 300)
+    return () => window.clearTimeout(handle)
+  }, [autoFocusPrimary])
 
   return (
     <section
@@ -140,5 +140,5 @@ export const NudgeCard = ({
         </div>
       </div>
     </section>
-  );
-};
+  )
+}

@@ -5,41 +5,41 @@ import type {
   VerbosityLevel,
   WorkflowId,
   WorkspaceId,
-} from '@goodboy/types';
-import type { ProviderId } from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { ProviderId } from '@goodboy/types'
+import type { Database } from '../client'
 
 type WorkspaceOverrideRow = {
-  default_provider_id: string | null;
-  default_workflow_id: string | null;
-  default_branch_prefix: string | null;
-  parallel_enabled: number | null;
-  default_verbosity: string | null;
-  provider_bindings: string | null;
-  scout_fanout: number | null;
-};
+  default_provider_id: string | null
+  default_workflow_id: string | null
+  default_branch_prefix: string | null
+  parallel_enabled: number | null
+  default_verbosity: string | null
+  provider_bindings: string | null
+  scout_fanout: number | null
+}
 
 type SessionOverrideRow = {
-  default_provider_id: string | null;
-  default_workflow_id: string | null;
-  default_branch_prefix: string | null;
-  parallel_enabled: number | null;
-  provider_bindings: string | null;
-};
+  default_provider_id: string | null
+  default_workflow_id: string | null
+  default_branch_prefix: string | null
+  parallel_enabled: number | null
+  provider_bindings: string | null
+}
 
 function parseBindings(raw: string | null): ProviderBindings | null {
   if (!raw) {
-    return null;
+    return null
   }
   try {
-    return JSON.parse(raw) as ProviderBindings;
+    return JSON.parse(raw) as ProviderBindings
   } catch {
-    return null;
+    return null
   }
 }
 
 function serializeBindings(bindings: ProviderBindings | null): string | null {
-  return bindings && Object.keys(bindings).length > 0 ? JSON.stringify(bindings) : null;
+  return bindings && Object.keys(bindings).length > 0 ? JSON.stringify(bindings) : null
 }
 
 function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
@@ -51,7 +51,7 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
     providerBindings: parseBindings(row.provider_bindings),
     scoutFanout: row.scout_fanout === null ? null : row.scout_fanout !== 0,
-  };
+  }
 }
 
 function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
@@ -63,7 +63,7 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
     defaultVerbosity: null,
     providerBindings: parseBindings(row.provider_bindings),
     scoutFanout: null,
-  };
+  }
 }
 
 export const getWorkspaceOverrides = async (
@@ -74,10 +74,10 @@ export const getWorkspaceOverrides = async (
     `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, scout_fanout
      FROM workspaces WHERE id = ?`,
     [workspaceId],
-  );
-  const row = rows[0];
-  return row ? workspaceRowToOverride(row) : null;
-};
+  )
+  const row = rows[0]
+  return row ? workspaceRowToOverride(row) : null
+}
 
 export const setWorkspaceOverrides = async (
   db: Database,
@@ -106,8 +106,8 @@ export const setWorkspaceOverrides = async (
       Date.now(),
       workspaceId,
     ],
-  );
-};
+  )
+}
 
 export const getSessionOverrides = async (
   db: Database,
@@ -117,10 +117,10 @@ export const getSessionOverrides = async (
     `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, provider_bindings
      FROM sessions WHERE id = ?`,
     [sessionId],
-  );
-  const row = rows[0];
-  return row ? sessionRowToOverride(row) : null;
-};
+  )
+  const row = rows[0]
+  return row ? sessionRowToOverride(row) : null
+}
 
 export const setSessionOverrides = async (
   db: Database,
@@ -145,5 +145,5 @@ export const setSessionOverrides = async (
       Date.now(),
       sessionId,
     ],
-  );
-};
+  )
+}

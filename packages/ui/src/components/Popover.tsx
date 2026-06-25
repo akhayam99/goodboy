@@ -1,14 +1,14 @@
-import type { CSSProperties, ReactNode, Ref } from 'react';
-import { cn } from '../cn';
+import type { CSSProperties, ReactNode, Ref } from 'react'
+import { cn } from '../cn'
 
 export type PopoverProps = {
-  readonly children: ReactNode;
-  readonly className?: string;
-  readonly style?: CSSProperties;
-  readonly role?: 'menu' | 'dialog' | 'listbox';
-  readonly ariaLabel?: string;
-  readonly innerRef?: Ref<HTMLDivElement>;
-};
+  readonly children: ReactNode
+  readonly className?: string
+  readonly style?: CSSProperties
+  readonly role?: 'menu' | 'dialog' | 'listbox'
+  readonly ariaLabel?: string
+  readonly innerRef?: Ref<HTMLDivElement>
+}
 
 export const Popover = ({
   children,
@@ -31,5 +31,5 @@ export const Popover = ({
     >
       {children}
     </div>
-  );
-};
+  )
+}

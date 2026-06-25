@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types';
-import { reduceTranscript } from '../features/chat/utils/transcript-items';
+import { describe, expect, it } from 'vitest'
+import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types'
+import { reduceTranscript } from '../features/chat/utils/transcript-items'
 
-const RUN = 'run-1' as ProviderRunId;
-const AT = '2026-01-01T00:00:00.000Z' as IsoDateTime;
-const RULE_ID = 'rule-abc' as PermissionRuleId;
+const RUN = 'run-1' as ProviderRunId
+const AT = '2026-01-01T00:00:00.000Z' as IsoDateTime
+const RULE_ID = 'rule-abc' as PermissionRuleId
 
 function permReqEvent(toolUseId = 'tu-1'): TurnEvent {
   return {
@@ -14,7 +14,7 @@ function permReqEvent(toolUseId = 'tu-1'): TurnEvent {
     toolName: 'bash',
     input: { cmd: 'ls' },
     at: AT,
-  };
+  }
 }
 
 function permDecEvent(
@@ -31,159 +31,159 @@ function permDecEvent(
     ruleId,
     decidedBy,
     at: AT,
-  };
+  }
 }
 
 describe('reduceTranscript, permission_request', () => {
   it('produces a permission_request item', () => {
-    const items = reduceTranscript([permReqEvent()]);
-    expect(items).toHaveLength(1);
-    const item = items[0]!;
-    expect(item.kind).toBe('permission_request');
+    const items = reduceTranscript([permReqEvent()])
+    expect(items).toHaveLength(1)
+    const item = items[0]!
+    expect(item.kind).toBe('permission_request')
     if (item.kind !== 'permission_request') {
-      return;
+      return
     }
-    expect(item.toolName).toBe('bash');
-    expect(item.toolUseId).toBe('tu-1');
-    expect(item.runId).toBe(RUN);
-    expect(item.input).toEqual({ cmd: 'ls' });
-    expect(item.at).toBe(AT);
-  });
+    expect(item.toolName).toBe('bash')
+    expect(item.toolUseId).toBe('tu-1')
+    expect(item.runId).toBe(RUN)
+    expect(item.input).toEqual({ cmd: 'ls' })
+    expect(item.at).toBe(AT)
+  })
 
   it('key contains toolUseId', () => {
-    const items = reduceTranscript([permReqEvent('tu-xyz')]);
-    const item = items[0]!;
-    expect(item.key).toContain('tu-xyz');
-  });
+    const items = reduceTranscript([permReqEvent('tu-xyz')])
+    const item = items[0]!
+    expect(item.key).toContain('tu-xyz')
+  })
 
   it('multiple permission_request events produce separate items', () => {
-    const items = reduceTranscript([permReqEvent('tu-1'), permReqEvent('tu-2')]);
-    expect(items).toHaveLength(2);
-    expect(items[0]!.kind).toBe('permission_request');
-    expect(items[1]!.kind).toBe('permission_request');
-  });
-});
+    const items = reduceTranscript([permReqEvent('tu-1'), permReqEvent('tu-2')])
+    expect(items).toHaveLength(2)
+    expect(items[0]!.kind).toBe('permission_request')
+    expect(items[1]!.kind).toBe('permission_request')
+  })
+})
 
 describe('reduceTranscript, permission_decision', () => {
   it('produces a permission_decision item with allow + ruleId', () => {
-    const items = reduceTranscript([permDecEvent('tu-1', 'allow', RULE_ID, 'engine')]);
-    expect(items).toHaveLength(1);
-    const item = items[0]!;
-    expect(item.kind).toBe('permission_decision');
+    const items = reduceTranscript([permDecEvent('tu-1', 'allow', RULE_ID, 'engine')])
+    expect(items).toHaveLength(1)
+    const item = items[0]!
+    expect(item.kind).toBe('permission_decision')
     if (item.kind !== 'permission_decision') {
-      return;
+      return
     }
-    expect(item.decision).toBe('allow');
-    expect(item.ruleId).toBe(RULE_ID);
-    expect(item.decidedBy).toBe('engine');
-    expect(item.runId).toBe(RUN);
-  });
+    expect(item.decision).toBe('allow')
+    expect(item.ruleId).toBe(RULE_ID)
+    expect(item.decidedBy).toBe('engine')
+    expect(item.runId).toBe(RUN)
+  })
 
   it('produces a deny decision with null ruleId', () => {
-    const items = reduceTranscript([permDecEvent('tu-2', 'deny', null, 'default')]);
-    const item = items[0]!;
-    expect(item.kind).toBe('permission_decision');
+    const items = reduceTranscript([permDecEvent('tu-2', 'deny', null, 'default')])
+    const item = items[0]!
+    expect(item.kind).toBe('permission_decision')
     if (item.kind !== 'permission_decision') {
-      return;
+      return
     }
-    expect(item.decision).toBe('deny');
-    expect(item.ruleId).toBeNull();
-    expect(item.decidedBy).toBe('default');
-  });
+    expect(item.decision).toBe('deny')
+    expect(item.ruleId).toBeNull()
+    expect(item.decidedBy).toBe('default')
+  })
 
   it('key contains toolUseId', () => {
-    const items = reduceTranscript([permDecEvent('tu-abc')]);
-    const item = items[0]!;
-    expect(item.key).toContain('tu-abc');
-  });
+    const items = reduceTranscript([permDecEvent('tu-abc')])
+    const item = items[0]!
+    expect(item.key).toContain('tu-abc')
+  })
 
   it('carries toolName from paired permission_request event', () => {
-    const items = reduceTranscript([permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null)]);
-    const dec = items[1]!;
-    expect(dec.kind).toBe('permission_decision');
+    const items = reduceTranscript([permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null)])
+    const dec = items[1]!
+    expect(dec.kind).toBe('permission_decision')
     if (dec.kind !== 'permission_decision') {
-      return;
+      return
     }
-    expect(dec.toolName).toBe('bash');
-  });
+    expect(dec.toolName).toBe('bash')
+  })
 
   it('falls back to toolUseId when no prior request event', () => {
-    const items = reduceTranscript([permDecEvent('tu-orphan', 'deny', null)]);
-    const dec = items[0]!;
-    expect(dec.kind).toBe('permission_decision');
+    const items = reduceTranscript([permDecEvent('tu-orphan', 'deny', null)])
+    const dec = items[0]!
+    expect(dec.kind).toBe('permission_decision')
     if (dec.kind !== 'permission_decision') {
-      return;
+      return
     }
-    expect(dec.toolName).toBe('tu-orphan');
-  });
-});
+    expect(dec.toolName).toBe('tu-orphan')
+  })
+})
 
 describe('reduceTranscript, request + decision pair', () => {
   it('produces two items for a request followed by a decision', () => {
-    const events: TurnEvent[] = [permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null, 'user')];
-    const items = reduceTranscript(events);
-    expect(items).toHaveLength(2);
-    expect(items[0]!.kind).toBe('permission_request');
-    expect(items[1]!.kind).toBe('permission_decision');
-  });
-});
+    const events: TurnEvent[] = [permReqEvent('tu-1'), permDecEvent('tu-1', 'deny', null, 'user')]
+    const items = reduceTranscript(events)
+    expect(items).toHaveLength(2)
+    expect(items[0]!.kind).toBe('permission_request')
+    expect(items[1]!.kind).toBe('permission_decision')
+  })
+})
 
 function userTextEvent(text: string): TurnEvent {
-  return { kind: 'user_text', runId: RUN, text, at: AT };
+  return { kind: 'user_text', runId: RUN, text, at: AT }
 }
 
 function assistantTextEvent(delta: string): TurnEvent {
-  return { kind: 'assistant_text', runId: RUN, delta, at: AT };
+  return { kind: 'assistant_text', runId: RUN, delta, at: AT }
 }
 
 describe('reduceTranscript, open-question answer boundary', () => {
   it('emits an oq_answer marker for a user_text wrapped in oq-answers', () => {
     const items = reduceTranscript([
       userTextEvent('<<oq-answers>>\nAnswers to open questions:\n- Q: a\n  A: b\n<</oq-answers>>'),
-    ]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('oq_answer');
-  });
+    ])
+    expect(items).toHaveLength(1)
+    expect(items[0]!.kind).toBe('oq_answer')
+  })
 
   it('keeps ordinary user_text turns', () => {
-    const items = reduceTranscript([userTextEvent('a normal message')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
-  });
+    const items = reduceTranscript([userTextEvent('a normal message')])
+    expect(items).toHaveLength(1)
+    expect(items[0]!.kind).toBe('user_text')
+  })
 
   it('detects the oq-answers wrapper despite leading whitespace', () => {
     const items = reduceTranscript([
       userTextEvent('\n\n   <<oq-answers>>\nAnswers:\n- Q: a\n  A: b\n<</oq-answers>>'),
-    ]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('oq_answer');
-  });
+    ])
+    expect(items).toHaveLength(1)
+    expect(items[0]!.kind).toBe('oq_answer')
+  })
 
   it('does not treat an inline mention of the marker as an answer', () => {
-    const items = reduceTranscript([userTextEvent('here is text then <<oq-answers>> later')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
-  });
+    const items = reduceTranscript([userTextEvent('here is text then <<oq-answers>> later')])
+    expect(items).toHaveLength(1)
+    expect(items[0]!.kind).toBe('user_text')
+  })
 
   it('carries no answer text on the oq_answer marker (pure boundary)', () => {
     const items = reduceTranscript([
       userTextEvent('<<oq-answers>>\nsecret answer\n<</oq-answers>>'),
-    ]);
-    const item = items[0]!;
-    expect(item.kind).toBe('oq_answer');
-    expect(Object.keys(item)).toEqual(['kind', 'key']);
-  });
+    ])
+    const item = items[0]!
+    expect(item.kind).toBe('oq_answer')
+    expect(Object.keys(item)).toEqual(['kind', 'key'])
+  })
 
   it('assigns distinct keys to consecutive oq_answer markers', () => {
     const items = reduceTranscript([
       userTextEvent('<<oq-answers>>\na\n<</oq-answers>>'),
       userTextEvent('<<oq-answers>>\nb\n<</oq-answers>>'),
-    ]);
-    expect(items).toHaveLength(2);
-    expect(items[0]!.kind).toBe('oq_answer');
-    expect(items[1]!.kind).toBe('oq_answer');
-    expect(items[0]!.key).not.toBe(items[1]!.key);
-  });
+    ])
+    expect(items).toHaveLength(2)
+    expect(items[0]!.kind).toBe('oq_answer')
+    expect(items[1]!.kind).toBe('oq_answer')
+    expect(items[0]!.key).not.toBe(items[1]!.key)
+  })
 
   it('flushes buffered assistant_text before emitting the oq_answer marker', () => {
     const events: TurnEvent[] = [
@@ -191,13 +191,13 @@ describe('reduceTranscript, open-question answer boundary', () => {
       assistantTextEvent('here is my question'),
       userTextEvent('<<oq-answers>>\nresolved\n<</oq-answers>>'),
       assistantTextEvent('thanks, continuing'),
-    ];
-    const items = reduceTranscript(events);
+    ]
+    const items = reduceTranscript(events)
     expect(items.map((i) => i.kind)).toEqual([
       'user_text',
       'assistant_text',
       'oq_answer',
       'assistant_text',
-    ]);
-  });
-});
+    ])
+  })
+})

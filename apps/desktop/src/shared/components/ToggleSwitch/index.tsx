@@ -1,12 +1,12 @@
-import { cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui'
 
 type ToggleSwitchProps = {
-  readonly label: string;
-  readonly checked: boolean;
-  readonly disabled: boolean;
-  readonly beta?: boolean;
-  readonly onChange: (next: boolean) => void;
-};
+  readonly label: string
+  readonly checked: boolean
+  readonly disabled: boolean
+  readonly beta?: boolean
+  readonly onChange: (next: boolean) => void
+}
 
 export const ToggleSwitch = ({ label, checked, disabled, beta, onChange }: ToggleSwitchProps) => (
   <button
@@ -42,4 +42,4 @@ export const ToggleSwitch = ({ label, checked, disabled, beta, onChange }: Toggl
       </span>
     ) : null}
   </button>
-);
+)

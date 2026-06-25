@@ -1,25 +1,25 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { SessionId } from '@goodboy/types'
 
 const { state } = vi.hoisted(() => ({
   state: {
     currentSessionId: 'session-1',
     sessions: [{ id: 'session-1', goal: 'build the feature' }] as ReadonlyArray<{
-      id: string;
-      goal: string;
+      id: string
+      goal: string
     }>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     workspaceSummary: { inputTokens: 100, outputTokens: 200, estimatedCostUsd: 5, recordCount: 4 },
     providerSpendBreakdown: [
       { provider: 'anthropic', spentUsd: 3, capUsd: 10, pct: 0.3 },
     ] as ReadonlyArray<{
-      provider: string;
-      spentUsd: number;
-      capUsd: number | null;
-      pct: number;
+      provider: string
+      spentUsd: number
+      capUsd: number | null
+      pct: number
     }>,
     budgetAlerts: [] as ReadonlyArray<unknown>,
     budgetRules: [] as ReadonlyArray<unknown>,
@@ -35,15 +35,15 @@ const { state } = vi.hoisted(() => ({
     setSessionBudget: vi.fn(),
     refreshProviderSpendBreakdown: vi.fn(),
   },
-}));
+}))
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessions: () => state.sessions,
-}));
+}))
 
-import { BudgetStudio } from './index';
+import { BudgetStudio } from './index'
 
 beforeEach(() => {
   state.sessionTelemetry = {
@@ -61,23 +61,23 @@ beforeEach(() => {
         recordedAt: '2026-06-01T00:00:00.000Z',
       },
     ],
-  };
-});
-afterEach(cleanup);
+  }
+})
+afterEach(cleanup)
 
 describe('BudgetStudio', () => {
   it('renders the overview scope by default', () => {
-    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
-    expect(screen.getByText('Budget Studio')).toBeDefined();
-    expect(screen.getByText(/spend by provider/i)).toBeDefined();
-  });
+    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />)
+    expect(screen.getByText('Budget Studio')).toBeDefined()
+    expect(screen.getByText(/spend by provider/i)).toBeDefined()
+  })
 
   it('switches to a provider scope and shows its spend breakdown', () => {
-    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
-    const [claudeButton] = screen.getAllByRole('button', { name: /claude/i });
-    fireEvent.click(claudeButton!);
-    expect(screen.getByText(/total spend/i)).toBeDefined();
-  });
+    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />)
+    const [claudeButton] = screen.getAllByRole('button', { name: /claude/i })
+    fireEvent.click(claudeButton!)
+    expect(screen.getByText(/total spend/i)).toBeDefined()
+  })
 
   it('renders a session scope with all sessions listed', () => {
     render(
@@ -86,31 +86,31 @@ describe('BudgetStudio', () => {
         initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
         onClose={vi.fn()}
       />,
-    );
-    expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/session cost/i)).toBeDefined();
-  });
+    )
+    expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/session cost/i)).toBeDefined()
+  })
 
   it('authors a new provider cap via saveBudgetRule', () => {
-    state.budgetRules = [];
+    state.budgetRules = []
     render(
       <BudgetStudio
         workspaceName="goodboy"
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
         onClose={vi.fn()}
       />,
-    );
-    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '50' } });
-    fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
+    )
+    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '50' } })
+    fireEvent.click(screen.getByRole('button', { name: /set cap/i }))
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
       provider: 'anthropic',
       period: 'monthly',
       capUsd: 50,
       alertThresholdPct: 80,
       extraTokensBudget: null,
-    });
-    expect(state.deleteBudgetRule).not.toHaveBeenCalled();
-  });
+    })
+    expect(state.deleteBudgetRule).not.toHaveBeenCalled()
+  })
 
   it('edits an existing provider cap as delete then save', async () => {
     state.budgetRules = [
@@ -123,26 +123,26 @@ describe('BudgetStudio', () => {
         extraTokensBudget: 5,
         createdAt: '2026-06-01T00:00:00.000Z',
       },
-    ];
+    ]
     render(
       <BudgetStudio
         workspaceName="goodboy"
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
         onClose={vi.fn()}
       />,
-    );
-    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } });
-    fireEvent.click(screen.getByRole('button', { name: /update cap/i }));
-    await Promise.resolve();
-    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
+    )
+    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } })
+    fireEvent.click(screen.getByRole('button', { name: /update cap/i }))
+    await Promise.resolve()
+    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1')
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
       provider: 'anthropic',
       period: 'monthly',
       capUsd: 25,
       alertThresholdPct: 90,
       extraTokensBudget: 5,
-    });
-  });
+    })
+  })
 
   it('removes a provider cap via deleteBudgetRule', () => {
     state.budgetRules = [
@@ -155,29 +155,29 @@ describe('BudgetStudio', () => {
         extraTokensBudget: null,
         createdAt: '2026-06-01T00:00:00.000Z',
       },
-    ];
+    ]
     render(
       <BudgetStudio
         workspaceName="goodboy"
         initialScope={{ kind: 'provider', provider: 'anthropic' }}
         onClose={vi.fn()}
       />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
-    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
-  });
+    )
+    fireEvent.click(screen.getByRole('button', { name: /remove/i }))
+    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1')
+  })
 
   it('sets a session soft cap via setSessionBudget', () => {
-    state.sessionBudgets = {};
+    state.sessionBudgets = {}
     render(
       <BudgetStudio
         workspaceName="goodboy"
         initialScope={{ kind: 'session', sessionId: 'session-1' as SessionId }}
         onClose={vi.fn()}
       />,
-    );
-    fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } });
-    fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
-    expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5);
-  });
-});
+    )
+    fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } })
+    fireEvent.click(screen.getByRole('button', { name: /set cap/i }))
+    expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5)
+  })
+})

@@ -1,27 +1,27 @@
-import type { IsoDateTime } from '@goodboy/types';
-import type { Database } from '../client';
+import type { IsoDateTime } from '@goodboy/types'
+import type { Database } from '../client'
 
-export type NudgeKind = 'model-rightsize' | 'scope-mismatch' | 'plan-ready' | 'handoff-suggested';
+export type NudgeKind = 'model-rightsize' | 'scope-mismatch' | 'plan-ready' | 'handoff-suggested'
 
-export type NudgeOutcome = 'accepted' | 'dismissed' | 'overridden' | 'ignored';
+export type NudgeOutcome = 'accepted' | 'dismissed' | 'overridden' | 'ignored'
 
 export type NudgeEvent = {
-  readonly id: string;
-  readonly ts: IsoDateTime;
-  readonly kind: NudgeKind;
-  readonly contextJson: string | null;
-  readonly outcome: NudgeOutcome | null;
-  readonly outcomeTs: IsoDateTime | null;
-};
+  readonly id: string
+  readonly ts: IsoDateTime
+  readonly kind: NudgeKind
+  readonly contextJson: string | null
+  readonly outcome: NudgeOutcome | null
+  readonly outcomeTs: IsoDateTime | null
+}
 
 type NudgeEventRow = {
-  id: string;
-  ts: string;
-  kind: string;
-  context_json: string | null;
-  outcome: string | null;
-  outcome_ts: string | null;
-};
+  id: string
+  ts: string
+  kind: string
+  context_json: string | null
+  outcome: string | null
+  outcome_ts: string | null
+}
 
 function toNudgeEvent(row: NudgeEventRow): NudgeEvent {
   return {
@@ -31,7 +31,7 @@ function toNudgeEvent(row: NudgeEventRow): NudgeEvent {
     contextJson: row.context_json,
     outcome: row.outcome ? (row.outcome as NudgeOutcome) : null,
     outcomeTs: row.outcome_ts ? (row.outcome_ts as IsoDateTime) : null,
-  };
+  }
 }
 
 export const insertNudgeEvent = async (db: Database, event: NudgeEvent): Promise<void> => {
@@ -46,8 +46,8 @@ export const insertNudgeEvent = async (db: Database, event: NudgeEvent): Promise
       event.outcome ?? null,
       event.outcomeTs ?? null,
     ],
-  );
-};
+  )
+}
 
 export const updateNudgeEventOutcome = async (
   db: Database,
@@ -59,34 +59,34 @@ export const updateNudgeEventOutcome = async (
     outcome,
     outcomeTs,
     id,
-  ]);
-};
+  ])
+}
 
 export type ListNudgeEventsOptions = {
-  readonly sinceTs?: IsoDateTime;
-  readonly kind?: NudgeKind;
-  readonly limit?: number;
-};
+  readonly sinceTs?: IsoDateTime
+  readonly kind?: NudgeKind
+  readonly limit?: number
+}
 
 export const listNudgeEvents = async (
   db: Database,
   opts: ListNudgeEventsOptions = {},
 ): Promise<ReadonlyArray<NudgeEvent>> => {
-  const where: string[] = [];
-  const params: Array<string> = [];
+  const where: string[] = []
+  const params: Array<string> = []
   if (opts.sinceTs) {
-    where.push('ts >= ?');
-    params.push(opts.sinceTs);
+    where.push('ts >= ?')
+    params.push(opts.sinceTs)
   }
   if (opts.kind) {
-    where.push('kind = ?');
-    params.push(opts.kind);
+    where.push('kind = ?')
+    params.push(opts.kind)
   }
-  const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
-  const limitClause = opts.limit && opts.limit > 0 ? `LIMIT ${Math.floor(opts.limit)}` : '';
+  const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+  const limitClause = opts.limit && opts.limit > 0 ? `LIMIT ${Math.floor(opts.limit)}` : ''
   const rows = await db.select<NudgeEventRow>(
     `SELECT * FROM nudge_events ${whereClause} ORDER BY ts DESC ${limitClause}`,
     params,
-  );
-  return rows.map(toNudgeEvent);
-};
+  )
+  return rows.map(toNudgeEvent)
+}

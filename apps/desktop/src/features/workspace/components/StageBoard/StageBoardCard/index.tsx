@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo } from 'react'
 import {
   Archive,
   Bot,
@@ -8,29 +8,29 @@ import {
   SquareTerminal,
   Trash2,
   type LucideIcon,
-} from 'lucide-react';
-import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
-import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
+} from 'lucide-react'
+import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui'
+import type { Session, SessionId, TelemetryRecord } from '@goodboy/types'
 import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionHasUnread,
   useSessionStageInfo,
-} from '../../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
-import { CostBadge } from '../../../../providers/components/CostBadge';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
-import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
-import type { BoardNavigation } from '../useBoardNavigation';
+} from '../../../../../store'
+import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage'
+import { CostBadge } from '../../../../providers/components/CostBadge'
+import { PullRequestChip } from '../../../../github/components/PullRequestChip'
+import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip'
+import type { BoardNavigation } from '../useBoardNavigation'
 
 type StageBoardCardProps = {
-  readonly session: Session;
-  readonly nav: BoardNavigation;
-  readonly archived?: boolean;
-  readonly onArchive?: (session: Session) => void;
-  readonly onDelete?: (session: Session) => void;
-  readonly onRestore?: (session: Session) => void;
-};
+  readonly session: Session
+  readonly nav: BoardNavigation
+  readonly archived?: boolean
+  readonly onArchive?: (session: Session) => void
+  readonly onDelete?: (session: Session) => void
+  readonly onRestore?: (session: Session) => void
+}
 
 export const StageBoardCard = memo(function StageBoardCard({
   session,
@@ -40,33 +40,33 @@ export const StageBoardCard = memo(function StageBoardCard({
   onDelete,
   onRestore,
 }: StageBoardCardProps) {
-  const id = session.id as SessionId;
-  const { stage, reason } = useSessionStageInfo(session);
+  const id = session.id as SessionId
+  const { stage, reason } = useSessionStageInfo(session)
   const isAutoMode =
-    stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
+    stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt)
 
-  const prState = useAppStore((s) => s.sessionGithub[id]?.pr?.state ?? null);
-  const prNumber = useAppStore((s) => s.sessionGithub[id]?.pr?.number);
-  const externalTask = useAppStore((s) => s.sessionExternalTasks?.[id] ?? null);
-  const agentCount = useAppStore((s) => (s.sessionPhaseRuns[id] ?? EMPTY_ARRAY).length);
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
-  useSessionHasUnread(id);
+  const prState = useAppStore((s) => s.sessionGithub[id]?.pr?.state ?? null)
+  const prNumber = useAppStore((s) => s.sessionGithub[id]?.pr?.number)
+  const externalTask = useAppStore((s) => s.sessionExternalTasks?.[id] ?? null)
+  const agentCount = useAppStore((s) => (s.sessionPhaseRuns[id] ?? EMPTY_ARRAY).length)
+  const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null)
+  useSessionHasUnread(id)
 
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
+  )
   const sessionCost = useMemo(() => {
-    let sum = 0;
+    let sum = 0
     for (const rec of telemetry) {
       if (rec.kind === 'summarizer') {
-        continue;
+        continue
       }
-      sum += rec.estimatedCostUsd;
+      sum += rec.estimatedCostUsd
     }
-    return sum;
-  }, [telemetry]);
+    return sum
+  }, [telemetry])
 
-  const stageMeta = SESSION_STAGE_META[stage];
+  const stageMeta = SESSION_STAGE_META[stage]
 
   return (
     <button
@@ -172,16 +172,16 @@ export const StageBoardCard = memo(function StageBoardCard({
         />
       </span>
     </button>
-  );
-});
+  )
+})
 
 type CardActionProps = {
-  readonly icon: LucideIcon;
-  readonly color: string;
-  readonly label: string;
-  readonly onClick: () => void;
-  readonly disabled?: boolean;
-};
+  readonly icon: LucideIcon
+  readonly color: string
+  readonly label: string
+  readonly onClick: () => void
+  readonly disabled?: boolean
+}
 
 const CardAction = ({ icon: Icon, color, label, onClick, disabled }: CardActionProps) => {
   return (
@@ -191,13 +191,13 @@ const CardAction = ({ icon: Icon, color, label, onClick, disabled }: CardActionP
         disabled={disabled}
         aria-label={label}
         onClick={(e) => {
-          e.stopPropagation();
-          onClick();
+          e.stopPropagation()
+          onClick()
         }}
         className="inline-flex size-7 items-center justify-center rounded-md transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
       >
         <Icon size={14} className={color} aria-hidden />
       </button>
     </Tooltip>
-  );
-};
+  )
+}

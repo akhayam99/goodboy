@@ -1,23 +1,23 @@
-import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { CostBadge } from '../../../providers/components/CostBadge';
-import { formatTokens } from '../../agent-row-format';
+import type { Agent, TelemetryRecord } from '@goodboy/types'
+import { CostBadge } from '../../../providers/components/CostBadge'
+import { formatTokens } from '../../agent-row-format'
 
 export type AgentAggregate = {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly estimatedCostUsd: number;
-  readonly turns: number;
-};
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly estimatedCostUsd: number
+  readonly turns: number
+}
 
 type Props = {
-  readonly run: Agent;
-  readonly telemetry: TelemetryRecord | null;
-  readonly aggregate: AgentAggregate | null;
-  readonly turns: number;
-  readonly turnsLoading: boolean;
+  readonly run: Agent
+  readonly telemetry: TelemetryRecord | null
+  readonly aggregate: AgentAggregate | null
+  readonly turns: number
+  readonly turnsLoading: boolean
   /** Accepted for caller compatibility; the block renders identically either way. */
-  readonly variant?: 'workflow' | 'adhoc';
-};
+  readonly variant?: 'workflow' | 'adhoc'
+}
 
 export const AgentMetricsBlock = ({ run, telemetry, aggregate, turns, turnsLoading }: Props) => {
   return (
@@ -73,32 +73,32 @@ export const AgentMetricsBlock = ({ run, telemetry, aggregate, turns, turnsLoadi
       </span>
       <AgentDuration run={run} />
     </div>
-  );
-};
+  )
+}
 
 function formatRelativeDuration(fromIso: string, toIso?: string): string {
-  const fromMs = Date.parse(fromIso);
+  const fromMs = Date.parse(fromIso)
   if (Number.isNaN(fromMs)) {
-    return '';
+    return ''
   }
-  const toMs = toIso ? Date.parse(toIso) : Date.now();
+  const toMs = toIso ? Date.parse(toIso) : Date.now()
   if (Number.isNaN(toMs)) {
-    return '';
+    return ''
   }
-  const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
+  const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000))
   if (diff < 60) {
-    return `${diff}s`;
+    return `${diff}s`
   }
-  const m = Math.floor(diff / 60);
+  const m = Math.floor(diff / 60)
   if (m < 60) {
-    return `${m}m`;
+    return `${m}m`
   }
-  const h = Math.floor(m / 60);
+  const h = Math.floor(m / 60)
   if (h < 24) {
-    return `${h}h`;
+    return `${h}h`
   }
-  const d = Math.floor(h / 24);
-  return `${d}d`;
+  const d = Math.floor(h / 24)
+  return `${d}d`
 }
 
 function AgentDuration({ run }: { run: Agent }) {
@@ -107,15 +107,15 @@ function AgentDuration({ run }: { run: Agent }) {
       <span className="font-mono text-muted-foreground/60" title="not started yet">
         ·
       </span>
-    );
+    )
   }
-  const ageStr = formatRelativeDuration(run.startedAt, run.completedAt);
+  const ageStr = formatRelativeDuration(run.startedAt, run.completedAt)
   const tooltip = run.completedAt
     ? `started ${run.startedAt}\ncompleted ${run.completedAt}\nworked ${ageStr}`
-    : `started ${run.startedAt}\nworking for ${ageStr}`;
+    : `started ${run.startedAt}\nworking for ${ageStr}`
   return (
     <span className="font-mono text-muted-foreground/80" title={tooltip}>
       {ageStr}
     </span>
-  );
+  )
 }

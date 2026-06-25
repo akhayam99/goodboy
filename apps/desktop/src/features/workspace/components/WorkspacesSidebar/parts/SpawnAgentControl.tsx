@@ -1,98 +1,98 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Popover, cn } from '@goodboy/ui';
-import { Plus } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Popover, cn } from '@goodboy/ui'
+import { Plus } from 'lucide-react'
+import type { SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../../store'
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   AGENT_KIND_ORDER,
   AGENT_KIND_PALETTE,
-} from '../../../../../features/session/agent-kind';
+} from '../../../../../features/session/agent-kind'
 
 type SpawnAgentControlProps = {
-  sessionId: SessionId;
-};
+  sessionId: SessionId
+}
 
-const MENU_WIDTH = 320;
-const MENU_MAX_HEIGHT = 288;
-const MENU_MARGIN = 8;
+const MENU_WIDTH = 320
+const MENU_MAX_HEIGHT = 288
+const MENU_MARGIN = 8
 
 type PopoverAnchor = {
-  readonly left: number;
-  readonly top: number | null;
-  readonly bottom: number | null;
-  readonly direction: 'up' | 'down';
-};
+  readonly left: number
+  readonly top: number | null
+  readonly bottom: number | null
+  readonly direction: 'up' | 'down'
+}
 
 export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
-  const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const [open, setOpen] = useState(false)
+  const [anchor, setAnchor] = useState<PopoverAnchor | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
 
   const computeAnchor = useCallback((): PopoverAnchor | null => {
-    const rect = triggerRef.current?.getBoundingClientRect();
+    const rect = triggerRef.current?.getBoundingClientRect()
     if (!rect) {
-      return null;
+      return null
     }
-    const spaceAbove = rect.top;
-    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top
+    const spaceBelow = window.innerHeight - rect.bottom
     const direction: 'up' | 'down' =
-      spaceBelow > MENU_MAX_HEIGHT || spaceBelow > spaceAbove ? 'down' : 'up';
+      spaceBelow > MENU_MAX_HEIGHT || spaceBelow > spaceAbove ? 'down' : 'up'
     const left = Math.max(
       MENU_MARGIN,
       Math.min(rect.left, window.innerWidth - MENU_WIDTH - MENU_MARGIN),
-    );
+    )
     if (direction === 'down') {
-      return { left, top: rect.bottom + 4, bottom: null, direction };
+      return { left, top: rect.bottom + 4, bottom: null, direction }
     }
-    return { left, top: null, bottom: window.innerHeight - rect.top + 4, direction };
-  }, []);
+    return { left, top: null, bottom: window.innerHeight - rect.top + 4, direction }
+  }, [])
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const onDocClick = (e: MouseEvent) => {
-      const target = e.target as Node;
+      const target = e.target as Node
       if (triggerRef.current?.contains(target)) {
-        return;
+        return
       }
       if (menuRef.current?.contains(target)) {
-        return;
+        return
       }
-      setOpen(false);
-    };
+      setOpen(false)
+    }
     const onReanchor = () => {
-      const next = computeAnchor();
+      const next = computeAnchor()
       if (next) {
-        setAnchor(next);
+        setAnchor(next)
       } else {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    window.addEventListener('mousedown', onDocClick);
-    window.addEventListener('resize', onReanchor);
-    window.addEventListener('scroll', onReanchor, true);
+    }
+    window.addEventListener('mousedown', onDocClick)
+    window.addEventListener('resize', onReanchor)
+    window.addEventListener('scroll', onReanchor, true)
     return () => {
-      window.removeEventListener('mousedown', onDocClick);
-      window.removeEventListener('resize', onReanchor);
-      window.removeEventListener('scroll', onReanchor, true);
-    };
-  }, [open, computeAnchor]);
+      window.removeEventListener('mousedown', onDocClick)
+      window.removeEventListener('resize', onReanchor)
+      window.removeEventListener('scroll', onReanchor, true)
+    }
+  }, [open, computeAnchor])
 
   const onToggle = () => {
     if (!open) {
-      const next = computeAnchor();
+      const next = computeAnchor()
       if (next) {
-        setAnchor(next);
+        setAnchor(next)
       }
     }
-    setOpen((v) => !v);
-  };
+    setOpen((v) => !v)
+  }
 
   const menu =
     open && anchor
@@ -116,17 +116,17 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
               .filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false)
               .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
               .map((kind) => {
-                const meta = AGENT_KIND_META[kind];
-                const palette = AGENT_KIND_PALETTE[kind];
+                const meta = AGENT_KIND_META[kind]
+                const palette = AGENT_KIND_PALETTE[kind]
                 return (
                   <button
                     key={kind}
                     type="button"
                     role="menuitem"
                     onClick={() => {
-                      setOpen(false);
-                      void spawnAgent(sessionId, { kindOverride: kind });
-                      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+                      setOpen(false)
+                      void spawnAgent(sessionId, { kindOverride: kind })
+                      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))
                     }}
                     className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted"
                   >
@@ -141,12 +141,12 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
                       </span>
                     </span>
                   </button>
-                );
+                )
               })}
           </Popover>,
           document.body,
         )
-      : null;
+      : null
 
   return (
     <div className="relative mt-1">
@@ -163,5 +163,5 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       </button>
       {menu}
     </div>
-  );
+  )
 }

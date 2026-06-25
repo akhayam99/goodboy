@@ -1,65 +1,65 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Dialog, Button } from '@goodboy/ui';
-import { CheckCircle2 } from 'lucide-react';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
-import { CommandPreview } from '../ProviderLifecycleTile/CommandPreview';
-import { ErrorPanel } from '../ProviderLifecycleTile/ErrorPanel';
-import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
-import { OpenInBrowserButton } from '../ProviderLifecycleTile/OpenInBrowserButton';
-import { StatusPill } from '../ProviderLifecycleTile/StatusPill';
-import { Stepper } from '../ProviderLifecycleTile/Stepper';
-import { EscapeHatch } from './EscapeHatch';
-import { GuidePanel } from './GuidePanel';
-import { EmptyTerminalPlaceholder, HelperNote, useProviderConnect } from './useProviderConnect';
+import { useCallback, useEffect, useState } from 'react'
+import { Dialog, Button } from '@goodboy/ui'
+import { CheckCircle2 } from 'lucide-react'
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
+import { brandColor, PROVIDER_BRAND } from '../provider-brand'
+import { CommandPreview } from '../ProviderLifecycleTile/CommandPreview'
+import { ErrorPanel } from '../ProviderLifecycleTile/ErrorPanel'
+import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal'
+import { OpenInBrowserButton } from '../ProviderLifecycleTile/OpenInBrowserButton'
+import { StatusPill } from '../ProviderLifecycleTile/StatusPill'
+import { Stepper } from '../ProviderLifecycleTile/Stepper'
+import { EscapeHatch } from './EscapeHatch'
+import { GuidePanel } from './GuidePanel'
+import { EmptyTerminalPlaceholder, HelperNote, useProviderConnect } from './useProviderConnect'
 
 type Props = {
-  readonly providerId: ProviderId | null;
-  readonly initialAction: ProviderLifecycleAction;
-  readonly onClose: () => void;
-};
+  readonly providerId: ProviderId | null
+  readonly initialAction: ProviderLifecycleAction
+  readonly onClose: () => void
+}
 
 export const ProviderConnectModal = ({ providerId, initialAction, onClose }: Props) => {
-  const open = providerId !== null;
-  const [pinned, setPinned] = useState<ProviderId | null>(null);
-  const [pinnedAction, setPinnedAction] = useState<ProviderLifecycleAction>(initialAction);
+  const open = providerId !== null
+  const [pinned, setPinned] = useState<ProviderId | null>(null)
+  const [pinnedAction, setPinnedAction] = useState<ProviderLifecycleAction>(initialAction)
 
   useEffect(() => {
     if (providerId) {
-      setPinned(providerId);
-      setPinnedAction(initialAction);
+      setPinned(providerId)
+      setPinnedAction(initialAction)
     }
-  }, [providerId, initialAction]);
+  }, [providerId, initialAction])
 
-  const target = providerId ?? pinned;
+  const target = providerId ?? pinned
   if (!target) {
     return (
       <Dialog open={false} onClose={onClose} size="xl">
         {null}
       </Dialog>
-    );
+    )
   }
   return (
     <ModalBody providerId={target} initialAction={pinnedAction} open={open} onClose={onClose} />
-  );
-};
+  )
+}
 
 type BodyProps = {
-  readonly providerId: ProviderId;
-  readonly initialAction: ProviderLifecycleAction;
-  readonly open: boolean;
-  readonly onClose: () => void;
-};
+  readonly providerId: ProviderId
+  readonly initialAction: ProviderLifecycleAction
+  readonly open: boolean
+  readonly onClose: () => void
+}
 
 function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
   const { lifecycle, provider, guide, command, inFlight, connected, primary, runPrimary } =
-    useProviderConnect(providerId, initialAction, open);
+    useProviderConnect(providerId, initialAction, open)
 
-  const onPrimary = useCallback(() => runPrimary(onClose), [runPrimary, onClose]);
+  const onPrimary = useCallback(() => runPrimary(onClose), [runPrimary, onClose])
 
-  const brand = PROVIDER_BRAND[providerId];
-  const Icon = brand.icon;
-  const color = brandColor(providerId);
+  const brand = PROVIDER_BRAND[providerId]
+  const Icon = brand.icon
+  const color = brandColor(providerId)
 
   return (
     <Dialog
@@ -133,5 +133,5 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
 
       {command ? <EscapeHatch command={command} /> : null}
     </Dialog>
-  );
+  )
 }

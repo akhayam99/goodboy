@@ -1,6 +1,6 @@
-import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@goodboy/types';
-import type { GhRunner } from './gh';
-import { GhCliError, runJson } from './gh';
+import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@goodboy/types'
+import type { GhRunner } from './gh'
+import { GhCliError, runJson } from './gh'
 
 const PR_FIELDS = [
   'number',
@@ -16,83 +16,83 @@ const PR_FIELDS = [
   'updatedAt',
   'body',
   'autoMergeRequest',
-] as const;
+] as const
 
 type RawPullRequest = {
-  number: number;
-  title: string;
-  url: string;
-  state: 'OPEN' | 'CLOSED' | 'MERGED';
-  isDraft: boolean;
-  mergeable: 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN' | null;
-  baseRefName: string;
-  headRefName: string;
-  reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null;
+  number: number
+  title: string
+  url: string
+  state: 'OPEN' | 'CLOSED' | 'MERGED'
+  isDraft: boolean
+  mergeable: 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN' | null
+  baseRefName: string
+  headRefName: string
+  reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
   statusCheckRollup: ReadonlyArray<{
-    state?: 'SUCCESS' | 'FAILURE' | 'PENDING' | 'ERROR' | null;
-    conclusion?: 'SUCCESS' | 'FAILURE' | 'NEUTRAL' | 'CANCELLED' | 'TIMED_OUT' | null;
-  }> | null;
-  updatedAt: string;
-  body: string | null;
-  autoMergeRequest: Record<string, unknown> | null;
-};
+    state?: 'SUCCESS' | 'FAILURE' | 'PENDING' | 'ERROR' | null
+    conclusion?: 'SUCCESS' | 'FAILURE' | 'NEUTRAL' | 'CANCELLED' | 'TIMED_OUT' | null
+  }> | null
+  updatedAt: string
+  body: string | null
+  autoMergeRequest: Record<string, unknown> | null
+}
 
 type ClosingIssueRef = {
-  number: number;
-  title?: string;
-  url: string;
-};
+  number: number
+  title?: string
+  url: string
+}
 
 function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
   if (raw.state === 'MERGED') {
-    return 'merged';
+    return 'merged'
   }
   if (raw.state === 'CLOSED') {
-    return 'closed';
+    return 'closed'
   }
   if (raw.isDraft) {
-    return 'draft';
+    return 'draft'
   }
   if (raw.autoMergeRequest != null) {
-    return 'queued';
+    return 'queued'
   }
   if (raw.reviewDecision === 'APPROVED') {
-    return 'approved';
+    return 'approved'
   }
-  return 'open';
+  return 'open'
 }
 
 function deriveChecks(raw: RawPullRequest): PullRequestState['checks'] {
-  const checks = raw.statusCheckRollup ?? [];
+  const checks = raw.statusCheckRollup ?? []
   if (checks.length === 0) {
-    return null;
+    return null
   }
-  let pending = false;
+  let pending = false
   for (const c of checks) {
-    const status = c.conclusion ?? c.state ?? null;
+    const status = c.conclusion ?? c.state ?? null
     if (
       status === 'FAILURE' ||
       status === 'CANCELLED' ||
       status === 'TIMED_OUT' ||
       status === 'ERROR'
     ) {
-      return 'failure';
+      return 'failure'
     }
     if (status === 'PENDING' || status === null) {
-      pending = true;
+      pending = true
     }
   }
-  return pending ? 'pending' : 'success';
+  return pending ? 'pending' : 'success'
 }
 
 function deriveMergeable(raw: RawPullRequest): boolean | null {
   if (raw.mergeable === 'MERGEABLE') {
-    return true;
+    return true
   }
   if (raw.mergeable === 'CONFLICTING') {
-    return false;
+    return false
   }
-  return null;
+  return null
 }
 
 function toPullRequestState(raw: RawPullRequest): PullRequestState {
@@ -100,7 +100,7 @@ function toPullRequestState(raw: RawPullRequest): PullRequestState {
     APPROVED: 'approved',
     CHANGES_REQUESTED: 'changes_requested',
     REVIEW_REQUIRED: 'review_required',
-  };
+  }
   return {
     number: raw.number,
     title: raw.title,
@@ -115,7 +115,7 @@ function toPullRequestState(raw: RawPullRequest): PullRequestState {
     body: raw.body ?? '',
     updatedAt: raw.updatedAt,
     mergeQueue: raw.autoMergeRequest != null ? { position: null } : null,
-  };
+  }
 }
 
 export const resolvePrForBranch = async (
@@ -137,24 +137,24 @@ export const resolvePrForBranch = async (
     '5',
     '--json',
     PR_FIELDS.join(','),
-  ];
-  let raw: ReadonlyArray<RawPullRequest>;
+  ]
+  let raw: ReadonlyArray<RawPullRequest>
   try {
-    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
+    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts)
   } catch (err) {
     if (err instanceof GhCliError) {
-      return null;
+      return null
     }
-    throw err;
+    throw err
   }
   if (raw.length === 0) {
-    return null;
+    return null
   }
-  const open = raw.filter((p) => p.state === 'OPEN');
-  open.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const head = open[0] ?? [...raw].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-  return head ? toPullRequestState(head) : null;
-};
+  const open = raw.filter((p) => p.state === 'OPEN')
+  open.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  const head = open[0] ?? [...raw].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
+  return head ? toPullRequestState(head) : null
+}
 
 export const listPrsForBranch = async (
   runner: GhRunner,
@@ -175,59 +175,59 @@ export const listPrsForBranch = async (
     '20',
     '--json',
     PR_FIELDS.join(','),
-  ];
-  let raw: ReadonlyArray<RawPullRequest>;
+  ]
+  let raw: ReadonlyArray<RawPullRequest>
   try {
-    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
+    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts)
   } catch (err) {
     if (err instanceof GhCliError) {
-      return [];
+      return []
     }
-    throw err;
+    throw err
   }
   return [...raw]
     .sort((a, b) => {
-      const aTerminal = a.state === 'OPEN' ? 0 : 1;
-      const bTerminal = b.state === 'OPEN' ? 0 : 1;
+      const aTerminal = a.state === 'OPEN' ? 0 : 1
+      const bTerminal = b.state === 'OPEN' ? 0 : 1
       if (aTerminal !== bTerminal) {
-        return aTerminal - bTerminal;
+        return aTerminal - bTerminal
       }
-      return b.updatedAt.localeCompare(a.updatedAt);
+      return b.updatedAt.localeCompare(a.updatedAt)
     })
-    .map(toPullRequestState);
-};
+    .map(toPullRequestState)
+}
 
 const LINKED_KEYWORD_RE =
-  /\b(close[sd]?|fix(?:es|ed)?|resolve[sd]?|ref(?:s|erence[sd]?)?)\s+#(\d+)/gi;
+  /\b(close[sd]?|fix(?:es|ed)?|resolve[sd]?|ref(?:s|erence[sd]?)?)\s+#(\d+)/gi
 
 export const parseLinkedIssuesFromBody = (
   body: string,
   repoUrl: string,
 ): ReadonlyArray<LinkedIssue> => {
-  const seen = new Map<number, LinkedIssue>();
-  const repoBase = repoUrl.replace(/\/pull\/\d+.*$/, '').replace(/\.git$/, '');
+  const seen = new Map<number, LinkedIssue>()
+  const repoBase = repoUrl.replace(/\/pull\/\d+.*$/, '').replace(/\.git$/, '')
   for (const match of body.matchAll(LINKED_KEYWORD_RE)) {
-    const keyword = match[1]?.toLowerCase();
-    const numberStr = match[2];
+    const keyword = match[1]?.toLowerCase()
+    const numberStr = match[2]
     if (!keyword || !numberStr) {
-      continue;
+      continue
     }
-    const number = Number.parseInt(numberStr, 10);
+    const number = Number.parseInt(numberStr, 10)
     if (!Number.isFinite(number)) {
-      continue;
+      continue
     }
-    const closes = !keyword.startsWith('ref');
-    const existing = seen.get(number);
+    const closes = !keyword.startsWith('ref')
+    const existing = seen.get(number)
     if (!existing || (closes && !existing.closes)) {
       seen.set(number, {
         number,
         url: `${repoBase}/issues/${number}`,
         closes,
-      });
+      })
     }
   }
-  return [...seen.values()].sort((a, b) => a.number - b.number);
-};
+  return [...seen.values()].sort((a, b) => a.number - b.number)
+}
 
 export const fetchLinkedIssues = async (
   runner: GhRunner,
@@ -235,7 +235,7 @@ export const fetchLinkedIssues = async (
   pr: PullRequestState,
   opts: { cwd?: string; token?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<LinkedIssue>> => {
-  const fromBody = parseLinkedIssuesFromBody(pr.body, pr.url);
+  const fromBody = parseLinkedIssuesFromBody(pr.body, pr.url)
   try {
     const args = [
       'pr',
@@ -245,31 +245,31 @@ export const fetchLinkedIssues = async (
       repo,
       '--json',
       'closingIssuesReferences',
-    ];
+    ]
     const res = await runJson<{ closingIssuesReferences: ReadonlyArray<ClosingIssueRef> }>(
       runner,
       args,
       opts,
-    );
-    const merged = new Map<number, LinkedIssue>();
-    for (const item of fromBody) merged.set(item.number, item);
+    )
+    const merged = new Map<number, LinkedIssue>()
+    for (const item of fromBody) merged.set(item.number, item)
     for (const item of res.closingIssuesReferences ?? []) {
-      const existing = merged.get(item.number);
+      const existing = merged.get(item.number)
       merged.set(item.number, {
         number: item.number,
         title: item.title,
         url: item.url,
         closes: existing?.closes ?? true,
-      });
+      })
     }
-    return [...merged.values()].sort((a, b) => a.number - b.number);
+    return [...merged.values()].sort((a, b) => a.number - b.number)
   } catch (err) {
     if (err instanceof GhCliError) {
-      return fromBody;
+      return fromBody
     }
-    throw err;
+    throw err
   }
-};
+}
 
 export const detectRepoSlug = async (
   runner: GhRunner,
@@ -283,13 +283,13 @@ export const detectRepoSlug = async (
         cwd,
         workspaceId,
       },
-    );
+    )
     if (res.exitCode !== 0) {
-      return null;
+      return null
     }
-    const slug = res.stdout.trim();
-    return slug.length > 0 ? slug : null;
+    const slug = res.stdout.trim()
+    return slug.length > 0 ? slug : null
   } catch {
-    return null;
+    return null
   }
-};
+}

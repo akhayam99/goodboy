@@ -20,4 +20,4 @@ INSERT INTO session_workflows (session_id, workflow_id, ordinal, current_step_or
 SELECT id, workflow_id, 0, COALESCE(current_step_ordinal, 0)
 FROM sessions
 WHERE workflow_id IS NOT NULL;
-`;
+`

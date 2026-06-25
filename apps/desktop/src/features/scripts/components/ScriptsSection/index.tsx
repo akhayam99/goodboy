@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { cn, Divider, Popover, SectionHeader } from '@goodboy/ui';
-import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { cn, Divider, Popover, SectionHeader } from '@goodboy/ui'
+import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types'
 import {
   ChevronDown,
   ChevronRight,
@@ -11,22 +11,22 @@ import {
   Square,
   Terminal,
   X,
-} from 'lucide-react';
-import { useAppStore } from '../../../../store';
-import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
+} from 'lucide-react'
+import { useAppStore } from '../../../../store'
+import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts'
 
 type ScriptsSectionProps = {
-  readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-  readonly worktreePath: string | null;
-  readonly forceExpanded?: boolean;
-  readonly hideHeader?: boolean;
-};
+  readonly sessionId: SessionId
+  readonly workspaceId: WorkspaceId
+  readonly worktreePath: string | null
+  readonly forceExpanded?: boolean
+  readonly hideHeader?: boolean
+}
 
 type LogTarget = {
-  readonly scriptId: WorkspaceScriptId;
-  readonly anchor: DOMRect;
-};
+  readonly scriptId: WorkspaceScriptId
+  readonly anchor: DOMRect
+}
 
 export const ScriptsSection = ({
   sessionId,
@@ -35,50 +35,50 @@ export const ScriptsSection = ({
   forceExpanded = false,
   hideHeader = false,
 }: ScriptsSectionProps) => {
-  const storedExpanded = useAppStore((s) => s.sessionPanelExpanded[sessionId]?.scripts ?? false);
-  const expanded = forceExpanded || storedExpanded;
-  const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
-  const [log, setLog] = useState<LogTarget | null>(null);
-  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
-  const runs = useAppStore((s) => s.scriptRuns[sessionId]);
-  const loadScripts = useAppStore((s) => s.loadScripts);
-  const runScript = useAppStore((s) => s.runScript);
-  const cancelScript = useAppStore((s) => s.cancelScript);
+  const storedExpanded = useAppStore((s) => s.sessionPanelExpanded[sessionId]?.scripts ?? false)
+  const expanded = forceExpanded || storedExpanded
+  const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded)
+  const [log, setLog] = useState<LogTarget | null>(null)
+  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId])
+  const runs = useAppStore((s) => s.scriptRuns[sessionId])
+  const loadScripts = useAppStore((s) => s.loadScripts)
+  const runScript = useAppStore((s) => s.runScript)
+  const cancelScript = useAppStore((s) => s.cancelScript)
 
   useEffect(() => {
-    void loadScripts(workspaceId);
-  }, [workspaceId, loadScripts]);
+    void loadScripts(workspaceId)
+  }, [workspaceId, loadScripts])
 
   const onRun = useCallback(
     (script: WorkspaceScript) => {
       if (!worktreePath) {
-        return;
+        return
       }
-      void runScript(sessionId, script.id, worktreePath);
+      void runScript(sessionId, script.id, worktreePath)
     },
     [runScript, sessionId, worktreePath],
-  );
+  )
 
   const onCancel = useCallback(
     (scriptId: WorkspaceScriptId) => {
-      void cancelScript(sessionId, scriptId);
+      void cancelScript(sessionId, scriptId)
     },
     [cancelScript, sessionId],
-  );
+  )
 
   const onToggleLog = useCallback((scriptId: WorkspaceScriptId, anchor: DOMRect) => {
-    setLog((prev) => (prev?.scriptId === scriptId ? null : { scriptId, anchor }));
-  }, []);
+    setLog((prev) => (prev?.scriptId === scriptId ? null : { scriptId, anchor }))
+  }, [])
 
-  const list = scripts ?? [];
+  const list = scripts ?? []
 
   const openSettings = () =>
     window.dispatchEvent(
       new CustomEvent('goodboy:open-workspace-settings', { detail: { section: 'scripts' } }),
-    );
+    )
 
-  const logScript = log ? list.find((s) => s.id === log.scriptId) : null;
-  const logResult = log ? (runs?.[log.scriptId]?.result ?? null) : null;
+  const logScript = log ? list.find((s) => s.id === log.scriptId) : null
+  const logResult = log ? (runs?.[log.scriptId]?.result ?? null) : null
 
   return (
     <>
@@ -148,18 +148,18 @@ export const ScriptsSection = ({
         />
       ) : null}
     </>
-  );
-};
+  )
+}
 
 type ScriptRowProps = {
-  readonly script: WorkspaceScript;
-  readonly run: ScriptRunRecord | null;
-  readonly disabled: boolean;
-  readonly logOpen: boolean;
-  readonly onRun: () => void;
-  readonly onCancel: () => void;
-  readonly onToggleLog: (anchor: DOMRect) => void;
-};
+  readonly script: WorkspaceScript
+  readonly run: ScriptRunRecord | null
+  readonly disabled: boolean
+  readonly logOpen: boolean
+  readonly onRun: () => void
+  readonly onCancel: () => void
+  readonly onToggleLog: (anchor: DOMRect) => void
+}
 
 function ScriptRow({
   script,
@@ -170,11 +170,11 @@ function ScriptRow({
   onCancel,
   onToggleLog,
 }: ScriptRowProps) {
-  const status: ScriptRunStatus = run?.status ?? 'idle';
-  const result = run?.result ?? null;
-  const isPending = status === 'pending';
-  const hasOutput = result !== null;
-  const logRef = useRef<HTMLButtonElement>(null);
+  const status: ScriptRunStatus = run?.status ?? 'idle'
+  const result = run?.result ?? null
+  const isPending = status === 'pending'
+  const hasOutput = result !== null
+  const logRef = useRef<HTMLButtonElement>(null)
 
   return (
     <div
@@ -193,9 +193,9 @@ function ScriptRow({
           ref={logRef}
           type="button"
           onClick={() => {
-            const rect = logRef.current?.getBoundingClientRect();
+            const rect = logRef.current?.getBoundingClientRect()
             if (rect) {
-              onToggleLog(rect);
+              onToggleLog(rect)
             }
           }}
           aria-expanded={logOpen}
@@ -233,59 +233,59 @@ function ScriptRow({
         </button>
       )}
     </div>
-  );
+  )
 }
 
 type LogFlyoutProps = {
-  readonly script: WorkspaceScript;
-  readonly result: ScriptRunResult;
-  readonly anchor: DOMRect;
-  readonly onClose: () => void;
-};
+  readonly script: WorkspaceScript
+  readonly result: ScriptRunResult
+  readonly anchor: DOMRect
+  readonly onClose: () => void
+}
 
 function computePosition(anchor: DOMRect) {
-  const margin = 16;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const width = Math.min(640, Math.max(480, vw - anchor.right - margin * 3));
-  const height = Math.min(vh - margin * 2, 640);
-  let left = anchor.right + 16;
+  const margin = 16
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const width = Math.min(640, Math.max(480, vw - anchor.right - margin * 3))
+  const height = Math.min(vh - margin * 2, 640)
+  let left = anchor.right + 16
   if (left + width > vw - margin) {
-    left = anchor.left - 16 - width;
+    left = anchor.left - 16 - width
   }
-  left = Math.max(margin, Math.min(left, vw - width - margin));
-  const top = Math.max(margin, (vh - height) / 2);
-  return { left, top, width, height };
+  left = Math.max(margin, Math.min(left, vw - width - margin))
+  const top = Math.max(margin, (vh - height) / 2)
+  return { left, top, width, height }
 }
 
 function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyoutProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onClose()
       }
-    };
+    }
     const onDown = (e: MouseEvent) => {
       if (!panelRef.current?.contains(e.target as Node)) {
-        onClose();
+        onClose()
       }
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('mousedown', onDown);
+    }
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('mousedown', onDown)
     return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose]);
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('mousedown', onDown)
+    }
+  }, [onClose])
 
-  const [pos, setPos] = useState(() => computePosition(initialAnchor));
+  const [pos, setPos] = useState(() => computePosition(initialAnchor))
   useEffect(() => {
-    const recompute = () => setPos(computePosition(initialAnchor));
-    window.addEventListener('resize', recompute);
-    return () => window.removeEventListener('resize', recompute);
-  }, [initialAnchor]);
+    const recompute = () => setPos(computePosition(initialAnchor))
+    window.addEventListener('resize', recompute)
+    return () => window.removeEventListener('resize', recompute)
+  }, [initialAnchor])
 
   return createPortal(
     <Popover
@@ -329,7 +329,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
       </pre>
     </Popover>,
     document.body,
-  );
+  )
 }
 
 function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
@@ -340,7 +340,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
         aria-label="last run ok"
         role="img"
       />
-    );
+    )
   }
   if (status === 'error') {
     return (
@@ -349,7 +349,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
         aria-label="last run failed"
         role="img"
       />
-    );
+    )
   }
   if (status === 'cancelled') {
     return (
@@ -358,7 +358,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
         aria-label="last run cancelled"
         role="img"
       />
-    );
+    )
   }
-  return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />;
+  return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />
 }

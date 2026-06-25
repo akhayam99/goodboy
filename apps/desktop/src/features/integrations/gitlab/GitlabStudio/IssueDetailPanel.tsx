@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Button, Divider, EmptyState, Input, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
+import { useEffect, useState } from 'react'
+import { Button, Divider, EmptyState, Input, Markdown, SectionHeader, Textarea } from '@goodboy/ui'
 import {
   AlertTriangle,
   ArrowRight,
@@ -9,36 +9,36 @@ import {
   Milestone,
   MousePointerClick,
   Target,
-} from 'lucide-react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
-import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors';
-import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
-import { removeWorktree } from '../../../worktree/worktree';
-import { useBranchConflict } from '../../../worktree/useBranchConflict';
-import { goalFromIssue } from '../goal-from-issue';
-import { issueIdentifier, type GitlabIssue } from '../client';
-import { gitlabBranchSlug } from './useGitlabIssues';
+} from 'lucide-react'
+import type { SessionId, WorkspaceId } from '@goodboy/types'
+import { ScrollFade } from '@goodboy/ui'
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
+import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors'
+import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide'
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings'
+import { removeWorktree } from '../../../worktree/worktree'
+import { useBranchConflict } from '../../../worktree/useBranchConflict'
+import { goalFromIssue } from '../goal-from-issue'
+import { issueIdentifier, type GitlabIssue } from '../client'
+import { gitlabBranchSlug } from './useGitlabIssues'
 
 type Props = {
-  readonly issue: GitlabIssue | null;
-  readonly sessionId: SessionId | null;
-  readonly workspaceId: WorkspaceId;
-  readonly onClose: () => void;
-};
+  readonly issue: GitlabIssue | null
+  readonly sessionId: SessionId | null
+  readonly workspaceId: WorkspaceId
+  readonly onClose: () => void
+}
 
-const SLUG_MAX_LEN = 48;
+const SLUG_MAX_LEN = 48
 
 function sanitizeSlug(input: string): string {
   return input
     .replace(/[^a-zA-Z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
+    .slice(0, SLUG_MAX_LEN)
 }
 
 function sanitizePrefix(input: string): string {
@@ -46,60 +46,60 @@ function sanitizePrefix(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '')
     .replace(/^-+/, '')
-    .slice(0, 16);
+    .slice(0, 16)
 }
 
 function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
+  const s = slug.trim()
   if (!s) {
-    return false;
+    return false
   }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..')
 }
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
-  const createSession = useAppStore((s) => s.createSession);
-  const loadSetting = useAppStore((s) => s.loadSetting);
+  const createSession = useAppStore((s) => s.createSession)
+  const loadSetting = useAppStore((s) => s.loadSetting)
   const rootPath = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
-  );
-  const { showToast } = useToast();
+  )
+  const { showToast } = useToast()
 
-  const [goal, setGoal] = useState('');
-  const [branchSlug, setBranchSlug] = useState('');
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
+  const [goal, setGoal] = useState('')
+  const [branchSlug, setBranchSlug] = useState('')
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
   const [setupWorkflow, setSetupWorkflow] = useState(() => {
     try {
-      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
+      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0'
     } catch {
-      return true;
+      return true
     }
-  });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const prefix = sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX;
-  const branchValid = isValidBranchSlug(branchSlug);
-  const fullBranch = branchValid ? `${prefix}/${branchSlug.trim()}` : null;
-  const conflict = useBranchConflict(fullBranch, rootPath);
-  const branchSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
-  const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
+  const prefix = sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX
+  const branchValid = isValidBranchSlug(branchSlug)
+  const fullBranch = branchValid ? `${prefix}/${branchSlug.trim()}` : null
+  const conflict = useBranchConflict(fullBranch, rootPath)
+  const branchSessionId = conflict?.kind === 'session' ? conflict.sessionId : null
+  const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null
 
   useEffect(() => {
     if (!issue) {
-      return;
+      return
     }
-    setGoal(goalFromIssue(issue));
-    setBranchSlug(gitlabBranchSlug(issue));
-    setError(null);
-    setBusy(false);
-  }, [issue]);
+    setGoal(goalFromIssue(issue))
+    setBranchSlug(gitlabBranchSlug(issue))
+    setError(null)
+    setBusy(false)
+  }, [issue])
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((value) => {
-      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
-    });
-  }, [workspaceId, loadSetting]);
+      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX)
+    })
+  }, [workspaceId, loadSetting])
 
   if (!issue) {
     return (
@@ -110,19 +110,19 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           description="Pick an issue to see its details and launch a session."
         />
       </div>
-    );
+    )
   }
 
-  const openableSessionId = sessionId ?? branchSessionId;
-  const missingBase = error !== null && isMissingBaseRefError(error);
-  const blockedByConflict = conflictPath !== null;
-  const canLaunch = goal.trim().length > 0 && branchValid && !busy && !blockedByConflict;
+  const openableSessionId = sessionId ?? branchSessionId
+  const missingBase = error !== null && isMissingBaseRefError(error)
+  const blockedByConflict = conflictPath !== null
+  const canLaunch = goal.trim().length > 0 && branchValid && !busy && !blockedByConflict
 
   const onLaunch = async (eraseWorktreePath?: string) => {
-    setError(null);
-    setBusy(true);
+    setError(null)
+    setBusy(true)
     try {
-      if (eraseWorktreePath && rootPath) await removeWorktree(rootPath, eraseWorktreePath);
+      if (eraseWorktreePath && rootPath) await removeWorktree(rootPath, eraseWorktreePath)
       const { session } = await createSession({
         workspaceId,
         goal,
@@ -135,33 +135,33 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           url: issue.webUrl,
           title: issue.title,
         },
-      });
-      showToast('success', `Session created: ${session.goal}`);
-      onClose();
+      })
+      showToast('success', `Session created: ${session.goal}`)
+      onClose()
       if (setupWorkflow) {
         setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent('goodboy:open-workflow-builder', {
               detail: { sessionId: session.id },
             }),
-          );
-        }, 0);
+          )
+        }, 0)
       }
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onToggleSetupWorkflow = (next: boolean) => {
-    setSetupWorkflow(next);
+    setSetupWorkflow(next)
     try {
-      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
+      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0')
     } catch {
-      void 0;
+      void 0
     }
-  };
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -351,22 +351,22 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}
 
 function LaunchField({
   icon,
   label,
   children,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
+  icon: React.ReactNode
+  label: string
+  children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <SectionHeader label={label} icon={icon} />
       {children}
     </div>
-  );
+  )
 }

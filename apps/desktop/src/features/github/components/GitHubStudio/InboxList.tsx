@@ -1,14 +1,14 @@
-import type { SessionId } from '@goodboy/types';
-import { cn, EmptyState } from '@goodboy/ui';
-import { GitBranch, Inbox } from 'lucide-react';
-import { PullRequestChip } from '../PullRequestChip';
-import type { InboxGroup } from './useGithubInbox';
+import type { SessionId } from '@goodboy/types'
+import { cn, EmptyState } from '@goodboy/ui'
+import { GitBranch, Inbox } from 'lucide-react'
+import { PullRequestChip } from '../PullRequestChip'
+import type { InboxGroup } from './useGithubInbox'
 
 type Props = {
-  readonly groups: ReadonlyArray<InboxGroup>;
-  readonly focusedSessionId: SessionId | null;
-  readonly onSelect: (sessionId: SessionId) => void;
-};
+  readonly groups: ReadonlyArray<InboxGroup>
+  readonly focusedSessionId: SessionId | null
+  readonly onSelect: (sessionId: SessionId) => void
+}
 
 export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
   if (groups.length === 0) {
@@ -20,7 +20,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
           description="Sessions in this workspace will show up here."
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -38,7 +38,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
           </div>
           <ul className="flex flex-col gap-0.5">
             {group.rows.map((row) => {
-              const active = row.session.id === focusedSessionId;
+              const active = row.session.id === focusedSessionId
               return (
                 <li key={row.session.id}>
                   <button
@@ -76,11 +76,11 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                     ) : null}
                   </button>
                 </li>
-              );
+              )
             })}
           </ul>
         </div>
       ))}
     </div>
-  );
-};
+  )
+}

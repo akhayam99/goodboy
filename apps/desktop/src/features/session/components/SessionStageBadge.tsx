@@ -1,15 +1,15 @@
-import { cn } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
-import { useSessionStageInfo } from '../../../store';
-import { SESSION_STAGE_META } from '../session-stage';
+import { cn } from '@goodboy/ui'
+import type { Session } from '@goodboy/types'
+import { useSessionStageInfo } from '../../../store'
+import { SESSION_STAGE_META } from '../session-stage'
 
 type Props = {
-  readonly session: Session;
-};
+  readonly session: Session
+}
 
 export const SessionStageBadge = ({ session }: Props) => {
-  const { stage, reason } = useSessionStageInfo(session);
-  const meta = SESSION_STAGE_META[stage];
+  const { stage, reason } = useSessionStageInfo(session)
+  const meta = SESSION_STAGE_META[stage]
   return (
     <span
       role="status"
@@ -21,5 +21,5 @@ export const SessionStageBadge = ({ session }: Props) => {
         stage === 'running' && 'motion-safe:animate-pulse',
       )}
     />
-  );
-};
+  )
+}

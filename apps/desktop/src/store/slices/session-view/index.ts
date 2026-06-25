@@ -1,6 +1,6 @@
-import { getSessionViewPrefs } from './getSessionViewPrefs';
-import { setSessionGroup } from './setSessionGroup';
-import { setSessionSort } from './setSessionSort';
+import { getSessionViewPrefs } from './getSessionViewPrefs'
+import { setSessionGroup } from './setSessionGroup'
+import { setSessionSort } from './setSessionSort'
 import {
   lensGo,
   setActiveLens,
@@ -8,15 +8,15 @@ import {
   setFocusedWorkflowRun,
   setSessionStudio,
   toggleWorkflowExpand,
-} from './workSurface';
-import type { GetFn, SessionViewSlice, SetFn } from './types';
+} from './workSurface'
+import type { GetFn, SessionViewSlice, SetFn } from './types'
 
-export { sortAndGroupSessions } from './sortAndGroupSessions';
-export { deriveSessionStage } from './deriveSessionStage';
-export { readPersistedLens } from './workSurfaceStorage';
-export { LENS_KINDS } from './types';
-export type { GroupedSessions, SessionViewSlice } from './types';
-export type { SessionStudio, LensKind, LensHistory } from './types';
+export { sortAndGroupSessions } from './sortAndGroupSessions'
+export { deriveSessionStage } from './deriveSessionStage'
+export { readPersistedLens } from './workSurfaceStorage'
+export { LENS_KINDS } from './types'
+export type { GroupedSessions, SessionViewSlice } from './types'
+export type { SessionStudio, LensKind, LensHistory } from './types'
 
 export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {
   return {
@@ -36,5 +36,5 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedPlanId: setFocusedPlanId(set),
     setSessionStudio: setSessionStudio(set),
-  };
-};
+  }
+}

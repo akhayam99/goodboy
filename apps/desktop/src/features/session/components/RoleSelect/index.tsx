@@ -1,24 +1,24 @@
-import { useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import type { AgentRole } from '@goodboy/types';
-import { Check, ChevronDown } from 'lucide-react';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { AGENT_ROLES, ROLE_LABEL, ROLE_TO_KIND } from '../../agent-kind';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
+import { useRef, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import type { AgentRole } from '@goodboy/types'
+import { Check, ChevronDown } from 'lucide-react'
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar'
+import { AGENT_ROLES, ROLE_LABEL, ROLE_TO_KIND } from '../../agent-kind'
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils'
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside'
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection'
 
 type Props = {
-  value: AgentRole;
-  onChange: (role: AgentRole) => void;
-  disabled: boolean;
-};
+  value: AgentRole
+  onChange: (role: AgentRole) => void
+  disabled: boolean
+}
 
 export const RoleSelect = ({ value, onChange, disabled }: Props) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useClickOutside(containerRef, () => setOpen(false))
+  const direction = useDropdownDirection(containerRef, open)
 
   return (
     <div ref={containerRef} className="relative">
@@ -54,14 +54,14 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
           )}
         >
           {AGENT_ROLES.map((role) => {
-            const active = value === role;
+            const active = value === role
             return (
               <button
                 key={role}
                 type="button"
                 onClick={() => {
-                  onChange(role);
-                  setOpen(false);
+                  onChange(role)
+                  setOpen(false)
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
@@ -74,10 +74,10 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
                 <span className="flex-1 truncate">{ROLE_LABEL[role]}</span>
                 {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
-            );
+            )
           })}
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

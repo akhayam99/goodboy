@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
-const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
+const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini']
 
 type ModeMeta = {
-  readonly value: ClaudePermissionMode;
-  readonly label: string;
-  readonly description: string;
-  readonly dot: string;
-  readonly text: string;
-};
+  readonly value: ClaudePermissionMode
+  readonly label: string
+  readonly description: string
+  readonly dot: string
+  readonly text: string
+}
 
 const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
   {
@@ -43,56 +43,56 @@ const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
     dot: 'bg-muted-foreground',
     text: 'text-muted-foreground',
   },
-];
+]
 
 export const permissionModeMeta = (mode: ClaudePermissionMode): ModeMeta => {
-  return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!;
-};
+  return PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0]!
+}
 
 type Props = {
-  readonly session: Session;
-  readonly activeProvider: ProviderId;
-};
+  readonly session: Session
+  readonly activeProvider: ProviderId
+}
 
 export const PermissionModePicker = ({ session, activeProvider }: Props) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
-  const current = permissionModeMeta(session.permissionMode);
-  const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider);
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode)
+  const current = permissionModeMeta(session.permissionMode)
+  const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider)
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
+    }
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    window.addEventListener('mousedown', onClick);
-    window.addEventListener('keydown', onEsc);
+    }
+    window.addEventListener('mousedown', onClick)
+    window.addEventListener('keydown', onEsc)
     return () => {
-      window.removeEventListener('mousedown', onClick);
-      window.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
+      window.removeEventListener('mousedown', onClick)
+      window.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
 
   useEffect(() => {
-    const handler = () => setOpen(true);
-    window.addEventListener('goodboy:open-permission-picker', handler);
-    return () => window.removeEventListener('goodboy:open-permission-picker', handler);
-  }, []);
+    const handler = () => setOpen(true)
+    window.addEventListener('goodboy:open-permission-picker', handler)
+    return () => window.removeEventListener('goodboy:open-permission-picker', handler)
+  }, [])
 
   const onPick = (mode: ClaudePermissionMode) => {
-    void setSessionPermissionMode(session.id, mode);
-    setOpen(false);
-  };
+    void setSessionPermissionMode(session.id, mode)
+    setOpen(false)
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -123,7 +123,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             </span>
           </div>
           {PERMISSION_MODES.map((m) => {
-            const active = session.permissionMode === m.value;
+            const active = session.permissionMode === m.value
             return (
               <button
                 key={m.value}
@@ -148,7 +148,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
                   </span>
                 ) : null}
               </button>
-            );
+            )
           })}
           {unenforced ? (
             <p className="px-2.5 pb-1 pt-1.5 text-2xs text-muted-foreground/80">
@@ -158,5 +158,5 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

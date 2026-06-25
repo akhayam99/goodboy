@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PrComment, PullRequestState } from '@goodboy/types';
-import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
-import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react';
-import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PrComment, PullRequestState } from '@goodboy/types'
+import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui'
+import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react'
+import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads'
 import {
   ResolverStateBadge,
   resolverBadgeState,
-} from '../../../session/components/ResolverStateBadge';
-import type { ResolverLink } from '../../../session/resolver-linkage';
+} from '../../../session/components/ResolverStateBadge'
+import type { ResolverLink } from '../../../session/resolver-linkage'
 
 type Props = {
-  readonly comments: ReadonlyArray<PrComment>;
-  readonly pr: PullRequestState;
-  readonly resolverFor?: (thread: CommentThread) => ResolverLink | undefined;
-  readonly scrollToThreadId?: string | null;
-  readonly onOpenUrl: (url: string) => void;
-};
+  readonly comments: ReadonlyArray<PrComment>
+  readonly pr: PullRequestState
+  readonly resolverFor?: (thread: CommentThread) => ResolverLink | undefined
+  readonly scrollToThreadId?: string | null
+  readonly onOpenUrl: (url: string) => void
+}
 
 export const PrConversation = ({
   comments,
@@ -25,31 +25,31 @@ export const PrConversation = ({
   onOpenUrl,
 }: Props) => {
   const threads = useMemo(() => {
-    const all = groupThreads(comments);
+    const all = groupThreads(comments)
     return [...all].sort((a, b) => {
-      const p = threadPriority(a) - threadPriority(b);
+      const p = threadPriority(a) - threadPriority(b)
       if (p !== 0) {
-        return p;
+        return p
       }
-      return b.head.createdAt.localeCompare(a.head.createdAt);
-    });
-  }, [comments]);
+      return b.head.createdAt.localeCompare(a.head.createdAt)
+    })
+  }, [comments])
 
-  const threadRefs = useRef(new Map<string, HTMLLIElement>());
-  const [flashThreadId, setFlashThreadId] = useState<string | null>(null);
+  const threadRefs = useRef(new Map<string, HTMLLIElement>())
+  const [flashThreadId, setFlashThreadId] = useState<string | null>(null)
   useEffect(() => {
     if (!scrollToThreadId) {
-      return;
+      return
     }
-    const el = threadRefs.current.get(scrollToThreadId);
+    const el = threadRefs.current.get(scrollToThreadId)
     if (!el) {
-      return;
+      return
     }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setFlashThreadId(scrollToThreadId);
-    const t = setTimeout(() => setFlashThreadId(null), 1600);
-    return () => clearTimeout(t);
-  }, [scrollToThreadId, threads]);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setFlashThreadId(scrollToThreadId)
+    const t = setTimeout(() => setFlashThreadId(null), 1600)
+    return () => clearTimeout(t)
+  }, [scrollToThreadId, threads])
 
   if (threads.length === 0) {
     return (
@@ -65,25 +65,25 @@ export const PrConversation = ({
           </Button>
         }
       />
-    );
+    )
   }
 
   return (
     <div className="flex flex-col gap-3">
       <ul className="flex flex-col gap-2.5">
         {threads.map((t) => {
-          const tid = t.head.threadId ?? null;
+          const tid = t.head.threadId ?? null
           return (
             <li
               key={t.head.id}
               ref={(el) => {
                 if (!tid) {
-                  return;
+                  return
                 }
                 if (el) {
-                  threadRefs.current.set(tid, el);
+                  threadRefs.current.set(tid, el)
                 } else {
-                  threadRefs.current.delete(tid);
+                  threadRefs.current.delete(tid)
                 }
               }}
               className={cn(
@@ -93,7 +93,7 @@ export const PrConversation = ({
             >
               <ConversationThread thread={t} link={resolverFor?.(t)} onOpenUrl={onOpenUrl} />
             </li>
-          );
+          )
         })}
       </ul>
       <button
@@ -105,22 +105,22 @@ export const PrConversation = ({
         <ExternalLink size={11} aria-hidden />
       </button>
     </div>
-  );
-};
+  )
+}
 
 function ConversationThread({
   thread,
   link,
   onOpenUrl,
 }: {
-  thread: CommentThread;
-  link?: ResolverLink;
-  onOpenUrl: (url: string) => void;
+  thread: CommentThread
+  link?: ResolverLink
+  onOpenUrl: (url: string) => void
 }) {
-  const { head, replies } = thread;
-  const isReview = head.source === 'review';
-  const resolved = isReview && head.resolved === true;
-  const open = isReview && head.resolved === false;
+  const { head, replies } = thread
+  const isReview = head.source === 'review'
+  const resolved = isReview && head.resolved === true
+  const open = isReview && head.resolved === false
 
   return (
     <div
@@ -211,7 +211,7 @@ function ConversationThread({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 function Avatar({ url, alt }: { url: string | null; alt: string }) {
@@ -223,27 +223,27 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
       >
         {alt.slice(0, 1).toUpperCase()}
       </span>
-    );
+    )
   }
-  return <img src={url} alt={alt} className="h-5 w-5 shrink-0 rounded-full" loading="lazy" />;
+  return <img src={url} alt={alt} className="h-5 w-5 shrink-0 rounded-full" loading="lazy" />
 }
 
 function formatRelative(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) {
-    return 'just now';
+    return 'just now'
   }
-  const s = Math.round(ms / 1_000);
+  const s = Math.round(ms / 1_000)
   if (s < 45) {
-    return 'just now';
+    return 'just now'
   }
-  const m = Math.round(s / 60);
+  const m = Math.round(s / 60)
   if (m < 60) {
-    return `${m}m ago`;
+    return `${m}m ago`
   }
-  const h = Math.round(m / 60);
+  const h = Math.round(m / 60)
   if (h < 24) {
-    return `${h}h ago`;
+    return `${h}h ago`
   }
-  const d = Math.round(h / 24);
-  return `${d}d ago`;
+  const d = Math.round(h / 24)
+  return `${d}d ago`
 }

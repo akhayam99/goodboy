@@ -1,37 +1,37 @@
-import { useEffect, useRef } from 'react';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import '@xterm/xterm/css/xterm.css';
-import { RotateCcw } from 'lucide-react';
-import { useThemeStore } from '../../lib/theme';
-import { resolveTerminalTheme } from './terminal-theme';
+import { useEffect, useRef } from 'react'
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
+import '@xterm/xterm/css/xterm.css'
+import { RotateCcw } from 'lucide-react'
+import { useThemeStore } from '../../lib/theme'
+import { resolveTerminalTheme } from './terminal-theme'
 
 export type TerminalDriver = {
-  write(data: string): void;
-  resize(cols: number, rows: number): void;
-  onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>;
-  onExit(handler: (exitCode: number) => void): Promise<() => void>;
-};
+  write(data: string): void
+  resize(cols: number, rows: number): void
+  onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>
+  onExit(handler: (exitCode: number) => void): Promise<() => void>
+}
 
-const MAX_CACHE_CHUNKS = 500;
+const MAX_CACHE_CHUNKS = 500
 
-const outputCache = new Map<string, Uint8Array[]>();
+const outputCache = new Map<string, Uint8Array[]>()
 
 export const clearTerminalCache = (terminalId: string): void => {
-  outputCache.delete(terminalId);
-};
+  outputCache.delete(terminalId)
+}
 
 type Props = {
-  readonly terminalId: string;
-  readonly driver: TerminalDriver;
-  readonly isActive: boolean;
-  readonly readOnly?: boolean;
-  readonly exitMessage?: string;
-  readonly onRestart?: () => void;
-  readonly onExit?: (exitCode: number) => void;
-};
+  readonly terminalId: string
+  readonly driver: TerminalDriver
+  readonly isActive: boolean
+  readonly readOnly?: boolean
+  readonly exitMessage?: string
+  readonly onRestart?: () => void
+  readonly onExit?: (exitCode: number) => void
+}
 
-const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
+const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m'
 
 export const GenericTerminalPanel = ({
   terminalId,
@@ -42,16 +42,16 @@ export const GenericTerminalPanel = ({
   onRestart,
   onExit,
 }: Props) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<Terminal | null>(null);
-  const fitAndSyncRef = useRef<(() => void) | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null)
+  const termRef = useRef<Terminal | null>(null)
+  const fitAndSyncRef = useRef<(() => void) | null>(null)
 
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useThemeStore((s) => s.theme)
 
   useEffect(() => {
-    const container = containerRef.current;
+    const container = containerRef.current
     if (!container) {
-      return;
+      return
     }
 
     const term = new Terminal({
@@ -63,121 +63,121 @@ export const GenericTerminalPanel = ({
       theme: resolveTerminalTheme(theme),
       disableStdin: readOnly,
       screenReaderMode: true,
-    });
+    })
 
-    const fitAddon = new FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(container);
+    const fitAddon = new FitAddon()
+    term.loadAddon(fitAddon)
+    term.open(container)
 
     const fitAndSync = () => {
       if (!container.clientWidth || !container.clientHeight) {
-        return;
+        return
       }
-      fitAddon.fit();
-      driver.resize(term.cols, term.rows);
-    };
-
-    if (isActive) {
-      fitAndSync();
+      fitAddon.fit()
+      driver.resize(term.cols, term.rows)
     }
 
-    termRef.current = term;
-    fitAndSyncRef.current = fitAndSync;
+    if (isActive) {
+      fitAndSync()
+    }
 
-    const cached = outputCache.get(terminalId) ?? [];
+    termRef.current = term
+    fitAndSyncRef.current = fitAndSync
+
+    const cached = outputCache.get(terminalId) ?? []
     for (const chunk of cached) {
-      term.write(chunk);
+      term.write(chunk)
     }
 
     const dataDisposable = readOnly
       ? null
       : term.onData((data) => {
-          driver.write(data);
-        });
+          driver.write(data)
+        })
 
-    let unlistenOutput: (() => void) | null = null;
-    let unlistenExit: (() => void) | null = null;
-    let mounted = true;
-    let firstOutputSynced = false;
+    let unlistenOutput: (() => void) | null = null
+    let unlistenExit: (() => void) | null = null
+    let mounted = true
+    let firstOutputSynced = false
 
     driver
       .onOutput((bytes) => {
-        const cache = outputCache.get(terminalId) ?? [];
+        const cache = outputCache.get(terminalId) ?? []
         if (cache.length < MAX_CACHE_CHUNKS) {
-          cache.push(bytes);
-          outputCache.set(terminalId, cache);
+          cache.push(bytes)
+          outputCache.set(terminalId, cache)
         }
         if (mounted) {
-          term.write(bytes);
+          term.write(bytes)
           if (!firstOutputSynced) {
-            firstOutputSynced = true;
-            fitAndSync();
+            firstOutputSynced = true
+            fitAndSync()
           }
         }
       })
       .then((fn) => {
         if (mounted) {
-          unlistenOutput = fn;
+          unlistenOutput = fn
         } else {
-          fn();
+          fn()
         }
-      });
+      })
 
     driver
       .onExit((exitCode) => {
         if (!mounted) {
-          return;
+          return
         }
         if (exitMessage) {
-          term.writeln(exitMessage);
+          term.writeln(exitMessage)
         }
-        onExit?.(exitCode);
+        onExit?.(exitCode)
       })
       .then((fn) => {
         if (mounted) {
-          unlistenExit = fn;
+          unlistenExit = fn
         } else {
-          fn();
+          fn()
         }
-      });
+      })
 
     const ro = new ResizeObserver(() => {
-      fitAndSync();
-    });
-    ro.observe(container);
+      fitAndSync()
+    })
+    ro.observe(container)
 
     return () => {
-      mounted = false;
-      dataDisposable?.dispose();
-      unlistenOutput?.();
-      unlistenExit?.();
-      ro.disconnect();
-      term.dispose();
-      termRef.current = null;
-      fitAndSyncRef.current = null;
-    };
+      mounted = false
+      dataDisposable?.dispose()
+      unlistenOutput?.()
+      unlistenExit?.()
+      ro.disconnect()
+      term.dispose()
+      termRef.current = null
+      fitAndSyncRef.current = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [terminalId]);
+  }, [terminalId])
 
   useEffect(() => {
-    const term = termRef.current;
+    const term = termRef.current
     if (!term) {
-      return;
+      return
     }
-    term.options.theme = resolveTerminalTheme(theme);
-  }, [theme]);
+    term.options.theme = resolveTerminalTheme(theme)
+  }, [theme])
 
   useEffect(() => {
     if (isActive) {
       const id = requestAnimationFrame(() => {
-        fitAndSyncRef.current?.();
+        fitAndSyncRef.current?.()
         if (!readOnly) {
-          termRef.current?.focus();
+          termRef.current?.focus()
         }
-      });
-      return () => cancelAnimationFrame(id);
+      })
+      return () => cancelAnimationFrame(id)
     }
-  }, [isActive, readOnly]);
+  }, [isActive, readOnly])
 
   return (
     <div className="relative size-full overflow-hidden" inert={!isActive} aria-hidden={!isActive}>
@@ -199,5 +199,5 @@ export const GenericTerminalPanel = ({
         </button>
       ) : null}
     </div>
-  );
-};
+  )
+}

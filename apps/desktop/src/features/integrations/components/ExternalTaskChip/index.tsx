@@ -1,19 +1,19 @@
-import { cn } from '@goodboy/ui';
-import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
+import { cn } from '@goodboy/ui'
+import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types'
 
 type ExternalTaskChipProps = {
-  task: SessionExternalTask;
-  variant?: 'full' | 'icon';
-  onClick?: () => void;
-};
+  task: SessionExternalTask
+  variant?: 'full' | 'icon'
+  onClick?: () => void
+}
 
 type ProviderMeta = {
-  label: string;
-  glyph: string;
-  glyphClasses: string;
-  colorClasses: string;
-  studioEvent: string;
-};
+  label: string
+  glyph: string
+  glyphClasses: string
+  colorClasses: string
+  studioEvent: string
+}
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   linear: {
@@ -40,11 +40,11 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
       'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10',
     studioEvent: 'goodboy:open-gitlab-studio',
   },
-};
+}
 
 export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTaskChipProps) => {
-  const meta = PROVIDER_META[task.provider];
-  const tooltip = `${task.identifier}: ${task.title}`;
+  const meta = PROVIDER_META[task.provider]
+  const tooltip = `${task.identifier}: ${task.title}`
 
   const glyph = (
     <span
@@ -55,7 +55,7 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
     >
       {meta.glyph}
     </span>
-  );
+  )
 
   if (variant === 'icon') {
     return (
@@ -66,7 +66,7 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
       >
         {glyph}
       </span>
-    );
+    )
   }
 
   const handleClick =
@@ -74,7 +74,7 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
     (() =>
       window.dispatchEvent(
         new CustomEvent(meta.studioEvent, { detail: { issueExternalId: task.externalId } }),
-      ));
+      ))
 
   return (
     <button
@@ -91,5 +91,5 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
       <span className="shrink-0 font-mono">{task.identifier}</span>
       <span className="truncate">{task.title}</span>
     </button>
-  );
-};
+  )
+}

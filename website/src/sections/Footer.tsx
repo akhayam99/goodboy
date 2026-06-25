@@ -1,4 +1,4 @@
-import { Logo } from '../components/Logo';
+import { Logo } from '../components/Logo'
 
 export function Footer() {
   return (
@@ -67,5 +67,5 @@ export function Footer() {
         </nav>
       </div>
     </footer>
-  );
+  )
 }

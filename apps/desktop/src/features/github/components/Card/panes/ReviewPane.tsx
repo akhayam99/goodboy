@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react'
 import {
   AlertCircle,
   CheckCheck,
@@ -7,79 +7,79 @@ import {
   ExternalLink,
   MessageSquare,
   Sparkles,
-} from 'lucide-react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
-import type { PrReview, PrReviewRequest, PullRequestState } from '@goodboy/types';
-import { isBot } from '../../../comment-threads';
-import { formatRelative, latestTerminalReviewsByAuthor } from '../lib';
-import { Avatar } from '../parts/Avatar';
-import { ReviewStateIcon } from '../parts/ReviewStateIcon';
+} from 'lucide-react'
+import { cn, tintClasses, type Tone } from '@goodboy/ui'
+import type { PrReview, PrReviewRequest, PullRequestState } from '@goodboy/types'
+import { isBot } from '../../../comment-threads'
+import { formatRelative, latestTerminalReviewsByAuthor } from '../lib'
+import { Avatar } from '../parts/Avatar'
+import { ReviewStateIcon } from '../parts/ReviewStateIcon'
 
 type Props = {
-  readonly reviews: ReadonlyArray<PrReview>;
-  readonly requests: ReadonlyArray<PrReviewRequest>;
-  readonly pr: PullRequestState;
-  readonly onOpenUrl: (url: string) => void;
-  readonly onSpawnFromReviewChanges?: () => void;
-};
+  readonly reviews: ReadonlyArray<PrReview>
+  readonly requests: ReadonlyArray<PrReviewRequest>
+  readonly pr: PullRequestState
+  readonly onOpenUrl: (url: string) => void
+  readonly onSpawnFromReviewChanges?: () => void
+}
 
 type ReviewSummary = {
-  readonly label: string;
-  readonly tone: Tone;
-  readonly icon: ReactNode;
-};
+  readonly label: string
+  readonly tone: Tone
+  readonly icon: ReactNode
+}
 
 const summarizeReview = (
   pr: PullRequestState,
   reviews: ReadonlyArray<PrReview>,
   requests: ReadonlyArray<PrReviewRequest>,
 ): ReviewSummary => {
-  const latestByAuthor = new Map<string, PrReview>();
+  const latestByAuthor = new Map<string, PrReview>()
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
     if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
-      continue;
+      continue
     }
-    latestByAuthor.set(r.author, r);
+    latestByAuthor.set(r.author, r)
   }
-  const approvals = [...latestByAuthor.values()].filter((r) => r.state === 'approved');
-  const changes = [...latestByAuthor.values()].filter((r) => r.state === 'changes_requested');
+  const approvals = [...latestByAuthor.values()].filter((r) => r.state === 'approved')
+  const changes = [...latestByAuthor.values()].filter((r) => r.state === 'changes_requested')
   if (changes.length > 0) {
     return {
       label: `Changes requested by ${changes.map((r) => r.author).join(', ')}`,
       tone: 'danger',
       icon: <AlertCircle size={10} aria-hidden />,
-    };
+    }
   }
   if (pr.reviewDecision === 'approved' || approvals.length > 0) {
-    const who = approvals.length > 0 ? approvals.map((r) => r.author).join(', ') : 'reviewer';
+    const who = approvals.length > 0 ? approvals.map((r) => r.author).join(', ') : 'reviewer'
     return {
       label: `Approved by ${who}`,
       tone: 'success',
       icon: <CheckCheck size={10} aria-hidden />,
-    };
+    }
   }
   if (requests.length > 0) {
     return {
       label: 'Awaiting review',
       tone: 'info',
       icon: <CircleDashed size={10} aria-hidden />,
-    };
+    }
   }
   if (reviews.some((r) => r.state === 'commented')) {
     return {
       label: 'Reviewer commented',
       tone: 'neutral',
       icon: <MessageSquare size={10} aria-hidden />,
-    };
+    }
   }
   return {
     label: 'No reviewer assigned',
     tone: 'neutral',
     icon: <CircleSlash size={10} aria-hidden />,
-  };
-};
+  }
+}
 
 export const ReviewPane = ({
   reviews,
@@ -88,9 +88,9 @@ export const ReviewPane = ({
   onOpenUrl,
   onSpawnFromReviewChanges,
 }: Props) => {
-  const summary = summarizeReview(pr, reviews, requests);
-  const summaryTint = tintClasses(summary.tone);
-  const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews]);
+  const summary = summarizeReview(pr, reviews, requests)
+  const summaryTint = tintClasses(summary.tone)
+  const perReviewer = useMemo(() => latestTerminalReviewsByAuthor(reviews), [reviews])
   return (
     <div className="flex flex-col gap-1.5">
       <div
@@ -164,5 +164,5 @@ export const ReviewPane = ({
         </button>
       )}
     </div>
-  );
-};
+  )
+}

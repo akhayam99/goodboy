@@ -1,9 +1,9 @@
-import { cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui'
 
 type Props = {
-  readonly current: number;
-  readonly total: number;
-};
+  readonly current: number
+  readonly total: number
+}
 
 export const Stepper = ({ current, total }: Props) => {
   return (
@@ -18,5 +18,5 @@ export const Stepper = ({ current, total }: Props) => {
         />
       ))}
     </div>
-  );
-};
+  )
+}

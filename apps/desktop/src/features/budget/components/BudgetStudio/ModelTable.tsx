@@ -1,11 +1,11 @@
-import { formatUsdPrecise } from '@goodboy/ui';
-import { ProviderIcon } from './ProviderIcon';
-import { formatModel, formatTokens, type ModelBreakdownEntry } from './lib';
+import { formatUsdPrecise } from '@goodboy/ui'
+import { ProviderIcon } from './ProviderIcon'
+import { formatModel, formatTokens, type ModelBreakdownEntry } from './lib'
 
 type Props = {
-  readonly entries: ReadonlyArray<ModelBreakdownEntry>;
-  readonly showProvider: boolean;
-};
+  readonly entries: ReadonlyArray<ModelBreakdownEntry>
+  readonly showProvider: boolean
+}
 
 export const ModelTable = ({ entries, showProvider }: Props) => {
   if (entries.length === 0) {
@@ -13,7 +13,7 @@ export const ModelTable = ({ entries, showProvider }: Props) => {
       <p className="rounded-lg border border-border-soft bg-muted/10 px-3 py-4 text-center text-xs text-muted-foreground">
         no model usage recorded yet.
       </p>
-    );
+    )
   }
 
   return (
@@ -51,5 +51,5 @@ export const ModelTable = ({ entries, showProvider }: Props) => {
         ))}
       </tbody>
     </table>
-  );
-};
+  )
+}

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core'
 import {
   assessPlanReadiness,
   extractClustersFromMarker,
@@ -7,7 +7,7 @@ import {
   Summarizer,
   type ExtractedHandoff,
   type SlotKey,
-} from '@goodboy/core';
+} from '@goodboy/core'
 import {
   insertNudgeEvent,
   insertProviderRun,
@@ -23,7 +23,7 @@ import {
   upsertContextSlot,
   type NudgeEvent,
   type NudgeKind,
-} from '@goodboy/db';
+} from '@goodboy/db'
 import type {
   AgentId,
   ContextSlot,
@@ -37,31 +37,31 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
   WorkflowRunId,
-} from '@goodboy/types';
-import { tauriDatabase } from '../shared/lib/db';
-import type { AgentKind } from '../features/session/agent-kind';
-import { kindReadsAttachment } from '../features/providers/attachment-routing';
-import { invokeBudgetRuleList } from '../features/budget/budget';
+} from '@goodboy/types'
+import { tauriDatabase } from '../shared/lib/db'
+import type { AgentKind } from '../features/session/agent-kind'
+import { kindReadsAttachment } from '../features/providers/attachment-routing'
+import { invokeBudgetRuleList } from '../features/budget/budget'
 import {
   listPlansForSession as invokeListPlansForSession,
   upsertPlan as invokeUpsertPlan,
-} from '../features/plans/plans';
-import { heuristicAgentTitle } from '../shared/lib/agent-title-heuristic';
-import { formatError } from '../shared/lib/errors';
-import { buildProviderSpendBreakdown } from './slices/budget';
-import type { SessionNudge } from './store';
-import type { SetFn, GetFn } from './slice-types';
+} from '../features/plans/plans'
+import { heuristicAgentTitle } from '../shared/lib/agent-title-heuristic'
+import { formatError } from '../shared/lib/errors'
+import { buildProviderSpendBreakdown } from './slices/budget'
+import type { SessionNudge } from './store'
+import type { SetFn, GetFn } from './slice-types'
 
 export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string => {
-  const list = refs.map((r) => `- ${r.relPath}`).join('\n');
+  const list = refs.map((r) => `- ${r.relPath}`).join('\n')
   return [
     '[attached-files]',
     `The user attached ${refs.length} file${refs.length === 1 ? '' : 's'} to this message.`,
     'Inspect each path below before answering. Images and PDFs render with your Read tool; for spreadsheets or other binary formats, read or parse the file with the appropriate tool:',
     list,
     '[/attached-files]',
-  ].join('\n');
-};
+  ].join('\n')
+}
 
 export const buildGoalAttachmentsBlock = (
   kind: AgentKind,
@@ -69,46 +69,46 @@ export const buildGoalAttachmentsBlock = (
   { isKickoff }: { isKickoff: boolean },
 ): string => {
   if (!isKickoff) {
-    return '';
+    return ''
   }
-  const relevant = attachments.filter((att) => kindReadsAttachment(att, kind));
+  const relevant = attachments.filter((att) => kindReadsAttachment(att, kind))
   if (relevant.length === 0) {
-    return '';
+    return ''
   }
-  const list = relevant.map((a) => `- ${a.relPath}`).join('\n');
+  const list = relevant.map((a) => `- ${a.relPath}`).join('\n')
   return [
     '## attachments',
     `The user attached ${relevant.length} file${relevant.length === 1 ? '' : 's'} to the goal of this session.`,
     'Read only those relevant to your role; ignore the rest. Inspect each path below with your Read tool before relying on it:',
     list,
-  ].join('\n');
-};
+  ].join('\n')
+}
 
 export const toRelPath = (absPath: string, workingDir: string): string => {
   if (!workingDir) {
-    return absPath;
+    return absPath
   }
-  const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`;
-  return absPath.startsWith(root) ? absPath.slice(root.length) : absPath;
-};
+  const root = workingDir.endsWith('/') ? workingDir : `${workingDir}/`
+  return absPath.startsWith(root) ? absPath.slice(root.length) : absPath
+}
 
 type SummarizerQueueEntry = {
-  readonly turnInput: string;
-  readonly turnOutput: string;
-};
+  readonly turnInput: string
+  readonly turnOutput: string
+}
 
 type SummarizerTaskQueue = {
-  inFlight: boolean;
-  queued: SummarizerQueueEntry | null;
-};
+  inFlight: boolean
+  queued: SummarizerQueueEntry | null
+}
 
-export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
+export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>()
 
 function scheduleIdle(fn: () => void): void {
   if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => fn());
+    requestIdleCallback(() => fn())
   } else {
-    queueMicrotask(fn);
+    queueMicrotask(fn)
   }
 }
 
@@ -119,45 +119,45 @@ export const enqueueSummarizer = (
   turnInput: string,
   turnOutput: string,
 ): void => {
-  let queue = summarizerQueues.get(sessionId);
+  let queue = summarizerQueues.get(sessionId)
   if (!queue) {
-    queue = { inFlight: false, queued: null };
-    summarizerQueues.set(sessionId, queue);
+    queue = { inFlight: false, queued: null }
+    summarizerQueues.set(sessionId, queue)
   }
 
   if (queue.inFlight) {
-    queue.queued = { turnInput, turnOutput };
-    return;
+    queue.queued = { turnInput, turnOutput }
+    return
   }
 
-  queue.inFlight = true;
-  queue.queued = null;
+  queue.inFlight = true
+  queue.queued = null
 
   const run = (): void => {
     void runSummarizer(set, get, sessionId, turnInput, turnOutput).finally(() => {
-      const q = summarizerQueues.get(sessionId);
+      const q = summarizerQueues.get(sessionId)
       if (!q) {
-        return;
+        return
       }
-      const next = q.queued;
+      const next = q.queued
       if (next) {
-        q.queued = null;
+        q.queued = null
         scheduleIdle(() => {
           void runSummarizer(set, get, sessionId, next.turnInput, next.turnOutput).finally(() => {
-            const q2 = summarizerQueues.get(sessionId);
+            const q2 = summarizerQueues.get(sessionId)
             if (q2) {
-              q2.inFlight = false;
+              q2.inFlight = false
             }
-          });
-        });
+          })
+        })
       } else {
-        q.inFlight = false;
+        q.inFlight = false
       }
-    });
-  };
+    })
+  }
 
-  scheduleIdle(run);
-};
+  scheduleIdle(run)
+}
 
 async function runSummarizer(
   set: SetFn,
@@ -166,10 +166,10 @@ async function runSummarizer(
   turnInput: string,
   turnOutput: string,
 ): Promise<void> {
-  const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+  const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime
 
   set((state) => {
-    const prev = state.summarizerStatus[sessionId];
+    const prev = state.summarizerStatus[sessionId]
     return {
       summarizerStatus: {
         ...state.summarizerStatus,
@@ -181,42 +181,42 @@ async function runSummarizer(
           lastAttempt: { turnInput, turnOutput },
         },
       },
-    };
-  });
+    }
+  })
 
   try {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === sessionId)
     if (!session) {
-      return;
+      return
     }
 
-    const providerId = session.providerPreference.defaultProvider;
-    const summarizer = new Summarizer({ providerId, invokeFn: invoke });
-    const prevSlots = get().sessionSlots[sessionId] ?? [];
-    const ghPr = get().sessionGithub[sessionId]?.pr ?? null;
+    const providerId = session.providerPreference.defaultProvider
+    const summarizer = new Summarizer({ providerId, invokeFn: invoke })
+    const prevSlots = get().sessionSlots[sessionId] ?? []
+    const ghPr = get().sessionGithub[sessionId]?.pr ?? null
     const prState = ghPr
       ? {
           hasOpenPr: ghPr.state === 'open' || ghPr.state === 'draft' || ghPr.state === 'approved',
           checksGreen: ghPr.checks === 'success',
         }
-      : null;
-    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState });
+      : null
+    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState })
 
     const changedKeys = (
       await Promise.all(
         result.delta.upserts.map(async (upsert) => {
-          const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
-          const prevValue = existing && existing.value !== upsert.value ? existing.value : null;
+          const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key)
+          const prevValue = existing && existing.value !== upsert.value ? existing.value : null
           const next: ContextSlot = {
             key: upsert.key,
             value: upsert.value,
             enabled: existing?.enabled ?? true,
-          };
-          await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer');
-          return prevValue !== null ? upsert.key : null;
+          }
+          await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer')
+          return prevValue !== null ? upsert.key : null
         }),
       )
-    ).filter((k): k is SlotKey => k !== null);
+    ).filter((k): k is SlotKey => k !== null)
 
     if (
       !get().sessionGithub[sessionId]?.pr &&
@@ -224,11 +224,11 @@ async function runSummarizer(
     ) {
       void get()
         .refreshSessionPr(sessionId, { force: true })
-        .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }));
+        .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }))
     }
 
-    const summarizerRunId = crypto.randomUUID() as ProviderRunId;
-    const startedAt = now();
+    const summarizerRunId = crypto.randomUUID() as ProviderRunId
+    const startedAt = now()
 
     const [
       refreshed,
@@ -267,8 +267,8 @@ async function runSummarizer(
             outputTokens: result.usage.outputTokens,
             estimatedCostUsd: result.usage.estimatedCostUsd,
             recordedAt: now(),
-          };
-          return insertTelemetry(tauriDatabase, record);
+          }
+          return insertTelemetry(tauriDatabase, record)
         }),
       summarizeSessionTelemetry(tauriDatabase, sessionId),
       summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
@@ -281,7 +281,7 @@ async function runSummarizer(
             [key, await listContextSlotHistory(tauriDatabase, sessionId, key)] as const,
         ),
       ),
-    ]);
+    ])
 
     set((state) => ({
       sessionSlots: { ...state.sessionSlots, [sessionId]: refreshed },
@@ -310,17 +310,17 @@ async function runSummarizer(
         },
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
-    }));
+    }))
     void get().emitNotification('summarizer-success', 'info', 'context summarized', undefined, {
       sessionId,
-    });
+    })
   } catch (err) {
-    const message = formatError(err);
+    const message = formatError(err)
     if (import.meta.env.DEV) {
-      console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
+      console.warn(`[summarizer] failed for session ${sessionId}: ${message}`)
     }
     set((state) => {
-      const prev = state.summarizerStatus[sessionId];
+      const prev = state.summarizerStatus[sessionId]
       return {
         summarizerStatus: {
           ...state.summarizerStatus,
@@ -332,11 +332,11 @@ async function runSummarizer(
             lastAttempt: prev?.lastAttempt ?? { turnInput, turnOutput },
           },
         },
-      };
-    });
+      }
+    })
     void get().emitNotification('error', 'error', 'summarizer failed', message, {
       sessionId,
-    });
+    })
   }
 }
 
@@ -348,11 +348,11 @@ export const capturePlanFromTurn = async (
   workflowRunId?: WorkflowRunId,
 ): Promise<PlanWithCount | null> => {
   try {
-    const extracted = extractPlanFromMarker(assistantText);
+    const extracted = extractPlanFromMarker(assistantText)
     if (!extracted) {
-      return null;
+      return null
     }
-    const clusters = extractClustersFromMarker(assistantText);
+    const clusters = extractClustersFromMarker(assistantText)
     await invokeUpsertPlan({
       sessionId,
       agentId,
@@ -360,29 +360,29 @@ export const capturePlanFromTurn = async (
       title: extracted.title,
       bodyMd: extracted.bodyMd,
       ...(clusters && { clusters }),
-    });
-    const refreshed = await invokeListPlansForSession(sessionId);
+    })
+    const refreshed = await invokeListPlansForSession(sessionId)
     set((state) => ({
       sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-    }));
+    }))
     return (
       refreshed.find((p) => p.title === extracted.title && p.bodyMd === extracted.bodyMd) ??
       refreshed[0] ??
       null
-    );
+    )
   } catch (err) {
     if (import.meta.env.DEV) {
-      console.warn(`[plan-capture] failed for session ${sessionId}: ${formatError(err)}`);
+      console.warn(`[plan-capture] failed for session ${sessionId}: ${formatError(err)}`)
     }
-    return null;
+    return null
   }
-};
+}
 
 async function recordNudgeShown(
   kind: NudgeKind,
   context: Record<string, unknown>,
 ): Promise<string> {
-  const id = crypto.randomUUID();
+  const id = crypto.randomUUID()
   const event: NudgeEvent = {
     id,
     ts: new Date().toISOString() as IsoDateTime,
@@ -390,15 +390,15 @@ async function recordNudgeShown(
     contextJson: JSON.stringify(context),
     outcome: null,
     outcomeTs: null,
-  };
+  }
   try {
-    await insertNudgeEvent(tauriDatabase, event);
+    await insertNudgeEvent(tauriDatabase, event)
   } catch (err) {
     if (import.meta.env.DEV) {
-      console.warn(`[nudge-event] insert failed: ${formatError(err)}`);
+      console.warn(`[nudge-event] insert failed: ${formatError(err)}`)
     }
   }
-  return id;
+  return id
 }
 
 export const emitTurnNudges = async (
@@ -409,15 +409,15 @@ export const emitTurnNudges = async (
   assistantText: string,
   capturedPlan: PlanWithCount | null,
 ): Promise<void> => {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = get().sessions.find((s) => s.id === sessionId)
   if (!session) {
-    return;
+    return
   }
-  const inWorkflow = session.workflowRuns.length > 0;
+  const inWorkflow = session.workflowRuns.length > 0
 
-  let nextNudge: SessionNudge | null = null;
+  let nextNudge: SessionNudge | null = null
 
-  const handoff: ExtractedHandoff | null = extractHandoff(assistantText);
+  const handoff: ExtractedHandoff | null = extractHandoff(assistantText)
   if (handoff && !inWorkflow) {
     const id = await recordNudgeShown('handoff-suggested', {
       sessionId,
@@ -425,7 +425,7 @@ export const emitTurnNudges = async (
       targetKind: handoff.kind,
       reason: handoff.reason,
       planId: handoff.planId,
-    });
+    })
     nextNudge = {
       kind: 'handoff-suggested',
       id,
@@ -433,34 +433,34 @@ export const emitTurnNudges = async (
       targetKind: handoff.kind,
       reason: handoff.reason,
       planId: (handoff.planId as PlanId | null) ?? null,
-    };
+    }
   } else if (capturedPlan && !inWorkflow) {
     const readiness = assessPlanReadiness({
       planBody: capturedPlan.bodyMd,
       assistantText,
-    });
+    })
     if (readiness.ready) {
       const id = await recordNudgeShown('plan-ready', {
         sessionId,
         agentId,
         planId: capturedPlan.id,
-      });
+      })
       nextNudge = {
         kind: 'plan-ready',
         id,
         agentId,
         planId: capturedPlan.id,
         planTitle: capturedPlan.title,
-      };
+      }
     }
   }
 
   if (nextNudge !== null) {
     set((state) => ({
       sessionNudges: { ...state.sessionNudges, [sessionId]: nextNudge },
-    }));
+    }))
   }
-};
+}
 
 export const applyHeuristicTitle = async (
   set: SetFn,
@@ -470,31 +470,31 @@ export const applyHeuristicTitle = async (
   prompt: string,
 ): Promise<void> => {
   try {
-    const title = heuristicAgentTitle(prompt);
+    const title = heuristicAgentTitle(prompt)
     if (!title) {
-      return;
+      return
     }
 
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === sessionId)
     if (!session) {
-      return;
+      return
     }
 
-    const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId);
-    const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false;
-    const isFoundingAgent = agentRecord?.ordinal === 0;
+    const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId)
+    const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false
+    const isFoundingAgent = agentRecord?.ordinal === 0
 
-    const titleNow = new Date().toISOString() as IsoDateTime;
+    const titleNow = new Date().toISOString() as IsoDateTime
     if (isFoundingAgent && !session.titleUserEdited) {
       set((state) => ({
         sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, goal: title } : s)),
-      }));
-      await renameSessionInDb(tauriDatabase, sessionId, title, titleNow, false);
+      }))
+      await renameSessionInDb(tauriDatabase, sessionId, title, titleNow, false)
     }
     if (agentNameEditable) {
-      await get().renameAgent(sessionId, agentId, title);
+      await get().renameAgent(sessionId, agentId, title)
     }
   } catch {
     // best-effort
   }
-};
+}

@@ -1,38 +1,38 @@
-import { useEffect, useState } from 'react';
-import { Check, MessageCircleQuestion, X } from 'lucide-react';
-import { cn, Markdown } from '@goodboy/ui';
-import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
-import { SuggestionChip } from '../SuggestionChip';
-import { CustomAnswerField } from '../CustomAnswerField';
-import { deriveSuggestions } from '../deriveSuggestions';
+import { useEffect, useState } from 'react'
+import { Check, MessageCircleQuestion, X } from 'lucide-react'
+import { cn, Markdown } from '@goodboy/ui'
+import type { OpenQuestion, OpenQuestionId } from '@goodboy/types'
+import { SuggestionChip } from '../SuggestionChip'
+import { CustomAnswerField } from '../CustomAnswerField'
+import { deriveSuggestions } from '../deriveSuggestions'
 
 type Props = {
-  question: OpenQuestion;
-  selectedSuggestions: ReadonlyArray<string>;
-  customAnswer: string;
-  showCustomField: boolean;
-  justAnswered: boolean;
-  onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
-  onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
-  onToggleCustomField: (questionId: OpenQuestionId) => void;
-  onDismiss: (id: OpenQuestionId) => void;
-  onClearJustAnswered: (id: OpenQuestionId) => void;
-};
+  question: OpenQuestion
+  selectedSuggestions: ReadonlyArray<string>
+  customAnswer: string
+  showCustomField: boolean
+  justAnswered: boolean
+  onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void
+  onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void
+  onToggleCustomField: (questionId: OpenQuestionId) => void
+  onDismiss: (id: OpenQuestionId) => void
+  onClearJustAnswered: (id: OpenQuestionId) => void
+}
 
 function relativeAge(isoDate: string): string {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
-  const mins = Math.floor(diffMs / 60_000);
+  const diffMs = Date.now() - new Date(isoDate).getTime()
+  const mins = Math.floor(diffMs / 60_000)
   if (mins < 1) {
-    return 'just now';
+    return 'just now'
   }
   if (mins < 60) {
-    return `${mins}m ago`;
+    return `${mins}m ago`
   }
-  const hrs = Math.floor(mins / 60);
+  const hrs = Math.floor(mins / 60)
   if (hrs < 24) {
-    return `${hrs}h ago`;
+    return `${hrs}h ago`
   }
-  return `${Math.floor(hrs / 24)}d ago`;
+  return `${Math.floor(hrs / 24)}d ago`
 }
 
 export const QuestionCard = ({
@@ -47,31 +47,31 @@ export const QuestionCard = ({
   onDismiss,
   onClearJustAnswered,
 }: Props) => {
-  const [animate, setAnimate] = useState(false);
+  const [animate, setAnimate] = useState(false)
 
   useEffect(() => {
     if (!justAnswered) {
-      return;
+      return
     }
-    setAnimate(true);
+    setAnimate(true)
     const t = setTimeout(() => {
-      setAnimate(false);
-      onClearJustAnswered(question.id);
-    }, 800);
-    return () => clearTimeout(t);
-  }, [justAnswered, question.id, onClearJustAnswered]);
+      setAnimate(false)
+      onClearJustAnswered(question.id)
+    }, 800)
+    return () => clearTimeout(t)
+  }, [justAnswered, question.id, onClearJustAnswered])
 
-  const hasPendingAnswer = selectedSuggestions.length > 0 || customAnswer.trim().length > 0;
+  const hasPendingAnswer = selectedSuggestions.length > 0 || customAnswer.trim().length > 0
   const baseSuggestions =
     question.suggestedAnswers.length > 0
       ? question.suggestedAnswers
-      : deriveSuggestions(question.text);
+      : deriveSuggestions(question.text)
 
-  const recommended = question.recommendedAnswer?.trim() ?? '';
+  const recommended = question.recommendedAnswer?.trim() ?? ''
   const suggestions =
     recommended.length > 0 && !baseSuggestions.includes(recommended)
       ? [recommended, ...baseSuggestions]
-      : baseSuggestions;
+      : baseSuggestions
 
   return (
     <div
@@ -148,5 +148,5 @@ export const QuestionCard = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}

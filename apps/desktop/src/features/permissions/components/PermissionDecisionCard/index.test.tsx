@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import type { TranscriptItem } from '../../../chat/utils/transcript-items';
-import { PermissionDecisionCard } from './index';
+import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import type { TranscriptItem } from '../../../chat/utils/transcript-items'
+import { PermissionDecisionCard } from './index'
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 function makeItem(over: Partial<Extract<TranscriptItem, { kind: 'permission_decision' }>> = {}) {
   return {
@@ -15,15 +15,15 @@ function makeItem(over: Partial<Extract<TranscriptItem, { kind: 'permission_deci
     decision: 'allow',
     ruleId: null,
     ...over,
-  } as Extract<TranscriptItem, { kind: 'permission_decision' }>;
+  } as Extract<TranscriptItem, { kind: 'permission_decision' }>
 }
 
 describe('PermissionDecisionCard', () => {
   it('renders the tool use id and the allow decision', () => {
-    render(<PermissionDecisionCard item={makeItem()} sessionId={null} agentId={null} />);
-    expect(screen.getByText('tool-7')).toBeDefined();
-    expect(screen.getByText('allow')).toBeDefined();
-  });
+    render(<PermissionDecisionCard item={makeItem()} sessionId={null} agentId={null} />)
+    expect(screen.getByText('tool-7')).toBeDefined()
+    expect(screen.getByText('allow')).toBeDefined()
+  })
 
   it('renders a rule id chip when present', () => {
     render(
@@ -32,8 +32,8 @@ describe('PermissionDecisionCard', () => {
         sessionId={null}
         agentId={null}
       />,
-    );
-    expect(screen.getByText('rule-42')).toBeDefined();
-    expect(screen.getByText('deny')).toBeDefined();
-  });
-});
+    )
+    expect(screen.getByText('rule-42')).toBeDefined()
+    expect(screen.getByText('deny')).toBeDefined()
+  })
+})

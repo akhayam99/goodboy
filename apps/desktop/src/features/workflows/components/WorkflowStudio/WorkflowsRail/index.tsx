@@ -1,20 +1,20 @@
-import { EmptyState, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
-import { Check, Layers, Plus, RotateCcw, X } from 'lucide-react';
-import type { Workflow, WorkflowId } from '@goodboy/types';
-import { PresetCard } from '../../PresetCard';
+import { EmptyState, ScrollFade, SectionHeader, cn } from '@goodboy/ui'
+import { Check, Layers, Plus, RotateCcw, X } from 'lucide-react'
+import type { Workflow, WorkflowId } from '@goodboy/types'
+import { PresetCard } from '../../PresetCard'
 
 type Props = {
-  readonly presets: ReadonlyArray<Workflow>;
-  readonly activeId: WorkflowId | null;
-  readonly editing: Workflow | null | 'new';
-  readonly resetting: boolean;
-  readonly confirmReset: boolean;
-  readonly setConfirmReset: (value: boolean) => void;
-  readonly onSelect: (t: Workflow) => void;
-  readonly onNew: () => void;
-  readonly onDelete: (t: Workflow) => void;
-  readonly onReset: () => void;
-};
+  readonly presets: ReadonlyArray<Workflow>
+  readonly activeId: WorkflowId | null
+  readonly editing: Workflow | null | 'new'
+  readonly resetting: boolean
+  readonly confirmReset: boolean
+  readonly setConfirmReset: (value: boolean) => void
+  readonly onSelect: (t: Workflow) => void
+  readonly onNew: () => void
+  readonly onDelete: (t: Workflow) => void
+  readonly onReset: () => void
+}
 
 export const WorkflowsRail = ({
   presets,
@@ -117,5 +117,5 @@ export const WorkflowsRail = ({
         )}
       </div>
     </aside>
-  );
-};
+  )
+}

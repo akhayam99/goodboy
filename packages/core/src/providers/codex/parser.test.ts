@@ -1,30 +1,30 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
-import { parseJsonLine, type ParseContext } from './parser';
+import { describe, expect, it, vi } from 'vitest'
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types'
+import { parseJsonLine, type ParseContext } from './parser'
 
-const at = '2026-05-13T00:00:00.000Z' as IsoDateTime;
+const at = '2026-05-13T00:00:00.000Z' as IsoDateTime
 const ctx: ParseContext = {
   runId: 'run_1' as ProviderRunId,
   now: () => at,
-};
+}
 
 function parse(line: string, overrides?: Partial<ParseContext>) {
-  return parseJsonLine(line, { ...ctx, ...overrides });
+  return parseJsonLine(line, { ...ctx, ...overrides })
 }
 
 describe('parseJsonLine (codex v0.130.0)', () => {
   it('returns [] for empty / blank lines', () => {
-    expect(parse('')).toEqual([]);
-    expect(parse('   ')).toEqual([]);
-  });
+    expect(parse('')).toEqual([])
+    expect(parse('   ')).toEqual([])
+  })
 
   it('returns [] for malformed json', () => {
-    expect(parse('{not json')).toEqual([]);
-    expect(parse('not json at all')).toEqual([]);
-  });
+    expect(parse('{not json')).toEqual([])
+    expect(parse('not json at all')).toEqual([])
+  })
 
   it('emits provider_session_init from thread.started', () => {
-    const events = parse(JSON.stringify({ type: 'thread.started', thread_id: 'abc-123' }));
+    const events = parse(JSON.stringify({ type: 'thread.started', thread_id: 'abc-123' }))
     expect(events).toEqual([
       {
         kind: 'provider_session_init',
@@ -32,12 +32,12 @@ describe('parseJsonLine (codex v0.130.0)', () => {
         providerSessionId: 'abc-123',
         at,
       },
-    ]);
-  });
+    ])
+  })
 
   it('ignores turn.started silently', () => {
-    expect(parse(JSON.stringify({ type: 'turn.started' }))).toEqual([]);
-  });
+    expect(parse(JSON.stringify({ type: 'turn.started' }))).toEqual([])
+  })
 
   it('emits tool_call_start for item.started of command_execution', () => {
     const events = parse(
@@ -50,7 +50,7 @@ describe('parseJsonLine (codex v0.130.0)', () => {
           status: 'in_progress',
         },
       }),
-    );
+    )
     expect(events).toEqual([
       {
         kind: 'tool_call_start',
@@ -60,8 +60,8 @@ describe('parseJsonLine (codex v0.130.0)', () => {
         input: { command: '/bin/zsh -lc ls' },
         at,
       },
-    ]);
-  });
+    ])
+  })
 
   it('emits tool_call_end for item.completed of command_execution', () => {
     const events = parse(
@@ -76,7 +76,7 @@ describe('parseJsonLine (codex v0.130.0)', () => {
           status: 'completed',
         },
       }),
-    );
+    )
     expect(events).toEqual([
       {
         kind: 'tool_call_end',
@@ -86,8 +86,8 @@ describe('parseJsonLine (codex v0.130.0)', () => {
         isError: false,
         at,
       },
-    ]);
-  });
+    ])
+  })
 
   it('marks tool_call_end isError true when exit_code != 0', () => {
     const events = parse(
@@ -101,9 +101,9 @@ describe('parseJsonLine (codex v0.130.0)', () => {
           status: 'completed',
         },
       }),
-    );
-    expect(events[0]).toMatchObject({ kind: 'tool_call_end', isError: true });
-  });
+    )
+    expect(events[0]).toMatchObject({ kind: 'tool_call_end', isError: true })
+  })
 
   it('emits assistant_text for item.completed of agent_message', () => {
     const events = parse(
@@ -111,9 +111,9 @@ describe('parseJsonLine (codex v0.130.0)', () => {
         type: 'item.completed',
         item: { id: 'item_1', type: 'agent_message', text: 'hello' },
       }),
-    );
-    expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }]);
-  });
+    )
+    expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }])
+  })
 
   it('skips agent_message with empty text', () => {
     const events = parse(
@@ -121,9 +121,9 @@ describe('parseJsonLine (codex v0.130.0)', () => {
         type: 'item.completed',
         item: { id: 'item_1', type: 'agent_message', text: '' },
       }),
-    );
-    expect(events).toEqual([]);
-  });
+    )
+    expect(events).toEqual([])
+  })
 
   it('emits file_edit + tool_call_end for apply_patch items', () => {
     const events = parse(
@@ -138,12 +138,12 @@ describe('parseJsonLine (codex v0.130.0)', () => {
           ],
         },
       }),
-    );
-    const fileEdits = events.filter((e) => e.kind === 'file_edit');
-    expect(fileEdits).toHaveLength(2);
-    expect(fileEdits[0]).toMatchObject({ path: '/tmp/new.ts', editType: 'create' });
-    expect(fileEdits[1]).toMatchObject({ path: '/tmp/old.ts', editType: 'modify' });
-  });
+    )
+    const fileEdits = events.filter((e) => e.kind === 'file_edit')
+    expect(fileEdits).toHaveLength(2)
+    expect(fileEdits[0]).toMatchObject({ path: '/tmp/new.ts', editType: 'create' })
+    expect(fileEdits[1]).toMatchObject({ path: '/tmp/old.ts', editType: 'modify' })
+  })
 
   it('emits usage from turn.completed.usage with reasoning_output_tokens folded into output', () => {
     const events = parse(
@@ -156,7 +156,7 @@ describe('parseJsonLine (codex v0.130.0)', () => {
           reasoning_output_tokens: 20,
         },
       }),
-    );
+    )
     expect(events).toEqual([
       {
         kind: 'usage',
@@ -169,19 +169,19 @@ describe('parseJsonLine (codex v0.130.0)', () => {
         },
         at,
       },
-    ]);
-  });
+    ])
+  })
 
   it('emits error event for error type', () => {
-    const events = parse(JSON.stringify({ type: 'error', message: 'rate limit exceeded' }));
-    expect(events[0]).toMatchObject({ kind: 'error', message: 'rate limit exceeded' });
-  });
+    const events = parse(JSON.stringify({ type: 'error', message: 'rate limit exceeded' }))
+    expect(events[0]).toMatchObject({ kind: 'error', message: 'rate limit exceeded' })
+  })
 
   it('emits unknown_payload for unrecognized types', () => {
-    const onUnknown = vi.fn();
-    const raw = { type: 'mystery_event', payload: { x: 1 } };
-    const events = parse(JSON.stringify(raw), { onUnknown });
-    expect(events).toHaveLength(1);
+    const onUnknown = vi.fn()
+    const raw = { type: 'mystery_event', payload: { x: 1 } }
+    const events = parse(JSON.stringify(raw), { onUnknown })
+    expect(events).toHaveLength(1)
     expect(events[0]).toMatchObject({
       kind: 'unknown_payload',
       runId: ctx.runId,
@@ -189,15 +189,15 @@ describe('parseJsonLine (codex v0.130.0)', () => {
       payloadType: 'mystery_event',
       raw,
       at,
-    });
-    expect(onUnknown).toHaveBeenCalled();
-  });
+    })
+    expect(onUnknown).toHaveBeenCalled()
+  })
 
   it('does not call onUnknown for known types', () => {
-    const onUnknown = vi.fn();
-    parse(JSON.stringify({ type: 'turn.started' }), { onUnknown });
-    parse(JSON.stringify({ type: 'turn.completed', usage: {} }), { onUnknown });
-    parse(JSON.stringify({ type: 'thread.started', thread_id: 'x' }), { onUnknown });
-    expect(onUnknown).not.toHaveBeenCalled();
-  });
-});
+    const onUnknown = vi.fn()
+    parse(JSON.stringify({ type: 'turn.started' }), { onUnknown })
+    parse(JSON.stringify({ type: 'turn.completed', usage: {} }), { onUnknown })
+    parse(JSON.stringify({ type: 'thread.started', thread_id: 'x' }), { onUnknown })
+    expect(onUnknown).not.toHaveBeenCalled()
+  })
+})

@@ -1,61 +1,59 @@
-import { useState } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { Agent, Session, StepId, Workflow } from '@goodboy/types';
+import { useState } from 'react'
+import { ArrowRight, Sparkles } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { Agent, Session, StepId, Workflow } from '@goodboy/types'
 import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionOpenQuestions,
   useSessionPlans,
-} from '../../../../../store';
-import { workflowHasOpenQuestions } from '../../../../context/openQuestionsGate';
+} from '../../../../../store'
+import { workflowHasOpenQuestions } from '../../../../context/openQuestionsGate'
 import {
   type AgentKind,
   inferAgentKindFromName,
   kindConsumesPlan,
-} from '../../../../session/agent-kind';
+} from '../../../../session/agent-kind'
 
 type Props = {
-  task: Session;
-};
+  task: Session
+}
 
 export const PlanReadySuggestion = ({ task }: Props) => {
-  const plans = useSessionPlans(task.id);
-  const openQuestions = useSessionOpenQuestions(task.id);
+  const plans = useSessionPlans(task.id)
+  const openQuestions = useSessionOpenQuestions(task.id)
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
+  )
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
-  const runPlan = useAppStore((s) => s.runPlan);
-  const [spawning, setSpawning] = useState(false);
+  )
+  const runPlan = useAppStore((s) => s.runPlan)
+  const [spawning, setSpawning] = useState(false)
 
-  const latest = plans[plans.length - 1];
+  const latest = plans[plans.length - 1]
   if (!latest || latest.status !== 'active') {
-    return null;
+    return null
   }
 
-  const creator = phaseRuns.find((r) => r.id === latest.agentId);
+  const creator = phaseRuns.find((r) => r.id === latest.agentId)
   const creatorWorkflow = creator?.stepId
     ? (phaseTemplates.find((t) => t.steps.some((s) => s.id === creator.stepId)) ?? null)
-    : null;
+    : null
   if (creatorWorkflow) {
     if (workflowHasOpenQuestions(openQuestions, creatorWorkflow.id)) {
-      return null;
+      return null
     }
   } else if (openQuestions.some((q) => q.status === 'open')) {
-    return null;
+    return null
   }
 
-  const liveStepIds = new Set<StepId>();
+  const liveStepIds = new Set<StepId>()
   for (const run of task.workflowRuns) {
     if (run.discardedAt) {
-      continue;
+      continue
     }
-    phaseTemplates
-      .find((t) => t.id === run.workflowId)
-      ?.steps.forEach((s) => liveStepIds.add(s.id));
+    phaseTemplates.find((t) => t.id === run.workflowId)?.steps.forEach((s) => liveStepIds.add(s.id))
   }
   const hasPendingConsumer = phaseRuns.some(
     (a) =>
@@ -63,22 +61,22 @@ export const PlanReadySuggestion = ({ task }: Props) => {
       a.stepId !== undefined &&
       liveStepIds.has(a.stepId) &&
       kindConsumesPlan((a.kind as AgentKind | undefined) ?? inferAgentKindFromName(a.name)),
-  );
+  )
   if (hasPendingConsumer) {
-    return null;
+    return null
   }
 
   const onSpawn = async () => {
     if (spawning) {
-      return;
+      return
     }
-    setSpawning(true);
+    setSpawning(true)
     try {
-      await runPlan(task.id, latest.id);
+      await runPlan(task.id, latest.id)
     } finally {
-      setSpawning(false);
+      setSpawning(false)
     }
-  };
+  }
 
   return (
     <button
@@ -117,5 +115,5 @@ export const PlanReadySuggestion = ({ task }: Props) => {
         className="mt-0.5 shrink-0 text-primary/70 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
       />
     </button>
-  );
-};
+  )
+}

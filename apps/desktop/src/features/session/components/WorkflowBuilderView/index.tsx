@@ -1,5 +1,5 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 import {
   AlertTriangle,
   Check,
@@ -16,8 +16,8 @@ import {
   Undo2,
   Wand2,
   type LucideIcon,
-} from 'lucide-react';
-import { Button, Divider, Input, Skeleton, Textarea, cn } from '@goodboy/ui';
+} from 'lucide-react'
+import { Button, Divider, Input, Skeleton, Textarea, cn } from '@goodboy/ui'
 import {
   PlannerClient,
   type PlannerOutput,
@@ -27,7 +27,7 @@ import {
   isWorkflowComplete,
   polishWorkflowGoal,
   runsForWorkflowRun,
-} from '@goodboy/core';
+} from '@goodboy/core'
 import type {
   AgentEffort,
   AgentRole,
@@ -39,64 +39,64 @@ import type {
   WorkflowId,
   WorkflowRunId,
   WorkflowTriggerMode,
-} from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
+} from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store'
 import type {
   Mode,
   StepEdit,
   WorkflowBuilderDraft,
-} from '../../../../store/slices/workflowDrafts/types';
+} from '../../../../store/slices/workflowDrafts/types'
 import {
   AGENT_KIND_PALETTE,
   ROLE_LABEL,
   ROLE_TO_KIND,
   inferAgentKindFromName,
   type AgentKind,
-} from '../../agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { ModelSelect } from '../ModelSelect';
-import { EffortSelect } from '../EffortSelect';
+} from '../../agent-kind'
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar'
+import { ModelSelect } from '../ModelSelect'
+import { EffortSelect } from '../EffortSelect'
 import {
   EFFORT_LABEL,
   type EffortLevel,
   clampEffort,
   modelLabel,
-} from '../../../chat/utils/chat-constants';
-import { formatError } from '../../../../shared/lib/errors';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
-import { useToast } from '../../../../app/components/Toast';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
-import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
-import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
-import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
+} from '../../../chat/utils/chat-constants'
+import { formatError } from '../../../../shared/lib/errors'
+import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch'
+import { useToast } from '../../../../app/components/Toast'
+import { StudioShell } from '../../../../shared/components/StudioShell'
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside'
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection'
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils'
+import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip'
+import { toAttachmentInput } from '../../../chat/components/ChatInput/lib'
+import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments'
+import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds'
 
 type Props = {
-  readonly session: Session;
-  readonly onClose: () => void;
-};
+  readonly session: Session
+  readonly onClose: () => void
+}
 
 const planStepKind = (step: PlannerOutput['steps'][number]): AgentKind =>
-  ROLE_TO_KIND[step.role as AgentRole] ?? inferAgentKindFromName(step.name);
+  ROLE_TO_KIND[step.role as AgentRole] ?? inferAgentKindFromName(step.name)
 
 const templateStepKind = (step: Workflow['steps'][number]): AgentKind =>
-  step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
+  step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name)
 
 const sortedSteps = (template: Workflow): Workflow['steps'] =>
-  [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  [...template.steps].sort((a, b) => a.ordinal - b.ordinal)
 
 const pruneToDirty = (edits: Record<number, StepEdit>): Record<number, StepEdit> => {
-  const kept: Record<number, StepEdit> = {};
+  const kept: Record<number, StepEdit> = {}
   for (const [k, v] of Object.entries(edits)) {
     if (v.dirty) {
-      kept[Number(k)] = v;
+      kept[Number(k)] = v
     }
   }
-  return kept;
-};
+  return kept
+}
 
 const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.goalText.trim() === '' &&
@@ -106,22 +106,22 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.plan === null &&
   Object.keys(d.stepEdits).length === 0 &&
   !d.saveAsPreset &&
-  !d.autoRun;
+  !d.autoRun
 
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
-  const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
-  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
+  const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate)
+  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession)
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
+  )
   const sessionPhaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
-  );
-  const providers = useAppStore((s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>));
-  const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
-  const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
-  const sessionSlots = useSessionSlots(session.id);
-  const { showToast } = useToast();
+  )
+  const providers = useAppStore((s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>))
+  const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft)
+  const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft)
+  const sessionSlots = useSessionSlots(session.id)
+  const { showToast } = useToast()
 
   const {
     attachments,
@@ -130,62 +130,62 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     fileInputRef,
     onFileInputChange,
     removeAttachment,
-  } = usePendingAttachments({ showToast });
+  } = usePendingAttachments({ showToast })
 
-  const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
+  const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt)
 
-  const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[session.id]);
+  const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[session.id])
 
   const [mode, setMode] = useState<Mode>(
     initialDraft?.mode ?? (presets.length > 0 ? 'preset' : 'custom'),
-  );
-  const [goalText, setGoalText] = useState(initialDraft?.goalText ?? '');
+  )
+  const [goalText, setGoalText] = useState(initialDraft?.goalText ?? '')
   const [goalHistory, setGoalHistory] = useState<ReadonlyArray<string>>(
     initialDraft?.goalHistory ?? [],
-  );
-  const [polishing, setPolishing] = useState(false);
+  )
+  const [polishing, setPolishing] = useState(false)
   const [selectedPresetId, setSelectedPresetId] = useState<WorkflowId | null>(
     initialDraft?.selectedPresetId ?? null,
-  );
-  const [processText, setProcessText] = useState(initialDraft?.processText ?? '');
-  const [plan, setPlan] = useState<PlannerOutput | null>(initialDraft?.plan ?? null);
+  )
+  const [processText, setProcessText] = useState(initialDraft?.processText ?? '')
+  const [plan, setPlan] = useState<PlannerOutput | null>(initialDraft?.plan ?? null)
   const [stepEdits, setStepEdits] = useState<Record<number, StepEdit>>(
     initialDraft?.stepEdits ?? {},
-  );
-  const [planning, setPlanning] = useState(false);
-  const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
-  const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
-  const [triggerMode, setTriggerMode] = useState<WorkflowTriggerMode>('immediate');
-  const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const promptRef = useRef<HTMLDivElement>(null);
+  )
+  const [planning, setPlanning] = useState(false)
+  const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false)
+  const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false)
+  const [triggerMode, setTriggerMode] = useState<WorkflowTriggerMode>('immediate')
+  const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const promptRef = useRef<HTMLDivElement>(null)
 
   const activeRuns = useMemo(() => {
-    const runs = session.workflowRuns ?? [];
+    const runs = session.workflowRuns ?? []
     return [...runs]
       .filter((r) => !r.discardedAt)
       .map((r) => {
-        const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null;
-        const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
-        const complete = template ? isWorkflowComplete(template, agents) : false;
-        return { run: r, template, complete };
+        const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null
+        const agents = runsForWorkflowRun(sessionPhaseRuns, r.id)
+        const complete = template ? isWorkflowComplete(template, agents) : false
+        return { run: r, template, complete }
       })
       .filter(
         (e): e is { run: (typeof e)['run']; template: Workflow; complete: boolean } =>
           e.template !== null && !e.complete,
       )
-      .sort((a, b) => a.run.ordinal - b.run.ordinal);
-  }, [session.workflowRuns, phaseTemplates, sessionPhaseRuns]);
+      .sort((a, b) => a.run.ordinal - b.run.ordinal)
+  }, [session.workflowRuns, phaseTemplates, sessionPhaseRuns])
 
-  const latestActiveRunId = activeRuns[activeRuns.length - 1]?.run.id ?? null;
-  const resolvedChainId = chainAfterId ?? latestActiveRunId;
+  const latestActiveRunId = activeRuns[activeRuns.length - 1]?.run.id ?? null
+  const resolvedChainId = chainAfterId ?? latestActiveRunId
 
   useEffect(() => {
     if (activeRuns.length === 0 && triggerMode === 'after_run') {
-      setTriggerMode('immediate');
+      setTriggerMode('immediate')
     }
-  }, [activeRuns.length, triggerMode]);
+  }, [activeRuns.length, triggerMode])
 
   const draft: WorkflowBuilderDraft = {
     mode,
@@ -197,14 +197,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     stepEdits,
     saveAsPreset,
     autoRun,
-  };
-  const draftEmpty = isDraftEmpty(draft);
+  }
+  const draftEmpty = isDraftEmpty(draft)
 
   useEffect(() => {
     if (draftEmpty) {
-      clearWorkflowDraft(session.id);
+      clearWorkflowDraft(session.id)
     } else {
-      setWorkflowDraft(session.id, draft);
+      setWorkflowDraft(session.id, draft)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -218,162 +218,162 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     stepEdits,
     saveAsPreset,
     autoRun,
-  ]);
+  ])
 
   const resetDraft = () => {
-    setMode(presets.length > 0 ? 'preset' : 'custom');
-    setGoalText('');
-    setGoalHistory([]);
-    setSelectedPresetId(null);
-    setProcessText('');
-    setPlan(null);
-    setStepEdits({});
-    setSaveAsPreset(false);
-    setAutoRun(false);
-    setError(null);
-    clearWorkflowDraft(session.id);
-  };
+    setMode(presets.length > 0 ? 'preset' : 'custom')
+    setGoalText('')
+    setGoalHistory([])
+    setSelectedPresetId(null)
+    setProcessText('')
+    setPlan(null)
+    setStepEdits({})
+    setSaveAsPreset(false)
+    setAutoRun(false)
+    setError(null)
+    clearWorkflowDraft(session.id)
+  }
 
   const handleClose = () => {
-    clearWorkflowDraft(session.id);
-    onClose();
-  };
+    clearWorkflowDraft(session.id)
+    onClose()
+  }
 
   const providerId =
     providers.find((p) => p.id === session.providerOverride)?.id ??
-    session.providerPreference.defaultProvider;
-  const blocked = busy || planning;
+    session.providerPreference.defaultProvider
+  const blocked = busy || planning
 
   const patchStep = (i: number, patch: Partial<StepEdit>) =>
-    setStepEdits((prev) => ({ ...prev, [i]: { ...prev[i], ...patch, dirty: true } }));
+    setStepEdits((prev) => ({ ...prev, [i]: { ...prev[i], ...patch, dirty: true } }))
 
   const effortModelFor = (i: number, role: AgentRole): string => {
-    const picked = stepEdits[i]?.model;
+    const picked = stepEdits[i]?.model
     if (picked) {
-      return picked;
+      return picked
     }
-    return autoModelForRole(role, [providerId])?.model ?? getDefaultTurnModel(providerId);
-  };
-  const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
-  const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
+    return autoModelForRole(role, [providerId])?.model ?? getDefaultTurnModel(providerId)
+  }
+  const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim()
+  const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null
   // Right column is always populated: fall back to the first/recommended preset for the
   // live preview when nothing is explicitly picked. Start gating still requires selectedPreset.
-  const previewPreset = selectedPreset ?? presets[0] ?? null;
-  const workspaceName = useCurrentWorkspace()?.name ?? '';
+  const previewPreset = selectedPreset ?? presets[0] ?? null
+  const workspaceName = useCurrentWorkspace()?.name ?? ''
 
   const replaceGoal = (next: string) => {
-    setGoalHistory((h) => [...h, goalText]);
-    setGoalText(next);
-  };
+    setGoalHistory((h) => [...h, goalText])
+    setGoalText(next)
+  }
 
   const onUseSessionGoal = () => {
     if (sessionGoal.length === 0 || goalText === sessionGoal) {
-      return;
+      return
     }
-    replaceGoal(sessionGoal);
-  };
+    replaceGoal(sessionGoal)
+  }
 
   const onUndoGoal = () => {
-    const prev = goalHistory[goalHistory.length - 1];
+    const prev = goalHistory[goalHistory.length - 1]
     if (prev === undefined) {
-      return;
+      return
     }
-    setGoalText(prev);
-    setGoalHistory((h) => h.slice(0, -1));
-  };
+    setGoalText(prev)
+    setGoalHistory((h) => h.slice(0, -1))
+  }
 
   const onPolishGoal = async () => {
     if (goalText.trim().length === 0 || polishing) {
-      return;
+      return
     }
-    setError(null);
-    setPolishing(true);
+    setError(null)
+    setPolishing(true)
     try {
-      const polished = await polishWorkflowGoal({ providerId, invokeFn: invoke }, goalText);
+      const polished = await polishWorkflowGoal({ providerId, invokeFn: invoke }, goalText)
       if (polished && polished !== goalText) {
-        replaceGoal(polished);
+        replaceGoal(polished)
       } else if (!polished) {
-        showToast('error', 'could not polish the goal, kept your wording');
+        showToast('error', 'could not polish the goal, kept your wording')
       }
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setPolishing(false);
+      setPolishing(false)
     }
-  };
+  }
 
   const attachOptions = () => {
-    const goal = goalText.trim();
-    const after = triggerMode === 'after_run' ? resolvedChainId : null;
+    const goal = goalText.trim()
+    const after = triggerMode === 'after_run' ? resolvedChainId : null
     return {
       autoRun,
       ...(goal.length > 0 && { goal }),
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
       ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
-    };
-  };
+    }
+  }
 
   const onStartPreset = async () => {
     if (!selectedPreset || blocked) {
-      return;
+      return
     }
-    setError(null);
-    setBusy(true);
+    setError(null)
+    setBusy(true)
     try {
-      await attachWorkflowToSession(session.id, selectedPreset.id, attachOptions());
-      showToast('success', `workflow started: ${selectedPreset.name}`);
-      handleClose();
+      await attachWorkflowToSession(session.id, selectedPreset.id, attachOptions())
+      showToast('success', `workflow started: ${selectedPreset.name}`)
+      handleClose()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onPlan = async () => {
-    const process = processText.trim();
+    const process = processText.trim()
     if (process.length === 0 || blocked) {
-      return;
+      return
     }
-    setError(null);
-    setPlan(null);
-    setStepEdits((prev) => pruneToDirty(prev));
-    setPlanning(true);
+    setError(null)
+    setPlan(null)
+    setStepEdits((prev) => pruneToDirty(prev))
+    setPlanning(true)
     try {
-      const client = new PlannerClient({ providerId, invokeFn: invoke });
-      const result = await client.plan({ process });
-      setPlan(result.output);
+      const client = new PlannerClient({ providerId, invokeFn: invoke })
+      const result = await client.plan({ process })
+      setPlan(result.output)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setPlanning(false);
+      setPlanning(false)
     }
-  };
+  }
 
   const onRedesign = () => {
-    setPlan(null);
-    setStepEdits((prev) => pruneToDirty(prev));
-    setError(null);
-    promptRef.current?.querySelector('textarea')?.focus();
-  };
+    setPlan(null)
+    setStepEdits((prev) => pruneToDirty(prev))
+    setError(null)
+    promptRef.current?.querySelector('textarea')?.focus()
+  }
 
   const onStartCustom = async () => {
     if (!plan || blocked) {
-      return;
+      return
     }
-    setError(null);
-    setBusy(true);
+    setError(null)
+    setBusy(true)
     try {
-      const now = new Date().toISOString() as Workflow['createdAt'];
-      const workflowId = `wf_planner_${crypto.randomUUID()}` as WorkflowId;
+      const now = new Date().toISOString() as Workflow['createdAt']
+      const workflowId = `wf_planner_${crypto.randomUUID()}` as WorkflowId
       const steps: ReadonlyArray<Step> = plan.steps.map((s, ordinal) => {
-        const defaults = defaultsForRole(s.role);
-        const edit = stepEdits[ordinal];
-        const name = (edit?.name ?? s.name).trim() || s.name;
-        const promptPrefix = edit?.promptPrefix ?? s.promptPrefix;
-        const picked = edit?.model ?? '';
-        const baseEffort = (edit?.effort ?? defaults.effort) as EffortLevel;
+        const defaults = defaultsForRole(s.role)
+        const edit = stepEdits[ordinal]
+        const name = (edit?.name ?? s.name).trim() || s.name
+        const promptPrefix = edit?.promptPrefix ?? s.promptPrefix
+        const picked = edit?.model ?? ''
+        const baseEffort = (edit?.effort ?? defaults.effort) as EffortLevel
         const base: Step = {
           id: `step_planner_${crypto.randomUUID()}` as StepId,
           workflowId,
@@ -383,17 +383,17 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           role: s.role as AgentRole,
           effort: baseEffort as AgentEffort,
           verbosity: 'normal',
-        };
+        }
         if (picked === '') {
-          return base;
+          return base
         }
         return {
           ...base,
           modelOverride: picked,
           effort: clampEffort(picked, baseEffort) as AgentEffort,
-        };
-      });
-      const goal = goalText.trim();
+        }
+      })
+      const goal = goalText.trim()
       const workflow: Workflow = {
         id: workflowId,
         workspaceId: session.workspaceId,
@@ -404,20 +404,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         isPreset: saveAsPreset,
         createdAt: now,
         updatedAt: now,
-      };
-      await savePhaseTemplate(workflow);
-      await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      showToast('success', `workflow started: ${plan.workflowName}`);
-      handleClose();
+      }
+      await savePhaseTemplate(workflow)
+      await attachWorkflowToSession(session.id, workflowId, attachOptions())
+      showToast('success', `workflow started: ${plan.workflowName}`)
+      handleClose()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
-  const startDisabled = blocked || (mode === 'preset' ? !selectedPreset : !plan);
-  const onStart = mode === 'preset' ? onStartPreset : onStartCustom;
+  const startDisabled = blocked || (mode === 'preset' ? !selectedPreset : !plan)
+  const onStart = mode === 'preset' ? onStartPreset : onStartCustom
 
   return (
     <StudioShell
@@ -566,11 +566,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             aria-label="presets"
                           >
                             {presets.map((t) => {
-                              const steps = sortedSteps(t);
-                              const kinds = steps.map(templateStepKind);
-                              const shown = kinds.slice(0, 5);
-                              const selected = t.id === selectedPresetId;
-                              const desc = t.description || t.goal;
+                              const steps = sortedSteps(t)
+                              const kinds = steps.map(templateStepKind)
+                              const shown = kinds.slice(0, 5)
+                              const selected = t.id === selectedPresetId
+                              const desc = t.description || t.goal
                               return (
                                 <button
                                   key={t.id}
@@ -620,7 +620,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                     />
                                   ) : null}
                                 </button>
-                              );
+                              )
                             })}
                           </div>
                         </>
@@ -744,9 +744,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           active={triggerMode === 'after_run'}
                           disabled={blocked}
                           onClick={() => {
-                            setTriggerMode('after_run');
+                            setTriggerMode('after_run')
                             if (chainAfterId === null) {
-                              setChainAfterId(latestActiveRunId);
+                              setChainAfterId(latestActiveRunId)
                             }
                           }}
                           icon={<Link2 size={12} aria-hidden />}
@@ -869,8 +869,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     </div>
                     <ol className="flex flex-col divide-y divide-border-soft/50">
                       {plan.steps.map((s, i) => {
-                        const role = s.role as AgentRole;
-                        const edit = stepEdits[i];
+                        const role = s.role as AgentRole
+                        const edit = stepEdits[i]
                         return (
                           <EditableStepCard
                             key={`${i}-${s.name}`}
@@ -888,7 +888,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             onModel={(v) => patchStep(i, { model: v })}
                             onEffort={(v) => patchStep(i, { effort: v })}
                           />
-                        );
+                        )
                       })}
                     </ol>
                     <p className="px-1 pt-1 text-2xs leading-relaxed text-muted-foreground/50">
@@ -968,18 +968,18 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         </div>
       )}
     </StudioShell>
-  );
-};
+  )
+}
 
 type SectionHeaderProps = {
-  readonly icon: LucideIcon;
-  readonly label: string;
-  readonly htmlFor?: string;
-  readonly children?: ReactNode;
-};
+  readonly icon: LucideIcon
+  readonly label: string
+  readonly htmlFor?: string
+  readonly children?: ReactNode
+}
 
 const SECTION_LABEL_CLS =
-  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70';
+  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70'
 
 const SectionHeader = ({ icon: Icon, label, htmlFor, children }: SectionHeaderProps) => (
   <div className="flex items-center gap-2">
@@ -996,15 +996,15 @@ const SectionHeader = ({ icon: Icon, label, htmlFor, children }: SectionHeaderPr
       <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">{children}</div>
     ) : null}
   </div>
-);
+)
 
 type TriggerButtonProps = {
-  readonly active: boolean;
-  readonly disabled: boolean;
-  readonly onClick: () => void;
-  readonly icon: ReactNode;
-  readonly label: string;
-};
+  readonly active: boolean
+  readonly disabled: boolean
+  readonly onClick: () => void
+  readonly icon: ReactNode
+  readonly label: string
+}
 
 const TriggerButton = ({ active, disabled, onClick, icon, label }: TriggerButtonProps) => (
   <button
@@ -1021,23 +1021,23 @@ const TriggerButton = ({ active, disabled, onClick, icon, label }: TriggerButton
   >
     {icon} {label}
   </button>
-);
+)
 
-type ChainRun = { readonly run: { readonly id: WorkflowRunId }; readonly template: Workflow };
+type ChainRun = { readonly run: { readonly id: WorkflowRunId }; readonly template: Workflow }
 
 type ChainAfterSelectProps = {
-  readonly runs: ReadonlyArray<ChainRun>;
-  readonly value: WorkflowRunId | null;
-  readonly disabled: boolean;
-  readonly onChange: (id: WorkflowRunId) => void;
-};
+  readonly runs: ReadonlyArray<ChainRun>
+  readonly value: WorkflowRunId | null
+  readonly disabled: boolean
+  readonly onChange: (id: WorkflowRunId) => void
+}
 
 const ChainAfterSelect = ({ runs, value, disabled, onChange }: ChainAfterSelectProps) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
-  const selected = runs.find((r) => r.run.id === value) ?? null;
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useClickOutside(containerRef, () => setOpen(false))
+  const direction = useDropdownDirection(containerRef, open)
+  const selected = runs.find((r) => r.run.id === value) ?? null
 
   return (
     <div ref={containerRef} className="relative">
@@ -1072,14 +1072,14 @@ const ChainAfterSelect = ({ runs, value, disabled, onChange }: ChainAfterSelectP
           className={cn(POPUP_BASE, 'min-w-[12rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
         >
           {runs.map(({ run, template }) => {
-            const active = run.id === value;
+            const active = run.id === value
             return (
               <button
                 key={run.id}
                 type="button"
                 onClick={() => {
-                  onChange(run.id);
-                  setOpen(false);
+                  onChange(run.id)
+                  setOpen(false)
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
@@ -1091,23 +1091,23 @@ const ChainAfterSelect = ({ runs, value, disabled, onChange }: ChainAfterSelectP
                 <span className="flex-1 truncate">{template.name}</span>
                 {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
-            );
+            )
           })}
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
 type ReadOnlyStepCardProps = {
-  readonly ordinal: number;
-  readonly kind: AgentKind;
-  readonly name: string;
-  readonly role: AgentRole;
-  readonly model?: string;
-  readonly effort?: EffortLevel;
-  readonly promptPrefix: string;
-};
+  readonly ordinal: number
+  readonly kind: AgentKind
+  readonly name: string
+  readonly role: AgentRole
+  readonly model?: string
+  readonly effort?: EffortLevel
+  readonly promptPrefix: string
+}
 
 const ReadOnlyStepCard = ({
   ordinal,
@@ -1118,10 +1118,10 @@ const ReadOnlyStepCard = ({
   effort,
   promptPrefix,
 }: ReadOnlyStepCardProps) => {
-  const [expanded, setExpanded] = useState(false);
-  const pal = AGENT_KIND_PALETTE[kind];
-  const instruction = (promptPrefix ?? '').trim();
-  const expandable = instruction.length > 120;
+  const [expanded, setExpanded] = useState(false)
+  const pal = AGENT_KIND_PALETTE[kind]
+  const instruction = (promptPrefix ?? '').trim()
+  const expandable = instruction.length > 120
 
   return (
     <li className="px-1 py-3 first:pt-1">
@@ -1169,24 +1169,24 @@ const ReadOnlyStepCard = ({
         </p>
       )}
     </li>
-  );
-};
+  )
+}
 
 type EditableStepCardProps = {
-  readonly ordinal: number;
-  readonly kind: AgentKind;
-  readonly provider: ProviderId;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly model: string;
-  readonly effort: EffortLevel;
-  readonly effortModel: string;
-  readonly disabled: boolean;
-  readonly onName: (v: string) => void;
-  readonly onPrompt: (v: string) => void;
-  readonly onModel: (v: string) => void;
-  readonly onEffort: (v: EffortLevel) => void;
-};
+  readonly ordinal: number
+  readonly kind: AgentKind
+  readonly provider: ProviderId
+  readonly name: string
+  readonly promptPrefix: string
+  readonly model: string
+  readonly effort: EffortLevel
+  readonly effortModel: string
+  readonly disabled: boolean
+  readonly onName: (v: string) => void
+  readonly onPrompt: (v: string) => void
+  readonly onModel: (v: string) => void
+  readonly onEffort: (v: EffortLevel) => void
+}
 
 const EditableStepCard = ({
   ordinal,
@@ -1203,7 +1203,7 @@ const EditableStepCard = ({
   onModel,
   onEffort,
 }: EditableStepCardProps) => {
-  const pal = AGENT_KIND_PALETTE[kind];
+  const pal = AGENT_KIND_PALETTE[kind]
   return (
     <li className="flex flex-col gap-2 px-1 py-3 first:pt-1">
       <div className="flex items-center gap-2">
@@ -1255,5 +1255,5 @@ const EditableStepCard = ({
         </div>
       </div>
     </li>
-  );
-};
+  )
+}

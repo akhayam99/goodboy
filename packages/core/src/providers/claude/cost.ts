@@ -1,26 +1,26 @@
-import type { ProviderUsage } from '@goodboy/types';
+import type { ProviderUsage } from '@goodboy/types'
 
 type ModelPrice = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok: number;
-};
+  readonly inputPerMtok: number
+  readonly outputPerMtok: number
+  readonly cachedInputPerMtok: number
+}
 
 const FABLE_PRICE: ModelPrice = {
   inputPerMtok: 10,
   outputPerMtok: 50,
   cachedInputPerMtok: 1,
-};
+}
 const OPUS_PRICE: ModelPrice = {
   inputPerMtok: 5,
   outputPerMtok: 25,
   cachedInputPerMtok: 0.5,
-};
+}
 const SONNET_PRICE: ModelPrice = {
   inputPerMtok: 3,
   outputPerMtok: 15,
   cachedInputPerMtok: 0.3,
-};
+}
 
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5': FABLE_PRICE,
@@ -34,20 +34,20 @@ export const CLAUDE_PRICES: Record<string, ModelPrice> = {
     outputPerMtok: 5,
     cachedInputPerMtok: 0.1,
   },
-};
+}
 
-const FALLBACK: ModelPrice = CLAUDE_PRICES['claude-sonnet-4-6']!;
+const FALLBACK: ModelPrice = CLAUDE_PRICES['claude-sonnet-4-6']!
 
 export const priceFor = (model: string): ModelPrice => {
-  return CLAUDE_PRICES[model] ?? FALLBACK;
-};
+  return CLAUDE_PRICES[model] ?? FALLBACK
+}
 
 export const computeCostUsd = (usage: ProviderUsage, model: string): number => {
-  const price = priceFor(model);
-  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
+  const price = priceFor(model)
+  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens)
   return (
     (billableInput * price.inputPerMtok) / 1_000_000 +
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
-  );
-};
+  )
+}

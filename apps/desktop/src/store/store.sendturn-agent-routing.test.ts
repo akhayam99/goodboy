@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -8,17 +8,17 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
+const runTurnSpy = vi.fn()
+const cancelTurnSpy = vi.fn()
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -28,20 +28,20 @@ vi.mock('../features/permissions/permissions', () => ({
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
   invokeAuditRetryDelete: vi.fn(async () => undefined),
   useEffectivePermissionRules: () => [],
-}));
+}))
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
-}));
+}))
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -83,7 +83,7 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -91,7 +91,7 @@ vi.mock('../features/providers/providers', () => ({
   getCursorStatus: vi.fn(),
   getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -99,7 +99,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
-}));
+}))
 
 vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -110,7 +110,7 @@ vi.mock('../features/budget/budget', () => ({
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
   invokeCheckProviderBudget: vi.fn(),
-}));
+}))
 
 vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
@@ -118,7 +118,7 @@ vi.mock('../features/skills/skills', () => ({
   invokeSkillDelete: vi.fn(),
   invokeSkillRescan: vi.fn(),
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
 vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
@@ -128,16 +128,16 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
   invokeAgentMarkViewed: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
-}));
+}))
 
 vi.mock('../features/plans/plans', () => ({
   listPlansForSession: vi.fn(async () => []),
@@ -147,13 +147,13 @@ vi.mock('../features/plans/plans', () => ({
   deletePlan: vi.fn(),
   addPlanConsumption: vi.fn(),
   listConsumptionsForPlan: vi.fn(async () => []),
-}));
+}))
 
-const SESSION_ID = 'session-rt-1' as SessionId;
-const AGENT_A = 'agent-a' as AgentId;
-const AGENT_B = 'agent-b' as AgentId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const NOW = '2026-05-18T00:00:00.000Z' as IsoDateTime;
+const SESSION_ID = 'session-rt-1' as SessionId
+const AGENT_A = 'agent-a' as AgentId
+const AGENT_B = 'agent-b' as AgentId
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId
+const NOW = '2026-05-18T00:00:00.000Z' as IsoDateTime
 
 function buildSession(): Session {
   return {
@@ -169,7 +169,7 @@ function buildSession(): Session {
     workflowRuns: [],
     createdAt: NOW,
     updatedAt: NOW,
-  };
+  }
 }
 
 function buildAgent(id: AgentId, ordinal: number): Agent {
@@ -179,32 +179,32 @@ function buildAgent(id: AgentId, ordinal: number): Agent {
     ordinal,
     name: `agent ${ordinal}`,
     status: 'pending',
-  };
+  }
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
 async function importStore() {
-  const mod = await import('./store');
-  return mod.useAppStore;
+  const mod = await import('./store')
+  return mod.useAppStore
 }
 
 describe('sendTurn, agent routing', () => {
   beforeEach(async () => {
-    runTurnSpy.mockReset();
-    cancelTurnSpy.mockReset();
-    runTurnSpy.mockImplementation(() => emptyStream());
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    runTurnSpy.mockReset()
+    cancelTurnSpy.mockReset()
+    runTurnSpy.mockImplementation(() => emptyStream())
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'preference',
-    });
-  });
+    })
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   function setupTwoAgents(
     useAppStore: Awaited<ReturnType<typeof importStore>>,
@@ -233,88 +233,86 @@ describe('sendTurn, agent routing', () => {
       workspaces: [
         { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
       ],
-    });
+    })
   }
 
   it('routes user_text to the explicit agentId, not selectedAgentId', async () => {
-    const useAppStore = await importStore();
-    setupTwoAgents(useAppStore, AGENT_A);
+    const useAppStore = await importStore()
+    setupTwoAgents(useAppStore, AGENT_A)
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_B, content: 'fix the bug' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_B, content: 'fix the bug' })
 
-    const transcriptB = useAppStore.getState().transcripts[AGENT_B] ?? [];
-    const userEvent = transcriptB.find((e) => e.kind === 'user_text');
-    expect(userEvent).toBeDefined();
-    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('fix the bug');
+    const transcriptB = useAppStore.getState().transcripts[AGENT_B] ?? []
+    const userEvent = transcriptB.find((e) => e.kind === 'user_text')
+    expect(userEvent).toBeDefined()
+    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('fix the bug')
 
-    const transcriptA = useAppStore.getState().transcripts[AGENT_A] ?? [];
-    const userEventA = transcriptA.find((e) => e.kind === 'user_text');
-    expect(userEventA).toBeUndefined();
-  });
+    const transcriptA = useAppStore.getState().transcripts[AGENT_A] ?? []
+    const userEventA = transcriptA.find((e) => e.kind === 'user_text')
+    expect(userEventA).toBeUndefined()
+  })
 
   it('falls back to selectedAgentId when agentId is omitted', async () => {
-    const useAppStore = await importStore();
-    setupTwoAgents(useAppStore, AGENT_A);
+    const useAppStore = await importStore()
+    setupTwoAgents(useAppStore, AGENT_A)
 
-    await useAppStore
-      .getState()
-      .sendTurn({ sessionId: SESSION_ID, content: 'hello from fallback' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello from fallback' })
 
-    const transcriptA = useAppStore.getState().transcripts[AGENT_A] ?? [];
-    const userEvent = transcriptA.find((e) => e.kind === 'user_text');
-    expect(userEvent).toBeDefined();
-    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('hello from fallback');
+    const transcriptA = useAppStore.getState().transcripts[AGENT_A] ?? []
+    const userEvent = transcriptA.find((e) => e.kind === 'user_text')
+    expect(userEvent).toBeDefined()
+    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('hello from fallback')
 
-    const transcriptB = useAppStore.getState().transcripts[AGENT_B] ?? [];
-    expect(transcriptB.find((e) => e.kind === 'user_text')).toBeUndefined();
-  });
+    const transcriptB = useAppStore.getState().transcripts[AGENT_B] ?? []
+    expect(transcriptB.find((e) => e.kind === 'user_text')).toBeUndefined()
+  })
 
   it('sends the AI request to the explicit agent even if selectedAgentId changes mid-flight', async () => {
-    const useAppStore = await importStore();
-    setupTwoAgents(useAppStore, AGENT_A);
+    const useAppStore = await importStore()
+    setupTwoAgents(useAppStore, AGENT_A)
 
     runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
       yield {
         kind: 'done' as const,
         runId: args.runId,
         at: NOW,
-      };
-    });
+      }
+    })
 
-    useAppStore.setState({ selectedAgentId: { [SESSION_ID]: AGENT_B } });
+    useAppStore.setState({ selectedAgentId: { [SESSION_ID]: AGENT_B } })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'pinned to A' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'pinned to A' })
 
-    const transcriptA = useAppStore.getState().transcripts[AGENT_A] ?? [];
-    const userEvent = transcriptA.find((e) => e.kind === 'user_text');
-    expect(userEvent).toBeDefined();
-    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('pinned to A');
+    const transcriptA = useAppStore.getState().transcripts[AGENT_A] ?? []
+    const userEvent = transcriptA.find((e) => e.kind === 'user_text')
+    expect(userEvent).toBeDefined()
+    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('pinned to A')
 
-    expect(runTurnSpy).toHaveBeenCalledOnce();
-  });
-});
+    expect(runTurnSpy).toHaveBeenCalledOnce()
+  })
+})
 
 describe('sendTurn, resolver config (provider pin + effort)', () => {
   beforeEach(async () => {
-    runTurnSpy.mockReset();
-    runTurnSpy.mockImplementation(() => emptyStream());
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    runTurnSpy.mockReset()
+    runTurnSpy.mockImplementation(() => emptyStream())
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'preference',
-    });
-    const workflowsMod = await import('../features/workflows/workflows');
-    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-  });
+    })
+    const workflowsMod = await import('../features/workflows/workflows')
+    ;(workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([])
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   function setup(useAppStore: Awaited<ReturnType<typeof importStore>>) {
     useAppStore.setState({
@@ -343,96 +341,96 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       workspaces: [
         { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
       ],
-    });
+    })
   }
 
   it('passes --effort (mapped) to runTurn when an effort override is set on anthropic', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'extra-high' } });
+    const useAppStore = await importStore()
+    setup(useAppStore)
+    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'extra-high' } })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(runTurnSpy).toHaveBeenCalledOnce();
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('xhigh');
-  });
+    expect(runTurnSpy).toHaveBeenCalledOnce()
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('xhigh')
+  })
 
   it('omits effort from runTurn when no override is set (model default preserved)', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
+    const useAppStore = await importStore()
+    setup(useAppStore)
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined();
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined()
+  })
 
   it('passes clamped effort to runTurn when the resolved provider is codex', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    const useAppStore = await importStore()
+    setup(useAppStore)
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'codex',
       selectedModel: 'gpt-5.5',
       reason: 'override',
-    });
-    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'max' } });
+    })
+    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'max' } })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('high');
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('high')
+  })
 
   it('omits effort when the resolved provider has no effort axis (gemini)', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    const useAppStore = await importStore()
+    setup(useAppStore)
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'gemini',
       selectedModel: 'gemini-2.5-pro',
       reason: 'override',
-    });
-    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'high' } });
+    })
+    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'high' } })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined();
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined()
+  })
 
   it('pins the provider override into routing even when the session forbids turn overrides', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
+    const useAppStore = await importStore()
+    setup(useAppStore)
     useAppStore.setState({
       agentProviderOverride: { [AGENT_A]: 'codex' },
       agentModelOverride: { [AGENT_A]: 'gpt-5-codex' },
-    });
-    const routingMod = await import('../features/providers/routing');
-    const spy = routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>;
+    })
+    const routingMod = await import('../features/providers/routing')
+    const spy = routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(spy).toHaveBeenCalled();
-    const [preference, override] = spy.mock.calls[0]!;
-    expect(preference.allowTurnOverride).toBe(true);
-    expect(override).toEqual({ providerId: 'codex', model: 'gpt-5-codex' });
-  });
+    expect(spy).toHaveBeenCalled()
+    const [preference, override] = spy.mock.calls[0]!
+    expect(preference.allowTurnOverride).toBe(true)
+    expect(override).toEqual({ providerId: 'codex', model: 'gpt-5-codex' })
+  })
 
   it('a resolver that emits a resolution marker records committed and advances the queue', async () => {
-    const useAppStore = await importStore();
-    const workflowsMod = await import('../features/workflows/workflows');
-    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
+    const useAppStore = await importStore()
+    const workflowsMod = await import('../features/workflows/workflows')
+    ;(workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), status: 'completed' },
       buildAgent(AGENT_B, 1),
-    ]);
+    ])
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -458,35 +456,35 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       workspaces: [
         { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
       ],
-    });
-    runTurnSpy.mockReset();
+    })
+    runTurnSpy.mockReset()
     runTurnSpy.mockImplementationOnce(async function* (args: { runId: ProviderRunId }) {
       yield {
         kind: 'assistant_text' as const,
         runId: args.runId,
         delta: '<<comment-resolved threadId="PRRT_1" commit="abc1234">>',
         at: NOW,
-      };
-      yield { kind: 'done' as const, runId: args.runId, at: NOW };
-    });
-    runTurnSpy.mockImplementation(() => emptyStream());
+      }
+      yield { kind: 'done' as const, runId: args.runId, at: NOW }
+    })
+    runTurnSpy.mockImplementation(() => emptyStream())
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('committed');
-    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
-    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBeUndefined();
-  });
+    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('committed')
+    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2))
+    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBeUndefined()
+  })
 
   it('a resolver that ends without a marker records awaiting and blocks the queue', async () => {
-    const useAppStore = await importStore();
-    const workflowsMod = await import('../features/workflows/workflows');
-    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
+    const useAppStore = await importStore()
+    const workflowsMod = await import('../features/workflows/workflows')
+    ;(workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), status: 'completed' },
       buildAgent(AGENT_B, 1),
-    ]);
+    ])
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -512,30 +510,30 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       workspaces: [
         { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
       ],
-    });
-    runTurnSpy.mockReset();
+    })
+    runTurnSpy.mockReset()
     runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
       yield {
         kind: 'assistant_text' as const,
         runId: args.runId,
         delta: 'this is non-trivial. can I commit?',
         at: NOW,
-      };
-      yield { kind: 'done' as const, runId: args.runId, at: NOW };
-    });
+      }
+      yield { kind: 'done' as const, runId: args.runId, at: NOW }
+    })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('awaiting');
-    expect(runTurnSpy).toHaveBeenCalledOnce();
-    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBe('kick B');
-  });
+    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('awaiting')
+    expect(runTurnSpy).toHaveBeenCalledOnce()
+    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBe('kick B')
+  })
 
   it('an explicit per-turn model override beats the agent kind model pin', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
+    const useAppStore = await importStore()
+    setup(useAppStore)
     useAppStore.setState({
       sessions: [
         {
@@ -544,41 +542,41 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
         },
       ],
       agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
-    });
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    })
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'override',
-    });
+    })
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: AGENT_A,
       content: 'go',
       override: { providerId: 'anthropic', model: 'claude-3-5-sonnet-latest' },
-    });
+    })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-sonnet-latest');
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-sonnet-latest')
+  })
 
   it('keeps the agent kind model pin when no per-turn override is supplied', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
+    const useAppStore = await importStore()
+    setup(useAppStore)
     useAppStore.setState({
       agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
-    });
+    })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest');
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest')
+  })
 
   it('an explicit per-turn model override beats both the agent provider and model pin', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
+    const useAppStore = await importStore()
+    setup(useAppStore)
     useAppStore.setState({
       sessions: [
         {
@@ -588,41 +586,41 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       ],
       agentProviderOverride: { [AGENT_A]: 'anthropic' },
       agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
-    });
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    })
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'override',
-    });
+    })
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: AGENT_A,
       content: 'go',
       override: { providerId: 'anthropic', model: 'claude-3-5-sonnet-latest' },
-    });
+    })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-sonnet-latest');
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-sonnet-latest')
+  })
 
   it('keeps both the agent provider and model pin when no per-turn override is supplied', async () => {
-    const useAppStore = await importStore();
-    setup(useAppStore);
+    const useAppStore = await importStore()
+    setup(useAppStore)
     useAppStore.setState({
       agentProviderOverride: { [AGENT_A]: 'anthropic' },
       agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
-    });
+    })
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' })
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest');
-  });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest')
+  })
 
   it('activateNextResolver runs only the head of the queue and dequeues it', async () => {
-    const useAppStore = await importStore();
+    const useAppStore = await importStore()
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -649,13 +647,13 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       workspaces: [
         { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
       ],
-    });
+    })
 
-    await useAppStore.getState().activateNextResolver(SESSION_ID);
+    await useAppStore.getState().activateNextResolver(SESSION_ID)
 
-    expect(useAppStore.getState().pendingResolverKickoff[AGENT_A]).toBeUndefined();
-    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBe('kick B');
-    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledOnce());
-    expect(runTurnSpy.mock.calls[0]?.[0]?.prompt).toContain('kick A');
-  });
-});
+    expect(useAppStore.getState().pendingResolverKickoff[AGENT_A]).toBeUndefined()
+    expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBe('kick B')
+    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledOnce())
+    expect(runTurnSpy.mock.calls[0]?.[0]?.prompt).toContain('kick A')
+  })
+})

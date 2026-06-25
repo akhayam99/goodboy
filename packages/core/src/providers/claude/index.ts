@@ -1,1 +1,1 @@
-export { ClaudeAdapter, type ClaudeAdapterDeps } from './adapter';
+export { ClaudeAdapter, type ClaudeAdapterDeps } from './adapter'

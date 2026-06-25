@@ -1,6 +1,6 @@
-import type { AgentStatus, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
-import { resolveConflicts } from '@goodboy/core';
-import type { GetFn, SetFn } from './types';
+import type { AgentStatus, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types'
+import { resolveConflicts } from '@goodboy/core'
+import type { GetFn, SetFn } from './types'
 
 export const resolveMergeConflicts = (set: SetFn, get: GetFn) => {
   return async (
@@ -8,7 +8,7 @@ export const resolveMergeConflicts = (set: SetFn, get: GetFn) => {
     picks: Record<string, string>,
     runStatuses: ReadonlyArray<{ runId: string; completedAt: string; status: string }>,
   ) => {
-    const conflicts = get().sessionMergeConflicts[sessionId] ?? [];
+    const conflicts = get().sessionMergeConflicts[sessionId] ?? []
     await resolveConflicts({
       conflicts,
       runStatuses: runStatuses.map((rs) => ({
@@ -18,11 +18,11 @@ export const resolveMergeConflicts = (set: SetFn, get: GetFn) => {
       })),
       strategy: 'manual',
       manualPicks: picks as Record<string, ProviderRunId>,
-    });
+    })
     set((state) => {
-      const next = { ...state.sessionMergeConflicts };
-      delete next[sessionId];
-      return { sessionMergeConflicts: next };
-    });
-  };
-};
+      const next = { ...state.sessionMergeConflicts }
+      delete next[sessionId]
+      return { sessionMergeConflicts: next }
+    })
+  }
+}

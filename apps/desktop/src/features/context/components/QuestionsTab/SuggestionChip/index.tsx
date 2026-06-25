@@ -1,14 +1,14 @@
-import { Check, Sparkles } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Check, Sparkles } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 
 type Props = {
-  label: string;
-  selected: boolean;
-  recommended?: boolean;
-  onToggle: () => void;
-};
+  label: string
+  selected: boolean
+  recommended?: boolean
+  onToggle: () => void
+}
 
-const isCodeLike = (label: string) => /^\S+$/.test(label) && /[_().:[\]/]/.test(label);
+const isCodeLike = (label: string) => /^\S+$/.test(label) && /[_().:[\]/]/.test(label)
 
 export const SuggestionChip = ({ label, selected, recommended = false, onToggle }: Props) => {
   return (
@@ -42,5 +42,5 @@ export const SuggestionChip = ({ label, selected, recommended = false, onToggle 
       )}
       <span className="min-w-0 break-words text-left">{label}</span>
     </button>
-  );
-};
+  )
+}

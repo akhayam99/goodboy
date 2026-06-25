@@ -1,28 +1,28 @@
-const PREFIX = 'goodboy:';
+const PREFIX = 'goodboy:'
 
 export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
-} as const;
+} as const
 
 export const STORAGE_PREFIXES = {
   workSurfaceView: `${PREFIX}work-surface-view:`,
   diffView: `${PREFIX}diff-view:`,
   diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,
-} as const;
+} as const
 
 export const wipeLocalStorage = (): void => {
   if (typeof localStorage === 'undefined') {
-    return;
+    return
   }
-  const keys: string[] = [];
+  const keys: string[] = []
   for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
+    const key = localStorage.key(i)
     if (key?.startsWith(PREFIX)) {
-      keys.push(key);
+      keys.push(key)
     }
   }
-  for (const key of keys) localStorage.removeItem(key);
-};
+  for (const key of keys) localStorage.removeItem(key)
+}

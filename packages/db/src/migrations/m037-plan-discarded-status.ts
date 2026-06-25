@@ -36,4 +36,4 @@ CREATE INDEX idx_session_plans_agent_id ON session_plans(agent_id);
 
 PRAGMA foreign_key_check;
 PRAGMA foreign_keys = ON;
-`;
+`

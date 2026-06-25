@@ -1,78 +1,78 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, GitCommit } from 'lucide-react';
-import { cn, ScrollFade } from '@goodboy/ui';
-import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown, GitCommit } from 'lucide-react'
+import { cn, ScrollFade } from '@goodboy/ui'
+import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types'
 
 type Props = {
-  view: DiffView;
-  onChange: (next: DiffView) => void;
-  commits: ReadonlyArray<BranchCommit>;
-  status: WorktreeStatus | null;
-  filesCount: number | null;
-  loading?: boolean;
-};
+  view: DiffView
+  onChange: (next: DiffView) => void
+  commits: ReadonlyArray<BranchCommit>
+  status: WorktreeStatus | null
+  filesCount: number | null
+  loading?: boolean
+}
 
 type Row =
   | { kind: 'header'; label: string; badge?: string }
   | { kind: 'option'; view: DiffView; label: string; meta?: string; badge?: string }
-  | { kind: 'placeholder'; label: string };
+  | { kind: 'placeholder'; label: string }
 
 const SCOPE_LABEL: Record<'working' | 'unstaged' | 'staged' | 'all', string> = {
   working: 'working tree',
   unstaged: 'unstaged only',
   staged: 'staged only',
   all: 'working tree',
-};
+}
 
 function viewLabel(view: DiffView, commits: ReadonlyArray<BranchCommit>): string {
   if (view.kind === 'working') {
     if (view.scope === 'all') {
-      return 'working tree';
+      return 'working tree'
     }
-    return SCOPE_LABEL[view.scope];
+    return SCOPE_LABEL[view.scope]
   }
   if (view.kind === 'commit') {
-    const found = commits.find((c) => c.sha === view.sha);
+    const found = commits.find((c) => c.sha === view.sha)
     if (found) {
-      return `commit ${found.shortSha}`;
+      return `commit ${found.shortSha}`
     }
-    return `commit ${view.sha.slice(0, 7)}`;
+    return `commit ${view.sha.slice(0, 7)}`
   }
-  return 'branch vs main';
+  return 'branch vs main'
 }
 
 function relativeTime(ts: number): string {
-  const now = Date.now() / 1000;
-  const delta = Math.max(0, now - ts);
+  const now = Date.now() / 1000
+  const delta = Math.max(0, now - ts)
   if (delta < 60) {
-    return `${Math.floor(delta)}s`;
+    return `${Math.floor(delta)}s`
   }
   if (delta < 3600) {
-    return `${Math.floor(delta / 60)}min`;
+    return `${Math.floor(delta / 60)}min`
   }
   if (delta < 86400) {
-    return `${Math.floor(delta / 3600)}h`;
+    return `${Math.floor(delta / 3600)}h`
   }
   if (delta < 86400 * 7) {
-    return `${Math.floor(delta / 86400)}d`;
+    return `${Math.floor(delta / 86400)}d`
   }
   if (delta < 86400 * 30) {
-    return `${Math.floor(delta / (86400 * 7))}w`;
+    return `${Math.floor(delta / (86400 * 7))}w`
   }
-  return `${Math.floor(delta / (86400 * 30))}mo`;
+  return `${Math.floor(delta / (86400 * 30))}mo`
 }
 
 function viewEquals(a: DiffView, b: DiffView): boolean {
   if (a.kind !== b.kind) {
-    return false;
+    return false
   }
   if (a.kind === 'working' && b.kind === 'working') {
-    return a.scope === b.scope;
+    return a.scope === b.scope
   }
   if (a.kind === 'commit' && b.kind === 'commit') {
-    return a.sha === b.sha;
+    return a.sha === b.sha
   }
-  return true;
+  return true
 }
 
 export const DiffViewSelector = ({
@@ -83,47 +83,47 @@ export const DiffViewSelector = ({
   filesCount,
   loading,
 }: Props) => {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [focusIdx, setFocusIdx] = useState(0);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [focusIdx, setFocusIdx] = useState(0)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
 
-  const localCommits = useMemo(() => commits.filter((c) => !c.pushed), [commits]);
-  const pushedCommits = useMemo(() => commits.filter((c) => c.pushed), [commits]);
+  const localCommits = useMemo(() => commits.filter((c) => !c.pushed), [commits])
+  const pushedCommits = useMemo(() => commits.filter((c) => c.pushed), [commits])
 
   const filterMatch = useCallback(
     (c: BranchCommit) => {
-      const q = query.trim().toLowerCase();
+      const q = query.trim().toLowerCase()
       if (q.length === 0) {
-        return true;
+        return true
       }
-      return c.shortSha.includes(q) || c.subject.toLowerCase().includes(q);
+      return c.shortSha.includes(q) || c.subject.toLowerCase().includes(q)
     },
     [query],
-  );
+  )
 
   const rows = useMemo<Row[]>(() => {
-    const out: Row[] = [];
-    out.push({ kind: 'header', label: 'currently editing' });
-    out.push({ kind: 'option', view: { kind: 'working', scope: 'all' }, label: 'working tree' });
+    const out: Row[] = []
+    out.push({ kind: 'header', label: 'currently editing' })
+    out.push({ kind: 'option', view: { kind: 'working', scope: 'all' }, label: 'working tree' })
     out.push({
       kind: 'option',
       view: { kind: 'working', scope: 'staged' },
       label: 'staged only',
-    });
+    })
     out.push({
       kind: 'option',
       view: { kind: 'working', scope: 'unstaged' },
       label: 'unstaged only',
-    });
+    })
 
-    const filteredLocal = localCommits.filter(filterMatch);
-    out.push({ kind: 'header', label: 'ready to push' });
+    const filteredLocal = localCommits.filter(filterMatch)
+    out.push({ kind: 'header', label: 'ready to push' })
     if (localCommits.length === 0) {
-      out.push({ kind: 'placeholder', label: 'nothing to push' });
+      out.push({ kind: 'placeholder', label: 'nothing to push' })
     } else if (filteredLocal.length === 0) {
-      out.push({ kind: 'placeholder', label: 'no match' });
+      out.push({ kind: 'placeholder', label: 'no match' })
     } else {
       for (const c of filteredLocal) {
         out.push({
@@ -131,19 +131,19 @@ export const DiffViewSelector = ({
           view: { kind: 'commit', sha: c.sha },
           label: `${c.shortSha}  ${c.subject}`,
           meta: relativeTime(c.timestamp),
-        });
+        })
       }
     }
 
-    const filteredPushed = pushedCommits.filter(filterMatch);
-    out.push({ kind: 'header', label: 'on origin' });
+    const filteredPushed = pushedCommits.filter(filterMatch)
+    out.push({ kind: 'header', label: 'on origin' })
     if (pushedCommits.length === 0) {
       out.push({
         kind: 'placeholder',
         label: status?.hasUpstream === false ? 'branch not pushed yet' : 'no commits pushed yet',
-      });
+      })
     } else if (filteredPushed.length === 0) {
-      out.push({ kind: 'placeholder', label: 'no match' });
+      out.push({ kind: 'placeholder', label: 'no match' })
     } else {
       for (const c of filteredPushed) {
         out.push({
@@ -151,90 +151,90 @@ export const DiffViewSelector = ({
           view: { kind: 'commit', sha: c.sha },
           label: `${c.shortSha}  ${c.subject}`,
           meta: relativeTime(c.timestamp),
-        });
+        })
       }
     }
 
-    out.push({ kind: 'header', label: 'presets' });
-    out.push({ kind: 'option', view: { kind: 'branch' }, label: 'branch vs main' });
+    out.push({ kind: 'header', label: 'presets' })
+    out.push({ kind: 'option', view: { kind: 'branch' }, label: 'branch vs main' })
 
-    return out;
-  }, [localCommits, pushedCommits, filterMatch, query, status]);
+    return out
+  }, [localCommits, pushedCommits, filterMatch, query, status])
 
   const optionIndices = useMemo(
     () =>
       rows.reduce<number[]>((acc, r, i) => {
         if (r.kind === 'option') {
-          acc.push(i);
+          acc.push(i)
         }
-        return acc;
+        return acc
       }, []),
     [rows],
-  );
+  )
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const handler = (e: MouseEvent) => {
       if (!rootRef.current) {
-        return;
+        return
       }
       if (!rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   useEffect(() => {
     if (open) {
-      setQuery('');
-      setFocusIdx(0);
-      window.setTimeout(() => searchRef.current?.focus(), 0);
+      setQuery('')
+      setFocusIdx(0)
+      window.setTimeout(() => searchRef.current?.focus(), 0)
     }
-  }, [open]);
+  }, [open])
 
   const moveFocus = (dir: 1 | -1) => {
     if (optionIndices.length === 0) {
-      return;
+      return
     }
-    const currentPos = optionIndices.findIndex((i) => i === focusIdx);
-    const startPos = currentPos === -1 ? (dir === 1 ? -1 : optionIndices.length) : currentPos;
-    const nextPos = Math.max(0, Math.min(optionIndices.length - 1, startPos + dir));
-    const targetIdx = optionIndices[nextPos];
+    const currentPos = optionIndices.findIndex((i) => i === focusIdx)
+    const startPos = currentPos === -1 ? (dir === 1 ? -1 : optionIndices.length) : currentPos
+    const nextPos = Math.max(0, Math.min(optionIndices.length - 1, startPos + dir))
+    const targetIdx = optionIndices[nextPos]
     if (targetIdx !== undefined) {
-      setFocusIdx(targetIdx);
+      setFocusIdx(targetIdx)
     }
-  };
+  }
 
   const commitOption = (v: DiffView) => {
-    onChange(v);
-    setOpen(false);
-  };
+    onChange(v)
+    setOpen(false)
+  }
 
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      moveFocus(1);
+      e.preventDefault()
+      moveFocus(1)
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      moveFocus(-1);
+      e.preventDefault()
+      moveFocus(-1)
     } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const row = rows[focusIdx];
+      e.preventDefault()
+      const row = rows[focusIdx]
       if (row?.kind === 'option') {
-        commitOption(row.view);
+        commitOption(row.view)
       }
     } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setOpen(false);
+      e.preventDefault()
+      setOpen(false)
     }
-  };
+  }
 
-  const label = viewLabel(view, commits);
-  const countStr = filesCount === null ? '' : ` · ${filesCount} file${filesCount === 1 ? '' : 's'}`;
+  const label = viewLabel(view, commits)
+  const countStr = filesCount === null ? '' : ` · ${filesCount} file${filesCount === 1 ? '' : 's'}`
 
   return (
     <div ref={rootRef} className="relative">
@@ -269,8 +269,8 @@ export const DiffViewSelector = ({
               ref={searchRef}
               value={query}
               onChange={(e) => {
-                setQuery(e.target.value);
-                setFocusIdx(0);
+                setQuery(e.target.value)
+                setFocusIdx(0)
               }}
               placeholder="filter commits by sha or subject…"
               className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
@@ -292,7 +292,7 @@ export const DiffViewSelector = ({
                       </span>
                     ) : null}
                   </div>
-                );
+                )
               }
               if (row.kind === 'placeholder') {
                 return (
@@ -302,10 +302,10 @@ export const DiffViewSelector = ({
                   >
                     {row.label}
                   </div>
-                );
+                )
               }
-              const isActive = viewEquals(view, row.view);
-              const isFocused = i === focusIdx;
+              const isActive = viewEquals(view, row.view)
+              const isFocused = i === focusIdx
               return (
                 <button
                   key={`o-${i}`}
@@ -346,11 +346,11 @@ export const DiffViewSelector = ({
                     </span>
                   ) : null}
                 </button>
-              );
+              )
             })}
           </ScrollFade>
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

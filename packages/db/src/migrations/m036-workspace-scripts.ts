@@ -14,4 +14,4 @@ CREATE INDEX idx_workspace_scripts_workspace ON workspace_scripts(workspace_id, 
 DROP TABLE IF EXISTS workspace_init_scripts;
 
 UPDATE agents SET kind = 'generic' WHERE kind = 'init';
-`;
+`

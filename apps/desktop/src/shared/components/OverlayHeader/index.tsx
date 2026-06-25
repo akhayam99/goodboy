@@ -1,17 +1,17 @@
-import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
-import { X, type LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react'
+import { cn } from '@goodboy/ui'
+import { X, type LucideIcon } from 'lucide-react'
 
 type Props = {
-  readonly icon?: LucideIcon;
-  readonly title: string;
-  readonly subtitle?: string;
-  readonly beta?: boolean;
-  readonly onClose: () => void;
-  readonly closeLabel: string;
-  readonly closeDisabled?: boolean;
-  readonly children?: ReactNode;
-};
+  readonly icon?: LucideIcon
+  readonly title: string
+  readonly subtitle?: string
+  readonly beta?: boolean
+  readonly onClose: () => void
+  readonly closeLabel: string
+  readonly closeDisabled?: boolean
+  readonly children?: ReactNode
+}
 
 export const OverlayHeader = ({
   icon: Icon,
@@ -49,4 +49,4 @@ export const OverlayHeader = ({
       <X size={14} aria-hidden />
     </button>
   </header>
-);
+)

@@ -5,20 +5,20 @@ import type {
   WorkflowRun,
   WorkflowRunId,
   WorkflowTriggerMode,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type SessionWorkflowRow = {
-  workflow_run_id: string;
-  workflow_id: string;
-  ordinal: number;
-  current_step_ordinal: number;
-  auto_run: number;
-  trigger_mode: string;
-  chain_after_run_id: string | null;
-  goal: string | null;
-  discarded_at: string | null;
-};
+  workflow_run_id: string
+  workflow_id: string
+  ordinal: number
+  current_step_ordinal: number
+  auto_run: number
+  trigger_mode: string
+  chain_after_run_id: string | null
+  goal: string | null
+  discarded_at: string | null
+}
 
 function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   return {
@@ -33,7 +33,7 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
-  };
+  }
 }
 
 export const listWorkflowsForSession = async (
@@ -43,9 +43,9 @@ export const listWorkflowsForSession = async (
   const rows = await db.select<SessionWorkflowRow>(
     'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
-  );
-  return rows.map(toWorkflowRun);
-};
+  )
+  return rows.map(toWorkflowRun)
+}
 
 async function bumpSessionUpdatedAt(
   db: Database,
@@ -55,7 +55,7 @@ async function bumpSessionUpdatedAt(
   await db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
     Date.parse(updatedAt),
     sessionId,
-  ]);
+  ])
 }
 
 export const attachWorkflowToSession = async (
@@ -72,8 +72,8 @@ export const attachWorkflowToSession = async (
   const maxOrdinal = await db.select<{ max_ordinal: number | null }>(
     'SELECT MAX(ordinal) as max_ordinal FROM session_workflows WHERE session_id = ?',
     [sessionId],
-  );
-  const nextOrdinal = (maxOrdinal[0]?.max_ordinal ?? -1) + 1;
+  )
+  const nextOrdinal = (maxOrdinal[0]?.max_ordinal ?? -1) + 1
 
   await db.execute(
     'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -88,9 +88,9 @@ export const attachWorkflowToSession = async (
       triggerMode,
       chainAfterRunId ?? null,
     ],
-  );
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-};
+  )
+  await bumpSessionUpdatedAt(db, sessionId, updatedAt)
+}
 
 export const detachWorkflowFromSession = async (
   db: Database,
@@ -98,9 +98,9 @@ export const detachWorkflowFromSession = async (
   workflowRunId: WorkflowRunId,
   updatedAt: IsoDateTime,
 ): Promise<void> => {
-  await db.execute('DELETE FROM session_workflows WHERE workflow_run_id = ?', [workflowRunId]);
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-};
+  await db.execute('DELETE FROM session_workflows WHERE workflow_run_id = ?', [workflowRunId])
+  await bumpSessionUpdatedAt(db, sessionId, updatedAt)
+}
 
 export const updateWorkflowOrder = async (
   db: Database,
@@ -111,16 +111,16 @@ export const updateWorkflowOrder = async (
   const existing = await db.select<SessionWorkflowRow>(
     'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ?',
     [sessionId],
-  );
-  const byRun = new Map(existing.map((r) => [r.workflow_run_id, r]));
+  )
+  const byRun = new Map(existing.map((r) => [r.workflow_run_id, r]))
 
-  await db.exec('BEGIN');
+  await db.exec('BEGIN')
   try {
-    await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
+    await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId])
     for (const [ordinal, runId] of workflowRunIds.entries()) {
-      const prev = byRun.get(runId);
+      const prev = byRun.get(runId)
       if (!prev) {
-        continue;
+        continue
       }
       await db.execute(
         'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -136,18 +136,18 @@ export const updateWorkflowOrder = async (
           prev.trigger_mode,
           prev.chain_after_run_id,
         ],
-      );
+      )
     }
     await db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
       Date.parse(updatedAt),
       sessionId,
-    ]);
-    await db.exec('COMMIT');
+    ])
+    await db.exec('COMMIT')
   } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
+    await db.exec('ROLLBACK')
+    throw err
   }
-};
+}
 
 export const discardWorkflowInSession = async (
   db: Database,
@@ -158,9 +158,9 @@ export const discardWorkflowInSession = async (
   await db.execute('UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?', [
     discardedAt,
     workflowRunId,
-  ]);
-  await bumpSessionUpdatedAt(db, sessionId, discardedAt);
-};
+  ])
+  await bumpSessionUpdatedAt(db, sessionId, discardedAt)
+}
 
 export const updateSessionWorkflowStep = async (
   db: Database,
@@ -172,9 +172,9 @@ export const updateSessionWorkflowStep = async (
   await db.execute(
     'UPDATE session_workflows SET current_step_ordinal = ? WHERE workflow_run_id = ?',
     [stepOrdinal, workflowRunId],
-  );
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-};
+  )
+  await bumpSessionUpdatedAt(db, sessionId, updatedAt)
+}
 
 export const updateSessionWorkflowAutoRun = async (
   db: Database,
@@ -186,9 +186,9 @@ export const updateSessionWorkflowAutoRun = async (
   await db.execute('UPDATE session_workflows SET auto_run = ? WHERE workflow_run_id = ?', [
     autoRun ? 1 : 0,
     workflowRunId,
-  ]);
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-};
+  ])
+  await bumpSessionUpdatedAt(db, sessionId, updatedAt)
+}
 
 export const updateSessionWorkflowTriggerMode = async (
   db: Database,
@@ -200,6 +200,6 @@ export const updateSessionWorkflowTriggerMode = async (
   await db.execute('UPDATE session_workflows SET trigger_mode = ? WHERE workflow_run_id = ?', [
     mode,
     workflowRunId,
-  ]);
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
-};
+  ])
+  await bumpSessionUpdatedAt(db, sessionId, updatedAt)
+}

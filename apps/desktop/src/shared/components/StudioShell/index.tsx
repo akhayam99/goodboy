@@ -1,20 +1,20 @@
-import type { ReactNode } from 'react';
-import { cn, Divider } from '@goodboy/ui';
-import { X, type LucideIcon } from 'lucide-react';
-import { useStudioOverlay } from '../../hooks/useStudioOverlay';
-import { OverlayHeader } from '../OverlayHeader';
+import type { ReactNode } from 'react'
+import { cn, Divider } from '@goodboy/ui'
+import { X, type LucideIcon } from 'lucide-react'
+import { useStudioOverlay } from '../../hooks/useStudioOverlay'
+import { OverlayHeader } from '../OverlayHeader'
 
 type Props = {
-  readonly icon?: LucideIcon;
-  readonly glyph?: ReactNode;
-  readonly title: string;
-  readonly workspaceName: string;
-  readonly closeLabel: string;
-  readonly headerAccessory?: ReactNode;
-  readonly onClose: () => void;
-  readonly variant?: 'fullscreen' | 'slot';
-  readonly children: (requestClose: () => void) => ReactNode;
-};
+  readonly icon?: LucideIcon
+  readonly glyph?: ReactNode
+  readonly title: string
+  readonly workspaceName: string
+  readonly closeLabel: string
+  readonly headerAccessory?: ReactNode
+  readonly onClose: () => void
+  readonly variant?: 'fullscreen' | 'slot'
+  readonly children: (requestClose: () => void) => ReactNode
+}
 
 export const StudioShell = ({
   icon: Icon,
@@ -27,7 +27,7 @@ export const StudioShell = ({
   variant = 'fullscreen',
   children,
 }: Props) => {
-  const { closing, requestClose } = useStudioOverlay(onClose);
+  const { closing, requestClose } = useStudioOverlay(onClose)
 
   return (
     <div
@@ -87,5 +87,5 @@ export const StudioShell = ({
 
       <div className="flex min-h-0 flex-1">{children(requestClose)}</div>
     </div>
-  );
-};
+  )
+}

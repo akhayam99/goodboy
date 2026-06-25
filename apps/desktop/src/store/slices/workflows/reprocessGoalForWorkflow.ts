@@ -1,55 +1,55 @@
-import type { ContextSlot, SessionId } from '@goodboy/types';
-import { rewriteWorkflowGoal } from '@goodboy/core';
-import { upsertContextSlot } from '@goodboy/db';
-import { invoke } from '@tauri-apps/api/core';
-import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import type { ContextSlot, SessionId } from '@goodboy/types'
+import { rewriteWorkflowGoal } from '@goodboy/core'
+import { upsertContextSlot } from '@goodboy/db'
+import { invoke } from '@tauri-apps/api/core'
+import { tauriDatabase } from '../../../shared/lib/db'
+import type { GetFn, SetFn } from './types'
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
     try {
-      const state = get();
-      const session = state.sessions.find((s) => s.id === sessionId);
+      const state = get()
+      const session = state.sessions.find((s) => s.id === sessionId)
       if (!session) {
-        return;
+        return
       }
 
-      const slots = state.sessionSlots[sessionId] ?? [];
-      const goalSlot = slots.find((s) => s.key === 'goal');
-      const goal = goalSlot?.value.trim() ?? '';
+      const slots = state.sessionSlots[sessionId] ?? []
+      const goalSlot = slots.find((s) => s.key === 'goal')
+      const goal = goalSlot?.value.trim() ?? ''
       if (goal.length === 0) {
-        return;
+        return
       }
 
-      const templates = state.phaseTemplates[session.workspaceId] ?? [];
+      const templates = state.phaseTemplates[session.workspaceId] ?? []
       const stepNames = session.workflowRuns
         .filter((r) => !r.discardedAt)
         .flatMap((r) => {
-          const template = templates.find((t) => t.id === r.workflowId);
+          const template = templates.find((t) => t.id === r.workflowId)
           if (!template) {
-            return [];
+            return []
           }
-          return [...template.steps].sort((a, b) => a.ordinal - b.ordinal).map((s) => s.name);
-        });
+          return [...template.steps].sort((a, b) => a.ordinal - b.ordinal).map((s) => s.name)
+        })
       if (stepNames.length === 0) {
-        return;
+        return
       }
 
       const rewritten = await rewriteWorkflowGoal(
         { providerId: session.providerPreference.defaultProvider, invokeFn: invoke },
         { goal, stepNames },
-      );
-      const cleaned = rewritten?.trim() ?? '';
+      )
+      const cleaned = rewritten?.trim() ?? ''
       if (cleaned.length === 0 || cleaned === goal) {
-        return;
+        return
       }
 
-      const next: ContextSlot = { key: 'goal', value: cleaned, enabled: goalSlot?.enabled ?? true };
-      await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer');
+      const next: ContextSlot = { key: 'goal', value: cleaned, enabled: goalSlot?.enabled ?? true }
+      await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer')
 
       set((s) => {
-        const existing = s.sessionSlots[sessionId] ?? [];
-        const hasGoal = existing.some((x) => x.key === 'goal');
+        const existing = s.sessionSlots[sessionId] ?? []
+        const hasGoal = existing.some((x) => x.key === 'goal')
         return {
           sessionSlots: {
             ...s.sessionSlots,
@@ -57,10 +57,10 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
               ? existing.map((x) => (x.key === 'goal' ? next : x))
               : [...existing, next],
           },
-        };
-      });
+        }
+      })
     } catch (e) {
-      console.error('reprocessGoalForWorkflow failed', e);
+      console.error('reprocessGoalForWorkflow failed', e)
     }
-  };
-};
+  }
+}

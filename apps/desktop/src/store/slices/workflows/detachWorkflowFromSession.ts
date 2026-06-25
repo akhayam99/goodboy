@@ -1,24 +1,24 @@
-import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
-import { detachWorkflowFromSession as detachWorkflowFromSessionInDb } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types'
+import { detachWorkflowFromSession as detachWorkflowFromSessionInDb } from '@goodboy/db'
+import { tauriDatabase } from '../../../shared/lib/db'
+import type { GetFn, SetFn } from './types'
 
 export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === sessionId)
     if (!session) {
-      throw new Error(`session not found: ${sessionId}`);
+      throw new Error(`session not found: ${sessionId}`)
     }
-    const run = session.workflowRuns.find((r) => r.id === workflowRunId);
+    const run = session.workflowRuns.find((r) => r.id === workflowRunId)
     if (!run) {
-      return;
+      return
     }
 
-    const now = new Date().toISOString() as IsoDateTime;
-    await detachWorkflowFromSessionInDb(tauriDatabase, sessionId, workflowRunId, now);
+    const now = new Date().toISOString() as IsoDateTime
+    await detachWorkflowFromSessionInDb(tauriDatabase, sessionId, workflowRunId, now)
 
-    const remaining = session.workflowRuns.filter((r) => r.id !== workflowRunId);
-    const stillUsesTemplate = remaining.some((r) => r.workflowId === run.workflowId);
+    const remaining = session.workflowRuns.filter((r) => r.id !== workflowRunId)
+    const stillUsesTemplate = remaining.some((r) => r.workflowId === run.workflowId)
 
     set((state) => ({
       sessions: state.sessions.map((s) =>
@@ -30,6 +30,6 @@ export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
           ? (state.sessionWorkflows[sessionId] ?? [])
           : (state.sessionWorkflows[sessionId] ?? []).filter((w) => w.id !== run.workflowId),
       },
-    }));
-  };
-};
+    }))
+  }
+}

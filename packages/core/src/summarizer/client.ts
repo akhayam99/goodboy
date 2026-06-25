@@ -1,77 +1,77 @@
-import type { ContextSlot, ProviderId } from '@goodboy/types';
-import { computeCostUsd } from '../providers/claude/cost';
-import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
-import { CURSOR_AUTO_MODEL } from '../providers/cursor/models';
-import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots';
-import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
+import type { ContextSlot, ProviderId } from '@goodboy/types'
+import { computeCostUsd } from '../providers/claude/cost'
+import { PROVIDER_CAPABILITIES } from '../providers/capabilities'
+import { CURSOR_AUTO_MODEL } from '../providers/cursor/models'
+import { isSlotKey, SLOT_KEYS, SLOT_LABELS, type SlotKey } from '../context/slots'
+import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions'
 
 export const getCheapModel = (providerId: ProviderId): string => {
   if (providerId === 'cursor') {
-    return CURSOR_AUTO_MODEL;
+    return CURSOR_AUTO_MODEL
   }
-  const caps = PROVIDER_CAPABILITIES[providerId];
-  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
-};
+  const caps = PROVIDER_CAPABILITIES[providerId]
+  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id
+}
 
 export const getDefaultBinary = (providerId: ProviderId): string => {
   switch (providerId) {
     case 'anthropic':
-      return 'claude';
+      return 'claude'
     case 'cursor':
-      return 'cursor-agent';
+      return 'cursor-agent'
     case 'codex':
-      return 'codex';
+      return 'codex'
     case 'gemini':
-      return 'gemini';
+      return 'gemini'
     default: {
-      const _exhaustive: never = providerId;
-      throw new Error(`unknown provider: ${_exhaustive}`);
+      const _exhaustive: never = providerId
+      throw new Error(`unknown provider: ${_exhaustive}`)
     }
   }
-};
+}
 
-export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
+export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>
 
 export type ContextSlotDelta = Readonly<{
-  upserts: ReadonlyArray<ContextSlotDeltaUpsert>;
-}>;
+  upserts: ReadonlyArray<ContextSlotDeltaUpsert>
+}>
 
 export type SummarizerUsage = {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly cachedInputTokens: number;
-  readonly estimatedCostUsd: number;
-};
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly cachedInputTokens: number
+  readonly estimatedCostUsd: number
+}
 
 export type SummarizeInput = {
-  readonly prevSlots: ReadonlyArray<ContextSlot>;
-  readonly turnInput: string;
-  readonly turnOutput: string;
-  readonly prState?: NextActionsPrState | null;
-};
+  readonly prevSlots: ReadonlyArray<ContextSlot>
+  readonly turnInput: string
+  readonly turnOutput: string
+  readonly prState?: NextActionsPrState | null
+}
 
 export type SummarizerResult = {
-  readonly delta: ContextSlotDelta;
-  readonly usage: SummarizerUsage;
-  readonly model: string;
-  readonly nextActions: ReadonlyArray<NextAction>;
-};
+  readonly delta: ContextSlotDelta
+  readonly usage: SummarizerUsage
+  readonly model: string
+  readonly nextActions: ReadonlyArray<NextAction>
+}
 
-type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
+type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>
 
 export type SummarizerDeps = {
-  readonly providerId: ProviderId;
-  readonly binary?: string;
-  readonly invokeFn: InvokeFn;
-};
+  readonly providerId: ProviderId
+  readonly binary?: string
+  readonly invokeFn: InvokeFn
+}
 
 export class SummarizerSpawnError extends Error {
   constructor(
     public readonly exitCode: number | null,
     public readonly stderr: string,
   ) {
-    super(`summarizer cli exited with code ${exitCode ?? 'null'}`);
-    this.name = 'SummarizerSpawnError';
+    super(`summarizer cli exited with code ${exitCode ?? 'null'}`)
+    this.name = 'SummarizerSpawnError'
   }
 }
 
@@ -80,16 +80,16 @@ export class SummarizerParseError extends Error {
     message: string,
     public readonly raw: string,
   ) {
-    super(message);
-    this.name = 'SummarizerParseError';
+    super(message)
+    this.name = 'SummarizerParseError'
   }
 }
 
 type SummarizeCommandResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
+  readonly stdout: string
+  readonly stderr: string
+  readonly exitCode: number | null
+}
 
 const SYSTEM_PROMPT = `You maintain a small structured summary for an AI coding session. The summary is the handoff payload, a fresh agent must be able to read these slots alone and continue the work without seeing any prior turns.
 
@@ -127,23 +127,23 @@ Schema:
 { "upserts": [ { "key": "<one of the five keys>", "value": "<full merged slot value, as compact markdown>" } ] }
 
 Only include slots that actually change. Omit slots that stay the same. Never invent new keys.
-If nothing should change, return { "upserts": [] }.`;
+If nothing should change, return { "upserts": [] }.`
 
 export class Summarizer {
-  private readonly providerId: ProviderId;
-  private readonly binary: string;
-  private readonly model: string;
-  private readonly invokeFn: InvokeFn;
+  private readonly providerId: ProviderId
+  private readonly binary: string
+  private readonly model: string
+  private readonly invokeFn: InvokeFn
 
   constructor(deps: SummarizerDeps) {
-    this.providerId = deps.providerId;
-    this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = getCheapModel(deps.providerId);
-    this.invokeFn = deps.invokeFn;
+    this.providerId = deps.providerId
+    this.binary = deps.binary ?? getDefaultBinary(deps.providerId)
+    this.model = getCheapModel(deps.providerId)
+    this.invokeFn = deps.invokeFn
   }
 
   async summarize(input: SummarizeInput): Promise<SummarizerResult> {
-    const userMessage = buildUserPrompt(input);
+    const userMessage = buildUserPrompt(input)
 
     const result = await this.invokeFn<SummarizeCommandResult>('summarize_session', {
       args: {
@@ -153,22 +153,22 @@ export class Summarizer {
         userMessage,
         systemPrompt: SYSTEM_PROMPT,
       },
-    });
+    })
 
     if ((result.exitCode ?? 0) !== 0) {
-      throw new SummarizerSpawnError(result.exitCode, result.stderr);
+      throw new SummarizerSpawnError(result.exitCode, result.stderr)
     }
 
-    const { text, usage } = extractTextAndUsage(this.providerId, result.stdout, this.model);
-    const delta = parseDelta(text);
-    const slotsAfter = applyDelta(input.prevSlots, delta);
+    const { text, usage } = extractTextAndUsage(this.providerId, result.stdout, this.model)
+    const delta = parseDelta(text)
+    const slotsAfter = applyDelta(input.prevSlots, delta)
     const nextActions = inferNextActions({
       input,
       delta,
       slotsAfter,
       prState: input.prState ?? null,
-    });
-    return { delta, usage, model: this.model, nextActions };
+    })
+    return { delta, usage, model: this.model, nextActions }
   }
 }
 
@@ -177,30 +177,30 @@ function applyDelta(
   delta: ContextSlotDelta,
 ): ReadonlyArray<ContextSlot> {
   if (delta.upserts.length === 0) {
-    return prev;
+    return prev
   }
-  const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
+  const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]))
   for (const upsert of delta.upserts) {
-    const existing = byKey.get(upsert.key);
+    const existing = byKey.get(upsert.key)
     byKey.set(upsert.key, {
       key: upsert.key,
       value: upsert.value,
       enabled: existing?.enabled ?? true,
-    });
+    })
   }
-  return Array.from(byKey.values());
+  return Array.from(byKey.values())
 }
 
 type ClaudeJsonResult = {
-  readonly result?: string;
+  readonly result?: string
   readonly usage?: {
-    readonly input_tokens?: number;
-    readonly output_tokens?: number;
-    readonly cache_read_input_tokens?: number;
-  };
-  readonly subtype?: string;
-  readonly is_error?: boolean;
-};
+    readonly input_tokens?: number
+    readonly output_tokens?: number
+    readonly cache_read_input_tokens?: number
+  }
+  readonly subtype?: string
+  readonly is_error?: boolean
+}
 
 function extractTextAndUsage(
   providerId: ProviderId,
@@ -208,45 +208,45 @@ function extractTextAndUsage(
   model: string,
 ): { text: string; usage: SummarizerUsage } {
   if (providerId === 'anthropic') {
-    return extractClaudeJsonOutput(stdout, model);
+    return extractClaudeJsonOutput(stdout, model)
   }
-  return { text: stdout.trim(), usage: zeroUsage() };
+  return { text: stdout.trim(), usage: zeroUsage() }
 }
 
 function extractClaudeJsonOutput(
   stdout: string,
   model: string,
 ): { text: string; usage: SummarizerUsage } {
-  const trimmed = stdout.trim();
-  let parsed: ClaudeJsonResult;
+  const trimmed = stdout.trim()
+  let parsed: ClaudeJsonResult
   try {
-    parsed = JSON.parse(trimmed) as ClaudeJsonResult;
+    parsed = JSON.parse(trimmed) as ClaudeJsonResult
   } catch {
-    return { text: trimmed, usage: zeroUsage() };
+    return { text: trimmed, usage: zeroUsage() }
   }
 
-  const text = parsed.result ?? '';
-  const rawUsage = parsed.usage ?? {};
-  const inputTokens = rawUsage.input_tokens ?? 0;
-  const outputTokens = rawUsage.output_tokens ?? 0;
-  const cachedInputTokens = rawUsage.cache_read_input_tokens ?? 0;
+  const text = parsed.result ?? ''
+  const rawUsage = parsed.usage ?? {}
+  const inputTokens = rawUsage.input_tokens ?? 0
+  const outputTokens = rawUsage.output_tokens ?? 0
+  const cachedInputTokens = rawUsage.cache_read_input_tokens ?? 0
   const estimatedCostUsd = computeCostUsd(
     { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd: 0 },
     model,
-  );
-  return { text, usage: { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd } };
+  )
+  return { text, usage: { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd } }
 }
 
 function zeroUsage(): SummarizerUsage {
-  return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 };
+  return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 }
 }
 
 function buildUserPrompt(input: SummarizeInput): string {
   const slotLines = SLOT_KEYS.map((key) => {
-    const slot = input.prevSlots.find((s) => s.key === key);
-    const value = slot?.enabled ? slot.value || '(empty)' : '(empty)';
-    return `${key}: ${value}`;
-  }).join('\n');
+    const slot = input.prevSlots.find((s) => s.key === key)
+    const value = slot?.enabled ? slot.value || '(empty)' : '(empty)'
+    return `${key}: ${value}`
+  }).join('\n')
 
   return [
     'Current slot values:',
@@ -259,105 +259,105 @@ function buildUserPrompt(input: SummarizeInput): string {
     input.turnOutput,
     '',
     'Return the JSON object now.',
-  ].join('\n');
+  ].join('\n')
 }
 
 function parseDelta(raw: string): ContextSlotDelta {
-  const stripped = extractJson(raw);
-  let parsed: unknown;
+  const stripped = extractJson(raw)
+  let parsed: unknown
   try {
-    parsed = JSON.parse(stripped);
+    parsed = JSON.parse(stripped)
   } catch (err) {
     throw new SummarizerParseError(
       `summarizer response was not valid JSON: ${err instanceof Error ? err.message : String(err)}`,
       raw,
-    );
+    )
   }
 
   if (typeof parsed !== 'object' || parsed === null || !('upserts' in parsed)) {
-    throw new SummarizerParseError('summarizer response missing "upserts" array', raw);
+    throw new SummarizerParseError('summarizer response missing "upserts" array', raw)
   }
-  const candidate = (parsed as { upserts: unknown }).upserts;
+  const candidate = (parsed as { upserts: unknown }).upserts
   if (!Array.isArray(candidate)) {
-    throw new SummarizerParseError('summarizer "upserts" was not an array', raw);
+    throw new SummarizerParseError('summarizer "upserts" was not an array', raw)
   }
 
-  const upserts: ContextSlotDeltaUpsert[] = [];
+  const upserts: ContextSlotDeltaUpsert[] = []
   for (const entry of candidate) {
     if (typeof entry !== 'object' || entry === null) {
-      continue;
+      continue
     }
-    const e = entry as Record<string, unknown>;
-    const key = e.key;
-    const value = e.value;
+    const e = entry as Record<string, unknown>
+    const key = e.key
+    const value = e.value
     if (typeof key !== 'string' || !isSlotKey(key)) {
-      continue;
+      continue
     }
     if (typeof value !== 'string') {
-      continue;
+      continue
     }
-    upserts.push({ key, value });
+    upserts.push({ key, value })
   }
-  return { upserts };
+  return { upserts }
 }
 
 function extractJson(raw: string): string {
-  const trimmed = raw.trim();
+  const trimmed = raw.trim()
 
-  const edgeFence = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i.exec(trimmed);
+  const edgeFence = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i.exec(trimmed)
   if (edgeFence?.[1]) {
-    return edgeFence[1].trim();
+    return edgeFence[1].trim()
   }
 
-  const innerFence = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
+  const innerFence = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed)
   if (innerFence?.[1]) {
-    return innerFence[1].trim();
+    return innerFence[1].trim()
   }
 
-  const balanced = extractBalancedJsonObject(trimmed);
+  const balanced = extractBalancedJsonObject(trimmed)
   if (balanced !== null) {
-    return balanced;
+    return balanced
   }
 
-  return trimmed;
+  return trimmed
 }
 
 function extractBalancedJsonObject(text: string): string | null {
-  const start = text.indexOf('{');
+  const start = text.indexOf('{')
   if (start === -1) {
-    return null;
+    return null
   }
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
+  let depth = 0
+  let inString = false
+  let escaped = false
   for (let i = start; i < text.length; i++) {
-    const ch = text[i];
+    const ch = text[i]
     if (inString) {
       if (escaped) {
-        escaped = false;
-        continue;
+        escaped = false
+        continue
       }
       if (ch === '\\') {
-        escaped = true;
-        continue;
+        escaped = true
+        continue
       }
       if (ch === '"') {
-        inString = false;
+        inString = false
       }
-      continue;
+      continue
     }
     if (ch === '"') {
-      inString = true;
-      continue;
+      inString = true
+      continue
     }
     if (ch === '{') {
-      depth++;
+      depth++
     } else if (ch === '}') {
-      depth--;
+      depth--
       if (depth === 0) {
-        return text.slice(start, i + 1);
+        return text.slice(start, i + 1)
       }
     }
   }
-  return null;
+  return null
 }

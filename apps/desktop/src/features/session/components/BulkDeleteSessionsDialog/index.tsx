@@ -1,48 +1,48 @@
-import { useState } from 'react';
-import { Button, Dialog, ScrollFade } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useState } from 'react'
+import { Button, Dialog, ScrollFade } from '@goodboy/ui'
+import type { Session, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 function unwrapError(err: unknown): string {
   if (err instanceof Error) {
-    return err.message;
+    return err.message
   }
   if (typeof err === 'object' && err !== null && 'message' in err) {
-    const { message } = err as Record<string, unknown>;
+    const { message } = err as Record<string, unknown>
     if (typeof message === 'string') {
-      return message;
+      return message
     }
   }
-  return String(err);
+  return String(err)
 }
 
 type Props = {
-  sessions: ReadonlyArray<Session>;
-  open: boolean;
-  onClose: () => void;
-  onConfirmed?: () => void;
-};
+  sessions: ReadonlyArray<Session>
+  open: boolean
+  onClose: () => void
+  onConfirmed?: () => void
+}
 
 export const BulkDeleteSessionsDialog = ({ sessions, open, onClose, onConfirmed }: Props) => {
-  const bulkDeleteTask = useAppStore((s) => s.bulkDeleteTask);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const bulkDeleteTask = useAppStore((s) => s.bulkDeleteTask)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const count = sessions.length;
+  const count = sessions.length
 
   const onConfirmDelete = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await bulkDeleteTask(sessions.map((s) => s.id as SessionId));
-      onConfirmed?.();
-      onClose();
+      await bulkDeleteTask(sessions.map((s) => s.id as SessionId))
+      onConfirmed?.()
+      onClose()
     } catch (err) {
-      setError(unwrapError(err));
+      setError(unwrapError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <Dialog
@@ -78,5 +78,5 @@ export const BulkDeleteSessionsDialog = ({ sessions, open, onClose, onConfirmed 
         <p className="text-xs font-medium text-danger">This cannot be undone.</p>
       </div>
     </Dialog>
-  );
-};
+  )
+}

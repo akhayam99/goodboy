@@ -1,5 +1,5 @@
-import type { PullRequestState, SessionId } from '@goodboy/types';
-import { cn, Divider } from '@goodboy/ui';
+import type { PullRequestState, SessionId } from '@goodboy/types'
+import { cn, Divider } from '@goodboy/ui'
 import {
   ExternalLink,
   GitMerge,
@@ -9,15 +9,15 @@ import {
   RotateCcw,
   Send,
   XCircle,
-} from 'lucide-react';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
+} from 'lucide-react'
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton'
 
-export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | null;
+export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | null
 
 const BTN =
-  'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
 const ICON_BTN =
-  'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50'
 
 const TONE = {
   neutral:
@@ -26,27 +26,27 @@ const TONE = {
   danger: 'border-danger/40 text-danger hover:bg-danger/10',
   primary: 'border-primary/40 text-primary hover:bg-primary/10',
   warning: 'border-warning/40 text-warning hover:bg-warning/10',
-} as const;
+} as const
 
 type Props = {
-  readonly pr: PullRequestState;
-  readonly sessionId: SessionId;
-  readonly onOpenSession: () => void;
-  readonly busy: ActionBusy;
-  readonly detailLoading: boolean;
-  readonly mergeConfirm: boolean;
-  readonly canMerge: boolean;
-  readonly mergeReason: string;
-  readonly onMarkReady: () => void;
-  readonly onConvertDraft: () => void;
-  readonly onClose: () => void;
-  readonly onReopen: () => void;
-  readonly onCreateNew: () => void;
-  readonly onMerge: () => void;
-  readonly onSetMergeConfirm: (v: boolean) => void;
-  readonly onOpenGithub: () => void;
-  readonly onRefresh: () => void;
-};
+  readonly pr: PullRequestState
+  readonly sessionId: SessionId
+  readonly onOpenSession: () => void
+  readonly busy: ActionBusy
+  readonly detailLoading: boolean
+  readonly mergeConfirm: boolean
+  readonly canMerge: boolean
+  readonly mergeReason: string
+  readonly onMarkReady: () => void
+  readonly onConvertDraft: () => void
+  readonly onClose: () => void
+  readonly onReopen: () => void
+  readonly onCreateNew: () => void
+  readonly onMerge: () => void
+  readonly onSetMergeConfirm: (v: boolean) => void
+  readonly onOpenGithub: () => void
+  readonly onRefresh: () => void
+}
 
 export const PrActionBar = ({
   pr,
@@ -67,11 +67,11 @@ export const PrActionBar = ({
   onOpenGithub,
   onRefresh,
 }: Props) => {
-  const isTerminal = pr.state === 'merged' || pr.state === 'closed';
-  const isClosed = pr.state === 'closed';
-  const isQueued = pr.state === 'queued';
-  const isDraft = pr.isDraft;
-  const spin = (k: ActionBusy) => busy === k;
+  const isTerminal = pr.state === 'merged' || pr.state === 'closed'
+  const isClosed = pr.state === 'closed'
+  const isQueued = pr.state === 'queued'
+  const isDraft = pr.isDraft
+  const spin = (k: ActionBusy) => busy === k
 
   return (
     <div className="flex shrink-0 items-center gap-1.5 px-6 py-3">
@@ -206,5 +206,5 @@ export const PrActionBar = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}

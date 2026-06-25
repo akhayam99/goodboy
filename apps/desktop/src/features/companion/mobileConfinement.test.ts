@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import type { PullRequestState, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { afterEach, describe, expect, it } from 'vitest'
+import type { PullRequestState, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types'
 import {
   clearMobileCreateRateState,
   clearMobileSharedSessions,
@@ -9,9 +9,9 @@ import {
   isMergeMethod,
   isSessionMobileShared,
   markSessionMobileShared,
-} from './mobileConfinement';
+} from './mobileConfinement'
 
-const sid = (s: string): SessionId => s as SessionId;
+const sid = (s: string): SessionId => s as SessionId
 
 // A fully-eligible PR (approved + green + open + non-draft + mergeable). Tests
 // override one field at a time to assert each gate independently.
@@ -29,112 +29,112 @@ const eligiblePr = (over: Partial<PullRequestState> = {}): PullRequestState => (
   body: '',
   updatedAt: '2026-06-22T00:00:00Z',
   ...over,
-});
+})
 
-afterEach(() => clearMobileSharedSessions());
+afterEach(() => clearMobileSharedSessions())
 
 describe('mobile shared-session registry', () => {
   it('starts empty and marks a session shared', () => {
-    expect(isSessionMobileShared(sid('s1'))).toBe(false);
-    markSessionMobileShared(sid('s1'));
-    expect(isSessionMobileShared(sid('s1'))).toBe(true);
-  });
+    expect(isSessionMobileShared(sid('s1'))).toBe(false)
+    markSessionMobileShared(sid('s1'))
+    expect(isSessionMobileShared(sid('s1'))).toBe(true)
+  })
 
   it('is sticky and idempotent until explicitly cleared (desktop revoke)', () => {
-    markSessionMobileShared(sid('s1'));
-    markSessionMobileShared(sid('s1'));
-    expect(isSessionMobileShared(sid('s1'))).toBe(true);
-    clearMobileSharedSessions();
-    expect(isSessionMobileShared(sid('s1'))).toBe(false);
-  });
+    markSessionMobileShared(sid('s1'))
+    markSessionMobileShared(sid('s1'))
+    expect(isSessionMobileShared(sid('s1'))).toBe(true)
+    clearMobileSharedSessions()
+    expect(isSessionMobileShared(sid('s1'))).toBe(false)
+  })
 
   it('confines each session independently', () => {
-    markSessionMobileShared(sid('s1'));
-    expect(isSessionMobileShared(sid('s1'))).toBe(true);
-    expect(isSessionMobileShared(sid('s2'))).toBe(false);
-  });
-});
+    markSessionMobileShared(sid('s1'))
+    expect(isSessionMobileShared(sid('s1'))).toBe(true)
+    expect(isSessionMobileShared(sid('s2'))).toBe(false)
+  })
+})
 
 describe('isMergeMethod', () => {
   it('accepts only the closed squash|merge|rebase set', () => {
     for (const m of ['squash', 'merge', 'rebase']) {
-      expect(isMergeMethod(m)).toBe(true);
+      expect(isMergeMethod(m)).toBe(true)
     }
     for (const m of ['', 'SQUASH', 'fast-forward', 'delete', 42, null, undefined, {}]) {
-      expect(isMergeMethod(m)).toBe(false);
+      expect(isMergeMethod(m)).toBe(false)
     }
-  });
-});
+  })
+})
 
 describe('evaluateMobileMerge (server-side gate)', () => {
   it('permits a merge only when approved + green + open + mergeable', () => {
-    expect(evaluateMobileMerge(eligiblePr(), 'squash')).toEqual({ ok: true });
-    expect(evaluateMobileMerge(eligiblePr({ state: 'open' }), 'merge')).toEqual({ ok: true });
-    expect(evaluateMobileMerge(eligiblePr(), 'rebase')).toEqual({ ok: true });
-  });
+    expect(evaluateMobileMerge(eligiblePr(), 'squash')).toEqual({ ok: true })
+    expect(evaluateMobileMerge(eligiblePr({ state: 'open' }), 'merge')).toEqual({ ok: true })
+    expect(evaluateMobileMerge(eligiblePr(), 'rebase')).toEqual({ ok: true })
+  })
 
   it('refuses an unsupported method even when the PR is eligible', () => {
-    const gate = evaluateMobileMerge(eligiblePr(), 'fast-forward');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/method/i);
-  });
+    const gate = evaluateMobileMerge(eligiblePr(), 'fast-forward')
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/method/i)
+  })
 
   it('refuses when there is no PR for the session', () => {
-    expect(evaluateMobileMerge(null, 'squash').ok).toBe(false);
-    expect(evaluateMobileMerge(undefined, 'squash').ok).toBe(false);
-  });
+    expect(evaluateMobileMerge(null, 'squash').ok).toBe(false)
+    expect(evaluateMobileMerge(undefined, 'squash').ok).toBe(false)
+  })
 
   it('refuses a draft PR', () => {
-    const gate = evaluateMobileMerge(eligiblePr({ isDraft: true }), 'squash');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/draft/i);
-  });
+    const gate = evaluateMobileMerge(eligiblePr({ isDraft: true }), 'squash')
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/draft/i)
+  })
 
   it('refuses an already-merged or closed PR', () => {
-    expect(evaluateMobileMerge(eligiblePr({ state: 'merged' }), 'squash').ok).toBe(false);
-    expect(evaluateMobileMerge(eligiblePr({ state: 'closed' }), 'squash').ok).toBe(false);
-  });
+    expect(evaluateMobileMerge(eligiblePr({ state: 'merged' }), 'squash').ok).toBe(false)
+    expect(evaluateMobileMerge(eligiblePr({ state: 'closed' }), 'squash').ok).toBe(false)
+  })
 
   it('refuses a PR already in the merge queue', () => {
-    const gate = evaluateMobileMerge(eligiblePr({ state: 'queued' }), 'squash');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/queue/i);
-  });
+    const gate = evaluateMobileMerge(eligiblePr({ state: 'queued' }), 'squash')
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/queue/i)
+  })
 
   it('refuses when review is not approved (never trusts a stale/lying client)', () => {
     for (const decision of ['changes_requested', 'review_required', null] as const) {
-      const gate = evaluateMobileMerge(eligiblePr({ reviewDecision: decision }), 'squash');
-      expect(gate.ok).toBe(false);
-      if (!gate.ok) expect(gate.reason).toMatch(/approv/i);
+      const gate = evaluateMobileMerge(eligiblePr({ reviewDecision: decision }), 'squash')
+      expect(gate.ok).toBe(false)
+      if (!gate.ok) expect(gate.reason).toMatch(/approv/i)
     }
-  });
+  })
 
   it('refuses when CI checks are not green', () => {
-    const failing = evaluateMobileMerge(eligiblePr({ checks: 'failure' }), 'squash');
-    expect(failing.ok).toBe(false);
-    if (!failing.ok) expect(failing.reason).toMatch(/fail/i);
+    const failing = evaluateMobileMerge(eligiblePr({ checks: 'failure' }), 'squash')
+    expect(failing.ok).toBe(false)
+    if (!failing.ok) expect(failing.reason).toMatch(/fail/i)
 
-    const pending = evaluateMobileMerge(eligiblePr({ checks: 'pending' }), 'squash');
-    expect(pending.ok).toBe(false);
+    const pending = evaluateMobileMerge(eligiblePr({ checks: 'pending' }), 'squash')
+    expect(pending.ok).toBe(false)
 
-    const missing = evaluateMobileMerge(eligiblePr({ checks: null }), 'squash');
-    expect(missing.ok).toBe(false);
-  });
+    const missing = evaluateMobileMerge(eligiblePr({ checks: null }), 'squash')
+    expect(missing.ok).toBe(false)
+  })
 
   it('refuses a known-unmergeable PR (conflicts) even when approved + green', () => {
-    const gate = evaluateMobileMerge(eligiblePr({ mergeable: false }), 'squash');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/conflict/i);
-  });
-});
+    const gate = evaluateMobileMerge(eligiblePr({ mergeable: false }), 'squash')
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/conflict/i)
+  })
+})
 
 describe('evaluateMobileCreateSession', () => {
   // Trusted server-side state the gate validates against. The phone's claims
   // (workspaceId/provider) are tested against THESE, never trusted directly.
-  const workspaces = [{ id: 'w1' as WorkspaceId }, { id: 'w2' as WorkspaceId }];
-  const linearOnW1 = [{ provider: 'linear' as const }];
+  const workspaces = [{ id: 'w1' as WorkspaceId }, { id: 'w2' as WorkspaceId }]
+  const linearOnW1 = [{ provider: 'linear' as const }]
 
-  afterEach(() => clearMobileCreateRateState());
+  afterEach(() => clearMobileCreateRateState())
 
   it('accepts a known workspace with the provider connected', () => {
     const gate = evaluateMobileCreateSession({
@@ -142,13 +142,13 @@ describe('evaluateMobileCreateSession', () => {
       provider: 'linear',
       workspaces,
       integrations: linearOnW1,
-    });
-    expect(gate.ok).toBe(true);
+    })
+    expect(gate.ok).toBe(true)
     if (gate.ok) {
-      expect(gate.workspaceId).toBe('w1');
-      expect(gate.provider).toBe('linear');
+      expect(gate.workspaceId).toBe('w1')
+      expect(gate.provider).toBe('linear')
     }
-  });
+  })
 
   it('refuses a missing workspaceId', () => {
     const gate = evaluateMobileCreateSession({
@@ -156,10 +156,10 @@ describe('evaluateMobileCreateSession', () => {
       provider: 'linear',
       workspaces,
       integrations: linearOnW1,
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/workspaceId/i);
-  });
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/workspaceId/i)
+  })
 
   it('refuses an unsupported provider', () => {
     const gate = evaluateMobileCreateSession({
@@ -167,10 +167,10 @@ describe('evaluateMobileCreateSession', () => {
       provider: 'github',
       workspaces,
       integrations: linearOnW1,
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/provider/i);
-  });
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/provider/i)
+  })
 
   // ADVERSARIAL: a lying phone claims a workspaceId the desktop does not have.
   it('refuses a forged/disallowed workspaceId (not in the trusted list)', () => {
@@ -179,10 +179,10 @@ describe('evaluateMobileCreateSession', () => {
       provider: 'linear',
       workspaces, // only w1, w2 are real
       integrations: linearOnW1,
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/unknown workspace/i);
-  });
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/unknown workspace/i)
+  })
 
   // ADVERSARIAL: target a real workspace but a provider that isn't connected
   // there — the desktop has no credential to resolve the issue, so refuse.
@@ -192,10 +192,10 @@ describe('evaluateMobileCreateSession', () => {
       provider: 'sentry', // only linear is connected on w1
       workspaces,
       integrations: linearOnW1,
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/not connected/i);
-  });
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/not connected/i)
+  })
 
   // ADVERSARIAL: w2 exists but has no integrations at all — can't launch from it.
   it('refuses a workspace with no integrations connected', () => {
@@ -204,10 +204,10 @@ describe('evaluateMobileCreateSession', () => {
       provider: 'linear',
       workspaces,
       integrations: [], // w2 has nothing wired up
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/not connected/i);
-  });
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/not connected/i)
+  })
 
   it('rate-limits a burst of launches (abuse guard)', () => {
     const ok = () => {
@@ -217,15 +217,15 @@ describe('evaluateMobileCreateSession', () => {
         workspaces,
         integrations: linearOnW1,
         now: 1_000,
-      });
+      })
       // The gate reserves the slot up front; committing turns it into a counted
       // launch (matches the executor's commit-on-success path).
-      if (g.ok) g.reservation.commit(1_000);
-      return g.ok;
-    };
+      if (g.ok) g.reservation.commit(1_000)
+      return g.ok
+    }
     // First five within the window pass; the sixth is throttled.
     for (let i = 0; i < 5; i += 1) {
-      expect(ok()).toBe(true);
+      expect(ok()).toBe(true)
     }
     const sixth = evaluateMobileCreateSession({
       workspaceId: 'w1',
@@ -233,9 +233,9 @@ describe('evaluateMobileCreateSession', () => {
       workspaces,
       integrations: linearOnW1,
       now: 1_000,
-    });
-    expect(sixth.ok).toBe(false);
-    if (!sixth.ok) expect(sixth.reason).toMatch(/too many|slow down/i);
+    })
+    expect(sixth.ok).toBe(false)
+    if (!sixth.ok) expect(sixth.reason).toMatch(/too many|slow down/i)
 
     // After the window slides, launches are allowed again.
     const later = evaluateMobileCreateSession({
@@ -244,9 +244,9 @@ describe('evaluateMobileCreateSession', () => {
       workspaces,
       integrations: linearOnW1,
       now: 1_000 + 61_000,
-    });
-    expect(later.ok).toBe(true);
-  });
+    })
+    expect(later.ok).toBe(true)
+  })
 
   // SECURITY (TOCTOU): a pipelined burst arriving in the same tick must NOT all
   // pass the gate. The reservation is counted against the cap synchronously, so
@@ -259,26 +259,26 @@ describe('evaluateMobileCreateSession', () => {
         workspaces,
         integrations: linearOnW1,
         now: 2_000,
-      });
+      })
     // Five concurrent gates pass and HOLD their reservations (no commit yet —
     // simulating five long createSession ops still in flight).
-    const held = [];
+    const held = []
     for (let i = 0; i < 5; i += 1) {
-      const g = gate();
-      expect(g.ok).toBe(true);
-      if (g.ok) held.push(g.reservation);
+      const g = gate()
+      expect(g.ok).toBe(true)
+      if (g.ok) held.push(g.reservation)
     }
     // Sixth concurrent gate is refused purely on pending reservations, even
     // though zero creates have completed (mobileCreateTimestamps is empty).
-    const sixth = gate();
-    expect(sixth.ok).toBe(false);
-    if (!sixth.ok) expect(sixth.reason).toMatch(/too many|slow down/i);
+    const sixth = gate()
+    expect(sixth.ok).toBe(false)
+    if (!sixth.ok) expect(sixth.reason).toMatch(/too many|slow down/i)
 
     // Releasing one reservation (a failed create) frees a slot for a retry.
-    held[0]!.release();
-    const retry = gate();
-    expect(retry.ok).toBe(true);
-  });
+    held[0]!.release()
+    const retry = gate()
+    expect(retry.ok).toBe(true)
+  })
 
   // A released reservation must not consume a slot OR throw on double-settle.
   it('releases a reserved slot without recording a launch; settle is idempotent', () => {
@@ -288,12 +288,12 @@ describe('evaluateMobileCreateSession', () => {
       workspaces,
       integrations: linearOnW1,
       now: 3_000,
-    });
-    expect(g.ok).toBe(true);
-    if (!g.ok) return;
-    g.reservation.release();
+    })
+    expect(g.ok).toBe(true)
+    if (!g.ok) return
+    g.reservation.release()
     // Double-settle is a no-op (commit after release does nothing).
-    g.reservation.commit(3_000);
+    g.reservation.commit(3_000)
     // Slot was freed: a full burst of five fresh launches still fits.
     for (let i = 0; i < 5; i += 1) {
       const next = evaluateMobileCreateSession({
@@ -302,19 +302,19 @@ describe('evaluateMobileCreateSession', () => {
         workspaces,
         integrations: linearOnW1,
         now: 3_000,
-      });
-      expect(next.ok).toBe(true);
-      if (next.ok) next.reservation.commit(3_000);
+      })
+      expect(next.ok).toBe(true)
+      if (next.ok) next.reservation.commit(3_000)
     }
-  });
-});
+  })
+})
 
 describe('evaluateMobileSpawnWorkflow (server-side gate)', () => {
   const sessions = [
     { id: sid('s1'), workspaceId: 'w1' as WorkspaceId },
     { id: sid('s2'), workspaceId: 'w2' as WorkspaceId },
-  ];
-  const w1Workflows = [{ id: 'wf-a' as WorkflowId }, { id: 'wf-b' as WorkflowId }];
+  ]
+  const w1Workflows = [{ id: 'wf-a' as WorkflowId }, { id: 'wf-b' as WorkflowId }]
 
   it('passes for a known session + a workflow in that session workspace', () => {
     const gate = evaluateMobileSpawnWorkflow({
@@ -322,13 +322,13 @@ describe('evaluateMobileSpawnWorkflow (server-side gate)', () => {
       workflowId: 'wf-a',
       sessions,
       workflowsForWorkspace: w1Workflows,
-    });
-    expect(gate.ok).toBe(true);
+    })
+    expect(gate.ok).toBe(true)
     if (gate.ok) {
-      expect(gate.sessionId).toBe('s1');
-      expect(gate.workflowId).toBe('wf-a');
+      expect(gate.sessionId).toBe('s1')
+      expect(gate.workflowId).toBe('wf-a')
     }
-  });
+  })
 
   it('refuses a missing sessionId', () => {
     const gate = evaluateMobileSpawnWorkflow({
@@ -336,9 +336,9 @@ describe('evaluateMobileSpawnWorkflow (server-side gate)', () => {
       workflowId: 'wf-a',
       sessions,
       workflowsForWorkspace: w1Workflows,
-    });
-    expect(gate).toMatchObject({ ok: false });
-  });
+    })
+    expect(gate).toMatchObject({ ok: false })
+  })
 
   it('refuses a missing workflowId', () => {
     const gate = evaluateMobileSpawnWorkflow({
@@ -346,9 +346,9 @@ describe('evaluateMobileSpawnWorkflow (server-side gate)', () => {
       workflowId: undefined,
       sessions,
       workflowsForWorkspace: w1Workflows,
-    });
-    expect(gate).toMatchObject({ ok: false });
-  });
+    })
+    expect(gate).toMatchObject({ ok: false })
+  })
 
   it('refuses an unknown (forged) session id', () => {
     const gate = evaluateMobileSpawnWorkflow({
@@ -356,10 +356,10 @@ describe('evaluateMobileSpawnWorkflow (server-side gate)', () => {
       workflowId: 'wf-a',
       sessions,
       workflowsForWorkspace: w1Workflows,
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/unknown session/);
-  });
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/unknown session/)
+  })
 
   it('refuses a workflow that is not in the session workspace', () => {
     // caller passes only the session's own workspace templates; a cross-workspace
@@ -369,8 +369,8 @@ describe('evaluateMobileSpawnWorkflow (server-side gate)', () => {
       workflowId: 'wf-from-w2',
       sessions,
       workflowsForWorkspace: w1Workflows,
-    });
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/unknown workflow/);
-  });
-});
+    })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) expect(gate.reason).toMatch(/unknown workflow/)
+  })
+})

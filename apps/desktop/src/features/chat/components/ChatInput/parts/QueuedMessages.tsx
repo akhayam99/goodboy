@@ -1,11 +1,11 @@
-import { Clock, Paperclip, X } from 'lucide-react';
-import type { PendingAttachment } from '../lib';
+import { Clock, Paperclip, X } from 'lucide-react'
+import type { PendingAttachment } from '../lib'
 
 type QueuedItem = {
-  readonly id: string;
-  readonly content: string;
-  readonly attachments: ReadonlyArray<PendingAttachment>;
-};
+  readonly id: string
+  readonly content: string
+  readonly attachments: ReadonlyArray<PendingAttachment>
+}
 
 export function QueuedMessages({
   items,
@@ -13,13 +13,13 @@ export function QueuedMessages({
   onEdit,
   onRemove,
 }: {
-  readonly items: ReadonlyArray<QueuedItem>;
-  readonly canEdit: boolean;
-  readonly onEdit: (id: string) => void;
-  readonly onRemove: (id: string) => void;
+  readonly items: ReadonlyArray<QueuedItem>
+  readonly canEdit: boolean
+  readonly onEdit: (id: string) => void
+  readonly onRemove: (id: string) => void
 }) {
   if (items.length === 0) {
-    return null;
+    return null
   }
   return (
     <div className="flex flex-col gap-1 rounded-[6px] bg-subtle/80 p-1 ring-1 ring-border-soft">
@@ -32,12 +32,12 @@ export function QueuedMessages({
         </span>
       </div>
       {items.map((item, i) => {
-        const trimmed = item.content.trim();
-        const attachmentCount = item.attachments.length;
+        const trimmed = item.content.trim()
+        const attachmentCount = item.attachments.length
         const preview =
           trimmed.length > 0
             ? trimmed
-            : `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`;
+            : `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`
         return (
           <div
             key={item.id}
@@ -71,8 +71,8 @@ export function QueuedMessages({
               <X size={11} aria-hidden />
             </button>
           </div>
-        );
+        )
       })}
     </div>
-  );
+  )
 }

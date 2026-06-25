@@ -1,7 +1,7 @@
-import type { ComponentProps } from 'react';
-import { cn } from '../cn';
+import type { ComponentProps } from 'react'
+import { cn } from '../cn'
 
-export type KbdPillProps = ComponentProps<'kbd'>;
+export type KbdPillProps = ComponentProps<'kbd'>
 
 export const KbdPill = ({ className, ...rest }: KbdPillProps) => {
   return (
@@ -12,5 +12,5 @@ export const KbdPill = ({ className, ...rest }: KbdPillProps) => {
       )}
       {...rest}
     />
-  );
-};
+  )
+}

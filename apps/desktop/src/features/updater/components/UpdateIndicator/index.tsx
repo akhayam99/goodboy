@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { ArrowUpCircle } from 'lucide-react';
-import { Button, Dialog, cn } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
+import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { ArrowUpCircle } from 'lucide-react'
+import { Button, Dialog, cn } from '@goodboy/ui'
+import { useAppStore } from '../../../../store'
 
-type Props = { variant: 'bar' | 'pip' };
+type Props = { variant: 'bar' | 'pip' }
 
 export const UpdateIndicator = ({ variant }: Props) => {
   const { status, version, installUpdate } = useAppStore(
@@ -13,21 +13,21 @@ export const UpdateIndicator = ({ variant }: Props) => {
       version: s.updateVersion,
       installUpdate: s.installUpdate,
     })),
-  );
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  )
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   if (status !== 'available' && status !== 'downloading') {
-    return null;
+    return null
   }
 
-  const downloading = status === 'downloading';
+  const downloading = status === 'downloading'
   const title = downloading
     ? 'Downloading update. Goodboy restarts when it finishes'
-    : `Update available${version ? ` (${version})` : ''}`;
+    : `Update available${version ? ` (${version})` : ''}`
   const confirm = () => {
-    setConfirmOpen(false);
-    void installUpdate();
-  };
+    setConfirmOpen(false)
+    void installUpdate()
+  }
 
   const trigger =
     variant === 'pip' ? (
@@ -58,7 +58,7 @@ export const UpdateIndicator = ({ variant }: Props) => {
         <ArrowUpCircle size={11} aria-hidden />
         <span>{downloading ? 'Updating…' : 'Update'}</span>
       </button>
-    );
+    )
 
   return (
     <>
@@ -86,5 +86,5 @@ export const UpdateIndicator = ({ variant }: Props) => {
         </p>
       </Dialog>
     </>
-  );
-};
+  )
+}

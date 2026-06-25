@@ -6,19 +6,19 @@ import type {
   MessageRole,
   SessionId,
   TurnProviderOverride,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type MessageRow = {
-  id: string;
-  session_id: string;
-  agent_id: string;
-  role: MessageRole;
-  content: string;
-  created_at: number;
-  provider_override_id: string | null;
-  provider_override_model: string | null;
-};
+  id: string
+  session_id: string
+  agent_id: string
+  role: MessageRole
+  content: string
+  created_at: number
+  provider_override_id: string | null
+  provider_override_model: string | null
+}
 
 function toDomain(row: MessageRow): Message {
   const providerOverride: TurnProviderOverride | undefined =
@@ -27,7 +27,7 @@ function toDomain(row: MessageRow): Message {
           providerId: row.provider_override_id as TurnProviderOverride['providerId'],
           model: row.provider_override_model ?? undefined,
         }
-      : undefined;
+      : undefined
 
   return {
     id: row.id as MessageId,
@@ -37,7 +37,7 @@ function toDomain(row: MessageRow): Message {
     content: row.content,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     ...(providerOverride !== undefined ? { providerOverride } : {}),
-  };
+  }
 }
 
 export const insertMessage = async (db: Database, message: Message): Promise<void> => {
@@ -55,8 +55,8 @@ export const insertMessage = async (db: Database, message: Message): Promise<voi
       message.providerOverride?.providerId ?? null,
       message.providerOverride?.model ?? null,
     ],
-  );
-};
+  )
+}
 
 export const listMessagesForSession = async (
   db: Database,
@@ -65,9 +65,9 @@ export const listMessagesForSession = async (
   const rows = await db.select<MessageRow>(
     'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
     [sessionId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const listMessagesForAgent = async (
   db: Database,
@@ -78,14 +78,14 @@ export const listMessagesForAgent = async (
     const rows = await db.select<MessageRow>(
       'SELECT * FROM messages WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',
       [agentId, opts.limit],
-    );
-    const out = rows.map(toDomain);
-    out.reverse();
-    return out;
+    )
+    const out = rows.map(toDomain)
+    out.reverse()
+    return out
   }
   const rows = await db.select<MessageRow>(
     'SELECT * FROM messages WHERE agent_id = ? ORDER BY created_at ASC',
     [agentId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}

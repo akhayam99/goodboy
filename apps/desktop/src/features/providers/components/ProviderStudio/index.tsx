@@ -1,50 +1,50 @@
-import { useEffect, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { ProviderStudioIcon } from '../brand-icons';
-import type { ProviderInfo } from '../../../../features/providers/providers';
-import { useAppStore } from '../../../../store';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { ProvidersRail } from './ProvidersRail';
-import { ProviderDetailPanel } from './ProviderDetailPanel';
-import { ProviderConnectPane } from './ProviderConnectPane';
+import { useEffect, useState } from 'react'
+import { Divider, ScrollFade } from '@goodboy/ui'
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
+import { ProviderStudioIcon } from '../brand-icons'
+import type { ProviderInfo } from '../../../../features/providers/providers'
+import { useAppStore } from '../../../../store'
+import { StudioShell } from '../../../../shared/components/StudioShell'
+import { ProvidersRail } from './ProvidersRail'
+import { ProviderDetailPanel } from './ProviderDetailPanel'
+import { ProviderConnectPane } from './ProviderConnectPane'
 
-const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini']
 
 type Props = {
-  readonly workspaceName: string;
-  readonly initialFocus?: ProviderId | null;
-  readonly initialAction?: ProviderLifecycleAction | null;
-  readonly onClose: () => void;
-};
+  readonly workspaceName: string
+  readonly initialFocus?: ProviderId | null
+  readonly initialAction?: ProviderLifecycleAction | null
+  readonly onClose: () => void
+}
 
 export const ProviderStudio = ({ workspaceName, initialFocus, initialAction, onClose }: Props) => {
-  const providers = useAppStore((s) => s.providers);
-  const [focused, setFocused] = useState<ProviderId | null>(initialFocus ?? null);
+  const providers = useAppStore((s) => s.providers)
+  const [focused, setFocused] = useState<ProviderId | null>(initialFocus ?? null)
   const [connectAction, setConnectAction] = useState<ProviderLifecycleAction | null>(
     initialFocus && initialAction ? initialAction : null,
-  );
+  )
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
-  );
+  )
 
   useEffect(() => {
     if (focused !== null) {
-      return;
+      return
     }
-    const first = ordered.find((p) => p.connection === 'connected')?.id ?? ordered[0]?.id ?? null;
+    const first = ordered.find((p) => p.connection === 'connected')?.id ?? ordered[0]?.id ?? null
     if (first) {
-      setFocused(first);
+      setFocused(first)
     }
-  }, [focused, ordered]);
+  }, [focused, ordered])
 
-  const selected = ordered.find((p) => p.id === focused) ?? null;
+  const selected = ordered.find((p) => p.id === focused) ?? null
 
   const onSelect = (id: ProviderId) => {
-    setConnectAction(null);
-    setFocused(id);
-  };
+    setConnectAction(null)
+    setFocused(id)
+  }
 
   return (
     <StudioShell
@@ -74,5 +74,5 @@ export const ProviderStudio = ({ workspaceName, initialFocus, initialAction, onC
         </>
       )}
     </StudioShell>
-  );
-};
+  )
+}

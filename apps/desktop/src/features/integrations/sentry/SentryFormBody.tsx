@@ -1,58 +1,58 @@
-import { useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
-import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
-import { useAppStore } from '../../../store';
-import { formatError } from '../../../shared/lib/errors';
+import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types'
+import { Button, Input } from '@goodboy/ui'
+import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react'
+import { useAppStore } from '../../../store'
+import { formatError } from '../../../shared/lib/errors'
 
 type Props = {
-  workspaceId: WorkspaceId;
-  onConnected?: () => void;
-};
+  workspaceId: WorkspaceId
+  onConnected?: () => void
+}
 
 export const SentryFormBody = ({ workspaceId, onConnected }: Props) => {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const sentry = integrations.find((i) => i.provider === 'sentry') ?? null;
-  const sentryConfig = (sentry?.config ?? null) as SentryIntegrationConfig | null;
-  const connectSentry = useAppStore((s) => s.connectSentry);
-  const disconnectSentry = useAppStore((s) => s.disconnectSentry);
+  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []))
+  const sentry = integrations.find((i) => i.provider === 'sentry') ?? null
+  const sentryConfig = (sentry?.config ?? null) as SentryIntegrationConfig | null
+  const connectSentry = useAppStore((s) => s.connectSentry)
+  const disconnectSentry = useAppStore((s) => s.disconnectSentry)
 
-  const [token, setToken] = useState('');
-  const [org, setOrg] = useState('');
-  const [project, setProject] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState('')
+  const [org, setOrg] = useState('')
+  const [project, setProject] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const onConnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await connectSentry(workspaceId, token.trim(), org.trim(), project.trim());
-      setToken('');
-      setOrg('');
-      setProject('');
-      onConnected?.();
+      await connectSentry(workspaceId, token.trim(), org.trim(), project.trim())
+      setToken('')
+      setOrg('')
+      setProject('')
+      onConnected?.()
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onDisconnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await disconnectSentry(workspaceId);
+      await disconnectSentry(workspaceId)
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
-  const canConnect = token.trim().length > 0 && org.trim().length > 0 && project.trim().length > 0;
+  const canConnect = token.trim().length > 0 && org.trim().length > 0 && project.trim().length > 0
 
   return (
     <div className="flex flex-col gap-5">
@@ -152,5 +152,5 @@ export const SentryFormBody = ({ workspaceId, onConnected }: Props) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

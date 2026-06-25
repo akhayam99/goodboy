@@ -1,46 +1,46 @@
-import { useMemo, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
-import type { PrComment, PullRequestState } from '@goodboy/types';
-import { groupThreads, threadPriority } from '../../../comment-threads';
-import { COMMENT_DISPLAY_LIMIT } from '../lib';
-import { CommentThreadRow } from './CommentThreadRow';
+import { useMemo, useState } from 'react'
+import { ExternalLink } from 'lucide-react'
+import type { PrComment, PullRequestState } from '@goodboy/types'
+import { groupThreads, threadPriority } from '../../../comment-threads'
+import { COMMENT_DISPLAY_LIMIT } from '../lib'
+import { CommentThreadRow } from './CommentThreadRow'
 
 type Props = {
-  readonly comments: ReadonlyArray<PrComment>;
-  readonly pr: PullRequestState;
-  readonly onOpenUrl: (url: string) => void;
-  readonly onSpawnFromComment?: (c: PrComment) => void;
-};
+  readonly comments: ReadonlyArray<PrComment>
+  readonly pr: PullRequestState
+  readonly onOpenUrl: (url: string) => void
+  readonly onSpawnFromComment?: (c: PrComment) => void
+}
 
 export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Props) => {
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const [showAll, setShowAll] = useState(false);
-  const [showResolved, setShowResolved] = useState(false);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
+  const [showAll, setShowAll] = useState(false)
+  const [showResolved, setShowResolved] = useState(false)
 
-  const allThreads = useMemo(() => groupThreads(comments), [comments]);
+  const allThreads = useMemo(() => groupThreads(comments), [comments])
 
   const reviewThreads = useMemo(
     () => allThreads.filter((t) => t.head.source === 'review'),
     [allThreads],
-  );
-  const generalCount = allThreads.length - reviewThreads.length;
+  )
+  const generalCount = allThreads.length - reviewThreads.length
   const resolvedCount = useMemo(
     () => reviewThreads.filter((t) => t.head.resolved === true).length,
     [reviewThreads],
-  );
+  )
 
   const threads = useMemo(() => {
     const filtered = showResolved
       ? reviewThreads
-      : reviewThreads.filter((t) => t.head.resolved !== true);
+      : reviewThreads.filter((t) => t.head.resolved !== true)
     return [...filtered].sort((a, b) => {
-      const p = threadPriority(a) - threadPriority(b);
+      const p = threadPriority(a) - threadPriority(b)
       if (p !== 0) {
-        return p;
+        return p
       }
-      return b.head.createdAt.localeCompare(a.head.createdAt);
-    });
-  }, [reviewThreads, showResolved]);
+      return b.head.createdAt.localeCompare(a.head.createdAt)
+    })
+  }, [reviewThreads, showResolved])
 
   const generalFooter =
     generalCount > 0 ? (
@@ -53,7 +53,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
         {generalCount} general comment{generalCount === 1 ? '' : 's'}
         <ExternalLink size={9} aria-hidden />
       </button>
-    ) : null;
+    ) : null
 
   if (reviewThreads.length === 0) {
     return (
@@ -61,7 +61,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
         <span>No review comments yet</span>
         {generalFooter}
       </div>
-    );
+    )
   }
 
   if (threads.length === 0) {
@@ -81,23 +81,23 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
         </div>
         {generalFooter}
       </div>
-    );
+    )
   }
 
-  const visible = showAll ? threads : threads.slice(0, COMMENT_DISPLAY_LIMIT);
-  const hidden = threads.length - visible.length;
+  const visible = showAll ? threads : threads.slice(0, COMMENT_DISPLAY_LIMIT)
+  const hidden = threads.length - visible.length
 
   const toggle = (id: string) => {
     setExpanded((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(id)) {
-        next.delete(id);
+        next.delete(id)
       } else {
-        next.add(id);
+        next.add(id)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
   return (
     <ul className="flex flex-col gap-1.5">
@@ -136,5 +136,5 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
       )}
       {generalFooter ? <li>{generalFooter}</li> : null}
     </ul>
-  );
-};
+  )
+}

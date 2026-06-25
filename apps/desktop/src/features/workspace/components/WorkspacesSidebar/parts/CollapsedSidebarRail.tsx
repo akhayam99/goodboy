@@ -1,17 +1,17 @@
-import { PanelLeftOpen, Plus } from 'lucide-react';
-import { useCurrentWorkspace } from '../../../../../store';
-import { workspaceAccent } from '../../../color';
-import { FOOTER_ICON_BTN } from '../lib';
+import { PanelLeftOpen, Plus } from 'lucide-react'
+import { useCurrentWorkspace } from '../../../../../store'
+import { workspaceAccent } from '../../../color'
+import { FOOTER_ICON_BTN } from '../lib'
 
-const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
+const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?'
 
 type Props = {
-  onExpand: () => void;
-};
+  onExpand: () => void
+}
 
 export const CollapsedSidebarRail = ({ onExpand }: Props) => {
-  const currentWorkspace = useCurrentWorkspace();
-  const accent = currentWorkspace ? workspaceAccent(currentWorkspace.id) : null;
+  const currentWorkspace = useCurrentWorkspace()
+  const accent = currentWorkspace ? workspaceAccent(currentWorkspace.id) : null
 
   return (
     <div className="flex h-full w-full flex-col items-center gap-2 py-3">
@@ -47,5 +47,5 @@ export const CollapsedSidebarRail = ({ onExpand }: Props) => {
         <PanelLeftOpen size={16} aria-hidden />
       </button>
     </div>
-  );
-};
+  )
+}

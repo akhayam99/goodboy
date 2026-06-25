@@ -4,34 +4,34 @@ import type {
   PermissionDecisionKind,
   ProviderRunId,
   SessionId,
-} from '@goodboy/types';
-import { invokePermissionRuleUpsert } from '../../../features/permissions/permissions';
-import type { GetFn, SetFn } from './types';
+} from '@goodboy/types'
+import { invokePermissionRuleUpsert } from '../../../features/permissions/permissions'
+import type { GetFn, SetFn } from './types'
 
 type Params = {
-  sessionId: SessionId;
-  agentId: AgentId;
-  toolUseId: string;
-  toolName: string;
-  runId: ProviderRunId;
-  scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
-};
+  sessionId: SessionId
+  agentId: AgentId
+  toolUseId: string
+  toolName: string
+  runId: ProviderRunId
+  scope: 'global' | 'workspace' | 'session' | 'once' | 'deny'
+}
 
 export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId, toolUseId, toolName, runId, scope }: Params) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = get().sessions.find((s) => s.id === sessionId)
     if (!session) {
-      return;
+      return
     }
-    const now = new Date().toISOString() as IsoDateTime;
+    const now = new Date().toISOString() as IsoDateTime
 
     if (scope === 'once') {
       set((state) => ({
         volatilePermissionAllows: new Set([...state.volatilePermissionAllows, toolUseId]),
-      }));
+      }))
     } else {
-      const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow';
-      const ruleScope = scope === 'deny' ? 'session' : scope;
+      const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow'
+      const ruleScope = scope === 'deny' ? 'session' : scope
       await invokePermissionRuleUpsert({
         scope: ruleScope,
         ...(ruleScope === 'workspace' ? { workspaceId: session.workspaceId } : {}),
@@ -39,7 +39,7 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
         patternTool: toolName,
         decision: ruleDecision,
         priority: 100,
-      });
+      })
     }
 
     get().appendTurnEvent(agentId, sessionId, {
@@ -50,6 +50,6 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
       ruleId: null,
       decidedBy: 'user',
       at: now,
-    });
-  };
-};
+    })
+  }
+}

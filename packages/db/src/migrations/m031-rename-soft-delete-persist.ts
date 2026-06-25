@@ -331,4 +331,4 @@ CREATE INDEX idx_notifications_workspace_id ON notifications(workspace_id) WHERE
 
 PRAGMA foreign_key_check;
 PRAGMA foreign_keys = ON;
-`;
+`

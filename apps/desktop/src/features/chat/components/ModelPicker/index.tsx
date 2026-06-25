@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
-import { Divider, cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { RotateCcw } from 'lucide-react'
+import { Divider, cn } from '@goodboy/ui'
+import type { ProviderId } from '@goodboy/types'
 import {
   VERBOSITY_LEVELS,
   VERBOSITY_LABEL,
   type VerbosityLevel,
-} from '../../../../features/settings/verbosity';
+} from '../../../../features/settings/verbosity'
 import {
   PROVIDER_LABEL,
   PROVIDER_TEXT,
@@ -25,29 +25,29 @@ import {
   parseModelId,
   subfamilyLabel,
   subfamilyTier,
-} from '../../utils/chat-constants';
+} from '../../utils/chat-constants'
 
-const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
-const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const
+const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const
 
 export type Props = {
-  readonly providers: ReadonlyArray<ProviderId>;
-  readonly models: ReadonlyArray<string>;
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly effort: EffortLevel;
-  readonly verbosity: VerbosityLevel;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly disabled: boolean;
-  readonly disabledTitle?: string;
-  readonly defaultProvider: ProviderId;
-  readonly defaultModel: string;
-  readonly onSelectProvider: (id: ProviderId) => void;
-  readonly onSelectModel: (id: string) => void;
-  readonly onSelectEffort: (level: EffortLevel) => void;
-  readonly onSelectVerbosity: (level: VerbosityLevel) => void;
-  readonly onResetToDefault: () => void;
-};
+  readonly providers: ReadonlyArray<ProviderId>
+  readonly models: ReadonlyArray<string>
+  readonly provider: ProviderId
+  readonly model: string
+  readonly effort: EffortLevel
+  readonly verbosity: VerbosityLevel
+  readonly connectedProviders: ReadonlyArray<ProviderId>
+  readonly disabled: boolean
+  readonly disabledTitle?: string
+  readonly defaultProvider: ProviderId
+  readonly defaultModel: string
+  readonly onSelectProvider: (id: ProviderId) => void
+  readonly onSelectModel: (id: string) => void
+  readonly onSelectEffort: (level: EffortLevel) => void
+  readonly onSelectVerbosity: (level: VerbosityLevel) => void
+  readonly onResetToDefault: () => void
+}
 
 export const ModelPicker = ({
   providers,
@@ -67,63 +67,63 @@ export const ModelPicker = ({
   onSelectVerbosity,
   onResetToDefault,
 }: Props) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const isOverride = provider !== defaultProvider || model !== defaultModel;
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const isOverride = provider !== defaultProvider || model !== defaultModel
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
+    }
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    window.addEventListener('mousedown', onClick);
-    window.addEventListener('keydown', onEsc);
+    }
+    window.addEventListener('mousedown', onClick)
+    window.addEventListener('keydown', onEsc)
     return () => {
-      window.removeEventListener('mousedown', onClick);
-      window.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
+      window.removeEventListener('mousedown', onClick)
+      window.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
 
   useEffect(() => {
     const handler = () => {
       if (!disabled) {
-        setOpen(true);
+        setOpen(true)
       }
-    };
-    window.addEventListener('goodboy:open-model-picker', handler);
-    return () => window.removeEventListener('goodboy:open-model-picker', handler);
-  }, [disabled]);
+    }
+    window.addEventListener('goodboy:open-model-picker', handler)
+    return () => window.removeEventListener('goodboy:open-model-picker', handler)
+  }, [disabled])
 
-  const effortLevels = modelEffortLevels(model);
-  const showEffort = effortLevels !== null;
-  const tier = modelTier(model);
+  const effortLevels = modelEffortLevels(model)
+  const showEffort = effortLevels !== null
+  const tier = modelTier(model)
 
   const groupedModels = useMemo(() => {
-    const sorted = [...models].sort((a, b) => modelWeight(a) - modelWeight(b));
-    const byFamily = new Map<ModelFamily, Map<string | null, string[]>>();
+    const sorted = [...models].sort((a, b) => modelWeight(a) - modelWeight(b))
+    const byFamily = new Map<ModelFamily, Map<string | null, string[]>>()
     for (const id of sorted) {
-      const parsed = parseModelId(id);
-      let subMap = byFamily.get(parsed.family);
+      const parsed = parseModelId(id)
+      let subMap = byFamily.get(parsed.family)
       if (!subMap) {
-        subMap = new Map();
-        byFamily.set(parsed.family, subMap);
+        subMap = new Map()
+        byFamily.set(parsed.family, subMap)
       }
-      const key = parsed.subfamily;
-      const arr = subMap.get(key) ?? [];
-      arr.push(id);
-      subMap.set(key, arr);
+      const key = parsed.subfamily
+      const arr = subMap.get(key) ?? []
+      arr.push(id)
+      subMap.set(key, arr)
     }
-    return byFamily;
-  }, [models]);
+    return byFamily
+  }, [models])
 
   return (
     <div className="relative flex items-center gap-1" ref={ref}>
@@ -131,8 +131,8 @@ export const ModelPicker = ({
         <button
           type="button"
           onClick={(e) => {
-            e.stopPropagation();
-            onResetToDefault();
+            e.stopPropagation()
+            onResetToDefault()
           }}
           title={`reset to session default (${PROVIDER_LABEL[defaultProvider]} · ${modelLabel(defaultModel)})`}
           aria-label="reset model override"
@@ -222,17 +222,17 @@ export const ModelPicker = ({
           <PickerSection label="Provider" hint="Which CLI agent runs your turns">
             <div className={CHIP_ROW}>
               {providers.map((id) => {
-                const isConnected = connectedProviders.includes(id);
-                const active = provider === id;
+                const isConnected = connectedProviders.includes(id)
+                const active = provider === id
                 const chipTone = (() => {
                   if (active) {
-                    return cn('bg-muted font-semibold', PROVIDER_TEXT[id]);
+                    return cn('bg-muted font-semibold', PROVIDER_TEXT[id])
                   }
                   if (isConnected) {
-                    return CHIP_INACTIVE;
+                    return CHIP_INACTIVE
                   }
-                  return 'text-muted-foreground/35 hover:bg-muted/50';
-                })();
+                  return 'text-muted-foreground/35 hover:bg-muted/50'
+                })()
                 return (
                   <button
                     key={id}
@@ -244,19 +244,19 @@ export const ModelPicker = ({
                     {PROVIDER_LABEL[id]}
                     {!isConnected && <span className="ml-0.5 text-[9px] text-warning">↗</span>}
                   </button>
-                );
+                )
               })}
             </div>
           </PickerSection>
           <Divider />
 
           {[...groupedModels.entries()].map(([fam, subMap]) => {
-            const subKeys = [...subMap.keys()];
-            const onlyFlat = subKeys.length === 1 && subKeys[0] === null;
-            const sectionLabel = FAMILY_SECTION_LABEL[fam] ?? fam;
+            const subKeys = [...subMap.keys()]
+            const onlyFlat = subKeys.length === 1 && subKeys[0] === null
+            const sectionLabel = FAMILY_SECTION_LABEL[fam] ?? fam
 
             if (onlyFlat) {
-              const ids = subMap.get(null) ?? [];
+              const ids = subMap.get(null) ?? []
               return (
                 <PickerSection key={fam} label={sectionLabel}>
                   <FlatVariantRow
@@ -266,7 +266,7 @@ export const ModelPicker = ({
                     onSelect={onSelectModel}
                   />
                 </PickerSection>
-              );
+              )
             }
 
             return (
@@ -281,7 +281,7 @@ export const ModelPicker = ({
                         selectedModel={model}
                         onSelect={onSelectModel}
                       />
-                    );
+                    )
                   }
                   return (
                     <SubfamilyVariantRow
@@ -292,10 +292,10 @@ export const ModelPicker = ({
                       selectedModel={model}
                       onSelect={onSelectModel}
                     />
-                  );
+                  )
                 })}
               </PickerSection>
-            );
+            )
           })}
           <Divider />
 
@@ -348,17 +348,17 @@ export const ModelPicker = ({
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
 function PickerSection({
   label,
   hint,
   children,
 }: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
+  label: string
+  hint?: string
+  children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col">
@@ -372,7 +372,7 @@ function PickerSection({
       </div>
       {children}
     </div>
-  );
+  )
 }
 
 function SubfamilyVariantRow({
@@ -382,13 +382,13 @@ function SubfamilyVariantRow({
   selectedModel,
   onSelect,
 }: {
-  family: ModelFamily;
-  subfamily: string;
-  ids: string[];
-  selectedModel: string;
-  onSelect: (id: string) => void;
+  family: ModelFamily
+  subfamily: string
+  ids: string[]
+  selectedModel: string
+  onSelect: (id: string) => void
 }) {
-  const tier = subfamilyTier(family, subfamily);
+  const tier = subfamilyTier(family, subfamily)
   return (
     <div className="flex items-center px-2.5 py-1.5 hover:bg-muted/60">
       <span className={cn('flex-1 text-xs', TIER_TEXT[tier])}>
@@ -396,9 +396,9 @@ function SubfamilyVariantRow({
       </span>
       <div className="flex flex-wrap gap-1">
         {ids.map((id) => {
-          const selected = selectedModel === id;
-          const t = modelTier(id);
-          const chip = parseModelId(id).variantLabel;
+          const selected = selectedModel === id
+          const t = modelTier(id)
+          const chip = parseModelId(id).variantLabel
           return (
             <button
               key={id}
@@ -412,11 +412,11 @@ function SubfamilyVariantRow({
             >
               {chip}
             </button>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }
 
 function FlatVariantRow({
@@ -425,17 +425,17 @@ function FlatVariantRow({
   selectedModel,
   onSelect,
 }: {
-  family: ModelFamily;
-  ids: string[];
-  selectedModel: string;
-  onSelect: (id: string) => void;
+  family: ModelFamily
+  ids: string[]
+  selectedModel: string
+  onSelect: (id: string) => void
 }) {
   return (
     <div className={CHIP_ROW}>
       {ids.map((id) => {
-        const selected = selectedModel === id;
-        const t = modelTier(id);
-        const chip = parseModelId(id).variantLabel;
+        const selected = selectedModel === id
+        const t = modelTier(id)
+        const chip = parseModelId(id).variantLabel
         return (
           <button
             key={id}
@@ -449,8 +449,8 @@ function FlatVariantRow({
           >
             {chip}
           </button>
-        );
+        )
       })}
     </div>
-  );
+  )
 }

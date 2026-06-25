@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
-import { cn } from '../cn';
-import { Eyebrow } from './Eyebrow';
+import type { ReactNode } from 'react'
+import { cn } from '../cn'
+import { Eyebrow } from './Eyebrow'
 
 export type SectionHeaderProps = {
-  readonly label: string;
-  readonly icon?: ReactNode;
-  readonly hint?: string;
-  readonly action?: ReactNode;
-  readonly className?: string;
-};
+  readonly label: string
+  readonly icon?: ReactNode
+  readonly hint?: string
+  readonly action?: ReactNode
+  readonly className?: string
+}
 
 export const SectionHeader = ({ label, icon, hint, action, className }: SectionHeaderProps) => {
   return (
@@ -19,5 +19,5 @@ export const SectionHeader = ({ label, icon, hint, action, className }: SectionH
       </div>
       {hint ? <p className="text-2xs text-muted-foreground/70">{hint}</p> : null}
     </div>
-  );
-};
+  )
+}

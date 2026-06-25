@@ -1,22 +1,22 @@
-import { formatUsd } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
+import { formatUsd } from '@goodboy/ui'
+import { useAppStore } from '../../../../store'
 
-const EMPTY_SPEND: ReadonlyArray<never> = [];
+const EMPTY_SPEND: ReadonlyArray<never> = []
 
 const PROVIDER_DOT: Record<string, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',
   cursor: 'bg-[var(--color-provider-cursor)]',
   codex: 'bg-[var(--color-provider-codex)]',
   gemini: 'bg-[var(--color-provider-gemini)]',
-};
+}
 
 export const TelemetryPill = () => {
-  const sessionSummary = useAppStore((s) => s.sessionSummary);
-  const workspaceSummary = useAppStore((s) => s.workspaceSummary);
-  const providerSpend = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
+  const sessionSummary = useAppStore((s) => s.sessionSummary)
+  const workspaceSummary = useAppStore((s) => s.workspaceSummary)
+  const providerSpend = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND)
 
-  const sessionCost = sessionSummary?.estimatedCostUsd ?? 0;
-  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
+  const sessionCost = sessionSummary?.estimatedCostUsd ?? 0
+  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0
 
   const tooltipLines = [
     `session: ${formatUsd(sessionCost)}`,
@@ -31,7 +31,7 @@ export const TelemetryPill = () => {
           ),
         ]
       : []),
-  ].join('\n');
+  ].join('\n')
 
   return (
     <>
@@ -63,5 +63,5 @@ export const TelemetryPill = () => {
         )}
       </button>
     </>
-  );
-};
+  )
+}

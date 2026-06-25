@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS skills (
   UNIQUE(workspace_id, name)
 );
 CREATE INDEX IF NOT EXISTS idx_skills_workspace_id ON skills(workspace_id);
-`;
+`

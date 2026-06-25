@@ -1,12 +1,12 @@
-import { CircleHelp } from 'lucide-react';
-import type { TurnState } from '@goodboy/types';
-import { useCurrentSession, useCurrentWorkspace } from '../../../store';
-import { TelemetryPill } from '../../../features/providers/components/TelemetryPill';
-import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
+import { CircleHelp } from 'lucide-react'
+import type { TurnState } from '@goodboy/types'
+import { useCurrentSession, useCurrentWorkspace } from '../../../store'
+import { TelemetryPill } from '../../../features/providers/components/TelemetryPill'
+import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator'
 
 type StatusBarProps = {
-  onFocusWorkspaces?: () => void;
-};
+  onFocusWorkspaces?: () => void
+}
 
 // Raw state.kind strings are internal; map to human labels. 'idle' is the
 // resting state — surfacing it just adds noise, so it reads as no label.
@@ -17,12 +17,12 @@ const STATE_LABEL: Record<TurnState['kind'], string | null> = {
   running: 'running',
   error: 'failed',
   ended: 'ended',
-};
+}
 
 export const StatusBar = ({ onFocusWorkspaces }: StatusBarProps) => {
-  const workspace = useCurrentWorkspace();
-  const session = useCurrentSession();
-  const stateLabel = session ? STATE_LABEL[session.state.kind] : null;
+  const workspace = useCurrentWorkspace()
+  const session = useCurrentSession()
+  const stateLabel = session ? STATE_LABEL[session.state.kind] : null
 
   return (
     <div className="flex w-full items-center gap-3">
@@ -48,5 +48,5 @@ export const StatusBar = ({ onFocusWorkspaces }: StatusBarProps) => {
         </span>
       </div>
     </div>
-  );
-};
+  )
+}

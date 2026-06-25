@@ -4,17 +4,17 @@ import type {
   ParallelGroupId,
   ParallelMergeStrategy,
   SessionId,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type ParallelGroupRow = {
-  id: string;
-  session_id: string;
-  ordinal: number;
-  merge_strategy: string;
-  created_at: number;
-  completed_at: number | null;
-};
+  id: string
+  session_id: string
+  ordinal: number
+  merge_strategy: string
+  created_at: number
+  completed_at: number | null
+}
 
 function toDomain(row: ParallelGroupRow): ParallelGroup {
   return {
@@ -26,7 +26,7 @@ function toDomain(row: ParallelGroupRow): ParallelGroup {
     completedAt: row.completed_at
       ? (new Date(row.completed_at).toISOString() as IsoDateTime)
       : null,
-  };
+  }
 }
 
 export const insertGroup = async (db: Database, group: ParallelGroup): Promise<void> => {
@@ -42,8 +42,8 @@ export const insertGroup = async (db: Database, group: ParallelGroup): Promise<v
       new Date(group.createdAt).getTime(),
       group.completedAt ? new Date(group.completedAt).getTime() : null,
     ],
-  );
-};
+  )
+}
 
 export const listGroupsForSession = async (
   db: Database,
@@ -52,9 +52,9 @@ export const listGroupsForSession = async (
   const rows = await db.select<ParallelGroupRow>(
     'SELECT * FROM parallel_groups WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const getGroupById = async (
   db: Database,
@@ -63,13 +63,13 @@ export const getGroupById = async (
   const rows = await db.select<ParallelGroupRow>(
     'SELECT * FROM parallel_groups WHERE id = ? LIMIT 1',
     [groupId],
-  );
-  return rows.length > 0 ? toDomain(rows[0]!) : null;
-};
+  )
+  return rows.length > 0 ? toDomain(rows[0]!) : null
+}
 
 export const deleteGroup = async (db: Database, groupId: ParallelGroupId): Promise<void> => {
-  await db.execute('DELETE FROM parallel_groups WHERE id = ?', [groupId]);
-};
+  await db.execute('DELETE FROM parallel_groups WHERE id = ?', [groupId])
+}
 
 export const updateGroupCompletedAt = async (
   db: Database,
@@ -79,5 +79,5 @@ export const updateGroupCompletedAt = async (
   await db.execute('UPDATE parallel_groups SET completed_at = ? WHERE id = ?', [
     new Date(completedAt).getTime(),
     groupId,
-  ]);
-};
+  ])
+}

@@ -1,10 +1,10 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
 type Props = {
-  readonly expanded: boolean;
-  readonly label: string;
-  readonly onToggle: () => void;
-};
+  readonly expanded: boolean
+  readonly label: string
+  readonly onToggle: () => void
+}
 
 export const SectionToggle = ({ expanded, label, onToggle }: Props) => {
   return (
@@ -17,5 +17,5 @@ export const SectionToggle = ({ expanded, label, onToggle }: Props) => {
     >
       {expanded ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
     </button>
-  );
-};
+  )
+}

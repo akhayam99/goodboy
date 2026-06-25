@@ -4,18 +4,18 @@ import type {
   WorkspaceIntegration,
   WorkspaceIntegrationId,
   WorkspaceIntegrationProvider,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type WorkspaceIntegrationRow = {
-  id: string;
-  workspace_id: string;
-  provider: string;
-  config: string;
-  credential_key: string;
-  created_at: number;
-  updated_at: number;
-};
+  id: string
+  workspace_id: string
+  provider: string
+  config: string
+  credential_key: string
+  created_at: number
+  updated_at: number
+}
 
 function toDomain(row: WorkspaceIntegrationRow): WorkspaceIntegration {
   return {
@@ -26,15 +26,15 @@ function toDomain(row: WorkspaceIntegrationRow): WorkspaceIntegration {
     credentialKey: row.credential_key,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  } as WorkspaceIntegration;
+  } as WorkspaceIntegration
 }
 
 export const upsertWorkspaceIntegration = async (
   db: Database,
   integration: WorkspaceIntegration,
 ): Promise<void> => {
-  const created = Date.parse(integration.createdAt);
-  const updated = Date.parse(integration.updatedAt);
+  const created = Date.parse(integration.createdAt)
+  const updated = Date.parse(integration.updatedAt)
   await db.execute(
     `INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -51,8 +51,8 @@ export const upsertWorkspaceIntegration = async (
       created,
       updated,
     ],
-  );
-};
+  )
+}
 
 export const listIntegrationsForWorkspace = async (
   db: Database,
@@ -61,9 +61,9 @@ export const listIntegrationsForWorkspace = async (
   const rows = await db.select<WorkspaceIntegrationRow>(
     'SELECT * FROM workspace_integrations WHERE workspace_id = ? ORDER BY created_at ASC',
     [workspaceId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const getWorkspaceIntegration = async (
   db: Database,
@@ -73,10 +73,10 @@ export const getWorkspaceIntegration = async (
   const rows = await db.select<WorkspaceIntegrationRow>(
     'SELECT * FROM workspace_integrations WHERE workspace_id = ? AND provider = ? LIMIT 1',
     [workspaceId, provider],
-  );
-  const row = rows[0];
-  return row ? toDomain(row) : null;
-};
+  )
+  const row = rows[0]
+  return row ? toDomain(row) : null
+}
 
 export const deleteWorkspaceIntegration = async (
   db: Database,
@@ -86,5 +86,5 @@ export const deleteWorkspaceIntegration = async (
   await db.execute('DELETE FROM workspace_integrations WHERE workspace_id = ? AND provider = ?', [
     workspaceId,
     provider,
-  ]);
-};
+  ])
+}

@@ -1,43 +1,43 @@
-import { useMemo } from 'react';
-import { ArrowRight } from 'lucide-react';
-import type { PlanId, SessionId } from '@goodboy/types';
-import { extractHandoff } from '@goodboy/core';
-import { useAppStore } from '../../../../store';
-import { AGENT_KIND_META } from '../../../session/agent-kind';
+import { useMemo } from 'react'
+import { ArrowRight } from 'lucide-react'
+import type { PlanId, SessionId } from '@goodboy/types'
+import { extractHandoff } from '@goodboy/core'
+import { useAppStore } from '../../../../store'
+import { AGENT_KIND_META } from '../../../session/agent-kind'
 
 type Props = {
-  readonly assistantText: string;
-  readonly sessionId: SessionId;
-};
+  readonly assistantText: string
+  readonly sessionId: SessionId
+}
 
 export const HandoffChip = ({ assistantText, sessionId }: Props) => {
-  const handoff = useMemo(() => extractHandoff(assistantText), [assistantText]);
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
-  const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
+  const handoff = useMemo(() => extractHandoff(assistantText), [assistantText])
+  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null)
+  const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff)
 
   if (!handoff || !session) {
-    return null;
+    return null
   }
   if (session.workflowRuns.length > 0) {
-    return null;
+    return null
   }
 
-  const meta = AGENT_KIND_META[handoff.kind];
+  const meta = AGENT_KIND_META[handoff.kind]
   const isActiveNudge =
-    sessionNudge?.kind === 'handoff-suggested' && sessionNudge.targetKind === handoff.kind;
+    sessionNudge?.kind === 'handoff-suggested' && sessionNudge.targetKind === handoff.kind
 
   const onClick = () => {
     if (isActiveNudge) {
-      void acceptHandoff(sessionId);
-      return;
+      void acceptHandoff(sessionId)
+      return
     }
     void spawnAgent(sessionId, {
       kindOverride: handoff.kind,
       ...(handoff.planId ? { triggeredPlanId: handoff.planId as PlanId } : {}),
-    });
-  };
+    })
+  }
   return (
     <button
       type="button"
@@ -49,5 +49,5 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
       <span>spawn {meta.label.toLowerCase()}</span>
       {handoff.reason ? <span className="text-muted-foreground">· {handoff.reason}</span> : null}
     </button>
-  );
-};
+  )
+}

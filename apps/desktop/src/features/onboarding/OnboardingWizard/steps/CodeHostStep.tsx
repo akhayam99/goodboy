@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { FolderGit2, GitBranch, GitFork } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
-import { GithubFormBody } from '../../../integrations/github/GithubFormBody';
-import { GitlabFormBody } from '../../../integrations/gitlab/GitlabFormBody';
-import { Segmented, type SegmentedOption } from '../Segmented';
+import { useState } from 'react'
+import { FolderGit2, GitBranch, GitFork } from 'lucide-react'
+import { Button } from '@goodboy/ui'
+import type { WorkspaceId } from '@goodboy/types'
+import { GithubFormBody } from '../../../integrations/github/GithubFormBody'
+import { GitlabFormBody } from '../../../integrations/gitlab/GitlabFormBody'
+import { Segmented, type SegmentedOption } from '../Segmented'
 
-type Host = 'github' | 'gitlab';
+type Host = 'github' | 'gitlab'
 
 type Props = {
-  readonly workspaceId: WorkspaceId | null;
-  readonly githubConnected: boolean;
-  readonly gitlabConnected: boolean;
-  readonly onConnected: () => void;
-};
+  readonly workspaceId: WorkspaceId | null
+  readonly githubConnected: boolean
+  readonly gitlabConnected: boolean
+  readonly onConnected: () => void
+}
 
 export const CodeHostStep = ({
   workspaceId,
@@ -21,7 +21,7 @@ export const CodeHostStep = ({
   gitlabConnected,
   onConnected,
 }: Props) => {
-  const [host, setHost] = useState<Host>(gitlabConnected && !githubConnected ? 'gitlab' : 'github');
+  const [host, setHost] = useState<Host>(gitlabConnected && !githubConnected ? 'gitlab' : 'github')
 
   const options: ReadonlyArray<SegmentedOption<Host>> = [
     { value: 'github', label: 'GitHub', icon: GitBranch, connected: githubConnected },
@@ -32,7 +32,7 @@ export const CodeHostStep = ({
       color: 'var(--color-provider-gitlab)',
       connected: gitlabConnected,
     },
-  ];
+  ]
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
@@ -79,5 +79,5 @@ export const CodeHostStep = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}

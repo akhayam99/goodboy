@@ -1,18 +1,18 @@
-import type { ReactNode } from 'react';
-import { cn, ScrollFade } from '@goodboy/ui';
+import type { ReactNode } from 'react'
+import { cn, ScrollFade } from '@goodboy/ui'
 
 type PaneShellProps = {
-  readonly title: string;
-  readonly description?: string;
-  readonly actions?: ReactNode;
-  readonly width?: '2xl' | '3xl';
-  readonly children: ReactNode;
-};
+  readonly title: string
+  readonly description?: string
+  readonly actions?: ReactNode
+  readonly width?: '2xl' | '3xl'
+  readonly children: ReactNode
+}
 
 const WIDTH: Record<'2xl' | '3xl', string> = {
   '2xl': 'max-w-2xl',
   '3xl': 'max-w-3xl',
-};
+}
 
 export const PaneShell = ({
   title,
@@ -35,4 +35,4 @@ export const PaneShell = ({
       {children}
     </div>
   </ScrollFade>
-);
+)

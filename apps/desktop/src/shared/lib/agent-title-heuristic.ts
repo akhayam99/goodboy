@@ -36,7 +36,7 @@ const ACTION_VERBS = new Set([
   'clean',
   'lint',
   'format',
-]);
+])
 
 const STOP_WORDS = new Set([
   'a',
@@ -78,7 +78,7 @@ const STOP_WORDS = new Set([
   'want',
   'need',
   'help',
-]);
+])
 
 export const heuristicAgentTitle = (prompt: string): string | null => {
   const clean = prompt
@@ -87,20 +87,20 @@ export const heuristicAgentTitle = (prompt: string): string | null => {
     .replace(/https?:\/\/\S+/g, ' ')
     .replace(/[*_#>\[\]]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
 
-  const first = clean.slice(0, 300).split('\n')[0] ?? '';
-  const words = first.toLowerCase().split(/\s+/).filter(Boolean);
+  const first = clean.slice(0, 300).split('\n')[0] ?? ''
+  const words = first.toLowerCase().split(/\s+/).filter(Boolean)
 
-  const verbIdx = words.findIndex((w) => ACTION_VERBS.has(w));
+  const verbIdx = words.findIndex((w) => ACTION_VERBS.has(w))
   if (verbIdx !== -1) {
-    const slice = words.slice(verbIdx, verbIdx + 6);
-    const significant = slice.filter((w, i) => i === 0 || !STOP_WORDS.has(w)).slice(0, 3);
+    const slice = words.slice(verbIdx, verbIdx + 6)
+    const significant = slice.filter((w, i) => i === 0 || !STOP_WORDS.has(w)).slice(0, 3)
     if (significant.length >= 2) {
-      return significant.join(' ');
+      return significant.join(' ')
     }
   }
 
-  const significant = words.filter((w) => !STOP_WORDS.has(w)).slice(0, 3);
-  return significant.length >= 2 ? significant.join(' ') : null;
-};
+  const significant = words.filter((w) => !STOP_WORDS.has(w)).slice(0, 3)
+  return significant.length >= 2 ? significant.join(' ') : null
+}

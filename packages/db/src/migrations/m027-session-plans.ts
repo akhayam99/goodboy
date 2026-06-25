@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS session_plans (
 );
 
 CREATE INDEX IF NOT EXISTS idx_session_plans_session ON session_plans(session_id, updated_at DESC);
-`;
+`

@@ -3,18 +3,18 @@ import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
-} from '@goodboy/types';
-import type { Database } from '../client';
+} from '@goodboy/types'
+import type { Database } from '../client'
 
 type SessionExternalTaskRow = {
-  session_id: string;
-  provider: string;
-  external_id: string;
-  identifier: string;
-  url: string;
-  title: string;
-  created_at: number;
-};
+  session_id: string
+  provider: string
+  external_id: string
+  identifier: string
+  url: string
+  title: string
+  created_at: number
+}
 
 function toDomain(row: SessionExternalTaskRow): SessionExternalTask {
   return {
@@ -25,14 +25,14 @@ function toDomain(row: SessionExternalTaskRow): SessionExternalTask {
     url: row.url,
     title: row.title,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-  };
+  }
 }
 
 export const setSessionExternalTask = async (
   db: Database,
   task: SessionExternalTask,
 ): Promise<void> => {
-  const created = Date.parse(task.createdAt);
+  const created = Date.parse(task.createdAt)
   await db.execute(
     `INSERT INTO session_external_tasks (session_id, provider, external_id, identifier, url, title, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -51,8 +51,8 @@ export const setSessionExternalTask = async (
       task.title,
       created,
     ],
-  );
-};
+  )
+}
 
 export const getSessionExternalTask = async (
   db: Database,
@@ -61,10 +61,10 @@ export const getSessionExternalTask = async (
   const rows = await db.select<SessionExternalTaskRow>(
     'SELECT * FROM session_external_tasks WHERE session_id = ? LIMIT 1',
     [sessionId],
-  );
-  const row = rows[0];
-  return row ? toDomain(row) : null;
-};
+  )
+  const row = rows[0]
+  return row ? toDomain(row) : null
+}
 
 export const listExternalTasksForWorkspace = async (
   db: Database,
@@ -76,13 +76,13 @@ export const listExternalTasksForWorkspace = async (
        INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?`,
     [workspaceId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const removeSessionExternalTask = async (
   db: Database,
   sessionId: SessionId,
 ): Promise<void> => {
-  await db.execute('DELETE FROM session_external_tasks WHERE session_id = ?', [sessionId]);
-};
+  await db.execute('DELETE FROM session_external_tasks WHERE session_id = ?', [sessionId])
+}

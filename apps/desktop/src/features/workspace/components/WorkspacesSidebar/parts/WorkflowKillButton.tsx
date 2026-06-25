@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Ban, Check, X } from 'lucide-react';
+import { useState } from 'react'
+import { Ban, Check, X } from 'lucide-react'
 
 export function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useState(false)
   if (confirming) {
     return (
       <span className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm">
@@ -10,8 +10,8 @@ export function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
         <button
           type="button"
           onClick={() => {
-            setConfirming(false);
-            onConfirm();
+            setConfirming(false)
+            onConfirm()
           }}
           title="confirm discard"
           aria-label="confirm discard workflow"
@@ -29,7 +29,7 @@ export function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
           <X size={12} aria-hidden />
         </button>
       </span>
-    );
+    )
   }
   return (
     <button
@@ -41,5 +41,5 @@ export function WorkflowKillButton({ onConfirm }: { onConfirm: () => void }) {
     >
       <Ban size={11} aria-hidden />
     </button>
-  );
+  )
 }

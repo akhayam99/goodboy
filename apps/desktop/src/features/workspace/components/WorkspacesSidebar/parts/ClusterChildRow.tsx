@@ -1,17 +1,17 @@
-import { StatusDot, cn } from '@goodboy/ui';
-import { Check, Clock } from 'lucide-react';
-import type { Agent } from '@goodboy/types';
-import { agentHasUnread } from '../../../../../store';
+import { StatusDot, cn } from '@goodboy/ui'
+import { Check, Clock } from 'lucide-react'
+import type { Agent } from '@goodboy/types'
+import { agentHasUnread } from '../../../../../store'
 
 type ClusterChildRowProps = {
-  readonly child: Agent;
-  readonly index: number;
-  readonly total: number;
-  readonly costUsd: number;
-  readonly isSelected: boolean;
-  readonly isTaskActive: boolean;
-  readonly onSelect: () => void;
-};
+  readonly child: Agent
+  readonly index: number
+  readonly total: number
+  readonly costUsd: number
+  readonly isSelected: boolean
+  readonly isTaskActive: boolean
+  readonly onSelect: () => void
+}
 
 export function ClusterChildRow({
   child,
@@ -22,7 +22,7 @@ export function ClusterChildRow({
   isTaskActive,
   onSelect,
 }: ClusterChildRowProps) {
-  const hasUnread = agentHasUnread(child, isSelected && isTaskActive);
+  const hasUnread = agentHasUnread(child, isSelected && isTaskActive)
   const icon =
     child.status === 'running' ? (
       <StatusDot tone="info" size="sm" pulsing />
@@ -34,7 +34,7 @@ export function ClusterChildRow({
       <span className="size-1.5 rounded-full bg-danger" aria-hidden />
     ) : (
       <Clock size={10} className="text-muted-foreground/60" aria-hidden />
-    );
+    )
   return (
     <button
       type="button"
@@ -61,5 +61,5 @@ export function ClusterChildRow({
         </span>
       )}
     </button>
-  );
+  )
 }

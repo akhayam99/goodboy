@@ -1,15 +1,15 @@
-import type { ReactNode } from 'react';
-import { cn } from '../cn';
-import { tintClasses, type Tone } from '../tint';
+import type { ReactNode } from 'react'
+import { cn } from '../cn'
+import { tintClasses, type Tone } from '../tint'
 
 export type EyebrowProps = {
-  readonly label: ReactNode;
-  readonly icon?: ReactNode;
-  readonly tone?: Tone;
-  readonly badge?: boolean;
-  readonly muted?: boolean;
-  readonly className?: string;
-};
+  readonly label: ReactNode
+  readonly icon?: ReactNode
+  readonly tone?: Tone
+  readonly badge?: boolean
+  readonly muted?: boolean
+  readonly className?: string
+}
 
 export const Eyebrow = ({
   label,
@@ -20,7 +20,7 @@ export const Eyebrow = ({
   className,
 }: EyebrowProps) => {
   if (badge) {
-    const tint = tintClasses(tone);
+    const tint = tintClasses(tone)
     return (
       <span
         className={cn(
@@ -34,7 +34,7 @@ export const Eyebrow = ({
         {icon}
         {label}
       </span>
-    );
+    )
   }
 
   return (
@@ -49,5 +49,5 @@ export const Eyebrow = ({
       {icon}
       {label}
     </span>
-  );
-};
+  )
+}

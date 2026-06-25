@@ -8,6 +8,6 @@ export {
   type CreatedWorktree,
   type CreateWorktreeOptions,
   type WorktreeInfo,
-} from './worktree';
+} from './worktree'
 
-export { ClaudeAdapter, type ClaudeAdapterDeps } from './providers/claude';
+export { ClaudeAdapter, type ClaudeAdapterDeps } from './providers/claude'

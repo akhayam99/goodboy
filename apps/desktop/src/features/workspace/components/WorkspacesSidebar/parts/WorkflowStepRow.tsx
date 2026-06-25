@@ -1,41 +1,41 @@
-import { useEffect, useState } from 'react';
-import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
-import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { getModelProvider } from '@goodboy/core';
-import { agentHasUnread } from '../../../../../store';
-import type { AgentKind } from '../../../../../features/session/agent-kind';
-import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
+import { useEffect, useState } from 'react'
+import { StatusDot, cn } from '@goodboy/ui'
+import { AlertTriangle, Check, Clock, Play } from 'lucide-react'
+import type { Agent, TelemetryRecord } from '@goodboy/types'
+import { getModelProvider } from '@goodboy/core'
+import { agentHasUnread } from '../../../../../store'
+import type { AgentKind } from '../../../../../features/session/agent-kind'
+import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip'
 import {
   AgentMetricsBlock,
   type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderGlyph } from './ProviderGlyph';
-import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import type { WorkflowBlockReason } from '../lib';
+} from '../../../../../features/session/components/AgentMetricsBlock'
+import { ProviderGlyph } from './ProviderGlyph'
+import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar'
+import type { WorkflowBlockReason } from '../lib'
 
 type WorkflowStepRowProps = {
-  readonly run: Agent;
-  readonly kind: AgentKind;
-  readonly index: number;
-  readonly resolvedModel: string;
-  readonly isActionable: boolean;
-  readonly blockReason: WorkflowBlockReason | null;
-  readonly isSelected: boolean;
-  readonly isTaskActive: boolean;
-  readonly isEditing: boolean;
-  readonly telemetry: TelemetryRecord | null;
-  readonly aggregate: AgentAggregate | null;
-  readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
-  readonly turns: number;
-  readonly turnsLoading: boolean;
-  readonly onStart: () => void;
-  readonly onSelect: () => void;
-  readonly onRenameStart: () => void;
-  readonly onRenameCommit: (name: string) => void;
-  readonly onRenameCancel: () => void;
-  readonly onResolveFirst?: () => void;
-};
+  readonly run: Agent
+  readonly kind: AgentKind
+  readonly index: number
+  readonly resolvedModel: string
+  readonly isActionable: boolean
+  readonly blockReason: WorkflowBlockReason | null
+  readonly isSelected: boolean
+  readonly isTaskActive: boolean
+  readonly isEditing: boolean
+  readonly telemetry: TelemetryRecord | null
+  readonly aggregate: AgentAggregate | null
+  readonly contextUsage: ReadonlyArray<ProviderContextUsage>
+  readonly turns: number
+  readonly turnsLoading: boolean
+  readonly onStart: () => void
+  readonly onSelect: () => void
+  readonly onRenameStart: () => void
+  readonly onRenameCommit: (name: string) => void
+  readonly onRenameCancel: () => void
+  readonly onResolveFirst?: () => void
+}
 
 export function WorkflowStepRow({
   run,
@@ -59,38 +59,38 @@ export function WorkflowStepRow({
   onRenameCancel,
   onResolveFirst,
 }: WorkflowStepRowProps) {
-  const isBlocked = blockReason !== null;
-  const isPendingFuture = run.status === 'pending' && !isActionable;
-  const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
-  const isStartable = isActionable && !isBlocked;
-  const isRunning = run.status === 'running';
-  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
+  const isBlocked = blockReason !== null
+  const isPendingFuture = run.status === 'pending' && !isActionable
+  const modelLabel = resolvedModel.split('-').slice(1, 3).join('-')
+  const isStartable = isActionable && !isBlocked
+  const isRunning = run.status === 'running'
+  const hasUnread = agentHasUnread(run, isSelected && isTaskActive)
 
-  const [draft, setDraft] = useState(run.name);
-  const [pendingConfirm, setPendingConfirm] = useState(false);
+  const [draft, setDraft] = useState(run.name)
+  const [pendingConfirm, setPendingConfirm] = useState(false)
   useEffect(() => {
     if (isEditing) {
-      setDraft(run.name);
+      setDraft(run.name)
     }
-  }, [isEditing, run.name]);
+  }, [isEditing, run.name])
   useEffect(() => {
     if (!isBlocked) {
-      setPendingConfirm(false);
+      setPendingConfirm(false)
     }
-  }, [isBlocked]);
+  }, [isBlocked])
 
   const handleRowClick = () => {
     if (isPendingFuture) {
-      return;
+      return
     }
     if (isStartable) {
-      onStart();
+      onStart()
     } else if (isActionable && isBlocked) {
-      setPendingConfirm(true);
+      setPendingConfirm(true)
     } else {
-      onSelect();
+      onSelect()
     }
-  };
+  }
 
   const containerClass = cn(
     'group rounded border transition-colors',
@@ -108,7 +108,7 @@ export function WorkflowStepRow({
               : isSelected
                 ? 'border-border bg-elevated'
                 : 'border-transparent bg-muted/40 hover:bg-muted/60',
-  );
+  )
 
   const renderStatusIcon = () => {
     if (isStartable) {
@@ -116,13 +116,13 @@ export function WorkflowStepRow({
         <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
           <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
         </span>
-      );
+      )
     }
     if (isActionable && isBlocked) {
-      return <AlertTriangle size={12} className="text-warning" aria-hidden />;
+      return <AlertTriangle size={12} className="text-warning" aria-hidden />
     }
     if (isRunning) {
-      return <StatusDot tone="info" size="md" pulsing />;
+      return <StatusDot tone="info" size="md" pulsing />
     }
     if (run.status === 'completed' || run.status === 'skipped') {
       return (
@@ -138,13 +138,13 @@ export function WorkflowStepRow({
             aria-hidden
           />
         </span>
-      );
+      )
     }
     if (run.status === 'failed') {
-      return <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
+      return <span className="size-1.5 rounded-full bg-danger" aria-hidden />
     }
-    return <Clock size={11} className="text-muted-foreground/50" aria-hidden />;
-  };
+    return <Clock size={11} className="text-muted-foreground/50" aria-hidden />
+  }
 
   const stableTitle =
     isActionable && isBlocked
@@ -153,7 +153,7 @@ export function WorkflowStepRow({
         : 'next workflow step. gated by open questions (click to force)'
       : isPendingFuture
         ? 'waiting for previous steps'
-        : `agent ${run.ordinal + 1}: ${run.status}`;
+        : `agent ${run.ordinal + 1}: ${run.status}`
 
   return (
     <div className="flex flex-col gap-1">
@@ -166,11 +166,11 @@ export function WorkflowStepRow({
         onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
         onKeyDown={(e) => {
           if (isEditing) {
-            return;
+            return
           }
           if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleRowClick();
+            e.preventDefault()
+            handleRowClick()
           }
         }}
         className={containerClass}
@@ -197,13 +197,13 @@ export function WorkflowStepRow({
               onClick={(e) => e.stopPropagation()}
               onDoubleClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
-                e.stopPropagation();
+                e.stopPropagation()
                 if (e.key === 'Enter') {
-                  e.preventDefault();
-                  onRenameCommit(draft);
+                  e.preventDefault()
+                  onRenameCommit(draft)
                 } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  onRenameCancel();
+                  e.preventDefault()
+                  onRenameCancel()
                 }
               }}
               onBlur={() => onRenameCommit(draft)}
@@ -270,10 +270,10 @@ export function WorkflowStepRow({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation();
-              setPendingConfirm(false);
+              e.stopPropagation()
+              setPendingConfirm(false)
               if (blockReason !== 'summarizer') {
-                onResolveFirst?.();
+                onResolveFirst?.()
               }
             }}
             className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -283,9 +283,9 @@ export function WorkflowStepRow({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation();
-              setPendingConfirm(false);
-              onStart();
+              e.stopPropagation()
+              setPendingConfirm(false)
+              onStart()
             }}
             className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold text-warning transition-colors hover:bg-warning/10"
           >
@@ -294,5 +294,5 @@ export function WorkflowStepRow({
         </div>
       ) : null}
     </div>
-  );
+  )
 }

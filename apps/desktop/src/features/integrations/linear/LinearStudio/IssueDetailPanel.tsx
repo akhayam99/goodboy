@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 import {
   Button,
   Divider,
@@ -9,7 +9,7 @@ import {
   StatusDot,
   Textarea,
   cn,
-} from '@goodboy/ui';
+} from '@goodboy/ui'
 import {
   AlertTriangle,
   ArrowRight,
@@ -19,31 +19,31 @@ import {
   MessagesSquare,
   MousePointerClick,
   Target,
-} from 'lucide-react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
-import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors';
-import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
-import { removeWorktree } from '../../../worktree/worktree';
-import { useBranchConflict } from '../../../worktree/useBranchConflict';
-import { ghPrHeadBranch } from '../../../github/github';
-import { goalFromIssue } from '../goal-from-issue';
-import { issuePullRequests, type LinearIssue } from '../client';
+} from 'lucide-react'
+import type { SessionId, WorkspaceId } from '@goodboy/types'
+import { ScrollFade } from '@goodboy/ui'
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
+import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors'
+import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide'
+import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings'
+import { removeWorktree } from '../../../worktree/worktree'
+import { useBranchConflict } from '../../../worktree/useBranchConflict'
+import { ghPrHeadBranch } from '../../../github/github'
+import { goalFromIssue } from '../goal-from-issue'
+import { issuePullRequests, type LinearIssue } from '../client'
 
-type BranchMode = 'pr' | 'fresh';
+type BranchMode = 'pr' | 'fresh'
 
 type Props = {
-  readonly issue: LinearIssue | null;
-  readonly sessionId: SessionId | null;
-  readonly workspaceId: WorkspaceId;
-  readonly onClose: () => void;
-};
+  readonly issue: LinearIssue | null
+  readonly sessionId: SessionId | null
+  readonly workspaceId: WorkspaceId
+  readonly onClose: () => void
+}
 
-const SLUG_MAX_LEN = 48;
+const SLUG_MAX_LEN = 48
 
 function slugify(input: string): string {
   return input
@@ -53,7 +53,7 @@ function slugify(input: string): string {
     .replace(/[\s_]+/g, '-')
     .replace(/-+/g, '-')
     .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
+    .replace(/-+$/, '')
 }
 
 function sanitizeSlug(input: string): string {
@@ -61,7 +61,7 @@ function sanitizeSlug(input: string): string {
     .replace(/[^a-zA-Z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
+    .slice(0, SLUG_MAX_LEN)
 }
 
 function sanitizePrefix(input: string): string {
@@ -69,123 +69,123 @@ function sanitizePrefix(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '')
     .replace(/^-+/, '')
-    .slice(0, 16);
+    .slice(0, 16)
 }
 
 function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
+  const s = slug.trim()
   if (!s) {
-    return false;
+    return false
   }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
+  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..')
 }
 
 function branchSlugFor(issue: LinearIssue): string {
-  const branchName = issue.branchName;
+  const branchName = issue.branchName
   if (branchName) {
-    const idx = branchName.indexOf('/');
-    const tail = idx >= 0 ? branchName.slice(idx + 1) : branchName;
-    const cleaned = sanitizeSlug(tail);
+    const idx = branchName.indexOf('/')
+    const tail = idx >= 0 ? branchName.slice(idx + 1) : branchName
+    const cleaned = sanitizeSlug(tail)
     if (cleaned.length > 0) {
-      return cleaned;
+      return cleaned
     }
   }
-  return slugify(issue.title);
+  return slugify(issue.title)
 }
 
 function prStatusTone(status: string | null): string {
   switch (status?.toLowerCase()) {
     case 'merged':
-      return 'border-primary/40 bg-primary/10 text-primary';
+      return 'border-primary/40 bg-primary/10 text-primary'
     case 'open':
-      return 'border-success/40 bg-success/10 text-success';
+      return 'border-success/40 bg-success/10 text-success'
     case 'draft':
-      return 'border-border-soft bg-muted/50 text-muted-foreground';
+      return 'border-border-soft bg-muted/50 text-muted-foreground'
     case 'closed':
-      return 'border-danger/40 bg-danger/10 text-danger';
+      return 'border-danger/40 bg-danger/10 text-danger'
     default:
-      return 'border-border-soft bg-muted/40 text-muted-foreground';
+      return 'border-border-soft bg-muted/40 text-muted-foreground'
   }
 }
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
-  const createSession = useAppStore((s) => s.createSession);
-  const loadSetting = useAppStore((s) => s.loadSetting);
+  const createSession = useAppStore((s) => s.createSession)
+  const loadSetting = useAppStore((s) => s.loadSetting)
   const rootPath = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
-  );
-  const { showToast } = useToast();
+  )
+  const { showToast } = useToast()
 
-  const adoptablePr = issue ? (issuePullRequests(issue).find((pr) => pr.repo) ?? null) : null;
+  const adoptablePr = issue ? (issuePullRequests(issue).find((pr) => pr.repo) ?? null) : null
 
-  const [goal, setGoal] = useState('');
-  const [branchSlug, setBranchSlug] = useState('');
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [mode, setMode] = useState<BranchMode>('fresh');
-  const [prBranch, setPrBranch] = useState<string | null>(null);
-  const [prResolving, setPrResolving] = useState(false);
-  const [prError, setPrError] = useState<string | null>(null);
+  const [goal, setGoal] = useState('')
+  const [branchSlug, setBranchSlug] = useState('')
+  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX)
+  const [mode, setMode] = useState<BranchMode>('fresh')
+  const [prBranch, setPrBranch] = useState<string | null>(null)
+  const [prResolving, setPrResolving] = useState(false)
+  const [prError, setPrError] = useState<string | null>(null)
   const [setupWorkflow, setSetupWorkflow] = useState(() => {
     try {
-      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
+      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0'
     } catch {
-      return true;
+      return true
     }
-  });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const conflict = useBranchConflict(mode === 'pr' ? prBranch : null, rootPath);
-  const branchSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
-  const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
+  const conflict = useBranchConflict(mode === 'pr' ? prBranch : null, rootPath)
+  const branchSessionId = conflict?.kind === 'session' ? conflict.sessionId : null
+  const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null
 
   useEffect(() => {
     if (!issue) {
-      return;
+      return
     }
-    setGoal(goalFromIssue(issue));
-    setBranchSlug(branchSlugFor(issue));
-    setError(null);
-    setBusy(false);
-    setMode(issuePullRequests(issue).some((pr) => pr.repo) ? 'pr' : 'fresh');
-    setPrBranch(null);
-    setPrError(null);
-  }, [issue]);
+    setGoal(goalFromIssue(issue))
+    setBranchSlug(branchSlugFor(issue))
+    setError(null)
+    setBusy(false)
+    setMode(issuePullRequests(issue).some((pr) => pr.repo) ? 'pr' : 'fresh')
+    setPrBranch(null)
+    setPrError(null)
+  }, [issue])
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((value) => {
-      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
-    });
-  }, [workspaceId, loadSetting]);
+      setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX)
+    })
+  }, [workspaceId, loadSetting])
 
   useEffect(() => {
     if (mode !== 'pr' || !adoptablePr?.repo || !rootPath) {
-      return;
+      return
     }
-    const prNumber = adoptablePr.number;
-    let cancelled = false;
-    setPrResolving(true);
-    setPrError(null);
+    const prNumber = adoptablePr.number
+    let cancelled = false
+    setPrResolving(true)
+    setPrError(null)
     ghPrHeadBranch(rootPath, prNumber, workspaceId)
       .then((branch) => {
         if (!cancelled) {
-          setPrBranch(branch);
+          setPrBranch(branch)
         }
       })
       .catch((err) => {
         if (!cancelled) {
-          setPrError(formatError(err));
+          setPrError(formatError(err))
         }
       })
       .finally(() => {
         if (!cancelled) {
-          setPrResolving(false);
+          setPrResolving(false)
         }
-      });
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [mode, adoptablePr?.repo, adoptablePr?.number, rootPath]);
+      cancelled = true
+    }
+  }, [mode, adoptablePr?.repo, adoptablePr?.number, rootPath])
 
   if (!issue) {
     return (
@@ -196,25 +196,25 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           description="Pick an issue to see its details and launch a session."
         />
       </div>
-    );
+    )
   }
 
-  const openableSessionId = sessionId ?? branchSessionId;
+  const openableSessionId = sessionId ?? branchSessionId
 
   const branchReady =
-    mode === 'pr' ? Boolean(prBranch) && !prResolving : isValidBranchSlug(branchSlug);
-  const missingBase = error !== null && isMissingBaseRefError(error);
-  const blockedByConflict = mode === 'pr' && conflictPath !== null;
-  const canLaunch = goal.trim().length > 0 && branchReady && !busy && !blockedByConflict;
+    mode === 'pr' ? Boolean(prBranch) && !prResolving : isValidBranchSlug(branchSlug)
+  const missingBase = error !== null && isMissingBaseRefError(error)
+  const blockedByConflict = mode === 'pr' && conflictPath !== null
+  const canLaunch = goal.trim().length > 0 && branchReady && !busy && !blockedByConflict
 
   const onLaunch = async (eraseWorktreePath?: string) => {
-    setError(null);
-    setBusy(true);
+    setError(null)
+    setBusy(true)
     try {
       if (eraseWorktreePath && rootPath) {
-        await removeWorktree(rootPath, eraseWorktreePath);
+        await removeWorktree(rootPath, eraseWorktreePath)
       }
-      const adoptBranch = mode === 'pr' ? (prBranch ?? undefined) : undefined;
+      const adoptBranch = mode === 'pr' ? (prBranch ?? undefined) : undefined
       const { session } = await createSession({
         workspaceId,
         goal,
@@ -228,35 +228,35 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           url: issue.url,
           title: issue.title,
         },
-      });
-      showToast('success', `Session created: ${session.goal}`);
-      onClose();
+      })
+      showToast('success', `Session created: ${session.goal}`)
+      onClose()
       if (setupWorkflow) {
         setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent('goodboy:open-workflow-builder', {
               detail: { sessionId: session.id },
             }),
-          );
-        }, 0);
+          )
+        }, 0)
       }
     } catch (err) {
-      setError(formatError(err));
+      setError(formatError(err))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onToggleSetupWorkflow = (next: boolean) => {
-    setSetupWorkflow(next);
+    setSetupWorkflow(next)
     try {
-      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
+      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0')
     } catch {
-      void 0;
+      void 0
     }
-  };
+  }
 
-  const linkedPrs = issuePullRequests(issue);
+  const linkedPrs = issuePullRequests(issue)
 
   return (
     <div className="flex h-full flex-col">
@@ -496,8 +496,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </ScrollFade>
       </div>
     </div>
-  );
-};
+  )
+}
 
 function BranchModeButton({
   active,
@@ -505,10 +505,10 @@ function BranchModeButton({
   onClick,
   label,
 }: {
-  active: boolean;
-  disabled: boolean;
-  onClick: () => void;
-  label: string;
+  active: boolean
+  disabled: boolean
+  onClick: () => void
+  label: string
 }) {
   return (
     <button
@@ -527,7 +527,7 @@ function BranchModeButton({
     >
       {label}
     </button>
-  );
+  )
 }
 
 function LaunchField({
@@ -535,14 +535,14 @@ function LaunchField({
   label,
   children,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
+  icon: React.ReactNode
+  label: string
+  children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <SectionHeader label={label} icon={icon} />
       {children}
     </div>
-  );
+  )
 }

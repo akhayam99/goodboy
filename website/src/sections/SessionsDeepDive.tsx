@@ -1,5 +1,5 @@
-import { Section } from '../components/Section';
-import { SessionsSnapshot } from '../mockups/Snapshots';
+import { Section } from '../components/Section'
+import { SessionsSnapshot } from '../mockups/Snapshots'
 
 export function SessionsDeepDive() {
   return (
@@ -17,5 +17,5 @@ export function SessionsDeepDive() {
     >
       <SessionsSnapshot />
     </Section>
-  );
+  )
 }

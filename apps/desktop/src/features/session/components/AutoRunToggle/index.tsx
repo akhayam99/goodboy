@@ -1,32 +1,28 @@
-import { Zap, ZapOff } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { Zap, ZapOff } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import type { Session, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly session: Session;
-};
+  readonly session: Session
+}
 
 export const AutoRunToggle = ({ session }: Props) => {
-  const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
-  const hasWorkflow = session.workflowRuns.length > 0;
-  const anyRunAuto = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
+  const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun)
+  const hasWorkflow = session.workflowRuns.length > 0
+  const anyRunAuto = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt)
   const tooltip = !hasWorkflow
     ? 'no workflow configured, auto-run unavailable'
     : anyRunAuto
       ? 'autorun on, click to pause'
-      : 'autorun off, click to enable';
-  const ariaLabel = !hasWorkflow
-    ? 'autorun unavailable'
-    : anyRunAuto
-      ? 'autorun on'
-      : 'autorun off';
-  const on = hasWorkflow && anyRunAuto;
+      : 'autorun off, click to enable'
+  const ariaLabel = !hasWorkflow ? 'autorun unavailable' : anyRunAuto ? 'autorun on' : 'autorun off'
+  const on = hasWorkflow && anyRunAuto
   const cls = !hasWorkflow
     ? 'text-muted-foreground/25 cursor-not-allowed'
     : on
       ? 'bg-danger/10 text-danger hover:bg-danger/15'
-      : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground';
+      : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground'
 
   return (
     <button
@@ -34,9 +30,9 @@ export const AutoRunToggle = ({ session }: Props) => {
       disabled={!hasWorkflow}
       onClick={() => {
         if (!hasWorkflow) {
-          return;
+          return
         }
-        void setSessionAutoRun(session.id as SessionId, !on);
+        void setSessionAutoRun(session.id as SessionId, !on)
       }}
       title={tooltip}
       aria-label={ariaLabel}
@@ -58,5 +54,5 @@ export const AutoRunToggle = ({ session }: Props) => {
       </span>
       {on ? <Zap size={13} aria-hidden /> : <ZapOff size={13} aria-hidden />}
     </button>
-  );
-};
+  )
+}

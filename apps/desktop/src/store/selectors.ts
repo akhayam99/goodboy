@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { worktreeChangedFiles } from '../features/worktree/worktree';
+import { useEffect, useMemo, useState } from 'react'
+import { worktreeChangedFiles } from '../features/worktree/worktree'
 import type {
   Agent,
   ContextSlot,
@@ -13,99 +13,97 @@ import type {
   SessionStageInfo,
   SessionViewPrefs,
   WorkspaceId,
-} from '@goodboy/types';
-import type { Workspace } from '@goodboy/types';
+} from '@goodboy/types'
+import type { Workspace } from '@goodboy/types'
 import {
   useAppStore,
   type AppState,
   type SessionLoadingFlags,
   type SummarizerSessionStatus,
-} from './store';
+} from './store'
 import {
   deriveSessionStage,
   sortAndGroupSessions,
   type GroupedSessions,
-} from './slices/session-view';
+} from './slices/session-view'
 
-const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
+const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' }
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
-  const prefs = useAppStore((s) =>
-    workspaceId ? (s.sessionViewPrefs[workspaceId] ?? null) : null,
-  );
-  const getSessionViewPrefs = useAppStore((s) => s.getSessionViewPrefs);
+  const prefs = useAppStore((s) => (workspaceId ? (s.sessionViewPrefs[workspaceId] ?? null) : null))
+  const getSessionViewPrefs = useAppStore((s) => s.getSessionViewPrefs)
 
   useEffect(() => {
     if (workspaceId && prefs === null) {
-      getSessionViewPrefs(workspaceId);
+      getSessionViewPrefs(workspaceId)
     }
-  }, [workspaceId, prefs, getSessionViewPrefs]);
+  }, [workspaceId, prefs, getSessionViewPrefs])
 
-  return prefs ?? DEFAULT_SESSION_VIEW_PREFS;
-};
+  return prefs ?? DEFAULT_SESSION_VIEW_PREFS
+}
 
-const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
+const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({})
 
 function countOpenQuestions(state: AppState, sessionId: SessionId): number {
-  const questions = state.sessionOpenQuestions[sessionId];
+  const questions = state.sessionOpenQuestions[sessionId]
   if (!questions) {
-    return 0;
+    return 0
   }
-  return questions.filter((q) => q.status === 'open').length;
+  return questions.filter((q) => q.status === 'open').length
 }
 
 function sessionHasUnreadIn(state: AppState, sessionId: SessionId): boolean {
-  const runs = state.sessionPhaseRuns[sessionId];
+  const runs = state.sessionPhaseRuns[sessionId]
   if (!runs) {
-    return false;
+    return false
   }
-  const selected = state.selectedAgentId[sessionId] ?? null;
-  const isCurrent = state.currentSessionId === sessionId;
-  return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected));
+  const selected = state.selectedAgentId[sessionId] ?? null
+  const isCurrent = state.currentSessionId === sessionId
+  return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected))
 }
 
 function sessionHasRunningAgentIn(state: AppState, sessionId: SessionId): boolean {
-  const runs = state.sessionPhaseRuns[sessionId];
-  return runs ? runs.some((r) => r.status === 'running') : false;
+  const runs = state.sessionPhaseRuns[sessionId]
+  return runs ? runs.some((r) => r.status === 'running') : false
 }
 
 function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
-  const sessionId = session.id as SessionId;
+  const sessionId = session.id as SessionId
   return deriveSessionStage({
     session,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
-  });
+  })
 }
 
 export const useSessionStageInfo = (session: Session): SessionStageInfo => {
-  const stage = useAppStore((s) => stageInfoOf(s, session).stage);
-  const reason = useAppStore((s) => stageInfoOf(s, session).reason);
-  return useMemo(() => ({ stage, reason }), [stage, reason]);
-};
+  const stage = useAppStore((s) => stageInfoOf(s, session).stage)
+  const reason = useAppStore((s) => stageInfoOf(s, session).reason)
+  return useMemo(() => ({ stage, reason }), [stage, reason])
+}
 
 export const useSortedGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> => {
-  const prefs = useSessionViewPrefs(workspaceId);
-  const needsGithub = prefs.group === 'pr' || prefs.group === 'stage';
-  const needsStage = prefs.group === 'stage';
+  const prefs = useSessionViewPrefs(workspaceId)
+  const needsGithub = prefs.group === 'pr' || prefs.group === 'stage'
+  const needsStage = prefs.group === 'stage'
   const sessionGithub = useAppStore((s) =>
     needsGithub ? s.sessionGithub : (EMPTY_GITHUB_STATE as typeof s.sessionGithub),
-  );
+  )
   const sessionOpenQuestions = useAppStore((s) =>
     needsStage ? s.sessionOpenQuestions : (EMPTY_GITHUB_STATE as typeof s.sessionOpenQuestions),
-  );
+  )
   const sessionPhaseRuns = useAppStore((s) =>
     needsStage ? s.sessionPhaseRuns : (EMPTY_GITHUB_STATE as typeof s.sessionPhaseRuns),
-  );
+  )
   const selectedAgentId = useAppStore((s) =>
     needsStage ? s.selectedAgentId : (EMPTY_GITHUB_STATE as typeof s.selectedAgentId),
-  );
-  const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
+  )
+  const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null))
   return useMemo(() => {
     const partial = {
       sessionGithub,
@@ -113,14 +111,14 @@ export const useSortedGroupedSessions = (
       sessionPhaseRuns,
       selectedAgentId,
       currentSessionId,
-    };
-    const stages: Record<SessionId, SessionStage> = {};
+    }
+    const stages: Record<SessionId, SessionStage> = {}
     if (needsStage) {
       for (const session of sessions) {
-        stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage;
+        stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage
       }
     }
-    return sortAndGroupSessions(sessions, prefs, sessionGithub, stages);
+    return sortAndGroupSessions(sessions, prefs, sessionGithub, stages)
   }, [
     sessions,
     prefs,
@@ -130,19 +128,19 @@ export const useSortedGroupedSessions = (
     sessionPhaseRuns,
     selectedAgentId,
     currentSessionId,
-  ]);
-};
+  ])
+}
 
 export const useStageGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> => {
-  const prefs = useSessionViewPrefs(workspaceId);
-  const sessionGithub = useAppStore((s) => s.sessionGithub);
-  const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
-  const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId);
-  const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const prefs = useSessionViewPrefs(workspaceId)
+  const sessionGithub = useAppStore((s) => s.sessionGithub)
+  const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions)
+  const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns)
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId)
+  const currentSessionId = useAppStore((s) => s.currentSessionId)
   return useMemo(() => {
     const partial = {
       sessionGithub,
@@ -150,17 +148,17 @@ export const useStageGroupedSessions = (
       sessionPhaseRuns,
       selectedAgentId,
       currentSessionId,
-    };
-    const stages: Record<SessionId, SessionStage> = {};
+    }
+    const stages: Record<SessionId, SessionStage> = {}
     for (const session of sessions) {
-      stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage;
+      stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage
     }
     return sortAndGroupSessions(
       sessions,
       { sort: prefs.sort, group: 'stage' },
       sessionGithub,
       stages,
-    );
+    )
   }, [
     sessions,
     prefs.sort,
@@ -169,46 +167,46 @@ export const useStageGroupedSessions = (
     sessionPhaseRuns,
     selectedAgentId,
     currentSessionId,
-  ]);
-};
+  ])
+}
 
 export type WorkspaceRollup = {
-  readonly attentionCount: number;
-  readonly runningCount: number;
-  readonly todaySpend: number;
-};
+  readonly attentionCount: number
+  readonly runningCount: number
+  readonly todaySpend: number
+}
 
 export const useWorkspaceRollup = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): WorkspaceRollup => {
-  const groups = useStageGroupedSessions(workspaceId, sessions);
-  const sessionTelemetry = useAppStore((s) => s.sessionTelemetry);
+  const groups = useStageGroupedSessions(workspaceId, sessions)
+  const sessionTelemetry = useAppStore((s) => s.sessionTelemetry)
   return useMemo(() => {
-    const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0;
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const cutoff = startOfDay.toISOString();
-    let todaySpend = 0;
+    const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+    const cutoff = startOfDay.toISOString()
+    let todaySpend = 0
     for (const session of sessions) {
-      const recs = sessionTelemetry[session.id as SessionId];
+      const recs = sessionTelemetry[session.id as SessionId]
       if (!recs) {
-        continue;
+        continue
       }
       for (const rec of recs) {
         if (rec.kind === 'summarizer' || rec.recordedAt < cutoff) {
-          continue;
+          continue
         }
-        todaySpend += rec.estimatedCostUsd;
+        todaySpend += rec.estimatedCostUsd
       }
     }
     return {
       attentionCount: countOf('attention'),
       runningCount: countOf('running'),
       todaySpend,
-    };
-  }, [groups, sessionTelemetry, sessions]);
-};
+    }
+  }, [groups, sessionTelemetry, sessions])
+}
 
 const NO_LOADING: SessionLoadingFlags = {
   agents: false,
@@ -217,39 +215,39 @@ const NO_LOADING: SessionLoadingFlags = {
   slots: false,
   plans: false,
   summary: false,
-};
+}
 
 export const useSessionLoading = (sessionId: SessionId | null): SessionLoadingFlags =>
-  useAppStore((s) => (sessionId ? (s.sessionLoading[sessionId] ?? NO_LOADING) : NO_LOADING));
+  useAppStore((s) => (sessionId ? (s.sessionLoading[sessionId] ?? NO_LOADING) : NO_LOADING))
 
-const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces;
+const selectWorkspaces = (state: AppState): ReadonlyArray<Workspace> => state.workspaces
 const selectCurrentWorkspace = (state: AppState): Workspace | null =>
-  state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null;
-const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
+  state.workspaces.find((w) => w.id === state.currentWorkspaceId) ?? null
+const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions
 
 function findSessionInAnyPool(state: AppState, id: string | null): Session | null {
   if (!id) {
-    return null;
+    return null
   }
-  const active = state.sessions.find((s) => s.id === id);
+  const active = state.sessions.find((s) => s.id === id)
   if (active) {
-    return active;
+    return active
   }
   for (const list of Object.values(state.archivedSessions)) {
-    const hit = list.find((s) => s.id === id);
+    const hit = list.find((s) => s.id === id)
     if (hit) {
-      return hit;
+      return hit
     }
   }
-  return null;
+  return null
 }
 
 const selectCurrentSession = (state: AppState): Session | null =>
-  findSessionInAnyPool(state, state.currentSessionId);
-export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);
-export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace);
-export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
-export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession);
+  findSessionInAnyPool(state, state.currentSessionId)
+export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces)
+export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace)
+export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions)
+export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession)
 
 export const useSessionById = (id: SessionId | null): Session | null => {
   const selector = useMemo(
@@ -257,21 +255,21 @@ export const useSessionById = (id: SessionId | null): Session | null => {
       (state: AppState): Session | null =>
         findSessionInAnyPool(state, id),
     [id],
-  );
-  return useAppStore(selector);
-};
+  )
+  return useAppStore(selector)
+}
 
-const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = [];
+const EMPTY_SLOTS: ReadonlyArray<ContextSlot> = []
 
 export const useSessionSlots = (sessionId: SessionId | null): ReadonlyArray<ContextSlot> =>
-  useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS));
+  useAppStore((s) => (sessionId ? (s.sessionSlots[sessionId] ?? EMPTY_SLOTS) : EMPTY_SLOTS))
 
-const EMPTY_OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
+const EMPTY_OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = []
 
 export const useSessionOpenQuestions = (sessionId: SessionId | null): ReadonlyArray<OpenQuestion> =>
   useAppStore((s) =>
     sessionId ? (s.sessionOpenQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS) : EMPTY_OPEN_QUESTIONS,
-  );
+  )
 
 export const useSessionAnsweredQuestions = (
   sessionId: SessionId | null,
@@ -280,7 +278,7 @@ export const useSessionAnsweredQuestions = (
     sessionId
       ? (s.sessionAnsweredQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS)
       : EMPTY_OPEN_QUESTIONS,
-  );
+  )
 
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',
@@ -288,12 +286,12 @@ const IDLE_STATUS: SummarizerSessionStatus = {
   error: null,
   lastUsage: null,
   lastAttempt: null,
-};
+}
 
 export const useSummarizerStatus = (sessionId: SessionId | null): SummarizerSessionStatus =>
-  useAppStore((s) => (sessionId ? (s.summarizerStatus[sessionId] ?? IDLE_STATUS) : IDLE_STATUS));
+  useAppStore((s) => (sessionId ? (s.summarizerStatus[sessionId] ?? IDLE_STATUS) : IDLE_STATUS))
 
-const EMPTY_HISTORY: ReadonlyArray<ContextSlotHistoryEntry> = [];
+const EMPTY_HISTORY: ReadonlyArray<ContextSlotHistoryEntry> = []
 
 export const useSlotHistory = (
   sessionId: SessionId | null,
@@ -301,26 +299,26 @@ export const useSlotHistory = (
 ): ReadonlyArray<ContextSlotHistoryEntry> =>
   useAppStore((s) =>
     sessionId ? (s.slotHistory[sessionId]?.[key] ?? EMPTY_HISTORY) : EMPTY_HISTORY,
-  );
+  )
 
-const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = [];
+const EMPTY_COMMENTS: ReadonlyArray<DiffComment> = []
 
 export const useDiffComments = (sessionId: SessionId | null): ReadonlyArray<DiffComment> =>
-  useAppStore((s) => (sessionId ? (s.diffComments[sessionId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS));
+  useAppStore((s) => (sessionId ? (s.diffComments[sessionId] ?? EMPTY_COMMENTS) : EMPTY_COMMENTS))
 
-const EMPTY_PLANS: ReadonlyArray<PlanWithCount> = [];
+const EMPTY_PLANS: ReadonlyArray<PlanWithCount> = []
 
 export const useSessionPlans = (sessionId: SessionId | null): ReadonlyArray<PlanWithCount> =>
-  useAppStore((s) => (sessionId ? (s.sessionPlans[sessionId] ?? EMPTY_PLANS) : EMPTY_PLANS));
+  useAppStore((s) => (sessionId ? (s.sessionPlans[sessionId] ?? EMPTY_PLANS) : EMPTY_PLANS))
 
 export type FilesTouched = {
-  readonly paths: ReadonlyArray<string>;
-  readonly count: number;
-  readonly additions: number;
-  readonly deletions: number;
-};
+  readonly paths: ReadonlyArray<string>
+  readonly count: number
+  readonly additions: number
+  readonly deletions: number
+}
 
-const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 };
+const EMPTY_FILES_TOUCHED: FilesTouched = { paths: [], count: 0, additions: 0, deletions: 0 }
 
 export const useFilesTouched = (
   sessionId: SessionId | null,
@@ -328,42 +326,42 @@ export const useFilesTouched = (
 ): FilesTouched => {
   const workingDir = useAppStore((s) =>
     sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
-  );
+  )
   const lastTurnFinishedAt = useAppStore((s) => {
     if (!sessionId) {
-      return null;
+      return null
     }
-    const runs = s.sessionPhaseRuns[sessionId];
+    const runs = s.sessionPhaseRuns[sessionId]
     if (!runs) {
-      return null;
+      return null
     }
-    let max: string | null = null;
+    let max: string | null = null
     for (const run of runs) {
-      const t = run.lastFinishedAt ?? null;
+      const t = run.lastFinishedAt ?? null
       if (t && (max === null || t > max)) {
-        max = t;
+        max = t
       }
     }
-    return max;
-  });
+    return max
+  })
   const summarizerLastUpdate = useAppStore((s) =>
     sessionId ? (s.summarizerStatus[sessionId]?.lastUpdate ?? null) : null,
-  );
+  )
 
-  const [state, setState] = useState<FilesTouched>(EMPTY_FILES_TOUCHED);
+  const [state, setState] = useState<FilesTouched>(EMPTY_FILES_TOUCHED)
 
   useEffect(() => {
     if (!isActive || !workingDir) {
       if (!workingDir) {
-        setState(EMPTY_FILES_TOUCHED);
+        setState(EMPTY_FILES_TOUCHED)
       }
-      return;
+      return
     }
-    let cancelled = false;
+    let cancelled = false
     worktreeChangedFiles(workingDir)
       .then((summary) => {
         if (cancelled) {
-          return;
+          return
         }
         setState(
           summary.paths.length === 0
@@ -374,71 +372,69 @@ export const useFilesTouched = (
                 additions: summary.additions,
                 deletions: summary.deletions,
               },
-        );
+        )
       })
       .catch(() => {
         if (!cancelled) {
-          setState(EMPTY_FILES_TOUCHED);
+          setState(EMPTY_FILES_TOUCHED)
         }
-      });
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [isActive, workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
+      cancelled = true
+    }
+  }, [isActive, workingDir, lastTurnFinishedAt, summarizerLastUpdate])
 
-  return state;
-};
+  return state
+}
 
 export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolean => {
   if (isCurrentlyViewed) {
-    return false;
+    return false
   }
   if (agent.status === 'skipped') {
-    return false;
+    return false
   }
   if (!agent.lastFinishedAt) {
-    return false;
+    return false
   }
   if (!agent.lastViewedAt) {
-    return true;
+    return true
   }
-  return agent.lastFinishedAt > agent.lastViewedAt;
-};
+  return agent.lastFinishedAt > agent.lastViewedAt
+}
 
 export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {
-  const phaseRuns = useAppStore((s) =>
-    sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
-  );
+  const phaseRuns = useAppStore((s) => (sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null))
   const selectedAgentId = useAppStore((s) =>
     sessionId ? (s.selectedAgentId[sessionId] ?? null) : null,
-  );
+  )
   const isCurrentSession = useAppStore(
     (s) => sessionId !== null && s.currentSessionId === sessionId,
-  );
+  )
   return useMemo(() => {
     if (!phaseRuns) {
-      return false;
+      return false
     }
-    return phaseRuns.some((r) => agentHasUnread(r, isCurrentSession && r.id === selectedAgentId));
-  }, [phaseRuns, selectedAgentId, isCurrentSession]);
-};
+    return phaseRuns.some((r) => agentHasUnread(r, isCurrentSession && r.id === selectedAgentId))
+  }, [phaseRuns, selectedAgentId, isCurrentSession])
+}
 
 export const useWorkspaceHasUnread = (workspaceId: WorkspaceId | null): boolean =>
-  useAppStore((s) => (workspaceId ? s.unreadWorkspaceIds.has(workspaceId) : false));
+  useAppStore((s) => (workspaceId ? s.unreadWorkspaceIds.has(workspaceId) : false))
 
 export const useHasUnreadElsewhere = (currentId: WorkspaceId | null): boolean => {
-  const unread = useAppStore((s) => s.unreadWorkspaceIds);
-  const presence = useAppStore((s) => s.windowPresence);
+  const unread = useAppStore((s) => s.unreadWorkspaceIds)
+  const presence = useAppStore((s) => s.windowPresence)
   return useMemo(() => {
-    const shown = new Set<WorkspaceId>();
+    const shown = new Set<WorkspaceId>()
     for (const ws of Object.values(presence))
       if (ws) {
-        shown.add(ws);
+        shown.add(ws)
       }
     for (const id of unread)
       if (id !== currentId && !shown.has(id)) {
-        return true;
+        return true
       }
-    return false;
-  }, [unread, presence, currentId]);
-};
+    return false
+  }, [unread, presence, currentId])
+}

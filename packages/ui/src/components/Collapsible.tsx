@@ -1,13 +1,13 @@
-import { useId, type ReactNode } from 'react';
-import { cn } from '../cn';
+import { useId, type ReactNode } from 'react'
+import { cn } from '../cn'
 
 export type CollapsibleProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  trigger: ReactNode;
-  children: ReactNode;
-  className?: string;
-};
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  trigger: ReactNode
+  children: ReactNode
+  className?: string
+}
 
 export const Collapsible = ({
   open,
@@ -16,7 +16,7 @@ export const Collapsible = ({
   children,
   className,
 }: CollapsibleProps) => {
-  const panelId = useId();
+  const panelId = useId()
   return (
     <div className={className}>
       <button
@@ -43,5 +43,5 @@ export const Collapsible = ({
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

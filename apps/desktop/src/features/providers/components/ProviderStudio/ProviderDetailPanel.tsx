@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { cn, Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { useCallback, useState } from 'react'
+import { cn, Divider, ScrollFade, SectionHeader } from '@goodboy/ui'
 import {
   ArrowRight,
   Download,
@@ -8,18 +8,18 @@ import {
   Sparkles,
   TriangleAlert,
   type LucideIcon,
-} from 'lucide-react';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import type { ProviderInfo } from '../../../../features/providers/providers';
-import { useAppStore } from '../../../../store';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
-import { ProviderCredentialsSection } from './ProviderCredentialsSection';
-import { ProviderBindingsSection } from './ProviderBindingsSection';
+} from 'lucide-react'
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
+import type { ProviderInfo } from '../../../../features/providers/providers'
+import { useAppStore } from '../../../../store'
+import { brandColor, PROVIDER_BRAND } from '../provider-brand'
+import { ProviderCredentialsSection } from './ProviderCredentialsSection'
+import { ProviderBindingsSection } from './ProviderBindingsSection'
 
 type Props = {
-  readonly info: ProviderInfo | null;
-  readonly onConnect: (action: ProviderLifecycleAction) => void;
-};
+  readonly info: ProviderInfo | null
+  readonly onConnect: (action: ProviderLifecycleAction) => void
+}
 
 export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
   if (!info) {
@@ -27,41 +27,41 @@ export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
         Select a provider
       </div>
-    );
+    )
   }
-  return <Detail info={info} onConnect={onConnect} />;
-};
+  return <Detail info={info} onConnect={onConnect} />
+}
 
 function Detail({
   info,
   onConnect,
 }: {
-  readonly info: ProviderInfo;
-  readonly onConnect: (action: ProviderLifecycleAction) => void;
+  readonly info: ProviderInfo
+  readonly onConnect: (action: ProviderLifecycleAction) => void
 }) {
-  const id = info.id as ProviderId;
-  const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? Sparkles;
-  const color = brandColor(id);
-  const lifecycle = useAppStore((s) => s.providerLifecycle[id]);
-  const logoutProvider = useAppStore((s) => s.logoutProvider);
-  const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const id = info.id as ProviderId
+  const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? Sparkles
+  const color = brandColor(id)
+  const lifecycle = useAppStore((s) => s.providerLifecycle[id])
+  const logoutProvider = useAppStore((s) => s.logoutProvider)
+  const refreshProviders = useAppStore((s) => s.refreshProviders)
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [refreshing, setRefreshing] = useState(false)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
+    setRefreshing(true)
     try {
-      await refreshProviders();
+      await refreshProviders()
     } finally {
-      setRefreshing(false);
+      setRefreshing(false)
     }
-  }, [refreshProviders]);
+  }, [refreshProviders])
 
   const inFlight =
     lifecycle.phase === 'installing' ||
     lifecycle.phase === 'connecting' ||
-    lifecycle.phase === 'disconnecting';
+    lifecycle.phase === 'disconnecting'
 
   return (
     <div className="flex h-full flex-col">
@@ -122,8 +122,8 @@ function Detail({
                 onAskDisconnect={() => setConfirmDisconnect(true)}
                 onCancelDisconnect={() => setConfirmDisconnect(false)}
                 onConfirmDisconnect={() => {
-                  setConfirmDisconnect(false);
-                  void logoutProvider(id);
+                  setConfirmDisconnect(false)
+                  void logoutProvider(id)
                 }}
               />
             ) : (
@@ -146,7 +146,7 @@ function Detail({
         </div>
       </ScrollFade>
     </div>
-  );
+  )
 }
 
 function ConnectedAccount({
@@ -157,12 +157,12 @@ function ConnectedAccount({
   onCancelDisconnect,
   onConfirmDisconnect,
 }: {
-  readonly identity: string | null;
-  readonly confirmDisconnect: boolean;
-  readonly onReauth: () => void;
-  readonly onAskDisconnect: () => void;
-  readonly onCancelDisconnect: () => void;
-  readonly onConfirmDisconnect: () => void;
+  readonly identity: string | null
+  readonly confirmDisconnect: boolean
+  readonly onReauth: () => void
+  readonly onAskDisconnect: () => void
+  readonly onCancelDisconnect: () => void
+  readonly onConfirmDisconnect: () => void
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
@@ -208,7 +208,7 @@ function ConnectedAccount({
         </button>
       )}
     </div>
-  );
+  )
 }
 
 function EmptyCard({
@@ -218,11 +218,11 @@ function EmptyCard({
   ctaLabel,
   onCta,
 }: {
-  readonly icon: LucideIcon;
-  readonly title: string;
-  readonly description: string;
-  readonly ctaLabel: string;
-  readonly onCta: () => void;
+  readonly icon: LucideIcon
+  readonly title: string
+  readonly description: string
+  readonly ctaLabel: string
+  readonly onCta: () => void
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-10 text-center">
@@ -241,7 +241,7 @@ function EmptyCard({
         {ctaLabel}
       </button>
     </div>
-  );
+  )
 }
 
 function InFlightCard({ label, onView }: { readonly label: string; readonly onView: () => void }) {
@@ -256,7 +256,7 @@ function InFlightCard({ label, onView }: { readonly label: string; readonly onVi
         View progress <ArrowRight size={12} aria-hidden />
       </span>
     </button>
-  );
+  )
 }
 
 function ErrorCard({
@@ -264,9 +264,9 @@ function ErrorCard({
   onRetry,
   retrying,
 }: {
-  readonly message: string | null;
-  readonly onRetry: () => void;
-  readonly retrying: boolean;
+  readonly message: string | null
+  readonly onRetry: () => void
+  readonly retrying: boolean
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4">
@@ -287,5 +287,5 @@ function ErrorCard({
         <RotateCw size={12} aria-hidden /> Retry
       </button>
     </div>
-  );
+  )
 }

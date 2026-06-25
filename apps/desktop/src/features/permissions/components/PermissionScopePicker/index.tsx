@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { cn } from '@goodboy/ui';
-import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useState } from 'react'
+import { cn } from '@goodboy/ui'
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
 
-export type PermissionScope = 'global' | 'workspace' | 'session' | 'once' | 'deny';
+export type PermissionScope = 'global' | 'workspace' | 'session' | 'once' | 'deny'
 
 const SCOPE_LABELS: Record<PermissionScope, string> = {
   global: 'approve global',
@@ -12,7 +12,7 @@ const SCOPE_LABELS: Record<PermissionScope, string> = {
   session: 'approve session',
   once: 'approve once',
   deny: 'deny',
-};
+}
 
 const SCOPE_TOAST: Record<PermissionScope, string> = {
   global: 'rule added: allow globally',
@@ -20,16 +20,16 @@ const SCOPE_TOAST: Record<PermissionScope, string> = {
   session: 'rule added: allow for this session',
   once: 'allowed once, not saved',
   deny: 'rule added: deny for this session',
-};
+}
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly agentId: AgentId;
-  readonly toolUseId: string;
-  readonly toolName: string;
-  readonly runId: ProviderRunId;
-  readonly onResolved: () => void;
-};
+  readonly sessionId: SessionId
+  readonly agentId: AgentId
+  readonly toolUseId: string
+  readonly toolName: string
+  readonly runId: ProviderRunId
+  readonly onResolved: () => void
+}
 
 export const PermissionScopePicker = ({
   sessionId,
@@ -39,27 +39,27 @@ export const PermissionScopePicker = ({
   runId,
   onResolved,
 }: Props) => {
-  const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
-  const { showToast } = useToast();
-  const [busy, setBusy] = useState(false);
+  const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest)
+  const { showToast } = useToast()
+  const [busy, setBusy] = useState(false)
 
   const handle = async (scope: PermissionScope) => {
     if (busy) {
-      return;
+      return
     }
-    setBusy(true);
+    setBusy(true)
     try {
-      await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
-      showToast(scope === 'deny' ? 'warning' : 'success', SCOPE_TOAST[scope]);
-      onResolved();
+      await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope })
+      showToast(scope === 'deny' ? 'warning' : 'success', SCOPE_TOAST[scope])
+      onResolved()
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'failed to resolve permission');
+      showToast('error', err instanceof Error ? err.message : 'failed to resolve permission')
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
-  const scopes: PermissionScope[] = ['global', 'workspace', 'session', 'once', 'deny'];
+  const scopes: PermissionScope[] = ['global', 'workspace', 'session', 'once', 'deny']
 
   const SCOPE_TITLES: Record<PermissionScope, string> = {
     global: 'allow for all sessions',
@@ -67,17 +67,17 @@ export const PermissionScopePicker = ({
     session: 'allow for this task (recommended)',
     once: 'allow this time only (not saved)',
     deny: 'deny this request',
-  };
+  }
 
   const scopeTone = (scope: PermissionScope): string => {
     if (scope === 'session') {
-      return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90';
+      return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90'
     }
     if (scope === 'deny') {
-      return 'border-danger/40 text-danger hover:bg-danger/10';
+      return 'border-danger/40 text-danger hover:bg-danger/10'
     }
-    return 'border-success/40 text-success hover:bg-success/10';
-  };
+    return 'border-success/40 text-success hover:bg-success/10'
+  }
 
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
@@ -98,5 +98,5 @@ export const PermissionScopePicker = ({
         </button>
       ))}
     </div>
-  );
-};
+  )
+}

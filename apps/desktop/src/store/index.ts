@@ -1,4 +1,4 @@
-export { useAppStore, type BootPhase, type ProviderSpendEntry } from './store';
+export { useAppStore, type BootPhase, type ProviderSpendEntry } from './store'
 
 export {
   agentHasUnread,
@@ -25,9 +25,9 @@ export {
   useHasUnreadElsewhere,
   useWorkspaces,
   type FilesTouched,
-} from './selectors';
-export { useTranscript } from './transcript';
-export { readPersistedLens, LENS_KINDS } from './slices/session-view';
-export type { SessionStudio, LensKind } from './slices/session-view';
+} from './selectors'
+export { useTranscript } from './transcript'
+export { readPersistedLens, LENS_KINDS } from './slices/session-view'
+export type { SessionStudio, LensKind } from './slices/session-view'
 
-export const EMPTY_ARRAY: readonly never[] = [];
+export const EMPTY_ARRAY: readonly never[] = []

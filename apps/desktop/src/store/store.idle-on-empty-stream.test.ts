@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -8,17 +8,17 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
+const runTurnSpy = vi.fn()
+const cancelTurnSpy = vi.fn()
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -28,20 +28,20 @@ vi.mock('../features/permissions/permissions', () => ({
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
   invokeAuditRetryDelete: vi.fn(async () => undefined),
   useEffectivePermissionRules: () => [],
-}));
+}))
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
-}));
+}))
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -83,7 +83,7 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -91,7 +91,7 @@ vi.mock('../features/providers/providers', () => ({
   getCursorStatus: vi.fn(),
   getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -99,7 +99,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
-}));
+}))
 
 vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -110,7 +110,7 @@ vi.mock('../features/budget/budget', () => ({
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
   invokeCheckProviderBudget: vi.fn(),
-}));
+}))
 
 vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
@@ -118,7 +118,7 @@ vi.mock('../features/skills/skills', () => ({
   invokeSkillDelete: vi.fn(),
   invokeSkillRescan: vi.fn(),
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
 vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
@@ -127,23 +127,23 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
-}));
+}))
 
-const SESSION_ID = 'session-1' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const SESSION_ID = 'session-1' as SessionId
+const AGENT_ID = 'agent-1' as AgentId
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId
 
 function buildSession(): Session {
-  const now = '2026-05-08T00:00:00.000Z' as IsoDateTime;
+  const now = '2026-05-08T00:00:00.000Z' as IsoDateTime
   return {
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
@@ -160,7 +160,7 @@ function buildSession(): Session {
     workflowRuns: [],
     createdAt: now,
     updatedAt: now,
-  };
+  }
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
@@ -170,7 +170,7 @@ async function* doneOnlyStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
     kind: 'done',
     runId,
     at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
-  };
+  }
 }
 
 async function* throwingStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
@@ -179,30 +179,30 @@ async function* throwingStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
     runId,
     delta: 'partial',
     at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
-  };
-  throw new Error('provider crashed mid-stream');
+  }
+  throw new Error('provider crashed mid-stream')
 }
 
 describe('sendTurn, terminal state guarantees', () => {
   beforeEach(async () => {
-    runTurnSpy.mockReset();
-    cancelTurnSpy.mockReset();
-    runTurnSpy.mockImplementation(() => emptyStream());
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    runTurnSpy.mockReset()
+    cancelTurnSpy.mockReset()
+    runTurnSpy.mockImplementation(() => emptyStream())
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'preference',
-    });
-  });
+    })
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   async function importStore() {
-    const mod = await import('./store');
-    return mod.useAppStore;
+    const mod = await import('./store')
+    return mod.useAppStore
   }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
@@ -212,7 +212,7 @@ describe('sendTurn, terminal state guarantees', () => {
       ordinal: 0,
       name: 'agent 1',
       status: 'pending',
-    };
+    }
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -242,103 +242,103 @@ describe('sendTurn, terminal state guarantees', () => {
           updatedAt: '2026-05-08T00:00:00.000Z' as IsoDateTime,
         },
       ],
-    });
+    })
   }
 
   it('transitions session to idle after stream ends without a done event', async () => {
-    runTurnSpy.mockImplementation(() => emptyStream());
+    runTurnSpy.mockImplementation(() => emptyStream())
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' })
 
-    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
-    expect(session?.state.kind).toBe('idle');
-  });
+    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID)
+    expect(session?.state.kind).toBe('idle')
+  })
 
   it('appends an error event when the stream ends with no assistant text', async () => {
-    runTurnSpy.mockImplementation(() => emptyStream());
+    runTurnSpy.mockImplementation(() => emptyStream())
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' })
 
-    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
-    const errorEvent = transcript.find((e) => e.kind === 'error');
-    expect(errorEvent).toBeDefined();
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? []
+    const errorEvent = transcript.find((e) => e.kind === 'error')
+    expect(errorEvent).toBeDefined()
     expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toMatch(
       /provider exited without a response/i,
-    );
-  });
+    )
+  })
 
   it('appends user_text event so the user message is visible immediately', async () => {
-    runTurnSpy.mockImplementation(() => emptyStream());
+    runTurnSpy.mockImplementation(() => emptyStream())
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'ciao mondo' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'ciao mondo' })
 
-    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
-    const userEvent = transcript.find((e) => e.kind === 'user_text');
-    expect(userEvent).toBeDefined();
-    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('ciao mondo');
-  });
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? []
+    const userEvent = transcript.find((e) => e.kind === 'user_text')
+    expect(userEvent).toBeDefined()
+    expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('ciao mondo')
+  })
 
   it('does not append a duplicate error event when the stream emits a done event', async () => {
-    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => doneOnlyStream(args.runId));
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => doneOnlyStream(args.runId))
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' })
 
-    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
-    expect(session?.state.kind).toBe('idle');
+    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID)
+    expect(session?.state.kind).toBe('idle')
 
-    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
-    const errorEvents = transcript.filter((e) => e.kind === 'error');
-    expect(errorEvents).toHaveLength(0);
-  });
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? []
+    const errorEvents = transcript.filter((e) => e.kind === 'error')
+    expect(errorEvents).toHaveLength(0)
+  })
 
   it('transitions session to error and rethrows when the stream throws mid-turn', async () => {
-    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId));
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId))
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
 
     await expect(
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
-    ).rejects.toThrow('provider crashed mid-stream');
+    ).rejects.toThrow('provider crashed mid-stream')
 
-    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID);
-    expect(session?.state.kind).toBe('error');
+    const session = useAppStore.getState().sessions.find((s) => s.id === SESSION_ID)
+    expect(session?.state.kind).toBe('error')
 
-    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
-    const errorEvent = transcript.find((e) => e.kind === 'error');
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? []
+    const errorEvent = transcript.find((e) => e.kind === 'error')
     expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toMatch(
       /provider crashed mid-stream/i,
-    );
-  });
+    )
+  })
 
   it('marks the provider run failed when the stream throws mid-turn', async () => {
-    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId));
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId))
 
-    const { updateProviderRunStatus } = await import('@goodboy/db');
-    (updateProviderRunStatus as ReturnType<typeof vi.fn>).mockClear();
+    const { updateProviderRunStatus } = await import('@goodboy/db')
+    ;(updateProviderRunStatus as ReturnType<typeof vi.fn>).mockClear()
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
 
     await expect(
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
-    ).rejects.toThrow();
+    ).rejects.toThrow()
 
     const statuses = (updateProviderRunStatus as ReturnType<typeof vi.fn>).mock.calls.map(
       (c) => (c[2] as { kind: string }).kind,
-    );
-    expect(statuses).toContain('failed');
-  });
-});
+    )
+    expect(statuses).toContain('failed')
+  })
+})

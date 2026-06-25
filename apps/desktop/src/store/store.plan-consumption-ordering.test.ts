@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -16,25 +16,25 @@ import type {
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 type UpsertPlanArgs = {
-  readonly sessionId: SessionId;
-  readonly agentId: AgentId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly title: string;
-  readonly bodyMd: string;
-  readonly clusters?: ReadonlyArray<ImplementationCluster>;
-};
+  readonly sessionId: SessionId
+  readonly agentId: AgentId
+  readonly workflowRunId?: WorkflowRunId
+  readonly title: string
+  readonly bodyMd: string
+  readonly clusters?: ReadonlyArray<ImplementationCluster>
+}
 
-const runTurnSpy = vi.fn();
+const runTurnSpy = vi.fn()
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: vi.fn(),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
@@ -43,15 +43,15 @@ vi.mock('../features/permissions/permissions', () => ({
   invokePermissionAuditInsert: vi.fn(),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
   useEffectivePermissionRules: () => [],
-}));
+}))
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }))
 
 vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn(async () => []) },
-}));
+}))
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -92,7 +92,7 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
@@ -100,7 +100,7 @@ vi.mock('../features/providers/providers', () => ({
   getCursorStatus: vi.fn(),
   getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async () => ({
@@ -108,7 +108,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedModel: 'claude-opus-4-5',
     reason: 'preference',
   })),
-}));
+}))
 
 vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -119,7 +119,7 @@ vi.mock('../features/budget/budget', () => ({
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
   invokeCheckProviderBudget: vi.fn(),
-}));
+}))
 
 vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
@@ -127,11 +127,11 @@ vi.mock('../features/skills/skills', () => ({
   invokeSkillDelete: vi.fn(),
   invokeSkillRescan: vi.fn(),
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
-const phaseRunInsertSpy = vi.fn();
-const phaseRunListSpy = vi.fn();
-const phaseRunUpdateStatusSpy = vi.fn();
+const phaseRunInsertSpy = vi.fn()
+const phaseRunListSpy = vi.fn()
+const phaseRunUpdateStatusSpy = vi.fn()
 
 vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
@@ -141,36 +141,36 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
   invokeAgentUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
   invokeAgentMarkViewed: vi.fn(async () => undefined),
-}));
+}))
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
-}));
+}))
 
-vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
+vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }))
 
-const fanOutClustersSpy = vi.fn(async () => undefined);
+const fanOutClustersSpy = vi.fn(async () => undefined)
 
 vi.mock('./slices/workflows/clusterImplementation', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./slices/workflows/clusterImplementation')>();
+  const actual = await importOriginal<typeof import('./slices/workflows/clusterImplementation')>()
   return {
     ...actual,
     fanOutClusters: fanOutClustersSpy,
     advanceClusterImplementation: () => async () => undefined,
-  };
-});
+  }
+})
 
 type PlanBackingStore = {
-  plans: PlanWithCount[];
-  consumptions: Record<string, PlanConsumption[]>;
-  seq: number;
-};
+  plans: PlanWithCount[]
+  consumptions: Record<string, PlanConsumption[]>
+  seq: number
+}
 
-const planBacking: PlanBackingStore = { plans: [], consumptions: {}, seq: 0 };
+const planBacking: PlanBackingStore = { plans: [], consumptions: {}, seq: 0 }
 
 const upsertPlanSpy = vi.fn(async (args: UpsertPlanArgs): Promise<PlanWithCount> => {
-  planBacking.seq += 1;
+  planBacking.seq += 1
   const plan: PlanWithCount = {
     id: `plan-${planBacking.seq}` as PlanId,
     sessionId: args.sessionId,
@@ -183,37 +183,37 @@ const upsertPlanSpy = vi.fn(async (args: UpsertPlanArgs): Promise<PlanWithCount>
     consumptionCount: 0,
     createdAt: NOW,
     updatedAt: NOW,
-  };
-  planBacking.plans.push(plan);
-  return plan;
-});
+  }
+  planBacking.plans.push(plan)
+  return plan
+})
 
 const listPlansForSessionSpy = vi.fn(
   async (sessionId: SessionId): Promise<ReadonlyArray<PlanWithCount>> =>
     planBacking.plans.filter((p) => p.sessionId === sessionId),
-);
+)
 
 const addPlanConsumptionSpy = vi.fn(
   async (planId: PlanId, agentId: AgentId): Promise<PlanConsumption> => {
     planBacking.plans = planBacking.plans.map((p) =>
       p.id === planId ? { ...p, status: 'consumed', consumptionCount: p.consumptionCount + 1 } : p,
-    );
+    )
     const consumption: PlanConsumption = {
       id: `pc-${planBacking.seq}-${agentId}` as PlanConsumptionId,
       planId,
       agentId,
       agentName: null,
       consumedAt: NOW,
-    };
-    planBacking.consumptions[planId] = [...(planBacking.consumptions[planId] ?? []), consumption];
-    return consumption;
+    }
+    planBacking.consumptions[planId] = [...(planBacking.consumptions[planId] ?? []), consumption]
+    return consumption
   },
-);
+)
 
 const listConsumptionsForPlanSpy = vi.fn(
   async (planId: PlanId): Promise<ReadonlyArray<PlanConsumption>> =>
     planBacking.consumptions[planId] ?? [],
-);
+)
 
 vi.mock('../features/plans/plans', () => ({
   listPlansForSession: (sessionId: SessionId) => listPlansForSessionSpy(sessionId),
@@ -223,20 +223,20 @@ vi.mock('../features/plans/plans', () => ({
   setPlanStatus: vi.fn(async () => undefined),
   setPlanBody: vi.fn(async () => undefined),
   deletePlan: vi.fn(async () => undefined),
-}));
+}))
 
-const WS_ID = 'ws-1' as WorkspaceId;
-const WORKFLOW_ID = 'wf-plan-impl' as WorkflowId;
-const RUN_ID = 'run-1' as WorkflowRunId;
-const SESSION_ID = 'ses-1' as SessionId;
-const PLANNER_ID = 'a-plan' as AgentId;
-const IMPL_ID = 'a-impl' as AgentId;
-const STEP_PLAN = 's-plan' as StepId;
-const STEP_IMPL = 's-impl' as StepId;
-const NOW = '2026-06-10T00:00:00.000Z' as IsoDateTime;
+const WS_ID = 'ws-1' as WorkspaceId
+const WORKFLOW_ID = 'wf-plan-impl' as WorkflowId
+const RUN_ID = 'run-1' as WorkflowRunId
+const SESSION_ID = 'ses-1' as SessionId
+const PLANNER_ID = 'a-plan' as AgentId
+const IMPL_ID = 'a-impl' as AgentId
+const STEP_PLAN = 's-plan' as StepId
+const STEP_IMPL = 's-impl' as StepId
+const NOW = '2026-06-10T00:00:00.000Z' as IsoDateTime
 
-const PLAN_MARKER = '<<plan>>\nThe Plan\n\ndo the thing<</plan>>';
-const PLAN_MARKER_WITH_CLUSTERS = `${PLAN_MARKER}\n<<clusters>>\n[{"title":"cluster a","instructions":"i1"},{"title":"cluster b","instructions":"i2"}]\n<</clusters>>`;
+const PLAN_MARKER = '<<plan>>\nThe Plan\n\ndo the thing<</plan>>'
+const PLAN_MARKER_WITH_CLUSTERS = `${PLAN_MARKER}\n<<clusters>>\n[{"title":"cluster a","instructions":"i1"},{"title":"cluster b","instructions":"i2"}]\n<</clusters>>`
 
 function makeWorkflow(): Workflow {
   return {
@@ -256,7 +256,7 @@ function makeWorkflow(): Workflow {
     ],
     createdAt: NOW,
     updatedAt: NOW,
-  };
+  }
 }
 
 function makeSession(): Session {
@@ -282,10 +282,10 @@ function makeSession(): Session {
     ],
     createdAt: NOW,
     updatedAt: NOW,
-  };
+  }
 }
 
-let phaseRuns: Agent[] = [];
+let phaseRuns: Agent[] = []
 
 function wirePhaseSpies() {
   phaseRuns = [
@@ -309,10 +309,10 @@ function wirePhaseSpies() {
       status: 'pending',
       kind: 'implementer',
     },
-  ];
-  phaseRunListSpy.mockReset();
-  phaseRunListSpy.mockImplementation(async () => phaseRuns);
-  phaseRunInsertSpy.mockReset();
+  ]
+  phaseRunListSpy.mockReset()
+  phaseRunListSpy.mockImplementation(async () => phaseRuns)
+  phaseRunInsertSpy.mockReset()
   phaseRunInsertSpy.mockImplementation(async (args: Record<string, unknown>) => {
     const row: Agent = {
       id: `inserted-${phaseRuns.length + 1}` as AgentId,
@@ -323,24 +323,24 @@ function wirePhaseSpies() {
       ...((args['stepId'] as StepId | undefined) !== undefined && {
         stepId: args['stepId'] as StepId,
       }),
-    };
-    phaseRuns.push(row);
-    return row;
-  });
-  phaseRunUpdateStatusSpy.mockReset();
+    }
+    phaseRuns.push(row)
+    return row
+  })
+  phaseRunUpdateStatusSpy.mockReset()
   phaseRunUpdateStatusSpy.mockImplementation(
     async (id: AgentId, fields: Record<string, unknown>) => {
-      let updated: Agent | undefined;
+      let updated: Agent | undefined
       phaseRuns = phaseRuns.map((r) => {
         if (r.id !== id) {
-          return r;
+          return r
         }
-        updated = { ...r, status: (fields['status'] as Agent['status']) ?? r.status };
-        return updated;
-      });
-      return updated ?? { id, sessionId: SESSION_ID, ordinal: 0, name: '', status: 'running' };
+        updated = { ...r, status: (fields['status'] as Agent['status']) ?? r.status }
+        return updated
+      })
+      return updated ?? { id, sessionId: SESSION_ID, ordinal: 0, name: '', status: 'running' }
     },
-  );
+  )
 }
 
 function seedStore(useAppStore: { setState: (s: Record<string, unknown>) => void }) {
@@ -366,139 +366,139 @@ function seedStore(useAppStore: { setState: (s: Record<string, unknown>) => void
     ],
     authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
     workspaces: [{ id: WS_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW }],
-  });
+  })
 }
 
 function streamText(text: string) {
   return async function* (args: { runId: string }): AsyncIterable<TurnEvent> {
-    yield { kind: 'assistant_text' as const, runId: args.runId as never, delta: text, at: NOW };
-    yield { kind: 'done' as const, runId: args.runId as never, at: NOW };
-  };
+    yield { kind: 'assistant_text' as const, runId: args.runId as never, delta: text, at: NOW }
+    yield { kind: 'done' as const, runId: args.runId as never, at: NOW }
+  }
 }
 
 describe('autorun plan consumption ordering', () => {
-  let idleSpy: typeof globalThis.requestIdleCallback | undefined;
+  let idleSpy: typeof globalThis.requestIdleCallback | undefined
 
   beforeEach(async () => {
-    planBacking.plans = [];
-    planBacking.consumptions = {};
-    planBacking.seq = 0;
-    wirePhaseSpies();
-    runTurnSpy.mockReset();
-    runTurnSpy.mockImplementation(() => emptyStream());
-    fanOutClustersSpy.mockClear();
-    addPlanConsumptionSpy.mockClear();
-    upsertPlanSpy.mockClear();
-    listPlansForSessionSpy.mockClear();
-    idleSpy = globalThis.requestIdleCallback;
-    (globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = (cb: () => void) =>
-      setTimeout(cb, 0) as unknown as number;
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    planBacking.plans = []
+    planBacking.consumptions = {}
+    planBacking.seq = 0
+    wirePhaseSpies()
+    runTurnSpy.mockReset()
+    runTurnSpy.mockImplementation(() => emptyStream())
+    fanOutClustersSpy.mockClear()
+    addPlanConsumptionSpy.mockClear()
+    upsertPlanSpy.mockClear()
+    listPlansForSessionSpy.mockClear()
+    idleSpy = globalThis.requestIdleCallback
+    ;(globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = (cb: () => void) =>
+      setTimeout(cb, 0) as unknown as number
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-opus-4-5',
       reason: 'preference',
-    });
-  });
+    })
+  })
 
   afterEach(() => {
-    (globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = idleSpy;
-    vi.clearAllMocks();
-  });
+    ;(globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = idleSpy
+    vi.clearAllMocks()
+  })
 
   it('persists the plan before the implementer reads it, recording a consumption (plan flips to consumed)', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
     runTurnSpy
       .mockImplementationOnce(streamText(PLAN_MARKER))
-      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
+      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`))
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: PLANNER_ID,
       content: 'plan it',
-    });
+    })
 
-    expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
-    const persisted = planBacking.plans[0]!;
-    expect(persisted.bodyMd).toBe('do the thing');
-    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID);
-    expect(planBacking.plans[0]!.status).toBe('consumed');
-    expect(planBacking.consumptions[persisted.id]).toHaveLength(1);
+    expect(upsertPlanSpy).toHaveBeenCalledTimes(1)
+    const persisted = planBacking.plans[0]!
+    expect(persisted.bodyMd).toBe('do the thing')
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID)
+    expect(planBacking.plans[0]!.status).toBe('consumed')
+    expect(planBacking.consumptions[persisted.id]).toHaveLength(1)
 
-    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2))
     const kickoffPrompt = runTurnSpy.mock.calls
       .map((c) => String((c[0] as { prompt?: unknown }).prompt ?? ''))
-      .find((p) => p.includes('do the thing'));
-    expect(kickoffPrompt).toBeDefined();
-  });
+      .find((p) => p.includes('do the thing'))
+    expect(kickoffPrompt).toBeDefined()
+  })
 
   it('does not auto-advance on empty planner output: retries then fails the step', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
-    runTurnSpy.mockImplementation(() => emptyStream());
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
+    runTurnSpy.mockImplementation(() => emptyStream())
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: PLANNER_ID,
       content: 'plan it',
-    });
+    })
 
     await vi.waitFor(() =>
       expect(phaseRunUpdateStatusSpy).toHaveBeenCalledWith(
         PLANNER_ID,
         expect.objectContaining({ status: 'failed' }),
       ),
-    );
-    expect(upsertPlanSpy).not.toHaveBeenCalled();
-    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
-    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID);
-  });
+    )
+    expect(upsertPlanSpy).not.toHaveBeenCalled()
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled()
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID)
+  })
 
   it('fans out when the persisted plan carries 2+ clusters, after recording the consumption', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
-    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER_WITH_CLUSTERS));
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
+    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER_WITH_CLUSTERS))
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: PLANNER_ID,
       content: 'plan it',
-    });
+    })
 
-    expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
-    const persisted = planBacking.plans[0]!;
-    expect(persisted.clusters).toHaveLength(2);
-    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID);
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
-  });
+    expect(upsertPlanSpy).toHaveBeenCalledTimes(1)
+    const persisted = planBacking.plans[0]!
+    expect(persisted.clusters).toHaveLength(2)
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(persisted.id, IMPL_ID)
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1)
+  })
 
   it('persists the plan strictly before recording its consumption (race-fix invariant)', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
     runTurnSpy
       .mockImplementationOnce(streamText(PLAN_MARKER))
-      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
+      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`))
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: PLANNER_ID,
       content: 'plan it',
-    });
+    })
 
-    await vi.waitFor(() => expect(addPlanConsumptionSpy).toHaveBeenCalledTimes(1));
-    expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(addPlanConsumptionSpy).toHaveBeenCalledTimes(1))
+    expect(upsertPlanSpy).toHaveBeenCalledTimes(1)
     expect(upsertPlanSpy.mock.invocationCallOrder[0]!).toBeLessThan(
       addPlanConsumptionSpy.mock.invocationCallOrder[0]!,
-    );
-  });
+    )
+  })
 
   it('does not auto-advance or capture a plan when the planner turn errors', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
     runTurnSpy.mockImplementationOnce(() => {
-      throw new Error('provider boom');
-    });
+      throw new Error('provider boom')
+    })
 
     await expect(
       useAppStore.getState().sendTurn({
@@ -506,50 +506,50 @@ describe('autorun plan consumption ordering', () => {
         agentId: PLANNER_ID,
         content: 'plan it',
       }),
-    ).rejects.toThrow('provider boom');
+    ).rejects.toThrow('provider boom')
 
-    expect(upsertPlanSpy).not.toHaveBeenCalled();
-    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
-    expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID);
-  });
+    expect(upsertPlanSpy).not.toHaveBeenCalled()
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled()
+    expect(runTurnSpy).toHaveBeenCalledTimes(1)
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID)
+  })
 
   it('still auto-advances when plan capture fails, recording no consumption', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
-    upsertPlanSpy.mockRejectedValueOnce(new Error('db unavailable'));
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
+    upsertPlanSpy.mockRejectedValueOnce(new Error('db unavailable'))
     runTurnSpy
       .mockImplementationOnce(streamText(PLAN_MARKER))
-      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
+      .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`))
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: PLANNER_ID,
       content: 'plan it',
-    });
+    })
 
-    expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
-    expect(planBacking.plans).toHaveLength(0);
-    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
-    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
-    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(IMPL_ID);
-  });
+    expect(upsertPlanSpy).toHaveBeenCalledTimes(1)
+    expect(planBacking.plans).toHaveLength(0)
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2))
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(IMPL_ID)
+  })
 
   it('captures the plan but records no consumption outside a workflow', async () => {
-    const { useAppStore } = await import('./store');
-    seedStore(useAppStore);
-    useAppStore.setState({ sessions: [{ ...makeSession(), workflowRuns: [] }] });
-    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER));
+    const { useAppStore } = await import('./store')
+    seedStore(useAppStore)
+    useAppStore.setState({ sessions: [{ ...makeSession(), workflowRuns: [] }] })
+    runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER))
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: PLANNER_ID,
       content: 'plan it',
-    });
+    })
 
-    expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
-    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
-    expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID);
-  });
-});
+    expect(upsertPlanSpy).toHaveBeenCalledTimes(1)
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled()
+    expect(runTurnSpy).toHaveBeenCalledTimes(1)
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID)
+  })
+})

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ArchiveRestore,
@@ -10,159 +10,159 @@ import {
   RotateCw,
   Sparkles,
   Trash2,
-} from 'lucide-react';
-import { Divider, Markdown, ScrollFade, Textarea, cn, tintClasses, type Tone } from '@goodboy/ui';
-import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+} from 'lucide-react'
+import { Divider, Markdown, ScrollFade, Textarea, cn, tintClasses, type Tone } from '@goodboy/ui'
+import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store'
+import { useToast } from '../../../../app/components/Toast'
 
 const PLAN_STATUS_TONE: Record<PlanStatus, Tone> = {
   active: 'warning',
   consumed: 'info',
   superseded: 'neutral',
   discarded: 'neutral',
-};
+}
 
 const PLAN_STATUS_OVERRIDE: Partial<Record<PlanStatus, string>> = {
   discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
-};
+}
 
 const planStatusStyle = (status: PlanStatus): string => {
-  const tint = tintClasses(PLAN_STATUS_TONE[status]);
-  return PLAN_STATUS_OVERRIDE[status] ?? cn(tint.bg, tint.text);
-};
+  const tint = tintClasses(PLAN_STATUS_TONE[status])
+  return PLAN_STATUS_OVERRIDE[status] ?? cn(tint.bg, tint.text)
+}
 
 const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   active: 'active',
   consumed: 'consumed',
   superseded: 'superseded',
   discarded: 'discarded',
-};
+}
 
 interface Props {
-  readonly sessionId: SessionId;
-  readonly initialPlanId?: PlanId;
+  readonly sessionId: SessionId
+  readonly initialPlanId?: PlanId
 }
 
 export function PlanStudio({ sessionId, initialPlanId }: Props) {
-  const plans = useSessionPlans(sessionId);
+  const plans = useSessionPlans(sessionId)
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const planConsumptions = useAppStore((s) => s.planConsumptions);
-  const loadConsumptionsForPlan = useAppStore((s) => s.loadConsumptionsForPlan);
-  const updatePlanBody = useAppStore((s) => s.updatePlanBody);
-  const deletePlan = useAppStore((s) => s.deletePlan);
-  const restorePlan = useAppStore((s) => s.restorePlan);
-  const runPlan = useAppStore((s) => s.runPlan);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const { showToast } = useToast();
+  )
+  const planConsumptions = useAppStore((s) => s.planConsumptions)
+  const loadConsumptionsForPlan = useAppStore((s) => s.loadConsumptionsForPlan)
+  const updatePlanBody = useAppStore((s) => s.updatePlanBody)
+  const deletePlan = useAppStore((s) => s.deletePlan)
+  const restorePlan = useAppStore((s) => s.restorePlan)
+  const runPlan = useAppStore((s) => s.runPlan)
+  const selectAgent = useAppStore((s) => s.selectAgent)
+  const { showToast } = useToast()
 
-  const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
-  const [mode, setMode] = useState<'preview' | 'edit'>('preview');
-  const [draft, setDraft] = useState('');
-  const [spawning, setSpawning] = useState(false);
-  const [retriggerArmed, setRetriggerArmed] = useState(false);
-  const retriggerTimerRef = useRef<number | null>(null);
+  const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null)
+  const [mode, setMode] = useState<'preview' | 'edit'>('preview')
+  const [draft, setDraft] = useState('')
+  const [spawning, setSpawning] = useState(false)
+  const [retriggerArmed, setRetriggerArmed] = useState(false)
+  const retriggerTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
-    setRetriggerArmed(false);
+    setRetriggerArmed(false)
     if (retriggerTimerRef.current !== null) {
-      window.clearTimeout(retriggerTimerRef.current);
-      retriggerTimerRef.current = null;
+      window.clearTimeout(retriggerTimerRef.current)
+      retriggerTimerRef.current = null
     }
-  }, [selectedId]);
+  }, [selectedId])
 
   useEffect(() => {
     return () => {
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
-    };
-  }, []);
+      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (selectedId === null && plans.length > 0) {
-      const fallback = plans[plans.length - 1];
-      if (fallback) setSelectedId(fallback.id);
+      const fallback = plans[plans.length - 1]
+      if (fallback) setSelectedId(fallback.id)
     }
-  }, [selectedId, plans]);
+  }, [selectedId, plans])
 
   useEffect(() => {
-    if (selectedId) void loadConsumptionsForPlan(selectedId);
-  }, [selectedId, loadConsumptionsForPlan]);
+    if (selectedId) void loadConsumptionsForPlan(selectedId)
+  }, [selectedId, loadConsumptionsForPlan])
 
-  const selected: PlanWithCount | null = plans.find((p) => p.id === selectedId) ?? null;
-
-  useEffect(() => {
-    if (selected && mode === 'preview') setDraft(planToSource(selected));
-  }, [selected, mode]);
+  const selected: PlanWithCount | null = plans.find((p) => p.id === selectedId) ?? null
 
   useEffect(() => {
-    if (selected?.status === 'discarded' && mode === 'edit') setMode('preview');
-  }, [selected?.status, mode]);
+    if (selected && mode === 'preview') setDraft(planToSource(selected))
+  }, [selected, mode])
+
+  useEffect(() => {
+    if (selected?.status === 'discarded' && mode === 'edit') setMode('preview')
+  }, [selected?.status, mode])
 
   const commitEdit = useCallback(() => {
-    if (!selected) return;
-    const next = parsePlanSource(draft);
-    if (next.title.length === 0) return;
-    if (next.title === selected.title && next.bodyMd === selected.bodyMd) return;
-    void updatePlanBody(sessionId, selected.id, next.title, next.bodyMd);
-  }, [selected, draft, sessionId, updatePlanBody]);
+    if (!selected) return
+    const next = parsePlanSource(draft)
+    if (next.title.length === 0) return
+    if (next.title === selected.title && next.bodyMd === selected.bodyMd) return
+    void updatePlanBody(sessionId, selected.id, next.title, next.bodyMd)
+  }, [selected, draft, sessionId, updatePlanBody])
 
   const flushEdit = useCallback(() => {
-    if (mode === 'edit') commitEdit();
-    setMode('preview');
-  }, [mode, commitEdit]);
+    if (mode === 'edit') commitEdit()
+    setMode('preview')
+  }, [mode, commitEdit])
 
   const openAgent = (agentId: Agent['id']) => {
-    flushEdit();
-    void selectAgent(sessionId, agentId);
-  };
+    flushEdit()
+    void selectAgent(sessionId, agentId)
+  }
 
   const handleSelectPlan = (id: PlanId) => {
-    if (mode === 'edit') commitEdit();
-    setMode('preview');
-    setSelectedId(id);
-  };
+    if (mode === 'edit') commitEdit()
+    setMode('preview')
+    setSelectedId(id)
+  }
 
   const handleTrigger = async () => {
-    if (!selected || spawning) return;
+    if (!selected || spawning) return
     if (selected.status === 'consumed' && !retriggerArmed) {
-      setRetriggerArmed(true);
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
+      setRetriggerArmed(true)
+      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current)
       retriggerTimerRef.current = window.setTimeout(() => {
-        setRetriggerArmed(false);
-        retriggerTimerRef.current = null;
-      }, 4000);
-      return;
+        setRetriggerArmed(false)
+        retriggerTimerRef.current = null
+      }, 4000)
+      return
     }
     if (retriggerTimerRef.current !== null) {
-      window.clearTimeout(retriggerTimerRef.current);
-      retriggerTimerRef.current = null;
+      window.clearTimeout(retriggerTimerRef.current)
+      retriggerTimerRef.current = null
     }
-    setRetriggerArmed(false);
-    setSpawning(true);
+    setRetriggerArmed(false)
+    setSpawning(true)
     try {
-      await runPlan(sessionId, selected.id);
-      flushEdit();
+      await runPlan(sessionId, selected.id)
+      flushEdit()
     } finally {
-      setSpawning(false);
+      setSpawning(false)
     }
-  };
+  }
 
   const handleDiscard = (plan: PlanWithCount) => {
-    if (mode === 'edit') commitEdit();
-    setMode('preview');
-    void deletePlan(sessionId, plan.id);
-  };
+    if (mode === 'edit') commitEdit()
+    setMode('preview')
+    void deletePlan(sessionId, plan.id)
+  }
 
   const handleRestore = (plan: PlanWithCount) => {
-    void restorePlan(sessionId, plan.id);
-  };
+    void restorePlan(sessionId, plan.id)
+  }
 
-  const consumptions = selected ? (planConsumptions[selected.id] ?? []) : [];
-  const creatorAgent = selected ? agents.find((a) => a.id === selected.agentId) : null;
-  const creatorDeleted = selected ? !creatorAgent : false;
-  const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown agent') : '';
+  const consumptions = selected ? (planConsumptions[selected.id] ?? []) : []
+  const creatorAgent = selected ? agents.find((a) => a.id === selected.agentId) : null
+  const creatorDeleted = selected ? !creatorAgent : false
+  const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown agent') : ''
 
   return (
     <div className="relative flex h-full w-full flex-col bg-background">
@@ -191,8 +191,8 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                 </li>
               ) : (
                 plans.map((plan, idx) => {
-                  const isSel = plan.id === selectedId;
-                  const isDiscarded = plan.status === 'discarded';
+                  const isSel = plan.id === selectedId
+                  const isDiscarded = plan.status === 'discarded'
                   return (
                     <li key={plan.id}>
                       <button
@@ -223,7 +223,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                         </span>
                       </button>
                     </li>
-                  );
+                  )
                 })
               )}
             </ul>
@@ -245,10 +245,10 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                               showToast(
                                 'info',
                                 `agent "${selectedAgentName}" was deleted and can no longer be opened`,
-                              );
-                              return;
+                              )
+                              return
                             }
-                            openAgent(selected.agentId);
+                            openAgent(selected.agentId)
                           }}
                           className={cn(
                             'truncate font-medium underline-offset-2',
@@ -273,9 +273,9 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                         <span className="shrink-0">{fmtTimestamp(selected.createdAt)}</span>
                       </div>
                       {consumptions.map((c) => {
-                        const ag = agents.find((a) => a.id === c.agentId);
-                        const isDeleted = !ag;
-                        const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
+                        const ag = agents.find((a) => a.id === c.agentId)
+                        const isDeleted = !ag
+                        const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8)
                         return (
                           <div key={c.id} className="flex items-center gap-1.5">
                             <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
@@ -287,10 +287,10 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                                   showToast(
                                     'info',
                                     `agent "${displayName}" was deleted and can no longer be opened`,
-                                  );
-                                  return;
+                                  )
+                                  return
                                 }
-                                openAgent(c.agentId);
+                                openAgent(c.agentId)
                               }}
                               className={cn(
                                 'truncate font-medium underline-offset-2',
@@ -310,7 +310,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                             <span aria-hidden>·</span>
                             <span className="shrink-0">{fmtTimestamp(c.consumedAt)}</span>
                           </div>
-                        );
+                        )
                       })}
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
@@ -327,8 +327,8 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                           role="tab"
                           aria-selected={mode === 'preview'}
                           onClick={() => {
-                            if (mode === 'edit') commitEdit();
-                            setMode('preview');
+                            if (mode === 'edit') commitEdit()
+                            setMode('preview')
                           }}
                           className={cn(
                             'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
@@ -466,7 +466,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
         </>
       </div>
     </div>
-  );
+  )
 }
 
 function fmtTimestamp(ts: string | number): string {
@@ -475,31 +475,31 @@ function fmtTimestamp(ts: string | number): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  })
 }
 
 function planToSource(plan: { title: string; bodyMd: string }): string {
-  const head = plan.title.startsWith('#') ? plan.title : `# ${plan.title}`;
-  return plan.bodyMd.length > 0 ? `${head}\n\n${plan.bodyMd}` : head;
+  const head = plan.title.startsWith('#') ? plan.title : `# ${plan.title}`
+  return plan.bodyMd.length > 0 ? `${head}\n\n${plan.bodyMd}` : head
 }
 
 function parsePlanSource(raw: string): { title: string; bodyMd: string } {
-  const lines = raw.split('\n');
-  let firstIdx = -1;
+  const lines = raw.split('\n')
+  let firstIdx = -1
   for (let i = 0; i < lines.length; i++) {
     if ((lines[i] ?? '').trim().length > 0) {
-      firstIdx = i;
-      break;
+      firstIdx = i
+      break
     }
   }
-  if (firstIdx === -1) return { title: '', bodyMd: '' };
-  const titleLine = (lines[firstIdx] ?? '').trim();
-  const title = titleLine.replace(/^#+\s*/, '').trim();
-  const restLines = lines.slice(firstIdx + 1);
-  let lo = 0;
-  let hi = restLines.length;
-  while (lo < hi && (restLines[lo] ?? '') === '') lo += 1;
-  while (hi > lo && (restLines[hi - 1] ?? '') === '') hi -= 1;
-  const bodyMd = restLines.slice(lo, hi).join('\n');
-  return { title, bodyMd };
+  if (firstIdx === -1) return { title: '', bodyMd: '' }
+  const titleLine = (lines[firstIdx] ?? '').trim()
+  const title = titleLine.replace(/^#+\s*/, '').trim()
+  const restLines = lines.slice(firstIdx + 1)
+  let lo = 0
+  let hi = restLines.length
+  while (lo < hi && (restLines[lo] ?? '') === '') lo += 1
+  while (hi > lo && (restLines[hi - 1] ?? '') === '') hi -= 1
+  const bodyMd = restLines.slice(lo, hi).join('\n')
+  return { title, bodyMd }
 }

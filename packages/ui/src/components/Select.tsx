@@ -1,22 +1,22 @@
-import type { ComponentProps } from 'react';
-import { cn } from '../cn';
+import type { ComponentProps } from 'react'
+import { cn } from '../cn'
 
-export type SelectSize = 'sm' | 'md';
+export type SelectSize = 'sm' | 'md'
 
 export type SelectProps = Omit<ComponentProps<'select'>, 'size'> & {
-  size?: SelectSize;
-  block?: boolean;
-};
+  size?: SelectSize
+  block?: boolean
+}
 
 const SIZE: Record<SelectSize, string> = {
   sm: 'h-7 pl-2 pr-7 text-xs',
   md: 'h-8 pl-2.5 pr-8 text-sm',
-};
+}
 
 const CHEVRON_OFFSET: Record<SelectSize, string> = {
   sm: 'right-1.5',
   md: 'right-2',
-};
+}
 
 export const Select = ({
   className,
@@ -58,5 +58,5 @@ export const Select = ({
         />
       </svg>
     </span>
-  );
-};
+  )
+}

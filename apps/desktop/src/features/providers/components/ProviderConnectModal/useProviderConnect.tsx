@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Info } from 'lucide-react';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
-import { resolveLifecycleCommand } from '../../provider-lifecycle';
-import { guideFor } from './guides';
+import { useEffect, useMemo, useState } from 'react'
+import { Info } from 'lucide-react'
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
+import type { ProviderLifecyclePhase } from '../../../../store/slices/providers'
+import { resolveLifecycleCommand } from '../../provider-lifecycle'
+import { guideFor } from './guides'
 
 export type PrimaryButton = {
-  readonly label: string;
-  readonly variant: 'primary' | 'secondary' | 'ghost' | 'danger';
-};
+  readonly label: string
+  readonly variant: 'primary' | 'secondary' | 'ghost' | 'danger'
+}
 
 const RESTING_PHASES: ReadonlyArray<ProviderLifecyclePhase> = [
   'idle',
@@ -17,43 +17,43 @@ const RESTING_PHASES: ReadonlyArray<ProviderLifecyclePhase> = [
   'error',
   'installed',
   'connected',
-];
+]
 
 export function useProviderConnect(
   providerId: ProviderId,
   initialAction: ProviderLifecycleAction,
   active: boolean,
 ) {
-  const lifecycle = useAppStore((s) => s.providerLifecycle[providerId]);
-  const provider = useAppStore((s) => s.providers.find((p) => p.id === providerId));
-  const installProvider = useAppStore((s) => s.installProvider);
-  const loginProvider = useAppStore((s) => s.loginProvider);
-  const cancelLifecycle = useAppStore((s) => s.cancelProviderLifecycle);
+  const lifecycle = useAppStore((s) => s.providerLifecycle[providerId])
+  const provider = useAppStore((s) => s.providers.find((p) => p.id === providerId))
+  const installProvider = useAppStore((s) => s.installProvider)
+  const loginProvider = useAppStore((s) => s.loginProvider)
+  const cancelLifecycle = useAppStore((s) => s.cancelProviderLifecycle)
 
-  const [didAutoStart, setDidAutoStart] = useState(false);
+  const [didAutoStart, setDidAutoStart] = useState(false)
 
   useEffect(() => {
     if (!active) {
-      setDidAutoStart(false);
-      return;
+      setDidAutoStart(false)
+      return
     }
     if (didAutoStart) {
-      return;
+      return
     }
     if (!RESTING_PHASES.includes(lifecycle.phase)) {
-      return;
+      return
     }
     if (initialAction === 'install' && provider?.connection !== 'missing') {
-      return;
+      return
     }
     if (initialAction === 'login' && provider?.connection === 'connected') {
-      return;
+      return
     }
-    setDidAutoStart(true);
+    setDidAutoStart(true)
     if (initialAction === 'install') {
-      void installProvider(providerId);
+      void installProvider(providerId)
     } else if (initialAction === 'login') {
-      void loginProvider(providerId);
+      void loginProvider(providerId)
     }
   }, [
     active,
@@ -64,36 +64,36 @@ export function useProviderConnect(
     providerId,
     installProvider,
     loginProvider,
-  ]);
+  ])
 
-  const currentAction: ProviderLifecycleAction = lifecycle.action ?? initialAction;
-  const guide = useMemo(() => guideFor(providerId, currentAction), [providerId, currentAction]);
-  const command = lifecycle.command ?? resolveLifecycleCommand(providerId, currentAction);
+  const currentAction: ProviderLifecycleAction = lifecycle.action ?? initialAction
+  const guide = useMemo(() => guideFor(providerId, currentAction), [providerId, currentAction])
+  const command = lifecycle.command ?? resolveLifecycleCommand(providerId, currentAction)
 
   const inFlight =
     lifecycle.phase === 'installing' ||
     lifecycle.phase === 'connecting' ||
-    lifecycle.phase === 'disconnecting';
-  const connected = provider?.connection === 'connected';
-  const installed = provider !== undefined && provider.connection !== 'missing';
+    lifecycle.phase === 'disconnecting'
+  const connected = provider?.connection === 'connected'
+  const installed = provider !== undefined && provider.connection !== 'missing'
 
   const runPrimary = (onDone: () => void) => {
     if (inFlight) {
-      void cancelLifecycle(providerId);
-      return;
+      void cancelLifecycle(providerId)
+      return
     }
     if (connected) {
-      onDone();
-      return;
+      onDone()
+      return
     }
     if (!installed) {
-      void installProvider(providerId);
+      void installProvider(providerId)
     } else {
-      void loginProvider(providerId);
+      void loginProvider(providerId)
     }
-  };
+  }
 
-  const primary = primaryButton(lifecycle.phase, connected, installed, inFlight);
+  const primary = primaryButton(lifecycle.phase, connected, installed, inFlight)
 
   return {
     lifecycle,
@@ -105,7 +105,7 @@ export function useProviderConnect(
     installed,
     primary,
     runPrimary,
-  };
+  }
 }
 
 function primaryButton(
@@ -115,21 +115,21 @@ function primaryButton(
   inFlight: boolean,
 ): PrimaryButton {
   if (inFlight) {
-    return { label: 'Cancel', variant: 'secondary' };
+    return { label: 'Cancel', variant: 'secondary' }
   }
   if (connected) {
-    return { label: 'Done', variant: 'primary' };
+    return { label: 'Done', variant: 'primary' }
   }
   if (phase === 'error') {
     if (!installed) {
-      return { label: 'Retry install', variant: 'primary' };
+      return { label: 'Retry install', variant: 'primary' }
     }
-    return { label: 'Retry sign-in', variant: 'primary' };
+    return { label: 'Retry sign-in', variant: 'primary' }
   }
   if (!installed) {
-    return { label: 'Install', variant: 'primary' };
+    return { label: 'Install', variant: 'primary' }
   }
-  return { label: 'Sign in', variant: 'primary' };
+  return { label: 'Sign in', variant: 'primary' }
 }
 
 export function HelperNote({ inFlight }: { readonly inFlight: boolean }) {
@@ -142,7 +142,7 @@ export function HelperNote({ inFlight }: { readonly inFlight: boolean }) {
           : 'The embedded terminal accepts keyboard input. Click in it and type if a step needs a password or a menu choice.'}
       </span>
     </div>
-  );
+  )
 }
 
 export function EmptyTerminalPlaceholder({ connected }: { readonly connected: boolean }) {
@@ -152,5 +152,5 @@ export function EmptyTerminalPlaceholder({ connected }: { readonly connected: bo
         ? 'You are already connected. The next sign-in or reinstall will run here.'
         : 'Terminal will appear when the command starts running.'}
     </div>
-  );
+  )
 }

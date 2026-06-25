@@ -1,7 +1,7 @@
-import type { ModelTier } from '@goodboy/types';
+import type { ModelTier } from '@goodboy/types'
 
-export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-pro';
-export const GEMINI_CHEAP_MODEL = 'gemini-2.5-flash';
+export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-pro'
+export const GEMINI_CHEAP_MODEL = 'gemini-2.5-flash'
 
 export const GEMINI_MODELS: ReadonlyArray<ModelTier> = [
   {
@@ -40,4 +40,4 @@ export const GEMINI_MODELS: ReadonlyArray<ModelTier> = [
     weight: 6,
     effort: null,
   },
-];
+]

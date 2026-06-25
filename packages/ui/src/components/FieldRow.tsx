@@ -5,38 +5,38 @@ import {
   type ElementType,
   type ReactElement,
   type ReactNode,
-} from 'react';
-import { cn } from '../cn';
-import { Input } from './Input';
-import { Select } from './Select';
-import { Textarea } from './Textarea';
+} from 'react'
+import { cn } from '../cn'
+import { Input } from './Input'
+import { Select } from './Select'
+import { Textarea } from './Textarea'
 
 // A child is "labelable" (worth a real <label htmlFor>/id association) only when
 // it renders a native form control. Detect intrinsic input/select/textarea by
 // tag string, or our form primitives that forward id onto such an element.
 // Everything else (Button, ToggleSwitch, div/span/ul, custom components) gets an
 // inert <span> so clicking the descriptive label text can't activate a button.
-const LABELABLE_TAGS = new Set(['input', 'select', 'textarea']);
-const LABELABLE_COMPONENTS = new Set<ElementType>([Input, Select, Textarea]);
+const LABELABLE_TAGS = new Set(['input', 'select', 'textarea'])
+const LABELABLE_COMPONENTS = new Set<ElementType>([Input, Select, Textarea])
 
 const isLabelableControl = (child: ReactNode): child is ReactElement<{ id?: string }> => {
   if (!isValidElement(child)) {
-    return false;
+    return false
   }
-  const { type } = child;
+  const { type } = child
   if (typeof type === 'string') {
-    return LABELABLE_TAGS.has(type);
+    return LABELABLE_TAGS.has(type)
   }
-  return LABELABLE_COMPONENTS.has(type as ElementType);
-};
+  return LABELABLE_COMPONENTS.has(type as ElementType)
+}
 
 export type FieldRowProps = {
-  readonly label: string;
-  readonly help?: ReactNode;
-  readonly children: ReactNode;
-  readonly layout?: 'horizontal' | 'stacked';
-  readonly className?: string;
-};
+  readonly label: string
+  readonly help?: ReactNode
+  readonly children: ReactNode
+  readonly layout?: 'horizontal' | 'stacked'
+  readonly className?: string
+}
 
 export const FieldRow = ({
   label,
@@ -45,9 +45,9 @@ export const FieldRow = ({
   layout = 'horizontal',
   className,
 }: FieldRowProps) => {
-  const controlId = useId();
-  const labelable = isLabelableControl(children);
-  const associate = labelable && children.props.id === undefined;
+  const controlId = useId()
+  const labelable = isLabelableControl(children)
+  const associate = labelable && children.props.id === undefined
 
   const labelBlock = (
     <div className="flex min-w-0 flex-col gap-0.5">
@@ -60,9 +60,9 @@ export const FieldRow = ({
       )}
       {help ? <p className="text-2xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
-  );
+  )
 
-  const control = associate ? cloneElement(children, { id: controlId }) : children;
+  const control = associate ? cloneElement(children, { id: controlId }) : children
 
   if (layout === 'stacked') {
     return (
@@ -70,7 +70,7 @@ export const FieldRow = ({
         {labelBlock}
         <div>{control}</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -83,5 +83,5 @@ export const FieldRow = ({
       {labelBlock}
       <div className="shrink-0">{control}</div>
     </div>
-  );
-};
+  )
+}

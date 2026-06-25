@@ -1,11 +1,11 @@
-import { Sparkles } from 'lucide-react';
-import { cn, Divider } from '@goodboy/ui';
+import { Sparkles } from 'lucide-react'
+import { cn, Divider } from '@goodboy/ui'
 
 type Props = {
-  openCount: number;
-  spawning: boolean;
-  onPropose: () => void;
-};
+  openCount: number
+  spawning: boolean
+  onPropose: () => void
+}
 
 export const NotesFooter = ({ openCount, spawning, onPropose }: Props) => {
   return (
@@ -30,5 +30,5 @@ export const NotesFooter = ({ openCount, spawning, onPropose }: Props) => {
         </button>
       </div>
     </>
-  );
-};
+  )
+}

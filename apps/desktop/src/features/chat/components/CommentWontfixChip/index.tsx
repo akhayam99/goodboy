@@ -1,38 +1,38 @@
-import { useMemo, useState } from 'react';
-import { Ban, CheckCheck, MessageSquareReply, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useMemo, useState } from 'react'
+import { Ban, CheckCheck, MessageSquareReply, X } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core'
+import type { SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 
 type Props = {
-  readonly assistantText: string;
-  readonly sessionId: SessionId;
-};
+  readonly assistantText: string
+  readonly sessionId: SessionId
+}
 
 type ChipState =
   | { kind: 'idle' }
   | { kind: 'resolving' }
   | { kind: 'resolved' }
-  | { kind: 'dismissed' };
+  | { kind: 'dismissed' }
 
 export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
-  const marker = useMemo(() => extractCommentWontfix(assistantText), [assistantText]);
-  const threadId = marker?.threadId;
+  const marker = useMemo(() => extractCommentWontfix(assistantText), [assistantText])
+  const threadId = marker?.threadId
 
-  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
+  const resolveGithubThread = useAppStore((s) => s.resolveGithubThread)
   const resolvedOnGithub = useAppStore((s) =>
     threadId
       ? (s.sessionGithub[sessionId]?.detail?.comments?.some(
           (c) => c.threadId === threadId && c.resolved === true,
         ) ?? false)
       : false,
-  );
+  )
 
-  const [state, setState] = useState<ChipState>({ kind: 'idle' });
+  const [state, setState] = useState<ChipState>({ kind: 'idle' })
 
   if (!marker || !isReviewThreadId(marker.threadId)) {
-    return null;
+    return null
   }
 
   if (state.kind === 'resolved' || resolvedOnGithub) {
@@ -41,23 +41,23 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
         <CheckCheck size={11} aria-hidden />
         <span>marked solved with explanation</span>
       </div>
-    );
+    )
   }
 
   if (state.kind === 'dismissed') {
-    return null;
+    return null
   }
 
-  const busy = state.kind === 'resolving';
+  const busy = state.kind === 'resolving'
 
   const markSolved = async () => {
     if (busy) {
-      return;
+      return
     }
-    setState({ kind: 'resolving' });
-    const ok = await resolveGithubThread(sessionId, marker.threadId, { reason: marker.reason });
-    setState(ok ? { kind: 'resolved' } : { kind: 'idle' });
-  };
+    setState({ kind: 'resolving' })
+    const ok = await resolveGithubThread(sessionId, marker.threadId, { reason: marker.reason })
+    setState(ok ? { kind: 'resolved' } : { kind: 'idle' })
+  }
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-[11px]">
@@ -94,5 +94,5 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

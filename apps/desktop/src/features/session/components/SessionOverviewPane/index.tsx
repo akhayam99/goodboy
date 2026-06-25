@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from 'react'
 import {
   Activity,
   ArrowRight,
@@ -18,11 +18,11 @@ import {
   Target,
   Terminal,
   Workflow,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { FolderGit2 } from 'lucide-react';
-import { Chip, cn, Divider, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
-import type { Tone } from '@goodboy/ui';
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { FolderGit2 } from 'lucide-react'
+import { Chip, cn, Divider, Eyebrow, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui'
+import type { Tone } from '@goodboy/ui'
 import type {
   Agent,
   Session,
@@ -31,7 +31,7 @@ import type {
   Step,
   Workflow as WorkflowModel,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -39,35 +39,35 @@ import {
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionStageInfo,
-} from '../../../../store';
-import type { FilesTouched, LensKind } from '../../../../store';
-import { STAGE_TONE } from '../../session-stage';
+} from '../../../../store'
+import type { FilesTouched, LensKind } from '../../../../store'
+import { STAGE_TONE } from '../../session-stage'
 import {
   outcomeWord,
   type SpawnNode,
   type SpawnNodeStatus,
-} from '../../../orchestration/components/SpawnTree/lib';
-import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { pickNextWorkflowStep } from '../../../workflows/components/WorkflowNextStepCta';
-import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
-import { AgentKindChip } from '../AgentKindChip';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
-import { BranchChip } from './BranchChip';
-import { SessionCostChip } from './SessionCostChip';
+} from '../../../orchestration/components/SpawnTree/lib'
+import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns'
+import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns'
+import { pickNextWorkflowStep } from '../../../workflows/components/WorkflowNextStepCta'
+import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate'
+import { AgentKindChip } from '../AgentKindChip'
+import { formatRelativeDuration } from '../../../../shared/utils/relativeDate'
+import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge'
+import { BranchChip } from './BranchChip'
+import { SessionCostChip } from './SessionCostChip'
 import {
   resolveAttentionLens,
   selectAttention,
   selectOpenQuestions,
   selectStandaloneAgents,
-} from './lib';
+} from './lib'
 
 type SessionOverviewPaneProps = {
-  readonly session: Session;
-  readonly filesTouched: FilesTouched;
-  readonly onSelectLens: (lens: LensKind) => void;
-};
+  readonly session: Session
+  readonly filesTouched: FilesTouched
+  readonly onSelectLens: (lens: LensKind) => void
+}
 
 const STAGE_LABEL: Record<SessionStage, string> = {
   attention: 'Needs attention',
@@ -75,40 +75,40 @@ const STAGE_LABEL: Record<SessionStage, string> = {
   review: 'In review',
   building: 'Building',
   done: 'Done',
-};
+}
 
 type Nudge = {
-  readonly icon: LucideIcon;
-  readonly label: string;
-  readonly detail: string;
-  readonly lens: LensKind;
-};
+  readonly icon: LucideIcon
+  readonly label: string
+  readonly detail: string
+  readonly lens: LensKind
+}
 
 type Metric = {
-  readonly kind: LensKind;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly value: string;
-  readonly label: string;
-  readonly active: boolean;
-  readonly alert?: boolean;
-};
+  readonly kind: LensKind
+  readonly icon: LucideIcon
+  readonly tone: Tone
+  readonly value: string
+  readonly label: string
+  readonly active: boolean
+  readonly alert?: boolean
+}
 
 const CONTEXT_LINKS: ReadonlyArray<{
-  readonly kind: LensKind;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
+  readonly kind: LensKind
+  readonly icon: LucideIcon
+  readonly tone: Tone
+  readonly label: string
 }> = [
   { kind: 'goal', icon: Target, tone: 'primary', label: 'Goal' },
   { kind: 'decisions', icon: CheckCheck, tone: 'success', label: 'Decisions' },
   { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Last output' },
   { kind: 'scripts', icon: Terminal, tone: 'info', label: 'Scripts' },
   { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
-];
+]
 
 const isGhostStep = (status: SpawnNodeStatus): boolean =>
-  status === 'planned' || status === 'queued';
+  status === 'planned' || status === 'queued'
 
 const StatusGlyph = ({ status }: { readonly status: SpawnNodeStatus }) =>
   status === 'running' ? (
@@ -121,23 +121,23 @@ const StatusGlyph = ({ status }: { readonly status: SpawnNodeStatus }) =>
     <span className="size-1.5 rounded-full bg-danger" aria-hidden />
   ) : (
     <Clock size={11} aria-hidden className="text-muted-foreground/60" />
-  );
+  )
 
 const StepBadge = ({
   step,
   onAdvance,
 }: {
-  readonly step: StepModel;
-  readonly onAdvance?: () => void;
+  readonly step: StepModel
+  readonly onAdvance?: () => void
 }) => {
-  const ghost = isGhostStep(step.status);
+  const ghost = isGhostStep(step.status)
   const statusIcon = onAdvance ? (
     <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
       <Play size={8} aria-hidden className="text-primary" fill="currentColor" />
     </span>
   ) : (
     <StatusGlyph status={step.status} />
-  );
+  )
   const inner = (
     <>
       <span className="flex size-3.5 shrink-0 items-center justify-center">{statusIcon}</span>
@@ -147,47 +147,47 @@ const StepBadge = ({
         title={`${step.name || ''} ${ghost ? 'pending' : outcomeWord(step.status)}`.trim()}
       />
     </>
-  );
+  )
   if (onAdvance) {
     return (
       <button
         type="button"
         onClick={(e) => {
-          e.stopPropagation();
-          onAdvance();
+          e.stopPropagation()
+          onAdvance()
         }}
         title={`start ${step.name || 'this step'}`}
         className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-primary/40 transition-colors hover:bg-primary/10"
       >
         {inner}
       </button>
-    );
+    )
   }
-  return <span className="inline-flex shrink-0 items-center gap-1">{inner}</span>;
-};
+  return <span className="inline-flex shrink-0 items-center gap-1">{inner}</span>
+}
 
 type LaneAdvance = {
-  readonly workflow: WorkflowModel;
-  readonly runs: ReadonlyArray<Agent>;
-  readonly hasOpenQuestions: boolean;
-  readonly onAdvance: (step: Step) => void | Promise<void>;
-};
+  readonly workflow: WorkflowModel
+  readonly runs: ReadonlyArray<Agent>
+  readonly hasOpenQuestions: boolean
+  readonly onAdvance: (step: Step) => void | Promise<void>
+}
 
 const PipelineLane = ({
   lane,
   onOpen,
   advance,
 }: {
-  readonly lane: RunLaneModel;
-  readonly onOpen: () => void;
-  readonly advance?: LaneAdvance;
+  readonly lane: RunLaneModel
+  readonly onOpen: () => void
+  readonly advance?: LaneAdvance
 }) => {
-  const done = lane.steps.filter((s) => s.status === 'done').length;
+  const done = lane.steps.filter((s) => s.status === 'done').length
   const nextStep = advance
     ? pickNextWorkflowStep(advance.workflow, advance.runs, {
         hasOpenQuestions: advance.hasOpenQuestions,
       })
-    : null;
+    : null
   return (
     <div className="group flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 shadow-sm transition-colors hover:border-border">
       <button type="button" onClick={onOpen} className="flex w-full items-center gap-2 text-left">
@@ -219,8 +219,8 @@ const PipelineLane = ({
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const SummaryRow = ({
   icon: Icon,
@@ -228,10 +228,10 @@ const SummaryRow = ({
   label,
   onClick,
 }: {
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-  readonly onClick: () => void;
+  readonly icon: LucideIcon
+  readonly tone: Tone
+  readonly label: string
+  readonly onClick: () => void
 }) => (
   <button
     type="button"
@@ -246,14 +246,14 @@ const SummaryRow = ({
       className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
     />
   </button>
-);
+)
 
 const AgentRow = ({
   agent,
   onClick,
 }: {
-  readonly agent: SpawnNode;
-  readonly onClick: () => void;
+  readonly agent: SpawnNode
+  readonly onClick: () => void
 }) => (
   <button
     type="button"
@@ -276,7 +276,7 @@ const AgentRow = ({
       className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
     />
   </button>
-);
+)
 
 const StartCard = ({
   icon: Icon,
@@ -284,10 +284,10 @@ const StartCard = ({
   label,
   onClick,
 }: {
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-  readonly onClick: () => void;
+  readonly icon: LucideIcon
+  readonly tone: Tone
+  readonly label: string
+  readonly onClick: () => void
 }) => (
   <button
     type="button"
@@ -306,68 +306,68 @@ const StartCard = ({
     </span>
     <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
   </button>
-);
+)
 
 type PipelineSectionProps = {
-  readonly session: Session;
-  readonly workspaceId: WorkspaceId;
-  readonly onSelectLens: (lens: LensKind) => void;
-};
+  readonly session: Session
+  readonly workspaceId: WorkspaceId
+  readonly onSelectLens: (lens: LensKind) => void
+}
 
 const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSectionProps) => {
-  const sessionList = useMemo(() => [session], [session]);
-  const { lanes, freeAgents, resolveQueue } = useWorkspaceRuns(workspaceId, sessionList);
-  const sessionId = session.id as SessionId;
-  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
-  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
+  const sessionList = useMemo(() => [session], [session])
+  const { lanes, freeAgents, resolveQueue } = useWorkspaceRuns(workspaceId, sessionList)
+  const sessionId = session.id as SessionId
+  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun)
+  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent)
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
+  )
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates?.[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
-  );
+  )
   const sessionWorkflows = useAppStore(
     (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
-  );
-  const openQuestions = useSessionOpenQuestions(sessionId);
+  )
+  const openQuestions = useSessionOpenQuestions(sessionId)
 
   const workflowById = useMemo(() => {
-    const m = new Map<string, WorkflowModel>();
-    for (const w of phaseTemplates) m.set(w.id, w);
-    for (const w of sessionWorkflows) m.set(w.id, w);
-    return m;
-  }, [phaseTemplates, sessionWorkflows]);
+    const m = new Map<string, WorkflowModel>()
+    for (const w of phaseTemplates) m.set(w.id, w)
+    for (const w of sessionWorkflows) m.set(w.id, w)
+    return m
+  }, [phaseTemplates, sessionWorkflows])
 
   if (lanes.length === 0 && freeAgents.length === 0 && resolveQueue.length === 0) {
-    return null;
+    return null
   }
 
   const open = (runId: string) => {
-    setFocusedWorkflowRun(sessionId, runId);
-    onSelectLens('workflows');
-  };
+    setFocusedWorkflowRun(sessionId, runId)
+    onSelectLens('workflows')
+  }
 
   const advanceFor = (runId: string): LaneAdvance | undefined => {
-    const run = session.workflowRuns.find((r) => r.id === runId);
-    const workflow = run ? workflowById.get(run.workflowId) : undefined;
+    const run = session.workflowRuns.find((r) => r.id === runId)
+    const workflow = run ? workflowById.get(run.workflowId) : undefined
     if (!run || !workflow) {
-      return undefined;
+      return undefined
     }
     const runs = phaseRuns.filter(
       (r) => r.workflowRunId === runId && r.stepId != null && r.parentAgentId == null,
-    );
+    )
     return {
       workflow,
       runs,
       hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
       onAdvance: async (step) => {
-        const agent = runs.find((r) => r.stepId === step.id);
+        const agent = runs.find((r) => r.stepId === step.id)
         if (agent?.status === 'pending') {
-          await activateWorkflowAgent(sessionId, agent.id, undefined, false);
+          await activateWorkflowAgent(sessionId, agent.id, undefined, false)
         }
       },
-    };
-  };
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -394,58 +394,58 @@ const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSection
         ) : null}
       </div>
     </div>
-  );
-};
+  )
+}
 
 export const SessionOverviewPane = ({
   session,
   filesTouched,
   onSelectLens,
 }: SessionOverviewPaneProps) => {
-  const stage = useSessionStageInfo(session);
-  const workspace = useCurrentWorkspace();
-  const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const attention = selectAttention(stage);
-  const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
+  const stage = useSessionStageInfo(session)
+  const workspace = useCurrentWorkspace()
+  const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const attention = selectAttention(stage)
+  const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id))
   const agents = selectStandaloneAgents(
     useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
-  );
-  const runningAgents = agents.filter((a) => a.status === 'running').length;
-  const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
+  )
+  const runningAgents = agents.filter((a) => a.status === 'running').length
+  const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length
   const hasPr = useAppStore(
     (s) => s.sessionGithub[session.id]?.pr != null || s.sessionGitlabMr[session.id]?.mr != null,
-  );
+  )
 
-  const openCount = openQuestions.length;
-  const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
-  const isFresh = activeWorkflows === 0 && agents.length === 0;
-  const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
+  const openCount = openQuestions.length
+  const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length
+  const isFresh = activeWorkflows === 0 && agents.length === 0
+  const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running')
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-workflow-builder', {
         detail: { sessionId: session.id as SessionId },
       }),
-    );
-  };
+    )
+  }
   const startAgent = () => {
-    void spawnAgent(session.id as SessionId, {});
-  };
+    void spawnAgent(session.id as SessionId, {})
+  }
 
-  const nudges: Nudge[] = [];
+  const nudges: Nudge[] = []
   if (openCount > 0) {
     nudges.push({
       icon: CircleHelp,
       label: `${openCount} open ${openCount === 1 ? 'question' : 'questions'}`,
       detail: openQuestions[0]!.text.trim().split('\n')[0] ?? '',
       lens: 'questions',
-    });
+    })
   }
   const attentionLens = resolveAttentionLens(stage, {
     hasStandalone: agents.length > 0,
     hasWorkflow: activeWorkflows > 0,
-  });
+  })
   if (attention.active && attentionLens && attentionLens !== 'questions') {
     nudges.push({
       icon: attentionLens === 'pr' ? GitPullRequest : attentionLens === 'workflows' ? Layers : Bot,
@@ -457,7 +457,7 @@ export const SessionOverviewPane = ({
             : 'An agent needs you',
       detail: attention.reason,
       lens: attentionLens,
-    });
+    })
   }
 
   const metrics: Metric[] = [
@@ -503,7 +503,7 @@ export const SessionOverviewPane = ({
       label: 'pull request',
       active: hasPr,
     },
-  ];
+  ]
 
   return (
     <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
@@ -669,5 +669,5 @@ export const SessionOverviewPane = ({
         </div>
       </div>
     </ScrollFade>
-  );
-};
+  )
+}

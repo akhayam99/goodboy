@@ -1,9 +1,9 @@
-import { ExternalLink } from 'lucide-react';
-import type { ProviderGuide } from './guides';
+import { ExternalLink } from 'lucide-react'
+import type { ProviderGuide } from './guides'
 
 type Props = {
-  readonly guide: ProviderGuide;
-};
+  readonly guide: ProviderGuide
+}
 
 export const GuidePanel = ({ guide }: Props) => {
   return (
@@ -45,5 +45,5 @@ export const GuidePanel = ({ guide }: Props) => {
         <ExternalLink size={10} aria-hidden />
       </a>
     </div>
-  );
-};
+  )
+}

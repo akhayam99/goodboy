@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core'
 import type {
   IsoDateTime,
   PermissionAuditEntry,
@@ -12,34 +12,34 @@ import type {
   ProviderRunId,
   SessionId,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
 type RawPermissionRuleRow = {
-  readonly id: string;
-  readonly scope: string;
-  readonly workspaceId: string | null;
-  readonly sessionId: string | null;
-  readonly patternTool: string;
-  readonly patternArgsMatcher: string | null;
-  readonly decision: string;
-  readonly priority: number;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
+  readonly id: string
+  readonly scope: string
+  readonly workspaceId: string | null
+  readonly sessionId: string | null
+  readonly patternTool: string
+  readonly patternArgsMatcher: string | null
+  readonly decision: string
+  readonly priority: number
+  readonly createdAt: string
+  readonly updatedAt: string
+}
 
 type RawPermissionAuditRow = {
-  readonly id: string;
-  readonly runId: string;
-  readonly sessionId: string;
-  readonly toolUseId: string;
-  readonly toolName: string;
-  readonly inputJson: string;
-  readonly decision: string;
-  readonly ruleId: string | null;
-  readonly decidedBy: string;
-  readonly requestedAt: string;
-  readonly decidedAt: string;
-};
+  readonly id: string
+  readonly runId: string
+  readonly sessionId: string
+  readonly toolUseId: string
+  readonly toolName: string
+  readonly inputJson: string
+  readonly decision: string
+  readonly ruleId: string | null
+  readonly decidedBy: string
+  readonly requestedAt: string
+  readonly decidedAt: string
+}
 
 function rowToPermissionRule(row: RawPermissionRuleRow): PermissionRule {
   return {
@@ -55,7 +55,7 @@ function rowToPermissionRule(row: RawPermissionRuleRow): PermissionRule {
     priority: row.priority,
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
-  };
+  }
 }
 
 function rowToAuditEntry(row: RawPermissionAuditRow): PermissionAuditEntry {
@@ -75,46 +75,46 @@ function rowToAuditEntry(row: RawPermissionAuditRow): PermissionAuditEntry {
       decidedBy: row.decidedBy as PermissionDecisionSource,
       at: row.decidedAt as IsoDateTime,
     },
-  };
+  }
 }
 
 export type PermissionRuleUpsertPayload = {
-  readonly id?: PermissionRuleId;
-  readonly scope: PermissionRuleScope;
-  readonly workspaceId?: WorkspaceId;
-  readonly sessionId?: SessionId;
-  readonly patternTool: string;
-  readonly patternArgsMatcher?: string;
-  readonly decision: PermissionDecisionKind;
-  readonly priority: number;
-};
+  readonly id?: PermissionRuleId
+  readonly scope: PermissionRuleScope
+  readonly workspaceId?: WorkspaceId
+  readonly sessionId?: SessionId
+  readonly patternTool: string
+  readonly patternArgsMatcher?: string
+  readonly decision: PermissionDecisionKind
+  readonly priority: number
+}
 
 export type PermissionAuditInsertPayload = {
-  readonly id?: string;
-  readonly runId: ProviderRunId;
-  readonly sessionId: SessionId;
-  readonly toolUseId: string;
-  readonly toolName: string;
-  readonly inputJson: string;
-  readonly decision: PermissionDecisionOutcome;
-  readonly ruleId?: PermissionRuleId;
-  readonly decidedBy: PermissionDecisionSource;
-  readonly requestedAt: IsoDateTime;
-  readonly decidedAt: IsoDateTime;
-};
+  readonly id?: string
+  readonly runId: ProviderRunId
+  readonly sessionId: SessionId
+  readonly toolUseId: string
+  readonly toolName: string
+  readonly inputJson: string
+  readonly decision: PermissionDecisionOutcome
+  readonly ruleId?: PermissionRuleId
+  readonly decidedBy: PermissionDecisionSource
+  readonly requestedAt: IsoDateTime
+  readonly decidedAt: IsoDateTime
+}
 
 export const invokePermissionRuleList = async (args: {
-  scope: PermissionRuleScope;
-  workspaceId?: WorkspaceId;
-  sessionId?: SessionId;
+  scope: PermissionRuleScope
+  workspaceId?: WorkspaceId
+  sessionId?: SessionId
 }): Promise<ReadonlyArray<PermissionRule>> => {
   const rows = await invoke<RawPermissionRuleRow[]>('permission_rule_list', {
     scope: args.scope,
     workspaceId: args.workspaceId ?? null,
     sessionId: args.sessionId ?? null,
-  });
-  return rows.map(rowToPermissionRule);
-};
+  })
+  return rows.map(rowToPermissionRule)
+}
 
 export const invokePermissionRuleUpsert = async (
   input: PermissionRuleUpsertPayload,
@@ -130,9 +130,9 @@ export const invokePermissionRuleUpsert = async (
       decision: input.decision,
       priority: input.priority,
     },
-  });
-  return rowToPermissionRule(row);
-};
+  })
+  return rowToPermissionRule(row)
+}
 
 export const invokePermissionAuditInsert = async (
   input: PermissionAuditInsertPayload,
@@ -151,27 +151,27 @@ export const invokePermissionAuditInsert = async (
       requestedAt: input.requestedAt,
       decidedAt: input.decidedAt,
     },
-  });
-  return rowToAuditEntry(row);
-};
+  })
+  return rowToAuditEntry(row)
+}
 
 type RawAuditRetryRow = {
-  readonly id: string;
-  readonly payloadJson: string;
-  readonly attempts: number;
-  readonly lastError: string | null;
-  readonly createdAt: number;
-  readonly updatedAt: number;
-};
+  readonly id: string
+  readonly payloadJson: string
+  readonly attempts: number
+  readonly lastError: string | null
+  readonly createdAt: number
+  readonly updatedAt: number
+}
 
 export type AuditRetryEntry = {
-  readonly id: string;
-  readonly payloadJson: string;
-  readonly attempts: number;
-  readonly lastError: string | null;
-  readonly createdAt: number;
-  readonly updatedAt: number;
-};
+  readonly id: string
+  readonly payloadJson: string
+  readonly attempts: number
+  readonly lastError: string | null
+  readonly createdAt: number
+  readonly updatedAt: number
+}
 
 function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
   return {
@@ -181,28 +181,28 @@ function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
     lastError: row.lastError,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-  };
+  }
 }
 
 export const invokeAuditRetryEnqueue = async (id: string, payloadJson: string): Promise<void> => {
-  return invoke<void>('permission_audit_retry_enqueue', { input: { id, payloadJson } });
-};
+  return invoke<void>('permission_audit_retry_enqueue', { input: { id, payloadJson } })
+}
 
 export const invokeAuditRetryDrain = async (
   limit: number,
 ): Promise<ReadonlyArray<AuditRetryEntry>> => {
-  const rows = await invoke<RawAuditRetryRow[]>('permission_audit_retry_drain', { limit });
-  return rows.map(rowToAuditRetryEntry);
-};
+  const rows = await invoke<RawAuditRetryRow[]>('permission_audit_retry_drain', { limit })
+  return rows.map(rowToAuditRetryEntry)
+}
 
 export const invokeAuditRetryUpdate = async (
   id: string,
   attempts: number,
   lastError: string,
 ): Promise<void> => {
-  return invoke<void>('permission_audit_retry_update', { id, attempts, lastError });
-};
+  return invoke<void>('permission_audit_retry_update', { id, attempts, lastError })
+}
 
 export const invokeAuditRetryDelete = async (id: string): Promise<void> => {
-  return invoke<void>('permission_audit_retry_delete', { id });
-};
+  return invoke<void>('permission_audit_retry_delete', { id })
+}

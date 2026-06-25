@@ -29,4 +29,4 @@ CREATE TABLE IF NOT EXISTS budget_alerts (
 CREATE INDEX IF NOT EXISTS idx_budget_alerts_session_id ON budget_alerts(session_id);
 CREATE INDEX IF NOT EXISTS idx_budget_alerts_provider ON budget_alerts(provider);
 CREATE INDEX IF NOT EXISTS idx_budget_alerts_created_at ON budget_alerts(created_at);
-`;
+`

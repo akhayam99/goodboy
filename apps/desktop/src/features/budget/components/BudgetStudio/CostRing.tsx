@@ -1,19 +1,19 @@
-import { Eyebrow } from '@goodboy/ui';
-import { spendStrokeColor } from './lib';
+import { Eyebrow } from '@goodboy/ui'
+import { spendStrokeColor } from './lib'
 
 type Props = {
-  readonly pct: number;
-  readonly centerLabel: string;
-  readonly subLabel?: string;
-  readonly size?: number;
-};
+  readonly pct: number
+  readonly centerLabel: string
+  readonly subLabel?: string
+  readonly size?: number
+}
 
 export const CostRing = ({ pct, centerLabel, subLabel, size = 132 }: Props) => {
-  const stroke = 12;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const filled = Math.min(Math.max(pct, 0), 1) * c;
-  const center = size / 2;
+  const stroke = 12
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  const filled = Math.min(Math.max(pct, 0), 1) * c
+  const center = size / 2
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -44,5 +44,5 @@ export const CostRing = ({ pct, centerLabel, subLabel, size = 132 }: Props) => {
         {subLabel ? <Eyebrow label={subLabel} /> : null}
       </div>
     </div>
-  );
-};
+  )
+}

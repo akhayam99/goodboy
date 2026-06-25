@@ -1,10 +1,10 @@
-import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
-import { AGENT_KIND_META, inferAgentKindFromName, type AgentKind } from '../session/agent-kind';
-import type { QuickActionItem } from './types';
+import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types'
+import { AGENT_KIND_META, inferAgentKindFromName, type AgentKind } from '../session/agent-kind'
+import type { QuickActionItem } from './types'
 
 function firstLine(body: string): string | undefined {
-  const line = body.trim().split('\n', 1)[0]?.trim();
-  return line ? line : undefined;
+  const line = body.trim().split('\n', 1)[0]?.trim()
+  return line ? line : undefined
 }
 
 export const buildScriptActions = (
@@ -17,8 +17,8 @@ export const buildScriptActions = (
     sublabel: firstLine(script.body),
     group: 'script',
     perform: () => onPick(script),
-  }));
-};
+  }))
+}
 
 export const buildSkillActions = (
   skills: ReadonlyArray<Skill>,
@@ -30,8 +30,8 @@ export const buildSkillActions = (
     sublabel: skill.description || undefined,
     group: 'skill',
     perform: () => onPick(skill),
-  }));
-};
+  }))
+}
 
 export const buildWorkflowActions = (
   workflows: ReadonlyArray<Workflow>,
@@ -45,8 +45,8 @@ export const buildWorkflowActions = (
       `${workflow.steps.length} step${workflow.steps.length === 1 ? '' : 's'}`,
     group: 'workflow',
     perform: () => onPick(workflow),
-  }));
-};
+  }))
+}
 
 export const buildAgentActions = (
   agents: ReadonlyArray<Agent>,
@@ -57,7 +57,7 @@ export const buildAgentActions = (
   const switches = agents
     .filter((agent) => agent.deletedAt === undefined)
     .map<QuickActionItem>((agent) => {
-      const kind = kindOverride[agent.id] ?? inferAgentKindFromName(agent.name);
+      const kind = kindOverride[agent.id] ?? inferAgentKindFromName(agent.name)
       return {
         id: `agent:${agent.id}`,
         label: agent.name,
@@ -65,10 +65,10 @@ export const buildAgentActions = (
         trailing: { label: AGENT_KIND_META[kind].label, kind },
         group: 'agent',
         perform: () => onSwitch(agent),
-      };
-    });
+      }
+    })
   return [
     ...switches,
     { id: 'agent:spawn', label: '+ new agent', group: 'agent', perform: onSpawn },
-  ];
-};
+  ]
+}

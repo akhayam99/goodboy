@@ -3,15 +3,15 @@ import {
   type Notification,
   type NotificationKind,
   type NotificationSeverity,
-} from '@goodboy/db';
-import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+} from '@goodboy/db'
+import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types'
+import { tauriDatabase } from '../../../shared/lib/db'
+import type { SetFn } from './types'
 
 type Params = {
-  sessionId?: SessionId;
-  workspaceId?: WorkspaceId;
-};
+  sessionId?: SessionId
+  workspaceId?: WorkspaceId
+}
 
 export const emitNotification = (set: SetFn) => {
   return async (
@@ -31,8 +31,8 @@ export const emitNotification = (set: SetFn) => {
       sessionId: opts?.sessionId ?? null,
       workspaceId: opts?.workspaceId ?? null,
       read: false,
-    };
-    await insertNotification(tauriDatabase, n);
-    set((state) => ({ notifications: [n, ...state.notifications] }));
-  };
-};
+    }
+    await insertNotification(tauriDatabase, n)
+    set((state) => ({ notifications: [n, ...state.notifications] }))
+  }
+}

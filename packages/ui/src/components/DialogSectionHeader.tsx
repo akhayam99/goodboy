@@ -1,17 +1,17 @@
-import type { ReactNode } from 'react';
-import { cn } from '../cn';
-import { tintClasses } from '../tint';
+import type { ReactNode } from 'react'
+import { cn } from '../cn'
+import { tintClasses } from '../tint'
 
-export type DialogSectionHeaderTone = 'primary' | 'success' | 'warning' | 'danger' | 'info';
+export type DialogSectionHeaderTone = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 
 export type DialogSectionHeaderProps = {
-  readonly icon: ReactNode;
-  readonly title: string;
-  readonly description?: string;
-  readonly tone?: DialogSectionHeaderTone;
-  readonly beta?: boolean;
-  readonly className?: string;
-};
+  readonly icon: ReactNode
+  readonly title: string
+  readonly description?: string
+  readonly tone?: DialogSectionHeaderTone
+  readonly beta?: boolean
+  readonly className?: string
+}
 
 const TITLE_FG: Record<DialogSectionHeaderTone, string> = {
   primary: 'text-foreground',
@@ -19,7 +19,7 @@ const TITLE_FG: Record<DialogSectionHeaderTone, string> = {
   warning: 'text-foreground',
   danger: 'text-danger',
   info: 'text-foreground',
-};
+}
 
 export const DialogSectionHeader = ({
   icon,
@@ -51,5 +51,5 @@ export const DialogSectionHeader = ({
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
     </div>
-  );
-};
+  )
+}

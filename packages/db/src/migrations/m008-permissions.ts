@@ -34,4 +34,4 @@ CREATE TABLE IF NOT EXISTS permission_audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_permission_audit_session_id ON permission_audit_log(session_id);
 CREATE INDEX IF NOT EXISTS idx_permission_audit_run_id ON permission_audit_log(run_id);
-`;
+`

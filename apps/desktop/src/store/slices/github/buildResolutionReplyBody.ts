@@ -3,20 +3,20 @@ export const buildResolutionReplyBody = (
   prUrl: string | null,
 ): string | null => {
   if (!closure) {
-    return null;
+    return null
   }
-  const sha = closure.commitSha?.trim();
+  const sha = closure.commitSha?.trim()
   if (sha && sha.length > 0) {
-    const short = sha.slice(0, 7);
-    const commitUrl = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
+    const short = sha.slice(0, 7)
+    const commitUrl = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null
     if (commitUrl && commitUrl !== prUrl) {
-      return `Resolved in [\`${short}\`](${commitUrl}).`;
+      return `Resolved in [\`${short}\`](${commitUrl}).`
     }
-    return `Resolved in \`${short}\`.`;
+    return `Resolved in \`${short}\`.`
   }
-  const reason = closure.reason?.trim();
+  const reason = closure.reason?.trim()
   if (reason && reason.length > 0) {
-    return `Closing: ${reason}`;
+    return `Closing: ${reason}`
   }
-  return null;
-};
+  return null
+}

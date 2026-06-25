@@ -1,9 +1,9 @@
-import { listPendingResolutionsForSession, queuePendingResolution } from '@goodboy/db';
-import type { SessionId } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import { listPendingResolutionsForSession, queuePendingResolution } from '@goodboy/db'
+import type { SessionId } from '@goodboy/types'
+import { tauriDatabase } from '../../../shared/lib/db'
+import type { GetFn, SetFn } from './types'
 
-type QueueArgs = { threadId: string; commitSha: string; prNumber: number };
+type QueueArgs = { threadId: string; commitSha: string; prNumber: number }
 
 export const queueResolution = (set: SetFn, _get: GetFn) => {
   return async (
@@ -17,10 +17,10 @@ export const queueResolution = (set: SetFn, _get: GetFn) => {
       prNumber,
       threadId,
       commitSha,
-    );
-    const rows = await listPendingResolutionsForSession(tauriDatabase, sessionId);
+    )
+    const rows = await listPendingResolutionsForSession(tauriDatabase, sessionId)
     set((state) => ({
       sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
-    }));
-  };
-};
+    }))
+  }
+}

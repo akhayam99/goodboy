@@ -30,4 +30,4 @@ CREATE INDEX idx_diff_comments_task_file ON diff_comments(task_id, file_path);
 CREATE INDEX idx_diff_comments_task_file_line
   ON diff_comments(task_id, file_path, line_side, line_number);
 CREATE INDEX idx_diff_comments_consumed_by ON diff_comments(consumed_by_agent_id);
-`;
+`

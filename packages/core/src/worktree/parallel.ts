@@ -1,87 +1,87 @@
-import type { SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types'
 
 export type ParallelWorktreeDeps = {
   invokeWorktreeCreate: (args: {
-    repoPath: string;
-    branchPrefix: string;
-    slug: string;
-    parentDir?: string;
-  }) => Promise<{ worktreePath: string; branch: string }>;
-  invokeWorktreeRemove: (args: { repoPath: string; worktreePath: string }) => Promise<void>;
+    repoPath: string
+    branchPrefix: string
+    slug: string
+    parentDir?: string
+  }) => Promise<{ worktreePath: string; branch: string }>
+  invokeWorktreeRemove: (args: { repoPath: string; worktreePath: string }) => Promise<void>
   insertSessionWorktree: (args: {
-    sessionId: SessionId;
-    worktreePath: string;
-    branch: string;
-    parallelIndex: number;
-  }) => Promise<void>;
+    sessionId: SessionId
+    worktreePath: string
+    branch: string
+    parallelIndex: number
+  }) => Promise<void>
   listWorktreesForSession: (
     sessionId: SessionId,
-  ) => Promise<ReadonlyArray<{ worktreePath: string; branch: string; parallelIndex: number }>>;
-  deleteWorktreesForSession: (sessionId: SessionId) => Promise<void>;
-};
+  ) => Promise<ReadonlyArray<{ worktreePath: string; branch: string; parallelIndex: number }>>
+  deleteWorktreesForSession: (sessionId: SessionId) => Promise<void>
+}
 
 export type ParallelWorktreeResult = {
-  readonly worktreePath: string;
-  readonly branch: string;
-  readonly parallelIndex: number;
-};
+  readonly worktreePath: string
+  readonly branch: string
+  readonly parallelIndex: number
+}
 
 function splitParentBranch(parentBranch: string): { prefix: string; base: string } {
-  const slashIdx = parentBranch.indexOf('/');
+  const slashIdx = parentBranch.indexOf('/')
   if (slashIdx === -1) {
-    return { prefix: 'goodboy', base: parentBranch };
+    return { prefix: 'goodboy', base: parentBranch }
   }
   return {
     prefix: parentBranch.slice(0, slashIdx),
     base: parentBranch.slice(slashIdx + 1),
-  };
+  }
 }
 
 export const createParallelWorktrees = async (
   deps: ParallelWorktreeDeps,
   args: {
-    sessionId: SessionId;
-    repoPath: string;
-    parentBranch: string;
-    n: number;
-    slugSeed: string;
+    sessionId: SessionId
+    repoPath: string
+    parentBranch: string
+    n: number
+    slugSeed: string
   },
 ): Promise<ReadonlyArray<ParallelWorktreeResult>> => {
-  const { prefix } = splitParentBranch(args.parentBranch);
-  const created: Array<{ worktreePath: string; branch: string; index: number }> = [];
+  const { prefix } = splitParentBranch(args.parentBranch)
+  const created: Array<{ worktreePath: string; branch: string; index: number }> = []
 
   const tasks = Array.from({ length: args.n }, (_, i) => async () => {
-    const slug = `${args.slugSeed}-p${i}`;
+    const slug = `${args.slugSeed}-p${i}`
     const result = await deps.invokeWorktreeCreate({
       repoPath: args.repoPath,
       branchPrefix: prefix,
       slug,
       parentDir: undefined,
-    });
-    return { worktreePath: result.worktreePath, branch: result.branch, index: i };
-  });
+    })
+    return { worktreePath: result.worktreePath, branch: result.branch, index: i }
+  })
 
-  let settled: PromiseSettledResult<{ worktreePath: string; branch: string; index: number }>[];
+  let settled: PromiseSettledResult<{ worktreePath: string; branch: string; index: number }>[]
   try {
-    settled = await Promise.allSettled(tasks.map((t) => t()));
+    settled = await Promise.allSettled(tasks.map((t) => t()))
   } catch {
-    settled = [];
+    settled = []
   }
 
-  const failures: string[] = [];
+  const failures: string[] = []
   for (const r of settled) {
     if (r.status === 'fulfilled') {
-      created.push(r.value);
+      created.push(r.value)
     } else {
-      failures.push(String(r.reason));
+      failures.push(String(r.reason))
     }
   }
 
   if (failures.length > 0) {
-    await rollback(deps, args.repoPath, created);
+    await rollback(deps, args.repoPath, created)
     throw new Error(
       `createParallelWorktrees: ${failures.length} of ${args.n} failed:\n${failures.join('\n')}`,
-    );
+    )
   }
 
   await Promise.all(
@@ -93,12 +93,12 @@ export const createParallelWorktrees = async (
         parallelIndex: c.index,
       }),
     ),
-  );
+  )
 
   return created
     .sort((a, b) => a.index - b.index)
-    .map((c) => ({ worktreePath: c.worktreePath, branch: c.branch, parallelIndex: c.index }));
-};
+    .map((c) => ({ worktreePath: c.worktreePath, branch: c.branch, parallelIndex: c.index }))
+}
 
 async function rollback(
   deps: ParallelWorktreeDeps,
@@ -107,10 +107,10 @@ async function rollback(
 ): Promise<void> {
   const results = await Promise.allSettled(
     created.map((c) => deps.invokeWorktreeRemove({ repoPath, worktreePath: c.worktreePath })),
-  );
+  )
   for (const r of results) {
     if (r.status === 'rejected') {
-      console.error('[parallel] rollback cleanup failed:', r.reason);
+      console.error('[parallel] rollback cleanup failed:', r.reason)
     }
   }
 }
@@ -119,19 +119,19 @@ export const removeParallelWorktrees = async (
   deps: ParallelWorktreeDeps,
   args: { repoPath: string; sessionId: SessionId },
 ): Promise<void> => {
-  const rows = await deps.listWorktreesForSession(args.sessionId);
+  const rows = await deps.listWorktreesForSession(args.sessionId)
 
   const results = await Promise.allSettled(
     rows.map((row) =>
       deps.invokeWorktreeRemove({ repoPath: args.repoPath, worktreePath: row.worktreePath }),
     ),
-  );
+  )
 
   for (const r of results) {
     if (r.status === 'rejected') {
-      console.error('[parallel] removeParallelWorktrees: removal failed (non-fatal):', r.reason);
+      console.error('[parallel] removeParallelWorktrees: removal failed (non-fatal):', r.reason)
     }
   }
 
-  await deps.deleteWorktreesForSession(args.sessionId);
-};
+  await deps.deleteWorktreesForSession(args.sessionId)
+}

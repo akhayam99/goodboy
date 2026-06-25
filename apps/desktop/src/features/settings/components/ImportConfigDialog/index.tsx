@@ -1,21 +1,21 @@
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button, Dialog } from '@goodboy/ui';
-import type { ConfigBundleImportResult } from '@goodboy/types';
-import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Button, Dialog } from '@goodboy/ui'
+import type { ConfigBundleImportResult } from '@goodboy/types'
+import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features'
 
 type Props = {
-  open: boolean;
-  result: ConfigBundleImportResult | null;
-  error: string | null;
-  onClose: () => void;
-};
+  open: boolean
+  result: ConfigBundleImportResult | null
+  error: string | null
+  onClose: () => void
+}
 
 export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
   const title = error
     ? 'Import failed'
     : result?.ok
       ? 'Import complete'
-      : 'Import validation errors';
+      : 'Import validation errors'
 
   const statRows: ReadonlyArray<{ readonly label: string; readonly value: number }> = result?.ok
     ? [
@@ -27,7 +27,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           ? [{ label: 'budget rules', value: result.stats.budgetRules }]
           : []),
       ]
-    : [];
+    : []
 
   return (
     <Dialog
@@ -69,5 +69,5 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
         </ul>
       ) : null}
     </Dialog>
-  );
-};
+  )
+}

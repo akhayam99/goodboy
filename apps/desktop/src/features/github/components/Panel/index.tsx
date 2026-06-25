@@ -1,64 +1,64 @@
-import { useEffect, useState } from 'react';
-import { GitFork as GithubIcon, Check, AlertCircle, RefreshCw } from 'lucide-react';
-import { Button, Input, cn } from '@goodboy/ui';
-import { formatError } from '../../../../shared/lib/errors';
-import type { SaveState } from '../../../../shared/types/saveState';
-import { useAppStore } from '../../../../store';
-import { CreateTokenLink } from '../../../integrations/github/CreateTokenLink';
+import { useEffect, useState } from 'react'
+import { GitFork as GithubIcon, Check, AlertCircle, RefreshCw } from 'lucide-react'
+import { Button, Input, cn } from '@goodboy/ui'
+import { formatError } from '../../../../shared/lib/errors'
+import type { SaveState } from '../../../../shared/types/saveState'
+import { useAppStore } from '../../../../store'
+import { CreateTokenLink } from '../../../integrations/github/CreateTokenLink'
 
 export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) => {
-  const status = useAppStore((s) => s.githubStatus);
-  const refreshStatus = useAppStore((s) => s.refreshGithubStatus);
-  const setPat = useAppStore((s) => s.setGithubPat);
-  const clearToken = useAppStore((s) => s.clearGithubToken);
+  const status = useAppStore((s) => s.githubStatus)
+  const refreshStatus = useAppStore((s) => s.refreshGithubStatus)
+  const setPat = useAppStore((s) => s.setGithubPat)
+  const clearToken = useAppStore((s) => s.clearGithubToken)
 
-  const [token, setToken] = useState('');
-  const [save, setSave] = useState<SaveState>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
+  const [token, setToken] = useState('')
+  const [save, setSave] = useState<SaveState>('idle')
+  const [error, setError] = useState<string | null>(null)
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => {
     if (!status) {
-      void refreshStatus();
+      void refreshStatus()
     }
-  }, [status, refreshStatus]);
+  }, [status, refreshStatus])
 
   const onReload = async () => {
-    setChecking(true);
+    setChecking(true)
     try {
-      await refreshStatus();
+      await refreshStatus()
     } finally {
-      setChecking(false);
+      setChecking(false)
     }
-  };
+  }
 
   const onConnect = async () => {
     if (!token.trim()) {
-      return;
+      return
     }
-    setSave('saving');
-    setError(null);
+    setSave('saving')
+    setError(null)
     try {
-      await setPat(token.trim());
-      setToken('');
-      setSave('saved');
+      await setPat(token.trim())
+      setToken('')
+      setSave('saved')
     } catch (err) {
-      setSave('error');
-      setError(formatError(err));
+      setSave('error')
+      setError(formatError(err))
     }
-  };
+  }
 
   const onDisconnect = async () => {
-    setSave('saving');
-    setError(null);
+    setSave('saving')
+    setError(null)
     try {
-      await clearToken();
-      setSave('saved');
+      await clearToken()
+      setSave('saved')
     } catch (err) {
-      setSave('error');
-      setError(formatError(err));
+      setSave('error')
+      setError(formatError(err))
     }
-  };
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -108,8 +108,8 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
         Settings → Integrations.
       </p>
     </div>
-  );
-};
+  )
+}
 
 function NotInstalled() {
   return (
@@ -133,7 +133,7 @@ function NotInstalled() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function Absent({
@@ -143,11 +143,11 @@ function Absent({
   save,
   error,
 }: {
-  token: string;
-  setToken: (v: string) => void;
-  onConnect: () => void;
-  save: SaveState;
-  error: string | null;
+  token: string
+  setToken: (v: string) => void
+  onConnect: () => void
+  save: SaveState
+  error: string | null
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -186,7 +186,7 @@ function Absent({
         machine.
       </p>
     </div>
-  );
+  )
 }
 
 function Connected({
@@ -198,15 +198,15 @@ function Connected({
   onConnect,
   error,
 }: {
-  status: { user?: string; mode: string; version?: string; scopes?: ReadonlyArray<string> };
-  onDisconnect: () => void;
-  save: SaveState;
-  token: string;
-  setToken: (v: string) => void;
-  onConnect: () => void;
-  error: string | null;
+  status: { user?: string; mode: string; version?: string; scopes?: ReadonlyArray<string> }
+  onDisconnect: () => void
+  save: SaveState
+  token: string
+  setToken: (v: string) => void
+  onConnect: () => void
+  error: string | null
 }) {
-  const viaPat = status.mode === 'pat';
+  const viaPat = status.mode === 'pat'
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-md border border-success/40 bg-success/10 px-3 py-2.5 text-xs text-success">
@@ -271,5 +271,5 @@ function Connected({
         </div>
       )}
     </div>
-  );
+  )
 }

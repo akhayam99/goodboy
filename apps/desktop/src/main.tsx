@@ -1,15 +1,15 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { App } from './App';
-import { ErrorBoundary } from './app/components/ErrorBoundary';
-import { bootstrapTheme } from './shared/lib/theme';
-import './styles.css';
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { App } from './App'
+import { ErrorBoundary } from './app/components/ErrorBoundary'
+import { bootstrapTheme } from './shared/lib/theme'
+import './styles.css'
 
-bootstrapTheme();
+bootstrapTheme()
 
-const container = document.getElementById('root');
+const container = document.getElementById('root')
 if (!container) {
-  throw new Error('root element not found');
+  throw new Error('root element not found')
 }
 
 createRoot(container).render(
@@ -18,4 +18,4 @@ createRoot(container).render(
       <App />
     </ErrorBoundary>
   </StrictMode>,
-);
+)

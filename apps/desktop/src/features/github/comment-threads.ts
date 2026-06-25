@@ -1,39 +1,39 @@
-import type { PrComment } from '@goodboy/types';
+import type { PrComment } from '@goodboy/types'
 
 export type CommentThread = {
-  readonly head: PrComment;
-  readonly replies: ReadonlyArray<PrComment>;
-};
+  readonly head: PrComment
+  readonly replies: ReadonlyArray<PrComment>
+}
 
 export const groupThreads = (comments: ReadonlyArray<PrComment>): ReadonlyArray<CommentThread> => {
-  const groups = new Map<string, Array<PrComment>>();
-  const order: Array<string> = [];
+  const groups = new Map<string, Array<PrComment>>()
+  const order: Array<string> = []
   for (const c of comments) {
-    const key = c.source === 'review' && c.threadId ? `t:${c.threadId}` : `c:${c.id}`;
-    const arr = groups.get(key);
+    const key = c.source === 'review' && c.threadId ? `t:${c.threadId}` : `c:${c.id}`
+    const arr = groups.get(key)
     if (arr) {
-      arr.push(c);
+      arr.push(c)
     } else {
-      groups.set(key, [c]);
-      order.push(key);
+      groups.set(key, [c])
+      order.push(key)
     }
   }
   return order.map((key) => {
-    const sorted = [...groups.get(key)!].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    return { head: sorted[0]!, replies: sorted.slice(1) };
-  });
-};
+    const sorted = [...groups.get(key)!].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    return { head: sorted[0]!, replies: sorted.slice(1) }
+  })
+}
 
 export const threadPriority = (t: CommentThread): number => {
   if (t.head.source === 'review' && t.head.resolved === false) {
-    return 0;
+    return 0
   }
   if (t.head.source === 'issue') {
-    return 1;
+    return 1
   }
-  return 2;
-};
+  return 2
+}
 
 export const isBot = (author: string): boolean => {
-  return author.endsWith('[bot]') || author.endsWith('-bot');
-};
+  return author.endsWith('[bot]') || author.endsWith('-bot')
+}

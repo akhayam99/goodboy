@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PrDetail, PrReview, PrReviewState, PullRequestState } from '@goodboy/types';
-import { cn, Divider, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PrDetail, PrReview, PrReviewState, PullRequestState } from '@goodboy/types'
+import { cn, Divider, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui'
 import {
   AlertCircle,
   Check,
@@ -13,38 +13,38 @@ import {
   Plus,
   Search,
   Sparkles,
-} from 'lucide-react';
-import { PullRequestChip } from '../PullRequestChip';
-import { computeTabStatus, TabBadge } from '../Card';
-import { ghRepoCollaborators } from '../../github';
-import { useCurrentWorkspace } from '../../../../store';
-import { PrSwitcher } from './PrSwitcher';
+} from 'lucide-react'
+import { PullRequestChip } from '../PullRequestChip'
+import { computeTabStatus, TabBadge } from '../Card'
+import { ghRepoCollaborators } from '../../github'
+import { useCurrentWorkspace } from '../../../../store'
+import { PrSwitcher } from './PrSwitcher'
 
-export type PrSection = 'overview' | 'comments' | 'resolve' | 'ci';
+export type PrSection = 'overview' | 'comments' | 'resolve' | 'ci'
 
 const NAV: ReadonlyArray<{
-  key: PrSection;
-  label: string;
-  icon: typeof FileText;
-  status?: keyof ReturnType<typeof computeTabStatus>;
+  key: PrSection
+  label: string
+  icon: typeof FileText
+  status?: keyof ReturnType<typeof computeTabStatus>
 }> = [
   { key: 'overview', label: 'Overview', icon: FileText },
   { key: 'comments', label: 'Conversation', icon: MessageSquare, status: 'comments' },
   { key: 'resolve', label: 'Resolve', icon: Sparkles },
   { key: 'ci', label: 'Checks', icon: ListChecks, status: 'ci' },
-];
+]
 
 type Props = {
-  readonly pr: PullRequestState;
-  readonly options: ReadonlyArray<PullRequestState>;
-  readonly selected: number | null;
-  readonly onSelectPr: (n: number) => void;
-  readonly detail: PrDetail | null;
-  readonly section: PrSection;
-  readonly onSection: (s: PrSection) => void;
-  readonly workspaceRoot: string | null;
-  readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
-};
+  readonly pr: PullRequestState
+  readonly options: ReadonlyArray<PullRequestState>
+  readonly selected: number | null
+  readonly onSelectPr: (n: number) => void
+  readonly detail: PrDetail | null
+  readonly section: PrSection
+  readonly onSection: (s: PrSection) => void
+  readonly workspaceRoot: string | null
+  readonly onAddReviewers: (logins: ReadonlyArray<string>) => void
+}
 
 export const PrSidebar = ({
   pr,
@@ -57,14 +57,14 @@ export const PrSidebar = ({
   workspaceRoot,
   onAddReviewers,
 }: Props) => {
-  const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
+  const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail])
   const openResolveCount = useMemo(
     () =>
       (detail?.comments ?? []).filter((c) => c.source === 'review' && c.resolved === false).length,
     [detail?.comments],
-  );
-  const requests = detail?.reviewRequests ?? [];
-  const reviewed = useMemo(() => latestReviews(detail?.reviews ?? []), [detail?.reviews]);
+  )
+  const requests = detail?.reviewRequests ?? []
+  const reviewed = useMemo(() => latestReviews(detail?.reviews ?? []), [detail?.reviews])
   const known = useMemo(
     () =>
       new Set([
@@ -72,7 +72,7 @@ export const PrSidebar = ({
         ...reviewed.map((r) => r.author.toLowerCase()),
       ]),
     [requests, reviewed],
-  );
+  )
 
   return (
     <aside className="flex w-72 shrink-0 flex-col">
@@ -96,9 +96,9 @@ export const PrSidebar = ({
 
       <nav className="flex flex-col gap-0.5 p-2">
         {NAV.map((item) => {
-          const Icon = item.icon;
-          const active = section === item.key;
-          const status = item.status ? tabStatus[item.status] : null;
+          const Icon = item.icon
+          const active = section === item.key
+          const status = item.status ? tabStatus[item.status] : null
           return (
             <button
               key={item.key}
@@ -126,7 +126,7 @@ export const PrSidebar = ({
                 <TabBadge status={status} dim={!active} />
               ) : null}
             </button>
-          );
+          )
         })}
       </nav>
 
@@ -173,53 +173,53 @@ export const PrSidebar = ({
         </div>
       </ScrollFade>
     </aside>
-  );
-};
+  )
+}
 
 function ReviewerPicker({
   workspaceRoot,
   exclude,
   onAdd,
 }: {
-  workspaceRoot: string | null;
-  exclude: ReadonlySet<string>;
-  onAdd: (logins: ReadonlyArray<string>) => void;
+  workspaceRoot: string | null
+  exclude: ReadonlySet<string>
+  onAdd: (logins: ReadonlyArray<string>) => void
 }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const workspaceId = useCurrentWorkspace()?.id;
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null)
+  const [loading, setLoading] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const workspaceId = useCurrentWorkspace()?.id
 
   useEffect(() => {
     if (!open) {
-      return;
+      return
     }
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        setOpen(false)
       }
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
 
   useEffect(() => {
     if (!open || logins !== null || !workspaceRoot) {
-      return;
+      return
     }
-    setLoading(true);
+    setLoading(true)
     void ghRepoCollaborators(workspaceRoot, workspaceId)
       .then(setLogins)
       .catch(() => setLogins([]))
-      .finally(() => setLoading(false));
-  }, [open, logins, workspaceRoot, workspaceId]);
+      .finally(() => setLoading(false))
+  }, [open, logins, workspaceRoot, workspaceId])
 
   const candidates = (logins ?? [])
     .filter((l) => !exclude.has(l.toLowerCase()))
     .filter((l) => l.toLowerCase().includes(query.trim().toLowerCase()))
-    .slice(0, 8);
+    .slice(0, 8)
 
   return (
     <div ref={ref} className="relative">
@@ -263,9 +263,9 @@ function ReviewerPicker({
                   <button
                     type="button"
                     onClick={() => {
-                      onAdd([login]);
-                      setOpen(false);
-                      setQuery('');
+                      onAdd([login])
+                      setOpen(false)
+                      setQuery('')
                     }}
                     className="flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-xs text-foreground hover:bg-muted/60"
                   >
@@ -279,34 +279,34 @@ function ReviewerPicker({
         </div>
       ) : null}
     </div>
-  );
+  )
 }
 
 function latestReviews(reviews: ReadonlyArray<PrReview>): ReadonlyArray<PrReview> {
-  const map = new Map<string, PrReview>();
+  const map = new Map<string, PrReview>()
   for (const r of [...reviews].sort((a, b) =>
     (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
   )) {
     if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
-      continue;
+      continue
     }
-    map.set(r.author, r);
+    map.set(r.author, r)
   }
-  return [...map.values()];
+  return [...map.values()]
 }
 
 function ReviewStateIcon({ state }: { state: PrReviewState }) {
-  const props = { size: 12, 'aria-hidden': true } as const;
+  const props = { size: 12, 'aria-hidden': true } as const
   if (state === 'approved') {
-    return <CheckCheck {...props} className="shrink-0 text-success" />;
+    return <CheckCheck {...props} className="shrink-0 text-success" />
   }
   if (state === 'changes_requested') {
-    return <AlertCircle {...props} className="shrink-0 text-danger" />;
+    return <AlertCircle {...props} className="shrink-0 text-danger" />
   }
   if (state === 'dismissed') {
-    return <MinusCircle {...props} className="shrink-0 text-muted-foreground" />;
+    return <MinusCircle {...props} className="shrink-0 text-muted-foreground" />
   }
-  return <Check {...props} className="shrink-0 text-muted-foreground" />;
+  return <Check {...props} className="shrink-0 text-muted-foreground" />
 }
 
 function Avatar({ url, alt }: { url: string | null; alt: string }) {
@@ -318,7 +318,7 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
       >
         {alt.slice(0, 1).toUpperCase()}
       </span>
-    );
+    )
   }
-  return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />;
+  return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />
 }

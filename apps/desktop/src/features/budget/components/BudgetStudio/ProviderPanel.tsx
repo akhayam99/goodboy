@@ -1,36 +1,36 @@
-import { useMemo } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import type { BudgetRule, ProviderName } from '@goodboy/types';
-import type { ProviderSpendEntry } from '../../../../store';
-import { CapEditor } from './CapEditor';
-import { CostRing } from './CostRing';
-import { ModelTable } from './ModelTable';
-import { PanelShell } from './PanelShell';
-import { ProviderIcon } from './ProviderIcon';
-import { TurnsTable } from './TurnsTable';
-import { Widget } from './Widget';
-import { buildModelBreakdown, providerLabel, type WorkspaceTurn } from './lib';
+import { useMemo } from 'react'
+import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui'
+import type { BudgetRule, ProviderName } from '@goodboy/types'
+import type { ProviderSpendEntry } from '../../../../store'
+import { CapEditor } from './CapEditor'
+import { CostRing } from './CostRing'
+import { ModelTable } from './ModelTable'
+import { PanelShell } from './PanelShell'
+import { ProviderIcon } from './ProviderIcon'
+import { TurnsTable } from './TurnsTable'
+import { Widget } from './Widget'
+import { buildModelBreakdown, providerLabel, type WorkspaceTurn } from './lib'
 
 type Props = {
-  readonly provider: ProviderName;
-  readonly entry: ProviderSpendEntry | null;
-  readonly turns: ReadonlyArray<WorkspaceTurn>;
-  readonly rule: BudgetRule | null;
-  readonly onSaveCap: (capUsd: number) => Promise<void>;
-  readonly onRemoveCap: () => Promise<void>;
-};
+  readonly provider: ProviderName
+  readonly entry: ProviderSpendEntry | null
+  readonly turns: ReadonlyArray<WorkspaceTurn>
+  readonly rule: BudgetRule | null
+  readonly onSaveCap: (capUsd: number) => Promise<void>
+  readonly onRemoveCap: () => Promise<void>
+}
 
 export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemoveCap }: Props) => {
-  const spent = entry?.spentUsd ?? 0;
-  const capUsd = entry?.capUsd ?? null;
-  const pct = entry?.pct ?? 0;
-  const remaining = capUsd !== null ? Math.max(capUsd - spent, 0) : null;
+  const spent = entry?.spentUsd ?? 0
+  const capUsd = entry?.capUsd ?? null
+  const pct = entry?.pct ?? 0
+  const remaining = capUsd !== null ? Math.max(capUsd - spent, 0) : null
 
   const filtered = useMemo(
     () => turns.filter((t) => t.record.provider === provider),
     [turns, provider],
-  );
-  const models = useMemo(() => buildModelBreakdown(filtered.map((t) => t.record)), [filtered]);
+  )
+  const models = useMemo(() => buildModelBreakdown(filtered.map((t) => t.record)), [filtered])
 
   return (
     <PanelShell
@@ -73,5 +73,5 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
 
       <TurnsTable turns={filtered} showProvider={false} showSession />
     </PanelShell>
-  );
-};
+  )
+}

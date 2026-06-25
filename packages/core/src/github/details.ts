@@ -6,160 +6,160 @@ import type {
   PrReview,
   PrReviewRequest,
   PrReviewState,
-} from '@goodboy/types';
-import type { GhRunner } from './gh';
-import { GhCliError, runJson } from './gh';
+} from '@goodboy/types'
+import type { GhRunner } from './gh'
+import { GhCliError, runJson } from './gh'
 
 type RawIssueComment = {
-  id: number;
-  user: { login: string; avatar_url: string | null } | null;
-  body: string | null;
-  created_at: string;
-  html_url: string;
-};
+  id: number
+  user: { login: string; avatar_url: string | null } | null
+  body: string | null
+  created_at: string
+  html_url: string
+}
 
 type RawReviewThreadComment = {
-  id: string;
-  databaseId: number;
-  author: { login: string; avatarUrl: string | null } | null;
-  body: string | null;
-  createdAt: string;
-  url: string;
-  replyTo: { id: string } | null;
-};
+  id: string
+  databaseId: number
+  author: { login: string; avatarUrl: string | null } | null
+  body: string | null
+  createdAt: string
+  url: string
+  replyTo: { id: string } | null
+}
 
 type RawReviewThreadNode = {
-  id: string;
-  isResolved: boolean;
-  isOutdated: boolean;
-  path: string | null;
-  line: number | null;
-  comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null;
-};
+  id: string
+  isResolved: boolean
+  isOutdated: boolean
+  path: string | null
+  line: number | null
+  comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null
+}
 
 type RawReviewThreadsResponse = {
   data?: {
     repository?: {
       pullRequest?: {
-        reviewThreads?: { nodes?: ReadonlyArray<RawReviewThreadNode> } | null;
-      } | null;
-    } | null;
-  };
-};
+        reviewThreads?: { nodes?: ReadonlyArray<RawReviewThreadNode> } | null
+      } | null
+    } | null
+  }
+}
 
 type RawReview = {
-  id: number;
-  author: { login: string } | null;
-  authorAssociation: string;
-  body: string | null;
-  state: string;
-  submittedAt: string | null;
-};
+  id: number
+  author: { login: string } | null
+  authorAssociation: string
+  body: string | null
+  state: string
+  submittedAt: string | null
+}
 
 type RawReviewRequestUser = {
-  login: string;
-  avatarUrl?: string | null;
-};
+  login: string
+  avatarUrl?: string | null
+}
 
 type RawReviewRequestTeam = {
-  name: string;
-  avatarUrl?: string | null;
-};
+  name: string
+  avatarUrl?: string | null
+}
 
 type RawCheckRollupEntry = {
-  name?: string | null;
-  status?: string | null;
-  conclusion?: string | null;
-  state?: string | null;
-  startedAt?: string | null;
-  completedAt?: string | null;
-  detailsUrl?: string | null;
-  workflowName?: string | null;
-};
+  name?: string | null
+  status?: string | null
+  conclusion?: string | null
+  state?: string | null
+  startedAt?: string | null
+  completedAt?: string | null
+  detailsUrl?: string | null
+  workflowName?: string | null
+}
 
 type RawPrViewForDetail = {
-  reviews?: ReadonlyArray<RawReview> | null;
-  reviewRequests?: ReadonlyArray<RawReviewRequestUser | RawReviewRequestTeam> | null;
-  statusCheckRollup?: ReadonlyArray<RawCheckRollupEntry> | null;
-};
+  reviews?: ReadonlyArray<RawReview> | null
+  reviewRequests?: ReadonlyArray<RawReviewRequestUser | RawReviewRequestTeam> | null
+  statusCheckRollup?: ReadonlyArray<RawCheckRollupEntry> | null
+}
 
 function mapReviewState(raw: string): PrReviewState {
-  const normalized = raw.toLowerCase();
+  const normalized = raw.toLowerCase()
   if (normalized === 'approved') {
-    return 'approved';
+    return 'approved'
   }
   if (normalized === 'changes_requested') {
-    return 'changes_requested';
+    return 'changes_requested'
   }
   if (normalized === 'dismissed') {
-    return 'dismissed';
+    return 'dismissed'
   }
   if (normalized === 'pending') {
-    return 'pending';
+    return 'pending'
   }
-  return 'commented';
+  return 'commented'
 }
 
 function mapCheckConclusion(raw: RawCheckRollupEntry): PrCheckConclusion {
-  const status = (raw.status ?? '').toLowerCase();
-  const conclusion = (raw.conclusion ?? '').toLowerCase();
-  const state = (raw.state ?? '').toLowerCase();
+  const status = (raw.status ?? '').toLowerCase()
+  const conclusion = (raw.conclusion ?? '').toLowerCase()
+  const state = (raw.state ?? '').toLowerCase()
   if (status === 'in_progress' || status === 'queued' || status === 'pending') {
-    return 'pending';
+    return 'pending'
   }
   if (state === 'pending') {
-    return 'pending';
+    return 'pending'
   }
   if (conclusion === 'success' || state === 'success') {
-    return 'success';
+    return 'success'
   }
   if (conclusion === 'failure' || state === 'failure' || state === 'error') {
-    return 'failure';
+    return 'failure'
   }
   if (conclusion === 'neutral') {
-    return 'neutral';
+    return 'neutral'
   }
   if (conclusion === 'cancelled') {
-    return 'cancelled';
+    return 'cancelled'
   }
   if (conclusion === 'timed_out') {
-    return 'timed_out';
+    return 'timed_out'
   }
   if (conclusion === 'action_required') {
-    return 'action_required';
+    return 'action_required'
   }
   if (conclusion === 'stale') {
-    return 'stale';
+    return 'stale'
   }
   if (conclusion === 'skipped') {
-    return 'skipped';
+    return 'skipped'
   }
-  return 'unknown';
+  return 'unknown'
 }
 
 function deriveCheckDuration(raw: RawCheckRollupEntry): number | null {
   if (!raw.startedAt || !raw.completedAt) {
-    return null;
+    return null
   }
-  const start = Date.parse(raw.startedAt);
-  const end = Date.parse(raw.completedAt);
+  const start = Date.parse(raw.startedAt)
+  const end = Date.parse(raw.completedAt)
   if (!Number.isFinite(start) || !Number.isFinite(end)) {
-    return null;
+    return null
   }
-  return Math.max(0, end - start);
+  return Math.max(0, end - start)
 }
 
 function dedupeComments(list: ReadonlyArray<PrComment>): ReadonlyArray<PrComment> {
-  const seen = new Set<string>();
-  const out: Array<PrComment> = [];
+  const seen = new Set<string>()
+  const out: Array<PrComment> = []
   for (const c of list) {
     if (seen.has(c.id)) {
-      continue;
+      continue
     }
-    seen.add(c.id);
-    out.push(c);
+    seen.add(c.id)
+    out.push(c)
   }
-  return out;
+  return out
 }
 
 async function fetchIssueComments(
@@ -173,7 +173,7 @@ async function fetchIssueComments(
       runner,
       ['api', `repos/${repo}/issues/${prNumber}/comments`, '--paginate'],
       opts,
-    );
+    )
     return raw.map((c) => ({
       id: `issue-${c.id}`,
       author: c.user?.login ?? 'unknown',
@@ -182,12 +182,12 @@ async function fetchIssueComments(
       createdAt: c.created_at,
       url: c.html_url,
       source: 'issue' as const,
-    }));
+    }))
   } catch (err) {
     if (err instanceof GhCliError) {
-      return [];
+      return []
     }
-    throw err;
+    throw err
   }
 }
 
@@ -216,7 +216,7 @@ const REVIEW_THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!){
       }
     }
   }
-}`;
+}`
 
 async function fetchReviewThreads(
   runner: GhRunner,
@@ -224,9 +224,9 @@ async function fetchReviewThreads(
   prNumber: number,
   opts: { cwd?: string; workspaceId?: string } = {},
 ): Promise<ReadonlyArray<PrComment>> {
-  const [owner, name] = repo.split('/');
+  const [owner, name] = repo.split('/')
   if (!owner || !name) {
-    return [];
+    return []
   }
   try {
     const raw = await runJson<RawReviewThreadsResponse>(
@@ -244,17 +244,17 @@ async function fetchReviewThreads(
         `pr=${prNumber}`,
       ],
       opts,
-    );
-    const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
-    const out: Array<PrComment> = [];
-    const nodeIdToCommentId = new Map<string, string>();
+    )
+    const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? []
+    const out: Array<PrComment> = []
+    const nodeIdToCommentId = new Map<string, string>()
     for (const t of threads) {
       for (const c of t.comments?.nodes ?? []) {
-        nodeIdToCommentId.set(c.id, `review-${c.databaseId}`);
+        nodeIdToCommentId.set(c.id, `review-${c.databaseId}`)
       }
     }
     for (const t of threads) {
-      const nodes = t.comments?.nodes ?? [];
+      const nodes = t.comments?.nodes ?? []
       for (const c of nodes) {
         out.push({
           id: `review-${c.databaseId}`,
@@ -271,15 +271,15 @@ async function fetchReviewThreads(
             ? (nodeIdToCommentId.get(c.replyTo.id) ?? undefined)
             : undefined,
           threadId: t.id,
-        });
+        })
       }
     }
-    return out;
+    return out
   } catch (err) {
     if (err instanceof GhCliError) {
-      return [];
+      return []
     }
-    throw err;
+    throw err
   }
 }
 
@@ -302,12 +302,12 @@ async function fetchPrViewDetail(
         'reviews,reviewRequests,statusCheckRollup',
       ],
       opts,
-    );
+    )
   } catch (err) {
     if (err instanceof GhCliError) {
-      return {};
+      return {}
     }
-    throw err;
+    throw err
   }
 }
 
@@ -321,10 +321,10 @@ export const fetchPrDetail = async (
     fetchIssueComments(runner, repo, prNumber, opts),
     fetchReviewThreads(runner, repo, prNumber, opts),
     fetchPrViewDetail(runner, repo, prNumber, opts),
-  ]);
+  ])
 
-  const merged = dedupeComments([...issueComments, ...reviewComments]);
-  const sorted = [...merged].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const merged = dedupeComments([...issueComments, ...reviewComments])
+  const sorted = [...merged].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
   const reviews: ReadonlyArray<PrReview> = (prView.reviews ?? []).map((r) => ({
     id: `review-${r.id}`,
@@ -333,7 +333,7 @@ export const fetchPrDetail = async (
     state: mapReviewState(r.state),
     submittedAt: r.submittedAt,
     body: r.body ?? '',
-  }));
+  }))
 
   const reviewRequests: ReadonlyArray<PrReviewRequest> = (prView.reviewRequests ?? []).map((rr) => {
     if ('login' in rr) {
@@ -341,21 +341,21 @@ export const fetchPrDetail = async (
         login: rr.login,
         avatarUrl: rr.avatarUrl ?? null,
         kind: 'user' as const,
-      };
+      }
     }
     return {
       login: rr.name,
       avatarUrl: rr.avatarUrl ?? null,
       kind: 'team' as const,
-    };
-  });
+    }
+  })
 
   const checks: ReadonlyArray<PrCheckRun> = (prView.statusCheckRollup ?? []).map((entry) => ({
     name: entry.name ?? entry.workflowName ?? 'check',
     conclusion: mapCheckConclusion(entry),
     detailsUrl: entry.detailsUrl ?? null,
     durationMs: deriveCheckDuration(entry),
-  }));
+  }))
 
   return {
     prNumber,
@@ -363,5 +363,5 @@ export const fetchPrDetail = async (
     reviews,
     reviewRequests,
     checks,
-  };
-};
+  }
+}

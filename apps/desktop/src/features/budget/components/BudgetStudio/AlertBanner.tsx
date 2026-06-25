@@ -1,36 +1,36 @@
-import { formatUsd } from '@goodboy/ui';
-import { TriangleAlert, X } from 'lucide-react';
-import type { BudgetAlert } from '@goodboy/types';
-import { providerLabel } from './lib';
+import { formatUsd } from '@goodboy/ui'
+import { TriangleAlert, X } from 'lucide-react'
+import type { BudgetAlert } from '@goodboy/types'
+import { providerLabel } from './lib'
 
 type Props = {
-  readonly alerts: ReadonlyArray<BudgetAlert>;
-  readonly onDismiss: (id: string) => void;
-};
+  readonly alerts: ReadonlyArray<BudgetAlert>
+  readonly onDismiss: (id: string) => void
+}
 
 function alertMessage(alert: BudgetAlert): string {
-  const who = alert.provider ? providerLabel(alert.provider) : 'this session';
-  const usage = `${formatUsd(alert.currentUsd)} of ${formatUsd(alert.capUsd)}`;
+  const who = alert.provider ? providerLabel(alert.provider) : 'this session'
+  const usage = `${formatUsd(alert.currentUsd)} of ${formatUsd(alert.capUsd)}`
   switch (alert.kind) {
     case 'provider-exceeded':
     case 'session-exceeded':
-      return `${who} exceeded its cap (${usage})`;
+      return `${who} exceeded its cap (${usage})`
     case 'provider-threshold':
     case 'session-threshold':
-      return `${who} is nearing its cap (${usage})`;
+      return `${who} is nearing its cap (${usage})`
   }
 }
 
 export const AlertBanner = ({ alerts, onDismiss }: Props) => {
-  const active = alerts.filter((a) => !a.dismissedAt);
+  const active = alerts.filter((a) => !a.dismissedAt)
   if (active.length === 0) {
-    return null;
+    return null
   }
 
   return (
     <ul className="flex flex-col gap-1.5">
       {active.map((alert) => {
-        const exceeded = alert.kind === 'provider-exceeded' || alert.kind === 'session-exceeded';
+        const exceeded = alert.kind === 'provider-exceeded' || alert.kind === 'session-exceeded'
         return (
           <li
             key={alert.id}
@@ -55,8 +55,8 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
               <X size={13} aria-hidden />
             </button>
           </li>
-        );
+        )
       })}
     </ul>
-  );
-};
+  )
+}

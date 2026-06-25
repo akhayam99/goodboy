@@ -1,15 +1,15 @@
-import { type ReactNode } from 'react';
-import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
-import { cn } from '../cn';
+import { type ReactNode } from 'react'
+import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react'
+import { cn } from '../cn'
 
 type CtxTagStyle = {
-  readonly icon: LucideIcon;
-  readonly label: string;
-  readonly iconClass: string;
-  readonly chipClass: string;
-  readonly calloutClass: string;
-  readonly calloutLabelClass: string;
-};
+  readonly icon: LucideIcon
+  readonly label: string
+  readonly iconClass: string
+  readonly chipClass: string
+  readonly calloutClass: string
+  readonly calloutLabelClass: string
+}
 
 const CTX_DEFAULT: CtxTagStyle = {
   icon: Activity,
@@ -18,7 +18,7 @@ const CTX_DEFAULT: CtxTagStyle = {
   chipClass: 'bg-muted text-muted-foreground',
   calloutClass: 'border-border-soft bg-muted/40',
   calloutLabelClass: 'text-muted-foreground',
-};
+}
 
 const CTX_TAG_STYLES: ReadonlyArray<readonly [RegExp, CtxTagStyle]> = [
   [
@@ -76,24 +76,24 @@ const CTX_TAG_STYLES: ReadonlyArray<readonly [RegExp, CtxTagStyle]> = [
       calloutLabelClass: 'text-info',
     },
   ],
-];
+]
 
 function ctxStyleForTag(tag: string): CtxTagStyle {
-  const stripped = tag.replace(/^ctx-?/i, '');
+  const stripped = tag.replace(/^ctx-?/i, '')
   for (const [re, style] of CTX_TAG_STYLES) {
     if (re.test(tag) || re.test(stripped)) {
-      return style;
+      return style
     }
   }
-  return { ...CTX_DEFAULT, label: stripped || tag };
+  return { ...CTX_DEFAULT, label: stripped || tag }
 }
 
 type MarkdownProps = {
-  readonly text: string;
-  readonly className?: string;
-};
+  readonly text: string
+  readonly className?: string
+}
 
-type CellAlign = 'left' | 'center' | 'right';
+type CellAlign = 'left' | 'center' | 'right'
 
 type Block =
   | { kind: 'code'; lang: string | null; content: string }
@@ -102,87 +102,87 @@ type Block =
   | { kind: 'list'; ordered: boolean; items: ReadonlyArray<ListItem> }
   | { kind: 'quote'; lines: ReadonlyArray<string> }
   | {
-      kind: 'table';
-      headers: ReadonlyArray<string>;
-      align: ReadonlyArray<CellAlign>;
-      rows: ReadonlyArray<ReadonlyArray<string>>;
+      kind: 'table'
+      headers: ReadonlyArray<string>
+      align: ReadonlyArray<CellAlign>
+      rows: ReadonlyArray<ReadonlyArray<string>>
     }
   | { kind: 'callout'; tag: string; content: string }
-  | { kind: 'paragraph'; content: string };
+  | { kind: 'paragraph'; content: string }
 
 type ListItem = {
-  readonly content: string;
-  readonly children: ReadonlyArray<Block>;
-};
+  readonly content: string
+  readonly children: ReadonlyArray<Block>
+}
 
-const FENCE_RE = /^```([^\s`]*)\s*$/;
-const HEADING_RE = /^(#{1,6})\s+(.*)$/;
-const HR_RE = /^[-*_]{3,}\s*$/;
-const ULIST_RE = /^(\s*)[-*+]\s+(.*)$/;
-const OLIST_RE = /^(\s*)\d+\.\s+(.*)$/;
-const QUOTE_RE = /^>\s?(.*)$/;
-const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
-const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
-const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
+const FENCE_RE = /^```([^\s`]*)\s*$/
+const HEADING_RE = /^(#{1,6})\s+(.*)$/
+const HR_RE = /^[-*_]{3,}\s*$/
+const ULIST_RE = /^(\s*)[-*+]\s+(.*)$/
+const OLIST_RE = /^(\s*)\d+\.\s+(.*)$/
+const QUOTE_RE = /^>\s?(.*)$/
+const TABLE_ROW_RE = /^\s*\|.*\|\s*$/
+const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/
+const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/
 
 function splitTableCells(line: string): ReadonlyArray<string> {
-  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
-  return trimmed.split('|').map((c) => c.trim());
+  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '')
+  return trimmed.split('|').map((c) => c.trim())
 }
 
 function parseAlign(divider: string): ReadonlyArray<CellAlign> {
   return splitTableCells(divider).map((c) => {
-    const left = c.startsWith(':');
-    const right = c.endsWith(':');
+    const left = c.startsWith(':')
+    const right = c.endsWith(':')
     if (left && right) {
-      return 'center';
+      return 'center'
     }
     if (right) {
-      return 'right';
+      return 'right'
     }
-    return 'left';
-  });
+    return 'left'
+  })
 }
 
 function parseBlocks(input: string): ReadonlyArray<Block> {
-  const lines = input.replace(/\r\n/g, '\n').split('\n');
-  const blocks: Block[] = [];
-  let i = 0;
+  const lines = input.replace(/\r\n/g, '\n').split('\n')
+  const blocks: Block[] = []
+  let i = 0
 
   while (i < lines.length) {
-    const line = lines[i] ?? '';
+    const line = lines[i] ?? ''
 
-    const fence = line.match(FENCE_RE);
+    const fence = line.match(FENCE_RE)
     if (fence) {
-      const lang = fence[1] && fence[1].length > 0 ? fence[1] : null;
-      const buf: string[] = [];
-      i++;
+      const lang = fence[1] && fence[1].length > 0 ? fence[1] : null
+      const buf: string[] = []
+      i++
       while (i < lines.length && !FENCE_RE.test(lines[i] ?? '')) {
-        buf.push(lines[i] ?? '');
-        i++;
+        buf.push(lines[i] ?? '')
+        i++
       }
-      i++;
-      blocks.push({ kind: 'code', lang, content: buf.join('\n') });
-      continue;
+      i++
+      blocks.push({ kind: 'code', lang, content: buf.join('\n') })
+      continue
     }
 
     if (line.trim().length === 0) {
-      i++;
-      continue;
+      i++
+      continue
     }
 
-    const heading = line.match(HEADING_RE);
+    const heading = line.match(HEADING_RE)
     if (heading) {
-      const level = Math.min(heading[1]!.length, 6) as 1 | 2 | 3 | 4 | 5 | 6;
-      blocks.push({ kind: 'heading', level, content: heading[2]!.trim() });
-      i++;
-      continue;
+      const level = Math.min(heading[1]!.length, 6) as 1 | 2 | 3 | 4 | 5 | 6
+      blocks.push({ kind: 'heading', level, content: heading[2]!.trim() })
+      i++
+      continue
     }
 
     if (HR_RE.test(line)) {
-      blocks.push({ kind: 'hr' });
-      i++;
-      continue;
+      blocks.push({ kind: 'hr' })
+      i++
+      continue
     }
 
     if (
@@ -190,92 +190,92 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       i + 1 < lines.length &&
       TABLE_DIVIDER_RE.test(lines[i + 1] ?? '')
     ) {
-      const headers = splitTableCells(line);
-      const align = parseAlign(lines[i + 1] ?? '');
-      i += 2;
-      const rows: string[][] = [];
+      const headers = splitTableCells(line)
+      const align = parseAlign(lines[i + 1] ?? '')
+      i += 2
+      const rows: string[][] = []
       while (i < lines.length && TABLE_ROW_RE.test(lines[i] ?? '')) {
-        rows.push([...splitTableCells(lines[i] ?? '')]);
-        i++;
+        rows.push([...splitTableCells(lines[i] ?? '')])
+        i++
       }
-      blocks.push({ kind: 'table', headers, align, rows });
-      continue;
+      blocks.push({ kind: 'table', headers, align, rows })
+      continue
     }
 
-    const calloutOpen = line.match(CALLOUT_OPEN_RE);
+    const calloutOpen = line.match(CALLOUT_OPEN_RE)
     if (calloutOpen) {
-      const tag = calloutOpen[1]!;
-      const closeRe = new RegExp(`</${tag}>>?`);
-      const buf: string[] = [];
-      const firstLineRest = calloutOpen[2] ?? '';
-      const firstClose = firstLineRest.match(closeRe);
+      const tag = calloutOpen[1]!
+      const closeRe = new RegExp(`</${tag}>>?`)
+      const buf: string[] = []
+      const firstLineRest = calloutOpen[2] ?? ''
+      const firstClose = firstLineRest.match(closeRe)
       if (firstClose && firstClose.index !== undefined) {
-        buf.push(firstLineRest.slice(0, firstClose.index));
-        i++;
-        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
-        continue;
+        buf.push(firstLineRest.slice(0, firstClose.index))
+        i++
+        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() })
+        continue
       }
       if (firstLineRest.length > 0) {
-        buf.push(firstLineRest);
+        buf.push(firstLineRest)
       }
-      i++;
-      let closed = false;
+      i++
+      let closed = false
       while (i < lines.length) {
-        const cur = lines[i] ?? '';
-        const m = cur.match(closeRe);
+        const cur = lines[i] ?? ''
+        const m = cur.match(closeRe)
         if (m && m.index !== undefined) {
-          buf.push(cur.slice(0, m.index));
-          i++;
-          closed = true;
-          break;
+          buf.push(cur.slice(0, m.index))
+          i++
+          closed = true
+          break
         }
-        buf.push(cur);
-        i++;
+        buf.push(cur)
+        i++
       }
       if (closed || buf.length > 0) {
-        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
-        continue;
+        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() })
+        continue
       }
     }
 
     if (QUOTE_RE.test(line)) {
-      const buf: string[] = [];
+      const buf: string[] = []
       while (i < lines.length) {
-        const m = (lines[i] ?? '').match(QUOTE_RE);
+        const m = (lines[i] ?? '').match(QUOTE_RE)
         if (!m) {
-          break;
+          break
         }
-        buf.push(m[1] ?? '');
-        i++;
+        buf.push(m[1] ?? '')
+        i++
       }
-      blocks.push({ kind: 'quote', lines: buf });
-      continue;
+      blocks.push({ kind: 'quote', lines: buf })
+      continue
     }
 
-    const ulist = line.match(ULIST_RE);
-    const olist = line.match(OLIST_RE);
+    const ulist = line.match(ULIST_RE)
+    const olist = line.match(OLIST_RE)
     if (ulist || olist) {
-      const ordered = !!olist;
-      const re = ordered ? OLIST_RE : ULIST_RE;
-      const items: ListItem[] = [];
+      const ordered = !!olist
+      const re = ordered ? OLIST_RE : ULIST_RE
+      const items: ListItem[] = []
       while (i < lines.length) {
-        const m = (lines[i] ?? '').match(re);
+        const m = (lines[i] ?? '').match(re)
         if (!m) {
-          break;
+          break
         }
-        items.push({ content: m[2]!.trim(), children: [] });
-        i++;
+        items.push({ content: m[2]!.trim(), children: [] })
+        i++
       }
-      blocks.push({ kind: 'list', ordered, items });
-      continue;
+      blocks.push({ kind: 'list', ordered, items })
+      continue
     }
 
-    const paraBuf: string[] = [line];
-    i++;
+    const paraBuf: string[] = [line]
+    i++
     while (i < lines.length) {
-      const next = lines[i] ?? '';
-      const nextNext = lines[i + 1] ?? '';
-      const tableStart = TABLE_ROW_RE.test(next) && TABLE_DIVIDER_RE.test(nextNext);
+      const next = lines[i] ?? ''
+      const nextNext = lines[i + 1] ?? ''
+      const tableStart = TABLE_ROW_RE.test(next) && TABLE_DIVIDER_RE.test(nextNext)
       if (
         next.trim().length === 0 ||
         FENCE_RE.test(next) ||
@@ -287,42 +287,42 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         CALLOUT_OPEN_RE.test(next) ||
         tableStart
       ) {
-        break;
+        break
       }
-      paraBuf.push(next);
-      i++;
+      paraBuf.push(next)
+      i++
     }
-    blocks.push({ kind: 'paragraph', content: paraBuf.join('\n') });
+    blocks.push({ kind: 'paragraph', content: paraBuf.join('\n') })
   }
 
-  return blocks;
+  return blocks
 }
 
 function renderInline(input: string, keyPrefix: string): ReactNode {
-  const out: ReactNode[] = [];
-  let buf = '';
-  let i = 0;
-  let keyN = 0;
+  const out: ReactNode[] = []
+  let buf = ''
+  let i = 0
+  let keyN = 0
   const flush = () => {
     if (buf.length > 0) {
-      out.push(buf);
-      buf = '';
+      out.push(buf)
+      buf = ''
     }
-  };
-  const nextKey = () => `${keyPrefix}-${keyN++}`;
+  }
+  const nextKey = () => `${keyPrefix}-${keyN++}`
 
   while (i < input.length) {
-    const ch = input[i];
+    const ch = input[i]
 
     if (ch === '<' && input[i + 1] === '<') {
-      const close = input.indexOf('>>', i + 2);
+      const close = input.indexOf('>>', i + 2)
       if (close > i) {
-        const inner = input.slice(i + 2, close);
+        const inner = input.slice(i + 2, close)
         if (/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(inner)) {
-          flush();
-          const style = ctxStyleForTag(inner);
-          const Icon = style.icon;
-          const label = style.label || inner.replace(/^ctx-?/i, '') || inner;
+          flush()
+          const style = ctxStyleForTag(inner)
+          const Icon = style.icon
+          const label = style.label || inner.replace(/^ctx-?/i, '') || inner
           out.push(
             <span
               key={nextKey()}
@@ -334,24 +334,24 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
               <Icon size={10} aria-hidden />
               {label}
             </span>,
-          );
-          i = close + 2;
-          continue;
+          )
+          i = close + 2
+          continue
         }
       }
     }
 
     if (ch === '`') {
-      const end = input.indexOf('`', i + 1);
+      const end = input.indexOf('`', i + 1)
       if (end > i) {
-        const inner = input.slice(i + 1, end);
-        const ctxMatch = inner.match(/^<<([a-zA-Z][a-zA-Z0-9_-]*)>>$/);
+        const inner = input.slice(i + 1, end)
+        const ctxMatch = inner.match(/^<<([a-zA-Z][a-zA-Z0-9_-]*)>>$/)
         if (ctxMatch) {
-          flush();
-          const tag = ctxMatch[1]!;
-          const style = ctxStyleForTag(tag);
-          const Icon = style.icon;
-          const label = style.label || tag.replace(/^ctx-?/i, '') || tag;
+          flush()
+          const tag = ctxMatch[1]!
+          const style = ctxStyleForTag(tag)
+          const Icon = style.icon
+          const label = style.label || tag.replace(/^ctx-?/i, '') || tag
           out.push(
             <span
               key={nextKey()}
@@ -363,11 +363,11 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
               <Icon size={10} aria-hidden />
               {label}
             </span>,
-          );
-          i = end + 1;
-          continue;
+          )
+          i = end + 1
+          continue
         }
-        flush();
+        flush()
         out.push(
           <code
             key={nextKey()}
@@ -375,54 +375,54 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
           >
             {inner}
           </code>,
-        );
-        i = end + 1;
-        continue;
+        )
+        i = end + 1
+        continue
       }
     }
 
     if ((ch === '*' || ch === '_') && input[i + 1] === ch) {
-      const delim = ch + ch;
-      const end = input.indexOf(delim, i + 2);
+      const delim = ch + ch
+      const end = input.indexOf(delim, i + 2)
       if (end > i) {
-        flush();
+        flush()
         out.push(
           <strong key={nextKey()} className="font-semibold">
             {renderInline(input.slice(i + 2, end), `${keyPrefix}-b${keyN}`)}
           </strong>,
-        );
-        i = end + 2;
-        continue;
+        )
+        i = end + 2
+        continue
       }
     }
 
     if ((ch === '*' || ch === '_') && input[i + 1] !== ch) {
-      const prev = input[i - 1];
-      const isWordBoundary = !prev || /\s|[(\[{,.!?]/.test(prev);
+      const prev = input[i - 1]
+      const isWordBoundary = !prev || /\s|[(\[{,.!?]/.test(prev)
       if (isWordBoundary) {
-        const end = input.indexOf(ch, i + 1);
+        const end = input.indexOf(ch, i + 1)
         if (end > i && input[end - 1] !== ch) {
-          flush();
+          flush()
           out.push(
             <em key={nextKey()}>
               {renderInline(input.slice(i + 1, end), `${keyPrefix}-i${keyN}`)}
             </em>,
-          );
-          i = end + 1;
-          continue;
+          )
+          i = end + 1
+          continue
         }
       }
     }
 
     if (ch === '!' && input[i + 1] === '[') {
-      const closeBracket = input.indexOf(']', i + 2);
+      const closeBracket = input.indexOf(']', i + 2)
       if (closeBracket > i && input[closeBracket + 1] === '(') {
-        const closeParen = input.indexOf(')', closeBracket + 2);
+        const closeParen = input.indexOf(')', closeBracket + 2)
         if (closeParen > closeBracket) {
-          const alt = input.slice(i + 2, closeBracket);
-          const url = input.slice(closeBracket + 2, closeParen).trim();
-          const safe = /^https?:/i.test(url);
-          flush();
+          const alt = input.slice(i + 2, closeBracket)
+          const url = input.slice(closeBracket + 2, closeParen).trim()
+          const safe = /^https?:/i.test(url)
+          flush()
           out.push(
             safe ? (
               <img
@@ -435,22 +435,22 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
             ) : (
               alt
             ),
-          );
-          i = closeParen + 1;
-          continue;
+          )
+          i = closeParen + 1
+          continue
         }
       }
     }
 
     if (ch === '[') {
-      const closeBracket = input.indexOf(']', i + 1);
+      const closeBracket = input.indexOf(']', i + 1)
       if (closeBracket > i && input[closeBracket + 1] === '(') {
-        const closeParen = input.indexOf(')', closeBracket + 2);
+        const closeParen = input.indexOf(')', closeBracket + 2)
         if (closeParen > closeBracket) {
-          const label = input.slice(i + 1, closeBracket);
-          const url = input.slice(closeBracket + 2, closeParen);
-          const safe = /^(https?:|mailto:)/i.test(url);
-          flush();
+          const label = input.slice(i + 1, closeBracket)
+          const url = input.slice(closeBracket + 2, closeParen)
+          const safe = /^(https?:|mailto:)/i.test(url)
+          flush()
           if (safe) {
             out.push(
               <a
@@ -462,26 +462,26 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
               >
                 {renderInline(label, `${keyPrefix}-l${keyN}`)}
               </a>,
-            );
+            )
           } else {
-            out.push(label);
+            out.push(label)
           }
-          i = closeParen + 1;
-          continue;
+          i = closeParen + 1
+          continue
         }
       }
     }
 
-    buf += ch;
-    i++;
+    buf += ch
+    i++
   }
 
-  flush();
-  return out.length === 1 ? out[0] : <>{out}</>;
+  flush()
+  return out.length === 1 ? out[0] : <>{out}</>
 }
 
 function renderBlock(block: Block, idx: number): ReactNode {
-  const key = `b-${idx}`;
+  const key = `b-${idx}`
   switch (block.kind) {
     case 'code':
       return (
@@ -491,7 +491,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
         >
           <code>{block.content}</code>
         </pre>
-      );
+      )
     case 'heading': {
       const sizes: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
         1: 'text-lg font-semibold text-foreground',
@@ -500,13 +500,13 @@ function renderBlock(block: Block, idx: number): ReactNode {
         4: 'text-sm font-medium text-foreground',
         5: 'text-sm font-medium text-foreground',
         6: 'text-sm font-medium text-foreground',
-      };
-      const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+      }
+      const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
       return (
         <Tag key={key} className={sizes[block.level]}>
           {renderInline(block.content, key)}
         </Tag>
-      );
+      )
     }
     case 'hr':
       return (
@@ -515,7 +515,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
           role="separator"
           className="my-2 h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
         />
-      );
+      )
     case 'list':
       if (block.ordered) {
         return (
@@ -526,7 +526,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
               </li>
             ))}
           </ol>
-        );
+        )
       }
       return (
         <ul key={key} className="flex list-disc flex-col gap-1.5 pl-5">
@@ -536,7 +536,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
             </li>
           ))}
         </ul>
-      );
+      )
     case 'quote':
       return (
         <blockquote key={key} className="border-l-2 border-border pl-3 text-muted-foreground">
@@ -544,17 +544,17 @@ function renderBlock(block: Block, idx: number): ReactNode {
             <p key={`${key}-${j}`}>{renderInline(ln, `${key}-${j}`)}</p>
           ))}
         </blockquote>
-      );
+      )
     case 'table': {
       const alignClass = (a: CellAlign | undefined): string => {
         if (a === 'right') {
-          return 'text-right';
+          return 'text-right'
         }
         if (a === 'center') {
-          return 'text-center';
+          return 'text-center'
         }
-        return 'text-left';
-      };
+        return 'text-left'
+      }
       return (
         <div key={key} className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
@@ -592,12 +592,12 @@ function renderBlock(block: Block, idx: number): ReactNode {
             </tbody>
           </table>
         </div>
-      );
+      )
     }
     case 'callout': {
-      const style = ctxStyleForTag(block.tag);
-      const Icon = style.icon;
-      const label = style.label || block.tag.replace(/^ctx-?/i, '') || block.tag;
+      const style = ctxStyleForTag(block.tag)
+      const Icon = style.icon
+      const label = style.label || block.tag.replace(/^ctx-?/i, '') || block.tag
       return (
         <div key={key} className={cn('rounded-md border p-3 text-sm', style.calloutClass)}>
           <div
@@ -613,10 +613,10 @@ function renderBlock(block: Block, idx: number): ReactNode {
             {renderInline(block.content, key)}
           </div>
         </div>
-      );
+      )
     }
     case 'paragraph': {
-      const isTree = /[├└│┌┐┘┤┬┼]/.test(block.content);
+      const isTree = /[├└│┌┐┘┤┬┼]/.test(block.content)
       return (
         <p
           key={key}
@@ -627,16 +627,16 @@ function renderBlock(block: Block, idx: number): ReactNode {
         >
           {renderInline(block.content, key)}
         </p>
-      );
+      )
     }
   }
 }
 
 export const Markdown = ({ text, className }: MarkdownProps) => {
-  const blocks = parseBlocks(text);
+  const blocks = parseBlocks(text)
   return (
     <div className={cn('flex flex-col gap-2 text-sm text-foreground/85', className)}>
       {blocks.map(renderBlock)}
     </div>
-  );
-};
+  )
+}

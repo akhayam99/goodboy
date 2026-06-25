@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import { Eyebrow, SectionTitle } from './ui';
-import { useInView } from './Reveal';
+import type { ReactNode } from 'react'
+import { Eyebrow, SectionTitle } from './ui'
+import { useInView } from './Reveal'
 
 /* Two-column editorial section: copy on one side, mockup on the other.
    Single-color title, eyebrow above. Reverse stacks the mockup to the left.
@@ -13,14 +13,14 @@ export function Section({
   reverse,
   children,
 }: {
-  id?: string;
-  eyebrow: string;
-  title: ReactNode;
-  body: ReactNode;
-  reverse?: boolean;
-  children: ReactNode;
+  id?: string
+  eyebrow: string
+  title: ReactNode
+  body: ReactNode
+  reverse?: boolean
+  children: ReactNode
 }) {
-  const { ref, inView } = useInView<HTMLElement>();
+  const { ref, inView } = useInView<HTMLElement>()
   return (
     <section
       id={id}
@@ -44,5 +44,5 @@ export function Section({
         </div>
       </div>
     </section>
-  );
+  )
 }

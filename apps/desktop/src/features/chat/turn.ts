@@ -1,13 +1,13 @@
-import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core'
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import {
   parseStreamJsonLine,
   parseCursorStreamLine,
   parseCodexJsonLine,
   parseGeminiJsonLine,
   type ParseContext,
-} from '@goodboy/core';
-import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
+} from '@goodboy/core'
+import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types'
 
 function parseForProvider(
   provider: ProviderId,
@@ -16,42 +16,42 @@ function parseForProvider(
 ): ReadonlyArray<TurnEvent> {
   switch (provider) {
     case 'anthropic':
-      return parseStreamJsonLine(line, ctx);
+      return parseStreamJsonLine(line, ctx)
     case 'cursor':
-      return parseCursorStreamLine(line, ctx);
+      return parseCursorStreamLine(line, ctx)
     case 'codex':
-      return parseCodexJsonLine(line, ctx);
+      return parseCodexJsonLine(line, ctx)
     case 'gemini':
-      return parseGeminiJsonLine(line, ctx);
+      return parseGeminiJsonLine(line, ctx)
     default: {
-      const _exhaustive: never = provider;
-      void _exhaustive;
-      return parseStreamJsonLine(line, ctx);
+      const _exhaustive: never = provider
+      void _exhaustive
+      return parseStreamJsonLine(line, ctx)
     }
   }
 }
 
-const AUTH_REQUIRED_PREFIX = '__auth_required__:';
+const AUTH_REQUIRED_PREFIX = '__auth_required__:'
 
 export type AuthRequiredPayload = {
-  readonly providerId: ProviderId;
-  readonly identity: string | null;
-};
+  readonly providerId: ProviderId
+  readonly identity: string | null
+}
 
 export const encodeAuthRequiredMessage = (payload: AuthRequiredPayload): string => {
-  return `${AUTH_REQUIRED_PREFIX}${JSON.stringify(payload)}`;
-};
+  return `${AUTH_REQUIRED_PREFIX}${JSON.stringify(payload)}`
+}
 
 export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload | null => {
   if (!message.startsWith(AUTH_REQUIRED_PREFIX)) {
-    return null;
+    return null
   }
   try {
-    return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload;
+    return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload
   } catch {
-    return null;
+    return null
   }
-};
+}
 
 const AUTH_ERROR_PATTERNS = [
   /not authenticated/i,
@@ -65,140 +65,140 @@ const AUTH_ERROR_PATTERNS = [
   /unauthorized/i,
   /login required/i,
   /not signed in/i,
-];
+]
 
 export const isAuthErrorMessage = (text: string): boolean => {
-  return AUTH_ERROR_PATTERNS.some((p) => p.test(text));
-};
+  return AUTH_ERROR_PATTERNS.some((p) => p.test(text))
+}
 
-const EVENT_NAME = 'turn_event';
+const EVENT_NAME = 'turn_event'
 
-type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
+type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan'
 
 type SpawnArgs = {
-  readonly runId: ProviderRunId;
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly workingDir: string;
-  readonly prompt: string;
-  readonly binary?: string;
-  readonly allowedTools?: ReadonlyArray<string>;
-  readonly disallowedTools?: ReadonlyArray<string>;
-  readonly permissionMode?: ClaudePermissionMode;
-  readonly resumeSessionId?: string;
-  readonly systemPrompt?: string;
-  readonly effort?: string;
-  readonly apiKeyEnv?: string;
-  readonly credentialId?: string;
-};
+  readonly runId: ProviderRunId
+  readonly provider: ProviderId
+  readonly model: string
+  readonly workingDir: string
+  readonly prompt: string
+  readonly binary?: string
+  readonly allowedTools?: ReadonlyArray<string>
+  readonly disallowedTools?: ReadonlyArray<string>
+  readonly permissionMode?: ClaudePermissionMode
+  readonly resumeSessionId?: string
+  readonly systemPrompt?: string
+  readonly effort?: string
+  readonly apiKeyEnv?: string
+  readonly credentialId?: string
+}
 
 type RawTurnEnvelope =
   | { runId: string; type: 'line'; line: string }
   | { runId: string; type: 'end'; exit_code: number | null; stderr: string }
-  | { runId: string; type: 'error'; message: string };
+  | { runId: string; type: 'error'; message: string }
 
 export async function* runTurn(
   args: SpawnArgs,
   now: () => IsoDateTime = () => new Date().toISOString() as IsoDateTime,
 ): AsyncIterable<TurnEvent> {
-  const ctx = { runId: args.runId, now };
-  const queue: TurnEvent[] = [];
-  let resolver: ((value: IteratorResult<TurnEvent>) => void) | null = null;
-  let rejector: ((err: unknown) => void) | null = null;
-  let ended = false;
-  let error: unknown = null;
+  const ctx = { runId: args.runId, now }
+  const queue: TurnEvent[] = []
+  let resolver: ((value: IteratorResult<TurnEvent>) => void) | null = null
+  let rejector: ((err: unknown) => void) | null = null
+  let ended = false
+  let error: unknown = null
 
   const flush = () => {
     if (!resolver) {
-      return;
+      return
     }
     if (queue.length > 0) {
-      const value = queue.shift()!;
-      const r = resolver;
-      resolver = null;
-      r({ value, done: false });
-      return;
+      const value = queue.shift()!
+      const r = resolver
+      resolver = null
+      r({ value, done: false })
+      return
     }
     if (ended) {
-      const r = resolver;
-      resolver = null;
+      const r = resolver
+      resolver = null
       if (error) {
-        const rej = rejector;
-        rejector = null;
-        rej?.(error);
+        const rej = rejector
+        rejector = null
+        rej?.(error)
       } else {
-        r({ value: undefined, done: true });
+        r({ value: undefined, done: true })
       }
     }
-  };
+  }
 
-  let receivedAnyLine = false;
+  let receivedAnyLine = false
 
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
     if (event.payload.runId !== args.runId) {
-      return;
+      return
     }
 
     switch (event.payload.type) {
       case 'line':
-        receivedAnyLine = true;
+        receivedAnyLine = true
         for (const ev of parseForProvider(args.provider, event.payload.line, ctx)) {
-          queue.push(ev);
+          queue.push(ev)
         }
-        flush();
-        break;
+        flush()
+        break
       case 'end': {
-        const exitCode = event.payload.exit_code;
-        const stderr = event.payload.stderr;
+        const exitCode = event.payload.exit_code
+        const stderr = event.payload.stderr
         if (!receivedAnyLine) {
-          const tail = stderr.trim().split('\n').slice(-5).join('\n');
-          const detail = tail.length > 0 ? `: ${tail}` : '';
+          const tail = stderr.trim().split('\n').slice(-5).join('\n')
+          const detail = tail.length > 0 ? `: ${tail}` : ''
           if (exitCode !== null && exitCode !== 0) {
-            error = new Error(`provider exited with code ${exitCode}${detail}`);
+            error = new Error(`provider exited with code ${exitCode}${detail}`)
           } else if (tail.length > 0) {
-            error = new Error(`provider emitted no events${detail}`);
+            error = new Error(`provider emitted no events${detail}`)
           }
         }
-        ended = true;
-        flush();
-        break;
+        ended = true
+        flush()
+        break
       }
       case 'error':
-        error = new Error(event.payload.message);
-        ended = true;
-        flush();
-        break;
+        error = new Error(event.payload.message)
+        ended = true
+        flush()
+        break
     }
-  });
+  })
 
-  await invoke<string>('turn_spawn', { args });
+  await invoke<string>('turn_spawn', { args })
 
   try {
     while (true) {
       if (queue.length > 0) {
-        yield queue.shift()!;
-        continue;
+        yield queue.shift()!
+        continue
       }
       if (ended) {
         if (error) {
-          throw error;
+          throw error
         }
-        return;
+        return
       }
       const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
-        resolver = resolve;
-        rejector = reject;
-      });
+        resolver = resolve
+        rejector = reject
+      })
       if (value.done) {
-        return;
+        return
       }
-      yield value.value;
+      yield value.value
     }
   } finally {
-    unlisten();
+    unlisten()
     if (!ended) {
       try {
-        await invoke('turn_cancel', { runId: args.runId });
+        await invoke('turn_cancel', { runId: args.runId })
       } catch {
         // best-effort cancellation
       }
@@ -207,66 +207,66 @@ export async function* runTurn(
 }
 
 export const cancelTurn = async (runId: ProviderRunId): Promise<void> => {
-  await invoke('turn_cancel', { runId });
-};
+  await invoke('turn_cancel', { runId })
+}
 
 export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
   try {
-    const ids = await invoke<string[]>('turn_list_live');
-    return new Set(ids ?? []);
+    const ids = await invoke<string[]>('turn_list_live')
+    return new Set(ids ?? [])
   } catch {
-    return new Set();
+    return new Set()
   }
-};
+}
 
 export const writeAttachment = async (args: {
-  readonly worktreeDir: string;
-  readonly attachmentId: string;
-  readonly fileName: string;
-  readonly dataBase64: string;
+  readonly worktreeDir: string
+  readonly attachmentId: string
+  readonly fileName: string
+  readonly dataBase64: string
 }): Promise<string> => {
-  return invoke<string>('attachment_write', args);
-};
+  return invoke<string>('attachment_write', args)
+}
 
 export const readAttachment = async (worktreeDir: string, relPath: string): Promise<string> => {
-  return invoke<string>('attachment_read', { worktreeDir, relPath });
-};
+  return invoke<string>('attachment_read', { worktreeDir, relPath })
+}
 
 export const deleteAttachment = async (worktreeDir: string, relPath: string): Promise<void> => {
-  await invoke('attachment_delete', { worktreeDir, relPath });
-};
+  await invoke('attachment_delete', { worktreeDir, relPath })
+}
 
 export type DroppedAttachment = {
-  readonly fileName: string;
-  readonly mimeType: string;
-  readonly dataBase64: string;
-};
+  readonly fileName: string
+  readonly mimeType: string
+  readonly dataBase64: string
+}
 
 export const readDroppedAttachment = async (absPath: string): Promise<DroppedAttachment> => {
-  return invoke<DroppedAttachment>('attachment_read_dropped', { absPath });
-};
+  return invoke<DroppedAttachment>('attachment_read_dropped', { absPath })
+}
 
 type ParallelRunSpec = {
-  readonly runId: ProviderRunId;
-  readonly workingDir: string;
-  readonly parallelIndex: number;
-};
+  readonly runId: ProviderRunId
+  readonly workingDir: string
+  readonly parallelIndex: number
+}
 
 export type ParallelSpawnArgs = {
-  readonly groupId: string;
-  readonly runs: ReadonlyArray<ParallelRunSpec>;
-  readonly binary?: string;
-  readonly model: string;
-  readonly prompt: string;
-  readonly permissionMode?: ClaudePermissionMode;
-  readonly allowedTools?: ReadonlyArray<string>;
-  readonly disallowedTools?: ReadonlyArray<string>;
-  readonly apiKeyEnv?: string;
-  readonly credentialId?: string;
-};
+  readonly groupId: string
+  readonly runs: ReadonlyArray<ParallelRunSpec>
+  readonly binary?: string
+  readonly model: string
+  readonly prompt: string
+  readonly permissionMode?: ClaudePermissionMode
+  readonly allowedTools?: ReadonlyArray<string>
+  readonly disallowedTools?: ReadonlyArray<string>
+  readonly apiKeyEnv?: string
+  readonly credentialId?: string
+}
 
 export const invokeParallelPhaseRunSpawn = async (
   args: ParallelSpawnArgs,
 ): Promise<ReadonlyArray<ProviderRunId>> => {
-  return invoke<string[]>('parallel_agent_spawn', { args }).then((ids) => ids as ProviderRunId[]);
-};
+  return invoke<string[]>('parallel_agent_spawn', { args }).then((ids) => ids as ProviderRunId[])
+}

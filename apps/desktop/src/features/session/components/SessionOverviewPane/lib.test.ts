@@ -1,30 +1,30 @@
-import { describe, expect, it } from 'vitest';
-import type { Agent, OpenQuestion, SessionStageInfo } from '@goodboy/types';
+import { describe, expect, it } from 'vitest'
+import type { Agent, OpenQuestion, SessionStageInfo } from '@goodboy/types'
 import {
   isStandaloneAgent,
   resolveAttentionLens,
   selectAttention,
   selectOpenQuestions,
   selectStandaloneAgents,
-} from './lib';
+} from './lib'
 
 const agent = (over: Partial<Agent>): Agent =>
-  ({ parentAgentId: null, workflowRunId: null, stepId: null, ...over }) as unknown as Agent;
+  ({ parentAgentId: null, workflowRunId: null, stepId: null, ...over }) as unknown as Agent
 
 const stage = (over: Partial<SessionStageInfo>): SessionStageInfo =>
-  ({ stage: 'building', reason: '', ...over }) as SessionStageInfo;
+  ({ stage: 'building', reason: '', ...over }) as SessionStageInfo
 
 const question = (over: Partial<OpenQuestion>): OpenQuestion =>
-  ({ status: 'open', text: 'q', ...over }) as unknown as OpenQuestion;
+  ({ status: 'open', text: 'q', ...over }) as unknown as OpenQuestion
 
 describe('isStandaloneAgent', () => {
   it('treats a top-level agent with no workflow binding as standalone', () => {
-    expect(isStandaloneAgent(agent({}))).toBe(true);
-  });
+    expect(isStandaloneAgent(agent({}))).toBe(true)
+  })
 
   it('rejects a child agent', () => {
-    expect(isStandaloneAgent(agent({ parentAgentId: 'a1' as Agent['parentAgentId'] }))).toBe(false);
-  });
+    expect(isStandaloneAgent(agent({ parentAgentId: 'a1' as Agent['parentAgentId'] }))).toBe(false)
+  })
 
   it('rejects an agent bound to a workflow step', () => {
     expect(
@@ -34,15 +34,13 @@ describe('isStandaloneAgent', () => {
           stepId: 'step1' as Agent['stepId'],
         }),
       ),
-    ).toBe(false);
-  });
+    ).toBe(false)
+  })
 
   it('keeps an agent that has a workflowRunId but no stepId', () => {
-    expect(isStandaloneAgent(agent({ workflowRunId: 'run1' as Agent['workflowRunId'] }))).toBe(
-      true,
-    );
-  });
-});
+    expect(isStandaloneAgent(agent({ workflowRunId: 'run1' as Agent['workflowRunId'] }))).toBe(true)
+  })
+})
 
 describe('selectStandaloneAgents', () => {
   it('filters out child and workflow-bound agents', () => {
@@ -53,46 +51,46 @@ describe('selectStandaloneAgents', () => {
         workflowRunId: 'r' as Agent['workflowRunId'],
         stepId: 's' as Agent['stepId'],
       }),
-    ];
-    expect(selectStandaloneAgents(list)).toHaveLength(1);
-  });
+    ]
+    expect(selectStandaloneAgents(list)).toHaveLength(1)
+  })
 
   it('returns an empty array when given none', () => {
-    expect(selectStandaloneAgents([])).toEqual([]);
-  });
-});
+    expect(selectStandaloneAgents([])).toEqual([])
+  })
+})
 
 describe('selectAttention', () => {
   it('flags active when the stage is attention and carries the reason', () => {
     expect(selectAttention(stage({ stage: 'attention', reason: 'needs you' }))).toEqual({
       active: true,
       reason: 'needs you',
-    });
-  });
+    })
+  })
 
   it('is inactive for any other stage', () => {
-    expect(selectAttention(stage({ stage: 'running', reason: 'x' })).active).toBe(false);
-  });
-});
+    expect(selectAttention(stage({ stage: 'running', reason: 'x' })).active).toBe(false)
+  })
+})
 
 describe('resolveAttentionLens', () => {
-  const ctx = { hasStandalone: false, hasWorkflow: false };
+  const ctx = { hasStandalone: false, hasWorkflow: false }
 
   it('returns null when not in the attention stage', () => {
-    expect(resolveAttentionLens(stage({ stage: 'running' }), ctx)).toBeNull();
-  });
+    expect(resolveAttentionLens(stage({ stage: 'running' }), ctx)).toBeNull()
+  })
 
   it('routes a PR reason to the pr lens', () => {
     expect(
       resolveAttentionLens(stage({ stage: 'attention', reason: 'PR needs review' }), ctx),
-    ).toBe('pr');
-  });
+    ).toBe('pr')
+  })
 
   it('routes a question reason to the questions lens', () => {
     expect(
       resolveAttentionLens(stage({ stage: 'attention', reason: 'an open question' }), ctx),
-    ).toBe('questions');
-  });
+    ).toBe('questions')
+  })
 
   it('prefers standalone agents over workflows', () => {
     expect(
@@ -100,8 +98,8 @@ describe('resolveAttentionLens', () => {
         hasStandalone: true,
         hasWorkflow: true,
       }),
-    ).toBe('agents');
-  });
+    ).toBe('agents')
+  })
 
   it('falls back to workflows when only a workflow is present', () => {
     expect(
@@ -109,13 +107,13 @@ describe('resolveAttentionLens', () => {
         hasStandalone: false,
         hasWorkflow: true,
       }),
-    ).toBe('workflows');
-  });
+    ).toBe('workflows')
+  })
 
   it('defaults to agents when nothing else matches', () => {
-    expect(resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), ctx)).toBe('agents');
-  });
-});
+    expect(resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), ctx)).toBe('agents')
+  })
+})
 
 describe('selectOpenQuestions', () => {
   it('keeps only open questions', () => {
@@ -123,7 +121,7 @@ describe('selectOpenQuestions', () => {
       question({ status: 'open' }),
       question({ status: 'answered' as OpenQuestion['status'] }),
       question({ status: 'open' }),
-    ];
-    expect(selectOpenQuestions(list)).toHaveLength(2);
-  });
-});
+    ]
+    expect(selectOpenQuestions(list)).toHaveLength(2)
+  })
+})

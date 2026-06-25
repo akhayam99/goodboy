@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core'
 import type {
   AgentEffort,
   AgentRole,
@@ -20,73 +20,73 @@ import type {
   ProviderRunId,
   SessionId,
   WorkspaceId,
-} from '@goodboy/types';
-import type { ProviderId } from '@goodboy/types';
+} from '@goodboy/types'
+import type { ProviderId } from '@goodboy/types'
 
 type RawWorkflowStepRow = {
-  readonly id: string;
-  readonly workflowId: string;
-  readonly libraryStepId: string | null;
-  readonly role: string | null;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly providerOverride: string | null;
-  readonly modelOverride: string | null;
-  readonly effort: string | null;
-  readonly verbosity: string | null;
-  readonly parallelGroup: number | null;
-};
+  readonly id: string
+  readonly workflowId: string
+  readonly libraryStepId: string | null
+  readonly role: string | null
+  readonly ordinal: number
+  readonly name: string
+  readonly promptPrefix: string
+  readonly providerOverride: string | null
+  readonly modelOverride: string | null
+  readonly effort: string | null
+  readonly verbosity: string | null
+  readonly parallelGroup: number | null
+}
 
 type RawStepDefRow = {
-  readonly id: string;
-  readonly workspaceId: string | null;
-  readonly baseStepId: string | null;
-  readonly role: string;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly providerDefault: string | null;
-  readonly modelDefault: string | null;
-  readonly effortDefault: string | null;
-  readonly verbosityDefault: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
+  readonly id: string
+  readonly workspaceId: string | null
+  readonly baseStepId: string | null
+  readonly role: string
+  readonly name: string
+  readonly promptPrefix: string
+  readonly providerDefault: string | null
+  readonly modelDefault: string | null
+  readonly effortDefault: string | null
+  readonly verbosityDefault: string | null
+  readonly createdAt: string
+  readonly updatedAt: string
+}
 
 type RawWorkflowRow = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly name: string;
-  readonly description: string;
-  readonly goal: string | null;
-  readonly steps: ReadonlyArray<RawWorkflowStepRow>;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-  readonly deletedAt: number | null;
-  readonly isPreset: boolean;
-};
+  readonly id: string
+  readonly workspaceId: string
+  readonly name: string
+  readonly description: string
+  readonly goal: string | null
+  readonly steps: ReadonlyArray<RawWorkflowStepRow>
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly deletedAt: number | null
+  readonly isPreset: boolean
+}
 
 type RawAgentRow = {
-  readonly id: string;
-  readonly sessionId: string;
-  readonly stepId: string | null;
-  readonly workflowRunId: string | null;
-  readonly parentAgentId: string | null;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly status: string;
-  readonly providerRunId: string | null;
-  readonly outputSummary: string | null;
-  readonly startedAt: string | null;
-  readonly completedAt: string | null;
-  readonly providerSessionId: string | null;
-  readonly lastFinishedAt: string | null;
-  readonly lastViewedAt: string | null;
-  readonly kind: string | null;
-  readonly verbosity: string | null;
-  readonly sourceThreadId: string | null;
-  readonly sourceCommentUrl: string | null;
-};
+  readonly id: string
+  readonly sessionId: string
+  readonly stepId: string | null
+  readonly workflowRunId: string | null
+  readonly parentAgentId: string | null
+  readonly ordinal: number
+  readonly name: string
+  readonly status: string
+  readonly providerRunId: string | null
+  readonly outputSummary: string | null
+  readonly startedAt: string | null
+  readonly completedAt: string | null
+  readonly providerSessionId: string | null
+  readonly lastFinishedAt: string | null
+  readonly lastViewedAt: string | null
+  readonly kind: string | null
+  readonly verbosity: string | null
+  readonly sourceThreadId: string | null
+  readonly sourceCommentUrl: string | null
+}
 
 function rowToStep(row: RawWorkflowStepRow): Step {
   return {
@@ -102,7 +102,7 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.parallelGroup != null && { parallelGroup: row.parallelGroup }),
-  };
+  }
 }
 
 function rowToStepDef(row: RawStepDefRow): StepDef {
@@ -121,7 +121,7 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
     ...(row.verbosityDefault != null && {
       verbosityDefault: row.verbosityDefault as VerbosityLevel,
     }),
-  };
+  }
 }
 
 function rowToWorkflow(row: RawWorkflowRow): Workflow {
@@ -138,7 +138,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     ...(row.deletedAt != null && {
       deletedAt: new Date(row.deletedAt * 1000).toISOString() as IsoDateTime,
     }),
-  };
+  }
 }
 
 function rowToAgent(row: RawAgentRow): Agent {
@@ -162,42 +162,42 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
-  };
+  }
 }
 
 export const invokeWorkflowList = async (workspaceId: WorkspaceId): Promise<Workflow[]> => {
-  const rows = await invoke<RawWorkflowRow[]>('workflow_list', { workspaceId });
-  return rows.map(rowToWorkflow);
-};
+  const rows = await invoke<RawWorkflowRow[]>('workflow_list', { workspaceId })
+  return rows.map(rowToWorkflow)
+}
 
 export const invokeWorkflowsForSession = async (sessionId: SessionId): Promise<Workflow[]> => {
-  const rows = await invoke<RawWorkflowRow[]>('workflows_for_session', { sessionId });
-  return rows.map(rowToWorkflow);
-};
+  const rows = await invoke<RawWorkflowRow[]>('workflows_for_session', { sessionId })
+  return rows.map(rowToWorkflow)
+}
 
 export type WorkflowStepUpsertArgs = {
-  readonly id?: StepId;
-  readonly libraryStepId?: StepDefId;
-  readonly role?: AgentRole;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly providerOverride?: ProviderId;
-  readonly modelOverride?: string;
-  readonly effort?: AgentEffort;
-  readonly verbosity?: VerbosityLevel;
-  readonly parallelGroup?: number;
-};
+  readonly id?: StepId
+  readonly libraryStepId?: StepDefId
+  readonly role?: AgentRole
+  readonly ordinal: number
+  readonly name: string
+  readonly promptPrefix: string
+  readonly providerOverride?: ProviderId
+  readonly modelOverride?: string
+  readonly effort?: AgentEffort
+  readonly verbosity?: VerbosityLevel
+  readonly parallelGroup?: number
+}
 
 export type WorkflowUpsertArgs = {
-  readonly id?: WorkflowId;
-  readonly workspaceId: WorkspaceId;
-  readonly name: string;
-  readonly description: string;
-  readonly goal?: string;
-  readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
-  readonly isPreset?: boolean;
-};
+  readonly id?: WorkflowId
+  readonly workspaceId: WorkspaceId
+  readonly name: string
+  readonly description: string
+  readonly goal?: string
+  readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>
+  readonly isPreset?: boolean
+}
 
 export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Workflow> => {
   const row = await invoke<RawWorkflowRow>('workflow_upsert', {
@@ -222,31 +222,31 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
         parallelGroup: d.parallelGroup ?? null,
       })),
     },
-  });
-  return rowToWorkflow(row);
-};
+  })
+  return rowToWorkflow(row)
+}
 
 export const invokeWorkflowDelete = async (id: WorkflowId): Promise<void> => {
-  return invoke<void>('workflow_delete', { id });
-};
+  return invoke<void>('workflow_delete', { id })
+}
 
 export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepDef[]> => {
-  const rows = await invoke<RawStepDefRow[]>('step_def_list', { workspaceId });
-  return rows.map(rowToStepDef);
-};
+  const rows = await invoke<RawStepDefRow[]>('step_def_list', { workspaceId })
+  return rows.map(rowToStepDef)
+}
 
 export type StepDefUpsertArgs = {
-  readonly id?: StepDefId;
-  readonly workspaceId: WorkspaceId | null;
-  readonly baseStepId?: StepDefId;
-  readonly role: AgentRole;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly providerDefault?: ProviderId;
-  readonly modelDefault?: string;
-  readonly effortDefault?: AgentEffort;
-  readonly verbosityDefault?: VerbosityLevel;
-};
+  readonly id?: StepDefId
+  readonly workspaceId: WorkspaceId | null
+  readonly baseStepId?: StepDefId
+  readonly role: AgentRole
+  readonly name: string
+  readonly promptPrefix: string
+  readonly providerDefault?: ProviderId
+  readonly modelDefault?: string
+  readonly effortDefault?: AgentEffort
+  readonly verbosityDefault?: VerbosityLevel
+}
 
 export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<StepDef> => {
   const row = await invoke<RawStepDefRow>('step_def_upsert', {
@@ -262,37 +262,37 @@ export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<Step
       effortDefault: args.effortDefault ?? null,
       verbosityDefault: args.verbosityDefault ?? null,
     },
-  });
-  return rowToStepDef(row);
-};
+  })
+  return rowToStepDef(row)
+}
 
 export const invokeStepDefDelete = async (id: StepDefId): Promise<void> => {
-  return invoke<void>('step_def_delete', { id });
-};
+  return invoke<void>('step_def_delete', { id })
+}
 
 export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> => {
-  const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
-  return rows.map(rowToAgent);
-};
+  const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId })
+  return rows.map(rowToAgent)
+}
 
 export type AgentInsertArgs = {
-  readonly id?: AgentId;
-  readonly sessionId: SessionId;
-  readonly stepId?: StepId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly parentAgentId?: AgentId;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly status: AgentStatus;
-  readonly providerRunId?: ProviderRunId;
-  readonly outputSummary?: string;
-  readonly startedAt?: IsoDateTime;
-  readonly completedAt?: IsoDateTime;
-  readonly kind?: string;
-  readonly verbosity?: VerbosityLevel;
-  readonly sourceThreadId?: string;
-  readonly sourceCommentUrl?: string;
-};
+  readonly id?: AgentId
+  readonly sessionId: SessionId
+  readonly stepId?: StepId
+  readonly workflowRunId?: WorkflowRunId
+  readonly parentAgentId?: AgentId
+  readonly ordinal: number
+  readonly name: string
+  readonly status: AgentStatus
+  readonly providerRunId?: ProviderRunId
+  readonly outputSummary?: string
+  readonly startedAt?: IsoDateTime
+  readonly completedAt?: IsoDateTime
+  readonly kind?: string
+  readonly verbosity?: VerbosityLevel
+  readonly sourceThreadId?: string
+  readonly sourceCommentUrl?: string
+}
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
   const row = await invoke<RawAgentRow>('agent_insert', {
@@ -314,28 +314,28 @@ export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> =>
       sourceThreadId: run.sourceThreadId ?? null,
       sourceCommentUrl: run.sourceCommentUrl ?? null,
     },
-  });
-  return rowToAgent(row);
-};
+  })
+  return rowToAgent(row)
+}
 
 export const invokeAgentSetKind = async (id: AgentId, kind: string | null): Promise<void> => {
-  return invoke<void>('agent_set_kind', { id, kind });
-};
+  return invoke<void>('agent_set_kind', { id, kind })
+}
 
 export const invokeAgentSetVerbosity = async (
   id: AgentId,
   verbosity: VerbosityLevel | null,
 ): Promise<void> => {
-  return invoke<void>('agent_set_verbosity', { id, verbosity });
-};
+  return invoke<void>('agent_set_verbosity', { id, verbosity })
+}
 
 export type AgentUpdateFields = {
-  readonly status: AgentStatus;
-  readonly providerRunId?: ProviderRunId;
-  readonly outputSummary?: string;
-  readonly startedAt?: IsoDateTime;
-  readonly completedAt?: IsoDateTime;
-};
+  readonly status: AgentStatus
+  readonly providerRunId?: ProviderRunId
+  readonly outputSummary?: string
+  readonly startedAt?: IsoDateTime
+  readonly completedAt?: IsoDateTime
+}
 
 export const invokeAgentUpdateStatus = async (
   id: AgentId,
@@ -350,9 +350,9 @@ export const invokeAgentUpdateStatus = async (
       startedAt: fields.startedAt ?? null,
       completedAt: fields.completedAt ?? null,
     },
-  });
-  return rowToAgent(row);
-};
+  })
+  return rowToAgent(row)
+}
 
 export const invokeAgentSetProviderSessionId = async (
   id: AgentId,
@@ -361,26 +361,26 @@ export const invokeAgentSetProviderSessionId = async (
   await invoke<void>('agent_set_provider_session_id', {
     id,
     providerSessionId,
-  });
-};
+  })
+}
 
 export const invokeAgentMarkViewed = async (id: AgentId, at: IsoDateTime): Promise<void> => {
-  await invoke<void>('agent_mark_viewed', { id, at });
-};
+  await invoke<void>('agent_mark_viewed', { id, at })
+}
 
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
-  const ids = await invoke<string[]>('workspaces_with_unread');
-  return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
-};
+  const ids = await invoke<string[]>('workspaces_with_unread')
+  return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>
+}
 
 type RawParallelGroupRow = {
-  readonly id: string;
-  readonly sessionId: string;
-  readonly ordinal: number;
-  readonly mergeStrategy: string;
-  readonly createdAt: string;
-  readonly completedAt: string | null;
-};
+  readonly id: string
+  readonly sessionId: string
+  readonly ordinal: number
+  readonly mergeStrategy: string
+  readonly createdAt: string
+  readonly completedAt: string | null
+}
 
 function rowToParallelGroup(row: RawParallelGroupRow): ParallelGroup {
   return {
@@ -390,16 +390,16 @@ function rowToParallelGroup(row: RawParallelGroupRow): ParallelGroup {
     mergeStrategy: row.mergeStrategy as ParallelMergeStrategy,
     createdAt: row.createdAt as IsoDateTime,
     completedAt: row.completedAt != null ? (row.completedAt as IsoDateTime) : null,
-  };
+  }
 }
 
 export type ParallelGroupCreateArgs = {
-  readonly id?: ParallelGroupId;
-  readonly sessionId: SessionId;
-  readonly ordinal: number;
-  readonly mergeStrategy: ParallelMergeStrategy;
-  readonly createdAt?: IsoDateTime;
-};
+  readonly id?: ParallelGroupId
+  readonly sessionId: SessionId
+  readonly ordinal: number
+  readonly mergeStrategy: ParallelMergeStrategy
+  readonly createdAt?: IsoDateTime
+}
 
 export const invokeParallelGroupCreate = async (
   args: ParallelGroupCreateArgs,
@@ -412,9 +412,9 @@ export const invokeParallelGroupCreate = async (
       mergeStrategy: args.mergeStrategy,
       createdAt: args.createdAt ?? null,
     },
-  });
-  return rowToParallelGroup(row);
-};
+  })
+  return rowToParallelGroup(row)
+}
 
 export const invokeParallelGroupUpdateCompletedAt = async (
   id: ParallelGroupId,
@@ -423,6 +423,6 @@ export const invokeParallelGroupUpdateCompletedAt = async (
   const row = await invoke<RawParallelGroupRow>('parallel_group_update_completed_at', {
     id,
     completedAt,
-  });
-  return rowToParallelGroup(row);
-};
+  })
+  return rowToParallelGroup(row)
+}

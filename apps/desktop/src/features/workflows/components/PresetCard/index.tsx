@@ -1,22 +1,22 @@
-import { useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { Check, Trash2, X } from 'lucide-react';
-import type { Workflow } from '@goodboy/types';
-import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { useState } from 'react'
+import { cn } from '@goodboy/ui'
+import { Check, Trash2, X } from 'lucide-react'
+import type { Workflow } from '@goodboy/types'
+import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind'
+import { AgentAvatar } from '../../../../shared/components/AgentAvatar'
 
 type Props = {
-  readonly template: Workflow;
-  readonly active: boolean;
-  readonly approved: boolean;
-  readonly onSelect: () => void;
-  readonly onDelete: () => void;
-};
+  readonly template: Workflow
+  readonly active: boolean
+  readonly approved: boolean
+  readonly onSelect: () => void
+  readonly onDelete: () => void
+}
 
 export const PresetCard = ({ template, active, approved, onSelect, onDelete }: Props) => {
-  const [confirming, setConfirming] = useState(false);
-  const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-  const description = template.description?.trim();
+  const [confirming, setConfirming] = useState(false)
+  const steps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal)
+  const description = template.description?.trim()
   return (
     <li className="group relative">
       <button
@@ -44,8 +44,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
         {steps.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2 pr-8">
             {steps.map((step) => {
-              const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-              return <AgentAvatar key={step.id} kind={kind} size="xs" title={step.name} />;
+              const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name)
+              return <AgentAvatar key={step.id} kind={kind} size="xs" title={step.name} />
             })}
           </span>
         ) : null}
@@ -56,9 +56,9 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation();
-              setConfirming(false);
-              onDelete();
+              e.stopPropagation()
+              setConfirming(false)
+              onDelete()
             }}
             title="confirm delete"
             aria-label={`confirm delete ${template.name}`}
@@ -69,8 +69,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation();
-              setConfirming(false);
+              e.stopPropagation()
+              setConfirming(false)
             }}
             title="cancel"
             aria-label="cancel delete"
@@ -83,8 +83,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
         <button
           type="button"
           onClick={(e) => {
-            e.stopPropagation();
-            setConfirming(true);
+            e.stopPropagation()
+            setConfirming(true)
           }}
           title="delete workflow"
           aria-label={`delete ${template.name}`}
@@ -94,5 +94,5 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
         </button>
       )}
     </li>
-  );
-};
+  )
+}

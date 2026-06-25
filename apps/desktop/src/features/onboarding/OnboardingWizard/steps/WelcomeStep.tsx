@@ -1,5 +1,5 @@
-import { FolderGit2, Plug } from 'lucide-react';
-import { DogMascot } from '../../../../shared/components/DogMascot';
+import { FolderGit2, Plug } from 'lucide-react'
+import { DogMascot } from '../../../../shared/components/DogMascot'
 
 export const WelcomeStep = () => {
   return (
@@ -33,17 +33,17 @@ export const WelcomeStep = () => {
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
 function SetupRow({
   icon,
   title,
   detail,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  detail: string;
+  icon: React.ReactNode
+  title: string
+  detail: string
 }) {
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border-soft/40 bg-subtle/20 px-3.5 py-3 text-left">
@@ -55,5 +55,5 @@ function SetupRow({
         <span className="text-2xs leading-relaxed text-muted-foreground/80">{detail}</span>
       </div>
     </div>
-  );
+  )
 }

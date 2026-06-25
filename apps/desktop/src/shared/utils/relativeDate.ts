@@ -1,24 +1,24 @@
 export const formatRelativeDuration = (fromIso: string, toIso?: string): string => {
-  const fromMs = Date.parse(fromIso);
+  const fromMs = Date.parse(fromIso)
   if (Number.isNaN(fromMs)) {
-    return '';
+    return ''
   }
-  const toMs = toIso ? Date.parse(toIso) : Date.now();
+  const toMs = toIso ? Date.parse(toIso) : Date.now()
   if (Number.isNaN(toMs)) {
-    return '';
+    return ''
   }
-  const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000));
+  const diff = Math.max(0, Math.floor((toMs - fromMs) / 1000))
   if (diff < 60) {
-    return `${diff}s`;
+    return `${diff}s`
   }
-  const m = Math.floor(diff / 60);
+  const m = Math.floor(diff / 60)
   if (m < 60) {
-    return `${m}m`;
+    return `${m}m`
   }
-  const h = Math.floor(m / 60);
+  const h = Math.floor(m / 60)
   if (h < 24) {
-    return `${h}h`;
+    return `${h}h`
   }
-  const d = Math.floor(h / 24);
-  return `${d}d`;
-};
+  const d = Math.floor(h / 24)
+  return `${d}d`
+}

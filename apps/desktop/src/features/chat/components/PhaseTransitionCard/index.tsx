@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Target } from 'lucide-react';
-import { Collapsible, Markdown } from '@goodboy/ui';
-import type { TranscriptItem } from '../../utils/transcript-items';
-import { formatCardTime } from '../../utils/format-card-time';
+import { useState } from 'react'
+import { Target } from 'lucide-react'
+import { Collapsible, Markdown } from '@goodboy/ui'
+import type { TranscriptItem } from '../../utils/transcript-items'
+import { formatCardTime } from '../../utils/format-card-time'
 
 type Props = {
-  readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
-};
+  readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>
+}
 
 export const PhaseTransitionCard = ({ item }: Props) => {
-  const [open, setOpen] = useState(false);
-  const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`;
-  const timestamp = formatCardTime(item.at);
+  const [open, setOpen] = useState(false)
+  const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`
+  const timestamp = formatCardTime(item.at)
 
   return (
     <div className="rounded-md border border-success/30 bg-success/5 px-2 py-1.5">
@@ -34,5 +34,5 @@ export const PhaseTransitionCard = ({ item }: Props) => {
         <p className="mt-1 text-right text-2xs text-muted-foreground">{timestamp}</p>
       </Collapsible>
     </div>
-  );
-};
+  )
+}

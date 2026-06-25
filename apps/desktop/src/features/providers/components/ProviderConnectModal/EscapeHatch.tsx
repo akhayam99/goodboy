@@ -1,41 +1,41 @@
-import { useState } from 'react';
-import { Check, Copy, Terminal } from 'lucide-react';
-import { Tooltip } from '@goodboy/ui';
-import { openCommandInExternalTerminal } from '../../external-terminal';
-import { formatError } from '../../../../shared/lib/errors';
+import { useState } from 'react'
+import { Check, Copy, Terminal } from 'lucide-react'
+import { Tooltip } from '@goodboy/ui'
+import { openCommandInExternalTerminal } from '../../external-terminal'
+import { formatError } from '../../../../shared/lib/errors'
 
 type Props = {
-  readonly command: string;
-};
+  readonly command: string
+}
 
-const RESET_AFTER_MS = 1500;
+const RESET_AFTER_MS = 1500
 
 export const EscapeHatch = ({ command }: Props) => {
-  const [copied, setCopied] = useState(false);
-  const [launching, setLaunching] = useState(false);
-  const [launchError, setLaunchError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false)
+  const [launching, setLaunching] = useState(false)
+  const [launchError, setLaunchError] = useState<string | null>(null)
 
   const onCopy = async () => {
     try {
-      await navigator.clipboard.writeText(command);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), RESET_AFTER_MS);
+      await navigator.clipboard.writeText(command)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), RESET_AFTER_MS)
     } catch {
-      setCopied(false);
+      setCopied(false)
     }
-  };
+  }
 
   const onLaunch = async () => {
-    setLaunching(true);
-    setLaunchError(null);
+    setLaunching(true)
+    setLaunchError(null)
     try {
-      await openCommandInExternalTerminal(command);
+      await openCommandInExternalTerminal(command)
     } catch (err) {
-      setLaunchError(formatError(err));
+      setLaunchError(formatError(err))
     } finally {
-      setLaunching(false);
+      setLaunching(false)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -78,5 +78,5 @@ export const EscapeHatch = ({ command }: Props) => {
         </span>
       ) : null}
     </div>
-  );
-};
+  )
+}

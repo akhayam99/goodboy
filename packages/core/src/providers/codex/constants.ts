@@ -1,10 +1,10 @@
-import type { ModelEffort, ModelTier } from '@goodboy/types';
+import type { ModelEffort, ModelTier } from '@goodboy/types'
 
-export const CODEX_DEFAULT_MODEL = 'gpt-5.5';
-export const CODEX_CHEAP_MODEL = 'gpt-5.4-mini';
+export const CODEX_DEFAULT_MODEL = 'gpt-5.5'
+export const CODEX_CHEAP_MODEL = 'gpt-5.4-mini'
 
-const CODEX_EFFORT: ReadonlyArray<ModelEffort> = ['minimal', 'low', 'medium', 'high'];
-const CODEX_MINI_EFFORT: ReadonlyArray<ModelEffort> = ['minimal', 'low', 'medium'];
+const CODEX_EFFORT: ReadonlyArray<ModelEffort> = ['minimal', 'low', 'medium', 'high']
+const CODEX_MINI_EFFORT: ReadonlyArray<ModelEffort> = ['minimal', 'low', 'medium']
 
 export const CODEX_MODELS: ReadonlyArray<ModelTier> = [
   {
@@ -79,4 +79,4 @@ export const CODEX_MODELS: ReadonlyArray<ModelTier> = [
     weight: 6,
     effort: CODEX_MINI_EFFORT,
   },
-];
+]

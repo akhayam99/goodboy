@@ -1,5 +1,5 @@
-import { Eyebrow } from '../components/ui';
-import { useInView } from '../components/Reveal';
+import { Eyebrow } from '../components/ui'
+import { useInView } from '../components/Reveal'
 
 /* The sixth "point": everything else, kept deliberately dry. One line each,
    no mockups. The five sections above carry the weight; this is the tail. */
@@ -24,10 +24,10 @@ const ITEMS: ReadonlyArray<{ k: string; v: string }> = [
     k: 'Open source',
     v: 'MIT licensed, fully open. Try it, break it, send feedback.',
   },
-];
+]
 
 export function MoreBriefly() {
-  const { ref, inView } = useInView<HTMLElement>();
+  const { ref, inView } = useInView<HTMLElement>()
   return (
     <section
       ref={ref}
@@ -55,5 +55,5 @@ export function MoreBriefly() {
         </dl>
       </div>
     </section>
-  );
+  )
 }

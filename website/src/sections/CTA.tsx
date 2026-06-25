@@ -1,39 +1,39 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { LinkButton } from '../components/ui';
-import { useInView } from '../components/Reveal';
+import { useEffect, useState, type ReactNode } from 'react'
+import { LinkButton } from '../components/ui'
+import { useInView } from '../components/Reveal'
 
-const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest';
-const LATEST_RELEASE_API = 'https://api.github.com/repos/akhayam99/goodboy/releases/latest';
+const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest'
+const LATEST_RELEASE_API = 'https://api.github.com/repos/akhayam99/goodboy/releases/latest'
 
 // The .dmg asset is version-stamped (Goodboy_<version>_universal.dmg), so no
 // static URL points at it. Resolve the latest release's dmg asset at runtime
 // and hand back its direct download link; fall back to the releases page if the
 // GitHub API is unreachable or rate-limited.
 function useLatestDmgUrl(): { href: string; direct: boolean } {
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     fetch(LATEST_RELEASE_API, { headers: { Accept: 'application/vnd.github+json' } })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data: { assets?: Array<{ name?: string; browser_download_url?: string }> }) => {
-        const dmg = data.assets?.find((a) => a.name?.toLowerCase().endsWith('.dmg'));
-        if (!cancelled && dmg?.browser_download_url) setUrl(dmg.browser_download_url);
+        const dmg = data.assets?.find((a) => a.name?.toLowerCase().endsWith('.dmg'))
+        if (!cancelled && dmg?.browser_download_url) setUrl(dmg.browser_download_url)
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
     return () => {
-      cancelled = true;
-    };
-  }, []);
-  return url ? { href: url, direct: true } : { href: RELEASES_LATEST, direct: false };
+      cancelled = true
+    }
+  }, [])
+  return url ? { href: url, direct: true } : { href: RELEASES_LATEST, direct: false }
 }
 
-const brewLine = 'brew install --cask akhayam99/tap/goodboy';
+const brewLine = 'brew install --cask akhayam99/tap/goodboy'
 
 const sourceLines = [
   { prompt: '$', command: 'git clone https://github.com/akhayam99/goodboy.git', muted: false },
   { prompt: '$', command: 'cd goodboy && pnpm install', muted: false },
   { prompt: '$', command: 'pnpm tauri:build', muted: true },
-];
+]
 
 function TerminalFrame({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -48,12 +48,12 @@ function TerminalFrame({ label, children }: { label: string; children: ReactNode
         {children}
       </div>
     </div>
-  );
+  )
 }
 
 export function CTA() {
-  const { ref, inView } = useInView<HTMLElement>();
-  const dmg = useLatestDmgUrl();
+  const { ref, inView } = useInView<HTMLElement>()
+  const dmg = useLatestDmgUrl()
   return (
     <section
       id="cta"
@@ -175,5 +175,5 @@ export function CTA() {
         </div>
       </div>
     </section>
-  );
+  )
 }

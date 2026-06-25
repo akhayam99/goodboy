@@ -1,13 +1,13 @@
-import type { Database } from '../client';
+import type { Database } from '../client'
 
 export type AuditRetryRow = {
-  readonly id: string;
-  readonly payload_json: string;
-  readonly attempts: number;
-  readonly last_error: string | null;
-  readonly created_at: number;
-  readonly updated_at: number;
-};
+  readonly id: string
+  readonly payload_json: string
+  readonly attempts: number
+  readonly last_error: string | null
+  readonly created_at: number
+  readonly updated_at: number
+}
 
 export const enqueueAuditRetry = async (
   db: Database,
@@ -20,8 +20,8 @@ export const enqueueAuditRetry = async (
      VALUES (?, ?, 0, NULL, ?, ?)
      ON CONFLICT(id) DO NOTHING`,
     [id, payloadJson, nowMs, nowMs],
-  );
-};
+  )
+}
 
 export const drainOldest = async (
   db: Database,
@@ -33,8 +33,8 @@ export const drainOldest = async (
      ORDER BY created_at ASC
      LIMIT ?`,
     [limit],
-  );
-};
+  )
+}
 
 export const updateAuditRetryAttempts = async (
   db: Database,
@@ -48,9 +48,9 @@ export const updateAuditRetryAttempts = async (
      SET attempts = ?, last_error = ?, updated_at = ?
      WHERE id = ?`,
     [attempts, lastError, nowMs, id],
-  );
-};
+  )
+}
 
 export const deleteAuditRetry = async (db: Database, id: string): Promise<void> => {
-  await db.execute(`DELETE FROM permission_audit_retry WHERE id = ?`, [id]);
-};
+  await db.execute(`DELETE FROM permission_audit_retry WHERE id = ?`, [id])
+}

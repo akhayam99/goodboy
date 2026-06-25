@@ -1,35 +1,35 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 type ErrorBoundaryProps = {
-  readonly children: ReactNode;
-};
+  readonly children: ReactNode
+}
 
 type ErrorBoundaryState = {
-  readonly error: Error | null;
-};
+  readonly error: Error | null
+}
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  override state: ErrorBoundaryState = { error: null };
+  override state: ErrorBoundaryState = { error: null }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { error };
+    return { error }
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[error-boundary]', error, info.componentStack);
+    console.error('[error-boundary]', error, info.componentStack)
   }
 
   reset = (): void => {
-    this.setState({ error: null });
-  };
+    this.setState({ error: null })
+  }
 
   reload = (): void => {
-    window.location.reload();
-  };
+    window.location.reload()
+  }
 
   override render(): ReactNode {
     if (!this.state.error) {
-      return this.props.children;
+      return this.props.children
     }
     return (
       <div
@@ -63,6 +63,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </div>
         </div>
       </div>
-    );
+    )
   }
 }

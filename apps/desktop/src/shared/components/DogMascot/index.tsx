@@ -1,11 +1,11 @@
-import type { CSSProperties } from 'react';
-import { cn } from '@goodboy/ui';
-import mascot from '../../../assets/mascot.png';
+import type { CSSProperties } from 'react'
+import { cn } from '@goodboy/ui'
+import mascot from '../../../assets/mascot.png'
 
 type Props = {
-  size?: number;
-  className?: string;
-};
+  size?: number
+  className?: string
+}
 
 export const DogMascot = ({ size = 16, className }: Props) => {
   const style: CSSProperties = {
@@ -20,7 +20,7 @@ export const DogMascot = ({ size = 16, className }: Props) => {
     WebkitMaskRepeat: 'no-repeat',
     WebkitMaskPosition: 'center',
     WebkitMaskSize: 'contain',
-  };
+  }
 
-  return <span aria-hidden style={style} className={cn('inline-block shrink-0', className)} />;
-};
+  return <span aria-hidden style={style} className={cn('inline-block shrink-0', className)} />
+}

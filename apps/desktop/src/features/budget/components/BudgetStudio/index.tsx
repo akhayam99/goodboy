@@ -1,71 +1,71 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
-import { Wallet } from 'lucide-react';
-import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
-import type { ProviderSpendEntry } from '../../../../store';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { OverviewPanel } from './OverviewPanel';
-import { ProviderPanel } from './ProviderPanel';
-import { ScopeRail } from './ScopeRail';
-import { SessionPanel } from './SessionPanel';
-import type { BudgetScope, SessionSpend, WorkspaceTurn } from './lib';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Divider, ScrollFade } from '@goodboy/ui'
+import { Wallet } from 'lucide-react'
+import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store'
+import type { ProviderSpendEntry } from '../../../../store'
+import { StudioShell } from '../../../../shared/components/StudioShell'
+import { OverviewPanel } from './OverviewPanel'
+import { ProviderPanel } from './ProviderPanel'
+import { ScopeRail } from './ScopeRail'
+import { SessionPanel } from './SessionPanel'
+import type { BudgetScope, SessionSpend, WorkspaceTurn } from './lib'
 
 type Props = {
-  readonly workspaceName: string;
-  readonly initialScope?: BudgetScope;
-  readonly onClose: () => void;
-};
+  readonly workspaceName: string
+  readonly initialScope?: BudgetScope
+  readonly onClose: () => void
+}
 
-const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
-const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
+const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>
+const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>
 
 export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) => {
-  const sessions = useSessions();
-  const currentSessionId = useAppStore((s) => s.currentSessionId);
-  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
-  const telemetryMap = useAppStore((s) => s.sessionTelemetry);
-  const workspaceSummary = useAppStore((s) => s.workspaceSummary);
-  const providers = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
-  const budgetAlerts = useAppStore((s) => s.budgetAlerts);
-  const budgetRules = useAppStore((s) => s.budgetRules);
-  const sessionBudgets = useAppStore((s) => s.sessionBudgets);
+  const sessions = useSessions()
+  const currentSessionId = useAppStore((s) => s.currentSessionId)
+  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId)
+  const telemetryMap = useAppStore((s) => s.sessionTelemetry)
+  const workspaceSummary = useAppStore((s) => s.workspaceSummary)
+  const providers = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND)
+  const budgetAlerts = useAppStore((s) => s.budgetAlerts)
+  const budgetRules = useAppStore((s) => s.budgetRules)
+  const sessionBudgets = useAppStore((s) => s.sessionBudgets)
 
-  const loadBudgetRules = useAppStore((s) => s.loadBudgetRules);
-  const loadBudgetAlerts = useAppStore((s) => s.loadBudgetAlerts);
-  const loadSessionTelemetry = useAppStore((s) => s.loadSessionTelemetry);
-  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
-  const dismissBudgetAlert = useAppStore((s) => s.dismissBudgetAlert);
-  const saveBudgetRule = useAppStore((s) => s.saveBudgetRule);
-  const deleteBudgetRule = useAppStore((s) => s.deleteBudgetRule);
-  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
-  const refreshProviderSpendBreakdown = useAppStore((s) => s.refreshProviderSpendBreakdown);
+  const loadBudgetRules = useAppStore((s) => s.loadBudgetRules)
+  const loadBudgetAlerts = useAppStore((s) => s.loadBudgetAlerts)
+  const loadSessionTelemetry = useAppStore((s) => s.loadSessionTelemetry)
+  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget)
+  const dismissBudgetAlert = useAppStore((s) => s.dismissBudgetAlert)
+  const saveBudgetRule = useAppStore((s) => s.saveBudgetRule)
+  const deleteBudgetRule = useAppStore((s) => s.deleteBudgetRule)
+  const setSessionBudget = useAppStore((s) => s.setSessionBudget)
+  const refreshProviderSpendBreakdown = useAppStore((s) => s.refreshProviderSpendBreakdown)
 
-  const [scope, setScope] = useState<BudgetScope>(initialScope ?? { kind: 'overview' });
+  const [scope, setScope] = useState<BudgetScope>(initialScope ?? { kind: 'overview' })
 
   useEffect(() => {
-    void loadBudgetRules();
-    void loadBudgetAlerts();
-  }, [loadBudgetRules, loadBudgetAlerts]);
+    void loadBudgetRules()
+    void loadBudgetAlerts()
+  }, [loadBudgetRules, loadBudgetAlerts])
 
   useEffect(() => {
     for (const s of sessions) {
-      void loadSessionTelemetry(s.id);
-      void loadSessionBudget(s.id);
+      void loadSessionTelemetry(s.id)
+      void loadSessionBudget(s.id)
     }
-  }, [sessions, loadSessionTelemetry, loadSessionBudget]);
+  }, [sessions, loadSessionTelemetry, loadSessionBudget])
 
   const refreshBreakdown = useCallback(async () => {
     if (currentWorkspaceId) {
-      await refreshProviderSpendBreakdown(currentWorkspaceId);
+      await refreshProviderSpendBreakdown(currentWorkspaceId)
     }
-  }, [currentWorkspaceId, refreshProviderSpendBreakdown]);
+  }, [currentWorkspaceId, refreshProviderSpendBreakdown])
 
   const saveProviderCap = useCallback(
     async (provider: ProviderName, capUsd: number) => {
-      const existing = budgetRules.find((r) => r.provider === provider) ?? null;
+      const existing = budgetRules.find((r) => r.provider === provider) ?? null
       if (existing) {
-        await deleteBudgetRule(existing.id);
+        await deleteBudgetRule(existing.id)
       }
       const next: Omit<BudgetRule, 'id' | 'createdAt'> = {
         provider,
@@ -73,30 +73,30 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
         capUsd,
         alertThresholdPct: existing?.alertThresholdPct ?? 80,
         extraTokensBudget: existing?.extraTokensBudget ?? null,
-      };
-      await saveBudgetRule(next);
-      await refreshBreakdown();
+      }
+      await saveBudgetRule(next)
+      await refreshBreakdown()
     },
     [budgetRules, deleteBudgetRule, saveBudgetRule, refreshBreakdown],
-  );
+  )
 
   const removeProviderCap = useCallback(
     async (provider: ProviderName) => {
-      const existing = budgetRules.find((r) => r.provider === provider) ?? null;
+      const existing = budgetRules.find((r) => r.provider === provider) ?? null
       if (existing) {
-        await deleteBudgetRule(existing.id);
+        await deleteBudgetRule(existing.id)
       }
-      await refreshBreakdown();
+      await refreshBreakdown()
     },
     [budgetRules, deleteBudgetRule, refreshBreakdown],
-  );
+  )
 
   const saveSessionCap = useCallback(
     async (sessionId: SessionId, capUsd: number) => {
-      await setSessionBudget(sessionId, capUsd);
+      await setSessionBudget(sessionId, capUsd)
     },
     [setSessionBudget],
-  );
+  )
 
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
@@ -108,33 +108,33 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
         })),
       ),
     [sessions, telemetryMap],
-  );
+  )
 
   const sessionSpends = useMemo<ReadonlyArray<SessionSpend>>(
     () =>
       sessions
         .map((s) => {
-          const recs = telemetryMap[s.id] ?? EMPTY_TELEMETRY;
+          const recs = telemetryMap[s.id] ?? EMPTY_TELEMETRY
           return {
             sessionId: s.id,
             goal: s.goal,
             spentUsd: recs.reduce((sum, r) => sum + r.estimatedCostUsd, 0),
             turnCount: recs.filter((r) => r.kind === 'turn').length,
             isCurrent: s.id === currentSessionId,
-          };
+          }
         })
         .sort((a, b) => b.spentUsd - a.spentUsd),
     [sessions, telemetryMap, currentSessionId],
-  );
+  )
 
   const selectedSession =
-    scope.kind === 'session' ? sessions.find((s) => s.id === scope.sessionId) : undefined;
+    scope.kind === 'session' ? sessions.find((s) => s.id === scope.sessionId) : undefined
 
   useEffect(() => {
     if (scope.kind === 'session' && !selectedSession) {
-      setScope({ kind: 'overview' });
+      setScope({ kind: 'overview' })
     }
-  }, [scope, selectedSession]);
+  }, [scope, selectedSession])
 
   return (
     <StudioShell
@@ -190,5 +190,5 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
         </>
       )}
     </StudioShell>
-  );
-};
+  )
+}

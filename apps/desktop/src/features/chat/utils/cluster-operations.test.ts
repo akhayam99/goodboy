@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import type { TranscriptItem } from './transcript-items';
-import { clusterOperations } from './cluster-operations';
+import { describe, expect, it } from 'vitest'
+import type { TranscriptItem } from './transcript-items'
+import { clusterOperations } from './cluster-operations'
 
 function tool(id: string, ended = true): TranscriptItem {
   return {
@@ -12,19 +12,19 @@ function tool(id: string, ended = true): TranscriptItem {
     output: null,
     isError: false,
     ended,
-  };
+  }
 }
 
 function userText(key: string): TranscriptItem {
-  return { kind: 'user_text', key, text: 'hi', at: '2026-06-08T10:00:00.000Z' } as TranscriptItem;
+  return { kind: 'user_text', key, text: 'hi', at: '2026-06-08T10:00:00.000Z' } as TranscriptItem
 }
 
 function assistantText(key: string): TranscriptItem {
-  return { kind: 'assistant_text', key, text: 'done' };
+  return { kind: 'assistant_text', key, text: 'done' }
 }
 
 function edit(key: string): TranscriptItem {
-  return { kind: 'file_edit', key, path: '/a/b.ts', editType: 'modify' };
+  return { kind: 'file_edit', key, path: '/a/b.ts', editType: 'modify' }
 }
 
 function usage(key: string): TranscriptItem {
@@ -37,7 +37,7 @@ function usage(key: string): TranscriptItem {
       cachedInputTokens: 0,
       estimatedCostUsd: 0,
     },
-  };
+  }
 }
 
 function permission(key: string): TranscriptItem {
@@ -49,7 +49,7 @@ function permission(key: string): TranscriptItem {
     runId: 'run-1',
     input: null,
     at: '2026-06-08T10:00:00.000Z',
-  } as TranscriptItem;
+  } as TranscriptItem
 }
 
 describe('clusterOperations', () => {
@@ -60,11 +60,11 @@ describe('clusterOperations', () => {
       edit('e1'),
       tool('b'),
       assistantText('t1'),
-    ]);
-    expect(rows.map((r) => r.kind)).toEqual(['item', 'operations', 'item']);
-    const ops = rows[1]!;
-    expect(ops.kind === 'operations' && ops.items).toHaveLength(3);
-  });
+    ])
+    expect(rows.map((r) => r.kind)).toEqual(['item', 'operations', 'item'])
+    const ops = rows[1]!
+    expect(ops.kind === 'operations' && ops.items).toHaveLength(3)
+  })
 
   it('keeps non-clustered items (text, permissions) as standalone item rows', () => {
     const rows = clusterOperations([
@@ -72,33 +72,33 @@ describe('clusterOperations', () => {
       permission('p1'),
       tool('a'),
       userText('u1'),
-    ]);
-    expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'operations', 'item']);
-  });
+    ])
+    expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'operations', 'item'])
+  })
 
   it('breaks the cluster when a non-clustered item interrupts the run', () => {
-    const rows = clusterOperations([tool('a'), permission('p1'), tool('b')]);
-    expect(rows.map((r) => r.kind)).toEqual(['operations', 'item', 'operations']);
-  });
+    const rows = clusterOperations([tool('a'), permission('p1'), tool('b')])
+    expect(rows.map((r) => r.kind)).toEqual(['operations', 'item', 'operations'])
+  })
 
   it('derives a stable key from the first item in the group', () => {
-    const rows = clusterOperations([tool('a'), tool('b')]);
-    expect(rows[0]!.key).toBe('ops-tool-a');
-  });
+    const rows = clusterOperations([tool('a'), tool('b')])
+    expect(rows[0]!.key).toBe('ops-tool-a')
+  })
 
   it('returns an empty array for no items', () => {
-    expect(clusterOperations([])).toEqual([]);
-  });
+    expect(clusterOperations([])).toEqual([])
+  })
 
   it('renders a lone usage line inline, not as a 1-item operations cluster', () => {
-    const rows = clusterOperations([assistantText('t1'), usage('u1'), assistantText('t2')]);
-    expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'item']);
-  });
+    const rows = clusterOperations([assistantText('t1'), usage('u1'), assistantText('t2')])
+    expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'item'])
+  })
 
   it('absorbs usage into a cluster when it sits next to a real operation', () => {
-    const rows = clusterOperations([tool('a'), usage('u1')]);
-    expect(rows.map((r) => r.kind)).toEqual(['operations']);
-    const ops = rows[0]!;
-    expect(ops.kind === 'operations' && ops.items).toHaveLength(2);
-  });
-});
+    const rows = clusterOperations([tool('a'), usage('u1')])
+    expect(rows.map((r) => r.kind)).toEqual(['operations'])
+    const ops = rows[0]!
+    expect(ops.kind === 'operations' && ops.items).toHaveLength(2)
+  })
+})

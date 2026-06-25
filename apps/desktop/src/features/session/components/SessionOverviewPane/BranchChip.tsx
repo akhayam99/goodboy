@@ -1,23 +1,23 @@
-import { useState } from 'react';
-import { Check, GitBranch } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { formatError } from '../../../../shared/lib/errors';
-import { useToast } from '../../../../app/components/Toast';
+import { useState } from 'react'
+import { Check, GitBranch } from 'lucide-react'
+import { cn } from '@goodboy/ui'
+import { formatError } from '../../../../shared/lib/errors'
+import { useToast } from '../../../../app/components/Toast'
 
 export const BranchChip = ({ branch }: { branch: string }) => {
-  const { showToast } = useToast();
-  const [copied, setCopied] = useState(false);
+  const { showToast } = useToast()
+  const [copied, setCopied] = useState(false)
 
   const onCopy = async () => {
     try {
-      await navigator.clipboard.writeText(branch);
-      setCopied(true);
-      showToast('success', 'branch copied');
-      setTimeout(() => setCopied(false), 1200);
+      await navigator.clipboard.writeText(branch)
+      setCopied(true)
+      showToast('success', 'branch copied')
+      setTimeout(() => setCopied(false), 1200)
     } catch (err) {
-      showToast('error', `copy failed: ${formatError(err)}`);
+      showToast('error', `copy failed: ${formatError(err)}`)
     }
-  };
+  }
 
   return (
     <button
@@ -42,5 +42,5 @@ export const BranchChip = ({ branch }: { branch: string }) => {
       )}
       <span className="truncate">{branch}</span>
     </button>
-  );
-};
+  )
+}

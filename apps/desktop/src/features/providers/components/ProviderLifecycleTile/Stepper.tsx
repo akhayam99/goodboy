@@ -1,14 +1,14 @@
-import type { ProviderLifecycleAction } from '@goodboy/types';
+import type { ProviderLifecycleAction } from '@goodboy/types'
 
 type Props = {
-  readonly action: ProviderLifecycleAction;
-};
+  readonly action: ProviderLifecycleAction
+}
 
 export const Stepper = ({ action }: Props) => {
   if (action === 'logout') {
-    return null;
+    return null
   }
-  const current = action === 'install' ? 1 : 2;
+  const current = action === 'install' ? 1 : 2
   return (
     <div
       className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground"
@@ -22,5 +22,5 @@ export const Stepper = ({ action }: Props) => {
         {action === 'install' ? 'Installing CLI' : 'Signing in'}
       </span>
     </div>
-  );
-};
+  )
+}

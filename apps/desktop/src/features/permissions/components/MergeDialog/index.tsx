@@ -1,27 +1,27 @@
-import { useState } from 'react';
-import type { ProviderRunId } from '@goodboy/types';
-import { Button, Dialog } from '@goodboy/ui';
+import { useState } from 'react'
+import type { ProviderRunId } from '@goodboy/types'
+import { Button, Dialog } from '@goodboy/ui'
 
-export const SKIP_SENTINEL = '__skip__' as const;
-export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
+export const SKIP_SENTINEL = '__skip__' as const
+export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL
 
 export type MergeConflict = {
-  file: string;
-  runIds: ReadonlyArray<ProviderRunId>;
-};
+  file: string
+  runIds: ReadonlyArray<ProviderRunId>
+}
 
 export type RunMeta = {
-  readonly agentName?: string;
-  readonly stepName?: string;
-};
+  readonly agentName?: string
+  readonly stepName?: string
+}
 
 export type MergeDialogProps = {
-  open: boolean;
-  conflicts: ReadonlyArray<MergeConflict>;
-  runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
-  onResolve: (picks: Record<string, MergeResolution>) => void;
-  onCancel: () => void;
-};
+  open: boolean
+  conflicts: ReadonlyArray<MergeConflict>
+  runMeta?: ReadonlyMap<ProviderRunId, RunMeta>
+  onResolve: (picks: Record<string, MergeResolution>) => void
+  onCancel: () => void
+}
 
 export const MergeDialog = ({
   open,
@@ -30,26 +30,26 @@ export const MergeDialog = ({
   onResolve,
   onCancel,
 }: MergeDialogProps) => {
-  const [picks, setPicks] = useState<Record<string, MergeResolution>>({});
+  const [picks, setPicks] = useState<Record<string, MergeResolution>>({})
 
   const setPick = (file: string, resolution: MergeResolution) => {
-    setPicks((prev) => ({ ...prev, [file]: resolution }));
-  };
+    setPicks((prev) => ({ ...prev, [file]: resolution }))
+  }
 
-  const allResolved = conflicts.length > 0 && conflicts.every((c) => picks[c.file] !== undefined);
+  const allResolved = conflicts.length > 0 && conflicts.every((c) => picks[c.file] !== undefined)
 
   const onConfirm = () => {
     if (!allResolved) {
-      return;
+      return
     }
-    onResolve(picks);
-    setPicks({});
-  };
+    onResolve(picks)
+    setPicks({})
+  }
 
   const handleCancel = () => {
-    setPicks({});
-    onCancel();
-  };
+    setPicks({})
+    onCancel()
+  }
 
   return (
     <Dialog
@@ -92,22 +92,22 @@ export const MergeDialog = ({
         </ul>
       )}
     </Dialog>
-  );
-};
+  )
+}
 
 type ConflictRowProps = {
-  conflict: MergeConflict;
-  runMeta?: ReadonlyMap<ProviderRunId, RunMeta>;
-  pick: MergeResolution | undefined;
-  onPick: (resolution: MergeResolution) => void;
-};
+  conflict: MergeConflict
+  runMeta?: ReadonlyMap<ProviderRunId, RunMeta>
+  pick: MergeResolution | undefined
+  onPick: (resolution: MergeResolution) => void
+}
 
 function shortRunId(runId: ProviderRunId): string {
-  return runId.slice(-8);
+  return runId.slice(-8)
 }
 
 function ConflictRow({ conflict, runMeta, pick, onPick }: ConflictRowProps) {
-  const groupName = `conflict-${conflict.file}`;
+  const groupName = `conflict-${conflict.file}`
 
   return (
     <div className="flex flex-col gap-2">
@@ -116,8 +116,8 @@ function ConflictRow({ conflict, runMeta, pick, onPick }: ConflictRowProps) {
       </div>
       <ul role="radiogroup" aria-label={conflict.file} className="flex flex-col gap-1 pl-1">
         {conflict.runIds.map((runId, idx) => {
-          const id = `${groupName}-run-${idx}`;
-          const meta = runMeta?.get(runId);
+          const id = `${groupName}-run-${idx}`
+          const meta = runMeta?.get(runId)
           return (
             <li key={runId}>
               <label
@@ -150,7 +150,7 @@ function ConflictRow({ conflict, runMeta, pick, onPick }: ConflictRowProps) {
                 </span>
               </label>
             </li>
-          );
+          )
         })}
         <li>
           <label
@@ -171,5 +171,5 @@ function ConflictRow({ conflict, runMeta, pick, onPick }: ConflictRowProps) {
         </li>
       </ul>
     </div>
-  );
+  )
 }

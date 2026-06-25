@@ -1,81 +1,81 @@
-import { useEffect, useMemo, useState } from 'react';
-import { History, RotateCcw } from 'lucide-react';
-import { Dialog, Markdown, Textarea, cn } from '@goodboy/ui';
-import type { ContextSlotHistoryEntry, Session, SessionId } from '@goodboy/types';
+import { useEffect, useMemo, useState } from 'react'
+import { History, RotateCcw } from 'lucide-react'
+import { Dialog, Markdown, Textarea, cn } from '@goodboy/ui'
+import type { ContextSlotHistoryEntry, Session, SessionId } from '@goodboy/types'
 import {
   useAppStore,
   useSessionLoading,
   useSessionSlots,
   useSlotHistory,
   useSummarizerStatus,
-} from '../../../../../store';
-import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
-import { PaneShell } from './PaneShell';
+} from '../../../../../store'
+import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip'
+import { PaneShell } from './PaneShell'
 
-type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
+type SlotKey = 'goal' | 'decisions' | 'last_output_summary'
 
 const SLOT_TITLE: Record<SlotKey, string> = {
   goal: 'Goal',
   decisions: 'Decisions',
   last_output_summary: 'Last output',
-};
+}
 
 const SLOT_DESCRIPTION: Record<SlotKey, string> = {
   goal: 'What this session is meant to achieve.',
   decisions: 'Choices already locked in for this session.',
   last_output_summary: "Summary of the agent's most recent reply.",
-};
+}
 
 const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
   last_output_summary: 'Write a manual summary',
-};
+}
 
-const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary']);
+const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary'])
 
 type SlotPaneProps = {
-  readonly session: Session;
-  readonly slotKey: SlotKey;
-};
+  readonly session: Session
+  readonly slotKey: SlotKey
+}
 
 export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
-  const sessionId = session.id as SessionId;
-  const slots = useSessionSlots(sessionId);
-  const loading = useSessionLoading(sessionId);
-  const summarizer = useSummarizerStatus(sessionId);
-  const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
-  const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
-  const history = useSlotHistory(sessionId, slotKey);
+  const sessionId = session.id as SessionId
+  const slots = useSessionSlots(sessionId)
+  const loading = useSessionLoading(sessionId)
+  const summarizer = useSummarizerStatus(sessionId)
+  const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot)
+  const loadSlotHistory = useAppStore((s) => s.loadSlotHistory)
+  const history = useSlotHistory(sessionId, slotKey)
 
-  const slot = useMemo(() => slots.find((s) => s.key === slotKey), [slots, slotKey]);
-  const value = slot?.value ?? '';
-  const hasValue = value.length > 0;
-  const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey);
-  const isSummarizing = summarizer.status === 'running';
+  const slot = useMemo(() => slots.find((s) => s.key === slotKey), [slots, slotKey])
+  const value = slot?.value ?? ''
+  const hasValue = value.length > 0
+  const renderAsMarkdown = MARKDOWN_SLOTS.has(slotKey)
+  const isSummarizing = summarizer.status === 'running'
 
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   useEffect(() => {
-    if (!editing) setDraft(value);
-  }, [value, editing]);
+    if (!editing) setDraft(value)
+  }, [value, editing])
 
   const commit = () => {
-    setEditing(false);
-    if (draft !== value) void upsertSessionSlot(sessionId, slotKey, draft);
-  };
+    setEditing(false)
+    if (draft !== value) void upsertSessionSlot(sessionId, slotKey, draft)
+  }
 
   const startEditing = () => {
-    if (isSummarizing) return;
-    setEditing(true);
-  };
+    if (isSummarizing) return
+    setEditing(true)
+  }
 
   const openHistory = () => {
-    void loadSlotHistory(sessionId, slotKey);
-    setHistoryOpen(true);
-  };
+    void loadSlotHistory(sessionId, slotKey)
+    setHistoryOpen(true)
+  }
 
   return (
     <PaneShell
@@ -111,13 +111,13 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
             onBlur={commit}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
-                e.preventDefault();
-                setDraft(value);
-                setEditing(false);
+                e.preventDefault()
+                setDraft(value)
+                setEditing(false)
               }
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                commit();
+                e.preventDefault()
+                commit()
               }
             }}
             className="font-mono text-sm"
@@ -143,10 +143,10 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
             tabIndex={isSummarizing ? -1 : 0}
             onClick={startEditing}
             onKeyDown={(e) => {
-              if (isSummarizing) return;
+              if (isSummarizing) return
               if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setEditing(true);
+                e.preventDefault()
+                setEditing(true)
               }
             }}
             className={cn(
@@ -180,24 +180,24 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
           open={historyOpen}
           entries={history}
           onRestore={(entry) => {
-            void upsertSessionSlot(sessionId, slotKey, entry.value);
-            setHistoryOpen(false);
+            void upsertSessionSlot(sessionId, slotKey, entry.value)
+            setHistoryOpen(false)
           }}
           onClose={() => setHistoryOpen(false)}
         />
       </>
     </PaneShell>
-  );
-};
+  )
+}
 
 type SlotHistoryDialogProps = {
-  readonly label: string;
-  readonly renderAsMarkdown: boolean;
-  readonly open: boolean;
-  readonly entries: ReadonlyArray<ContextSlotHistoryEntry>;
-  readonly onRestore: (entry: ContextSlotHistoryEntry) => void;
-  readonly onClose: () => void;
-};
+  readonly label: string
+  readonly renderAsMarkdown: boolean
+  readonly open: boolean
+  readonly entries: ReadonlyArray<ContextSlotHistoryEntry>
+  readonly onRestore: (entry: ContextSlotHistoryEntry) => void
+  readonly onClose: () => void
+}
 
 const SlotHistoryDialog = ({
   label,
@@ -254,14 +254,14 @@ const SlotHistoryDialog = ({
       </ul>
     )}
   </Dialog>
-);
+)
 
 function formatRelative(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
 }

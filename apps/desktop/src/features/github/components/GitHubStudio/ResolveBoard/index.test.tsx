@@ -1,23 +1,23 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PrComment } from '@goodboy/types';
-import type { CommentThread } from '../../../comment-threads';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { PrComment } from '@goodboy/types'
+import type { CommentThread } from '../../../comment-threads'
 
 const h = vi.hoisted(() => ({
   providers: [{ id: 'anthropic', connection: 'connected' }] as Array<{
-    id: string;
-    connection: string;
+    id: string
+    connection: string
   }>,
-}));
+}))
 
 vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (s: { providers: typeof h.providers }) => T) =>
     selector({ providers: h.providers }),
-}));
+}))
 
-import { ResolveBoard } from './index';
+import { ResolveBoard } from './index'
 
 function comment(over: Partial<PrComment> = {}): PrComment {
   return {
@@ -33,24 +33,24 @@ function comment(over: Partial<PrComment> = {}): PrComment {
     resolved: false,
     threadId: 'PRRT_1',
     ...over,
-  };
+  }
 }
 
 function thread(
   over: Partial<PrComment> = {},
   replies: ReadonlyArray<PrComment> = [],
 ): CommentThread {
-  return { head: comment(over), replies };
+  return { head: comment(over), replies }
 }
 
 beforeEach(() => {
-  h.providers = [{ id: 'anthropic', connection: 'connected' }];
-});
-afterEach(cleanup);
+  h.providers = [{ id: 'anthropic', connection: 'connected' }]
+})
+afterEach(cleanup)
 
 describe('ResolveBoard', () => {
   it('counts selected comments and fans out only the selected ones', () => {
-    const onSpawnBatch = vi.fn();
+    const onSpawnBatch = vi.fn()
     render(
       <ResolveBoard
         threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
@@ -58,25 +58,25 @@ describe('ResolveBoard', () => {
         onSpawnBatch={onSpawnBatch}
         onOpenThread={vi.fn()}
       />,
-    );
-    expect(screen.getByText(/Spawn resolver for 2 comments/i)).toBeDefined();
+    )
+    expect(screen.getByText(/Spawn resolver for 2 comments/i)).toBeDefined()
 
-    const checkboxes = screen.getAllByRole('checkbox');
+    const checkboxes = screen.getAllByRole('checkbox')
     act(() => {
-      fireEvent.click(checkboxes[1]!);
-    });
-    expect(screen.getByText(/Spawn resolver for 1 comment/i)).toBeDefined();
+      fireEvent.click(checkboxes[1]!)
+    })
+    expect(screen.getByText(/Spawn resolver for 1 comment/i)).toBeDefined()
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Spawn resolver for 1 comment/i }));
-    });
-    expect(onSpawnBatch).toHaveBeenCalledTimes(1);
-    const batchArg = onSpawnBatch.mock.calls[0]?.[0] as ReadonlyArray<CommentThread>;
-    expect(batchArg.map((t) => t.head.id)).toEqual(['c2']);
-  });
+      fireEvent.click(screen.getByRole('button', { name: /Spawn resolver for 1 comment/i }))
+    })
+    expect(onSpawnBatch).toHaveBeenCalledTimes(1)
+    const batchArg = onSpawnBatch.mock.calls[0]?.[0] as ReadonlyArray<CommentThread>
+    expect(batchArg.map((t) => t.head.id)).toEqual(['c2'])
+  })
 
   it('spawns a single comment via its Resolve button', () => {
-    const onSpawnOne = vi.fn();
+    const onSpawnOne = vi.fn()
     render(
       <ResolveBoard
         threads={[thread({ id: 'c1' })]}
@@ -84,13 +84,13 @@ describe('ResolveBoard', () => {
         onSpawnBatch={vi.fn()}
         onOpenThread={vi.fn()}
       />,
-    );
+    )
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /^Resolve$/i }));
-    });
-    expect(onSpawnOne).toHaveBeenCalledTimes(1);
-    expect(onSpawnOne.mock.calls[0]?.[0]?.head?.id).toBe('c1');
-  });
+      fireEvent.click(screen.getByRole('button', { name: /^Resolve$/i }))
+    })
+    expect(onSpawnOne).toHaveBeenCalledTimes(1)
+    expect(onSpawnOne.mock.calls[0]?.[0]?.head?.id).toBe('c1')
+  })
 
   it('renders the head comment plus its replies as context', () => {
     render(
@@ -104,11 +104,11 @@ describe('ResolveBoard', () => {
         onSpawnBatch={vi.fn()}
         onOpenThread={vi.fn()}
       />,
-    );
-    expect(screen.getByText(/main request/i)).toBeDefined();
-    expect(screen.getByText(/agree, ship it/i)).toBeDefined();
-    expect(screen.getByText('bob')).toBeDefined();
-  });
+    )
+    expect(screen.getByText(/main request/i)).toBeDefined()
+    expect(screen.getByText(/agree, ship it/i)).toBeDefined()
+    expect(screen.getByText('bob')).toBeDefined()
+  })
 
   it('renders an empty state when there are no open comments', () => {
     render(
@@ -118,7 +118,7 @@ describe('ResolveBoard', () => {
         onSpawnBatch={vi.fn()}
         onOpenThread={vi.fn()}
       />,
-    );
-    expect(screen.getByText(/Nothing to resolve/i)).toBeDefined();
-  });
-});
+    )
+    expect(screen.getByText(/Nothing to resolve/i)).toBeDefined()
+  })
+})

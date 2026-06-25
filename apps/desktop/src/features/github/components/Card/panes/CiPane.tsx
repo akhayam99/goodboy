@@ -1,13 +1,13 @@
-import type { PrCheckRun, PullRequestState } from '@goodboy/types';
-import { formatDuration } from '../lib';
-import { CheckConclusionIcon } from '../parts/CheckConclusionIcon';
-import { EmptyRow } from '../parts/EmptyRow';
+import type { PrCheckRun, PullRequestState } from '@goodboy/types'
+import { formatDuration } from '../lib'
+import { CheckConclusionIcon } from '../parts/CheckConclusionIcon'
+import { EmptyRow } from '../parts/EmptyRow'
 
 type Props = {
-  readonly checks: ReadonlyArray<PrCheckRun>;
-  readonly pr: PullRequestState;
-  readonly onOpenUrl: (url: string) => void;
-};
+  readonly checks: ReadonlyArray<PrCheckRun>
+  readonly pr: PullRequestState
+  readonly onOpenUrl: (url: string) => void
+}
 
 export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
   if (checks.length === 0) {
@@ -18,7 +18,7 @@ export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
         actionLabel="view on GitHub"
         onOpenUrl={onOpenUrl}
       />
-    );
+    )
   }
   return (
     <ul className="flex flex-col gap-0.5">
@@ -39,5 +39,5 @@ export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
         </li>
       ))}
     </ul>
-  );
-};
+  )
+}

@@ -1,15 +1,15 @@
-import type { SessionId } from '@goodboy/types';
-import { enqueueSummarizer } from '../../turn-helpers';
-import type { GetFn, SetFn } from './types';
+import type { SessionId } from '@goodboy/types'
+import { enqueueSummarizer } from '../../turn-helpers'
+import type { GetFn, SetFn } from './types'
 
 export const retrySummarizer = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId) => {
-    const status = get().summarizerStatus[sessionId];
+    const status = get().summarizerStatus[sessionId]
     if (!status || status.status === 'running') {
-      return;
+      return
     }
     if (!status.lastAttempt) {
-      return;
+      return
     }
     enqueueSummarizer(
       set,
@@ -17,6 +17,6 @@ export const retrySummarizer = (set: SetFn, get: GetFn) => {
       sessionId,
       status.lastAttempt.turnInput,
       status.lastAttempt.turnOutput,
-    );
-  };
-};
+    )
+  }
+}

@@ -1,52 +1,52 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
-import { Button, Divider, Eyebrow } from '@goodboy/ui';
-import type { Session, SessionStage, WorkspaceId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
-import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
-import { DogMascot } from '../../../../shared/components/DogMascot';
-import { ArchiveSessionDialog } from '../../../session/components/ArchiveSessionDialog';
-import { DeleteSessionDialog } from '../../../session/components/DeleteSessionDialog';
-import { StageColumn } from './StageColumn';
-import { useBoardNavigation } from './useBoardNavigation';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
+import { Button, Divider, Eyebrow } from '@goodboy/ui'
+import type { Session, SessionStage, WorkspaceId } from '@goodboy/types'
+import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store'
+import { STAGE_ORDER } from '../../../../store/slices/session-view/types'
+import { DogMascot } from '../../../../shared/components/DogMascot'
+import { ArchiveSessionDialog } from '../../../session/components/ArchiveSessionDialog'
+import { DeleteSessionDialog } from '../../../session/components/DeleteSessionDialog'
+import { StageColumn } from './StageColumn'
+import { useBoardNavigation } from './useBoardNavigation'
 
-type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
+type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session }
 
 const STAGES: ReadonlyArray<SessionStage> = (
   Object.entries(STAGE_ORDER) as Array<[SessionStage, number]>
 )
   .sort((a, b) => a[1] - b[1])
-  .map(([stage]) => stage);
+  .map(([stage]) => stage)
 
 type StageBoardProps = {
-  readonly workspaceId: WorkspaceId;
-  readonly sessions: ReadonlyArray<Session>;
-  readonly onCreateSession: () => void;
-};
+  readonly workspaceId: WorkspaceId
+  readonly sessions: ReadonlyArray<Session>
+  readonly onCreateSession: () => void
+}
 
 export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoardProps) => {
-  const groups = useStageGroupedSessions(workspaceId, sessions);
-  const nav = useBoardNavigation();
-  const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
-  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
-  const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const groups = useStageGroupedSessions(workspaceId, sessions)
+  const nav = useBoardNavigation()
+  const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY)
+  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions)
+  const [confirm, setConfirm] = useState<Confirm | null>(null)
 
-  const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), []);
-  const onDelete = useCallback((session: Session) => setConfirm({ kind: 'delete', session }), []);
+  const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), [])
+  const onDelete = useCallback((session: Session) => setConfirm({ kind: 'delete', session }), [])
 
   useEffect(() => {
-    void loadArchivedSessions(workspaceId);
-  }, [loadArchivedSessions, workspaceId]);
+    void loadArchivedSessions(workspaceId)
+  }, [loadArchivedSessions, workspaceId])
 
   const byStage = useMemo(() => {
-    const map = new Map<string, ReadonlyArray<Session>>();
+    const map = new Map<string, ReadonlyArray<Session>>()
     for (const group of groups) {
-      map.set(group.key, group.sessions);
+      map.set(group.key, group.sessions)
     }
-    return map;
-  }, [groups]);
+    return map
+  }, [groups])
 
-  const empty = sessions.length === 0;
+  const empty = sessions.length === 0
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
@@ -118,5 +118,5 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
         <DeleteSessionDialog session={confirm.session} open onClose={() => setConfirm(null)} />
       )}
     </div>
-  );
-};
+  )
+}

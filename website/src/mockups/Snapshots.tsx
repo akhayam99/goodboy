@@ -17,7 +17,7 @@
    - PRSnapshot                 <- features/github/components/* (PR row + diff comment)
 */
 
-import { Fragment, forwardRef, type ReactNode } from 'react';
+import { Fragment, forwardRef, type ReactNode } from 'react'
 import {
   IconBranch,
   IconCheck,
@@ -31,23 +31,23 @@ import {
   IconSparkles,
   IconTarget,
   IconTerminal,
-} from '../components/Icons';
-import { AgentAvatar, KIND_LABEL } from '../components/AgentAvatar';
-import { KIND, KindBadge, SnapshotFrame, FrameHeader, type KindKey } from './primitives';
-import { useAutoplay, SimCursor, type Beat } from './autoplay';
+} from '../components/Icons'
+import { AgentAvatar, KIND_LABEL } from '../components/AgentAvatar'
+import { KIND, KindBadge, SnapshotFrame, FrameHeader, type KindKey } from './primitives'
+import { useAutoplay, SimCursor, type Beat } from './autoplay'
 
 /* ---------------------------- Sessions -------------------------------- */
 
-type SessionKind = keyof typeof KIND;
+type SessionKind = keyof typeof KIND
 
 interface SessionMock {
-  readonly id: string;
-  readonly kind: SessionKind;
-  readonly goal: string;
-  readonly cost: number;
-  readonly state: 'active' | 'running' | 'pending' | 'idle';
-  readonly linearId?: string;
-  readonly pr?: 'draft' | 'open' | 'merged';
+  readonly id: string
+  readonly kind: SessionKind
+  readonly goal: string
+  readonly cost: number
+  readonly state: 'active' | 'running' | 'pending' | 'idle'
+  readonly linearId?: string
+  readonly pr?: 'draft' | 'open' | 'merged'
 }
 
 /* One coherent product story used across every mockup: a developer ships a
@@ -102,7 +102,7 @@ const SESSION_DATA: ReadonlyArray<SessionMock> = [
     cost: 0.07,
     state: 'idle',
   },
-];
+]
 
 /* Sessions snapshot. Faithful slice of WorkspacesSidebar:
      [ w-28 rail  |  divider  |  detail panel ]
@@ -113,22 +113,22 @@ const SESSION_DATA: ReadonlyArray<SessionMock> = [
    that's marketing UI, not product UI.
 */
 interface SessionRun {
-  steps: StepStatus[];
-  clusters: StepStatus[];
-  autoRun: boolean;
-  prOpen: boolean;
-  cost: number;
+  steps: StepStatus[]
+  clusters: StepStatus[]
+  autoRun: boolean
+  prOpen: boolean
+  cost: number
 }
 
-const SESSION_CLUSTERS = ['token model', 'request handler', 'email template'];
+const SESSION_CLUSTERS = ['token model', 'request handler', 'email template']
 
 type SessionAction =
   | { type: 'start'; i: number }
   | { type: 'cluster'; i: number }
   | { type: 'finish'; i: number }
-  | { type: 'auto' };
+  | { type: 'auto' }
 
-const SESSION_COST_AT = [0.04, 0.16, 0.3, 0.34];
+const SESSION_COST_AT = [0.04, 0.16, 0.3, 0.34]
 
 const SESSION_INITIAL: SessionRun = {
   steps: ['actionable', 'future', 'future', 'future'],
@@ -136,7 +136,7 @@ const SESSION_INITIAL: SessionRun = {
   autoRun: false,
   prOpen: false,
   cost: 0,
-};
+}
 
 const SESSION_STATIC: SessionRun = {
   steps: ['done', 'done', 'running', 'actionable'],
@@ -144,7 +144,7 @@ const SESSION_STATIC: SessionRun = {
   autoRun: true,
   prOpen: false,
   cost: 0.3,
-};
+}
 
 function sessionRunReducer(state: SessionRun, action: SessionAction): SessionRun {
   switch (action.type) {
@@ -153,12 +153,12 @@ function sessionRunReducer(state: SessionRun, action: SessionAction): SessionRun
         ...state,
         steps: state.steps.map((v, i) => (i === action.i ? 'running' : v)),
         clusters: action.i === 2 ? ['running', 'running', 'running'] : state.clusters,
-      };
+      }
     case 'cluster':
       return {
         ...state,
         clusters: state.clusters.map((v, i) => (i === action.i ? 'done' : v)),
-      };
+      }
     case 'finish':
       return {
         ...state,
@@ -167,11 +167,11 @@ function sessionRunReducer(state: SessionRun, action: SessionAction): SessionRun
         ),
         cost: SESSION_COST_AT[action.i] ?? state.cost,
         prOpen: action.i >= 3 ? true : state.prOpen,
-      };
+      }
     case 'auto':
-      return { ...state, autoRun: true };
+      return { ...state, autoRun: true }
     default:
-      return state;
+      return state
   }
 }
 
@@ -196,7 +196,7 @@ const SESSION_SCRIPT: ReadonlyArray<Beat<SessionAction>> = [
   { d: 560, kind: 'act', act: { type: 'start', i: 3 } },
   { d: 1400, kind: 'act', act: { type: 'finish', i: 3 } },
   { d: 2400, kind: 'reset' },
-];
+]
 
 export function SessionsSnapshot() {
   const { state, cursor, stageRef, registerTarget } = useAutoplay({
@@ -204,7 +204,7 @@ export function SessionsSnapshot() {
     reducer: sessionRunReducer,
     script: SESSION_SCRIPT,
     staticState: SESSION_STATIC,
-  });
+  })
 
   return (
     <SnapshotFrame className="max-w-[460px]">
@@ -315,12 +315,12 @@ export function SessionsSnapshot() {
         </div>
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function ClusterRow({ name, status }: { name: string; status: StepStatus }) {
-  const done = status === 'done';
-  const running = status === 'running';
+  const done = status === 'done'
+  const running = status === 'running'
   return (
     <div className="flex items-center gap-1.5 text-[10px]">
       <span className="flex size-3 shrink-0 items-center justify-center">
@@ -345,13 +345,13 @@ function ClusterRow({ name, status }: { name: string; status: StepStatus }) {
         subagent
       </span>
     </div>
-  );
+  )
 }
 
 function SessionRailItem({ session }: { session: SessionMock }) {
-  const isActive = session.state === 'active';
-  const isRunning = session.state === 'running';
-  const isPending = session.state === 'pending';
+  const isActive = session.state === 'active'
+  const isRunning = session.state === 'running'
+  const isPending = session.state === 'pending'
   return (
     <div
       className={[
@@ -377,7 +377,7 @@ function SessionRailItem({ session }: { session: SessionMock }) {
         </span>
       ) : null}
     </div>
-  );
+  )
 }
 
 /* Status icon for a rail card. Mirrors the SESSION_STATUS_PALETTE in
@@ -387,15 +387,15 @@ function SessionRailItem({ session }: { session: SessionMock }) {
    kind of agent is selected inside it. */
 function SessionStatusIcon({ state }: { state: SessionMock['state'] }) {
   if (state === 'active') {
-    return <ConstructionIcon size={12} />;
+    return <ConstructionIcon size={12} />
   }
   if (state === 'running') {
-    return <SpinnerIcon />;
+    return <SpinnerIcon />
   }
   if (state === 'pending') {
-    return <BellIcon />;
+    return <BellIcon />
   }
-  return <ClockIcon />;
+  return <ClockIcon />
 }
 
 function SpinnerIcon() {
@@ -414,7 +414,7 @@ function SpinnerIcon() {
     >
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
-  );
+  )
 }
 
 function BellIcon() {
@@ -434,7 +434,7 @@ function BellIcon() {
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
-  );
+  )
 }
 
 function ClockIcon() {
@@ -454,7 +454,7 @@ function ClockIcon() {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
     </svg>
-  );
+  )
 }
 
 function LinearIdChip({ id }: { id: string }) {
@@ -465,7 +465,7 @@ function LinearIdChip({ id }: { id: string }) {
     >
       {id}
     </span>
-  );
+  )
 }
 
 function ConstructionIcon({ size = 13 }: { size?: number }) {
@@ -490,7 +490,7 @@ function ConstructionIcon({ size = 13 }: { size?: number }) {
       <path d="m14 6 7.7 7.7" />
       <path d="m8 6 8 8" />
     </svg>
-  );
+  )
 }
 
 function DotsVerticalIcon({ size = 13 }: { size?: number }) {
@@ -500,7 +500,7 @@ function DotsVerticalIcon({ size = 13 }: { size?: number }) {
       <circle cx="12" cy="12" r="1.6" />
       <circle cx="12" cy="19" r="1.6" />
     </svg>
-  );
+  )
 }
 
 /* ---------------------------- Workflow -------------------------------- */
@@ -520,7 +520,7 @@ const WORKFLOW_STEPS = [
     name: 'Review & open PR',
     state: 'pending' as const,
   },
-];
+]
 
 export function WorkflowSnapshot() {
   return (
@@ -562,12 +562,12 @@ export function WorkflowSnapshot() {
         </button>
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; index: number }) {
-  const done = step.state === 'done';
-  const active = step.state === 'active';
+  const done = step.state === 'done'
+  const active = step.state === 'active'
   return (
     <div
       className={[
@@ -603,7 +603,7 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
         </p>
       ) : null}
     </div>
-  );
+  )
 }
 
 /* ------------------------- Workflow Studio ---------------------------- */
@@ -612,11 +612,11 @@ function WorkflowStep({ step, index }: { step: (typeof WORKFLOW_STEPS)[number]; 
    right. Mirrors apps/desktop WorkflowsPanel (preset rail + step library
    palette). Each composed step carries its own model. */
 interface StudioStep {
-  kind: KindKey;
-  name: string;
-  role: string;
-  model: string;
-  prompt: string;
+  kind: KindKey
+  name: string
+  role: string
+  model: string
+  prompt: string
 }
 
 const STUDIO_STEPS: ReadonlyArray<StudioStep> = [
@@ -649,7 +649,7 @@ const STUDIO_STEPS: ReadonlyArray<StudioStep> = [
     model: 'sonnet-4-5',
     prompt: 'Run the suite and review the diff against the plan. Flag anything that drifted.',
   },
-];
+]
 
 const STUDIO_LIBRARY: ReadonlyArray<{ kind: KindKey; name: string; prompt: string }> = [
   { kind: 'scout', name: 'Scout', prompt: 'Survey the code in scope.' },
@@ -658,26 +658,26 @@ const STUDIO_LIBRARY: ReadonlyArray<{ kind: KindKey; name: string; prompt: strin
   { kind: 'review', name: 'Verify', prompt: 'Review the diff against the plan.' },
   { kind: 'test', name: 'Test', prompt: 'Write and run tests.' },
   { kind: 'debug', name: 'Diagnose', prompt: 'Reproduce and isolate a bug.' },
-];
+]
 
 interface StudioState {
-  placed: number;
-  dragging: number | null;
+  placed: number
+  dragging: number | null
 }
 
-type StudioAction = { type: 'grab'; i: number } | { type: 'drop' };
+type StudioAction = { type: 'grab'; i: number } | { type: 'drop' }
 
-const STUDIO_INITIAL: StudioState = { placed: 0, dragging: null };
-const STUDIO_STATIC: StudioState = { placed: 2, dragging: null };
+const STUDIO_INITIAL: StudioState = { placed: 0, dragging: null }
+const STUDIO_STATIC: StudioState = { placed: 2, dragging: null }
 
 function studioReducer(state: StudioState, action: StudioAction): StudioState {
   switch (action.type) {
     case 'grab':
-      return { ...state, dragging: action.i };
+      return { ...state, dragging: action.i }
     case 'drop':
-      return { placed: Math.min(state.placed + 1, STUDIO_STEPS.length), dragging: null };
+      return { placed: Math.min(state.placed + 1, STUDIO_STEPS.length), dragging: null }
     default:
-      return state;
+      return state
   }
 }
 
@@ -687,14 +687,14 @@ const STUDIO_SCRIPT: ReadonlyArray<Beat<StudioAction>> = [0, 1, 2, 3].flatMap((i
   { d: 200, kind: 'act' as const, act: { type: 'grab' as const, i } },
   { d: 620, kind: 'move' as const, to: 'dropzone' },
   { d: 360, kind: 'act' as const, act: { type: 'drop' as const } },
-]);
+])
 const STUDIO_FULL_SCRIPT: ReadonlyArray<Beat<StudioAction>> = [
   ...STUDIO_SCRIPT,
   { d: 700, kind: 'move', to: 'save' },
   { d: 520, kind: 'press' },
   { d: 1900, kind: 'move', to: null },
   { d: 600, kind: 'reset' },
-];
+]
 
 function GripDots() {
   return (
@@ -714,7 +714,7 @@ function GripDots() {
         <circle cx="4.5" cy="10" r="1" />
       </g>
     </svg>
-  );
+  )
 }
 
 export function StudioComposeSnapshot() {
@@ -723,8 +723,8 @@ export function StudioComposeSnapshot() {
     reducer: studioReducer,
     script: STUDIO_FULL_SCRIPT,
     staticState: STUDIO_STATIC,
-  });
-  const full = state.placed >= STUDIO_STEPS.length;
+  })
+  const full = state.placed >= STUDIO_STEPS.length
 
   return (
     <SnapshotFrame className="max-w-[520px]">
@@ -819,7 +819,7 @@ export function StudioComposeSnapshot() {
         <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function StudioStepCard({ step, index }: { step: StudioStep; index: number }) {
@@ -846,41 +846,41 @@ function StudioStepCard({ step, index }: { step: StudioStep; index: number }) {
         </span>
       </div>
     </div>
-  );
+  )
 }
 
 /* ---------------------------- Context --------------------------------- */
 
-type CtxTab = 'context' | 'plans' | 'questions' | 'terminal';
-type TargetRef = (node: HTMLElement | null) => void;
+type CtxTab = 'context' | 'plans' | 'questions' | 'terminal'
+type TargetRef = (node: HTMLElement | null) => void
 
 const CTX_TABS: ReadonlyArray<{ key: CtxTab; label: string; icon: typeof IconTarget }> = [
   { key: 'context', label: 'Context', icon: IconList },
   { key: 'plans', label: 'Plans', icon: IconClipboard },
   { key: 'questions', label: 'Questions', icon: IconHelp },
   { key: 'terminal', label: 'Terminal', icon: IconTerminal },
-];
+]
 
 const CTX_GOAL =
-  'Add password reset via email link. Reuse the existing mailer. Keep the login UI untouched.';
+  'Add password reset via email link. Reuse the existing mailer. Keep the login UI untouched.'
 const CTX_DECISIONS = [
   'Token TTL 60 minutes, single-use.',
   'Rate-limit requests per email at 3 per hour.',
-];
-const CTX_DECISION_ADDED = 'Hash tokens with argon2id, not sha256.';
+]
+const CTX_DECISION_ADDED = 'Hash tokens with argon2id, not sha256.'
 const CTX_LAST_OUTPUT =
-  'POST /auth/reset-request is live. Email template wired. Endpoint and handler tests green.';
-const CTX_QUESTION = 'Cap reset tokens at one active per account, or allow several in flight?';
-const CTX_SUGGESTIONS = ['One active at a time', 'Allow up to three'];
+  'POST /auth/reset-request is live. Email template wired. Endpoint and handler tests green.'
+const CTX_QUESTION = 'Cap reset tokens at one active per account, or allow several in flight?'
+const CTX_SUGGESTIONS = ['One active at a time', 'Allow up to three']
 
 interface ContextState {
-  tab: CtxTab;
-  decisionsOpen: boolean;
-  decisionEditing: boolean;
-  decisionAdded: boolean;
-  questionOpen: boolean;
-  picked: number | null;
-  sent: boolean;
+  tab: CtxTab
+  decisionsOpen: boolean
+  decisionEditing: boolean
+  decisionAdded: boolean
+  questionOpen: boolean
+  picked: number | null
+  sent: boolean
 }
 
 type ContextAction =
@@ -890,7 +890,7 @@ type ContextAction =
   | { type: 'commitDecision' }
   | { type: 'raiseQuestion' }
   | { type: 'pick'; i: number }
-  | { type: 'send' };
+  | { type: 'send' }
 
 const CTX_INITIAL: ContextState = {
   tab: 'context',
@@ -900,7 +900,7 @@ const CTX_INITIAL: ContextState = {
   questionOpen: false,
   picked: null,
   sent: false,
-};
+}
 
 const CTX_STATIC: ContextState = {
   tab: 'context',
@@ -910,26 +910,26 @@ const CTX_STATIC: ContextState = {
   questionOpen: true,
   picked: null,
   sent: false,
-};
+}
 
 function contextReducer(state: ContextState, action: ContextAction): ContextState {
   switch (action.type) {
     case 'tab':
-      return { ...state, tab: action.tab };
+      return { ...state, tab: action.tab }
     case 'openDecisions':
-      return { ...state, decisionsOpen: true };
+      return { ...state, decisionsOpen: true }
     case 'editDecision':
-      return { ...state, decisionsOpen: true, decisionEditing: true };
+      return { ...state, decisionsOpen: true, decisionEditing: true }
     case 'commitDecision':
-      return { ...state, decisionEditing: false, decisionAdded: true };
+      return { ...state, decisionEditing: false, decisionAdded: true }
     case 'raiseQuestion':
-      return { ...state, questionOpen: true };
+      return { ...state, questionOpen: true }
     case 'pick':
-      return { ...state, picked: action.i };
+      return { ...state, picked: action.i }
     case 'send':
-      return { ...state, sent: true, questionOpen: false, tab: 'context' };
+      return { ...state, sent: true, questionOpen: false, tab: 'context' }
     default:
-      return state;
+      return state
   }
 }
 
@@ -959,7 +959,7 @@ const CTX_SCRIPT: ReadonlyArray<Beat<ContextAction>> = [
   { d: 540, kind: 'press' },
   { d: 220, kind: 'act', act: { type: 'send' } },
   { d: 2200, kind: 'reset' },
-];
+]
 
 export function ContextSnapshot() {
   const { state, cursor, stageRef, registerTarget } = useAutoplay({
@@ -967,8 +967,8 @@ export function ContextSnapshot() {
     reducer: contextReducer,
     script: CTX_SCRIPT,
     staticState: CTX_STATIC,
-  });
-  const questionCount = state.questionOpen && !state.sent ? 1 : 0;
+  })
+  const questionCount = state.questionOpen && !state.sent ? 1 : 0
 
   return (
     <SnapshotFrame className="max-w-[460px]">
@@ -1022,7 +1022,7 @@ export function ContextSnapshot() {
         <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function CtxTabButton({
@@ -1032,11 +1032,11 @@ function CtxTabButton({
   active,
   tabRef,
 }: {
-  label: string;
-  icon: typeof IconTarget;
-  badge: number | null;
-  active: boolean;
-  tabRef?: TargetRef;
+  label: string
+  icon: typeof IconTarget
+  badge: number | null
+  active: boolean
+  tabRef?: TargetRef
 }) {
   return (
     <span
@@ -1054,17 +1054,17 @@ function CtxTabButton({
         </span>
       ) : null}
     </span>
-  );
+  )
 }
 
 function ContextTabBody({
   state,
   registerTarget,
 }: {
-  state: ContextState;
-  registerTarget: (key: string) => TargetRef;
+  state: ContextState
+  registerTarget: (key: string) => TargetRef
 }) {
-  const decisions = state.decisionAdded ? [...CTX_DECISIONS, CTX_DECISION_ADDED] : CTX_DECISIONS;
+  const decisions = state.decisionAdded ? [...CTX_DECISIONS, CTX_DECISION_ADDED] : CTX_DECISIONS
   return (
     <div className="flex flex-col gap-2 p-3">
       <SlotCard tone="primary" label="goal" icon={<IconTarget size={11} />}>
@@ -1144,15 +1144,15 @@ function ContextTabBody({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function QuestionsTabBody({
   state,
   registerTarget,
 }: {
-  state: ContextState;
-  registerTarget: (key: string) => TargetRef;
+  state: ContextState
+  registerTarget: (key: string) => TargetRef
 }) {
   return (
     <div className="flex flex-col gap-2 p-3">
@@ -1211,7 +1211,7 @@ function QuestionsTabBody({
         ) : null}
       </div>
     </div>
-  );
+  )
 }
 
 function ActivityMark() {
@@ -1229,7 +1229,7 @@ function ActivityMark() {
     >
       <path d="M3 12h4l3 8 4-16 3 8h4" />
     </svg>
-  );
+  )
 }
 
 function SlotCard({
@@ -1241,26 +1241,22 @@ function SlotCard({
   headRef,
   children,
 }: {
-  tone: 'primary' | 'success' | 'info';
-  label: string;
-  icon: ReactNode;
-  count?: number;
-  open?: boolean;
-  headRef?: TargetRef;
-  children: ReactNode;
+  tone: 'primary' | 'success' | 'info'
+  label: string
+  icon: ReactNode
+  count?: number
+  open?: boolean
+  headRef?: TargetRef
+  children: ReactNode
 }) {
   const ring =
-    tone === 'primary'
-      ? 'ring-primary/15'
-      : tone === 'success'
-        ? 'ring-success/15'
-        : 'ring-info/15';
+    tone === 'primary' ? 'ring-primary/15' : tone === 'success' ? 'ring-success/15' : 'ring-info/15'
   const chip =
     tone === 'primary'
       ? 'bg-primary/10 text-primary'
       : tone === 'success'
         ? 'bg-success/10 text-success'
-        : 'bg-info/10 text-info';
+        : 'bg-info/10 text-info'
   return (
     <div className={['rounded-lg bg-muted/30 p-2.5 ring-1', ring].join(' ')}>
       <div ref={headRef} className="flex items-center gap-1.5 pb-1.5">
@@ -1283,7 +1279,7 @@ function SlotCard({
       </div>
       {children}
     </div>
-  );
+  )
 }
 
 const PLANS_DATA = [
@@ -1297,7 +1293,7 @@ const PLANS_DATA = [
     status: 'consumed' as const,
     body: 'Consumed by the Implement step. Folded into the endpoint + email work.',
   },
-];
+]
 
 function PlansTabBody() {
   return (
@@ -1322,7 +1318,7 @@ function PlansTabBody() {
         </div>
       ))}
     </div>
-  );
+  )
 }
 
 const TERMINAL_LINES = [
@@ -1332,7 +1328,7 @@ const TERMINAL_LINES = [
   { p: '·', t: 'rate-limit.test.ts  ✓ 4 passed', tone: 'ok' as const },
   { p: '$', t: 'pnpm typecheck', tone: 'cmd' as const },
   { p: '·', t: 'no errors found', tone: 'ok' as const },
-];
+]
 
 function TerminalTabBody() {
   return (
@@ -1345,7 +1341,7 @@ function TerminalTabBody() {
       ))}
       <span aria-hidden className="mt-1 inline-block h-3 w-1.5 animate-pulse bg-primary/60" />
     </div>
-  );
+  )
 }
 
 /* ---------------------------- GitHub Studio --------------------------- */
@@ -1356,14 +1352,14 @@ function TerminalTabBody() {
    lifecycle actions (mark ready, close, squash-merge) and a review comment
    you can hand straight to an agent. Compacted to two panes for the page. */
 const INBOX_GROUPS: ReadonlyArray<{
-  readonly label: string;
+  readonly label: string
   readonly rows: ReadonlyArray<{
-    readonly goal: string;
-    readonly num: number;
-    readonly tone: 'open' | 'approved' | 'draft';
-    readonly attention?: boolean;
-    readonly active?: boolean;
-  }>;
+    readonly goal: string
+    readonly num: number
+    readonly tone: 'open' | 'approved' | 'draft'
+    readonly attention?: boolean
+    readonly active?: boolean
+  }>
 }> = [
   {
     label: 'In review',
@@ -1380,22 +1376,22 @@ const INBOX_GROUPS: ReadonlyArray<{
     label: 'Draft',
     rows: [{ goal: 'Drop legacy cookies', num: 205, tone: 'draft' }],
   },
-];
+]
 
 const PR_TONE: Record<'open' | 'approved' | 'draft' | 'merged', string> = {
   open: 'text-success',
   approved: 'text-success',
   draft: 'text-muted-foreground/60',
   merged: 'text-merged',
-};
+}
 
-type GhTab = 'overview' | 'conversation' | 'checks';
-type GhPhase = 'open' | 'resolving' | 'committed' | 'resolved' | 'merged';
-const GH_SHA = 'a1b2c3d';
+type GhTab = 'overview' | 'conversation' | 'checks'
+type GhPhase = 'open' | 'resolving' | 'committed' | 'resolved' | 'merged'
+const GH_SHA = 'a1b2c3d'
 
 interface GithubState {
-  tab: GhTab;
-  phase: GhPhase;
+  tab: GhTab
+  phase: GhPhase
 }
 
 type GithubAction =
@@ -1403,25 +1399,25 @@ type GithubAction =
   | { type: 'resolve' }
   | { type: 'commit' }
   | { type: 'solved' }
-  | { type: 'merge' };
+  | { type: 'merge' }
 
-const GH_INITIAL: GithubState = { tab: 'overview', phase: 'open' };
-const GH_STATIC: GithubState = { tab: 'conversation', phase: 'resolved' };
+const GH_INITIAL: GithubState = { tab: 'overview', phase: 'open' }
+const GH_STATIC: GithubState = { tab: 'conversation', phase: 'resolved' }
 
 function githubReducer(state: GithubState, action: GithubAction): GithubState {
   switch (action.type) {
     case 'tab':
-      return { ...state, tab: action.tab };
+      return { ...state, tab: action.tab }
     case 'resolve':
-      return { ...state, phase: 'resolving' };
+      return { ...state, phase: 'resolving' }
     case 'commit':
-      return { ...state, phase: 'committed' };
+      return { ...state, phase: 'committed' }
     case 'solved':
-      return { ...state, phase: 'resolved' };
+      return { ...state, phase: 'resolved' }
     case 'merge':
-      return { ...state, phase: 'merged' };
+      return { ...state, phase: 'merged' }
     default:
-      return state;
+      return state
   }
 }
 
@@ -1443,9 +1439,9 @@ const GH_SCRIPT: ReadonlyArray<Beat<GithubAction>> = [
   { d: 560, kind: 'press' },
   { d: 220, kind: 'act', act: { type: 'merge' } },
   { d: 2200, kind: 'reset' },
-];
+]
 
-const GH_CHECKS = ['build', 'unit tests', 'typecheck', 'lint'];
+const GH_CHECKS = ['build', 'unit tests', 'typecheck', 'lint']
 
 export function GithubStudioSnapshot() {
   const { state, cursor, stageRef, registerTarget } = useAutoplay({
@@ -1453,10 +1449,10 @@ export function GithubStudioSnapshot() {
     reducer: githubReducer,
     script: GH_SCRIPT,
     staticState: GH_STATIC,
-  });
-  const merged = state.phase === 'merged';
-  const resolved = state.phase === 'resolved' || merged;
-  const canMerge = state.phase === 'resolved';
+  })
+  const merged = state.phase === 'merged'
+  const resolved = state.phase === 'resolved' || merged
+  const canMerge = state.phase === 'resolved'
 
   return (
     <SnapshotFrame className="max-w-[560px]">
@@ -1692,7 +1688,7 @@ export function GithubStudioSnapshot() {
         <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function GhTabPill({
@@ -1701,10 +1697,10 @@ function GhTabPill({
   badge,
   tabRef,
 }: {
-  label: string;
-  active: boolean;
-  badge?: ReactNode;
-  tabRef?: TargetRef;
+  label: string
+  active: boolean
+  badge?: ReactNode
+  tabRef?: TargetRef
 }) {
   return (
     <span
@@ -1717,7 +1713,7 @@ function GhTabPill({
       {label}
       {badge}
     </span>
-  );
+  )
 }
 
 function CommitMark() {
@@ -1735,7 +1731,7 @@ function CommitMark() {
       <circle cx="12" cy="12" r="4" />
       <path d="M1.05 12H8M16 12h6.95" strokeLinecap="round" />
     </svg>
-  );
+  )
 }
 
 /* ---------------------------- Linear Studio ------------------------- */
@@ -1747,15 +1743,15 @@ function CommitMark() {
    Branch mode tabs with PR adoption, launch button). Compressed to one screen;
    the real surface is taller. */
 const LINEAR_INBOX: ReadonlyArray<{
-  readonly label: string;
-  readonly dot: string;
+  readonly label: string
+  readonly dot: string
   readonly rows: ReadonlyArray<{
-    readonly id: string;
-    readonly title: string;
-    readonly active?: boolean;
-    readonly hasPr?: boolean;
-    readonly hasSession?: boolean;
-  }>;
+    readonly id: string
+    readonly title: string
+    readonly active?: boolean
+    readonly hasPr?: boolean
+    readonly hasSession?: boolean
+  }>
 }> = [
   {
     label: 'In progress',
@@ -1778,62 +1774,62 @@ const LINEAR_INBOX: ReadonlyArray<{
     dot: 'bg-muted-foreground/50',
     rows: [{ id: 'GOOD-231', title: 'Inline diffs in PR conversation' }],
   },
-];
+]
 
-type LinearStage = 'detail' | 'picker' | 'run';
+type LinearStage = 'detail' | 'picker' | 'run'
 
 interface LinearState {
-  stage: LinearStage;
-  preset: number | null;
-  steps: StepStatus[];
+  stage: LinearStage
+  preset: number | null
+  steps: StepStatus[]
 }
 
 type LinearAction =
   | { type: 'launch' }
   | { type: 'pick'; i: number }
   | { type: 'start' }
-  | { type: 'advance'; i: number };
+  | { type: 'advance'; i: number }
 
 const LINEAR_PRESETS = [
   { name: 'plan → ship', count: 4 },
   { name: 'fix-it', count: 3 },
-];
+]
 
 const LINEAR_RUN_STEPS = [
   { kind: 'scout' as const, name: 'Scout the surface', model: 'haiku-4-5' },
   { kind: 'plan' as const, name: 'Plan the change', model: 'opus-4-7' },
   { kind: 'imple' as const, name: 'Implement', model: 'sonnet-4-5' },
   { kind: 'review' as const, name: 'Open PR', model: 'sonnet-4-5' },
-];
+]
 
 const LINEAR_INITIAL: LinearState = {
   stage: 'detail',
   preset: null,
   steps: ['future', 'future', 'future', 'future'],
-};
+}
 const LINEAR_STATIC: LinearState = {
   stage: 'run',
   preset: 0,
   steps: ['done', 'running', 'future', 'future'],
-};
+}
 
 function linearReducer(state: LinearState, action: LinearAction): LinearState {
   switch (action.type) {
     case 'launch':
-      return { ...state, stage: 'picker' };
+      return { ...state, stage: 'picker' }
     case 'pick':
-      return { ...state, preset: action.i };
+      return { ...state, preset: action.i }
     case 'start':
-      return { ...state, stage: 'run', steps: ['running', 'future', 'future', 'future'] };
+      return { ...state, stage: 'run', steps: ['running', 'future', 'future', 'future'] }
     case 'advance':
       return {
         ...state,
         steps: state.steps.map((v, idx) =>
           idx === action.i ? 'done' : idx === action.i + 1 ? 'running' : v,
         ),
-      };
+      }
     default:
-      return state;
+      return state
   }
 }
 
@@ -1855,7 +1851,7 @@ const LINEAR_SCRIPT: ReadonlyArray<Beat<LinearAction>> = [
   { d: 1300, kind: 'act', act: { type: 'advance', i: 2 } },
   { d: 1300, kind: 'act', act: { type: 'advance', i: 3 } },
   { d: 2200, kind: 'reset' },
-];
+]
 
 export function LinearStudioSnapshot() {
   const { state, cursor, stageRef, registerTarget } = useAutoplay({
@@ -1863,7 +1859,7 @@ export function LinearStudioSnapshot() {
     reducer: linearReducer,
     script: LINEAR_SCRIPT,
     staticState: LINEAR_STATIC,
-  });
+  })
 
   return (
     <SnapshotFrame className="max-w-[560px]">
@@ -1959,7 +1955,7 @@ export function LinearStudioSnapshot() {
         <SimCursor cursor={cursor} />
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
@@ -2038,7 +2034,7 @@ function LinearDetail({ launchRef }: { launchRef: TargetRef }) {
         </span>
       </div>
     </div>
-  );
+  )
 }
 
 function LinearPicker({
@@ -2046,9 +2042,9 @@ function LinearPicker({
   presetRef,
   startRef,
 }: {
-  picked: number | null;
-  presetRef: TargetRef;
-  startRef: TargetRef;
+  picked: number | null
+  presetRef: TargetRef
+  startRef: TargetRef
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -2107,7 +2103,7 @@ function LinearPicker({
         </span>
       </div>
     </div>
-  );
+  )
 }
 
 function LinearRun({ steps }: { steps: StepStatus[] }) {
@@ -2128,7 +2124,7 @@ function LinearRun({ steps }: { steps: StepStatus[] }) {
       </div>
       <p className="pt-2 text-[10px] text-success/80">workflow started on GOOD-214</p>
     </div>
-  );
+  )
 }
 
 /* ---------------------------- Session cost --------------------------- */
@@ -2167,10 +2163,10 @@ const TURNS = [
     body: 'Argon2 over sha256 suggested. PR #214 opened.',
     cost: 0.198,
   },
-];
+]
 
 export function BudgetSnapshot() {
-  const total = TURNS.reduce((s, t) => s + (t.cost ?? 0), 0);
+  const total = TURNS.reduce((s, t) => s + (t.cost ?? 0), 0)
   return (
     <SnapshotFrame className="max-w-[440px]">
       <FrameHeader
@@ -2198,7 +2194,7 @@ export function BudgetSnapshot() {
         </div>
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function TurnRow({ turn }: { turn: (typeof TURNS)[number] }) {
@@ -2225,7 +2221,7 @@ function TurnRow({ turn }: { turn: (typeof TURNS)[number] }) {
         <p className="mt-1 pl-1 font-mono text-[10px] text-muted-foreground/70">{turn.model}</p>
       ) : null}
     </div>
-  );
+  )
 }
 
 /* ---------------------------- Agent roster --------------------------- */
@@ -2236,9 +2232,9 @@ function TurnRow({ turn }: { turn: (typeof TURNS)[number] }) {
    says what it may (and may not) touch. Order follows the natural lifecycle of
    a task: scout -> plan -> implement -> debug -> test -> review -> docs. */
 const ROSTER: ReadonlyArray<{
-  readonly kind: keyof typeof KIND;
-  readonly tile: string;
-  readonly hint: string;
+  readonly kind: keyof typeof KIND
+  readonly tile: string
+  readonly hint: string
 }> = [
   {
     kind: 'scout',
@@ -2259,7 +2255,7 @@ const ROSTER: ReadonlyArray<{
   { kind: 'test', tile: 'bg-teal-400/15', hint: 'Writes tests. Never touches production code' },
   { kind: 'review', tile: 'bg-cyan-400/15', hint: 'Reviews diffs read-only. Suggests fixes' },
   { kind: 'docs', tile: 'bg-orange-400/15', hint: 'Writes documentation. Never touches logic' },
-];
+]
 
 export function AgentRosterSnapshot() {
   return (
@@ -2286,7 +2282,7 @@ export function AgentRosterSnapshot() {
         ))}
       </ul>
     </SnapshotFrame>
-  );
+  )
 }
 
 /* ---------------------------- New session + Linear ----------------- */
@@ -2370,7 +2366,7 @@ export function NewSessionLinearSnapshot() {
         </div>
       </div>
     </SnapshotFrame>
-  );
+  )
 }
 
 function SectionRow({
@@ -2379,10 +2375,10 @@ function SectionRow({
   subtitle,
   children,
 }: {
-  icon: ReactNode;
-  title: string;
-  subtitle: string;
-  children: ReactNode;
+  icon: ReactNode
+  title: string
+  subtitle: string
+  children: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -2395,7 +2391,7 @@ function SectionRow({
       <p className="text-[11px] leading-relaxed text-muted-foreground">{subtitle}</p>
       {children}
     </div>
-  );
+  )
 }
 
 function LinearMark() {
@@ -2406,15 +2402,15 @@ function LinearMark() {
     >
       L
     </span>
-  );
+  )
 }
 
 function TargetMark() {
-  return <IconTarget size={13} className="text-primary" />;
+  return <IconTarget size={13} className="text-primary" />
 }
 
 function BranchMark() {
-  return <IconBranch size={13} className="text-primary" />;
+  return <IconBranch size={13} className="text-primary" />
 }
 
 const RUN_STEPS = [
@@ -2422,19 +2418,19 @@ const RUN_STEPS = [
   { kind: 'plan' as const, name: 'Draft reset flow + endpoints', model: 'opus-4-7' },
   { kind: 'imple' as const, name: 'Build endpoint + email', model: 'sonnet-4-5' },
   { kind: 'review' as const, name: 'Open PR for review', model: 'sonnet-4-5' },
-];
+]
 
 /* Mirrors the desktop step statuses: a future step waits on its predecessors,
    the next step is `actionable` (lit, clickable), then `running`, then `done`. */
-type StepStatus = 'future' | 'actionable' | 'running' | 'done';
+type StepStatus = 'future' | 'actionable' | 'running' | 'done'
 
 const RunStepRow = forwardRef<
   HTMLDivElement,
   { index: number; step: (typeof RUN_STEPS)[number]; status: StepStatus }
 >(function RunStepRow({ index, step, status }, ref) {
-  const actionable = status === 'actionable';
-  const running = status === 'running';
-  const future = status === 'future';
+  const actionable = status === 'actionable'
+  const running = status === 'running'
+  const future = status === 'future'
   return (
     <div
       ref={ref}
@@ -2477,8 +2473,8 @@ const RunStepRow = forwardRef<
       </span>
       {running && <span className="run-bar" />}
     </div>
-  );
-});
+  )
+})
 
 /* Per-status icon, mirroring the desktop WorkflowStepRow: a pinging play dot
    when the step is the lit next action, an info spinner while running, a green
@@ -2495,15 +2491,15 @@ function StepStatusIcon({ status }: { status: StepStatus }) {
           <PlayIcon size={8} />
         </span>
       </span>
-    );
+    )
   }
-  if (status === 'running') return <RunSpinner size={11} className="text-info" />;
+  if (status === 'running') return <RunSpinner size={11} className="text-info" />
   if (status === 'done') {
     return (
       <span className="flex size-3.5 shrink-0 items-center justify-center rounded-full bg-success/20">
         <IconCheck size={9} className="text-success" />
       </span>
-    );
+    )
   }
   return (
     <svg
@@ -2521,7 +2517,7 @@ function StepStatusIcon({ status }: { status: StepStatus }) {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 7v5l3 2" />
     </svg>
-  );
+  )
 }
 
 /* The real per-session auto-run control: a compact icon toggle that lives in
@@ -2570,8 +2566,8 @@ const AutoRunPill = forwardRef<HTMLButtonElement, { on: boolean }>(function Auto
         {!on && <line x1="3" y1="3" x2="21" y2="21" />}
       </svg>
     </button>
-  );
-});
+  )
+})
 
 function RunSpinner({ size = 10, className }: { size?: number; className?: string }) {
   return (
@@ -2588,7 +2584,7 @@ function RunSpinner({ size = 10, className }: { size?: number; className?: strin
     >
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
-  );
+  )
 }
 
 function PlayIcon({ size = 10 }: { size?: number }) {
@@ -2596,5 +2592,5 @@ function PlayIcon({ size = 10 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5v14l11-7z" />
     </svg>
-  );
+  )
 }

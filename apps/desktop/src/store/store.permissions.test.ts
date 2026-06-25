@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   Agent,
   AgentId,
@@ -10,20 +10,20 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
+const runTurnSpy = vi.fn()
+const cancelTurnSpy = vi.fn()
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
   cancelTurn: cancelTurnSpy,
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-}));
+}))
 
-const permissionRuleListSpy = vi.fn();
-const permissionAuditInsertSpy = vi.fn();
+const permissionRuleListSpy = vi.fn()
+const permissionAuditInsertSpy = vi.fn()
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
@@ -33,20 +33,20 @@ vi.mock('../features/permissions/permissions', () => ({
   invokeAuditRetryUpdate: vi.fn(async () => undefined),
   invokeAuditRetryDelete: vi.fn(async () => undefined),
   useEffectivePermissionRules: () => [],
-}));
+}))
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
-}));
+}))
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
+}))
 
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
@@ -88,7 +88,7 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [
@@ -99,7 +99,7 @@ vi.mock('../features/providers/providers', () => ({
   getCursorStatus: vi.fn(),
   getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/providers/routing', () => ({
   resolveProviderForTurn: vi.fn(async (_pref, _override, _connected) => ({
@@ -107,7 +107,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',
   })),
-}));
+}))
 
 vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -118,7 +118,7 @@ vi.mock('../features/budget/budget', () => ({
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
   invokeCheckProviderBudget: vi.fn(),
-}));
+}))
 
 vi.mock('../features/skills/skills', () => ({
   invokeSkillList: vi.fn(async () => []),
@@ -126,7 +126,7 @@ vi.mock('../features/skills/skills', () => ({
   invokeSkillDelete: vi.fn(),
   invokeSkillRescan: vi.fn(),
   resolveSkillInvocation: vi.fn(),
-}));
+}))
 
 vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
@@ -135,22 +135,22 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-}));
+}))
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
-}));
+}))
 
 vi.mock('../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(),
-}));
+}))
 
-const SESSION_ID = 'session-1' as SessionId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const SESSION_ID = 'session-1' as SessionId
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId
 
 function buildSession(): Session {
-  const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
+  const now = '2026-05-07T00:00:00.000Z' as IsoDateTime
   return {
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
@@ -167,11 +167,11 @@ function buildSession(): Session {
     workflowRuns: [],
     createdAt: now,
     updatedAt: now,
-  };
+  }
 }
 
 function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
-  const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
+  const now = '2026-05-07T00:00:00.000Z' as IsoDateTime
   return {
     id: 'rule-1' as PermissionRuleId,
     scope: 'session',
@@ -182,35 +182,35 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
     createdAt: now,
     updatedAt: now,
     ...overrides,
-  };
+  }
 }
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
 describe('sendTurn, permission proxy integration', () => {
   beforeEach(async () => {
-    runTurnSpy.mockReset();
-    cancelTurnSpy.mockReset();
-    permissionRuleListSpy.mockReset();
-    permissionAuditInsertSpy.mockReset();
-    runTurnSpy.mockImplementation(() => emptyStream());
-    permissionRuleListSpy.mockResolvedValue([]);
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockReset();
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    runTurnSpy.mockReset()
+    cancelTurnSpy.mockReset()
+    permissionRuleListSpy.mockReset()
+    permissionAuditInsertSpy.mockReset()
+    runTurnSpy.mockImplementation(() => emptyStream())
+    permissionRuleListSpy.mockResolvedValue([])
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockReset()
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-3-5-sonnet-latest',
       reason: 'preference',
-    });
-  });
+    })
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   async function importStore() {
-    const mod = await import('./store');
-    return mod.useAppStore;
+    const mod = await import('./store')
+    return mod.useAppStore
   }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
@@ -220,7 +220,7 @@ describe('sendTurn, permission proxy integration', () => {
       ordinal: 0,
       name: 'agent 1',
       status: 'pending',
-    };
+    }
     useAppStore.setState({
       sessions: [buildSession()],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -249,7 +249,7 @@ describe('sendTurn, permission proxy integration', () => {
           updatedAt: '2026-05-07T00:00:00.000Z' as IsoDateTime,
         },
       ],
-    });
+    })
   }
 
   it('forwards disallowedTools when a deny rule is configured (claude)', async () => {
@@ -260,70 +260,70 @@ describe('sendTurn, permission proxy integration', () => {
             decision: 'deny',
             pattern: { tool: 'Bash', argsMatcher: 'rm:*' },
           }),
-        ];
+        ]
       }
-      return [];
-    });
+      return []
+    })
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' })
 
-    expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(args.disallowedTools).toEqual(['Bash(rm:*)']);
-    expect(args.allowedTools).toEqual([]);
-    expect(args.permissionMode).toBe('bypassPermissions');
-  });
+    expect(runTurnSpy).toHaveBeenCalledTimes(1)
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(args.disallowedTools).toEqual(['Bash(rm:*)'])
+    expect(args.allowedTools).toEqual([])
+    expect(args.permissionMode).toBe('bypassPermissions')
+  })
 
   it('forwards allowedTools when an allow rule is configured (claude)', async () => {
     permissionRuleListSpy.mockImplementation(async (args: { scope: string }) => {
       if (args.scope === 'session') {
-        return [buildRule({ decision: 'allow', pattern: { tool: 'Edit' } })];
+        return [buildRule({ decision: 'allow', pattern: { tool: 'Edit' } })]
       }
-      return [];
-    });
+      return []
+    })
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' })
 
-    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(args.allowedTools).toEqual(['Edit']);
-    expect(args.disallowedTools).toEqual([]);
-  });
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(args.allowedTools).toEqual(['Edit'])
+    expect(args.disallowedTools).toEqual([])
+  })
 
   it('forwards empty tool lists with default mode when no rules exist (claude)', async () => {
-    permissionRuleListSpy.mockResolvedValue([]);
+    permissionRuleListSpy.mockResolvedValue([])
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' })
 
-    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(args.allowedTools).toEqual([]);
-    expect(args.disallowedTools).toEqual([]);
-    expect(args.permissionMode).toBe('bypassPermissions');
-    expect(JSON.stringify(args)).not.toContain('dangerously-skip-permissions');
-  });
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(args.allowedTools).toEqual([])
+    expect(args.disallowedTools).toEqual([])
+    expect(args.permissionMode).toBe('bypassPermissions')
+    expect(JSON.stringify(args)).not.toContain('dangerously-skip-permissions')
+  })
 
   it('does NOT forward permission flags when provider is cursor', async () => {
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    const routingMod = await import('../features/providers/routing')
+    ;(routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       selectedProvider: 'cursor',
       selectedModel: 'cursor-default',
       reason: 'preference',
-    });
+    })
 
-    const useAppStore = await importStore();
-    setupSession(useAppStore);
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+    const useAppStore = await importStore()
+    setupSession(useAppStore)
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' })
 
-    expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(args.allowedTools).toBeUndefined();
-    expect(args.disallowedTools).toBeUndefined();
-    expect(args.permissionMode).toBeUndefined();
-    expect(permissionRuleListSpy).not.toHaveBeenCalled();
-  });
-});
+    expect(runTurnSpy).toHaveBeenCalledTimes(1)
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(args.allowedTools).toBeUndefined()
+    expect(args.disallowedTools).toBeUndefined()
+    expect(args.permissionMode).toBeUndefined()
+    expect(permissionRuleListSpy).not.toHaveBeenCalled()
+  })
+})

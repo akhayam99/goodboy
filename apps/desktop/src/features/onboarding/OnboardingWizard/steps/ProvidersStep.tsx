@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { Check } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers';
-import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
-import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
-import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
-import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
+import { useState } from 'react'
+import { Check } from 'lucide-react'
+import { Button } from '@goodboy/ui'
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
+import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers'
+import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand'
+import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill'
+import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal'
+import type { ProviderLifecyclePhase } from '../../../../store/slices/providers'
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'cursor', 'gemini'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'cursor', 'gemini']
 
-type ConnectTarget = { readonly providerId: ProviderId; readonly action: ProviderLifecycleAction };
+type ConnectTarget = { readonly providerId: ProviderId; readonly action: ProviderLifecycleAction }
 
 export const ProvidersStep = () => {
-  const providers = useAppStore((s) => s.providers);
-  const lifecycle = useAppStore((s) => s.providerLifecycle);
-  const [connectTarget, setConnectTarget] = useState<ConnectTarget | null>(null);
+  const providers = useAppStore((s) => s.providers)
+  const lifecycle = useAppStore((s) => s.providerLifecycle)
+  const [connectTarget, setConnectTarget] = useState<ConnectTarget | null>(null)
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
-  );
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,21 +50,21 @@ export const ProvidersStep = () => {
         onClose={() => setConnectTarget(null)}
       />
     </div>
-  );
-};
+  )
+}
 
 function ProviderRow({
   info,
   phase,
   onConnect,
 }: {
-  info: ProviderInfo;
-  phase: ProviderLifecyclePhase;
-  onConnect: (target: ConnectTarget) => void;
+  info: ProviderInfo
+  phase: ProviderLifecyclePhase
+  onConnect: (target: ConnectTarget) => void
 }) {
-  const Icon = PROVIDER_BRAND[info.id].icon;
-  const connected = info.connection === 'connected';
-  const action: ProviderLifecycleAction = info.connection === 'missing' ? 'install' : 'login';
+  const Icon = PROVIDER_BRAND[info.id].icon
+  const connected = info.connection === 'connected'
+  const action: ProviderLifecycleAction = info.connection === 'missing' ? 'install' : 'login'
 
   return (
     <li className="flex items-center gap-3 rounded-lg border border-border-soft/50 bg-subtle/20 px-3.5 py-2.5">
@@ -94,5 +94,5 @@ function ProviderRow({
         </Button>
       )}
     </li>
-  );
+  )
 }

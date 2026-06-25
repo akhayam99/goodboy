@@ -1,14 +1,14 @@
-import type { IsoDateTime, PendingResolution, SessionId } from '@goodboy/types';
-import type { Database } from '../client';
+import type { IsoDateTime, PendingResolution, SessionId } from '@goodboy/types'
+import type { Database } from '../client'
 
 type PendingResolutionRow = {
-  id: string;
-  session_id: string;
-  pr_number: number;
-  thread_id: string;
-  commit_sha: string;
-  created_at: number;
-};
+  id: string
+  session_id: string
+  pr_number: number
+  thread_id: string
+  commit_sha: string
+  created_at: number
+}
 
 function toDomain(row: PendingResolutionRow): PendingResolution {
   return {
@@ -18,10 +18,10 @@ function toDomain(row: PendingResolutionRow): PendingResolution {
     threadId: row.thread_id,
     commitSha: row.commit_sha,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-  };
+  }
 }
 
-const SELECT_COLUMNS = `id, session_id, pr_number, thread_id, commit_sha, created_at`;
+const SELECT_COLUMNS = `id, session_id, pr_number, thread_id, commit_sha, created_at`
 
 export const queuePendingResolution = async (
   db: Database,
@@ -37,8 +37,8 @@ export const queuePendingResolution = async (
      ON CONFLICT (session_id, thread_id)
      DO UPDATE SET commit_sha = excluded.commit_sha, created_at = excluded.created_at`,
     [id, sessionId, prNumber, threadId, commitSha, Date.now()],
-  );
-};
+  )
+}
 
 export const listPendingResolutionsForSession = async (
   db: Database,
@@ -50,9 +50,9 @@ export const listPendingResolutionsForSession = async (
      WHERE session_id = ?
      ORDER BY created_at ASC`,
     [sessionId],
-  );
-  return rows.map(toDomain);
-};
+  )
+  return rows.map(toDomain)
+}
 
 export const deletePendingResolution = async (
   db: Database,
@@ -62,5 +62,5 @@ export const deletePendingResolution = async (
   await db.execute(`DELETE FROM pending_resolutions WHERE session_id = ? AND thread_id = ?`, [
     sessionId,
     threadId,
-  ]);
-};
+  ])
+}

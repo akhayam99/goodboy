@@ -1,36 +1,36 @@
-import { useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { Check, ChevronDown } from 'lucide-react';
+import { useRef, useState } from 'react'
+import { cn } from '@goodboy/ui'
+import { Check, ChevronDown } from 'lucide-react'
 import {
   EFFORT_DOT,
   EFFORT_LABEL,
   type EffortLevel,
   modelEffortLevels,
-} from '../../../chat/utils/chat-constants';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
+} from '../../../chat/utils/chat-constants'
+import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils'
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside'
+import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection'
 
 type Props = {
-  model: string;
-  value: EffortLevel;
-  onChange: (level: EffortLevel) => void;
-  disabled: boolean;
-};
+  model: string
+  value: EffortLevel
+  onChange: (level: EffortLevel) => void
+  disabled: boolean
+}
 
 export const EffortSelect = ({ model, value, onChange, disabled }: Props) => {
-  const levels = modelEffortLevels(model);
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
+  const levels = modelEffortLevels(model)
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useClickOutside(containerRef, () => setOpen(false))
+  const direction = useDropdownDirection(containerRef, open)
 
   if (!levels) {
     return (
       <div className="flex h-[34px] items-center rounded-md border border-border-soft/50 bg-subtle/50 px-2 text-xs text-muted-foreground/40">
         N/A
       </div>
-    );
+    )
   }
 
   return (
@@ -61,14 +61,14 @@ export const EffortSelect = ({ model, value, onChange, disabled }: Props) => {
       {open ? (
         <div className={cn(POPUP_BASE, 'min-w-[8rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
           {levels.map((level) => {
-            const active = value === level;
+            const active = value === level
             return (
               <button
                 key={level}
                 type="button"
                 onClick={() => {
-                  onChange(level);
-                  setOpen(false);
+                  onChange(level)
+                  setOpen(false)
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
@@ -84,10 +84,10 @@ export const EffortSelect = ({ model, value, onChange, disabled }: Props) => {
                 <span className="flex-1">{EFFORT_LABEL[level]}</span>
                 {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
-            );
+            )
           })}
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}

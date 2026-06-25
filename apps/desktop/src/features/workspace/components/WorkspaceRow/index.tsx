@@ -1,20 +1,20 @@
-import { cn } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
-import { useWorkspaceHasUnread } from '../../../../store';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import { workspaceAccent } from '../../color';
+import { cn } from '@goodboy/ui'
+import type { Workspace } from '@goodboy/types'
+import { useWorkspaceHasUnread } from '../../../../store'
+import { formatRelativeDuration } from '../../../../shared/utils/relativeDate'
+import { workspaceAccent } from '../../color'
 
 type Props = {
-  workspace: Workspace;
-  density: 'card' | 'row';
-  highlighted: boolean;
-  onOpen: () => void;
-};
+  workspace: Workspace
+  density: 'card' | 'row'
+  highlighted: boolean
+  onOpen: () => void
+}
 
 export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props) => {
-  const hasUnread = useWorkspaceHasUnread(workspace.id);
-  const accent = workspaceAccent(workspace.id);
-  const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : '';
+  const hasUnread = useWorkspaceHasUnread(workspace.id)
+  const accent = workspaceAccent(workspace.id)
+  const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : ''
 
   return (
     <button
@@ -51,5 +51,5 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
         <span className="shrink-0 text-xs text-muted-foreground/60">{lastSeen}</span>
       ) : null}
     </button>
-  );
-};
+  )
+}

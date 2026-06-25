@@ -1,5 +1,5 @@
-import { Check, Sparkles, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Check, Sparkles, X } from 'lucide-react'
+import { cn } from '@goodboy/ui'
 import {
   ONBOARDING_STEPS,
   collapse,
@@ -7,24 +7,24 @@ import {
   reopen,
   type OnboardingGroup,
   type OnboardingStepId,
-} from '../onboarding-store';
-import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnboardingProgress';
+} from '../onboarding-store'
+import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnboardingProgress'
 
 const GROUP_LABEL: Record<OnboardingGroup, string> = {
   setup: 'Setup',
   build: 'First steps',
-};
+}
 
-const GROUP_ORDER: ReadonlyArray<OnboardingGroup> = ['setup', 'build'];
+const GROUP_ORDER: ReadonlyArray<OnboardingGroup> = ['setup', 'build']
 
 export const OnboardingCard = () => {
-  const progress = useOnboardingProgress();
+  const progress = useOnboardingProgress()
 
   if (progress.finished) {
-    return null;
+    return null
   }
   if (!progress.isDone && progress.collapsed) {
-    return null;
+    return null
   }
 
   return (
@@ -33,8 +33,8 @@ export const OnboardingCard = () => {
         {progress.isDone ? <CompletedBody /> : <ChecklistBody progress={progress} />}
       </div>
     </div>
-  );
-};
+  )
+}
 
 function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
   return (
@@ -53,9 +53,9 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
       </div>
       <div className="flex flex-col gap-2.5">
         {GROUP_ORDER.map((group) => {
-          const steps = ONBOARDING_STEPS.filter((s) => s.group === group);
+          const steps = ONBOARDING_STEPS.filter((s) => s.group === group)
           if (steps.length === 0) {
-            return null;
+            return null
           }
           return (
             <div key={group} className="flex flex-col gap-1">
@@ -74,14 +74,14 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
                 ))}
               </ul>
             </div>
-          );
+          )
         })}
       </div>
       <p className="text-[10px] leading-snug text-muted-foreground/60">
         {progress.completedCount} of {progress.totalCount} steps done
       </p>
     </>
-  );
+  )
 }
 
 function CompletedBody() {
@@ -106,15 +106,15 @@ function CompletedBody() {
         That was the last step. Setup is complete.
       </p>
     </>
-  );
+  )
 }
 
 type StepRowProps = {
-  readonly id: OnboardingStepId;
-  readonly title: string;
-  readonly why: string;
-  readonly done: boolean;
-};
+  readonly id: OnboardingStepId
+  readonly title: string
+  readonly why: string
+  readonly done: boolean
+}
 
 function StepRow({ title, why, done }: StepRowProps) {
   return (
@@ -136,13 +136,13 @@ function StepRow({ title, why, done }: StepRowProps) {
       </span>
       <span className={cn('truncate', done && 'line-through decoration-1')}>{title}</span>
     </li>
-  );
+  )
 }
 
 export const OnboardingChip = () => {
-  const progress = useOnboardingProgress();
+  const progress = useOnboardingProgress()
   if (progress.finished) {
-    return null;
+    return null
   }
 
   return (
@@ -164,5 +164,5 @@ export const OnboardingChip = () => {
         />
       ))}
     </button>
-  );
-};
+  )
+}

@@ -1,33 +1,33 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { AgentId, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
-import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
-import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import type { AgentId, PrDetail, PullRequestState, SessionId } from '@goodboy/types'
+import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui'
+import { AlertCircle, Inbox, RefreshCw } from 'lucide-react'
 import {
   buildCommentAgentArgs,
   type CommentAgentArgs,
   type ResolveModelChoice,
-} from '../../../chat/spawn-from-comment';
-import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
-import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
-import { openUrl } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
-import { useAppStore, useSessions } from '../../../../store';
-import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
-import { groupThreads, type CommentThread } from '../../comment-threads';
-import { CreatePrPanel } from './CreatePrPanel';
-import { PrActionBar, type ActionBusy } from './PrActionBar';
-import { PrChecks } from './PrChecks';
-import { PrConversation } from './PrConversation';
-import { ResolveBoard } from './ResolveBoard';
-import { PrOverview } from './PrOverview';
-import { PrSidebar, type PrSection } from './PrSidebar';
+} from '../../../chat/spawn-from-comment'
+import { useResolverIndex } from '../../../session/hooks/useResolverIndex'
+import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage'
+import { openUrl } from '../../../../shared/lib/editor'
+import { formatError } from '../../../../shared/lib/errors'
+import { useAppStore, useSessions } from '../../../../store'
+import { ghPrDetailByNumber, ghPrsForBranch } from '../../github'
+import { groupThreads, type CommentThread } from '../../comment-threads'
+import { CreatePrPanel } from './CreatePrPanel'
+import { PrActionBar, type ActionBusy } from './PrActionBar'
+import { PrChecks } from './PrChecks'
+import { PrConversation } from './PrConversation'
+import { ResolveBoard } from './ResolveBoard'
+import { PrOverview } from './PrOverview'
+import { PrSidebar, type PrSection } from './PrSidebar'
 
 type Props = {
-  readonly sessionId: SessionId | null;
-  readonly initialPrNumber?: number | null;
-  readonly initialThreadId?: string | null;
-  readonly onClose: () => void;
-};
+  readonly sessionId: SessionId | null
+  readonly initialPrNumber?: number | null
+  readonly initialThreadId?: string | null
+  readonly onClose: () => void
+}
 
 export const PrDetailPanel = ({
   sessionId,
@@ -35,126 +35,126 @@ export const PrDetailPanel = ({
   initialThreadId = null,
   onClose,
 }: Props) => {
-  const sessions = useSessions();
-  const session = sessionId ? sessions.find((s) => s.id === sessionId) : undefined;
-  const github = useAppStore((s) => (sessionId ? s.sessionGithub[sessionId] : null));
-  const branch = useAppStore((s) => (sessionId ? (s.sessionBranches[sessionId] ?? null) : null));
+  const sessions = useSessions()
+  const session = sessionId ? sessions.find((s) => s.id === sessionId) : undefined
+  const github = useAppStore((s) => (sessionId ? s.sessionGithub[sessionId] : null))
+  const branch = useAppStore((s) => (sessionId ? (s.sessionBranches[sessionId] ?? null) : null))
   const workspaceRoot = useAppStore((s) => {
-    const sess = sessionId ? s.sessions.find((x) => x.id === sessionId) : undefined;
-    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
-    return ws?.rootPath ?? null;
-  });
-  const workspaceId = session?.workspaceId;
-  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-  const markPrReady = useAppStore((s) => s.markPrReady);
-  const convertPrToDraft = useAppStore((s) => s.convertPrToDraft);
-  const mergePr = useAppStore((s) => s.mergePr);
-  const closePr = useAppStore((s) => s.closePr);
-  const reopenPr = useAppStore((s) => s.reopenPr);
-  const requestReview = useAppStore((s) => s.requestReview);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const activateNextResolver = useAppStore((s) => s.activateNextResolver);
-  const setAgentConfig = useAppStore((s) => s.setAgentConfig);
+    const sess = sessionId ? s.sessions.find((x) => x.id === sessionId) : undefined
+    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined
+    return ws?.rootPath ?? null
+  })
+  const workspaceId = session?.workspaceId
+  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail)
+  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr)
+  const markPrReady = useAppStore((s) => s.markPrReady)
+  const convertPrToDraft = useAppStore((s) => s.convertPrToDraft)
+  const mergePr = useAppStore((s) => s.mergePr)
+  const closePr = useAppStore((s) => s.closePr)
+  const reopenPr = useAppStore((s) => s.reopenPr)
+  const requestReview = useAppStore((s) => s.requestReview)
+  const spawnAgent = useAppStore((s) => s.spawnAgent)
+  const selectAgent = useAppStore((s) => s.selectAgent)
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession)
+  const activateNextResolver = useAppStore((s) => s.activateNextResolver)
+  const setAgentConfig = useAppStore((s) => s.setAgentConfig)
 
-  const resolverIndex = useResolverIndex((sessionId ?? '') as SessionId);
+  const resolverIndex = useResolverIndex((sessionId ?? '') as SessionId)
   const resolverFor = useCallback(
     (thread: CommentThread): ResolverLink | undefined =>
       resolverForComment(resolverIndex, { threadId: thread.head.threadId, url: thread.head.url }),
     [resolverIndex],
-  );
+  )
 
-  const [busy, setBusy] = useState<ActionBusy>(null);
-  const [mergeConfirm, setMergeConfirm] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [section, setSection] = useState<PrSection>('overview');
-  const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
-  const [prs, setPrs] = useState<ReadonlyArray<PullRequestState>>([]);
-  const [prsTick, setPrsTick] = useState(0);
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  const [localDetail, setLocalDetail] = useState<PrDetail | null>(null);
-  const [localDetailLoading, setLocalDetailLoading] = useState(false);
-  const [localDetailError, setLocalDetailError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<ActionBusy>(null)
+  const [mergeConfirm, setMergeConfirm] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [section, setSection] = useState<PrSection>('overview')
+  const [jumpThreadId, setJumpThreadId] = useState<string | null>(null)
+  const [prs, setPrs] = useState<ReadonlyArray<PullRequestState>>([])
+  const [prsTick, setPrsTick] = useState(0)
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
+  const [localDetail, setLocalDetail] = useState<PrDetail | null>(null)
+  const [localDetailLoading, setLocalDetailLoading] = useState(false)
+  const [localDetailError, setLocalDetailError] = useState<string | null>(null)
 
-  const primary = github?.pr ?? null;
-  const primaryNumber = primary?.number ?? null;
-  const options = prs.length > 0 ? prs : primary ? [primary] : [];
-  const selected = selectedNumber ?? primaryNumber ?? options[0]?.number ?? null;
-  const activePr = options.find((p) => p.number === selected) ?? primary;
-  const isPrimary = !!activePr && activePr.number === primaryNumber;
+  const primary = github?.pr ?? null
+  const primaryNumber = primary?.number ?? null
+  const options = prs.length > 0 ? prs : primary ? [primary] : []
+  const selected = selectedNumber ?? primaryNumber ?? options[0]?.number ?? null
+  const activePr = options.find((p) => p.number === selected) ?? primary
+  const isPrimary = !!activePr && activePr.number === primaryNumber
 
-  const detail = isPrimary ? (github?.detail ?? null) : localDetail;
-  const detailLoading = isPrimary ? !!github?.detailLoading : localDetailLoading;
-  const detailError = isPrimary ? (github?.detailError ?? null) : localDetailError;
+  const detail = isPrimary ? (github?.detail ?? null) : localDetail
+  const detailLoading = isPrimary ? !!github?.detailLoading : localDetailLoading
+  const detailError = isPrimary ? (github?.detailError ?? null) : localDetailError
 
   const fetchLocalDetail = useCallback(
     async (num: number) => {
       if (!workspaceRoot) {
-        return;
+        return
       }
-      setLocalDetailLoading(true);
-      setLocalDetailError(null);
+      setLocalDetailLoading(true)
+      setLocalDetailError(null)
       try {
-        setLocalDetail(await ghPrDetailByNumber(workspaceRoot, num, workspaceId));
+        setLocalDetail(await ghPrDetailByNumber(workspaceRoot, num, workspaceId))
       } catch (e) {
-        setLocalDetailError(formatError(e));
+        setLocalDetailError(formatError(e))
       } finally {
-        setLocalDetailLoading(false);
+        setLocalDetailLoading(false)
       }
     },
     [workspaceRoot, workspaceId],
-  );
+  )
 
   useEffect(() => {
-    setSelectedNumber(null);
-    setPrs([]);
-    setLocalDetail(null);
-    setLocalDetailError(null);
-    setMergeConfirm(false);
-    setCreateOpen(false);
-    setSection('overview');
-  }, [sessionId]);
+    setSelectedNumber(null)
+    setPrs([])
+    setLocalDetail(null)
+    setLocalDetailError(null)
+    setMergeConfirm(false)
+    setCreateOpen(false)
+    setSection('overview')
+  }, [sessionId])
 
   useEffect(() => {
     if (initialThreadId == null) {
-      return;
+      return
     }
     if (initialPrNumber != null) {
-      setSelectedNumber(initialPrNumber);
+      setSelectedNumber(initialPrNumber)
     }
-    setSection('comments');
-  }, [sessionId, initialThreadId, initialPrNumber]);
+    setSection('comments')
+  }, [sessionId, initialThreadId, initialPrNumber])
 
   useEffect(() => {
     if (!branch || !workspaceRoot) {
-      setPrs([]);
-      return;
+      setPrs([])
+      return
     }
-    let cancelled = false;
+    let cancelled = false
     void ghPrsForBranch(workspaceRoot, branch, workspaceId)
       .then((list) => {
         if (!cancelled) {
-          setPrs(list);
+          setPrs(list)
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setPrs([]);
+          setPrs([])
         }
-      });
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [branch, workspaceRoot, workspaceId, prsTick]);
+      cancelled = true
+    }
+  }, [branch, workspaceRoot, workspaceId, prsTick])
 
   useEffect(() => {
     if (!sessionId || !isPrimary || !activePr) {
-      return;
+      return
     }
     if (!github?.detail && !github?.detailLoading && !github?.detailError) {
-      void refreshSessionPrDetail(sessionId);
+      void refreshSessionPrDetail(sessionId)
     }
   }, [
     sessionId,
@@ -164,24 +164,24 @@ export const PrDetailPanel = ({
     github?.detailLoading,
     github?.detailError,
     refreshSessionPrDetail,
-  ]);
+  ])
 
   useEffect(() => {
     if (!sessionId || prs.length === 0) {
-      return;
+      return
     }
     if ((prs[0]?.number ?? null) === primaryNumber) {
-      return;
+      return
     }
-    void refreshSessionPr(sessionId, { force: true, silent: true });
-  }, [sessionId, prs, primaryNumber, refreshSessionPr]);
+    void refreshSessionPr(sessionId, { force: true, silent: true })
+  }, [sessionId, prs, primaryNumber, refreshSessionPr])
 
   useEffect(() => {
     if (!activePr || isPrimary) {
-      return;
+      return
     }
-    void fetchLocalDetail(activePr.number);
-  }, [activePr, isPrimary, fetchLocalDetail]);
+    void fetchLocalDetail(activePr.number)
+  }, [activePr, isPrimary, fetchLocalDetail])
 
   if (!sessionId || !session) {
     return (
@@ -192,24 +192,24 @@ export const PrDetailPanel = ({
           description="Pick a session from the inbox to see its pull request."
         />
       </div>
-    );
+    )
   }
 
   const refreshActive = () => {
     if (!activePr) {
-      return;
+      return
     }
     if (isPrimary) {
-      void refreshSessionPrDetail(sessionId, { force: true });
+      void refreshSessionPrDetail(sessionId, { force: true })
     } else {
-      void fetchLocalDetail(activePr.number);
+      void fetchLocalDetail(activePr.number)
     }
-  };
+  }
 
   const onMutated = () => {
-    setPrsTick((t) => t + 1);
-    refreshActive();
-  };
+    setPrsTick((t) => t + 1)
+    refreshActive()
+  }
 
   const spawnResolver = async (
     args: CommentAgentArgs,
@@ -226,106 +226,106 @@ export const PrDetailPanel = ({
       ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
       sourceCommentUrl: args.sourceCommentUrl,
       ...(deferKickoff && { deferKickoff: true }),
-    });
+    })
     await setAgentConfig(sessionId, agentId, {
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),
       ...(choice.model !== undefined && { modelOverride: choice.model }),
       effort: args.effort,
-    });
-    return agentId;
-  };
+    })
+    return agentId
+  }
 
   const openResolver = (agentId: AgentId) => {
     void (async () => {
-      await setCurrentSession(sessionId);
-      await selectAgent(sessionId, agentId);
-      onClose();
-    })();
-  };
+      await setCurrentSession(sessionId)
+      await selectAgent(sessionId, agentId)
+      onClose()
+    })()
+  }
 
   const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
     if (!activePr) {
-      return;
+      return
     }
-    const existing = resolverFor(thread);
+    const existing = resolverFor(thread)
     if (existing && existing.status !== 'failed') {
-      openResolver(existing.agent.id as AgentId);
-      return;
+      openResolver(existing.agent.id as AgentId)
+      return
     }
     void (async () => {
       const agentId = await spawnResolver(
         buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
         choice,
         false,
-      );
-      await setCurrentSession(sessionId);
-      await selectAgent(sessionId, agentId);
-      onClose();
-    })();
-  };
+      )
+      await setCurrentSession(sessionId)
+      await selectAgent(sessionId, agentId)
+      onClose()
+    })()
+  }
 
   const onSpawnBatch = (
     batch: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => {
     if (!activePr || batch.length === 0) {
-      return;
+      return
     }
     const fresh = batch.filter((t) => {
-      const existing = resolverFor(t);
-      return !existing || existing.status === 'failed';
-    });
+      const existing = resolverFor(t)
+      return !existing || existing.status === 'failed'
+    })
     if (fresh.length === 0) {
       void (async () => {
-        await setCurrentSession(sessionId);
-        onClose();
-      })();
-      return;
+        await setCurrentSession(sessionId)
+        onClose()
+      })()
+      return
     }
     void (async () => {
       for (const t of fresh) {
-        const choice = choiceById[t.head.id] ?? {};
+        const choice = choiceById[t.head.id] ?? {}
         await spawnResolver(
           buildCommentAgentArgs(t.head, activePr, choice, t.replies),
           choice,
           true,
-        );
+        )
       }
-      await setCurrentSession(sessionId);
-      await activateNextResolver(sessionId);
-      onClose();
-    })();
-  };
+      await setCurrentSession(sessionId)
+      await activateNextResolver(sessionId)
+      onClose()
+    })()
+  }
 
   const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
     if (busy) {
-      return;
+      return
     }
-    setBusy(kind);
+    setBusy(kind)
     try {
-      await fn();
-      onMutated();
+      await fn()
+      onMutated()
     } catch {
-      void 0;
+      void 0
     } finally {
-      setBusy(null);
-      setMergeConfirm(false);
+      setBusy(null)
+      setMergeConfirm(false)
     }
-  };
+  }
 
   const onAddReviewers = (logins: ReadonlyArray<string>) => {
     if (!activePr) {
-      return;
+      return
     }
     void (async () => {
       try {
-        await requestReview(sessionId, activePr.number, logins);
+        await requestReview(sessionId, activePr.number, logins)
       } catch {
-        void 0;
+        void 0
       }
-      onMutated();
-    })();
-  };
+      onMutated()
+    })()
+  }
 
   if (!activePr) {
     return (
@@ -337,19 +337,19 @@ export const PrDetailPanel = ({
           onStudioClose={onClose}
         />
       </div>
-    );
+    )
   }
 
-  const isTerminal = activePr.state === 'merged' || activePr.state === 'closed';
-  const isClosed = activePr.state === 'closed';
-  const isDraft = activePr.isDraft;
-  const canMerge = !isTerminal && !isDraft && activePr.mergeable !== false;
+  const isTerminal = activePr.state === 'merged' || activePr.state === 'closed'
+  const isClosed = activePr.state === 'closed'
+  const isDraft = activePr.isDraft
+  const canMerge = !isTerminal && !isDraft && activePr.mergeable !== false
   const mergeReason = isDraft
     ? 'mark the PR ready before merging'
     : activePr.mergeable === false
       ? 'PR has conflicts, resolve them first'
-      : 'squash merge this PR';
-  const num = activePr.number;
+      : 'squash merge this PR'
+  const num = activePr.number
 
   return (
     <div className="flex h-full min-h-0">
@@ -396,8 +396,8 @@ export const PrDetailPanel = ({
             defaultTitle={session.goal}
             closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
             onCreated={() => {
-              setCreateOpen(false);
-              onMutated();
+              setCreateOpen(false)
+              onMutated()
             }}
             onCancel={() => setCreateOpen(false)}
             onStudioClose={onClose}
@@ -423,8 +423,8 @@ export const PrDetailPanel = ({
                     onSpawnBatch={onSpawnBatch}
                     onOpenResolver={openResolver}
                     onOpenThread={(threadId) => {
-                      setJumpThreadId(threadId);
-                      setSection('comments');
+                      setJumpThreadId(threadId)
+                      setSection('comments')
                     }}
                   />
                 ) : section === 'comments' ? (
@@ -448,8 +448,8 @@ export const PrDetailPanel = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 function SectionBody({
   detail,
@@ -458,11 +458,11 @@ function SectionBody({
   onRetry,
   children,
 }: {
-  detail: PrDetail | null;
-  detailLoading: boolean;
-  detailError: string | null;
-  onRetry: () => void;
-  children: ReactNode;
+  detail: PrDetail | null
+  detailLoading: boolean
+  detailError: string | null
+  onRetry: () => void
+  children: ReactNode
 }) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-8 py-6">
@@ -495,5 +495,5 @@ function SectionBody({
         children
       )}
     </div>
-  );
+  )
 }

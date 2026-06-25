@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { SquareTerminal } from 'lucide-react';
-import { Button, Divider, EmptyState } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { SquareTerminal } from 'lucide-react'
+import { Button, Divider, EmptyState } from '@goodboy/ui'
+import type { SessionId } from '@goodboy/types'
+import { useAppStore } from '../../../../store'
 import {
   clearTerminalCache,
   GenericTerminalPanel,
   type TerminalDriver,
-} from '../../../../shared/components/GenericTerminalPanel';
-import type { TerminalTabId } from '../../../../shared/types/terminal';
+} from '../../../../shared/components/GenericTerminalPanel'
+import type { TerminalTabId } from '../../../../shared/types/terminal'
 import {
   invokeTerminalClose,
   invokeTerminalOpen,
@@ -16,109 +16,109 @@ import {
   invokeTerminalWrite,
   listenTerminalExit,
   listenTerminalOutput,
-} from '../../terminal';
-import { TerminalTabStrip } from '../TerminalTabStrip';
+} from '../../terminal'
+import { TerminalTabStrip } from '../TerminalTabStrip'
 
 function base64ToBytes(b64: string): Uint8Array {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+    bytes[i] = binary.charCodeAt(i)
   }
-  return bytes;
+  return bytes
 }
 
 function stringToBase64(s: string): string {
-  const bytes = new TextEncoder().encode(s);
-  let binary = '';
+  const bytes = new TextEncoder().encode(s)
+  let binary = ''
   for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
+    binary += String.fromCharCode(byte)
   }
-  return btoa(binary);
+  return btoa(binary)
 }
 
-const EMPTY_TABS = [] as const;
+const EMPTY_TABS = [] as const
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly isActive: boolean;
-  readonly cwd: string | null;
-};
+  readonly sessionId: SessionId
+  readonly isActive: boolean
+  readonly cwd: string | null
+}
 
 export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
-  const tabs = useAppStore((s) => s.terminalTabs[sessionId] ?? EMPTY_TABS);
-  const activeId = useAppStore((s) => s.activeTerminalTab[sessionId] ?? null);
-  const addTerminalTab = useAppStore((s) => s.addTerminalTab);
-  const closeTerminalTab = useAppStore((s) => s.closeTerminalTab);
-  const setActiveTerminalTab = useAppStore((s) => s.setActiveTerminalTab);
-  const setTerminalTabStatus = useAppStore((s) => s.setTerminalTabStatus);
+  const tabs = useAppStore((s) => s.terminalTabs[sessionId] ?? EMPTY_TABS)
+  const activeId = useAppStore((s) => s.activeTerminalTab[sessionId] ?? null)
+  const addTerminalTab = useAppStore((s) => s.addTerminalTab)
+  const closeTerminalTab = useAppStore((s) => s.closeTerminalTab)
+  const setActiveTerminalTab = useAppStore((s) => s.setActiveTerminalTab)
+  const setTerminalTabStatus = useAppStore((s) => s.setTerminalTabStatus)
 
-  const spawnedRef = useRef(false);
+  const spawnedRef = useRef(false)
 
   useEffect(() => {
     if (!isActive || spawnedRef.current || tabs.length > 0) {
-      return;
+      return
     }
-    spawnedRef.current = true;
-    addTerminalTab(sessionId, cwd);
-  }, [isActive, tabs.length, sessionId, cwd, addTerminalTab]);
+    spawnedRef.current = true
+    addTerminalTab(sessionId, cwd)
+  }, [isActive, tabs.length, sessionId, cwd, addTerminalTab])
 
-  const activeTab = useMemo(() => tabs.find((t) => t.id === activeId) ?? null, [tabs, activeId]);
+  const activeTab = useMemo(() => tabs.find((t) => t.id === activeId) ?? null, [tabs, activeId])
 
   const driver = useMemo<TerminalDriver>(() => {
-    const terminalId = activeId;
+    const terminalId = activeId
     return {
       write: (data: string) => {
         if (!terminalId) {
-          return;
+          return
         }
-        void invokeTerminalWrite(terminalId, stringToBase64(data));
+        void invokeTerminalWrite(terminalId, stringToBase64(data))
       },
       resize: (cols: number, rows: number) => {
         if (!terminalId) {
-          return;
+          return
         }
-        void invokeTerminalResize(terminalId, cols, rows);
+        void invokeTerminalResize(terminalId, cols, rows)
       },
       onOutput: (handler) =>
         listenTerminalOutput((payload) => {
           if (payload.sessionId !== terminalId) {
-            return;
+            return
           }
-          handler(base64ToBytes(payload.data));
+          handler(base64ToBytes(payload.data))
         }),
       onExit: (handler) =>
         listenTerminalExit((payload) => {
           if (payload.sessionId !== terminalId) {
-            return;
+            return
           }
-          handler(payload.exitCode);
+          handler(payload.exitCode)
         }),
-    };
-  }, [activeId]);
+    }
+  }, [activeId])
 
   useEffect(() => {
     if (!activeTab) {
-      return;
+      return
     }
-    void invokeTerminalOpen(activeTab.id, activeTab.cwd, 100, 24);
-  }, [activeTab]);
+    void invokeTerminalOpen(activeTab.id, activeTab.cwd, 100, 24)
+  }, [activeTab])
 
   const handleClose = useCallback(
     (id: TerminalTabId) => {
-      void invokeTerminalClose(id).catch(() => undefined);
-      clearTerminalCache(id);
-      closeTerminalTab(sessionId, id);
+      void invokeTerminalClose(id).catch(() => undefined)
+      clearTerminalCache(id)
+      closeTerminalTab(sessionId, id)
     },
     [sessionId, closeTerminalTab],
-  );
+  )
 
   const handleExit = useCallback(
     (id: TerminalTabId) => () => {
-      setTerminalTabStatus(sessionId, id, 'exited');
+      setTerminalTabStatus(sessionId, id, 'exited')
     },
     [sessionId, setTerminalTabStatus],
-  );
+  )
 
   if (tabs.length === 0) {
     return (
@@ -134,7 +134,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
           }
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -159,5 +159,5 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
         ) : null}
       </div>
     </div>
-  );
-};
+  )
+}

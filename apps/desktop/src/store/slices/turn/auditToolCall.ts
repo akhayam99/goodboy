@@ -1,4 +1,4 @@
-import { PermissionEngine } from '@goodboy/core';
+import { PermissionEngine } from '@goodboy/core'
 import type {
   PermissionDecision,
   PermissionRequest,
@@ -8,29 +8,29 @@ import type {
   SessionId,
   TurnEvent,
   WorkspaceId,
-} from '@goodboy/types';
+} from '@goodboy/types'
 import {
   invokePermissionAuditInsert,
   invokeAuditRetryEnqueue,
   type PermissionAuditInsertPayload,
-} from '../../../features/permissions/permissions';
-import type { GetFn, SetFn } from './types';
+} from '../../../features/permissions/permissions'
+import type { GetFn, SetFn } from './types'
 
 type Params = {
-  event: Extract<TurnEvent, { kind: 'tool_call_start' }>;
-  runId: ProviderRunId;
-  sessionId: SessionId;
-  workspaceId: WorkspaceId;
-  effectiveRules: ReadonlyArray<PermissionRule>;
-};
+  event: Extract<TurnEvent, { kind: 'tool_call_start' }>
+  runId: ProviderRunId
+  sessionId: SessionId
+  workspaceId: WorkspaceId
+  effectiveRules: ReadonlyArray<PermissionRule>
+}
 
 export const auditToolCall = async (
   set: SetFn,
   get: GetFn,
   { event, runId, sessionId, workspaceId, effectiveRules }: Params,
 ): Promise<void> => {
-  const engine = new PermissionEngine();
-  const auditRequestId = crypto.randomUUID() as PermissionRequestId;
+  const engine = new PermissionEngine()
+  const auditRequestId = crypto.randomUUID() as PermissionRequestId
   const request: PermissionRequest = {
     id: auditRequestId,
     runId,
@@ -38,15 +38,15 @@ export const auditToolCall = async (
     toolName: event.toolName,
     input: event.input,
     at: event.at,
-  };
-  const volatile = get().volatilePermissionAllows;
-  const isVolatileAllow = volatile.has(event.toolUseId);
+  }
+  const volatile = get().volatilePermissionAllows
+  const isVolatileAllow = volatile.has(event.toolUseId)
   if (isVolatileAllow) {
     set((state) => {
-      const next = new Set(state.volatilePermissionAllows);
-      next.delete(event.toolUseId);
-      return { volatilePermissionAllows: next };
-    });
+      const next = new Set(state.volatilePermissionAllows)
+      next.delete(event.toolUseId)
+      return { volatilePermissionAllows: next }
+    })
   }
   const decision: PermissionDecision = isVolatileAllow
     ? {
@@ -59,7 +59,7 @@ export const auditToolCall = async (
     : engine.decide(request, effectiveRules, {
         sessionId,
         workspaceId,
-      });
+      })
   const auditPayload: PermissionAuditInsertPayload = {
     id: auditRequestId,
     runId,
@@ -72,14 +72,14 @@ export const auditToolCall = async (
     decidedBy: decision.decidedBy,
     requestedAt: event.at,
     decidedAt: decision.at,
-  };
+  }
   try {
-    await invokePermissionAuditInsert(auditPayload);
+    await invokePermissionAuditInsert(auditPayload)
   } catch {
     try {
-      await invokeAuditRetryEnqueue(auditRequestId, JSON.stringify(auditPayload));
+      await invokeAuditRetryEnqueue(auditRequestId, JSON.stringify(auditPayload))
     } catch (enqueueErr) {
-      console.error('permission audit retry enqueue failed', enqueueErr);
+      console.error('permission audit retry enqueue failed', enqueueErr)
     }
   }
-};
+}

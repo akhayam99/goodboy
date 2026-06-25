@@ -1,5 +1,5 @@
-import { Section } from '../components/Section';
-import { ContextSnapshot } from '../mockups/Snapshots';
+import { Section } from '../components/Section'
+import { ContextSnapshot } from '../mockups/Snapshots'
 
 export function ContextDeepDive() {
   return (
@@ -18,5 +18,5 @@ export function ContextDeepDive() {
     >
       <ContextSnapshot />
     </Section>
-  );
+  )
 }
