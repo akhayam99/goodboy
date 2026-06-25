@@ -2,11 +2,14 @@
 
 let _storeState: Record<string, unknown> = {};
 let _openQuestions: Array<{ status: string; [k: string]: unknown }> = [];
+let _answeredQuestions: Array<{ status: string; [k: string]: unknown }> = [];
 let _oqDrafts: Record<string, unknown> = {};
 let _oqJustAnswered: string[] = [];
 
 const mockAnswerOpenQuestions = vi.fn().mockResolvedValue(undefined);
 const mockDismissOpenQuestion = vi.fn().mockResolvedValue(undefined);
+const mockLoadSessionAnsweredQuestions = vi.fn().mockResolvedValue(undefined);
+const mockSelectAgent = vi.fn().mockResolvedValue(undefined);
 const mockFlashAnswered = vi.fn();
 const mockToggleSuggestion = vi.fn();
 const mockSetCustomAnswer = vi.fn();
@@ -25,6 +28,7 @@ vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: [] as never[],
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => selector(_storeState)),
   useSessionOpenQuestions: vi.fn(() => _openQuestions),
+  useSessionAnsweredQuestions: vi.fn(() => _answeredQuestions),
 }));
 
 vi.mock('../../../../context/components/QuestionsTab/useOpenQuestions', () => ({
@@ -71,6 +75,12 @@ vi.mock('./PaneShell', () => ({
 
 vi.mock('../../SessionOverviewPane/lib', () => ({
   selectOpenQuestions: (qs: Array<{ status: string }>) => qs.filter((q) => q.status === 'open'),
+}));
+
+vi.mock('../../../../chat/components/ChatView/OpenQuestionInlineCard', () => ({
+  AnsweredCard: (props: { question: { id: string; text: string } }) => (
+    <div data-testid={`answered-card-${props.question.id}`}>{props.question.text}</div>
+  ),
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -165,21 +175,27 @@ function setupStore(overrides: {
   agents?: Agent[];
   workflows?: Workflow[];
   openQuestions?: OpenQuestion[];
+  answeredQuestions?: OpenQuestion[];
   drafts?: Record<string, unknown>;
 }) {
   const agents = overrides.agents ?? [];
   const workflows = overrides.workflows ?? [];
   const openQuestions = overrides.openQuestions ?? [];
+  const answeredQuestions = overrides.answeredQuestions ?? [];
 
   _openQuestions = openQuestions;
+  _answeredQuestions = answeredQuestions;
   _oqDrafts = overrides.drafts ?? {};
   _oqJustAnswered = [];
   _storeState = {
     sessionPhaseRuns: { [SESSION_ID]: agents },
     phaseTemplates: { [WS_ID]: workflows },
     sessionOpenQuestions: { [SESSION_ID]: openQuestions },
+    sessionAnsweredQuestions: { [SESSION_ID]: answeredQuestions },
     answerOpenQuestions: mockAnswerOpenQuestions,
     dismissOpenQuestion: mockDismissOpenQuestion,
+    loadSessionAnsweredQuestions: mockLoadSessionAnsweredQuestions,
+    selectAgent: mockSelectAgent,
   };
 }
 
@@ -188,6 +204,7 @@ afterEach(() => {
   vi.clearAllMocks();
   _storeState = {};
   _openQuestions = [];
+  _answeredQuestions = [];
   _oqDrafts = {};
   _oqJustAnswered = [];
 });
@@ -532,6 +549,145 @@ describe('QuestionsPane', () => {
 
       render(<QuestionsPane session={BASE_SESSION} />);
       expect(screen.getByText('run1-agent')).toBeDefined();
+    });
+  });
+
+  describe('answered history', () => {
+    it('loads answered questions on mount', () => {
+      setupStore({ openQuestions: [] });
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(mockLoadSessionAnsweredQuestions).toHaveBeenCalledWith(SESSION_ID);
+    });
+
+    it('renders no answered section when answered list is empty', () => {
+      setupStore({ openQuestions: [], answeredQuestions: [] });
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.queryByTestId(/^answered-card-/)).toBeNull();
+    });
+
+    it('renders answered cards grouped by creator agent', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      setupStore({
+        openQuestions: [],
+        agents: [scout],
+        answeredQuestions: [
+          mkQuestion('aq1', {
+            status: 'answered',
+            createdByAgentId: scout.id,
+            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
+            userAnswer: 'yes',
+          }),
+          mkQuestion('aq2', {
+            status: 'answered',
+            createdByAgentId: scout.id,
+            answeredAt: '2026-05-26T02:00:00.000Z' as IsoDateTime,
+            userAnswer: 'no',
+          }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
+      expect(screen.getByTestId('answered-card-aq2')).toBeDefined();
+      expect(screen.getByText('scout')).toBeDefined();
+    });
+
+    it('clusters answered by different agents separately', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      const fixer = mkAgent('agent_fixer', undefined, 'fixer');
+      setupStore({
+        openQuestions: [],
+        agents: [scout, fixer],
+        answeredQuestions: [
+          mkQuestion('aq1', {
+            status: 'answered',
+            createdByAgentId: scout.id,
+            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
+            userAnswer: 'yes',
+          }),
+          mkQuestion('aq2', {
+            status: 'answered',
+            createdByAgentId: fixer.id,
+            answeredAt: '2026-05-26T02:00:00.000Z' as IsoDateTime,
+            userAnswer: 'no',
+          }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.getByText('scout')).toBeDefined();
+      expect(screen.getByText('fixer')).toBeDefined();
+      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
+      expect(screen.getByTestId('answered-card-aq2')).toBeDefined();
+    });
+
+    it('sorts clusters most-recent-first by newest answeredAt', () => {
+      const older = mkAgent('agent_older', undefined, 'older-agent');
+      const newer = mkAgent('agent_newer', undefined, 'newer-agent');
+      setupStore({
+        openQuestions: [],
+        agents: [older, newer],
+        answeredQuestions: [
+          mkQuestion('aq_old', {
+            status: 'answered',
+            createdByAgentId: older.id,
+            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
+            userAnswer: 'old answer',
+          }),
+          mkQuestion('aq_new', {
+            status: 'answered',
+            createdByAgentId: newer.id,
+            answeredAt: '2026-05-26T03:00:00.000Z' as IsoDateTime,
+            userAnswer: 'new answer',
+          }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      const agentLabels = screen.getAllByText(/.*-agent$/);
+      expect(agentLabels[0]!.textContent).toBe('newer-agent');
+      expect(agentLabels[1]!.textContent).toBe('older-agent');
+    });
+
+    it('clicking agent header calls selectAgent', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      setupStore({
+        openQuestions: [],
+        agents: [scout],
+        answeredQuestions: [
+          mkQuestion('aq1', {
+            status: 'answered',
+            createdByAgentId: scout.id,
+            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
+            userAnswer: 'yes',
+          }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      fireEvent.click(screen.getByText('scout'));
+      expect(mockSelectAgent).toHaveBeenCalledWith(SESSION_ID, scout.id);
+    });
+
+    it('renders answered section below open questions when both exist', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      setupStore({
+        openQuestions: [mkQuestion('open1', { createdByAgentId: scout.id })],
+        agents: [scout],
+        answeredQuestions: [
+          mkQuestion('aq1', {
+            status: 'answered',
+            createdByAgentId: scout.id,
+            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
+            userAnswer: 'yes',
+          }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.getByTestId('question-card-open1')).toBeDefined();
+      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
+      expect(screen.getByText('answered')).toBeDefined();
     });
   });
 });
