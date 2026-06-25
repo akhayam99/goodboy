@@ -74,7 +74,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       data-archived={archived || undefined}
       onClick={() => nav.selectCard(session)}
       className={cn(
-        'group flex min-h-[7.25rem] flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
+        'group flex min-h-[7.25rem] shrink-0 flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
           ? 'border-info/50'
           : stage === 'attention'
