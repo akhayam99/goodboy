@@ -6,7 +6,9 @@ import { Boxes, Check, FolderGit2, FolderPlus } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
-import { reopenWizard } from '../../../onboarding/onboarding-store';
+import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
+import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
+import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
 
 type Props = {
   open: boolean;
@@ -164,7 +166,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       const ws = await addWorkspace({ rootPath: path });
       await setCurrentWorkspace(ws.id);
       onClose();
-      reopenWizard('setup');
+      if (!isWizardDone()) {
+        reopenWizard('setup');
+      }
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {
@@ -187,7 +191,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       });
       await setCurrentWorkspace(ws.id);
       onClose();
-      reopenWizard('setup');
+      if (!isWizardDone()) {
+        reopenWizard('setup');
+      }
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {
@@ -214,6 +220,20 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
 
   const previewMounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath));
 
+  const breadcrumbCrumbs = buildBreadcrumb({
+    workspace: null,
+    session: null,
+    chrome: { kind: 'workspace-create' },
+    handlers: {
+      toOverview: onClose,
+      toWorkspaceLauncher: () => {
+        onClose();
+        window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
+      },
+      toWorkspaceBoard: onClose,
+    },
+  });
+
   return (
     <Dialog
       open={open}
@@ -239,6 +259,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       }
     >
       <div className="flex flex-col gap-4">
+        <AppBreadcrumb crumbs={breadcrumbCrumbs} />
         <div
           role="tablist"
           aria-label="Workspace type"
