@@ -1,9 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
 import { useThemeStore } from '../../lib/theme';
+import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
 
 export type TerminalDriver = {
@@ -62,12 +67,27 @@ export const GenericTerminalPanel = ({
       lineHeight: 1.4,
       theme: resolveTerminalTheme(theme),
       disableStdin: readOnly,
-      screenReaderMode: true,
+      allowProposedApi: true,
     });
 
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
+    term.loadAddon(new Unicode11Addon());
+    term.unicode.activeVersion = '11';
+    term.loadAddon(new ClipboardAddon());
+    term.loadAddon(new WebLinksAddon((_event, uri) => void openUrl(uri)));
     term.open(container);
+
+    let webgl: WebglAddon | null = null;
+    try {
+      webgl = new WebglAddon();
+    } catch {
+      webgl = null;
+    }
+    if (webgl) {
+      webgl.onContextLoss(() => webgl?.dispose());
+      term.loadAddon(webgl);
+    }
 
     const fitAndSync = () => {
       if (!container.clientWidth || !container.clientHeight) {

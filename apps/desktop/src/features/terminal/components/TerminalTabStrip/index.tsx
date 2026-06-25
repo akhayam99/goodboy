@@ -22,7 +22,7 @@ const STATUS_DOT: Record<TerminalTabStatus, string> = {
 
 export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }: Props) => {
   return (
-    <div className="flex items-center gap-0.5 overflow-x-auto px-2 py-1">
+    <div className="flex items-center gap-1 overflow-x-auto px-2 py-1.5">
       {tabs.map((t) => {
         const active = t.id === activeId;
         return (
