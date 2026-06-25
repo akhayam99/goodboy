@@ -20,6 +20,7 @@ import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/componen
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
+import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 
 // The folder CTA only ever opens the reference editors Goodboy auto-detects.
 // Other detected editors (Zed, Vim, …) are intentionally not surfaced here.
@@ -80,7 +81,6 @@ type SessionDetailPanelProps = {
 
 export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDetailPanelProps) => {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
-  const renameTask = useAppStore((s) => s.renameTask);
   const externalTask = useAppStore(
     (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
   );
@@ -93,9 +93,10 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
   const { showToast } = useToast();
   const archived = Boolean(session.archivedAt);
 
-  const [renaming, setRenaming] = useState(false);
-  const [renameDraft, setRenameDraft] = useState('');
-  const [renameError, setRenameError] = useState<string | null>(null);
+  const rename = useSessionTitleRename({
+    sessionId: session.id as SessionId,
+    currentTitle: session.goal,
+  });
   const [armed, setArmed] = useState<'archive' | 'delete' | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -205,53 +206,24 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detectedEditors, worktreePath]);
 
-  const startRename = () => {
-    setRenameDraft(session.goal);
-    setRenameError(null);
-    setRenaming(true);
-  };
-
-  const commitRename = async () => {
-    if (!renameDraft.trim()) {
-      setRenameError('name cannot be empty');
-      return;
-    }
-    try {
-      await renameTask(session.id as SessionId, renameDraft.trim());
-      setRenaming(false);
-      setRenameError(null);
-    } catch (err) {
-      setRenameError(formatError(err));
-    }
-  };
-
-  const onRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      void commitRename();
-    }
-    if (e.key === 'Escape') {
-      setRenaming(false);
-      setRenameError(null);
-    }
-  };
-
   return (
     <div className="flex shrink-0 flex-col gap-2 px-2 pb-2 pt-2.5">
       <div className="flex items-center gap-2">
         <SessionStageBadge session={session} />
         <div className="group/goal flex min-w-0 flex-1 items-center gap-1.5">
-          {renaming ? (
+          {rename.renaming ? (
             <div className="flex flex-1 flex-col gap-0.5">
               <Input
                 autoFocus
-                value={renameDraft}
-                onChange={(e) => setRenameDraft(e.target.value)}
-                onBlur={() => void commitRename()}
-                onKeyDown={onRenameKeyDown}
+                value={rename.draft}
+                maxLength={rename.maxLength}
+                onChange={(e) => rename.setDraft(e.target.value)}
+                onBlur={() => void rename.commit()}
+                onKeyDown={rename.onKeyDown}
                 aria-label="session goal"
                 className="h-7 text-xs font-semibold"
               />
-              {renameError && <span className="text-2xs text-danger">{renameError}</span>}
+              {rename.error && <span className="text-2xs text-danger">{rename.error}</span>}
             </div>
           ) : (
             <>
@@ -260,7 +232,7 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
               </span>
               <button
                 type="button"
-                onClick={startRename}
+                onClick={rename.start}
                 title="Edit goal"
                 aria-label="edit goal"
                 className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 opacity-0 transition-[opacity,color,background-color] hover:bg-muted/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover/goal:opacity-100 motion-reduce:opacity-60"

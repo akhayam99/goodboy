@@ -37,6 +37,7 @@ import {
   DEFAULT_BRANCH_PREFIX,
 } from '../../../features/settings/settings';
 import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
+import { clampTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
 
 const slugifyDir = (raw: string): string =>
@@ -155,7 +156,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const session: Session = {
       id: sessionId,
       workspaceId,
-      goal: goal.trim() || worktree.slug,
+      goal: clampTitle(goal.trim() || worktree.slug),
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,
@@ -218,7 +219,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
     }
 
-    const goalText = session.goal.trim();
+    const goalText = goal.trim() || worktree.slug;
     if (goalText.length > 0) {
       await upsertContextSlot(tauriDatabase, session.id, {
         key: 'goal',
