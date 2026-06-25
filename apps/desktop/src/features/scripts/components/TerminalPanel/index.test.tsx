@@ -15,11 +15,18 @@ vi.mock('@xterm/xterm', () => ({
     cols: 80,
     rows: 24,
     options: {},
+    unicode: { activeVersion: '6' },
   })),
 }));
 vi.mock('@xterm/addon-fit', () => ({
   FitAddon: vi.fn().mockImplementation(() => ({ fit: vi.fn() })),
 }));
+vi.mock('@xterm/addon-webgl', () => ({
+  WebglAddon: vi.fn().mockImplementation(() => ({ onContextLoss: vi.fn(), dispose: vi.fn() })),
+}));
+vi.mock('@xterm/addon-web-links', () => ({ WebLinksAddon: vi.fn() }));
+vi.mock('@xterm/addon-clipboard', () => ({ ClipboardAddon: vi.fn() }));
+vi.mock('@xterm/addon-unicode11', () => ({ Unicode11Addon: vi.fn() }));
 vi.mock('@xterm/xterm/css/xterm.css', () => ({}));
 
 vi.mock('../../../../store', () => ({
