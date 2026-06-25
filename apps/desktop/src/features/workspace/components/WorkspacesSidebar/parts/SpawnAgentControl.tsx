@@ -13,6 +13,7 @@ import {
 
 type SpawnAgentControlProps = {
   sessionId: SessionId;
+  className?: string;
 };
 
 const MENU_WIDTH = 320;
@@ -26,7 +27,7 @@ type PopoverAnchor = {
   readonly direction: 'up' | 'down';
 };
 
-export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
+export function SpawnAgentControl({ sessionId, className }: SpawnAgentControlProps) {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -149,7 +150,7 @@ export function SpawnAgentControl({ sessionId }: SpawnAgentControlProps) {
       : null;
 
   return (
-    <div className="relative mt-1">
+    <div className={cn('relative mt-1', className)}>
       <button
         ref={triggerRef}
         type="button"

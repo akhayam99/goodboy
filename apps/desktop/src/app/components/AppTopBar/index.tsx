@@ -1,36 +1,88 @@
 import { useEffect, useState } from 'react';
-import { Smartphone } from 'lucide-react';
-import { Divider, StatusDot, formatUsd } from '@goodboy/ui';
+import { HelpCircle, Moon, Settings, Smartphone, Sun } from 'lucide-react';
+import { cn, Divider, StatusDot, formatUsd } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
 import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
+import { useThemeStore } from '../../../shared/lib/theme';
+import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
+import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 
-export const AppTopBar = () => (
-  <>
-    <div
-      data-tauri-drag-region
-      className="flex h-9 shrink-0 items-center justify-between bg-background px-3"
-    >
-      <div className="flex items-center gap-1.5">
-        <DogMascot size={15} className="shrink-0 text-foreground" />
-        <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
-        <UpdateIndicator variant="pip" />
-      </div>
-      <WorkspaceRollupStrip />
-      <div className="flex items-center gap-2">
-        <PairDeviceCta />
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
-          Beta
-        </span>
-      </div>
-    </div>
-    <Divider />
-  </>
-);
+const TOPBAR_ICON_BTN =
+  'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
 
-// App-header pairing entry-point, beside the Beta chip — twin of the hidden
-// cmd+ctrl+shift+m shortcut. Polls bridge status to surface a presence dot.
+export type AppTopBarProps = {
+  onOpenSettings: () => void;
+  activeStudio: string | null;
+};
+
+export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+
+  return (
+    <>
+      <div
+        data-tauri-drag-region
+        className="flex h-9 shrink-0 items-center gap-2 bg-background px-3"
+      >
+        <div className="flex shrink-0 items-center gap-1.5">
+          <DogMascot size={15} className="shrink-0 text-foreground" />
+          <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
+          <UpdateIndicator variant="pip" />
+        </div>
+
+        <div className="min-w-0 flex-1" />
+
+        <WorkspaceRollupStrip />
+
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+            className={TOPBAR_ICON_BTN}
+          >
+            {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
+          </button>
+          <NotificationCenter />
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-guide'))}
+            title="getting started"
+            aria-label="open getting started guide"
+            className={TOPBAR_ICON_BTN}
+          >
+            <HelpCircle size={14} aria-hidden />
+          </button>
+          <OnboardingChip />
+          <PairDeviceCta />
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            title="settings (⌘,)"
+            aria-label="open settings"
+            className={cn(
+              'flex items-center justify-center rounded p-1.5 transition-colors',
+              activeStudio === 'settings'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+            )}
+          >
+            <Settings size={14} aria-hidden />
+          </button>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
+            Beta
+          </span>
+        </div>
+      </div>
+      <Divider />
+    </>
+  );
+};
+
 function PairDeviceCta() {
   const [linked, setLinked] = useState(false);
 
@@ -81,7 +133,7 @@ function WorkspaceRollupStrip() {
     return null;
   }
   return (
-    <div className="flex items-center gap-3 text-2xs">
+    <div className="flex shrink-0 items-center gap-3 text-2xs">
       {rollup.attentionCount > 0 ? (
         <span className="flex items-center gap-1">
           <StatusDot tone="warning" size="sm" pulsing />

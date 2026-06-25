@@ -64,7 +64,7 @@ const InteractiveCard = ({ question, sessionId }: Props) => {
   );
 };
 
-const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
+export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
   const [expanded, setExpanded] = useState(false);
   const resolvedByAgent = question.userAnswer === RESOLVED_BY_AGENT;
   const answeredAt = question.answeredAt ?? question.createdAt;

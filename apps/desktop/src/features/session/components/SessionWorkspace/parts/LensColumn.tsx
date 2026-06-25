@@ -68,9 +68,15 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
     ),
   );
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
+  const hasResolverAgent = useAppStore((s) =>
+    (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some((a) =>
+      isResolverAgent(a, s.agentKindOverride[a.id] ?? null),
+    ),
+  );
   const attentionLens = resolveAttentionLens(useSessionStageInfo(session), {
     hasStandalone: hasStandaloneAgent,
     hasWorkflow: activeWorkflows > 0,
+    hasResolver: hasResolverAgent,
   });
   const activePlans = useSessionPlans(sessionId).filter((p) => p.status === 'active').length;
   const runningScripts = useAppStore((s) => {
@@ -145,6 +151,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           icon: MessageSquareReply,
           tone: 'success',
           count: openResolvers,
+          dot: attentionLens === 'resolve' ? 'attention' : undefined,
           secondaryDot: hasPendingBatch,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },

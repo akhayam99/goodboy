@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Paperclip, Plus, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CURSOR_AUTO_MODEL } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -21,8 +21,6 @@ import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
-import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 
@@ -210,13 +208,6 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null);
-  const [setupWorkflow, setSetupWorkflow] = useState(() => {
-    try {
-      return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
-    } catch {
-      return true;
-    }
-  });
 
   const {
     attachments,
@@ -332,7 +323,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         await removeWorktree(workspace.rootPath, eraseWorktreePath);
       }
       const useExisting = branchMode === 'existing' && existingBranch.trim().length > 0;
-      const { session } = await createSession({
+      await createSession({
         workspaceId,
         goal,
         branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
@@ -351,13 +342,6 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           : {}),
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
       });
-      if (setupWorkflow) {
-        window.dispatchEvent(
-          new CustomEvent('goodboy:open-workflow-builder', {
-            detail: { sessionId: session.id },
-          }),
-        );
-      }
       onClose();
     } catch (err) {
       setError(formatError(err));
@@ -366,270 +350,250 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     }
   };
 
-  const onToggleSetupWorkflow = (next: boolean) => {
-    setSetupWorkflow(next);
-    try {
-      localStorage.setItem('goodboy:new-session-setup-workflow', next ? '1' : '0');
-    } catch {
-      return;
-    }
-  };
-
   return (
-    <div className="flex h-full w-full flex-col bg-background motion-safe:animate-studio-in">
-      <OverlayHeader
-        icon={Plus}
-        title="New session"
-        subtitle={workspace ? `in: ${workspace.name}` : 'creates a worktree on a fresh branch'}
-        onClose={onClose}
-        closeLabel="cancel new session"
-        closeDisabled={busy}
-      />
-      <Divider />
-
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
-        <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-8">
-          {noProviderConnected ? (
-            <div
-              role="alert"
-              className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs"
-            >
-              <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-              <div className="flex-1 leading-relaxed text-foreground">
-                No provider is connected. A session needs at least one of{' '}
-                {PROVIDER_ORDER.map((id, i) => (
-                  <span key={id}>
-                    <span className="font-medium">{PROVIDER_LABELS[id]}</span>
-                    {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
-                  </span>
-                ))}{' '}
-                connected to run.
-                <button
-                  type="button"
-                  onClick={onOpenSettings}
-                  className="ml-1 underline underline-offset-2 hover:text-warning"
-                >
-                  Open settings
-                </button>
-                .
+    <div className="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in">
+      <div className="flex w-full max-w-2xl flex-col overflow-hidden">
+        <ScrollFade
+          className="max-h-[70vh] overflow-y-auto"
+          viewportClassName="px-6 py-5"
+          fadeSize={24}
+        >
+          <div className="flex w-full flex-col gap-8">
+            {noProviderConnected ? (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs"
+              >
+                <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                <div className="flex-1 leading-relaxed text-foreground">
+                  No provider is connected. A session needs at least one of{' '}
+                  {PROVIDER_ORDER.map((id, i) => (
+                    <span key={id}>
+                      <span className="font-medium">{PROVIDER_LABELS[id]}</span>
+                      {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}{' '}
+                  connected to run.
+                  <button
+                    type="button"
+                    onClick={onOpenSettings}
+                    className="ml-1 underline underline-offset-2 hover:text-warning"
+                  >
+                    Open settings
+                  </button>
+                  .
+                </div>
               </div>
-            </div>
-          ) : null}
-          {hasLinear ? (
+            ) : null}
+            {hasLinear ? (
+              <Section
+                icon={
+                  <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
+                    L
+                  </span>
+                }
+                tone="primary"
+                title="Linear issue"
+                subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."
+              >
+                <IssuePicker
+                  workspaceId={workspaceId}
+                  value={linearIssue}
+                  onPick={onPickLinearIssue}
+                  onClear={() => setLinearIssue(null)}
+                  disabled={busy}
+                />
+              </Section>
+            ) : null}
+
             <Section
-              icon={
-                <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
-                  L
-                </span>
-              }
+              icon={<Target size={14} aria-hidden className="text-primary" />}
               tone="primary"
-              title="Linear issue"
-              subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."
+              title="Goal"
+              subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
             >
-              <IssuePicker
-                workspaceId={workspaceId}
-                value={linearIssue}
-                onPick={onPickLinearIssue}
-                onClear={() => setLinearIssue(null)}
+              <Textarea
+                value={goal}
+                placeholder="Refactor auth domain to extract token validation into a shared module…"
+                onChange={(e) => setGoal(e.target.value)}
+                autoGrow
+                minRows={4}
+                maxRows={12}
+                autoFocus
                 disabled={busy}
               />
             </Section>
-          ) : null}
 
-          <Section
-            icon={<Target size={14} aria-hidden className="text-primary" />}
-            tone="primary"
-            title="Goal"
-            subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
-          >
-            <Textarea
-              value={goal}
-              placeholder="Refactor auth domain to extract token validation into a shared module…"
-              onChange={(e) => setGoal(e.target.value)}
-              autoGrow
-              minRows={4}
-              maxRows={12}
-              autoFocus
-              disabled={busy}
-            />
-          </Section>
-
-          <Section
-            icon={<Paperclip size={14} aria-hidden className="text-primary" />}
-            tone="primary"
-            title="Attachments"
-            subtitle="Images and files the agents can read on demand. Routed to the agents that benefit from each type."
-          >
-            <div
-              ref={composerRef}
-              className={cn(
-                'flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors',
-                isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
-              )}
+            <Section
+              icon={<Paperclip size={14} aria-hidden className="text-primary" />}
+              tone="primary"
+              title="Attachments"
+              subtitle="Images and files the agents can read on demand. Routed to the agents that benefit from each type."
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ATTACHMENT_ACCEPT}
-                multiple
-                hidden
-                onChange={onFileInputChange}
-              />
-              {attachments.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {attachments.map((a) => (
-                    <AttachmentChip
-                      key={a.id}
-                      attachment={a}
-                      onRemove={() => removeAttachment(a.id)}
-                    />
-                  ))}
-                </div>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={busy}
+              <div
+                ref={composerRef}
                 className={cn(
-                  'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
-                  busy
-                    ? 'cursor-not-allowed text-muted-foreground/40'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  'flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors',
+                  isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
                 )}
               >
-                <Paperclip size={13} aria-hidden /> Add files
-              </button>
-            </div>
-          </Section>
-
-          <Section
-            icon={<GitBranch size={14} aria-hidden className="text-success" />}
-            tone="success"
-            title="Branch"
-            subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
-          >
-            <div className="flex flex-col gap-2">
-              <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
-              {branchMode === 'new' ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                    {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
-                  </span>
-                  {slugGenerating ? (
-                    <Skeleton className="h-8 flex-1 rounded border border-border" />
-                  ) : (
-                    <Input
-                      value={branchSlug}
-                      onChange={(e) => {
-                        setBranchSlug(sanitizeBranchSlug(e.target.value));
-                        setSlugTouched(true);
-                      }}
-                      placeholder="branch-slug"
-                      className="h-8 flex-1 font-mono text-sm"
-                      disabled={busy}
-                      autoCapitalize="off"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      aria-label="Branch slug"
-                    />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ATTACHMENT_ACCEPT}
+                  multiple
+                  hidden
+                  onChange={onFileInputChange}
+                />
+                {attachments.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {attachments.map((a) => (
+                      <AttachmentChip
+                        key={a.id}
+                        attachment={a}
+                        onRemove={() => removeAttachment(a.id)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={busy}
+                  className={cn(
+                    'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
+                    busy
+                      ? 'cursor-not-allowed text-muted-foreground/40'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
-                  <button
-                    type="button"
-                    onClick={handleGenerateSlug}
-                    disabled={!goal.trim() || slugGenerating || busy}
-                    title="Generate from goal"
-                    aria-label="Generate branch name"
-                    className={cn(
-                      'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
-                      goal.trim() && !slugGenerating && !busy
-                        ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        : 'cursor-not-allowed text-muted-foreground/30',
+                >
+                  <Paperclip size={13} aria-hidden /> Add files
+                </button>
+              </div>
+            </Section>
+
+            <Section
+              icon={<GitBranch size={14} aria-hidden className="text-success" />}
+              tone="success"
+              title="Branch"
+              subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
+            >
+              <div className="flex flex-col gap-2">
+                <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
+                {branchMode === 'new' ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="shrink-0 text-xs text-muted-foreground font-mono">
+                      {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
+                    </span>
+                    {slugGenerating ? (
+                      <Skeleton className="h-8 flex-1 rounded border border-border" />
+                    ) : (
+                      <Input
+                        value={branchSlug}
+                        onChange={(e) => {
+                          setBranchSlug(sanitizeBranchSlug(e.target.value));
+                          setSlugTouched(true);
+                        }}
+                        placeholder="branch-slug"
+                        className="h-8 flex-1 font-mono text-sm"
+                        disabled={busy}
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        aria-label="Branch slug"
+                      />
                     )}
-                  >
-                    <Wand2 size={13} aria-hidden />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <BranchCombobox
-                    branches={existingBranches}
-                    value={existingBranch}
-                    onChange={setExistingBranch}
-                    disabled={busy || branchesLoading}
-                    loading={branchesLoading}
-                  />
-                  {conflictSessionId ? (
-                    <p className="text-2xs leading-relaxed text-muted-foreground">
-                      This branch is already used by an open session. Open it instead of creating a
-                      duplicate.
-                    </p>
-                  ) : conflictWorktreePath ? (
-                    <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
-                      <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
-                      <span>
-                        Checked out in another worktree (
-                        <span className="break-all font-mono">{conflictWorktreePath}</span>).
-                        Creating erases that worktree and recreates it here.
-                      </span>
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          </Section>
-        </div>
-      </ScrollFade>
+                    <button
+                      type="button"
+                      onClick={handleGenerateSlug}
+                      disabled={!goal.trim() || slugGenerating || busy}
+                      title="Generate from goal"
+                      aria-label="Generate branch name"
+                      className={cn(
+                        'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
+                        goal.trim() && !slugGenerating && !busy
+                          ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : 'cursor-not-allowed text-muted-foreground/30',
+                      )}
+                    >
+                      <Wand2 size={13} aria-hidden />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <BranchCombobox
+                      branches={existingBranches}
+                      value={existingBranch}
+                      onChange={setExistingBranch}
+                      disabled={busy || branchesLoading}
+                      loading={branchesLoading}
+                    />
+                    {conflictSessionId ? (
+                      <p className="text-2xs leading-relaxed text-muted-foreground">
+                        This branch is already used by an open session. Open it instead of creating
+                        a duplicate.
+                      </p>
+                    ) : conflictWorktreePath ? (
+                      <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
+                        <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
+                        <span>
+                          Checked out in another worktree (
+                          <span className="break-all font-mono">{conflictWorktreePath}</span>).
+                          Creating erases that worktree and recreates it here.
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </Section>
+          </div>
+        </ScrollFade>
 
-      {error && isMissingBaseRefError(error) ? (
-        <div className="px-6 pb-2">
-          <BaseBranchGuide />
-        </div>
-      ) : null}
+        {error && isMissingBaseRefError(error) ? (
+          <div className="px-6 pb-2">
+            <BaseBranchGuide />
+          </div>
+        ) : null}
 
-      <Divider />
+        <Divider />
 
-      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
-        <div className="flex-1">
-          {error && !isMissingBaseRefError(error) ? (
-            <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
-              <AlertTriangle size={12} aria-hidden />
-              {error}
-            </span>
-          ) : null}
-        </div>
-        <ToggleSwitch
-          label="Set up workflow next"
-          checked={setupWorkflow}
-          onChange={onToggleSetupWorkflow}
-          disabled={busy}
-        />
-        <Divider orientation="vertical" className="h-5 self-center" />
-        <Button variant="ghost" onClick={onClose} disabled={busy}>
-          Cancel
-        </Button>
-        {conflictSessionId ? (
-          <Button onClick={() => onOpenConflictSession(conflictSessionId)} disabled={busy}>
-            Open session
+        <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
+          <div className="flex-1">
+            {error && !isMissingBaseRefError(error) ? (
+              <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
+                <AlertTriangle size={12} aria-hidden />
+                {error}
+              </span>
+            ) : null}
+          </div>
+          <Button variant="ghost" onClick={onClose} disabled={busy}>
+            Cancel
           </Button>
-        ) : conflictWorktreePath ? (
-          <Button
-            variant="danger"
-            onClick={() => void onCreate(conflictWorktreePath)}
-            disabled={busy || !goalReady}
-            className={cn(busy && 'animate-border-pulse')}
-          >
-            {busy ? 'Working…' : 'Erase worktree & create'}
-          </Button>
-        ) : (
-          <Button
-            onClick={() => void onCreate()}
-            disabled={!canCreate}
-            className={cn(busy && 'animate-border-pulse')}
-          >
-            {busy ? 'Creating…' : 'Create session'}
-          </Button>
-        )}
-      </footer>
+          {conflictSessionId ? (
+            <Button onClick={() => onOpenConflictSession(conflictSessionId)} disabled={busy}>
+              Open session
+            </Button>
+          ) : conflictWorktreePath ? (
+            <Button
+              variant="danger"
+              onClick={() => void onCreate(conflictWorktreePath)}
+              disabled={busy || !goalReady}
+              className={cn(busy && 'animate-border-pulse')}
+            >
+              {busy ? 'Working…' : 'Erase worktree & create'}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => void onCreate()}
+              disabled={!canCreate}
+              className={cn(busy && 'animate-border-pulse')}
+            >
+              {busy ? 'Creating…' : 'Create session'}
+            </Button>
+          )}
+        </footer>
+      </div>
     </div>
   );
 };

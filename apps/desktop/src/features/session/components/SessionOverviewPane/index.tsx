@@ -56,12 +56,14 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
+import { inferAgentKindFromName } from '../../agent-kind';
 import {
   resolveAttentionLens,
   selectAttention,
   selectOpenQuestions,
   selectStandaloneAgents,
 } from './lib';
+import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -405,7 +407,6 @@ export const SessionOverviewPane = ({
   const stage = useSessionStageInfo(session);
   const workspace = useCurrentWorkspace();
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
   const agents = selectStandaloneAgents(
@@ -429,9 +430,6 @@ export const SessionOverviewPane = ({
       }),
     );
   };
-  const startAgent = () => {
-    void spawnAgent(session.id as SessionId, {});
-  };
 
   const nudges: Nudge[] = [];
   if (openCount > 0) {
@@ -442,19 +440,35 @@ export const SessionOverviewPane = ({
       lens: 'questions',
     });
   }
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const hasResolver = agents.some(
+    (a) => (agentKindOverride?.[a.id] ?? inferAgentKindFromName(a.name ?? '')) === 'resolver',
+  );
   const attentionLens = resolveAttentionLens(stage, {
     hasStandalone: agents.length > 0,
     hasWorkflow: activeWorkflows > 0,
+    hasResolver,
   });
   if (attention.active && attentionLens && attentionLens !== 'questions') {
+    const attentionIcon =
+      attentionLens === 'pr'
+        ? GitPullRequest
+        : attentionLens === 'workflows'
+          ? Layers
+          : attentionLens === 'resolve'
+            ? MessageSquareReply
+            : Bot;
+    const attentionLabel =
+      attentionLens === 'pr'
+        ? 'Your pull request needs you'
+        : attentionLens === 'workflows'
+          ? 'A workflow needs you'
+          : attentionLens === 'resolve'
+            ? 'A resolver needs you'
+            : 'An agent needs you';
     nudges.push({
-      icon: attentionLens === 'pr' ? GitPullRequest : attentionLens === 'workflows' ? Layers : Bot,
-      label:
-        attentionLens === 'pr'
-          ? 'Your pull request needs you'
-          : attentionLens === 'workflows'
-            ? 'A workflow needs you'
-            : 'An agent needs you',
+      icon: attentionIcon,
+      label: attentionLabel,
       detail: attention.reason,
       lens: attentionLens,
     });
@@ -560,7 +574,7 @@ export const SessionOverviewPane = ({
               label="New workflow"
               onClick={openWorkflowBuilder}
             />
-            <StartCard icon={Bot} tone="primary" label="New agent" onClick={startAgent} />
+            <SpawnAgentControl sessionId={session.id as SessionId} className="mt-0" />
             <StartCard
               icon={MessageSquareReply}
               tone="success"

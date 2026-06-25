@@ -1,8 +1,6 @@
-// @vitest-environment happy-dom
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { GitlabWorkspaceIntegration, WorkspaceId, Workspace } from '@goodboy/types';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
 
 const { state, currentWorkspace } = vi.hoisted(() => ({
   state: {
@@ -12,7 +10,7 @@ const { state, currentWorkspace } = vi.hoisted(() => ({
     setCurrentSession: vi.fn(),
     loadArchivedSessions: vi.fn(),
   },
-  currentWorkspace: { id: 'ws-1' as WorkspaceId } as Workspace,
+  currentWorkspace: { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -28,71 +26,17 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../../../../shared/lib/theme', () => ({
-  useThemeStore: <T,>(selector: (s: { theme: string; toggleTheme: () => void }) => T) =>
-    selector({ theme: 'light', toggleTheme: vi.fn() }),
-}));
-
 vi.mock('../WorkspaceHeader', () => ({ WorkspaceHeader: () => null }));
 vi.mock('../SessionActivityBar', () => ({ SessionActivityBar: () => null }));
 vi.mock('../WorkspaceLinkDialog', () => ({ WorkspaceLinkDialog: () => null }));
-vi.mock('../../../../features/notifications/components/NotificationCenter', () => ({
-  NotificationCenter: () => null,
-}));
-vi.mock('../../../onboarding/OnboardingCard', () => ({ OnboardingChip: () => null }));
 
-const WS_ID = 'ws-1' as WorkspaceId;
-
-const gitlabIntegration: GitlabWorkspaceIntegration = {
-  id: 'wi-1' as never,
-  workspaceId: WS_ID,
-  provider: 'gitlab',
-  credentialKey: 'cred-1',
-  config: { userName: 'octo', userId: '42', host: 'https://gitlab.com' },
-  createdAt: '2026-01-01T00:00:00.000Z' as never,
-  updatedAt: '2026-01-01T00:00:00.000Z' as never,
-};
-
-const props = {
-  onOpenSettings: vi.fn(),
-  onOpenPalette: vi.fn(),
-  onOpenWorkflows: vi.fn(),
-  onOpenLinear: vi.fn(),
-  onOpenGitlab: vi.fn(),
-  onOpenSentry: vi.fn(),
-  onOpenProviders: vi.fn(),
-  onOpenGithub: vi.fn(),
-  onOpenBudget: vi.fn(),
-  onToggleCollapse: vi.fn(),
-};
-
-beforeEach(() => {
-  state.workspaceIntegrations = {};
-  state.archivedSessions = {};
-  state.providers = [];
-});
 afterEach(cleanup);
 
 import { WorkspacesSidebar } from './index';
 
-describe('WorkspacesSidebar quick-action chips', () => {
-  describe('when GitLab is connected', () => {
-    beforeEach(() => {
-      state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
-    });
-
-    it('shows the GitLab chip and hides the GitHub chip', () => {
-      render(<WorkspacesSidebar {...props} />);
-      expect(screen.getByText('GitLab')).toBeDefined();
-      expect(screen.queryByText('GitHub')).toBeNull();
-    });
-  });
-
-  describe('when GitLab is not connected', () => {
-    it('shows the GitHub chip and hides the GitLab chip', () => {
-      render(<WorkspacesSidebar {...props} />);
-      expect(screen.getByText('GitHub')).toBeDefined();
-      expect(screen.queryByText('GitLab')).toBeNull();
-    });
+describe('WorkspacesSidebar', () => {
+  it('renders without crashing when workspace is selected', () => {
+    render(<WorkspacesSidebar />);
+    expect(screen.queryByRole('button', { name: /collapse sidebar/i })).toBeNull();
   });
 });

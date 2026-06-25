@@ -16,16 +16,21 @@ export const selectAttention = (stage: SessionStageInfo): AttentionSummary => ({
   reason: stage.reason,
 });
 
-export type AttentionLens = 'agents' | 'workflows' | 'questions' | 'pr';
+export type AttentionLens = 'agents' | 'workflows' | 'questions' | 'pr' | 'resolve';
 
 export const resolveAttentionLens = (
   stage: SessionStageInfo,
-  ctx: { readonly hasStandalone: boolean; readonly hasWorkflow: boolean },
+  ctx: {
+    readonly hasStandalone: boolean;
+    readonly hasWorkflow: boolean;
+    readonly hasResolver: boolean;
+  },
 ): AttentionLens | null => {
   if (stage.stage !== 'attention') return null;
   if (stage.reason.startsWith('PR')) return 'pr';
   if (stage.reason.includes('question')) return 'questions';
-  if (ctx.hasStandalone) return 'agents';
+  if (ctx.hasStandalone && !ctx.hasResolver) return 'agents';
+  if (ctx.hasResolver) return 'resolve';
   if (ctx.hasWorkflow) return 'workflows';
   return 'agents';
 };

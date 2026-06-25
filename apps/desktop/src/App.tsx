@@ -1,6 +1,13 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
-import type { PlanId, ProviderId, ProviderLifecycleAction, SessionId } from '@goodboy/types';
+import { AppFooter } from './app/components/AppFooter';
+import type {
+  PlanId,
+  ProviderId,
+  ProviderLifecycleAction,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { CommandPalette } from './features/session/components/CommandPalette';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
@@ -67,6 +74,21 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const hasLinear = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'linear',
+    ),
+  );
+  const hasSentry = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'sentry',
+    ),
+  );
+  const hasGitlab = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'gitlab',
+    ),
+  );
   const [companionOpen, setCompanionOpen] = useState(false);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
@@ -109,11 +131,6 @@ export const App = () => {
   }, []);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
-  const [leftCollapsed, setLeftCollapsed] = useState(
-    () =>
-      typeof localStorage !== 'undefined' &&
-      localStorage.getItem('goodboy:left-sidebar-collapsed') === '1',
-  );
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
 
   useEffect(() => {
@@ -137,14 +154,46 @@ export const App = () => {
   useEffect(() => {
     const onOpenSettings = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
-    const onOpenGuide = () => setGuideStudioOpen(true);
+    const onOpenGuide = () => {
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
+      setGuideStudioOpen(true);
+    };
     const onOpenGithubStudio = (event: Event) => {
       const detail = (
         event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
       ).detail;
+      setWorkflowStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setGithubStudioSession(detail?.sessionId ?? null);
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
@@ -178,27 +227,77 @@ export const App = () => {
       const detail = (
         event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
       ).detail;
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setProviderStudioFocus(detail?.providerId ?? null);
       setProviderStudioAction(detail?.action ?? null);
       setProviderStudioOpen(true);
     };
     const onOpenBudgetStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
     };
     const onOpenLinearStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setLinearStudioFocus(detail?.issueExternalId ?? null);
       setLinearStudioOpen(true);
     };
     const onOpenSentryStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setSentryStudioFocus(detail?.issueExternalId ?? null);
       setSentryStudioOpen(true);
     };
     const onOpenGitlabStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
@@ -211,6 +310,7 @@ export const App = () => {
       const sid = state.currentSessionId;
       if (sid) {
         state.setSessionStudio(sid, null);
+        state.setActiveLens(sid, null);
       }
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
@@ -395,11 +495,46 @@ export const App = () => {
     });
   }, [currentSession?.id]);
 
+  const closeAllStudios = useCallback(() => {
+    setWorkflowStudioOpen(false);
+    setGithubStudioOpen(false);
+    setProviderStudioOpen(false);
+    setBudgetStudioOpen(false);
+    setLinearStudioOpen(false);
+    setSentryStudioOpen(false);
+    setGitlabStudioOpen(false);
+    setAppSettingsOpen(false);
+    setGuideStudioOpen(false);
+    setAddWorkspaceOpen(false);
+    setSwitcherOpen(false);
+  }, []);
+
+  const activeStudio: string | null = workflowStudioOpen
+    ? 'workflow'
+    : githubStudioOpen
+      ? 'github'
+      : providerStudioOpen
+        ? 'provider'
+        : budgetStudioOpen
+          ? 'budget'
+          : linearStudioOpen
+            ? 'linear'
+            : sentryStudioOpen
+              ? 'sentry'
+              : gitlabStudioOpen
+                ? 'gitlab'
+                : appSettingsOpen
+                  ? 'settings'
+                  : guideStudioOpen
+                    ? 'guide'
+                    : null;
+
   const openSettings = useCallback(() => {
+    closeAllStudios();
     clearSessionStudio();
     setAppSettingsFocus(undefined);
     setAppSettingsOpen(true);
-  }, [clearSessionStudio]);
+  }, [closeAllStudios, clearSessionStudio]);
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
       setDeleteOpen(true);
@@ -439,41 +574,6 @@ export const App = () => {
     setPaletteOpen(true);
     markStepComplete('palette');
   }, []);
-  const toggleLeftSidebar = useCallback(() => {
-    setLeftCollapsed((v) => {
-      const next = !v;
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('goodboy:left-sidebar-collapsed', next ? '1' : '0');
-      }
-      return next;
-    });
-  }, []);
-
-  // The NotificationCenter (the only listener for goodboy:open-notifications) lives
-  // in the expanded sidebar footer; when the sidebar is collapsed it isn't mounted,
-  // so the Toast overflow chip's event would be a silent no-op. Force-expand here,
-  // then re-fire on the next frame once NotificationCenter has mounted. When already
-  // expanded, do nothing — NotificationCenter handles the original event itself.
-  useEffect(() => {
-    const handler = () => {
-      let wasCollapsed = false;
-      setLeftCollapsed((v) => {
-        wasCollapsed = v;
-        if (v && typeof localStorage !== 'undefined') {
-          localStorage.setItem('goodboy:left-sidebar-collapsed', '0');
-        }
-        return false;
-      });
-      if (wasCollapsed) {
-        requestAnimationFrame(() => {
-          window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
-        });
-      }
-    };
-    window.addEventListener('goodboy:open-notifications', handler);
-    return () => window.removeEventListener('goodboy:open-notifications', handler);
-  }, []);
-
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const lensGo = useAppStore((s) => s.lensGo);
@@ -562,7 +662,6 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+a', openArchiveSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
-  useKeyboardShortcut('cmd+b', toggleLeftSidebar);
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
@@ -624,44 +723,54 @@ export const App = () => {
     <ToastProvider>
       <NotificationToastBridge />
       <AppShell
-        topBar={<AppTopBar />}
-        leftSidebarCollapsed={leftCollapsed}
-        leftSidebar={
-          hasWorkspaces ? (
-            <WorkspacesSidebar
-              onOpenSettings={openSettings}
-              onOpenPalette={openPalette}
-              onOpenWorkflows={() => setWorkflowStudioOpen(true)}
-              onOpenLinear={() => {
-                setLinearStudioFocus(null);
-                setLinearStudioOpen(true);
-              }}
-              onOpenSentry={() => {
-                setSentryStudioFocus(null);
-                setSentryStudioOpen(true);
-              }}
-              onOpenGitlab={() => {
-                setGitlabStudioFocus(null);
-                setGitlabStudioOpen(true);
+        topBar={<AppTopBar onOpenSettings={openSettings} activeStudio={activeStudio} />}
+        footer={
+          currentWorkspace ? (
+            <AppFooter
+              activeStudio={activeStudio}
+              linearEnabled={hasLinear}
+              sentryEnabled={hasSentry}
+              gitlabEnabled={hasGitlab}
+              onOpenWorkflows={() => {
+                closeAllStudios();
+                setWorkflowStudioOpen(true);
               }}
               onOpenProviders={() => {
+                closeAllStudios();
                 setProviderStudioFocus(null);
                 setProviderStudioAction(null);
                 setProviderStudioOpen(true);
               }}
-              onOpenGithub={() => {
-                setGithubStudioSession(currentSession?.id ?? null);
-                setGithubStudioOpen(true);
-              }}
               onOpenBudget={() => {
+                closeAllStudios();
                 setBudgetStudioScope({ kind: 'overview' });
                 setBudgetStudioOpen(true);
               }}
-              collapsed={leftCollapsed}
-              onToggleCollapse={toggleLeftSidebar}
+              onOpenGithub={() => {
+                closeAllStudios();
+                setGithubStudioSession(currentSession?.id ?? null);
+                setGithubStudioOpen(true);
+              }}
+              onOpenLinear={() => {
+                closeAllStudios();
+                setLinearStudioFocus(null);
+                setLinearStudioOpen(true);
+              }}
+              onOpenSentry={() => {
+                closeAllStudios();
+                setSentryStudioFocus(null);
+                setSentryStudioOpen(true);
+              }}
+              onOpenGitlab={() => {
+                closeAllStudios();
+                setGitlabStudioFocus(null);
+                setGitlabStudioOpen(true);
+              }}
             />
           ) : undefined
         }
+        leftHidden={!currentSession}
+        leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         main={
           <div className="relative h-full w-full">
             {error ? (

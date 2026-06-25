@@ -206,20 +206,7 @@ describe('snapshot, empty states', () => {
   });
 
   it('WorkspacesSidebar: no workspace selected', () => {
-    const { container } = render(
-      <WorkspacesSidebar
-        onOpenSettings={vi.fn()}
-        onOpenPalette={vi.fn()}
-        onOpenWorkflows={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onToggleCollapse={vi.fn()}
-      />,
-    );
+    const { container } = render(<WorkspacesSidebar />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

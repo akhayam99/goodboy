@@ -16,11 +16,13 @@ const defaults = {
 };
 
 describe('StudioShell variant rendering', () => {
-  it('defaults to fullscreen variant (fixed inset-0 z-50)', () => {
+  it('defaults to fullscreen variant (fixed top-9 inset-x-0 z-50)', () => {
     const { container } = render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('fixed');
-    expect(shell.className).toContain('inset-0');
+    expect(shell.className).toContain('top-9');
+    expect(shell.className).toContain('inset-x-0');
+    expect(shell.className).toContain('bottom-9');
     expect(shell.className).toContain('z-50');
   });
 

@@ -239,8 +239,18 @@ function ResolveClusterRow({
   ) : null;
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-label={agent.name}
       className={cn(
-        'relative flex w-full flex-col gap-1 rounded border px-2 py-1.5 text-2xs font-medium transition-colors',
+        'relative flex w-full cursor-pointer flex-col gap-1 rounded border px-2 py-1.5 text-2xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         isSelected
           ? 'bg-elevated text-foreground border-border'
           : 'text-foreground/70 hover:bg-muted/60',
@@ -255,18 +265,15 @@ function ResolveClusterRow({
         <span className="tabular-nums text-muted-foreground/50">
           {index + 1}/{total}
         </span>
-        <button
-          type="button"
-          onClick={onSelect}
-          className="min-w-0 flex-1 truncate text-left hover:text-foreground"
-        >
-          {agent.name}
-        </button>
+        <span className="min-w-0 flex-1 truncate text-left">{agent.name}</span>
         <ResolverStateBadge state={resolverBadgeState(status)} />
         {canJump ? (
           <button
             type="button"
-            onClick={onJump}
+            onClick={(e) => {
+              e.stopPropagation();
+              onJump();
+            }}
             title="go to the source comment"
             aria-label="go to the source comment"
             className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
@@ -280,7 +287,10 @@ function ResolveClusterRow({
         <div className="flex justify-end pl-7">
           <button
             type="button"
-            onClick={() => void onPush()}
+            onClick={(e) => {
+              e.stopPropagation();
+              void onPush();
+            }}
             disabled={pushing}
             title="push the branch and resolve this comment now"
             className={cn(

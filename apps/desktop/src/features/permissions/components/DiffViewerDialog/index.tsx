@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { CheckCircle2, FileEdit } from 'lucide-react';
 import { Dialog, Divider, ScrollFade, Skeleton } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
@@ -62,6 +62,8 @@ type DiffViewerPaneProps = DiffViewerContentProps & {
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
+
+const DIFF_BATCH_SIZE = 20;
 
 const DIFF_SKELETON_CARDS: ReadonlyArray<ReadonlyArray<string>> = [
   ['72%', '54%', '88%', '40%', '66%', '30%'],
@@ -265,6 +267,7 @@ const DiffViewerContent = ({
   showToolbarClose = true,
 }: DiffViewerContentProps) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
+  const [mountedCount, setMountedCount] = useState(DIFF_BATCH_SIZE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPref);
@@ -428,6 +431,24 @@ const DiffViewerContent = ({
   useEffect(() => {
     didInitialScroll.current = false;
   }, [view, refreshTick]);
+
+  useLayoutEffect(() => {
+    setMountedCount(DIFF_BATCH_SIZE);
+  }, [files]);
+
+  useEffect(() => {
+    if (mountedCount >= files.length) {
+      return;
+    }
+    const schedule = typeof requestIdleCallback !== 'undefined' ? requestIdleCallback : setTimeout;
+    const cancel = typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback : clearTimeout;
+    const id = schedule(() => {
+      setMountedCount((prev) => Math.min(prev + DIFF_BATCH_SIZE, files.length));
+    });
+    return () => {
+      cancel(id as number);
+    };
+  }, [mountedCount, files]);
 
   useEffect(() => {
     const fetcher = isGitAware
@@ -723,7 +744,7 @@ const DiffViewerContent = ({
             )}
             <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
               <ScrollFade className="min-h-0 flex-1">
-                {files.map((file) => (
+                {files.slice(0, mountedCount).map((file) => (
                   <FileDiffCard
                     key={file.path}
                     file={file}
@@ -745,6 +766,12 @@ const DiffViewerContent = ({
                     getAgentName={(id) => agentNameById.get(id)}
                   />
                 ))}
+                {mountedCount < files.length && (
+                  <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                    <span className="h-3 w-3 animate-spin rounded-full border border-muted-foreground/30 border-t-muted-foreground" />
+                    {mountedCount} / {files.length} files
+                  </div>
+                )}
               </ScrollFade>
             </div>
           </>

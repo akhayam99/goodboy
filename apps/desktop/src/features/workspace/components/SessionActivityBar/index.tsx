@@ -133,7 +133,30 @@ export const SessionActivityBar = ({
             <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Sessions
             </span>
-            <SessionViewMenu workspaceId={workspaceId} />
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const next: ActivityTab = isArchivedView ? 'active' : 'archived';
+                  if (next === 'archived') {
+                    onArchivedTabOpen?.();
+                  }
+                  setTab(next);
+                }}
+                aria-pressed={isArchivedView}
+                title={isArchivedView ? 'hide archived sessions' : 'show archived sessions'}
+                className={cn(
+                  'flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium transition-colors',
+                  isArchivedView
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+                )}
+              >
+                <Archive size={10} aria-hidden />
+                Archived
+              </button>
+              <SessionViewMenu workspaceId={workspaceId} />
+            </div>
           </div>
 
           {!isArchivedView && (
@@ -216,9 +239,9 @@ export const SessionActivityBar = ({
         </div>
       </ScrollArea>
 
-      <div className="shrink-0 p-2">
-        {isArchivedView && selectedSessions.length > 0 && (
-          <div className="mb-2 flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5">
+      {isArchivedView && selectedSessions.length > 0 && (
+        <div className="shrink-0 p-2">
+          <div className="flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5">
             <span className="mr-auto text-xs font-medium text-foreground">
               {selectedSessions.length} selected
             </span>
@@ -252,29 +275,8 @@ export const SessionActivityBar = ({
               Clear
             </Button>
           </div>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            const next: ActivityTab = isArchivedView ? 'active' : 'archived';
-            if (next === 'archived') {
-              onArchivedTabOpen?.();
-            }
-            setTab(next);
-          }}
-          aria-pressed={isArchivedView}
-          className={cn(
-            'flex w-full items-center justify-center gap-1.5 rounded-md border py-2 text-xs font-medium transition-colors',
-            isArchivedView
-              ? 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15'
-              : 'border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
-          )}
-          title={isArchivedView ? 'hide archived sessions' : 'show archived sessions'}
-        >
-          <Archive size={11} aria-hidden />
-          <span>Archived</span>
-        </button>
-      </div>
+        </div>
+      )}
 
       {bulkDeleteOpen && (
         <BulkDeleteSessionsDialog
@@ -347,20 +349,19 @@ const SessionActivityItem = memo(function SessionActivityItem({
           : stage === 'attention'
             ? 'border-warning/50'
             : stage === 'running'
-              ? isAutoMode
-                ? 'border-danger/60'
-                : 'border-info/60'
+              ? 'border-info/60'
               : 'border-transparent',
         dimmed && 'opacity-50',
       )}
     >
       <span className="flex w-full items-start gap-2">
-        <StatusDot
-          tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
-          size="sm"
-          pulsing={stage === 'running'}
-          className="mt-[5px]"
-        />
+        <span className="inline-flex h-5 shrink-0 items-center">
+          <StatusDot
+            tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
+            size="sm"
+            pulsing={stage === 'running'}
+          />
+        </span>
         <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
           {session.goal}
         </span>

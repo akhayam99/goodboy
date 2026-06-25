@@ -3,8 +3,9 @@ import { cn } from '../cn';
 
 export type AppShellProps = {
   topBar?: ReactNode;
+  footer?: ReactNode;
   leftSidebar?: ReactNode;
-  leftSidebarCollapsed?: boolean;
+  leftHidden?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
@@ -16,7 +17,6 @@ const LEFT_SIDEBAR_MIN = 260;
 const LEFT_SIDEBAR_MAX = 640;
 const LEFT_SIDEBAR_DEFAULT = 340;
 const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
-const LEFT_RAIL_WIDTH = 80;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
@@ -41,9 +41,10 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 
 function buildLayout(opts: {
   collapsed: boolean;
-  leftCollapsed: boolean;
+  leftHidden: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
+  hasFooter: boolean;
   leftWidthPx: number;
   rightWidthPx: number;
 }): {
@@ -51,53 +52,71 @@ function buildLayout(opts: {
   templateColumns: string;
   templateRows: string;
 } {
-  const { collapsed, leftCollapsed, hasLeftSidebar, hasRightSidebar, leftWidthPx, rightWidthPx } =
-    opts;
+  const {
+    collapsed,
+    leftHidden,
+    hasLeftSidebar,
+    hasRightSidebar,
+    hasFooter,
+    leftWidthPx,
+    rightWidthPx,
+  } = opts;
+
+  const rows = hasFooter ? 'minmax(0,1fr) 2.25rem' : 'minmax(0,1fr)';
 
   if (!hasLeftSidebar) {
     if (!hasRightSidebar) {
       return {
-        templateAreas: '"main"',
+        templateAreas: hasFooter ? '"main" "footer"' : '"main"',
         templateColumns: 'minmax(0,1fr)',
-        templateRows: 'minmax(0,1fr)',
+        templateRows: rows,
       };
     }
     return {
-      templateAreas: '"main rhandle right"',
+      templateAreas: hasFooter
+        ? '"main rhandle right" "footer footer footer"'
+        : '"main rhandle right"',
       templateColumns: `minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
         collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
       }px`,
-      templateRows: 'minmax(0,1fr)',
+      templateRows: rows,
     };
   }
 
-  const leftCol = `${leftCollapsed ? LEFT_RAIL_WIDTH : leftWidthPx}px`;
+  const leftCol = leftHidden ? '0px' : `${leftWidthPx}px`;
+  const handleCol = leftHidden ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
-      templateAreas: '"left lhandle main"',
-      templateColumns: `${leftCol} 6px minmax(0,1fr)`,
-      templateRows: 'minmax(0,1fr)',
+      templateAreas: hasFooter
+        ? '"left lhandle main" "footer footer footer"'
+        : '"left lhandle main"',
+      templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
+      templateRows: rows,
     };
   }
   return {
-    templateAreas: '"left lhandle main rhandle right"',
-    templateColumns: `${leftCol} 6px minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
+    templateAreas: hasFooter
+      ? '"left lhandle main rhandle right" "footer footer footer footer footer"'
+      : '"left lhandle main rhandle right"',
+    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
       collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
     }px`,
-    templateRows: 'minmax(0,1fr)',
+    templateRows: rows,
   };
 }
 
 export const AppShell = ({
   topBar,
+  footer,
   leftSidebar,
-  leftSidebarCollapsed = false,
+  leftHidden = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
   overlay,
   className,
 }: AppShellProps) => {
+  const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
@@ -203,9 +222,10 @@ export const AppShell = ({
 
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
-    leftCollapsed: leftSidebarCollapsed,
+    leftHidden,
     hasLeftSidebar,
     hasRightSidebar,
+    hasFooter,
     leftWidthPx: leftWidth,
     rightWidthPx: rightWidth,
   });
@@ -227,7 +247,12 @@ export const AppShell = ({
       >
         {hasLeftSidebar ? (
           <aside
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+            className={cn(
+              'flex min-h-0 min-w-0 flex-col overflow-hidden bg-background motion-safe:transition-[opacity,transform] duration-200 ease-out',
+              leftHidden
+                ? 'pointer-events-none -translate-x-2 opacity-0'
+                : 'translate-x-0 opacity-100',
+            )}
             style={{ gridArea: 'left' }}
           >
             {leftSidebar}
@@ -238,13 +263,18 @@ export const AppShell = ({
             role="separator"
             aria-orientation="vertical"
             aria-label="resize left sidebar"
-            tabIndex={0}
-            onMouseDown={startDrag('left')}
-            onKeyDown={onLeftKeyDown}
-            className="group relative cursor-col-resize select-none"
+            tabIndex={leftHidden ? -1 : 0}
+            onMouseDown={leftHidden ? undefined : startDrag('left')}
+            onKeyDown={leftHidden ? undefined : onLeftKeyDown}
+            className={cn(
+              'group relative select-none overflow-hidden',
+              leftHidden ? 'pointer-events-none' : 'cursor-col-resize',
+            )}
             style={{ gridArea: 'lhandle' }}
           >
-            <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
+            {!leftHidden && (
+              <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
+            )}
           </div>
         ) : null}
         <main
@@ -283,10 +313,15 @@ export const AppShell = ({
             className="relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden"
             style={{
               gridColumn: hasRightSidebar ? 'main-start / right-end' : 'main',
-              gridRow: '1 / -1',
+              gridRow: '1 / 2',
             }}
           >
             {overlay}
+          </div>
+        ) : null}
+        {hasFooter ? (
+          <div className="shrink-0" style={{ gridArea: 'footer' }}>
+            {footer}
           </div>
         ) : null}
       </div>

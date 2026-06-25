@@ -76,22 +76,21 @@ export const StageBoardCard = memo(function StageBoardCard({
       className={cn(
         'group flex min-h-[7.25rem] flex-col gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
-          ? isAutoMode
-            ? 'border-danger/50'
-            : 'border-info/50'
+          ? 'border-info/50'
           : stage === 'attention'
             ? 'border-warning/50'
             : 'border-transparent',
       )}
     >
       <span className="flex w-full items-start gap-2">
-        <StatusDot
-          tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
-          size="sm"
-          pulsing={stage === 'running'}
-          ariaLabel={stageMeta.label}
-          className="mt-[3px]"
-        />
+        <span className="inline-flex h-5 shrink-0 items-center">
+          <StatusDot
+            tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
+            size="sm"
+            pulsing={stage === 'running'}
+            ariaLabel={stageMeta.label}
+          />
+        </span>
         <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
           <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
             {session.goal}

@@ -34,7 +34,7 @@ export const StudioShell = ({
       className={cn(
         variant === 'slot'
           ? 'relative h-full w-full flex flex-col bg-background'
-          : 'fixed inset-0 z-50 flex flex-col bg-background',
+          : 'fixed inset-x-0 bottom-9 top-9 z-50 flex flex-col bg-background',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
