@@ -93,27 +93,25 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoar
       ) : (
         <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto">
           {STAGES.map((stage) => (
-            <div key={stage} className="flex min-w-[16rem] flex-1">
-              <StageColumn
-                spec={{ kind: 'stage', stage }}
-                sessions={byStage.get(stage) ?? EMPTY_ARRAY}
-                nav={nav}
-                onArchive={onArchive}
-                onDelete={onDelete}
-                onRestore={nav.restore}
-              />
-            </div>
-          ))}
-          <div key="archived" className="flex min-w-[16rem] flex-1">
             <StageColumn
-              spec={{ kind: 'archived' }}
-              sessions={archived}
+              key={stage}
+              spec={{ kind: 'stage', stage }}
+              sessions={byStage.get(stage) ?? EMPTY_ARRAY}
               nav={nav}
               onArchive={onArchive}
               onDelete={onDelete}
               onRestore={nav.restore}
             />
-          </div>
+          ))}
+          <StageColumn
+            key="archived"
+            spec={{ kind: 'archived' }}
+            sessions={archived}
+            nav={nav}
+            onArchive={onArchive}
+            onDelete={onDelete}
+            onRestore={nav.restore}
+          />
         </div>
       )}
 
