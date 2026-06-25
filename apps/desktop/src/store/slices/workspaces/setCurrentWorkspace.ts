@@ -73,6 +73,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sidebarStateFilter: [],
       sidebarProviderFilter: [],
       sessionLoading: {},
+      boardReady: false,
     });
     if (id) {
       const touchNow = new Date().toISOString() as IsoDateTime;
@@ -151,6 +152,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));
+      if (get().currentWorkspaceId === id && Object.keys(sessionBranches).length === 0) {
+        set({ boardReady: true });
+      }
       // eslint-disable-next-line no-console
       console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
 
