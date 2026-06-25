@@ -24,7 +24,7 @@ export const Eyebrow = ({
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1 rounded-md px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow ring-1',
+          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold uppercase leading-none tracking-eyebrow ring-1',
           tint.bg,
           tint.ring,
           tint.text,
