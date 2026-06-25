@@ -1,37 +1,13 @@
 import { Logo } from '../components/Logo';
 import { LinkButton } from '../components/ui';
 
-const links = [
-  { href: '#sessions', label: 'Sessions' },
-  { href: '#context', label: 'Context' },
-  { href: '#studio', label: 'Workflow' },
-  { href: '#github', label: 'GitHub' },
-  { href: '#linear', label: 'Linear' },
-  { href: '#compare', label: 'Compare' },
-];
-
-/* Top-of-page nav. Not sticky: scrolls away with the hero. The floating pill
-   (FloatingNav.tsx) takes over once you scroll past it, in the same spirit as
-   apple.com / linear.app / vercel.com.
-*/
 export function Nav() {
   return (
-    <header className="relative z-30 border-b border-border-soft/40 bg-background">
+    <header className="sticky top-0 z-40 border-b border-border-soft/40 bg-background">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <a href="#" className="flex items-center">
           <Logo />
         </a>
-        <nav className="hidden items-center gap-7 md:flex">
-          {links.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="whitespace-nowrap text-[13px] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {l.label}
-            </a>
-          ))}
-        </nav>
         <LinkButton
           href="https://github.com/akhayam99/goodboy"
           target="_blank"
