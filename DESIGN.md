@@ -32,31 +32,36 @@ functional. One register per surface; let the other supply only texture.
 
 ## Layout & navigation
 
-- **App chrome**: a single top bar (`AppTopBar`) holds the logo (left) and all
-  global controls (right): palette, skills, workflows, providers, integrations,
-  budget, notifications, settings. No breadcrumb renders in the top bar.
-  Navigation context is surfaced contextually: a "Back to board" action in the
-  session sidebar, and an in-content breadcrumb inside session lenses.
-  See [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb
-  derivation rules.
+- **App chrome**: a single top bar (`AppTopBar`) holds the logo (left) and
+  global controls (right): cost rollup, theme toggle, notifications, guide,
+  pair-device, settings. A persistent footer (`AppFooter`) holds integration
+  tools (GitHub/GitLab/Linear/Sentry, gated) on the left and studio launchers
+  (workflows, providers, budget) on the right. No breadcrumb renders in the
+  top bar. Navigation context is surfaced contextually: a "Back to board"
+  action in the session sidebar, and an in-content breadcrumb inside session
+  lenses. See [docs/navigation.md](docs/navigation.md) for the full IA and
+  breadcrumb derivation rules.
 - **Shell layout**: top bar (always visible) · left sidebar (sessions and
   agents; hidden at Overview, revealed on session entry) · main (workspace
-  board or session work surface) · right pane (session detail and artifacts).
-  Each pane owns one job. The sidebar is session-scoped: at Overview only the
-  board renders, with no left panel alongside it.
+  board or session work surface) · right pane (session detail and artifacts)
+  · footer (always visible). Each pane owns one job. The sidebar is
+  session-scoped: at Overview only the board renders, with no left panel
+  alongside it.
 - **The board is home; chat is a destination.** With a workspace open and no
   session selected, the main pane is a cross-session stage board (needs you /
   running / in review / building / done), not chat. Selecting a card navigates
   into the session, resting on its overview pane. Chat, diff, terminal, and
   open-in-IDE are destinations reached from cards — never the landing surface.
   Every capability stays one navigation away; zero capability is lost.
-- **Top bar is chrome, sidebar is presence, palette is transit.** The top bar
-  holds every global control. The sidebar answers "where am I" (session list,
-  agents). The command palette (⌘K) answers "where do I want to be". Each has
-  one job; they must not compete.
+- **Top bar is chrome, footer is access, sidebar is presence, palette is
+  transit.** The top bar holds global controls (cost, notifications, settings).
+  The footer holds integration shortcuts and studio launchers. The sidebar
+  answers "where am I" (session list, agents). The command palette (⌘K)
+  answers "where do I want to be". Each has one job; they must not compete.
 - **Pin the structure, flex the density.** Nothing appears or disappears at a
-  count threshold. Panels collapse to a rail; they never vanish. A control's
-  position is fixed so it can be learned.
+  count threshold. A control's position is fixed so it can be learned. The
+  sidebar has no collapse rail or toggle; it is either hidden (board-only
+  Overview) or at its persisted width.
 - **Settings match the scope they edit.** Configuration splits into three
   surfaces by ownership: application settings is a full-page studio; workspace
   and session settings are lightweight scoped panes. Each surface edits only

@@ -68,16 +68,28 @@ crumbs navigate via `toOverview` / `toWorkspaceLauncher` / `toWorkspaceBoard`.
 `AppTopBar` is the single app-chrome row. Layout: logo on the left; all
 global controls on the right. No breadcrumb renders in the top bar.
 
-Global controls (right side): palette, skills, workflows, providers,
-GitHub/GitLab/Linear/Sentry integrations, budget, notifications, guide,
-onboarding, pair-device, theme, settings.
+Global controls (right side): cost rollup, theme toggle, notifications, guide,
+pair-device, settings.
 
-Controls dispatch the same `goodboy:*` events and callbacks as before. Feature
-gating (skills, Linear/Sentry/GitLab enablement, providers pulse) is
-preserved.
+Controls dispatch the same `goodboy:*` events and callbacks as before.
 
-`WorkspacesSidebar` contains only its collapse toggle and the sessions/agents
-content. No global controls live in the sidebar.
+`WorkspacesSidebar` contains only the sessions/agents content. No global
+controls live in the sidebar.
+
+## App footer
+
+`AppFooter` is a persistent bottom bar rendered via the `AppShell` `footer`
+slot. Always visible on the board and inside a session.
+
+Layout:
+
+- Left: integration tools (GitHub, GitLab, Linear, Sentry), each gated by
+  enablement.
+- Right: common studios (workflows, providers, budget).
+
+Studio buttons show an inverted active state (`bg-foreground text-background`
+with a transition) when their studio is open. Opening any studio closes the
+others (`closeAllStudios` in `App.tsx`).
 
 ## Board-only Overview and animated sidebar
 
@@ -91,7 +103,8 @@ hidden.
 - Overview (no session active): board-only, sidebar hidden.
 - Session entered: sidebar reveals with a ~200ms animation.
 
-`cmd+b` collapse and persisted sidebar width are preserved.
+The sidebar has no collapse toggle, rail, or `cmd+b` shortcut. The left column
+is either `leftHidden` (at Overview) or at its persisted width.
 
 ## Studios
 
@@ -116,6 +129,25 @@ the dual-sidebar anti-pattern. The rule "no surface shows a left panel and a
 right panel at once" refers to two sidebars flanking content, which the app
 does not do.
 
+## New session form
+
+The new-session creation form renders centered on the plain background with no
+card chrome and no close (X) button. Cancel dismisses it. If an attachment
+image preview is open, ESC closes only the preview, not the form.
+
+## Sessions list: archived toggle
+
+The archived sessions toggle sits in the sessions header row, next to the
+sessions filter. It is not a separate bottom row.
+
+## Questions lens: answered history
+
+Below the open-questions empty state, the questions lens shows an
+answered-questions history. Entries are grouped into clusters by the agent that
+spawned them. Each cluster header is space-between: agent name on the left,
+asked-at timestamp on the right. Clusters are ordered most-recent-first.
+Clicking an agent name navigates to that agent.
+
 ## Agent-kind picker
 
 The `AGENT_KIND` role picker is exposed from `SessionOverviewPane` via
@@ -132,6 +164,6 @@ every stage.
 
 ## Full-page studios
 
-Studios using `StudioShell` (fullscreen variant) render below the top bar with
-a top offset equal to the top bar height. The top bar stays visible and
-interactive while any studio is open.
+Studios using `StudioShell` (fullscreen variant) render between the top bar
+and the footer (`top-9 bottom-9`). Both bars stay visible and interactive
+while any studio is open. Only one studio is open at a time.
