@@ -11,7 +11,16 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { Divider, Markdown, ScrollFade, Textarea, cn, tintClasses, type Tone } from '@goodboy/ui';
+import {
+  Divider,
+  Markdown,
+  ScrollFade,
+  Textarea,
+  Tooltip,
+  cn,
+  tintClasses,
+  type Tone,
+} from '@goodboy/ui';
 import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -400,33 +409,36 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                         </button>
                       ) : null}
                       {selected.status === 'consumed' ? (
-                        <span
-                          className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
-                          title="Consumed plans cannot be deleted"
-                          aria-label="Consumed plans cannot be deleted"
-                        >
-                          <Trash2 size={13} aria-hidden />
-                        </span>
+                        <Tooltip content="Consumed plans cannot be deleted">
+                          <span
+                            className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                            aria-label="Consumed plans cannot be deleted"
+                          >
+                            <Trash2 size={13} aria-hidden />
+                          </span>
+                        </Tooltip>
                       ) : selected.status === 'discarded' ? (
-                        <button
-                          type="button"
-                          onClick={() => handleRestore(selected)}
-                          title="Restore plan"
-                          aria-label="Restore plan"
-                          className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
-                        >
-                          <ArchiveRestore size={13} aria-hidden />
-                        </button>
+                        <Tooltip content="Restore plan">
+                          <button
+                            type="button"
+                            onClick={() => handleRestore(selected)}
+                            aria-label="Restore plan"
+                            className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
+                          >
+                            <ArchiveRestore size={13} aria-hidden />
+                          </button>
+                        </Tooltip>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleDiscard(selected)}
-                          title="Delete plan (soft delete, click restore to recover)"
-                          aria-label="Delete plan"
-                          className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
-                        >
-                          <Trash2 size={13} aria-hidden />
-                        </button>
+                        <Tooltip content="Delete plan (soft delete, click restore to recover)">
+                          <button
+                            type="button"
+                            onClick={() => handleDiscard(selected)}
+                            aria-label="Delete plan"
+                            className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                          >
+                            <Trash2 size={13} aria-hidden />
+                          </button>
+                        </Tooltip>
                       )}
                     </div>
                   </div>

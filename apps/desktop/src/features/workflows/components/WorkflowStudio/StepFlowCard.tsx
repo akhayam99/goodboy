@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react';
 import type { DefinitionForm } from '../../form';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
@@ -46,24 +46,25 @@ export const StepFlowCard = ({
       )}
     >
       <div className="flex items-stretch">
-        <button
-          type="button"
-          onPointerDown={onStartDrag}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              onMoveLeft();
-            } else if (e.key === 'ArrowDown') {
-              e.preventDefault();
-              onMoveRight();
-            }
-          }}
-          title="drag to reorder (or arrow keys)"
-          aria-label="reorder step, use up and down arrow keys"
-          className="flex shrink-0 cursor-grab touch-none items-center rounded-l-lg px-1 text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)] active:cursor-grabbing motion-safe:transition-colors hover:bg-muted/40 hover:text-muted-foreground"
-        >
-          <GripVertical size={14} aria-hidden />
-        </button>
+        <Tooltip content="drag to reorder (or arrow keys)">
+          <button
+            type="button"
+            onPointerDown={onStartDrag}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                onMoveLeft();
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                onMoveRight();
+              }
+            }}
+            aria-label="reorder step, use up and down arrow keys"
+            className="flex shrink-0 cursor-grab touch-none items-center rounded-l-lg px-1 text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)] active:cursor-grabbing motion-safe:transition-colors hover:bg-muted/40 hover:text-muted-foreground"
+          >
+            <GripVertical size={14} aria-hidden />
+          </button>
+        </Tooltip>
 
         <button
           type="button"
@@ -96,35 +97,42 @@ export const StepFlowCard = ({
         </button>
 
         <div className="flex shrink-0 items-center gap-px self-start px-1 py-1 opacity-0 focus-within:opacity-100 motion-safe:transition-opacity group-hover:opacity-100">
-          <button
-            type="button"
-            className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted/50 hover:text-foreground disabled:opacity-25"
-            onClick={onMoveLeft}
-            disabled={ordinal === 0}
-            title="move up"
-            aria-label="move step up"
-          >
-            <ChevronUp size={13} aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted/50 hover:text-foreground disabled:opacity-25"
-            onClick={onMoveRight}
-            disabled={ordinal === total - 1}
-            title="move down"
-            aria-label="move step down"
-          >
-            <ChevronDown size={13} aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-danger/10 hover:text-danger"
-            onClick={onRemove}
-            title="remove step"
-            aria-label="remove step"
-          >
-            <X size={13} aria-hidden />
-          </button>
+          <Tooltip content="move up">
+            <span className="inline-flex">
+              <button
+                type="button"
+                className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted/50 hover:text-foreground disabled:opacity-25"
+                onClick={onMoveLeft}
+                disabled={ordinal === 0}
+                aria-label="move step up"
+              >
+                <ChevronUp size={13} aria-hidden />
+              </button>
+            </span>
+          </Tooltip>
+          <Tooltip content="move down">
+            <span className="inline-flex">
+              <button
+                type="button"
+                className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted/50 hover:text-foreground disabled:opacity-25"
+                onClick={onMoveRight}
+                disabled={ordinal === total - 1}
+                aria-label="move step down"
+              >
+                <ChevronDown size={13} aria-hidden />
+              </button>
+            </span>
+          </Tooltip>
+          <Tooltip content="remove step">
+            <button
+              type="button"
+              className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-danger/10 hover:text-danger"
+              onClick={onRemove}
+              aria-label="remove step"
+            >
+              <X size={13} aria-hidden />
+            </button>
+          </Tooltip>
         </div>
       </div>
 

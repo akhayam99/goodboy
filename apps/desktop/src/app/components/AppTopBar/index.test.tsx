@@ -44,18 +44,18 @@ import { AppTopBar } from './index';
 describe('AppTopBar', () => {
   it('renders settings button', () => {
     render(<AppTopBar onOpenSettings={vi.fn()} activeStudio={null} />);
-    expect(screen.getByTitle('settings (⌘,)')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
   });
 
   it('settings button has active state when settings studio is open', () => {
     render(<AppTopBar onOpenSettings={vi.fn()} activeStudio="settings" />);
-    const btn = screen.getByTitle('settings (⌘,)');
+    const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).toContain('bg-foreground');
   });
 
   it('settings button is normal when a different studio is open', () => {
     render(<AppTopBar onOpenSettings={vi.fn()} activeStudio="workflow" />);
-    const btn = screen.getByTitle('settings (⌘,)');
+    const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).not.toContain('bg-foreground');
   });
 });

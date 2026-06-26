@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import { Check, GripVertical, Pencil, Trash2, X } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
@@ -62,51 +62,55 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
             onPointerDown={(e) => e.stopPropagation()}
           >
             <span className="px-1 text-2xs text-muted-foreground">Delete?</span>
-            <button
-              type="button"
-              onClick={() => {
-                setConfirming(false);
-                onDelete();
-              }}
-              title="confirm delete"
-              aria-label={`confirm delete ${def.name}`}
-              className="rounded p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
-            >
-              <Check size={12} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              title="cancel"
-              aria-label="cancel delete"
-              className="rounded p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
-            >
-              <X size={12} aria-hidden />
-            </button>
+            <Tooltip content="confirm delete">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirming(false);
+                  onDelete();
+                }}
+                aria-label={`confirm delete ${def.name}`}
+                className="rounded p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
+              >
+                <Check size={12} aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip content="cancel">
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                aria-label="cancel delete"
+                className="rounded p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+              >
+                <X size={12} aria-hidden />
+              </button>
+            </Tooltip>
           </div>
         ) : (
           <div className="hidden items-center gap-0.5 group-focus-within:flex group-hover:flex">
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={onEdit}
-              title={isGlobal ? 'edit (creates a workspace copy)' : 'edit step'}
-              aria-label={`edit ${def.name}`}
-              className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
-            >
-              <Pencil size={12} aria-hidden />
-            </button>
-            {!isGlobal && (
+            <Tooltip content={isGlobal ? 'edit (creates a workspace copy)' : 'edit step'}>
               <button
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setConfirming(true)}
-                title="delete step"
-                aria-label={`delete ${def.name}`}
-                className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+                onClick={onEdit}
+                aria-label={`edit ${def.name}`}
+                className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
               >
-                <Trash2 size={12} aria-hidden />
+                <Pencil size={12} aria-hidden />
               </button>
+            </Tooltip>
+            {!isGlobal && (
+              <Tooltip content="delete step">
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setConfirming(true)}
+                  aria-label={`delete ${def.name}`}
+                  className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+                >
+                  <Trash2 size={12} aria-hidden />
+                </button>
+              </Tooltip>
             )}
           </div>
         )}

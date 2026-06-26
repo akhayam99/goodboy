@@ -1,4 +1,4 @@
-import { EmptyState, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
+import { EmptyState, ScrollFade, SectionHeader, Tooltip, cn } from '@goodboy/ui';
 import { Check, Layers, Plus, RotateCcw, X } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import { PresetCard } from '../../PresetCard';
@@ -81,26 +81,32 @@ export const WorkflowsRail = ({
               Restore the built-in presets? Your edits to them are overwritten. Custom presets you
               made are kept.
             </span>
-            <button
-              type="button"
-              onClick={onReset}
-              disabled={resetting}
-              title="confirm restore"
-              aria-label="confirm restore defaults"
-              className="rounded p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
-            >
-              <Check size={13} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmReset(false)}
-              disabled={resetting}
-              title="cancel"
-              aria-label="cancel restore defaults"
-              className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-            >
-              <X size={13} aria-hidden />
-            </button>
+            <Tooltip content="confirm restore">
+              <span className="inline-flex">
+                <button
+                  type="button"
+                  onClick={onReset}
+                  disabled={resetting}
+                  aria-label="confirm restore defaults"
+                  className="rounded p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
+                >
+                  <Check size={13} aria-hidden />
+                </button>
+              </span>
+            </Tooltip>
+            <Tooltip content="cancel">
+              <span className="inline-flex">
+                <button
+                  type="button"
+                  onClick={() => setConfirmReset(false)}
+                  disabled={resetting}
+                  aria-label="cancel restore defaults"
+                  className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+                >
+                  <X size={13} aria-hidden />
+                </button>
+              </span>
+            </Tooltip>
           </div>
         ) : (
           <button
