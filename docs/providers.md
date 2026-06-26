@@ -152,60 +152,62 @@ Skipped by default; opt in when you want to verify a fresh install.
 
 ---
 
-## Google (Gemini)
+## Google (Antigravity)
+
+Google deprecated the Gemini CLI consumer "login with Google" flow on 2026-06-18. Antigravity (`agy`) is its official successor: a single Go binary installed via curl.
 
 ### Install
 
 ```bash
-npm install -g @google/gemini-cli
+curl -fsSL https://antigravity.google/cli/install.sh | bash
 ```
 
-Docs: <https://github.com/google-gemini/gemini-cli>
+Docs: <https://antigravity.google/cli>
 
-Verify: `gemini --version`
+Verify: `agy --version`
 
 ### Connect
 
 ```bash
-gemini
+agy login
 ```
 
-Launching the bare binary triggers the OAuth flow on first run — Goodboy spawns it in an external terminal. Complete the Google sign-in in the browser that opens; credentials land in `~/.gemini/oauth_creds.json`.
+`agy login` opens the Google OAuth flow in the browser; session state lands in `~/.gemini/antigravity-cli/`. Alternatively, set a Gemini API key via `GEMINI_API_KEY`, which `agy` honors with no browser round-trip.
 
 ### Disconnect
 
 ```bash
-rm -f ~/.gemini/oauth_creds.json
+rm -rf ~/.gemini/antigravity-cli
 ```
 
-gemini-cli v0.x has no `logout` subcommand. Goodboy wires the disconnect button to remove the credentials file directly.
+Goodboy wires the disconnect button to remove the session directory directly.
 
 ### Subscription tier
 
-Requires **Google AI Pro** (or the free tier with rate caps). Goodboy uses the local CLI's authenticated Google account; no API key is needed when signed in via OAuth.
+Requires **Google AI Pro** (or the free tier with rate caps). Goodboy uses the local CLI's authenticated Google account, or a `GEMINI_API_KEY` credential when set.
 
 ### Default models
 
-Per Google's Gemini 2.5 lineup:
+Per Google's Gemini 3.x lineup:
 
-- **Turn**: `gemini-2.5-pro` (default).
-- **Cheap**: `gemini-2.5-flash` (default), `gemini-2.5-flash-lite`.
+- **Turn**: `gemini-3.1-pro`.
+- **Cheap**: `gemini-3.5-flash` (default).
 
-All three support a 1M-token context window.
+Both support a 1M-token context window.
 
 ### Turn spawn args
 
-Goodboy spawns gemini non-interactively:
+Goodboy spawns `agy` non-interactively:
 
 ```
-gemini -m <MODEL> -p <PROMPT>
+agy -p <PROMPT> --model <MODEL> --sandbox
 ```
 
-The working directory is set on the spawned process; gemini-cli has no `--cwd` flag yet. There is no stable structured JSON output today, so the parser treats each stdout line as an `assistant_text` delta and is forward-compatible with a future `--output-format json` mode.
+`--sandbox` is replaced by `--dangerously-skip-permissions` under bypass permission mode. The working directory is set on the spawned process. `agy` has no stable structured JSON output, so the parser treats each stdout line as an `assistant_text` delta; per-turn token usage is unavailable in headless mode, so cost is estimated from per-token pricing.
 
 ### Auth detection
 
-gemini-cli does not ship a stable `auth status` subcommand. Goodboy probes a few candidates (`gemini auth status`, `gemini whoami`) and falls back to reading the email claim from `~/.gemini/oauth_creds.json` as ground truth. If the providers panel shows "not logged in" after a successful browser flow, click **refresh** so the file check runs again.
+`agy` has no stable `auth status` subcommand. Goodboy reads `~/.gemini/antigravity-cli/` directly as ground truth: an email claim in a session file populates the identity, and any session file marks the provider connected. API-key auth leaves no session directory and is surfaced as connected by the credential layer. If the providers panel shows "not logged in" after a successful login, click **refresh** so the file check runs again.
 
 ---
 

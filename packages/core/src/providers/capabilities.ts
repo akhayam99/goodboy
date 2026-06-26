@@ -1,7 +1,7 @@
 import type { ModelEffort, ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
 import { CURSOR_AUTO_MODEL, CURSOR_MODELS } from './cursor/models';
 import { CODEX_MODELS } from './codex/constants';
-import { GEMINI_MODELS } from './gemini/constants';
+import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './gemini/constants';
 
 const OPUS_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high', 'extra-high', 'max'];
 const SONNET_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high'];
@@ -125,6 +125,9 @@ export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities =>
 export const getDefaultTurnModel = (id: ProviderId): string => {
   if (id === 'cursor') {
     return CURSOR_AUTO_MODEL;
+  }
+  if (id === 'gemini') {
+    return GEMINI_DEFAULT_MODEL;
   }
   const caps = PROVIDER_CAPABILITIES[id];
   return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;

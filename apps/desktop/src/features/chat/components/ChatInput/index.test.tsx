@@ -38,7 +38,8 @@ const {
     providerSpendBreakdown: ReadonlyArray<never>;
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
-    agentModelOverride: Record<string, never>;
+    agentModelOverride: Record<string, string>;
+    agentProviderOverride: Record<string, never>;
     agentKindOverride: Record<string, never>;
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
@@ -79,6 +80,7 @@ const {
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
     agentModelOverride: {},
+    agentProviderOverride: {},
     agentKindOverride: {},
     agentRunHistory: {},
     agentDraft: {},
@@ -155,13 +157,18 @@ vi.mock('../../turn', () => ({
 
 vi.mock('@goodboy/core', () => ({
   buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
-  getDefaultTurnModel: () => 'claude-3-5-sonnet-latest',
+  getDefaultTurnModel: (id: string) => (id === 'cursor' ? 'auto' : 'claude-3-5-sonnet-latest'),
   getModelDescriptor: () => null,
   PROVIDER_CAPABILITIES: {
     anthropic: {
       models: [{ id: 'claude-3-5-sonnet-latest', tier: 'turn', contextWindow: 200_000 }],
     },
-    cursor: { models: [{ id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 }] },
+    cursor: {
+      models: [
+        { id: 'auto', tier: 'turn', contextWindow: 200_000 },
+        { id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 },
+      ],
+    },
     codex: { models: [{ id: 'codex-latest', tier: 'turn', contextWindow: 128_000 }] },
   },
   resolveProvider: vi.fn(async () => ({
@@ -299,7 +306,36 @@ describe('ChatInput, input wiring', () => {
     expect(sendTurnMock).toHaveBeenCalledOnce();
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        override: expect.objectContaining({ providerId: 'cursor' }),
+        override: { providerId: 'cursor', model: 'auto' },
+      }),
+    );
+  });
+
+  it('sends cursor when the picker shows cursor even with an anthropic agent model pin', async () => {
+    mockStore.setState({
+      agentModelOverride: { 'agent-1': 'claude-haiku-4-5' },
+    });
+
+    const user = userEvent.setup();
+    render(
+      <ChatInput
+        session={makeSession({
+          providerPreference: {
+            defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
+            allowTurnOverride: true,
+          },
+          providerOverride: 'cursor',
+        })}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'use cursor');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        override: { providerId: 'cursor', model: 'auto' },
       }),
     );
   });

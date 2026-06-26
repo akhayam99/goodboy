@@ -231,14 +231,15 @@ export const ModelPicker = ({
                   if (isConnected) {
                     return CHIP_INACTIVE;
                   }
-                  return 'text-muted-foreground/35 hover:bg-muted/50';
+                  return 'cursor-not-allowed text-muted-foreground/35 opacity-60 hover:bg-muted/40';
                 })();
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => onSelectProvider(id)}
-                    title={isConnected ? undefined : 'not connected'}
+                    aria-disabled={!isConnected}
+                    title={isConnected ? undefined : 'not connected, click to connect'}
                     className={cn('rounded-full px-2.5 py-0.5 transition-colors', chipTone)}
                   >
                     {PROVIDER_LABEL[id]}

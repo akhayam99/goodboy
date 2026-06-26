@@ -59,7 +59,7 @@ pub fn detect_codex() -> ProviderStatus {
 }
 
 pub fn detect_gemini() -> ProviderStatus {
-    detect_binary("gemini", "gemini")
+    detect_binary("gemini", "agy")
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
@@ -417,14 +417,14 @@ fn check_codex_auth() -> AuthState {
     }
 }
 
+fn gemini_creds_dir() -> Option<std::path::PathBuf> {
+    Some(dirs::home_dir()?.join(".gemini/antigravity-cli"))
+}
+
 fn extract_gemini_identity_from_creds() -> Option<String> {
-    // gemini-cli stores OAuth credentials at `~/.gemini/oauth_creds.json` after
-    // an interactive login; the `email` field carries the user's Google identity.
-    // Fallback paths covered: legacy `~/.config/gemini/auth.json`.
-    let home = dirs::home_dir()?;
-    for rel in ["./.gemini/oauth_creds.json", "./.config/gemini/auth.json"] {
-        let path = home.join(rel);
-        let Ok(content) = std::fs::read_to_string(&path) else {
+    let dir = gemini_creds_dir()?;
+    for entry in std::fs::read_dir(&dir).ok()?.flatten() {
+        let Ok(content) = std::fs::read_to_string(entry.path()) else {
             continue;
         };
         let Ok(root) = serde_json::from_str::<serde_json::Value>(&content) else {
@@ -442,17 +442,29 @@ fn extract_gemini_identity_from_creds() -> Option<String> {
     None
 }
 
+fn gemini_creds_present() -> bool {
+    gemini_creds_dir()
+        .and_then(|d| std::fs::read_dir(d).ok())
+        .map(|mut entries| entries.any(|e| e.is_ok()))
+        .unwrap_or(false)
+}
+
 fn check_gemini_auth() -> AuthState {
-    // gemini-cli (v0.x) has no `auth status`-like subcommand. Past attempts to
-    // probe `gemini auth status`/`whoami` either hung interactively (no TTY)
-    // or printed help, costing 3 × AUTH_TIMEOUT per refresh. The credentials
-    // file is the actual ground truth — gemini writes it on every successful
-    // login and removes it on logout — so we read it directly. Fast, accurate,
-    // no subprocess.
+    // antigravity (`agy`) persists session state under `~/.gemini/antigravity-cli/`
+    // after a successful login and clears it on logout, so the directory is the
+    // ground truth. Read it directly: fast, accurate, no interactive subprocess.
+    // API-key auth (GEMINI_API_KEY) leaves no creds dir and is surfaced as
+    // connected by the credential layer instead.
     if let Some(identity) = extract_gemini_identity_from_creds() {
         return AuthState {
             state: AuthStateKind::Connected,
             identity: Some(identity),
+        };
+    }
+    if gemini_creds_present() {
+        return AuthState {
+            state: AuthStateKind::Connected,
+            identity: None,
         };
     }
     AuthState {
@@ -569,7 +581,7 @@ pub fn refresh_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
 pub fn get_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
     state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
         id: "gemini".to_string(),
-        binary: "gemini".to_string(),
+        binary: "agy".to_string(),
         available: false,
         version: None,
         error: Some("status mutex poisoned".to_string()),

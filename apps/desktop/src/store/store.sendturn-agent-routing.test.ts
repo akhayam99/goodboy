@@ -394,7 +394,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'gemini',
-      selectedModel: 'gemini-2.5-pro',
+      selectedModel: 'gemini-3.1-pro',
       reason: 'override',
     });
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'high' } });
@@ -574,6 +574,33 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
     expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-3-5-haiku-latest');
+  });
+
+  it('does not apply an anthropic model pin when the routed provider is cursor', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'cursor',
+      selectedModel: 'auto',
+      reason: 'override',
+    });
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          providerPreference: { defaultProvider: 'cursor', allowTurnOverride: true },
+        },
+      ],
+      agentModelOverride: { [AGENT_A]: 'claude-3-5-haiku-latest' },
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('cursor');
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('auto');
   });
 
   it('an explicit per-turn model override beats both the agent provider and model pin', async () => {

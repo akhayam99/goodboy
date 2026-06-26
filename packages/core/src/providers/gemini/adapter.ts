@@ -41,7 +41,7 @@ export class GeminiAdapter implements ProviderAdapter {
   private readonly priceOverride: GeminiModelPriceOverride | null;
 
   constructor(deps: GeminiAdapterDeps = {}) {
-    this.binary = deps.binary ?? 'gemini';
+    this.binary = deps.binary ?? 'agy';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
     this.onUnknown = deps.onUnknown ?? (() => undefined);
@@ -93,7 +93,7 @@ async function* spawnGemini(
   const prompt = request.systemPrompt
     ? `${request.systemPrompt}\n\n${request.userMessage}`
     : request.userMessage;
-  const args = ['-m', request.model, '-p', prompt];
+  const args = ['-p', prompt, '--model', request.model, '--sandbox'];
 
   const child: ChildProcess = spawnFn(binary, args, {
     stdio: ['ignore', 'pipe', 'pipe'],

@@ -64,6 +64,8 @@ import { m063OpenQuestionsRecommendedAnswer } from './m063-open-questions-recomm
 import { m064SentryProvider } from './m064-sentry-provider';
 import { m065IntegrationGitlabProvider } from './m065-integration-gitlab-provider';
 import { m066GoalAttachments } from './m066-goal-attachments';
+import { m067GeminiProviderRun } from './m067-gemini-provider-run';
+import { m068ProviderRunsGeminiRepair } from './m068-provider-runs-gemini-repair';
 
 export type Migration = {
   readonly version: number;
@@ -137,4 +139,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 64, sql: m064SentryProvider },
   { version: 65, sql: m065IntegrationGitlabProvider },
   { version: 66, sql: m066GoalAttachments },
+  { version: 67, sql: m067GeminiProviderRun },
+  { version: 68, sql: m068ProviderRunsGeminiRepair },
 ];

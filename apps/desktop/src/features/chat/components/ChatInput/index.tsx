@@ -123,12 +123,22 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
   const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
-    asProvider(session.providerOverride),
-  );
-  const [selectedModel, setSelectedModelState] = useState<string | null>(
-    () => session.modelOverride ?? null,
-  );
+  const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() => {
+    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
+    const initialAgent = initialAgentId
+      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
+      : null;
+    return asProvider(initialAgent?.providerOverride) ?? asProvider(session.providerOverride);
+  });
+  const [selectedModel, setSelectedModelState] = useState<string | null>(() => {
+    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
+    const initialAgent = initialAgentId
+      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
+      : null;
+    return initialAgent?.modelOverride ?? session.modelOverride ?? null;
+  });
   const [effort, setEffortState] = useState<EffortLevel>(
     () => asEffortLevel(session.effort) ?? 'medium',
   );
@@ -176,6 +186,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const agentModelOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
   );
+  const agentProviderOverride = useAppStore((s) =>
+    selectedAgentId ? (s.agentProviderOverride[selectedAgentId] ?? null) : null,
+  );
   const isFirstTurnForAgent = useAppStore((s) =>
     selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
   );
@@ -205,27 +218,23 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
 
-  const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider;
+  const effectiveProvider: ProviderId =
+    selectedProvider ?? agentProviderOverride ?? defaultProvider;
   const defaultModel =
     agentModelOverride ??
     session.providerPreference.defaultModel ??
     getDefaultTurnModel(defaultProvider);
   const effectiveModel =
     selectedModel ??
+    session.modelOverride ??
     (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider));
   const effectiveEffort = clampEffort(effectiveModel, effort);
 
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
 
-  const providerChanged = selectedProvider !== null && selectedProvider !== defaultProvider;
-  const modelChanged = selectedModel !== null && selectedModel !== defaultModel;
-  const routingOverride: TurnProviderOverride | undefined =
-    allowOverride && (providerChanged || modelChanged)
-      ? {
-          providerId: effectiveProvider,
-          ...(modelChanged ? { model: effectiveModel } : {}),
-        }
-      : undefined;
+  const routingOverride: TurnProviderOverride | undefined = allowOverride
+    ? { providerId: effectiveProvider, model: effectiveModel }
+    : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
 
@@ -341,14 +350,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     atts: ReadonlyArray<PendingAttachment>,
     modelOverrideId: string | null,
   ) => {
-    const useModel = modelOverrideId ?? (modelChanged ? effectiveModel : null);
-    const override: TurnProviderOverride | undefined =
-      allowOverride && (providerChanged || useModel !== null)
-        ? {
-            providerId: effectiveProvider,
-            ...(useModel !== null ? { model: useModel } : {}),
-          }
-        : undefined;
+    const override: TurnProviderOverride | undefined = allowOverride
+      ? { providerId: effectiveProvider, model: modelOverrideId ?? effectiveModel }
+      : undefined;
 
     if (isRunning) {
       enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
