@@ -79,10 +79,22 @@ describe('SessionScopePanel', () => {
     expect(screen.getByRole('button', { name: /change/i })).toBeDefined();
   });
 
-  it('sets the default provider from a brand chip', () => {
+  it('sets the default provider from a connected brand chip', () => {
+    state.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected' },
+    ];
+    render(<SessionScopePanel sessionId={'sess-1' as never} />);
+    const cursorChips = screen.getAllByRole('button', { name: /cursor/i });
+    fireEvent.click(cursorChips[0]!);
+    expect(state.setSessionConfig).toHaveBeenCalledWith('sess-1', { defaultProvider: 'cursor' });
+  });
+
+  it('does not set an offline provider as default', () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
     render(<SessionScopePanel sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByRole('button', { name: /cursor/i }));
-    expect(state.setSessionConfig).toHaveBeenCalledWith('sess-1', { defaultProvider: 'cursor' });
+    expect(state.setSessionConfig).not.toHaveBeenCalled();
   });
 
   it('shows an empty routing pool note when nothing is connected', () => {

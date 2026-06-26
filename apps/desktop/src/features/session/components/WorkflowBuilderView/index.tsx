@@ -221,11 +221,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const candidateProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
     const connected = providers.filter((p) => p.connection === 'connected').map((p) => p.id);
-    const enabled = session.providerPreference.enabledProviders;
-    const enabledSet = enabled && enabled.length > 0 ? new Set(enabled) : null;
-    const list = connected.filter((p) => enabledSet === null || enabledSet.has(p));
-    return list.length > 0 ? list : [providerId];
-  }, [providers, session.providerPreference.enabledProviders, providerId]);
+    return connected.length > 0 ? connected : [providerId];
+  }, [providers, providerId]);
 
   const basePreset = useMemo(
     () => (basePresetId ? (presets.find((t) => t.id === basePresetId) ?? null) : null),
@@ -603,7 +600,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         ? 'Select a preset to continue'
         : 'Generate a plan to continue'
       : null;
-  const stageReachable = (i: Stage): boolean => i < 2 || canAdvanceFromApproach;
+  const stageReachable = (i: Stage): boolean => {
+    if (i <= stage) return true;
+    if (goalText.trim().length === 0) return false;
+    return i < 2 || canAdvanceFromApproach;
+  };
   const goNext = () => {
     if (canContinue) {
       setStage((s) => Math.min(s + 1, 2) as Stage);
@@ -1129,7 +1130,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 />
                               ) : null}
                             </div>
-                            {triggerMode === 'after_run' && activeRuns.length > 1 ? (
+                            {triggerMode === 'after_run' && activeRuns.length > 0 ? (
                               <ChainAfterSelect
                                 runs={activeRuns}
                                 value={resolvedChainId}

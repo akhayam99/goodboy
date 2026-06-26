@@ -337,7 +337,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
 
           <FieldRow
             label="Routing pool"
-            help="Fallbacks when the default is over budget or offline."
+            help="Providers Goodboy can pick on its own, like when drafting a workflow. Unselected ones still appear in the step and chat pickers."
           >
             {connectedProviderIds.length === 0 ? (
               <span className="text-2xs text-muted-foreground">No providers connected.</span>

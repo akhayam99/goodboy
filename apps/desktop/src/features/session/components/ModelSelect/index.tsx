@@ -23,6 +23,8 @@ const AutoTag = () => (
   </span>
 );
 
+const COST_RANK: Record<'cheap' | 'mid' | 'premium', number> = { cheap: 0, mid: 1, premium: 2 };
+
 export const ModelSelect = ({
   provider,
   value,
@@ -36,7 +38,12 @@ export const ModelSelect = ({
   useClickOutside(containerRef, () => setOpen(false));
   const direction = useDropdownDirection(containerRef, open);
 
-  const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
+  const models = [...PROVIDER_CAPABILITIES[provider].models].sort((a, b) => {
+    const byCost = COST_RANK[modelCostTier(a.id)] - COST_RANK[modelCostTier(b.id)];
+    return byCost !== 0
+      ? byCost
+      : shortModelWithVersion(a.id).localeCompare(shortModelWithVersion(b.id));
+  });
   const isAuto = allowAuto === true && value === '';
   const resolved = isAuto && recommendedModel ? recommendedModel : value;
   const tier = modelCostTier(resolved);

@@ -35,7 +35,7 @@ export const ProviderSelect = ({ value, providers, onChange, disabled, recommend
   useClickOutside(containerRef, () => setOpen(false));
   const direction = useDropdownDirection(containerRef, open);
 
-  const options: ReadonlyArray<Value> = ['', ...providers];
+  const options: ReadonlyArray<Value> = ['', ...providers.filter((p) => p !== recommended)];
 
   const renderOption = (opt: Value) => {
     if (opt !== '') {
