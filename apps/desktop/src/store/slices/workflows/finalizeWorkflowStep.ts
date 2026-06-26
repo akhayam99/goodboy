@@ -4,6 +4,7 @@ import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../../kickoff';
+import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
 const MAX_CONTINUE = 2;
@@ -52,8 +53,9 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     const hasMarker = extractStepDone(assistantText) !== null;
     const satisfied = !!opts?.force || hasMarker || planCapturedThisTurn;
     if (!satisfied) {
+      const handsFree = isHandsFree(get, sessionId, agent.workflowRunId);
       const attempts = continueAttempts.get(agentId) ?? 0;
-      if (attempts < MAX_CONTINUE) {
+      if (handsFree && attempts < MAX_CONTINUE) {
         continueAttempts.set(agentId, attempts + 1);
         startStep(set, get, sessionId, agentId, composeStepContinue(agentId));
       } else {
@@ -65,8 +67,10 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         void get().emitNotification(
           'error',
           'warning',
-          `step stalled: ${agent.name}`,
-          'the agent stopped before emitting a step-done marker. open the agent and continue manually.',
+          `step paused: ${agent.name}`,
+          handsFree
+            ? 'the agent stopped before emitting a step-done marker. open the agent and continue manually.'
+            : 'hands-free is off, so this step will not continue on its own. open the agent and continue manually, or enable hands-free.',
           { sessionId },
         );
       }

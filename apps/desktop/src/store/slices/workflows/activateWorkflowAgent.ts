@@ -16,6 +16,7 @@ import {
   composeStepBoundary,
 } from '../../kickoff';
 import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
+import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
 export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
@@ -93,7 +94,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
 
     const clusters =
       fanOutPlan?.clusters && fanOutPlan.clusters.length >= 2 ? fanOutPlan.clusters : undefined;
-    if (clusters && clusters.length >= 2) {
+    if (clusters && clusters.length >= 2 && isHandsFree(get, sessionId, agent.workflowRunId)) {
       await fanOutClusters(set, get, sessionId, agent, clusters, fanOutPlan!.title);
       return;
     }

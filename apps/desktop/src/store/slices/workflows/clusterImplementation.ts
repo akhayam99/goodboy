@@ -13,6 +13,7 @@ import {
   invokeAgentList,
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
+import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
 const MAX_CONTINUE = 2;
@@ -201,8 +202,9 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     );
 
     if (!opts?.force && !extractClusterDone(assistantText)) {
+      const handsFree = isHandsFree(get, sessionId, child.workflowRunId);
       const attempts = continueAttempts.get(childAgentId) ?? 0;
-      if (attempts < MAX_CONTINUE) {
+      if (handsFree && attempts < MAX_CONTINUE) {
         continueAttempts.set(childAgentId, attempts + 1);
         startChild(
           set,
@@ -220,8 +222,10 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         void get().emitNotification(
           'error',
           'warning',
-          `cluster stalled: ${child.name}`,
-          'the implementer stopped before completing this cluster. open the agent and continue manually.',
+          `cluster paused: ${child.name}`,
+          handsFree
+            ? 'the implementer stopped before completing this cluster. open the agent and continue manually.'
+            : 'hands-free is off, so this cluster will not continue on its own. open the agent and continue manually, or enable hands-free.',
           { sessionId },
         );
       }
