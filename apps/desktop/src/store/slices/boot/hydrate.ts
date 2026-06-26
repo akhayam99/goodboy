@@ -14,6 +14,7 @@ import {
   type ProviderStatuses,
 } from '../../../features/providers/providers';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
+import { consumeReloadIntent } from '../../../features/workspace/windowView';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_LAST_SESSION_ID,
@@ -112,30 +113,50 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         );
 
         set({ bootPhase: 'restoring-session' });
-        const hashWorkspaceId = targetWorkspaceFromHash();
-        const hashWorkspace = hashWorkspaceId
-          ? (workspaces.find((w) => w.id === hashWorkspaceId) ?? null)
-          : null;
-        const reopenLast = reopenLastRaw === '1';
-        if (hashWorkspace) {
-          await get().setCurrentWorkspace(hashWorkspace.id);
-          void setWindowTitle(hashWorkspace.name);
-        } else if (reopenLast) {
-          const lastWorkspaceId =
-            lastWorkspaceRaw && lastWorkspaceRaw.length > 0
-              ? (lastWorkspaceRaw as WorkspaceId)
-              : null;
-          const targetWorkspace = lastWorkspaceId
-            ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
+        const reloadIntent = consumeReloadIntent();
+        if (reloadIntent?.mode === 'restore') {
+          const snapWorkspace = workspaces.find((w) => w.id === reloadIntent.workspaceId) ?? null;
+          if (snapWorkspace) {
+            await get().setCurrentWorkspace(snapWorkspace.id);
+            void setWindowTitle(snapWorkspace.name);
+            const snapSessionId = reloadIntent.sessionId;
+            if (snapSessionId && get().sessions.some((s) => s.id === snapSessionId)) {
+              await get().setCurrentSession(snapSessionId);
+              const snapAgentId = reloadIntent.agentId;
+              if (
+                snapAgentId &&
+                (get().sessionPhaseRuns[snapSessionId] ?? []).some((r) => r.id === snapAgentId)
+              ) {
+                await get().selectAgent(snapSessionId, snapAgentId);
+              }
+            }
+          }
+        } else if (!reloadIntent) {
+          const hashWorkspaceId = targetWorkspaceFromHash();
+          const hashWorkspace = hashWorkspaceId
+            ? (workspaces.find((w) => w.id === hashWorkspaceId) ?? null)
             : null;
-          if (targetWorkspace) {
-            await get().setCurrentWorkspace(targetWorkspace.id);
-            const lastSessionId =
-              lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
-            if (lastSessionId) {
-              const sessions = get().sessions;
-              if (sessions.some((s) => s.id === lastSessionId)) {
-                await get().setCurrentSession(lastSessionId);
+          const reopenLast = reopenLastRaw === '1';
+          if (hashWorkspace) {
+            await get().setCurrentWorkspace(hashWorkspace.id);
+            void setWindowTitle(hashWorkspace.name);
+          } else if (reopenLast) {
+            const lastWorkspaceId =
+              lastWorkspaceRaw && lastWorkspaceRaw.length > 0
+                ? (lastWorkspaceRaw as WorkspaceId)
+                : null;
+            const targetWorkspace = lastWorkspaceId
+              ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
+              : null;
+            if (targetWorkspace) {
+              await get().setCurrentWorkspace(targetWorkspace.id);
+              const lastSessionId =
+                lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
+              if (lastSessionId) {
+                const sessions = get().sessions;
+                if (sessions.some((s) => s.id === lastSessionId)) {
+                  await get().setCurrentSession(lastSessionId);
+                }
               }
             }
           }
