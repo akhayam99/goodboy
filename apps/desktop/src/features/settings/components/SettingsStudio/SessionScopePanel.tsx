@@ -140,6 +140,9 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
     if (next === session.providerPreference.defaultProvider) {
       return;
     }
+    if (!connectedProviderIds.includes(next)) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -320,7 +323,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
                   key={id}
                   id={id}
                   selected={currentProvider === id}
-                  disabled={busy}
+                  disabled={busy || !connectedProviderIds.includes(id)}
                   onClick={() => void onChangeProvider(id)}
                   trailing={
                     connectedProviderIds.includes(id) ? null : (
