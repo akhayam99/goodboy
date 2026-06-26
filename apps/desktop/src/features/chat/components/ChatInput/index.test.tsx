@@ -44,6 +44,7 @@ const {
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
     agentAttachments: Record<string, ReadonlyArray<never>>;
+    agentQueue: Record<string, ReadonlyArray<{ id: string }>>;
     sessionNudges: Record<string, null>;
     sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
     phaseTemplates: Record<string, never>;
@@ -51,6 +52,8 @@ const {
     clearAgentDraft: (agentId: string) => void;
     setAgentAttachments: (agentId: string, attachments: ReadonlyArray<never>) => void;
     clearAgentAttachments: (agentId: string) => void;
+    setAgentQueue: (agentId: string, queue: ReadonlyArray<{ id: string }>) => void;
+    clearAgentQueue: (agentId: string) => void;
     dismissSessionNudge: () => Promise<void>;
     acceptSessionNudgeHandoff: () => Promise<void>;
     spawnAgent: () => Promise<void>;
@@ -85,6 +88,7 @@ const {
     agentRunHistory: {},
     agentDraft: {},
     agentAttachments: {},
+    agentQueue: {},
     sessionNudges: {},
     sessionPhaseRuns: {},
     phaseTemplates: {},
@@ -110,6 +114,17 @@ const {
         delete next[agentId];
         return { agentAttachments: next };
       }),
+    setAgentQueue: (agentId, queue) =>
+      set((s) => ({ agentQueue: { ...s.agentQueue, [agentId]: queue } })),
+    clearAgentQueue: (agentId) =>
+      set((s) => {
+        if (!(agentId in s.agentQueue)) {
+          return s;
+        }
+        const next = { ...s.agentQueue };
+        delete next[agentId];
+        return { agentQueue: next };
+      }),
     dismissSessionNudge: async () => undefined,
     acceptSessionNudgeHandoff: async () => undefined,
     spawnAgent: async () => undefined,
@@ -132,7 +147,12 @@ const {
 });
 
 function resetMockStore() {
-  mockStore.setState({ agentDraft: {}, agentAttachments: {}, sessionWorktrees: {} });
+  mockStore.setState({
+    agentDraft: {},
+    agentAttachments: {},
+    agentQueue: {},
+    sessionWorktrees: {},
+  });
 }
 
 vi.mock('../../../../store', () => ({

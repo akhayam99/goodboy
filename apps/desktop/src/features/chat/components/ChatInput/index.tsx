@@ -1,58 +1,26 @@
-import {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from 'react';
-import { ClipboardCheck, Paperclip, Send, Square, Telescope } from 'lucide-react';
+import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Paperclip, Send, Square } from 'lucide-react';
 import { Divider, Textarea, cn } from '@goodboy/ui';
-import type { IsoDateTime, ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, assessTurnWeight, getDefaultTurnModel } from '@goodboy/core';
-import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
-import { tauriDatabase } from '../../../../shared/lib/db';
-import { useShallow } from 'zustand/react/shallow';
+import type { Session, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast } from '../../../../app/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
-import { type VerbosityLevel } from '../../../../features/settings/verbosity';
-import {
-  type EffortLevel,
-  clampEffort,
-  suggestHeavierModel,
-  suggestLighterModel,
-} from '../../utils/chat-constants';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { ModelPicker } from '../ModelPicker';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
-import { RightSizeCard } from '../RightSizeCard';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
-import { NudgeCard } from '../NudgeCard';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
-import {
-  AGENT_KIND_META,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../session/agent-kind';
-import { detectScopeMismatch, type ScopeMismatch } from '../../utils/scope-mismatch';
-import {
-  CHAT_PLACEHOLDER,
-  RUNNING_KINDS,
-  asEffortLevel,
-  asProvider,
-  toAttachmentInput,
-  toastKindForAlert,
-  toastMessageForAlert,
-  type PendingAttachment,
-  type QueuedTurn,
-} from './lib';
+import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { CHAT_PLACEHOLDER, RUNNING_KINDS, type PendingAttachment, type QueuedTurn } from './lib';
 import { useAttachments } from './hooks/useAttachments';
 import { useChatPrefix } from './hooks/useChatPrefix';
 import { useMessageQueue } from './hooks/useMessageQueue';
+import { useTurnRouting } from './hooks/useTurnRouting';
+import { useTurnDispatch } from './hooks/useTurnDispatch';
+import { useScopeNudge } from './hooks/useScopeNudge';
+import { useRightSizeNudge } from './hooks/useRightSizeNudge';
+import { useAgentSwitchSync } from './hooks/useAgentSwitchSync';
+import { useSuggestionCards } from './hooks/useSuggestionCards';
 import { AttachmentChip } from './parts/AttachmentChip';
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
@@ -63,15 +31,7 @@ type Props = {
 };
 
 export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
-  const sendTurn = useAppStore((s) => s.sendTurn);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
-  const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
-  const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
-  const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
-  const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
-  const workspaceDefaultVerbosity = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
-  );
   const sessionNudge = useAppStore((s) => s.sessionNudges[session.id] ?? null);
   const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
   const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
@@ -81,31 +41,25 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
   const selectedAgentName = useAppStore((s) => {
-    if (!selectedAgentId) {
-      return null;
-    }
+    if (!selectedAgentId) return null;
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
   });
   const activeAgentKind: AgentKind | null =
     agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null);
-  const connectedProviders = useAppStore(
-    useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
-  );
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
 
   const { showToast } = useToast();
+
   const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
   const setValue = useCallback(
     (next: string) => {
-      if (!selectedAgentId) {
-        return;
-      }
+      if (!selectedAgentId) return;
       if (next.length === 0) {
         clearAgentDraft(selectedAgentId);
       } else {
@@ -115,43 +69,15 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     [selectedAgentId, setAgentDraft, clearAgentDraft],
   );
 
-  const [error, setError] = useState<string | null>(null);
-  type FailedTurn = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-    readonly override: TurnProviderOverride | undefined;
-  };
-  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
-    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
-    const initialAgent = initialAgentId
-      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
-      : null;
-    return asProvider(initialAgent?.providerOverride) ?? asProvider(session.providerOverride);
-  });
-  const [selectedModel, setSelectedModelState] = useState<string | null>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
-    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
-    const initialAgent = initialAgentId
-      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
-      : null;
-    return initialAgent?.modelOverride ?? session.modelOverride ?? null;
-  });
-  const [effort, setEffortState] = useState<EffortLevel>(
-    () => asEffortLevel(session.effort) ?? 'medium',
+
+  const selectedAgentState = useAppStore((s) =>
+    selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
   );
-  const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
-    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
-    const agentRow = initialAgentId
-      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
-      : null;
-    return (
-      (agentRow?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? 'normal'
-    );
-  });
+  const isFirstTurnForAgent = useAppStore((s) =>
+    selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
+  );
+  const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
 
   const {
     attachments,
@@ -180,155 +106,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     dismissPopover,
   } = useChatPrefix({ session, value, setValue, sessionWorktree, showToast, wrapperRef });
 
-  const selectedAgentState = useAppStore((s) =>
-    selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
-  );
-  const agentModelOverride = useAppStore((s) =>
-    selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
-  );
-  const agentProviderOverride = useAppStore((s) =>
-    selectedAgentId ? (s.agentProviderOverride[selectedAgentId] ?? null) : null,
-  );
-  const isFirstTurnForAgent = useAppStore((s) =>
-    selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
-  );
-  const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
-
-  const currentProviderRef = useRef(selectedProvider);
-  currentProviderRef.current = selectedProvider;
-  const currentModelRef = useRef(selectedModel);
-  currentModelRef.current = selectedModel;
-  const currentEffortRef = useRef(effort);
-  currentEffortRef.current = effort;
-
-  type RightSizePending = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-  };
-  const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null);
-  const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
-  type ScopePending = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-    readonly mismatch: ScopeMismatch;
-  };
-  const [scopePending, setScopePending] = useState<ScopePending | null>(null);
-  const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
-  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
-  const allowOverride = session.providerPreference.allowTurnOverride;
-  const defaultProvider = session.providerPreference.defaultProvider;
-
-  const effectiveProvider: ProviderId =
-    selectedProvider ?? agentProviderOverride ?? defaultProvider;
-  const defaultModel =
-    agentModelOverride ??
-    session.providerPreference.defaultModel ??
-    getDefaultTurnModel(defaultProvider);
-  const effectiveModel =
-    selectedModel ??
-    session.modelOverride ??
-    (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider));
-  const effectiveEffort = clampEffort(effectiveModel, effort);
-
-  const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
-
-  const routingOverride: TurnProviderOverride | undefined = allowOverride
-    ? { providerId: effectiveProvider, model: effectiveModel }
-    : undefined;
-
-  const connectedProviderIds = connectedProviders.map((p) => p.id);
-
-  const setEffort = (level: EffortLevel) => {
-    setEffortState(level);
-    void storeSetSessionConfig(session.id, { effort: level });
-    if (selectedAgentId) {
-      void storeSetAgentConfig(session.id, selectedAgentId, { effort: level });
-      storeSetAgentEffortOverride(selectedAgentId, level);
-    }
-  };
-
-  const setVerbosity = (level: VerbosityLevel) => {
-    setVerbosityState(level);
-    if (selectedAgentId) {
-      void storeSetAgentVerbosity(session.id, selectedAgentId, level);
-    }
-  };
-
-  const setSelectedProvider = (id: ProviderId | null) => {
-    setSelectedProviderState(id);
-    void storeSetSessionConfig(session.id, { providerOverride: id });
-    if (selectedAgentId) {
-      void storeSetAgentConfig(session.id, selectedAgentId, { providerOverride: id });
-    }
-  };
-
-  const setSelectedModel = (id: string | null) => {
-    setSelectedModelState(id);
-    void storeSetSessionConfig(session.id, { modelOverride: id });
-    if (selectedAgentId) {
-      void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
-    }
-  };
-
-  const onSelectProvider = (id: ProviderId) => {
-    if (!connectedProviderIds.includes(id)) {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-provider-studio', { detail: { providerId: id } }),
-      );
-      return;
-    }
-    if (!allowOverride || isRunning) {
-      return;
-    }
-    setSelectedProvider(id);
-    setSelectedModel(null);
-  };
-
-  const onSelectModel = (id: string) => {
-    if (!allowOverride || isRunning) {
-      return;
-    }
-    setSelectedModel(id);
-  };
-
-  const onResetTurnOverride = () => {
-    if (!allowOverride || isRunning) {
-      return;
-    }
-    setSelectedProvider(null);
-    setSelectedModel(null);
-  };
-
-  const dispatchTurn = useCallback(
-    async (
-      content: string,
-      atts: ReadonlyArray<PendingAttachment>,
-      override: TurnProviderOverride | undefined,
-    ) => {
-      try {
-        await sendTurn({
-          sessionId: session.id,
-          content,
-          ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
-          override,
-          onNewAlerts: (alerts) => {
-            if (!SESSION_FEATURES.budget) {
-              return;
-            }
-            for (const alert of alerts) {
-              showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
-            }
-          },
-        });
-        setLastFailedTurn(null);
-        cleanupSentAttachments(atts);
-      } catch (err) {
-        setError(formatError(err));
-        setLastFailedTurn({ content, attachments: atts, override });
-      }
-    },
-    [sendTurn, session.id, showToast, cleanupSentAttachments],
-  );
+  const routing = useTurnRouting({ session, isRunning });
+  const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
 
   const onEditQueued = useCallback(
     (item: QueuedTurn) => {
@@ -339,208 +118,38 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     [setValue, setAttachments],
   );
 
-  const { queue, enqueue, removeQueued, editQueued, clearQueue } = useMessageQueue({
+  const { queue, enqueue, removeQueued, editQueued } = useMessageQueue({
+    agentId: selectedAgentId,
     isRunning,
-    dispatchTurn,
+    dispatchTurn: dispatch.dispatchTurn,
     onEdit: onEditQueued,
   });
 
-  const sendWith = async (
-    content: string,
-    atts: ReadonlyArray<PendingAttachment>,
-    modelOverrideId: string | null,
-  ) => {
-    const override: TurnProviderOverride | undefined = allowOverride
-      ? { providerId: effectiveProvider, model: modelOverrideId ?? effectiveModel }
-      : undefined;
+  const scope = useScopeNudge({ session, activeAgentKind, isRunning });
+  const rightSize = useRightSizeNudge({
+    isFirstTurnForAgent,
+    value,
+    attachments,
+    effectiveModel: routing.effectiveModel,
+    modelCandidates: routing.modelCandidates,
+    allowOverride: routing.allowOverride,
+  });
 
-    if (isRunning) {
-      enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
-      return;
-    }
-
-    await dispatchTurn(content, atts, override);
-  };
-
-  const onSend = async () => {
-    const content = value.trim();
-    const atts = attachments;
-    if ((!content && atts.length === 0) || providerDisconnected) {
-      return;
-    }
-    setError(null);
-    setLastFailedTurn(null);
-
-    if (
-      !isRunning &&
-      scopePending === null &&
-      activeAgentKind !== null &&
-      session.workflowRuns.length === 0
-    ) {
-      const mismatch = detectScopeMismatch(content, activeAgentKind);
-      if (mismatch) {
-        const id = crypto.randomUUID();
-        try {
-          await insertNudgeEvent(tauriDatabase, {
-            id,
-            ts: new Date().toISOString() as IsoDateTime,
-            kind: 'scope-mismatch',
-            contextJson: JSON.stringify({
-              sessionId: session.id,
-              agentKind: activeAgentKind,
-              mismatchKind: mismatch.kind,
-              suggested: mismatch.suggestedAgentKind,
-            }),
-            outcome: null,
-            outcomeTs: null,
-          });
-        } catch {
-          // telemetry is best-effort
-        }
-        setScopeNudgeEventId(id);
-        setScopePending({ content, attachments: atts, mismatch });
-        return;
-      }
-    }
-
-    if (allowOverride && !isRunning && rightSizeSuggestion !== null && rightSizePending === null) {
-      setRightSizePending({ content, attachments: atts });
-      return;
-    }
-
-    setValue('');
-    setAttachments([]);
-    await sendWith(content, atts, null);
-  };
-
-  const recordScopeOutcome = async (outcome: NudgeOutcome) => {
-    if (!scopeNudgeEventId) {
-      return;
-    }
-    try {
-      await updateNudgeEventOutcome(
-        tauriDatabase,
-        scopeNudgeEventId,
-        outcome,
-        new Date().toISOString() as IsoDateTime,
-      );
-    } catch {
-      // best-effort
-    }
-    setScopeNudgeEventId(null);
-  };
-
-  const onScopeSpawn = async () => {
-    if (!scopePending) {
-      return;
-    }
-    const target = scopePending.mismatch.suggestedAgentKind;
-    const content = scopePending.content;
-    setScopePending(null);
-    setValue(content);
-    await recordScopeOutcome('accepted');
-    try {
-      await spawnAgent(session.id, { kindOverride: target });
-    } catch {
-      // ignore, user will see standard error path elsewhere
-    }
-  };
-
-  const onScopeSendAnyway = async () => {
-    if (!scopePending) {
-      return;
-    }
-    const content = scopePending.content;
-    const atts = scopePending.attachments;
-    setScopePending(null);
-    setValue('');
-    setAttachments([]);
-    await recordScopeOutcome('overridden');
-    await sendWith(content, atts, null);
-  };
-
-  const onScopeDismiss = async () => {
-    setScopePending(null);
-    await recordScopeOutcome('dismissed');
-  };
-
-  const onUseSuggested = async () => {
-    const pending = rightSizePending;
-    if (pending === null) {
-      return;
-    }
-    const suggested = rightSizeSuggestion?.model ?? null;
-    setRightSizePending(null);
-    setRightSizeDismissed(true);
-    setValue('');
-    setAttachments([]);
-    if (suggested !== null) {
-      setSelectedModel(suggested);
-    }
-    await sendWith(pending.content, pending.attachments, suggested);
-  };
-
-  const onKeepCurrent = async () => {
-    const pending = rightSizePending;
-    if (pending === null) {
-      return;
-    }
-    setRightSizePending(null);
-    setRightSizeDismissed(true);
-    setValue('');
-    setAttachments([]);
-    await sendWith(pending.content, pending.attachments, null);
-  };
-
-  const onChangeModel = () => {
-    setRightSizePending(null);
-    setRightSizeDismissed(true);
-  };
-
-  const lastAgentIdRef = useRef(selectedAgentId);
-
-  useEffect(() => {
-    if (lastAgentIdRef.current === selectedAgentId) {
-      return;
-    }
-    const outgoingAgentId = lastAgentIdRef.current;
-    lastAgentIdRef.current = selectedAgentId;
-
-    if (outgoingAgentId !== null) {
-      void storeSetAgentConfig(session.id, outgoingAgentId, {
-        providerOverride: currentProviderRef.current,
-        modelOverride: currentModelRef.current,
-        effort: currentEffortRef.current,
-      });
-    }
-
-    const restoredAgent =
-      selectedAgentId !== null
-        ? (useAppStore.getState().sessionPhaseRuns[session.id] ?? []).find(
-            (r) => r.id === selectedAgentId,
-          )
-        : null;
-    const restoredProvider = asProvider(restoredAgent?.providerOverride);
-    const restoredModel = restoredAgent?.modelOverride ?? null;
-    const restoredEffort = asEffortLevel(restoredAgent?.effort);
-    const restoredVerbosity =
-      (restoredAgent?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? null;
-
-    setSelectedProviderState(restoredProvider);
-    setSelectedModelState(restoredModel);
-    if (restoredEffort !== null) {
-      setEffortState(restoredEffort);
-    }
-    if (restoredVerbosity !== null) {
-      setVerbosityState(restoredVerbosity);
-    }
-
-    clearQueue();
-    setRightSizePending(null);
-    setRightSizeDismissed(false);
-    setScopePending(null);
-    setScopeNudgeEventId(null);
-  }, [selectedAgentId]);
+  useAgentSwitchSync({
+    session,
+    selectedAgentId,
+    currentProviderRef: routing.currentProviderRef,
+    currentModelRef: routing.currentModelRef,
+    currentEffortRef: routing.currentEffortRef,
+    setSelectedProviderState: routing.setSelectedProviderState,
+    setSelectedModelState: routing.setSelectedModelState,
+    setEffortState: routing.setEffortState,
+    setVerbosityState: routing.setVerbosityState,
+    setRightSizePending: rightSize.setRightSizePending,
+    setRightSizeDismissed: rightSize.setRightSizeDismissed,
+    setScopePending: scope.setScopePending,
+    setScopeNudgeEventId: scope.setScopeNudgeEventId,
+  });
 
   useEffect(() => {
     void loadScripts(session.workspaceId);
@@ -550,6 +159,126 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   useEffect(() => {
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
+
+  const sendWith = useCallback(
+    async (
+      content: string,
+      atts: ReadonlyArray<PendingAttachment>,
+      modelOverrideId: string | null,
+    ) => {
+      const override: TurnProviderOverride | undefined = routing.allowOverride
+        ? {
+            providerId: routing.effectiveProvider,
+            model: modelOverrideId ?? routing.effectiveModel,
+          }
+        : undefined;
+
+      if (isRunning) {
+        enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
+        return;
+      }
+
+      await dispatch.dispatchTurn(content, atts, override);
+    },
+    [
+      routing.allowOverride,
+      routing.effectiveProvider,
+      routing.effectiveModel,
+      isRunning,
+      enqueue,
+      dispatch.dispatchTurn,
+    ],
+  );
+
+  const onSend = async () => {
+    const content = value.trim();
+    const atts = attachments;
+    if ((!content && atts.length === 0) || providerDisconnected) return;
+    dispatch.setError(null);
+    dispatch.setLastFailedTurn(null);
+
+    if (await scope.checkAndInterceptScope(content, atts)) return;
+    if (!isRunning && rightSize.checkAndInterceptRightSize(content, atts)) return;
+
+    setValue('');
+    setAttachments([]);
+    await sendWith(content, atts, null);
+  };
+
+  const onScopeSpawn = async () => {
+    if (!scope.scopePending) return;
+    const target = scope.scopePending.mismatch.suggestedAgentKind;
+    const content = scope.scopePending.content;
+    scope.setScopePending(null);
+    setValue(content);
+    await scope.recordScopeOutcome('accepted');
+    try {
+      await spawnAgent(session.id, { kindOverride: target });
+    } catch {
+      // ignore
+    }
+  };
+
+  const onScopeSendAnyway = async () => {
+    if (!scope.scopePending) return;
+    const content = scope.scopePending.content;
+    const atts = scope.scopePending.attachments;
+    scope.setScopePending(null);
+    setValue('');
+    setAttachments([]);
+    await scope.recordScopeOutcome('overridden');
+    await sendWith(content, atts, null);
+  };
+
+  const onScopeDismiss = async () => {
+    scope.setScopePending(null);
+    await scope.recordScopeOutcome('dismissed');
+  };
+
+  const onUseSuggested = async () => {
+    const pending = rightSize.rightSizePending;
+    if (pending === null) return;
+    const suggested = rightSize.rightSizeSuggestion?.model ?? null;
+    rightSize.setRightSizePending(null);
+    rightSize.setRightSizeDismissed(true);
+    setValue('');
+    setAttachments([]);
+    if (suggested !== null) routing.setSelectedModel(suggested);
+    await sendWith(pending.content, pending.attachments, suggested);
+  };
+
+  const onKeepCurrent = async () => {
+    const pending = rightSize.rightSizePending;
+    if (pending === null) return;
+    rightSize.setRightSizePending(null);
+    rightSize.setRightSizeDismissed(true);
+    setValue('');
+    setAttachments([]);
+    await sendWith(pending.content, pending.attachments, null);
+  };
+
+  const onChangeModel = () => {
+    rightSize.setRightSizePending(null);
+    rightSize.setRightSizeDismissed(true);
+  };
+
+  const suggestions = useSuggestionCards({
+    session,
+    sessionNudge,
+    activeAgentKind,
+    scopePending: scope.scopePending,
+    rightSizePending: rightSize.rightSizePending,
+    rightSizeSuggestion: rightSize.rightSizeSuggestion,
+    effectiveModel: routing.effectiveModel,
+    onScopeSpawn,
+    onScopeSendAnyway,
+    onScopeDismiss,
+    onUseSuggested,
+    onKeepCurrent,
+    onChangeModel,
+    dismissSessionNudge,
+    acceptSessionNudgeHandoff,
+  });
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (
@@ -565,185 +294,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     }
   };
 
+  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
   const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined;
-  const overrideDisabledTitle = !allowOverride
+  const overrideDisabledTitle = !routing.allowOverride
     ? 'override disabled in session settings'
     : undefined;
-
-  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
-
-  const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
-    const ids = new Set(providerModels.map((m) => m.id));
-    if (effectiveModel) {
-      ids.add(effectiveModel);
-    }
-    return Array.from(ids);
-  }, [providerModels, effectiveModel]);
-
-  const rightSizeSuggestion = useMemo<{
-    readonly direction: 'lighter' | 'heavier';
-    readonly model: string;
-    readonly kind: 'strong' | 'optional';
-    readonly costMultiplier: number | null;
-  } | null>(() => {
-    if (!isFirstTurnForAgent || rightSizeDismissed) {
-      return null;
-    }
-    const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
-    if (weight === 'light') {
-      const s = suggestLighterModel(effectiveModel, modelCandidates);
-      return s
-        ? { direction: 'lighter', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
-        : null;
-    }
-    if (weight === 'heavy') {
-      const s = suggestHeavierModel(effectiveModel, modelCandidates);
-      return s
-        ? { direction: 'heavier', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
-        : null;
-    }
-    return null;
-  }, [
-    isFirstTurnForAgent,
-    rightSizeDismissed,
-    value,
-    effectiveModel,
-    modelCandidates,
-    attachments,
-  ]);
-
-  useEffect(() => {
-    if (rightSizePending !== null && rightSizeSuggestion === null) {
-      setRightSizePending(null);
-    }
-  }, [rightSizePending, rightSizeSuggestion]);
-
-  const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
-  if (sessionNudge?.kind === 'plan-ready' && session.workflowRuns.length === 0) {
-    suggestions.push({
-      key: 'plan-ready',
-      node: (
-        <NudgeCard
-          severity="success"
-          ariaLabel="plan ready to implement"
-          testId="plan-ready-nudge"
-          icon={<ClipboardCheck size={12} aria-hidden />}
-          title={
-            <>
-              Plan looks ready: <strong>{sessionNudge.planTitle}</strong>. Spawn an implementer to
-              execute it?
-            </>
-          }
-          primary={{
-            label: 'Spawn implementer',
-            onClick: () => void acceptSessionNudgeHandoff(session.id),
-            testId: 'plan-ready-accept',
-          }}
-          secondary={{
-            label: 'Not now',
-            onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
-            testId: 'plan-ready-dismiss',
-          }}
-          onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
-        />
-      ),
-    });
-  }
-  if (sessionNudge?.kind === 'scout-fanout-suggested') {
-    suggestions.push({
-      key: 'scout-fanout',
-      node: (
-        <NudgeCard
-          severity="info"
-          ariaLabel="multi-scout exploration available"
-          testId="scout-fanout-nudge"
-          icon={<Telescope size={12} aria-hidden />}
-          title={
-            <>
-              Broad search across <strong>{sessionNudge.areaCount} areas</strong>. Multi-scout can
-              explore them in parallel.
-            </>
-          }
-          body={<>Enable it for this workspace to scan large codebases faster.</>}
-          primary={{
-            label: 'Enable multi-scout',
-            onClick: () => {
-              window.dispatchEvent(
-                new CustomEvent('goodboy:open-workspace-settings', {
-                  detail: { section: 'scout' },
-                }),
-              );
-              void dismissSessionNudge(session.id, 'accepted');
-            },
-            testId: 'scout-fanout-enable',
-          }}
-          secondary={{
-            label: 'Not now',
-            onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
-            testId: 'scout-fanout-dismiss',
-          }}
-          onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
-        />
-      ),
-    });
-  }
-  if (scopePending !== null && activeAgentKind !== null) {
-    suggestions.push({
-      key: 'scope',
-      node: (
-        <NudgeCard
-          severity="warning"
-          ariaLabel="scope mismatch suggestion"
-          testId="scope-mismatch-nudge"
-          title={
-            <>
-              you're on <strong>{AGENT_KIND_META[activeAgentKind].label.toLowerCase()}</strong>.
-              this request fits{' '}
-              <strong>
-                {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}
-              </strong>{' '}
-              better.
-            </>
-          }
-          body={
-            <>
-              spawn a{' '}
-              {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()} agent,
-              or send anyway.
-            </>
-          }
-          primary={{
-            label: `spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
-            onClick: () => void onScopeSpawn(),
-            testId: 'scope-mismatch-spawn',
-          }}
-          secondary={{
-            label: 'send anyway',
-            onClick: () => void onScopeSendAnyway(),
-            testId: 'scope-mismatch-override',
-          }}
-          onDismiss={() => void onScopeDismiss()}
-        />
-      ),
-    });
-  }
-  if (rightSizePending !== null && rightSizeSuggestion !== null) {
-    suggestions.push({
-      key: 'right-size',
-      node: (
-        <RightSizeCard
-          direction={rightSizeSuggestion.direction}
-          kind={rightSizeSuggestion.kind}
-          costMultiplier={rightSizeSuggestion.costMultiplier}
-          currentModel={effectiveModel}
-          suggestedModel={rightSizeSuggestion.model}
-          onUseSuggested={() => void onUseSuggested()}
-          onKeepCurrent={() => void onKeepCurrent()}
-          onChangeModel={onChangeModel}
-        />
-      ),
-    });
-  }
 
   return (
     <div className="px-10 pb-4 pt-2">
@@ -751,8 +306,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
-            turnOverride={routingOverride}
-            connectedProviders={connectedProviderIds}
+            turnOverride={routing.routingOverride}
+            connectedProviders={routing.connectedProviderIds}
             onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
           />
         )}
@@ -846,7 +401,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           <Divider />
           <div className="flex items-center justify-between gap-2 px-2.5 py-2">
             <div className="flex items-center gap-2">
-              <PermissionModePicker session={session} activeProvider={effectiveProvider} />
+              <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -880,41 +435,39 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <ProviderUsagePill provider={effectiveProvider} />
+              <ProviderUsagePill provider={routing.effectiveProvider} />
               <ModelPicker
-                providers={providerCandidates}
-                models={modelCandidates}
-                provider={effectiveProvider}
-                model={effectiveModel}
-                effort={effectiveEffort}
-                verbosity={verbosity}
-                connectedProviders={connectedProviderIds}
-                disabled={!allowOverride || isRunning}
+                providers={routing.providerCandidates}
+                models={routing.modelCandidates}
+                provider={routing.effectiveProvider}
+                model={routing.effectiveModel}
+                effort={routing.effectiveEffort}
+                verbosity={routing.verbosity}
+                connectedProviders={routing.connectedProviderIds}
+                disabled={!routing.allowOverride || isRunning}
                 disabledTitle={overrideDisabledTitle}
-                defaultProvider={defaultProvider}
-                defaultModel={defaultModel}
-                onSelectProvider={onSelectProvider}
-                onSelectModel={onSelectModel}
-                onSelectEffort={setEffort}
-                onSelectVerbosity={setVerbosity}
-                onResetToDefault={onResetTurnOverride}
+                defaultProvider={routing.defaultProvider}
+                defaultModel={routing.defaultModel}
+                onSelectProvider={routing.onSelectProvider}
+                onSelectModel={routing.onSelectModel}
+                onSelectEffort={routing.setEffort}
+                onSelectVerbosity={routing.setVerbosity}
+                onResetToDefault={routing.onResetTurnOverride}
               />
             </div>
           </div>
         </div>
-        {error ? (
+        {dispatch.error ? (
           <div role="alert" className="flex items-center gap-2">
-            <p className="flex-1 text-xs text-danger">{error}</p>
-            {lastFailedTurn !== null && (
+            <p className="flex-1 text-xs text-danger">{dispatch.error}</p>
+            {dispatch.lastFailedTurn !== null && (
               <button
                 type="button"
                 onClick={() => {
-                  setError(null);
-                  void dispatchTurn(
-                    lastFailedTurn.content,
-                    lastFailedTurn.attachments,
-                    lastFailedTurn.override,
-                  );
+                  const failed = dispatch.lastFailedTurn;
+                  if (!failed) return;
+                  dispatch.setError(null);
+                  void dispatch.dispatchTurn(failed.content, failed.attachments, failed.override);
                 }}
                 className="shrink-0 rounded border border-danger/30 bg-danger/5 px-2 py-0.5 text-xs font-medium text-danger hover:bg-danger/15"
               >
