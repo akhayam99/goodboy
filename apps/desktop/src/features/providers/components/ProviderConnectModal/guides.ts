@@ -16,7 +16,7 @@ export type ProviderGuide = {
 const ANTHROPIC_DOCS = 'https://docs.claude.com/en/docs/claude-code/overview';
 const CURSOR_DOCS = 'https://docs.cursor.com/en/cli/installation';
 const CODEX_DOCS = 'https://github.com/openai/codex#installation';
-const GEMINI_DOCS = 'https://github.com/google-gemini/gemini-cli#installation';
+const GEMINI_DOCS = 'https://antigravity.google/cli';
 
 const INSTALL_GUIDES: Record<ProviderId, ProviderGuide> = {
   anthropic: {
@@ -80,24 +80,24 @@ const INSTALL_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsLabel: 'Codex install guide',
   },
   gemini: {
-    headline: 'Install Gemini CLI',
-    subscription: 'Google AI Pro plan, or any Google account on the free tier.',
+    headline: 'Install Antigravity CLI',
+    subscription: 'Google AI Pro plan, or a Gemini API key on the free tier.',
     steps: [
       {
-        title: 'npm global install',
-        body: 'Fetches `@google/gemini-cli` and exposes the `gemini` command on your PATH. Node 20+ required.',
+        title: 'Curl installer',
+        body: 'The official script downloads the `agy` binary for your OS and drops it into `~/.local/bin`. Antigravity is the successor to the Gemini CLI.',
       },
       {
-        title: 'Sign-in is interactive',
-        body: 'Running `gemini` opens an interactive menu in the terminal where you pick the OAuth flow. Click in the terminal and use the arrow keys, the prompt accepts input directly.',
+        title: 'PATH check',
+        body: 'After install, restart Goodboy if `agy` does not show up. Some shells need a new session before the new PATH takes effect.',
       },
       {
-        title: 'Auth lives in a file',
-        body: 'After login Gemini writes `~/.gemini/oauth_creds.json`. Goodboy reads that file to know you are connected, no subprocess polling needed.',
+        title: 'Then connect',
+        body: 'Goodboy moves to the connect step. You sign in with `agy login` or paste a Gemini API key, whichever you prefer.',
       },
     ],
     docsUrl: GEMINI_DOCS,
-    docsLabel: 'Gemini CLI docs',
+    docsLabel: 'Antigravity CLI docs',
   },
 };
 
@@ -151,20 +151,20 @@ const LOGIN_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsLabel: 'Codex sign-in',
   },
   gemini: {
-    headline: 'Sign in to Gemini',
-    subscription: 'Your Google account (free or AI Pro).',
+    headline: 'Connect Antigravity',
+    subscription: 'Your Google account, or a Gemini API key.',
     steps: [
       {
-        title: 'Pick the OAuth flow',
-        body: 'Gemini drops you into an interactive menu. Click in the terminal and use the arrow keys to choose "Login with Google".',
+        title: 'Browser handoff',
+        body: '`agy login` opens Google in the browser. Sign in, grant the scopes, and Antigravity writes the session to `~/.gemini/antigravity-cli/`.',
       },
       {
-        title: 'Browser handoff',
-        body: 'Google opens in the browser. Sign in, grant the requested scopes, and Gemini writes the token to `~/.gemini/oauth_creds.json`.',
+        title: 'API-key alternative',
+        body: 'Prefer a key? Paste a Gemini API key instead and Goodboy stores it as GEMINI_API_KEY for `agy`. No browser round-trip.',
       },
     ],
     docsUrl: GEMINI_DOCS,
-    docsLabel: 'Gemini CLI auth',
+    docsLabel: 'Antigravity CLI auth',
   },
 };
 
@@ -206,16 +206,16 @@ const LOGOUT_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsLabel: 'Codex docs',
   },
   gemini: {
-    headline: 'Sign out of Gemini',
+    headline: 'Sign out of Antigravity',
     subscription: '',
     steps: [
       {
-        title: 'File removal',
-        body: 'Gemini has no `logout` subcommand. Goodboy removes `~/.gemini/oauth_creds.json` directly, which is what gemini reads on startup.',
+        title: 'Local-only',
+        body: 'Goodboy removes `~/.gemini/antigravity-cli/`, the session state `agy` reads on startup. Your Google account stays intact.',
       },
     ],
     docsUrl: GEMINI_DOCS,
-    docsLabel: 'Gemini CLI docs',
+    docsLabel: 'Antigravity CLI docs',
   },
 };
 

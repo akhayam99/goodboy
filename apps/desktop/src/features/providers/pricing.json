@@ -11,12 +11,7 @@
     "codex-mini-latest": { "inputPerMtok": 1.5, "outputPerMtok": 6, "cachedInputPerMtok": 0.75 }
   },
   "gemini": {
-    "gemini-2.5-pro": { "inputPerMtok": 1.25, "outputPerMtok": 10, "cachedInputPerMtok": 0.31 },
-    "gemini-2.5-flash": { "inputPerMtok": 0.3, "outputPerMtok": 2.5, "cachedInputPerMtok": 0.075 },
-    "gemini-2.5-flash-lite": {
-      "inputPerMtok": 0.1,
-      "outputPerMtok": 0.4,
-      "cachedInputPerMtok": 0.025
-    }
+    "gemini-3.1-pro": { "inputPerMtok": 2, "outputPerMtok": 12 },
+    "gemini-3.5-flash": { "inputPerMtok": 1.5, "outputPerMtok": 9 }
   }
 }

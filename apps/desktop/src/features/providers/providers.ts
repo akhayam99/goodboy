@@ -39,14 +39,14 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   anthropic: 'https://docs.claude.com/en/docs/claude-code/overview',
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
-  gemini: 'https://github.com/google-gemini/gemini-cli#installation',
+  gemini: 'https://antigravity.google/cli',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   anthropic: 'claude',
   cursor: 'cursor-agent',
   codex: 'codex',
-  gemini: 'gemini',
+  gemini: 'agy',
 };
 
 const TAURI_GET_CMD: Record<ProviderId, string> = {

@@ -33,7 +33,7 @@ describe('getModelPrice', () => {
   });
 
   it('returns null for gemini picker ids with no static price table', () => {
-    expect(getModelPrice('gemini-2.5-pro')).toBeNull();
+    expect(getModelPrice('gemini-3.1-pro')).toBeNull();
   });
 
   it('returns null for an unknown model with no fallback', () => {

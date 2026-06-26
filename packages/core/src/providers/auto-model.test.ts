@@ -33,21 +33,21 @@ describe('autoModelForRole', () => {
     it('picks the matching expensive-tier model for a high-tier role', () => {
       expect(autoModelForRole('planner', ['gemini'])).toEqual({
         provider: 'gemini',
-        model: 'gemini-2.5-pro',
+        model: 'gemini-3.1-pro',
       });
     });
 
     it('picks the highest-weight cheap model for a low-tier role', () => {
       expect(autoModelForRole('scout', ['gemini'])).toEqual({
         provider: 'gemini',
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.5-flash',
       });
     });
 
     it('treats an unknown role as the custom default tier', () => {
       expect(autoModelForRole('totally-made-up', ['gemini'])).toEqual({
         provider: 'gemini',
-        model: 'gemini-2.5-pro',
+        model: 'gemini-3.1-pro',
       });
     });
 

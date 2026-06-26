@@ -9,6 +9,8 @@ import {
   getCapabilities,
   listSupportedProviders,
 } from './registry';
+import { getDefaultTurnModel } from './capabilities';
+import { GEMINI_DEFAULT_MODEL } from './gemini/constants';
 
 describe('listSupportedProviders', () => {
   it('returns all four provider ids', () => {
@@ -88,6 +90,11 @@ describe('getCapabilities', () => {
     const caps = getCapabilities('gemini');
     expect(caps.models.length).toBeGreaterThan(0);
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
+  });
+
+  it('getDefaultTurnModel for gemini returns the cheap default, not the pro turn model', () => {
+    expect(getDefaultTurnModel('gemini')).toBe(GEMINI_DEFAULT_MODEL);
+    expect(getDefaultTurnModel('gemini')).toBe('gemini-3.5-flash');
   });
 
   it('all models have required fields', () => {

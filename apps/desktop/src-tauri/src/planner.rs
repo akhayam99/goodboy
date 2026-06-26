@@ -105,10 +105,11 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
             format!("{}\n\n{}", args.system_prompt, args.user_message),
         ]),
         "gemini" => Ok(vec![
-            "-m".to_string(),
-            args.model.clone(),
             "-p".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
+            "--model".to_string(),
+            args.model.clone(),
+            "--sandbox".to_string(),
         ]),
         other => Err(PlannerError::UnknownProvider(other.to_string())),
     }

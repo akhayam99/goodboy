@@ -17,7 +17,7 @@ const ANTHROPIC = [
 
 const CODEX = ['gpt-5.4-mini', 'gpt-5.2', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.5'];
 
-const GEMINI = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+const GEMINI = ['gemini-3.5-flash', 'gemini-3.1-pro'];
 
 describe('suggestLighterModel', () => {
   it('Opus 4.8 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
@@ -59,7 +59,7 @@ describe('suggestLighterModel', () => {
   });
 
   it('gemini: Pro has no mid tier, so no suggestion instead of falling to Flash', () => {
-    expect(suggestLighterModel('gemini-2.5-pro', GEMINI)).toBeNull();
+    expect(suggestLighterModel('gemini-3.1-pro', GEMINI)).toBeNull();
   });
 });
 
@@ -121,11 +121,11 @@ describe('suggestHeavierModel', () => {
   });
 
   it('gemini: Flash → Pro', () => {
-    expect(suggestHeavierModel('gemini-2.5-flash', GEMINI)?.id).toBe('gemini-2.5-pro');
+    expect(suggestHeavierModel('gemini-3.5-flash', GEMINI)?.id).toBe('gemini-3.1-pro');
   });
 
   it('never downgrades the cost tier to gain weight', () => {
-    expect(suggestHeavierModel('gemini-2.5-pro', GEMINI)).toBeNull();
+    expect(suggestHeavierModel('gemini-3.1-pro', GEMINI)).toBeNull();
   });
 });
 

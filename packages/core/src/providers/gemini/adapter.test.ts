@@ -126,19 +126,23 @@ describe('GeminiAdapter.spawn', () => {
     await expect(collect(adapter)).rejects.toThrow('ENOENT gemini');
   });
 
-  it('passes -m <model> -p <prompt> with system prompt prepended', async () => {
+  it('passes -p <prompt> --model <model> --sandbox with system prompt prepended', async () => {
     let captured: ReadonlyArray<string> = [];
+    let capturedBin = '';
     const child = new FakeChild(['ok']);
-    const spawnFn = ((_bin: string, args: ReadonlyArray<string>) => {
+    const spawnFn = ((bin: string, args: ReadonlyArray<string>) => {
+      capturedBin = bin;
       captured = args;
       return child;
     }) as never;
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn });
     await collect(adapter);
-    expect(captured[0]).toBe('-m');
-    expect(captured[1]).toBe(GEMINI_DEFAULT_MODEL);
-    expect(captured[2]).toBe('-p');
-    expect(captured[3]).toBe('sys\n\nhi');
+    expect(capturedBin).toBe('agy');
+    expect(captured[0]).toBe('-p');
+    expect(captured[1]).toBe('sys\n\nhi');
+    expect(captured[2]).toBe('--model');
+    expect(captured[3]).toBe(GEMINI_DEFAULT_MODEL);
+    expect(captured[4]).toBe('--sandbox');
   });
 
   it('kills the child on early break', async () => {
