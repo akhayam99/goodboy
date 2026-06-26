@@ -15,159 +15,43 @@ export type WorkflowLibraryEntry = {
 
 export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
   {
-    slug: 'refactor',
-    name: 'Refactor',
-    description: 'Scout the area, plan the change, refactor, then verify.',
+    slug: 'refactor-example',
+    name: 'Refactor (example)',
+    description:
+      'A worked example: scout the area, plan the change, implement it, then test. Clone it and tune each step, or build your own from scratch.',
     goal: 'Restructure the target code without changing its behavior, keeping tests green throughout.',
     steps: [
       {
         name: 'Scout',
         role: 'scout',
         promptPrefix:
-          'Survey the area of code in scope. List relevant files, key abstractions, callers, and any tests. Do not propose changes yet.',
-        expectedOutput: 'A short map of the area: files, abstractions, callers, tests.',
+          'Search the docs and the code for everything relevant to the goal. List the files in scope, the key abstractions, who calls them, and the tests that cover them. Back each entry with a file:line reference. Do not modify any code or propose changes yet.',
+        expectedOutput:
+          'A short map of the area: relevant files, key abstractions, callers, and existing tests, each with a file:line reference.',
       },
       {
         name: 'Plan',
         role: 'planner',
         promptPrefix:
-          'Propose a refactor plan. Order changes by risk. Identify what stays, what moves, and what gets deleted. Flag any tests that need updating.',
-        expectedOutput: 'An ordered plan with risk notes and impacted tests.',
-      },
-      {
-        name: 'Refactor',
-        role: 'implementer',
-        promptPrefix:
-          'Apply the refactor in small commits. Keep behavior unchanged unless the plan says otherwise. Update tests in lock-step.',
-        expectedOutput: 'Working tree with the refactor applied; tests still green.',
-      },
-      {
-        name: 'Verify',
-        role: 'reviewer',
-        promptPrefix:
-          'Run the test suite and review the diff against the plan. Note anything that drifted, anything skipped, and any new tech-debt introduced.',
-        expectedOutput: 'A pass/fail report with diff vs plan + open follow-ups.',
-      },
-    ],
-  },
-  {
-    slug: 'bug-fix',
-    name: 'Bug fix',
-    description: 'Reproduce with a failing test, diagnose, fix, verify.',
-    goal: 'Resolve the reported bug at its root cause and guard it with a regression test.',
-    steps: [
-      {
-        name: 'Reproduce',
-        role: 'tester',
-        promptPrefix:
-          'Reproduce the bug and lock it in with a minimal FAILING test. Capture the failing input, expected output, and actual output. Do not fix anything yet.',
-        expectedOutput: 'A committed failing test that captures the bug.',
-      },
-      {
-        name: 'Diagnose',
-        role: 'investigator',
-        promptPrefix:
-          'Trace the failure to its root cause. Identify the smallest set of files involved. Avoid speculation; back every claim with a file:line reference.',
-        expectedOutput: 'A root-cause statement with file:line references.',
-      },
-      {
-        name: 'Fix',
-        role: 'implementer',
-        promptPrefix:
-          'Apply the smallest change that resolves the root cause. Do not bundle unrelated cleanup. Make the failing test pass.',
-        expectedOutput: 'A focused diff that turns the failing test green.',
-      },
-      {
-        name: 'Verify',
-        role: 'reviewer',
-        promptPrefix:
-          'Run the full test suite. Confirm no regressions. Re-read the diff to ensure scope did not creep.',
-        expectedOutput: 'All tests green + a one-paragraph summary of the fix.',
-      },
-    ],
-  },
-  {
-    slug: 'ship',
-    name: 'Ship it',
-    description: 'Plan, implement, test, review. End to end.',
-    goal: 'Take the change from plan to reviewed, tested, shippable code in one pass.',
-    steps: [
-      {
-        name: 'Plan',
-        role: 'planner',
-        promptPrefix:
-          'Turn the goal into a concrete, ordered plan: files to touch and the specific change per file. No code yet.',
-        expectedOutput: 'An ordered plan with file paths and per-file changes.',
+          'Turn the scout map into a concrete, ordered refactor plan. For each file, state exactly what stays, what moves, and what gets deleted. Order changes by risk, lowest first. Flag every test that needs updating. Do not write code.',
+        expectedOutput:
+          'An ordered, per-file refactor plan with risk notes and the list of impacted tests.',
       },
       {
         name: 'Implement',
         role: 'implementer',
         promptPrefix:
-          'Execute the plan with minimal, correct changes. Stay in scope. Keep the diff reviewable.',
-        expectedOutput: 'Working code that follows the plan.',
+          'Apply the refactor in small, reviewable steps that follow the plan. Keep behavior unchanged unless the plan says otherwise. Update the affected tests in lock-step. Stay within scope. No speculative cleanup.',
+        expectedOutput:
+          'A working tree with the refactor applied and the affected tests updated in lock-step.',
       },
       {
         name: 'Test',
         role: 'tester',
         promptPrefix:
-          'Cover the change with tests: happy path, edge cases, and a regression guard. Fix the code, never weaken a test.',
-        expectedOutput: 'A green test suite that exercises the change.',
-      },
-      {
-        name: 'Review',
-        role: 'reviewer',
-        promptPrefix:
-          'Review the full diff for correctness, security and scope creep. Report findings; do not rewrite unrelated code.',
-        expectedOutput: 'A pass/fail review with any follow-ups.',
-      },
-    ],
-  },
-  {
-    slug: 'feature',
-    name: 'Feature',
-    description: 'Survey, plan, implement, test.',
-    goal: 'Deliver the new feature end to end, meeting its acceptance criteria with test coverage.',
-    steps: [
-      {
-        name: 'Survey',
-        role: 'scout',
-        promptPrefix:
-          'Survey where this feature fits: the modules it touches, existing patterns to follow, and any constraints. Do not write code.',
-        expectedOutput: 'A short map of where the feature lands and what to reuse.',
-      },
-      {
-        name: 'Plan',
-        role: 'planner',
-        promptPrefix:
-          'Turn the goal into a concrete plan: user-facing behavior, acceptance criteria, modules to touch, new types and data flow. No code yet.',
-        expectedOutput: 'A plan with acceptance criteria and per-file changes.',
-      },
-      {
-        name: 'Implement',
-        role: 'implementer',
-        promptPrefix:
-          'Build the feature against the plan. Stop at the first acceptance criterion that needs clarification. Keep diffs reviewable.',
-        expectedOutput: 'Working code that satisfies the acceptance criteria.',
-      },
-      {
-        name: 'Test',
-        role: 'tester',
-        promptPrefix:
-          'Cover the happy path, edge cases, and at least one regression case for prior bugs in the area. Prefer integration tests where they pay back.',
-        expectedOutput: 'A test suite that exercises the feature and guards regressions.',
-      },
-    ],
-  },
-  {
-    slug: 'exploration',
-    name: 'Exploration',
-    description: 'Single open-ended agent.',
-    steps: [
-      {
-        name: 'Explore',
-        role: 'custom',
-        promptPrefix: '',
-        expectedOutput: '',
+          'Run the full test suite and confirm the refactor preserved behavior. Add coverage for any path the refactor exposed. Fix the code when a test fails. Never weaken a test to make it pass.',
+        expectedOutput:
+          'A green test suite that proves behavior is unchanged, plus any new coverage the refactor required.',
       },
     ],
   },

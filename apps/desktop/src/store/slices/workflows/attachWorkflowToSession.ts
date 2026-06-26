@@ -2,6 +2,7 @@ import type {
   Agent,
   AttachmentInput,
   IsoDateTime,
+  ProviderId,
   SessionId,
   WorkflowId,
   WorkflowRun,
@@ -9,7 +10,12 @@ import type {
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
-import { autoModelForRole, isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
+import {
+  autoModelForRole,
+  getDefaultTurnModel,
+  isWorkflowComplete,
+  runsForWorkflowRun,
+} from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
@@ -77,17 +83,13 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
     const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-    const connectedProviders = get()
-      .providers.filter((p) => p.connection === 'connected')
-      .map((p) => p.id);
-    const enabled = session.providerPreference.enabledProviders;
-    const enabledSet = enabled && enabled.length > 0 ? new Set(enabled) : null;
-    const autoCandidates = connectedProviders.filter(
-      (p) => enabledSet === null || enabledSet.has(p),
-    );
+    const sessionDefaultProvider = (session.providerOverride ??
+      session.providerPreference.defaultProvider) as ProviderId;
     const newAgents: Agent[] = [];
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
+    const agentProviderOverrides: Record<string, ProviderId> = {};
+    const agentEffortOverrides: Record<string, string> = {};
     for (let i = 0; i < sortedSteps.length; i += 1) {
       const step = sortedSteps[i]!;
       const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
@@ -100,10 +102,16 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         status: 'pending',
         kind,
       });
-      const autoModel = autoModelForRole(step.role ?? 'custom', autoCandidates)?.model;
+      const resolvedProvider = step.providerOverride ?? sessionDefaultProvider;
+      agentProviderOverrides[agent.id] = resolvedProvider;
       agentModelOverrides[agent.id] =
-        step.modelOverride ?? autoModel ?? AGENT_KIND_DEFAULTS[kind].model;
+        step.modelOverride ??
+        autoModelForRole(step.role ?? 'custom', [sessionDefaultProvider])?.model ??
+        getDefaultTurnModel(sessionDefaultProvider);
       agentKindOverrides[agent.id] = kind;
+      if (step.effort) {
+        agentEffortOverrides[agent.id] = step.effort;
+      }
       newAgents.push(agent);
     }
 
@@ -145,6 +153,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
       agentModelOverride: { ...state.agentModelOverride, ...agentModelOverrides },
       agentKindOverride: { ...state.agentKindOverride, ...agentKindOverrides },
+      agentProviderOverride: { ...state.agentProviderOverride, ...agentProviderOverrides },
+      agentEffortOverride: { ...state.agentEffortOverride, ...agentEffortOverrides },
     }));
 
     const attachmentInputs = options?.attachmentInputs;

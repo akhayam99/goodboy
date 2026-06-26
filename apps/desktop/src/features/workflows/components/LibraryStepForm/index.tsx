@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input, Textarea, Tooltip } from '@goodboy/ui';
 import { X } from 'lucide-react';
-import { getDefaultTurnModel } from '@goodboy/core';
+import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
 import type {
   AgentEffort,
   AgentRole,
@@ -54,8 +54,11 @@ export const LibraryStepForm = ({
     def?.verbosityDefault ?? DEFAULT_VERBOSITY,
   );
 
-  const effProvider: ProviderId = providerOverride || connectedProviders[0] || 'anthropic';
-  const modelValue = modelOverride || getDefaultTurnModel(effProvider);
+  const recommendedProv: ProviderId = connectedProviders[0] ?? 'anthropic';
+  const recommendedMod: string =
+    autoModelForRole(role, [recommendedProv])?.model ?? getDefaultTurnModel(recommendedProv);
+  const effProvider: ProviderId = providerOverride !== '' ? providerOverride : recommendedProv;
+  const modelValue = modelOverride !== '' ? modelOverride : recommendedMod;
 
   type FormState = {
     name: string;
@@ -157,6 +160,7 @@ export const LibraryStepForm = ({
           <ProviderSelect
             value={providerOverride}
             providers={connectedProviders}
+            recommended={recommendedProv}
             onChange={(p) => {
               setProviderOverride(p);
               commit({ providerOverride: p });
@@ -168,6 +172,8 @@ export const LibraryStepForm = ({
           <ModelSelect
             provider={effProvider}
             value={modelValue}
+            recommendedModel={recommendedMod}
+            allowAuto
             onChange={(m) => {
               const levels = modelEffortLevels(m);
               setModelOverride(m);

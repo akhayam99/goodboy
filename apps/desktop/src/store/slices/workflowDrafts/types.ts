@@ -1,4 +1,4 @@
-import type { WorkflowId } from '@goodboy/types';
+import type { AgentRole, ProviderId, StepId, WorkflowId } from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { EffortLevel } from '../../../features/chat/utils/chat-constants';
 
@@ -6,12 +6,15 @@ export type { SetFn, GetFn } from '../../slice-types';
 
 export type Mode = 'preset' | 'custom';
 
-export type StepEdit = {
-  readonly name?: string;
-  readonly promptPrefix?: string;
-  readonly model?: string;
+export type EditableStep = {
+  readonly key: string;
+  readonly sourceStepId?: StepId;
+  readonly role: AgentRole;
+  readonly name: string;
+  readonly promptPrefix: string;
+  readonly providerOverride?: ProviderId;
+  readonly modelOverride?: string;
   readonly effort?: EffortLevel;
-  readonly dirty?: boolean;
 };
 
 export type WorkflowBuilderDraft = {
@@ -19,9 +22,10 @@ export type WorkflowBuilderDraft = {
   readonly goalText: string;
   readonly goalHistory: ReadonlyArray<string>;
   readonly selectedPresetId: WorkflowId | null;
+  readonly basePresetId: WorkflowId | null;
   readonly processText: string;
   readonly plan: PlannerOutput | null;
-  readonly stepEdits: Record<number, StepEdit>;
+  readonly steps: ReadonlyArray<EditableStep>;
   readonly saveAsPreset: boolean;
   readonly autoRun: boolean;
 };

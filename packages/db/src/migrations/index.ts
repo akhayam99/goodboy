@@ -66,6 +66,8 @@ import { m065IntegrationGitlabProvider } from './m065-integration-gitlab-provide
 import { m066GoalAttachments } from './m066-goal-attachments';
 import { m067GeminiProviderRun } from './m067-gemini-provider-run';
 import { m068ProviderRunsGeminiRepair } from './m068-provider-runs-gemini-repair';
+import { m069RefactorExampleOnly } from './m069-refactor-example-only';
+import { m070StepLibraryExampleOnly } from './m070-step-library-example-only';
 
 export type Migration = {
   readonly version: number;
@@ -141,4 +143,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 66, sql: m066GoalAttachments },
   { version: 67, sql: m067GeminiProviderRun },
   { version: 68, sql: m068ProviderRunsGeminiRepair },
+  { version: 69, sql: m069RefactorExampleOnly },
+  { version: 70, sql: m070StepLibraryExampleOnly },
 ];

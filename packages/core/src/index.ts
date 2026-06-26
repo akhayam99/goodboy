@@ -174,6 +174,10 @@ export {
   polishWorkflowGoal,
   parsePolishedGoal,
   type GoalPolishDeps,
+  polishStepInstruction,
+  parsePolishedStep,
+  type StepPolishDeps,
+  type StepPolishInput,
 } from './workflows';
 
 export {

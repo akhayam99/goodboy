@@ -11,17 +11,7 @@ import type {
 import { upsertWorkflow, type Database } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 
-const SEEDED_ROLES = new Set<AgentRole>([
-  'scout',
-  'planner',
-  'implementer',
-  'reviewer',
-  'investigator',
-  'product',
-  'architect',
-  'tester',
-  'explorer',
-]);
+const SEEDED_ROLES = new Set<AgentRole>(['scout', 'planner', 'implementer', 'tester']);
 
 function libraryStepIdForRole(role: string): StepDefId | undefined {
   return SEEDED_ROLES.has(role as AgentRole) ? (`seed_${role}` as StepDefId) : undefined;

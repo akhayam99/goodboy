@@ -14,17 +14,39 @@ type Props = {
   onChange: (model: string) => void;
   disabled: boolean;
   allowAuto?: boolean;
+  recommendedModel?: string;
 };
 
-export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: Props) => {
+const AutoTag = () => (
+  <span className="shrink-0 rounded bg-muted px-1 text-[9px] font-medium uppercase leading-tight tracking-wide text-muted-foreground/70">
+    recommended
+  </span>
+);
+
+const COST_RANK: Record<'cheap' | 'mid' | 'premium', number> = { cheap: 0, mid: 1, premium: 2 };
+
+export const ModelSelect = ({
+  provider,
+  value,
+  onChange,
+  disabled,
+  allowAuto,
+  recommendedModel,
+}: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
   const direction = useDropdownDirection(containerRef, open);
 
-  const models = [...PROVIDER_CAPABILITIES[provider].models].reverse();
+  const models = [...PROVIDER_CAPABILITIES[provider].models].sort((a, b) => {
+    const byCost = COST_RANK[modelCostTier(a.id)] - COST_RANK[modelCostTier(b.id)];
+    return byCost !== 0
+      ? byCost
+      : shortModelWithVersion(a.id).localeCompare(shortModelWithVersion(b.id));
+  });
   const isAuto = allowAuto === true && value === '';
-  const tier = modelCostTier(value);
+  const resolved = isAuto && recommendedModel ? recommendedModel : value;
+  const tier = modelCostTier(resolved);
 
   return (
     <div ref={containerRef} className="relative">
@@ -40,7 +62,7 @@ export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: 
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
-        {isAuto ? (
+        {isAuto && !recommendedModel ? (
           <Sparkles size={11} className="shrink-0 text-primary" aria-hidden />
         ) : (
           <span
@@ -48,9 +70,10 @@ export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: 
             aria-hidden
           />
         )}
-        <span className="flex-1 truncate font-mono font-medium text-foreground">
-          {isAuto ? 'Auto' : shortModelWithVersion(value)}
+        <span className="min-w-0 flex-1 truncate font-mono font-medium text-foreground">
+          {isAuto && !recommendedModel ? 'Recommended' : shortModelWithVersion(resolved)}
         </span>
+        {isAuto && recommendedModel ? <AutoTag /> : null}
         <ChevronDown
           size={11}
           className={cn(
@@ -78,8 +101,21 @@ export const ModelSelect = ({ provider, value, onChange, disabled, allowAuto }: 
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              <Sparkles size={11} className="shrink-0 text-primary" aria-hidden />
-              <span className="flex-1 truncate">Auto</span>
+              {recommendedModel ? (
+                <span
+                  className={cn(
+                    'size-1.5 shrink-0 rounded-full',
+                    MODEL_COST_DOT[modelCostTier(recommendedModel)],
+                  )}
+                  aria-hidden
+                />
+              ) : (
+                <Sparkles size={11} className="shrink-0 text-primary" aria-hidden />
+              )}
+              <span className="min-w-0 flex-1 truncate">
+                {recommendedModel ? shortModelWithVersion(recommendedModel) : 'Recommended'}
+              </span>
+              {recommendedModel ? <AutoTag /> : null}
               {isAuto ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
             </button>
           ) : null}
