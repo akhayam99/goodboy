@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HelpCircle, Moon, Settings, Smartphone, Sun } from 'lucide-react';
-import { cn, Divider, StatusDot, formatUsd } from '@goodboy/ui';
+import { cn, Divider, StatusDot, Tooltip, formatUsd } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
@@ -38,41 +38,44 @@ export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
         <WorkspaceRollupStrip />
 
         <div className="flex shrink-0 items-center gap-0.5">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-            className={TOPBAR_ICON_BTN}
-          >
-            {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
-          </button>
+          <Tooltip content={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+              className={TOPBAR_ICON_BTN}
+            >
+              {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
+            </button>
+          </Tooltip>
           <NotificationCenter />
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-guide'))}
-            title="getting started"
-            aria-label="open getting started guide"
-            className={TOPBAR_ICON_BTN}
-          >
-            <HelpCircle size={14} aria-hidden />
-          </button>
+          <Tooltip content="getting started">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-guide'))}
+              aria-label="open getting started guide"
+              className={TOPBAR_ICON_BTN}
+            >
+              <HelpCircle size={14} aria-hidden />
+            </button>
+          </Tooltip>
           <OnboardingChip />
           <PairDeviceCta />
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            title="settings (⌘,)"
-            aria-label="open settings"
-            className={cn(
-              'flex items-center justify-center rounded p-1.5 transition-colors',
-              activeStudio === 'settings'
-                ? 'bg-foreground text-background'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-            )}
-          >
-            <Settings size={14} aria-hidden />
-          </button>
+          <Tooltip content="settings (⌘,)">
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="open settings"
+              className={cn(
+                'flex items-center justify-center rounded p-1.5 transition-colors',
+                activeStudio === 'settings'
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+              )}
+            >
+              <Settings size={14} aria-hidden />
+            </button>
+          </Tooltip>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
             Beta
           </span>

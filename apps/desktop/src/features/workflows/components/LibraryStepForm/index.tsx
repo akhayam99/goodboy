@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input, Textarea } from '@goodboy/ui';
+import { Input, Textarea, Tooltip } from '@goodboy/ui';
 import { X } from 'lucide-react';
 import { getDefaultTurnModel } from '@goodboy/core';
 import type {
@@ -122,15 +122,16 @@ export const LibraryStepForm = ({
             disabled={false}
           />
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          title="close"
-          aria-label="close step editor"
-          className="shrink-0 rounded p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
-        >
-          <X size={13} aria-hidden />
-        </button>
+        <Tooltip content="close">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="close step editor"
+            className="shrink-0 rounded p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            <X size={13} aria-hidden />
+          </button>
+        </Tooltip>
       </div>
 
       {isGlobal ? (
