@@ -202,6 +202,9 @@ const childAgent = (over: Omit<Partial<Agent>, 'id'> & { id: string; ordinal: nu
     id: over.id as AgentId,
   }) as Agent;
 
+const sessionRow = (autoRun: boolean) =>
+  ({ id: SID, autoRun, workflowRuns: [] }) as unknown as Record<string, unknown>;
+
 function makeStore(initial: Record<string, unknown>) {
   const sendTurn = vi.fn(async () => undefined);
   const emitNotification = vi.fn(async () => undefined);
@@ -210,6 +213,7 @@ function makeStore(initial: Record<string, unknown>) {
   const state: Record<string, unknown> = {
     sessionPhaseRuns: {},
     sessionPlans: {},
+    sessions: [sessionRow(true)],
     transcripts: {},
     agentTurnState: {},
     agentKindOverride: {},
@@ -379,6 +383,31 @@ describe('advanceClusterImplementation', () => {
     });
     expect(store.emitNotification).toHaveBeenCalled();
     expect(store.refreshUnreadWorkspaces).toHaveBeenCalled();
+  });
+
+  it('does not continue and pauses the child when hands-free is off', async () => {
+    const child = childAgent({ id: 'cont-c', ordinal: 0 });
+    const p = plan({});
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [p] },
+      sessions: [sessionRow(false)],
+    });
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'cont-c' as AgentId, 'no marker');
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('cont-c', {
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      expect.stringContaining('cluster paused'),
+      expect.stringContaining('hands-free is off'),
+      { sessionId: SID },
+    );
   });
 
   it('marks the child completed and starts the next child on a done marker', async () => {
