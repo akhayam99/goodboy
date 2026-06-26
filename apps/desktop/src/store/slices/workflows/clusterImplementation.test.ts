@@ -371,12 +371,11 @@ describe('advanceClusterImplementation', () => {
     const advance = advanceClusterImplementation(store.set, store.get);
 
     await advance(SID, 'cont-b' as AgentId, 'no marker 1');
-    await advance(SID, 'cont-b' as AgentId, 'no marker 2');
-    expect(store.sendTurn).toHaveBeenCalledTimes(2);
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
     expect(store.emitNotification).not.toHaveBeenCalled();
 
-    await advance(SID, 'cont-b' as AgentId, 'no marker 3');
-    expect(store.sendTurn).toHaveBeenCalledTimes(2);
+    await advance(SID, 'cont-b' as AgentId, 'no marker 2');
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('cont-b', {
       status: 'failed',
       completedAt: expect.any(String),

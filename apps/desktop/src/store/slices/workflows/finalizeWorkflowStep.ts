@@ -7,7 +7,7 @@ import { composeStepBoundary } from '../../kickoff';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
-const MAX_CONTINUE = 2;
+const MAX_CONTINUE = 1;
 
 const continueAttempts = new Map<string, number>();
 
