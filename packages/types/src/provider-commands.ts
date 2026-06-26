@@ -46,11 +46,11 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
   },
   gemini: {
     install: {
-      darwin: 'npm install -g @google/gemini-cli',
-      linux: 'npm install -g @google/gemini-cli',
-      win32: 'npm install -g @google/gemini-cli',
+      darwin: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+      linux: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+      win32: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
     },
-    login: 'gemini',
-    logout: 'rm -f ~/.gemini/oauth_creds.json && echo "gemini credentials removed"',
+    login: 'agy login',
+    logout: 'rm -rf ~/.gemini/antigravity-cli && echo "antigravity credentials removed"',
   },
 };

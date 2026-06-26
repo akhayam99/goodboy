@@ -84,7 +84,7 @@ function getCheapModel(providerId: ProviderId): string {
     case 'codex':
       return 'gpt-5.4-mini';
     case 'gemini':
-      return 'gemini-2.5-flash';
+      return 'gemini-3.5-flash';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;

@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
 import { Divider, Textarea, cn } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { Session, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast } from '../../../../app/components/Toast';
@@ -166,14 +166,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       atts: ReadonlyArray<PendingAttachment>,
       modelOverrideId: string | null,
     ) => {
-      const useModel = modelOverrideId ?? (routing.modelChanged ? routing.effectiveModel : null);
-      const override =
-        routing.allowOverride && (routing.providerChanged || useModel !== null)
-          ? {
-              providerId: routing.effectiveProvider,
-              ...(useModel !== null ? { model: useModel } : {}),
-            }
-          : undefined;
+      const override: TurnProviderOverride | undefined = routing.allowOverride
+        ? {
+            providerId: routing.effectiveProvider,
+            model: modelOverrideId ?? routing.effectiveModel,
+          }
+        : undefined;
 
       if (isRunning) {
         enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
@@ -183,11 +181,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       await dispatch.dispatchTurn(content, atts, override);
     },
     [
-      routing.modelChanged,
-      routing.effectiveModel,
       routing.allowOverride,
-      routing.providerChanged,
       routing.effectiveProvider,
+      routing.effectiveModel,
       isRunning,
       enqueue,
       dispatch.dispatchTurn,

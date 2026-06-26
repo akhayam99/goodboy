@@ -310,6 +310,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const provider: ProviderId = routingDecision.selectedProvider;
     const agentKindModel = get().agentModelOverride[activeAgentId] ?? null;
+    const agentModelApplies =
+      agentKindModel != null &&
+      (agentProvider != null
+        ? agentProvider === routingDecision.selectedProvider
+        : routingDecision.selectedProvider === 'anthropic');
     const turnOverrideActive = turnOverride !== undefined && effectiveOverride === turnOverride;
     const autoStepModel =
       phaseDefinition != null && !phaseDefinition.modelOverride
@@ -324,7 +329,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             ? routingDecision.selectedModel
             : routingDecision.fallbackUsed
               ? routingDecision.selectedModel
-              : (agentKindModel ?? routingDecision.selectedModel);
+              : agentModelApplies
+                ? agentKindModel
+                : routingDecision.selectedModel;
 
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};

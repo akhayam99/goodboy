@@ -24,16 +24,29 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
   const agentModelOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
   );
+  const agentProviderOverride = useAppStore((s) =>
+    selectedAgentId ? (s.agentProviderOverride[selectedAgentId] ?? null) : null,
+  );
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected')),
   );
 
-  const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
-    asProvider(session.providerOverride),
-  );
-  const [selectedModel, setSelectedModelState] = useState<string | null>(
-    () => session.modelOverride ?? null,
-  );
+  const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() => {
+    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
+    const initialAgent = initialAgentId
+      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
+      : null;
+    return asProvider(initialAgent?.providerOverride) ?? asProvider(session.providerOverride);
+  });
+  const [selectedModel, setSelectedModelState] = useState<string | null>(() => {
+    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
+    const initialAgent = initialAgentId
+      ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
+      : null;
+    return initialAgent?.modelOverride ?? session.modelOverride ?? null;
+  });
   const [effort, setEffortState] = useState<EffortLevel>(
     () => asEffortLevel(session.effort) ?? 'medium',
   );
@@ -61,20 +74,16 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
     agentModelOverride ??
     session.providerPreference.defaultModel ??
     getDefaultTurnModel(defaultProvider);
-  const effectiveProvider: ProviderId = selectedProvider ?? defaultProvider;
+  const effectiveProvider: ProviderId =
+    selectedProvider ?? agentProviderOverride ?? defaultProvider;
   const effectiveModel =
     selectedModel ??
+    session.modelOverride ??
     (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider));
   const effectiveEffort = clampEffort(effectiveModel, effort);
-  const providerChanged = selectedProvider !== null && selectedProvider !== defaultProvider;
-  const modelChanged = selectedModel !== null && selectedModel !== defaultModel;
-  const routingOverride: TurnProviderOverride | undefined =
-    allowOverride && (providerChanged || modelChanged)
-      ? {
-          providerId: effectiveProvider,
-          ...(modelChanged ? { model: effectiveModel } : {}),
-        }
-      : undefined;
+  const routingOverride: TurnProviderOverride | undefined = allowOverride
+    ? { providerId: effectiveProvider, model: effectiveModel }
+    : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
@@ -180,8 +189,6 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
     defaultModel,
     routingOverride,
     allowOverride,
-    providerChanged,
-    modelChanged,
     currentProviderRef,
     currentModelRef,
     currentEffortRef,

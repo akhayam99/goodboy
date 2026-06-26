@@ -97,12 +97,12 @@ spend.
 Bring the subscription you already pay for. Goodboy drives the official CLIs
 locally, on your existing plan, never on a metered API key.
 
-| Provider               | CLI                                  | Subscription     |
-| ---------------------- | ------------------------------------ | ---------------- |
-| **Anthropic (Claude)** | `npm i -g @anthropic-ai/claude-code` | Claude Max / Pro |
-| **Cursor**             | Cursor desktop app                   | Cursor Pro       |
-| **OpenAI (Codex)**     | `npm i -g @openai/codex`             | ChatGPT Pro      |
-| **Google (Gemini)**    | `npm i -g @google/gemini-cli`        | Google AI Pro    |
+| Provider                 | CLI                                                            | Subscription     |
+| ------------------------ | -------------------------------------------------------------- | ---------------- |
+| **Anthropic (Claude)**   | `npm i -g @anthropic-ai/claude-code`                           | Claude Max / Pro |
+| **Cursor**               | Cursor desktop app                                             | Cursor Pro       |
+| **OpenAI (Codex)**       | `npm i -g @openai/codex`                                       | ChatGPT Pro      |
+| **Google (Antigravity)** | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` | Google AI Pro    |
 
 One connected CLI is enough to start. Full guide:
 [docs/providers.md](./docs/providers.md).
