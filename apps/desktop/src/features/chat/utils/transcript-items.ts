@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
+import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
 
 export type TranscriptItem =
   | {
@@ -43,6 +44,16 @@ export type TranscriptItem =
       toStep: { ordinal: number; name: string };
       carryForwardContext: string;
       at: string;
+    }
+  | {
+      kind: 'workflow_kickoff';
+      key: string;
+      goal: string;
+      instructions: string;
+      marker: string;
+      raw: string;
+      parsed: boolean;
+      at: IsoDateTime;
     }
   | { kind: 'oq_answer'; key: string }
   | { kind: 'done'; key: string }
@@ -118,6 +129,20 @@ export const reduceTranscript = (
       case 'user_text':
         if (isOpenQuestionAnswerText(event.text)) {
           items.push({ kind: 'oq_answer', key: `oq-answer-${i}` });
+          break;
+        }
+        if (isWorkflowKickoff(event.text)) {
+          const parsed = parseWorkflowKickoff(event.text);
+          items.push({
+            kind: 'workflow_kickoff',
+            key: `kickoff-${i}`,
+            goal: parsed.goal,
+            instructions: parsed.instructions,
+            marker: parsed.marker,
+            raw: event.text,
+            parsed: parsed.parsed,
+            at: event.at,
+          });
           break;
         }
         items.push({

@@ -201,3 +201,107 @@ describe('reduceTranscript, open-question answer boundary', () => {
     ]);
   });
 });
+
+const workflowMarker = [
+  'Complete ONLY this workflow step. Do not start later steps or work on their scope.',
+  'When this step is fully complete, emit on its own line exactly:',
+  '<<step-done id="agent-1">>',
+  'Do not emit that marker until the step is truly done.',
+].join('\n');
+
+describe('reduceTranscript, workflow kickoff boundary', () => {
+  it('maps a composed kickoff to a workflow_kickoff item with parsed sections', () => {
+    const kickoff = [
+      'Workflow goal:\n\nShip the onboarding wizard',
+      'Active plan to execute:\n\n1. wire steps',
+      'Focus on the providers step only.',
+      workflowMarker,
+    ].join('\n\n');
+    const items = reduceTranscript([userTextEvent(kickoff)]);
+    expect(items).toHaveLength(1);
+    const item = items[0]!;
+    expect(item.kind).toBe('workflow_kickoff');
+    if (item.kind === 'workflow_kickoff') {
+      expect(item.goal).toBe('Ship the onboarding wizard');
+      expect(item.instructions).toContain('Focus on the providers step only.');
+      expect(item.parsed).toBe(true);
+      expect(item.raw).toBe(kickoff);
+    }
+  });
+
+  it('keeps ordinary user_text turns that are not kickoffs', () => {
+    const items = reduceTranscript([userTextEvent('fix the login bug')]);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.kind).toBe('user_text');
+  });
+
+  it('emits a workflow_kickoff even when parsed:false (malformed goal)', () => {
+    const malformed = `Workflow goal:\n\n\n\n${workflowMarker}`;
+    const items = reduceTranscript([userTextEvent(malformed)]);
+    expect(items).toHaveLength(1);
+    const item = items[0]!;
+    expect(item.kind).toBe('workflow_kickoff');
+    if (item.kind === 'workflow_kickoff') {
+      expect(item.parsed).toBe(false);
+      expect(item.raw).toBe(malformed);
+    }
+  });
+
+  it('carries the at timestamp from the event', () => {
+    const kickoff = `Workflow goal:\n\nGoal text\n\n${workflowMarker}`;
+    const items = reduceTranscript([userTextEvent(kickoff)]);
+    const item = items[0]!;
+    expect(item.kind).toBe('workflow_kickoff');
+    if (item.kind === 'workflow_kickoff') {
+      expect(item.at).toBe(AT);
+    }
+  });
+
+  it('key starts with kickoff-', () => {
+    const kickoff = `Workflow goal:\n\nGoal text\n\n${workflowMarker}`;
+    const items = reduceTranscript([userTextEvent(kickoff)]);
+    const item = items[0]!;
+    expect(item.key).toMatch(/^kickoff-/);
+  });
+
+  it('multiple kickoff events get distinct keys', () => {
+    const kickoff = `Workflow goal:\n\nGoal text\n\n${workflowMarker}`;
+    const items = reduceTranscript([userTextEvent(kickoff), userTextEvent(kickoff)]);
+    expect(items).toHaveLength(2);
+    expect(items[0]!.key).not.toBe(items[1]!.key);
+  });
+
+  it('oq_answer takes priority over workflow_kickoff check (oq-answers wrapping)', () => {
+    const items = reduceTranscript([
+      userTextEvent('<<oq-answers>>\nAnswers:\n- Q: a\n  A: b\n<</oq-answers>>'),
+    ]);
+    expect(items[0]!.kind).toBe('oq_answer');
+  });
+
+  it('flushes buffered assistant_text before a kickoff event', () => {
+    const kickoff = `Workflow goal:\n\nGoal text\n\n${workflowMarker}`;
+    const events: TurnEvent[] = [
+      assistantTextEvent('some assistant output'),
+      userTextEvent(kickoff),
+    ];
+    const items = reduceTranscript(events);
+    expect(items.map((i) => i.kind)).toEqual(['assistant_text', 'workflow_kickoff']);
+  });
+
+  it('kickoff followed by assistant_text produces both items in order', () => {
+    const kickoff = `Workflow goal:\n\nGoal text\n\n${workflowMarker}`;
+    const events: TurnEvent[] = [userTextEvent(kickoff), assistantTextEvent('ok, starting')];
+    const items = reduceTranscript(events);
+    expect(items.map((i) => i.kind)).toEqual(['workflow_kickoff', 'assistant_text']);
+  });
+
+  it('kickoff without plan section produces empty instructions', () => {
+    const noInstructions = `Workflow goal:\n\nOnly a goal\n\n${workflowMarker}`;
+    const items = reduceTranscript([userTextEvent(noInstructions)]);
+    const item = items[0]!;
+    expect(item.kind).toBe('workflow_kickoff');
+    if (item.kind === 'workflow_kickoff') {
+      expect(item.instructions).toBe('');
+    }
+  });
+});

@@ -12,6 +12,7 @@ import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ImageLightbox } from '../ImageLightbox';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
+import { WorkflowKickoffCard } from '../WorkflowKickoffCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { displayPath } from '../../../../shared/utils/display-path';
@@ -90,6 +91,8 @@ function TranscriptCardImpl({
       return <SkillInvocationCard item={item} />;
     case 'step_transition':
       return <PhaseTransitionCard item={item} />;
+    case 'workflow_kickoff':
+      return <WorkflowKickoffCard item={item} />;
     case 'oq_answer':
       return null;
     case 'done':
