@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import type { AgentId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
 import type { PendingAttachment, QueuedTurn } from '../lib';
 
 interface UseMessageQueueArgs {
+  readonly agentId: AgentId | null;
   readonly isRunning: boolean;
   readonly dispatchTurn: (
     content: string,
@@ -11,45 +14,76 @@ interface UseMessageQueueArgs {
   readonly onEdit: (item: QueuedTurn) => void;
 }
 
-export function useMessageQueue({ isRunning, dispatchTurn, onEdit }: UseMessageQueueArgs) {
-  const [queue, setQueue] = useState<ReadonlyArray<QueuedTurn>>([]);
-  const wasRunning = useRef(isRunning);
+const EMPTY: ReadonlyArray<QueuedTurn> = [];
+
+export function useMessageQueue({ agentId, isRunning, dispatchTurn, onEdit }: UseMessageQueueArgs) {
+  const queue = useAppStore((s) =>
+    agentId ? ((s.agentQueue[agentId] as ReadonlyArray<QueuedTurn> | undefined) ?? EMPTY) : EMPTY,
+  );
+  const setAgentQueue = useAppStore((s) => s.setAgentQueue);
+  const wasRunningByAgent = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
-    const wasRun = wasRunning.current;
-    wasRunning.current = isRunning;
+    if (!agentId) return;
+    const wasRun = wasRunningByAgent.current[agentId] ?? false;
+    wasRunningByAgent.current[agentId] = isRunning;
     if (wasRun && !isRunning && queue.length > 0) {
       const [next, ...rest] = queue;
-      setQueue(rest);
+      setAgentQueue(agentId, rest);
       if (next) {
         void dispatchTurn(next.content, next.attachments, next.override);
       }
     }
-  }, [isRunning, queue, dispatchTurn]);
+  }, [agentId, isRunning, queue, dispatchTurn, setAgentQueue]);
 
-  const enqueue = useCallback((turn: QueuedTurn) => {
-    setQueue((prev) => [...prev, turn]);
-  }, []);
+  const enqueue = useCallback(
+    (turn: QueuedTurn) => {
+      if (!agentId) return;
+      const prev =
+        (useAppStore.getState().agentQueue[agentId] as ReadonlyArray<QueuedTurn> | undefined) ??
+        EMPTY;
+      setAgentQueue(agentId, [...prev, turn]);
+    },
+    [agentId, setAgentQueue],
+  );
 
-  const removeQueued = useCallback((id: string) => {
-    setQueue((prev) => prev.filter((q) => q.id !== id));
-  }, []);
+  const removeQueued = useCallback(
+    (id: string) => {
+      if (!agentId) return;
+      const prev =
+        (useAppStore.getState().agentQueue[agentId] as ReadonlyArray<QueuedTurn> | undefined) ??
+        EMPTY;
+      setAgentQueue(
+        agentId,
+        prev.filter((q) => q.id !== id),
+      );
+    },
+    [agentId, setAgentQueue],
+  );
 
   const editQueued = useCallback(
     (id: string) => {
-      const item = queue.find((q) => q.id === id);
+      if (!agentId) return;
+      const prev =
+        (useAppStore.getState().agentQueue[agentId] as ReadonlyArray<QueuedTurn> | undefined) ??
+        EMPTY;
+      const item = prev.find((q) => q.id === id);
       if (!item) {
         return;
       }
-      setQueue((prev) => prev.filter((q) => q.id !== id));
+      setAgentQueue(
+        agentId,
+        prev.filter((q) => q.id !== id),
+      );
       onEdit(item);
     },
-    [queue, onEdit],
+    [agentId, setAgentQueue, onEdit],
   );
 
   const clearQueue = useCallback(() => {
-    setQueue([]);
-  }, []);
+    if (!agentId) return;
+    setAgentQueue(agentId, EMPTY);
+  }, [agentId, setAgentQueue]);
 
   return { queue, enqueue, removeQueued, editQueued, clearQueue };
 }

@@ -118,7 +118,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     [setValue, setAttachments],
   );
 
-  const { queue, enqueue, removeQueued, editQueued, clearQueue } = useMessageQueue({
+  const { queue, enqueue, removeQueued, editQueued } = useMessageQueue({
+    agentId: selectedAgentId,
     isRunning,
     dispatchTurn: dispatch.dispatchTurn,
     onEdit: onEditQueued,
@@ -144,7 +145,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setSelectedModelState: routing.setSelectedModelState,
     setEffortState: routing.setEffortState,
     setVerbosityState: routing.setVerbosityState,
-    clearQueue,
     setRightSizePending: rightSize.setRightSizePending,
     setRightSizeDismissed: rightSize.setRightSizeDismissed,
     setScopePending: scope.setScopePending,
@@ -202,7 +202,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     dispatch.setLastFailedTurn(null);
 
     if (await scope.checkAndInterceptScope(content, atts)) return;
-    if (rightSize.checkAndInterceptRightSize(content, atts)) return;
+    if (!isRunning && rightSize.checkAndInterceptRightSize(content, atts)) return;
 
     setValue('');
     setAttachments([]);

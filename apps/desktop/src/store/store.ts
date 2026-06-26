@@ -113,6 +113,7 @@ import {
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
+import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 import { createSlotsSlice } from './slices/slots';
@@ -260,6 +261,7 @@ export type AppState = UpdaterState & {
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
+  readonly agentQueue: Readonly<Record<AgentId, ReadonlyArray<AgentQueuedTurn>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
   readonly sessionAttachments: Readonly<Record<SessionId, ReadonlyArray<GoalAttachment>>>;
   readonly workflowRunAttachments: Readonly<Record<WorkflowRunId, ReadonlyArray<GoalAttachment>>>;
@@ -526,6 +528,8 @@ export type AppActions = {
   clearWorkflowDraft(sessionId: SessionId): void;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
   clearAgentAttachments(agentId: AgentId): void;
+  setAgentQueue(agentId: AgentId, queue: ReadonlyArray<AgentQueuedTurn>): void;
+  clearAgentQueue(agentId: AgentId): void;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   dismissSystemAlert(id: string): void;
@@ -781,6 +785,7 @@ export const initialState: AppState = {
   agentDraft: {},
   workflowDrafts: {},
   agentAttachments: {},
+  agentQueue: {},
   diffComments: {},
   sessionAttachments: {},
   workflowRunAttachments: {},

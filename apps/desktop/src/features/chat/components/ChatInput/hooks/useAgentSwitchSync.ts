@@ -15,7 +15,6 @@ type UseAgentSwitchSyncArgs = {
   readonly setSelectedModelState: (v: string | null) => void;
   readonly setEffortState: (v: EffortLevel) => void;
   readonly setVerbosityState: (v: VerbosityLevel) => void;
-  readonly clearQueue: () => void;
   readonly setRightSizePending: (v: null) => void;
   readonly setRightSizeDismissed: (v: boolean) => void;
   readonly setScopePending: (v: null) => void;
@@ -32,7 +31,6 @@ export function useAgentSwitchSync({
   setSelectedModelState,
   setEffortState,
   setVerbosityState,
-  clearQueue,
   setRightSizePending,
   setRightSizeDismissed,
   setScopePending,
@@ -80,7 +78,6 @@ export function useAgentSwitchSync({
       setVerbosityState(restoredVerbosity);
     }
 
-    clearQueue();
     setRightSizePending(null);
     setRightSizeDismissed(false);
     setScopePending(null);

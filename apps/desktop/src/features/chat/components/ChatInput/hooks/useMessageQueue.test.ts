@@ -1,7 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AgentId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
 import { useMessageQueue } from './useMessageQueue';
 import type { QueuedTurn } from '../lib';
+
+const AGENT = 'agent-1' as AgentId;
 
 const makeTurn = (id: string, content = 'hi'): QueuedTurn => ({
   id,
@@ -13,10 +17,14 @@ const makeTurn = (id: string, content = 'hi'): QueuedTurn => ({
 const noop = () => {};
 const resolved = () => Promise.resolve();
 
+beforeEach(() => {
+  useAppStore.setState({ agentQueue: {} });
+});
+
 describe('useMessageQueue', () => {
   it('enqueues turns in order', () => {
     const { result } = renderHook(() =>
-      useMessageQueue({ isRunning: true, dispatchTurn: resolved, onEdit: noop }),
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
     );
     act(() => {
       result.current.enqueue(makeTurn('t1'));
@@ -25,9 +33,19 @@ describe('useMessageQueue', () => {
     expect(result.current.queue.map((q) => q.id)).toEqual(['t1', 't2']);
   });
 
+  it('persists the queue in the store keyed by agent', () => {
+    const { result } = renderHook(() =>
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
+    );
+    act(() => {
+      result.current.enqueue(makeTurn('t1'));
+    });
+    expect(useAppStore.getState().agentQueue[AGENT]?.map((q) => q.id)).toEqual(['t1']);
+  });
+
   it('removes a queued turn by id', () => {
     const { result } = renderHook(() =>
-      useMessageQueue({ isRunning: true, dispatchTurn: resolved, onEdit: noop }),
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
     );
     act(() => {
       result.current.enqueue(makeTurn('t1'));
@@ -41,7 +59,7 @@ describe('useMessageQueue', () => {
 
   it('clears the whole queue', () => {
     const { result } = renderHook(() =>
-      useMessageQueue({ isRunning: true, dispatchTurn: resolved, onEdit: noop }),
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
     );
     act(() => {
       result.current.enqueue(makeTurn('t1'));
@@ -55,7 +73,7 @@ describe('useMessageQueue', () => {
   it('removes the item and hands it to onEdit on edit', () => {
     const onEdit = vi.fn();
     const { result } = renderHook(() =>
-      useMessageQueue({ isRunning: true, dispatchTurn: resolved, onEdit }),
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit }),
     );
     act(() => {
       result.current.enqueue(makeTurn('t1', 'edit me'));
@@ -70,7 +88,7 @@ describe('useMessageQueue', () => {
   it('ignores edit for an unknown id', () => {
     const onEdit = vi.fn();
     const { result } = renderHook(() =>
-      useMessageQueue({ isRunning: true, dispatchTurn: resolved, onEdit }),
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit }),
     );
     act(() => {
       result.current.enqueue(makeTurn('t1'));
@@ -85,7 +103,7 @@ describe('useMessageQueue', () => {
   it('dispatches the head turn when the agent goes from running to idle', () => {
     const dispatchTurn = vi.fn().mockResolvedValue(undefined);
     const { result, rerender } = renderHook(
-      ({ isRunning }) => useMessageQueue({ isRunning, dispatchTurn, onEdit: noop }),
+      ({ isRunning }) => useMessageQueue({ agentId: AGENT, isRunning, dispatchTurn, onEdit: noop }),
       { initialProps: { isRunning: true } },
     );
     act(() => {
@@ -99,12 +117,32 @@ describe('useMessageQueue', () => {
   it('holds turns queued while idle without a running-to-idle transition', () => {
     const dispatchTurn = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(() =>
-      useMessageQueue({ isRunning: false, dispatchTurn, onEdit: noop }),
+      useMessageQueue({ agentId: AGENT, isRunning: false, dispatchTurn, onEdit: noop }),
     );
     act(() => {
       result.current.enqueue(makeTurn('t1'));
     });
     expect(dispatchTurn).not.toHaveBeenCalled();
     expect(result.current.queue.map((q) => q.id)).toEqual(['t1']);
+  });
+
+  it('keeps separate queues per agent', () => {
+    const other = 'agent-2' as AgentId;
+    const { result, rerender } = renderHook(
+      ({ agentId }) =>
+        useMessageQueue({ agentId, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
+      { initialProps: { agentId: AGENT } },
+    );
+    act(() => {
+      result.current.enqueue(makeTurn('a'));
+    });
+    rerender({ agentId: other });
+    expect(result.current.queue).toEqual([]);
+    act(() => {
+      result.current.enqueue(makeTurn('b'));
+    });
+    expect(result.current.queue.map((q) => q.id)).toEqual(['b']);
+    rerender({ agentId: AGENT });
+    expect(result.current.queue.map((q) => q.id)).toEqual(['a']);
   });
 });
