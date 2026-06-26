@@ -758,7 +758,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }));
           void get().refreshUnreadWorkspaces();
 
-          shouldAutoAdvanceWorkflow = true;
           if (ranKind === 'resolver') {
             const resolvedMarker = extractCommentResolved(assistantText);
             const wontfixMarker = extractCommentWontfix(assistantText);
