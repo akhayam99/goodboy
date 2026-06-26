@@ -1,13 +1,13 @@
 import { Fragment } from 'react';
-import { Button, Divider, FieldRow, Input, SectionHeader, cn } from '@goodboy/ui';
+import { Button, Divider, FieldRow, Input, SectionHeader, ScrollFade, cn } from '@goodboy/ui';
 import { Check, Plus, Sparkles, X } from 'lucide-react';
-import { ScrollFade } from '@goodboy/ui';
+import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../../form';
-import { StepFlowCard } from '../StepFlowCard';
+import { ROLE_TO_KIND } from '../../../../session/agent-kind';
+import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCard';
 import { StepFlowConnector } from '../StepFlowConnector';
-import { StepEditor } from '../StepEditor';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { EmptyGuide } from '../EmptyGuide';
 
@@ -91,17 +91,30 @@ export const WorkflowComposer = ({
   const subtitle = [`${stepCount} ${stepCount === 1 ? 'step' : 'steps'}`, form.description.trim()]
     .filter(Boolean)
     .join('  ·  ');
-  const selectedStep =
-    expandedIdx !== null && expandedIdx >= 0 && expandedIdx < stepCount
-      ? form.steps[expandedIdx]
-      : null;
-
   const savedHint = saving ? 'Saving…' : 'Saved';
+
+  const defaultProvider: ProviderId =
+    connectedProviders.length > 0 ? (connectedProviders[0] as ProviderId) : 'anthropic';
+
+  const recommendedProvider = (_def: DefinitionForm): ProviderId => defaultProvider;
+
+  const recommendedModel = (def: DefinitionForm): string =>
+    autoModelForRole(def.role, [defaultProvider])?.model ?? getDefaultTurnModel(defaultProvider);
+
+  const resolvedProvider = (def: DefinitionForm): ProviderId =>
+    def.providerOverride !== undefined && def.providerOverride !== ''
+      ? (def.providerOverride as ProviderId)
+      : recommendedProvider(def);
+
+  const resolvedModel = (def: DefinitionForm): string =>
+    def.modelOverride !== undefined && def.modelOverride !== ''
+      ? def.modelOverride
+      : recommendedModel(def);
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="mx-auto flex w-full max-w-4xl shrink-0 items-center gap-4 px-8 py-4">
+        <div className="mx-auto flex w-full max-w-2xl shrink-0 items-center gap-4 px-6 py-4">
           <div className="flex min-w-0 flex-col">
             <span className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
               {title}
@@ -155,8 +168,8 @@ export const WorkflowComposer = ({
 
         <Divider />
 
-        <div className="flex shrink-0 flex-col gap-4 py-6">
-          <div className="mx-auto w-full max-w-3xl px-8">
+        <div className="flex shrink-0 flex-col gap-5 py-5">
+          <div className="mx-auto w-full max-w-2xl px-6">
             <div className="flex flex-col gap-4">
               <FieldRow label="Name">
                 <Input
@@ -178,7 +191,7 @@ export const WorkflowComposer = ({
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-3xl px-8">
+          <div className="mx-auto w-full max-w-2xl px-6">
             <SectionHeader
               label={`Steps (${stepCount})`}
               hint={
@@ -201,11 +214,11 @@ export const WorkflowComposer = ({
 
         <div className="min-h-0 flex-1">
           <ScrollFade
-            className="mx-auto h-full w-full max-w-3xl"
-            viewportClassName="px-8 pb-6"
+            className="mx-auto h-full w-full max-w-2xl"
+            viewportClassName="px-6 pb-6"
             fadeSize={24}
           >
-            <div className="flex flex-col">
+            <ul className="flex flex-col list-none p-0">
               {form.steps.map((def, idx) => (
                 <Fragment key={def.uid}>
                   <StepFlowConnector
@@ -214,26 +227,38 @@ export const WorkflowComposer = ({
                     dragging={dragging}
                     active={dropIndex === idx}
                   />
-                  <StepFlowCard
-                    def={def}
+                  <WorkflowStepCard
                     ordinal={idx}
-                    total={stepCount}
-                    selected={expandedIdx === idx}
-                    isDragging={draggingStepIdx === idx}
-                    onSelect={() => onToggleExpand(idx)}
+                    kind={ROLE_TO_KIND[def.role] ?? 'generic'}
+                    role={def.role}
+                    provider={resolvedProvider(def)}
+                    providerValue={def.providerOverride as ProviderId | ''}
+                    recommendedProvider={recommendedProvider(def)}
+                    candidateProviders={connectedProviders}
+                    name={def.name}
+                    promptPrefix={def.promptPrefix}
+                    model={def.modelOverride}
+                    resolvedModel={resolvedModel(def)}
+                    recommendedModel={recommendedModel(def)}
+                    effort={def.effort}
+                    verbosity={def.verbosity}
+                    expanded={expandedIdx === idx}
+                    dragging={draggingStepIdx === idx}
+                    disabled={false}
+                    polishing={false}
+                    onExpand={() => onToggleExpand(idx)}
+                    onCollapse={() => onToggleExpand(idx)}
                     onStartDrag={(e) => onStartStepDrag(idx, def.name || 'untitled step', e)}
+                    onName={(v) => onUpdateStep(idx, { name: v })}
+                    onPrompt={(v) => onUpdateStep(idx, { promptPrefix: v })}
+                    onProvider={(v) => onUpdateStep(idx, { providerOverride: v })}
+                    onModel={(v) => onUpdateStep(idx, { modelOverride: v })}
+                    onEffort={(v) => onUpdateStep(idx, { effort: v })}
+                    onRole={(v) => onUpdateStep(idx, { role: v })}
+                    onVerbosity={(v) => onUpdateStep(idx, { verbosity: v })}
                     onRemove={() => onRemoveStep(idx)}
-                    onMoveLeft={() => onMoveStep(idx, -1)}
-                    onMoveRight={() => onMoveStep(idx, 1)}
-                    editor={
-                      expandedIdx === idx && selectedStep ? (
-                        <StepEditor
-                          def={selectedStep}
-                          connectedProviders={connectedProviders}
-                          onUpdate={(patch) => onUpdateStep(idx, patch)}
-                        />
-                      ) : null
-                    }
+                    onMoveUp={() => onMoveStep(idx, -1)}
+                    onMoveDown={() => onMoveStep(idx, 1)}
                   />
                 </Fragment>
               ))}
@@ -243,7 +268,7 @@ export const WorkflowComposer = ({
                 dragging={dragging}
                 active={dropIndex === stepCount}
               />
-            </div>
+            </ul>
           </ScrollFade>
         </div>
       </section>

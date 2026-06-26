@@ -36,7 +36,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
         aria-hidden
       />
       <AgentAvatar kind={kind} size="sm" />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-14">
         <div className="flex items-baseline gap-2">
           <span className="truncate text-xs font-medium text-foreground">{def.name}</span>
           <span className={cn('shrink-0 text-2xs font-medium', AGENT_KIND_PALETTE[kind].fg)}>
@@ -44,7 +44,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
           </span>
         </div>
         {def.promptPrefix ? (
-          <span className="line-clamp-1 pr-14 text-2xs leading-relaxed text-muted-foreground/60">
+          <span className="line-clamp-1 text-2xs leading-relaxed text-muted-foreground/60">
             {def.promptPrefix}
           </span>
         ) : null}

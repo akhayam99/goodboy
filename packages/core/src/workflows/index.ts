@@ -21,3 +21,9 @@ export {
   type WorkflowFormatDeps,
 } from './format';
 export { polishWorkflowGoal, parsePolishedGoal, type GoalPolishDeps } from './polish';
+export {
+  polishStepInstruction,
+  parsePolishedStep,
+  type StepPolishDeps,
+  type StepPolishInput,
+} from './polish-step';

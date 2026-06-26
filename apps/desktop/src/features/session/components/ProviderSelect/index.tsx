@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { Check, ChevronDown } from 'lucide-react';
-import { PROVIDER_LABEL, PROVIDER_DOT } from '../../../chat/utils/chat-constants';
+import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
+import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
@@ -14,19 +15,57 @@ type Props = {
   providers: ReadonlyArray<ProviderId>;
   onChange: (value: Value) => void;
   disabled: boolean;
+  recommended?: ProviderId;
 };
 
-function label(value: Value): string {
-  return value === '' ? 'Default' : PROVIDER_LABEL[value];
-}
+const ProviderGlyph = ({ id }: { id: ProviderId }) => {
+  const Icon = PROVIDER_BRAND[id].icon;
+  return <Icon size={13} className="shrink-0" style={{ color: brandColor(id) }} aria-hidden />;
+};
 
-export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) => {
+const AutoTag = () => (
+  <span className="shrink-0 rounded bg-muted px-1 text-[9px] font-medium uppercase leading-tight tracking-wide text-muted-foreground/70">
+    recommended
+  </span>
+);
+
+export const ProviderSelect = ({ value, providers, onChange, disabled, recommended }: Props) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false));
   const direction = useDropdownDirection(containerRef, open);
 
   const options: ReadonlyArray<Value> = ['', ...providers];
+
+  const renderOption = (opt: Value) => {
+    if (opt !== '') {
+      return (
+        <>
+          <ProviderGlyph id={opt} />
+          <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+            {PROVIDER_LABEL[opt]}
+          </span>
+        </>
+      );
+    }
+    if (recommended) {
+      return (
+        <>
+          <ProviderGlyph id={recommended} />
+          <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+            {PROVIDER_LABEL[recommended]}
+          </span>
+          <AutoTag />
+        </>
+      );
+    }
+    return (
+      <>
+        <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
+        <span className="min-w-0 flex-1 truncate font-medium text-foreground">Default</span>
+      </>
+    );
+  };
 
   return (
     <div ref={containerRef} className="relative">
@@ -42,12 +81,7 @@ export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) 
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
-        {value === '' ? (
-          <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
-        ) : (
-          <span className={cn('size-1.5 shrink-0 rounded-full', PROVIDER_DOT[value])} aria-hidden />
-        )}
-        <span className="flex-1 truncate font-medium text-foreground">{label(value)}</span>
+        {renderOption(value)}
         <ChevronDown
           size={11}
           className={cn(
@@ -76,18 +110,7 @@ export const ProviderSelect = ({ value, providers, onChange, disabled }: Props) 
                     : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )}
               >
-                {opt === '' ? (
-                  <span
-                    className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40"
-                    aria-hidden
-                  />
-                ) : (
-                  <span
-                    className={cn('size-1.5 shrink-0 rounded-full', PROVIDER_DOT[opt])}
-                    aria-hidden
-                  />
-                )}
-                <span className="flex-1 truncate">{label(opt)}</span>
+                {renderOption(opt)}
                 {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
               </button>
             );
