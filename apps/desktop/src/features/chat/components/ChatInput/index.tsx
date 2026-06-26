@@ -116,12 +116,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   );
 
   const [error, setError] = useState<string | null>(null);
-  type FailedTurn = {
-    readonly content: string;
-    readonly attachments: ReadonlyArray<PendingAttachment>;
-    readonly override: TurnProviderOverride | undefined;
-  };
-  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
+  const [lastFailedTurn, setLastFailedTurn] = useState<Omit<QueuedTurn, 'id'> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() =>
     asProvider(session.providerOverride),

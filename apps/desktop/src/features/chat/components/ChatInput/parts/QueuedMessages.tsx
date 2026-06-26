@@ -1,11 +1,7 @@
 import { Clock, Paperclip, X } from 'lucide-react';
-import type { PendingAttachment } from '../lib';
+import type { QueuedTurn } from '../lib';
 
-type QueuedItem = {
-  readonly id: string;
-  readonly content: string;
-  readonly attachments: ReadonlyArray<PendingAttachment>;
-};
+type QueuedItem = Pick<QueuedTurn, 'id' | 'content' | 'attachments'>;
 
 export function QueuedMessages({
   items,
