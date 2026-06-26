@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
-import type { ProviderId, Session } from '@goodboy/types';
+import type { AgentId, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import type { EffortLevel } from '../../../utils/chat-constants';
@@ -7,7 +7,7 @@ import { asEffortLevel, asProvider } from '../lib';
 
 type UseAgentSwitchSyncArgs = {
   readonly session: Session;
-  readonly selectedAgentId: string | null;
+  readonly selectedAgentId: AgentId | null;
   readonly currentProviderRef: RefObject<ProviderId | null>;
   readonly currentModelRef: RefObject<string | null>;
   readonly currentEffortRef: RefObject<EffortLevel>;

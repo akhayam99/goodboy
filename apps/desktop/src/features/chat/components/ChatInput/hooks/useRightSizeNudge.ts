@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { assessTurnWeight, suggestHeavierModel, suggestLighterModel } from '@goodboy/core';
+import { assessTurnWeight } from '@goodboy/core';
+import { suggestHeavierModel, suggestLighterModel } from '../../../utils/chat-constants';
 import type { PendingAttachment } from '../lib';
 
 export type RightSizeSuggestion = {

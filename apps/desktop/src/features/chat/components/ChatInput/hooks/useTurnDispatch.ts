@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { TurnProviderOverride } from '@goodboy/types';
+import type { SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { formatError } from '../../../../../shared/lib/errors';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
@@ -8,7 +8,7 @@ import { toAttachmentInput, toastKindForAlert, toastMessageForAlert } from '../l
 import type { PendingAttachment, QueuedTurn } from '../lib';
 
 type UseTurnDispatchArgs = {
-  readonly sessionId: string;
+  readonly sessionId: SessionId;
   readonly cleanupSentAttachments: (atts: ReadonlyArray<PendingAttachment>) => void;
 };
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ClipboardCheck, Telescope } from 'lucide-react';
-import type { Session } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import type { SessionNudge } from '../../../../../store/store';
 import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
 import { NudgeCard } from '../../NudgeCard';
@@ -23,10 +23,10 @@ type UseSuggestionCardsArgs = {
   readonly onKeepCurrent: () => void;
   readonly onChangeModel: () => void;
   readonly dismissSessionNudge: (
-    sessionId: string,
+    sessionId: SessionId,
     outcome?: 'accepted' | 'dismissed',
   ) => Promise<void>;
-  readonly acceptSessionNudgeHandoff: (sessionId: string) => Promise<void>;
+  readonly acceptSessionNudgeHandoff: (sessionId: SessionId) => Promise<void>;
 };
 
 export function useSuggestionCards({
