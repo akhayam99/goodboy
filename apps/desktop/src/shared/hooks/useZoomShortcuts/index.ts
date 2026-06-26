@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { applyStoredZoom, zoomIn, zoomOut, zoomReset } from '../../lib/zoom';
+import { writeReloadIntent } from '../../../features/workspace/windowView';
+import { useAppStore } from '../../../store';
 
 const ZOOM_ACTIONS: Record<string, () => Promise<void>> = {
   '=': zoomIn,
@@ -18,6 +20,19 @@ export const useZoomShortcuts = (): void => {
       }
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
+        const s = useAppStore.getState();
+        if (e.shiftKey) {
+          writeReloadIntent({ mode: 'fresh' });
+          window.location.hash = '';
+        } else if (s.currentWorkspaceId) {
+          const sessionId = s.currentSessionId;
+          writeReloadIntent({
+            mode: 'restore',
+            workspaceId: s.currentWorkspaceId,
+            sessionId,
+            agentId: sessionId ? (s.selectedAgentId[sessionId] ?? null) : null,
+          });
+        }
         window.location.reload();
         return;
       }
