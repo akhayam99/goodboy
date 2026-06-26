@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Target } from 'lucide-react';
-import { Collapsible, Markdown } from '@goodboy/ui';
+import { ArrowRight, ChevronRight } from 'lucide-react';
+import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 
@@ -10,29 +10,50 @@ type Props = {
 
 export const PhaseTransitionCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
-  const header = `Step ${item.fromStep.ordinal + 1} ${item.fromStep.name} → Step ${item.toStep.ordinal + 1} ${item.toStep.name}`;
   const timestamp = formatCardTime(item.at);
+  const hasContext = item.carryForwardContext.trim().length > 0;
 
   return (
-    <div className="rounded-md border border-success/30 bg-success/5 px-2 py-1.5">
-      <Collapsible
-        open={open}
-        onOpenChange={setOpen}
-        trigger={
-          <span className="flex items-center gap-2 text-xs font-medium">
-            <Target size={11} aria-hidden className="text-success" />
-            <span className="text-2xs font-medium uppercase tracking-wide text-success/80">
-              step
-            </span>
-            <span className="text-foreground/85">{header}</span>
-          </span>
-        }
+    <div className="border-l-2 border-merged/40">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 rounded-r-md py-1 pl-2 pr-2 text-left motion-safe:transition-colors hover:bg-merged/5"
       >
-        <div className="mt-1 overflow-x-auto rounded-md bg-background p-2 text-xs">
-          <Markdown text={item.carryForwardContext} />
+        <ChevronRight
+          size={11}
+          aria-hidden
+          className={cn(
+            'shrink-0 text-merged/50 motion-safe:transition-transform',
+            open && 'rotate-90',
+          )}
+        />
+        <span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-merged/80">
+          step
+        </span>
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-foreground/70">
+          <span className="truncate">
+            {item.fromStep.ordinal + 1}. {item.fromStep.name}
+          </span>
+          <ArrowRight size={11} aria-hidden className="shrink-0 text-merged/60" />
+          <span className="truncate">
+            {item.toStep.ordinal + 1}. {item.toStep.name}
+          </span>
+        </span>
+        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{timestamp}</span>
+      </button>
+
+      {open && hasContext ? (
+        <div className="ml-2 flex flex-col gap-1 border-l border-merged/20 py-2 pl-3 pr-2">
+          <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+            carried forward
+          </span>
+          <div className="overflow-x-auto text-xs text-foreground/80">
+            <Markdown text={item.carryForwardContext} />
+          </div>
         </div>
-        <p className="mt-1 text-right text-2xs text-muted-foreground">{timestamp}</p>
-      </Collapsible>
+      ) : null}
     </div>
   );
 };

@@ -23,6 +23,11 @@ describe('PhaseTransitionCard', () => {
     expect(screen.getByText(/plan/i)).toBeDefined();
   });
 
+  it('keeps the carry-forward context collapsed by default', () => {
+    render(<PhaseTransitionCard item={item} />);
+    expect(screen.queryByText('carry me forward')).toBeNull();
+  });
+
   it('reveals the carry-forward context when expanded', () => {
     render(<PhaseTransitionCard item={item} />);
     fireEvent.click(screen.getByRole('button'));
