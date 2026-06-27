@@ -13,6 +13,7 @@ const { state } = vi.hoisted(() => ({
     restorePlan: vi.fn(async () => undefined),
     runPlan: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    setFocusedPlanId: vi.fn(),
     plans: [] as ReadonlyArray<unknown>,
   },
 }));

@@ -3,6 +3,7 @@ import { cn } from '../cn';
 
 export type AppShellProps = {
   topBar?: ReactNode;
+  workspaceBar?: ReactNode;
   footer?: ReactNode;
   leftSidebar?: ReactNode;
   leftHidden?: boolean;
@@ -107,6 +108,7 @@ function buildLayout(opts: {
 
 export const AppShell = ({
   topBar,
+  workspaceBar,
   footer,
   leftSidebar,
   leftHidden = false,
@@ -238,6 +240,7 @@ export const AppShell = ({
   return (
     <div className="flex h-screen w-screen flex-col bg-background">
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
+      {workspaceBar != null ? <div className="shrink-0">{workspaceBar}</div> : null}
       <div
         className={cn(
           'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-out',

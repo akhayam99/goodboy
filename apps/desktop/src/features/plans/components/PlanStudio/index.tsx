@@ -65,6 +65,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
   const restorePlan = useAppStore((s) => s.restorePlan);
   const runPlan = useAppStore((s) => s.runPlan);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const { showToast } = useToast();
 
   const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
@@ -98,6 +99,10 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
   useEffect(() => {
     if (selectedId) void loadConsumptionsForPlan(selectedId);
   }, [selectedId, loadConsumptionsForPlan]);
+
+  useEffect(() => {
+    setFocusedPlanId(sessionId, selectedId);
+  }, [sessionId, selectedId, setFocusedPlanId]);
 
   const selected: PlanWithCount | null = plans.find((p) => p.id === selectedId) ?? null;
 

@@ -1,15 +1,23 @@
-import { useEffect } from 'react';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import { useEffect, useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import { ChatView } from '../../../chat/components/ChatView';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ScriptsPanel } from '../../../scripts';
-import { readPersistedLens, useAppStore, useFilesTouched } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  readPersistedLens,
+  useAppStore,
+  useFilesTouched,
+  useSessionPlans,
+} from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { worktreeStatus } from '../../../worktree/worktree';
 import { AgentsSection } from '../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
+import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
+import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { SessionTopBar } from './parts/SessionTopBar';
@@ -20,6 +28,7 @@ import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
+import { buildSessionBreadcrumb } from './sessionBreadcrumb';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -53,8 +62,21 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
+  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
+  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   const filesTouched = useFilesTouched(sessionId, isActive);
+  const phaseRuns = useAppStore(
+    (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
+  );
+  const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const sessionWorkflows = useAppStore(
+    (s) => s.sessionWorkflows[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const plans = useSessionPlans(sessionId);
 
   useEffect(() => {
     if (activeLens === undefined) {
@@ -90,6 +112,65 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const onBareOverview = showLens && lens === null;
   const overlayHome = agentHome ?? 'agents';
 
+  const selectedAgentName = useMemo(
+    () =>
+      selectedAgentId != null
+        ? (phaseRuns.find((r) => r.id === selectedAgentId)?.name ?? 'Agent')
+        : null,
+    [phaseRuns, selectedAgentId],
+  );
+  const focusedWorkflowName = useMemo(() => {
+    if (focusedWorkflowRunId == null) return null;
+    const run = session.workflowRuns.find((r) => r.id === focusedWorkflowRunId);
+    if (!run) return null;
+    const workflow =
+      phaseTemplates.find((w) => w.id === run.workflowId) ??
+      sessionWorkflows.find((w) => w.id === run.workflowId) ??
+      null;
+    return workflow ? workflowKindName(workflow) : null;
+  }, [focusedWorkflowRunId, session.workflowRuns, phaseTemplates, sessionWorkflows]);
+  const focusedPlanTitle = useMemo(
+    () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
+    [plans, focusedPlanId],
+  );
+
+  const crumbs = useMemo(
+    () =>
+      buildSessionBreadcrumb({
+        lens,
+        studio,
+        selectedAgentName,
+        overlayHomeLens: overlayHome,
+        focusedWorkflowName,
+        focusedPlanTitle,
+        lensLabel: (l) => LENS_LABEL[l],
+        handlers: {
+          toOverview: () => setActiveLens(sessionId, null),
+          toLens: (l) => setActiveLens(sessionId, l),
+          toWorkflowsList: () => {
+            setFocusedWorkflowRun(sessionId, null);
+            setActiveLens(sessionId, 'workflows');
+          },
+          toPlansList: () => {
+            setFocusedPlanId(sessionId, null);
+            setActiveLens(sessionId, 'plans');
+          },
+        },
+      }),
+    [
+      lens,
+      studio,
+      selectedAgentName,
+      overlayHome,
+      focusedWorkflowName,
+      focusedPlanTitle,
+      sessionId,
+      setActiveLens,
+      setFocusedWorkflowRun,
+      setFocusedPlanId,
+    ],
+  );
+
   useEffect(() => {
     if (!showAgentOverlay) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -104,6 +185,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
+      <div className="flex shrink-0 items-center px-6 py-2.5">
+        <AppBreadcrumb crumbs={crumbs} />
+      </div>
+      <Divider />
       <div className="flex min-h-0 flex-1">
         {onBareOverview ? null : (
           <>
@@ -119,20 +204,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           </>
         )}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          {showLens && lens !== null ? (
-            <div className="flex shrink-0 items-center gap-1.5 px-6 pb-3 pt-4 text-xs text-muted-foreground">
-              <button
-                type="button"
-                onClick={onSelectOverview}
-                className="inline-flex items-center gap-1 rounded font-medium text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-              >
-                <ArrowLeft size={12} aria-hidden className="shrink-0" />
-                Back to overview
-              </button>
-              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/40" />
-              <span className="font-medium text-foreground">{LENS_LABEL[lens]}</span>
-            </div>
-          ) : null}
           <div className="relative min-h-0 flex-1">
             {showLens ? (
               <div className="absolute inset-0 z-0">

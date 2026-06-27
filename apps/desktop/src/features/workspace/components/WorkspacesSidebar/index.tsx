@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Divider } from '@goodboy/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -9,7 +8,6 @@ import {
   useCurrentWorkspace,
   useSessions,
 } from '../../../../store';
-import { WorkspaceHeader } from '../WorkspaceHeader';
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
@@ -40,13 +38,6 @@ export const WorkspacesSidebar = () => {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {currentWorkspace ? (
-        <>
-          <WorkspaceHeader />
-          <Divider />
-        </>
-      ) : null}
-
       {currentWorkspace && currentSession ? (
         <button
           type="button"
