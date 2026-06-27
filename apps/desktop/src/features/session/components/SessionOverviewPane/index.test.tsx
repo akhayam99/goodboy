@@ -216,7 +216,7 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     expect(screen.getByText('Start')).toBeDefined();
     expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
-    expect(screen.getByText('Resolve')).toBeDefined();
+    expect(screen.getByText('No pull request yet')).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
 
@@ -249,7 +249,7 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     const onSelectLens = renderPane();
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
     expect(screen.getByText('No pull request yet')).toBeDefined();
-    const card = screen.getByText('Resolve').closest('[aria-disabled]');
+    const card = screen.getByText('No pull request yet').closest('[aria-disabled]');
     expect(card).toBeDefined();
     fireEvent.click(card!);
     expect(onSelectLens).not.toHaveBeenCalledWith('resolve');
@@ -510,6 +510,16 @@ describe('SessionOverviewPane context links', () => {
     expect(onSelectLens).toHaveBeenCalledWith('scripts');
     fireEvent.click(screen.getByRole('button', { name: /^terminal$/i }));
     expect(onSelectLens).toHaveBeenCalledWith('terminal');
+  });
+
+  it('renders the primary context strip on a non-fresh session and routes correctly', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent()] };
+    const onSelectLens = renderPane();
+    expect(screen.getByRole('button', { name: /^goal$/i })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /^decisions$/i }));
+    expect(onSelectLens).toHaveBeenCalledWith('decisions');
+    fireEvent.click(screen.getByRole('button', { name: /^last output$/i }));
+    expect(onSelectLens).toHaveBeenCalledWith('last_output_summary');
   });
 });
 

@@ -804,7 +804,7 @@ export const SessionOverviewPane = ({
                     className={cn('mt-0.5 shrink-0', tintClasses('success').icon)}
                   />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-sm font-medium text-foreground">Comment resolution</span>
+                    <span className="text-sm font-medium text-foreground">Resolve</span>
                     <span className="text-2xs text-muted-foreground">
                       Addresses review comments on a pull request or diff.
                     </span>
