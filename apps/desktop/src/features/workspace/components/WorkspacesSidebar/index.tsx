@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { Kanban } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -39,15 +39,17 @@ export const WorkspacesSidebar = () => {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {currentWorkspace && currentSession ? (
-        <button
-          type="button"
-          onClick={() => void setCurrentSession(null)}
-          aria-label="back to board"
-          className="mx-2 mb-1 mt-2 inline-flex shrink-0 items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-xs font-semibold text-foreground motion-safe:transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        >
-          <ArrowLeft size={14} aria-hidden />
-          Back to board
-        </button>
+        <div className="shrink-0 px-2 pt-2 pb-1">
+          <button
+            type="button"
+            onClick={() => void setCurrentSession(null)}
+            aria-label="back to board"
+            className="w-full flex items-center justify-center gap-1.5 rounded-md bg-accent/10 px-2 py-1.5 text-xs font-semibold text-accent ring-1 ring-accent/20 motion-safe:transition-colors hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          >
+            <Kanban size={14} aria-hidden />
+            Board
+          </button>
+        </div>
       ) : null}
 
       <div className="flex min-h-0 flex-1">
