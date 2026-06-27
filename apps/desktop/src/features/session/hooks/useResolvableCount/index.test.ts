@@ -10,7 +10,6 @@ const { store } = vi.hoisted(() => {
 });
 
 vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [],
   useAppStore: Object.assign((selector: (s: StoreState) => unknown) => selector(store.state), {
     getState: () => store.state,
   }),
@@ -20,22 +19,11 @@ import { useResolvableCount } from './index';
 
 const SID = 'sess-1' as SessionId;
 
-const makeAgent = (over: Record<string, unknown> = {}) => ({
-  id: 'a',
-  parentAgentId: null,
-  workflowRunId: null,
-  sourceThreadId: null,
-  status: 'running',
-  ...over,
-});
-
 beforeEach(() => {
   store.state = {
     sessionGithub: {},
-    sessionGitlabMr: {},
     diffComments: {},
     sessionPendingResolutions: {},
-    sessionPhaseRuns: {},
   };
 });
 
@@ -44,31 +32,20 @@ afterEach(() => {
 });
 
 describe('useResolvableCount', () => {
-  it('no PR, no resolvers, nothing loaded -> disabled with "No pull request yet" and total 0', () => {
+  it('nothing loaded -> all counts are zero', () => {
     const { result } = renderHook(() => useResolvableCount(SID));
-    expect(result.current.enabled).toBe(false);
-    expect(result.current.disabledReason).toBe('No pull request yet');
-    expect(result.current.total).toBe(0);
+    expect(result.current).toEqual({ prComments: 0, diffComments: 0, pending: 0 });
   });
 
-  it('PR present but detail not loaded -> enabled (proxy), no disabledReason', () => {
-    store.state = {
-      ...store.state,
-      sessionGithub: { [SID]: { pr: { number: 1 }, detail: null } },
-    };
-    const { result } = renderHook(() => useResolvableCount(SID));
-    expect(result.current.enabled).toBe(true);
-    expect(result.current.disabledReason).toBeNull();
-  });
-
-  it('PR present, detail loaded with zero unresolved review comments -> disabled with "No comments in the PR"', () => {
+  it('counts unresolved review comments from loaded PR detail', () => {
     store.state = {
       ...store.state,
       sessionGithub: {
         [SID]: {
-          pr: { number: 1 },
           detail: {
             comments: [
+              { source: 'review', resolved: false },
+              { source: 'review', resolved: false },
               { source: 'review', resolved: true },
               { source: 'issue', resolved: false },
             ],
@@ -77,47 +54,31 @@ describe('useResolvableCount', () => {
       },
     };
     const { result } = renderHook(() => useResolvableCount(SID));
-    expect(result.current.enabled).toBe(false);
-    expect(result.current.disabledReason).toBe('No comments in the PR');
-    expect(result.current.total).toBe(0);
+    expect(result.current.prComments).toBe(2);
+    expect(result.current.diffComments).toBe(0);
+    expect(result.current.pending).toBe(0);
   });
 
-  it('PR present, detail loaded with one unresolved review comment -> enabled, total >= 1', () => {
+  it('counts open diff comments', () => {
     store.state = {
       ...store.state,
-      sessionGithub: {
-        [SID]: {
-          pr: { number: 1 },
-          detail: {
-            comments: [{ source: 'review', resolved: false }],
-          },
-        },
+      diffComments: {
+        [SID]: [{ status: 'open' }, { status: 'open' }, { status: 'resolved' }],
       },
     };
     const { result } = renderHook(() => useResolvableCount(SID));
-    expect(result.current.enabled).toBe(true);
-    expect(result.current.total).toBeGreaterThanOrEqual(1);
+    expect(result.current.diffComments).toBe(2);
+    expect(result.current.prComments).toBe(0);
   });
 
-  it('standalone resolver agent present -> enabled, total >= 1', () => {
+  it('reports the pending batch length', () => {
     store.state = {
       ...store.state,
-      sessionPhaseRuns: {
-        [SID]: [makeAgent({ sourceThreadId: 'thread-123' })],
-      },
+      sessionPendingResolutions: { [SID]: [{}, {}, {}] },
     };
     const { result } = renderHook(() => useResolvableCount(SID));
-    expect(result.current.enabled).toBe(true);
-    expect(result.current.total).toBeGreaterThanOrEqual(1);
-  });
-
-  it('diff loaded with zero open comments and no PR -> "No pull request yet"', () => {
-    store.state = {
-      ...store.state,
-      diffComments: { [SID]: [{ status: 'resolved' }, { status: 'consumed' }] },
-    };
-    const { result } = renderHook(() => useResolvableCount(SID));
-    expect(result.current.enabled).toBe(false);
-    expect(result.current.disabledReason).toBe('No pull request yet');
+    expect(result.current.pending).toBe(3);
+    expect(result.current.prComments).toBe(0);
+    expect(result.current.diffComments).toBe(0);
   });
 });

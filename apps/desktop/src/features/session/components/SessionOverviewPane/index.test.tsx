@@ -18,6 +18,7 @@ type Store = {
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
+  loadPendingResolutions: ReturnType<typeof vi.fn>;
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   diffComments: Record<string, ReadonlyArray<unknown>>;
@@ -46,6 +47,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     setFocusedWorkflowRun: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    loadPendingResolutions: vi.fn(async () => undefined),
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     diffComments: {} as Record<string, ReadonlyArray<unknown>>,
@@ -101,6 +103,10 @@ vi.mock('./BranchChip', () => ({
 
 vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="cost-chip" />,
+}));
+
+vi.mock('../../../context/components/ContextPanel/strips/PendingResolutionsStrip', () => ({
+  PendingResolutionsStrip: () => <div data-testid="pending-resolutions-strip" />,
 }));
 
 import { SessionOverviewPane } from './index';
@@ -161,6 +167,8 @@ beforeEach(() => {
   store.activateWorkflowAgent.mockResolvedValue(undefined);
   store.selectAgent.mockReset();
   store.selectAgent.mockResolvedValue(undefined);
+  store.loadPendingResolutions.mockReset();
+  store.loadPendingResolutions.mockResolvedValue(undefined);
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
   store.diffComments = {};
@@ -211,63 +219,53 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
 });
 
 describe('SessionOverviewPane start row (cluster B)', () => {
-  it('always shows the start entry cards and hides the metrics strip when fresh', () => {
+  it('renders the unified fresh start card with the workflow and agent options', () => {
     renderPane();
     expect(screen.getByText('Start')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
-    expect(screen.getByText('No pull request yet')).toBeDefined();
+    expect(screen.getByText('Choose how to start')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Workflow/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Agent/ })).toBeDefined();
+    expect(screen.getByText('recommended')).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
 
-  it('opens the workflow builder directly from the new-workflow card', () => {
+  it('does not mention resolve in the fresh start card', () => {
+    renderPane();
+    expect(screen.queryByText('Addresses review comments on a pull request or diff.')).toBeNull();
+  });
+
+  it('opens the workflow builder from the fresh workflow option', () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-workflow-builder', handler);
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'New workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: /Workflow/ }));
     expect(handler).toHaveBeenCalledOnce();
     expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({ sessionId: 'sess-1' });
     window.removeEventListener('goodboy:open-workflow-builder', handler);
   });
 
-  it('opens the role-picker menu from the new-agent card and spawns with chosen kind', () => {
+  it('opens the role picker from the fresh agent option and spawns the chosen kind', () => {
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
-    const menuitem = screen.getByRole('menuitem', { name: /Scout/i });
-    fireEvent.click(menuitem);
+    fireEvent.click(screen.getByRole('button', { name: /Agent/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Scout/i }));
     expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 
-  it('routes the resolve card to the resolve lens when a PR is present', () => {
-    store.sessionGithub = { 'sess-1': { pr: { number: 1 } } };
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
-    expect(onSelectLens).toHaveBeenCalledWith('resolve');
-  });
-
-  it('disables the Resolve card with "No pull request yet" when no PR and clicking does not route', () => {
-    const onSelectLens = renderPane();
-    expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
-    expect(screen.getByText('No pull request yet')).toBeDefined();
-    const card = screen.getByText('No pull request yet').closest('[aria-disabled]');
-    expect(card).toBeDefined();
-    fireEvent.click(card!);
-    expect(onSelectLens).not.toHaveBeenCalledWith('resolve');
-  });
-
-  it('enables the Resolve card and routes when a PR is present', () => {
-    store.sessionGithub = { 'sess-1': { pr: { number: 42 } } };
-    const onSelectLens = renderPane();
-    const btn = screen.getByRole('button', { name: 'Resolve' });
-    fireEvent.click(btn);
-    expect(onSelectLens).toHaveBeenCalledWith('resolve');
-  });
-
-  it('keeps the start cards once work exists', () => {
+  it('shows the two aligned start cards once work exists and no resolve start card', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
     renderPane();
+    expect(screen.queryByText('Choose how to start')).toBeNull();
     expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByText('Resolve')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
+  });
+
+  it('opens the role picker from the non-fresh create-agent card', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+    renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Scout/i }));
+    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 
   it('treats discarded workflow runs as not active for freshness', () => {
@@ -278,26 +276,33 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     );
     expect(screen.queryByText('At a glance')).toBeNull();
   });
+});
 
-  it('renders the teaching block with all three path descriptions when the session is fresh', () => {
-    renderPane();
-    expect(screen.getByText('Choose how to start')).toBeDefined();
-    expect(
-      screen.getByText('Runs a multi-step pipeline: scout, plan, implement, test, review.'),
-    ).toBeDefined();
-    expect(screen.getByText('A single specialist for a one-off task.')).toBeDefined();
-    expect(screen.getByText('Addresses review comments on a pull request or diff.')).toBeDefined();
-    expect(screen.getByText('recommended')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
+describe('SessionOverviewPane resolve section', () => {
+  it('surfaces the resolve section and routes a comment row to the resolve lens', () => {
+    store.sessionGithub = {
+      'sess-1': {
+        pr: { number: 1 },
+        detail: { comments: [{ source: 'review', resolved: false }] },
+      },
+    };
+    const onSelectLens = renderPane();
+    expect(screen.getByText('Resolve')).toBeDefined();
+    const row = screen.getByText('1 comment to resolve');
+    fireEvent.click(row);
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 
-  it('hides the teaching block and keeps start buttons when the session has work', () => {
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+  it('renders the push-and-resolve strip when a batch is pending', () => {
+    store.sessionPendingResolutions = { 'sess-1': [{}, {}] };
     renderPane();
-    expect(screen.queryByText('Choose how to start')).toBeNull();
-    expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
+    expect(screen.getByText('Resolve')).toBeDefined();
+    expect(screen.getByTestId('pending-resolutions-strip')).toBeDefined();
+  });
+
+  it('omits the resolve section when nothing is resolvable', () => {
+    renderPane();
+    expect(screen.queryByText('Resolve')).toBeNull();
   });
 });
 

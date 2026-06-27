@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -67,7 +67,8 @@ import {
   selectOpenQuestions,
   selectStandaloneAgents,
 } from './lib';
-import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
+import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentMenu';
+import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
 
@@ -295,67 +296,84 @@ const AgentRow = ({
   </button>
 );
 
-const StartCard = ({
+const startRowClass = (primary?: boolean): string =>
+  cn(
+    'group flex w-full items-center gap-3 rounded-lg border bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors',
+    primary
+      ? 'border-accent/40 ring-1 ring-accent/30 hover:border-accent/60'
+      : 'border-border-soft hover:border-border',
+  );
+
+const StartRowContent = ({
   icon: Icon,
   tone,
   label,
-  onClick,
-  disabled,
-  hint,
-  primary,
+  description,
+  chip,
 }: {
   readonly icon: LucideIcon;
   readonly tone: Tone;
   readonly label: string;
-  readonly onClick: () => void;
-  readonly disabled?: boolean;
-  readonly hint?: string;
-  readonly primary?: boolean;
-}) =>
-  disabled ? (
-    <div
-      aria-disabled="true"
-      className="flex cursor-default items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left opacity-45 shadow-sm"
-    >
-      <span
-        aria-hidden
-        className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
-          tintClasses(tone).bg,
-          tintClasses(tone).ring,
-        )}
-      >
-        <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
-      </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium text-foreground">{label}</span>
-        {hint ? <span className="truncate text-2xs text-muted-foreground">{hint}</span> : null}
-      </span>
-    </div>
-  ) : (
-    <button
-      type="button"
-      onClick={onClick}
+  readonly description: string;
+  readonly chip?: boolean;
+}) => (
+  <>
+    <span
+      aria-hidden
       className={cn(
-        'group flex items-center gap-2.5 rounded-lg border bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors',
-        primary
-          ? 'border-accent/40 ring-1 ring-accent/30 hover:border-accent/60'
-          : 'border-border-soft hover:border-border',
+        'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
+        tintClasses(tone).bg,
+        tintClasses(tone).ring,
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
-          tintClasses(tone).bg,
-          tintClasses(tone).ring,
-        )}
-      >
-        <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
+      <Icon size={16} aria-hidden className={tintClasses(tone).icon} />
+    </span>
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+        {label}
+        {chip ? <Chip tone="accent" size="sm" label="recommended" /> : null}
       </span>
-      <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
-    </button>
+      <span className="truncate text-2xs text-muted-foreground">{description}</span>
+    </span>
+    <ArrowRight
+      size={15}
+      aria-hidden
+      className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+    />
+  </>
+);
+
+const startTileClass = (primary?: boolean): string =>
+  cn(
+    'group flex items-center gap-2.5 rounded-lg border bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors',
+    primary
+      ? 'border-accent/40 ring-1 ring-accent/30 hover:border-accent/60'
+      : 'border-border-soft hover:border-border',
   );
+
+const StartTileContent = ({
+  icon: Icon,
+  tone,
+  label,
+}: {
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+}) => (
+  <>
+    <span
+      aria-hidden
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
+        tintClasses(tone).bg,
+        tintClasses(tone).ring,
+      )}
+    >
+      <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
+    </span>
+    <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
+  </>
+);
 
 type PipelineSectionProps = {
   readonly session: Session;
@@ -539,8 +557,15 @@ export const SessionOverviewPane = ({
   const resolvable = useResolvableCount(session.id as SessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
+  const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
+
+  useEffect(() => {
+    void loadPendingResolutions(session.id as SessionId);
+  }, [session.id, loadPendingResolutions]);
 
   const openCount = openQuestions.length;
+  const resolvableItems = resolvable.prComments + resolvable.diffComments + resolvable.pending;
+  const commentsToResolve = resolvable.prComments + resolvable.diffComments;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && rawStandalone.length === 0;
   const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
@@ -755,83 +780,73 @@ export const SessionOverviewPane = ({
           ))}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Eyebrow label="Start" muted className="px-0.5 font-medium" />
-          {isFresh ? (
+        {isFresh ? (
+          <div className="flex flex-col gap-2">
+            <Eyebrow label="Start" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated px-4 py-3.5">
               <div className="flex flex-col gap-1">
                 <Eyebrow label="New session" className="text-muted-foreground/70" />
                 <p className="text-base font-semibold text-foreground">Choose how to start</p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Three paths are available. Workflows are the recommended starting point for most
-                  tasks.
+                  Two ways to begin. Workflows are the recommended starting point for most tasks.
                 </p>
               </div>
-              <ul className="flex flex-col gap-2">
-                <li className="flex items-start gap-2.5">
-                  <Workflow
-                    size={14}
-                    aria-hidden
-                    className={cn('mt-0.5 shrink-0', tintClasses('accent').icon)}
+              <div className="flex flex-col gap-2">
+                <button type="button" onClick={openWorkflowBuilder} className={startRowClass(true)}>
+                  <StartRowContent
+                    icon={Workflow}
+                    tone="accent"
+                    label="Workflow"
+                    description="Runs a multi-step pipeline: scout, plan, implement, test, review."
+                    chip
                   />
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                      Workflow
-                      <Chip tone="accent" size="sm" label="recommended" />
-                    </span>
-                    <span className="text-2xs text-muted-foreground">
-                      Runs a multi-step pipeline: scout, plan, implement, test, review.
-                    </span>
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Bot
-                    size={14}
-                    aria-hidden
-                    className={cn('mt-0.5 shrink-0', tintClasses('primary').icon)}
-                  />
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-sm font-medium text-foreground">Agent</span>
-                    <span className="text-2xs text-muted-foreground">
-                      A single specialist for a one-off task.
-                    </span>
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <MessageSquareReply
-                    size={14}
-                    aria-hidden
-                    className={cn('mt-0.5 shrink-0', tintClasses('success').icon)}
-                  />
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-sm font-medium text-foreground">Resolve</span>
-                    <span className="text-2xs text-muted-foreground">
-                      Addresses review comments on a pull request or diff.
-                    </span>
-                  </span>
-                </li>
-              </ul>
+                </button>
+                <SpawnAgentMenu
+                  sessionId={session.id as SessionId}
+                  trigger={({ ref, onClick, ...aria }) => (
+                    <button
+                      ref={ref}
+                      type="button"
+                      onClick={onClick}
+                      className={startRowClass()}
+                      {...aria}
+                    >
+                      <StartRowContent
+                        icon={Bot}
+                        tone="primary"
+                        label="Agent"
+                        description="A single specialist for a one-off task."
+                      />
+                    </button>
+                  )}
+                />
+              </div>
             </div>
-          ) : null}
-          <div className="grid grid-cols-3 gap-2">
-            <StartCard
-              icon={Workflow}
-              tone="accent"
-              label="New workflow"
-              onClick={openWorkflowBuilder}
-              primary={isFresh}
-            />
-            <SpawnAgentControl sessionId={session.id as SessionId} className="mt-0" />
-            <StartCard
-              icon={MessageSquareReply}
-              tone="success"
-              label="Resolve"
-              onClick={() => onSelectLens('resolve')}
-              disabled={!resolvable.enabled}
-              hint={resolvable.disabledReason ?? undefined}
-            />
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Eyebrow label="Start" muted className="px-0.5 font-medium" />
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={openWorkflowBuilder} className={startTileClass()}>
+                <StartTileContent icon={Workflow} tone="accent" label="New workflow" />
+              </button>
+              <SpawnAgentMenu
+                sessionId={session.id as SessionId}
+                trigger={({ ref, onClick, ...aria }) => (
+                  <button
+                    ref={ref}
+                    type="button"
+                    onClick={onClick}
+                    className={startTileClass()}
+                    {...aria}
+                  >
+                    <StartTileContent icon={Bot} tone="primary" label="Create agent" />
+                  </button>
+                )}
+              />
+            </div>
+          </div>
+        )}
 
         {nudges.length > 0 ? (
           <div className="flex flex-col gap-2">
@@ -872,6 +887,25 @@ export const SessionOverviewPane = ({
             workspaceId={workspace.id}
             onSelectLens={onSelectLens}
           />
+        ) : null}
+
+        {resolvableItems > 0 ? (
+          <div className="flex flex-col gap-2">
+            <Eyebrow label="Resolve" muted className="px-0.5 font-medium" />
+            <div className="flex flex-col gap-2">
+              {resolvable.pending > 0 ? (
+                <PendingResolutionsStrip sessionId={session.id as SessionId} />
+              ) : null}
+              {commentsToResolve > 0 ? (
+                <SummaryRow
+                  icon={MessageSquareReply}
+                  tone="success"
+                  label={`${commentsToResolve} comment${commentsToResolve === 1 ? '' : 's'} to resolve`}
+                  onClick={() => onSelectLens('resolve')}
+                />
+              ) : null}
+            </div>
+          </div>
         ) : null}
 
         {!isFresh && nudges.length === 0 && !isRunning ? (
