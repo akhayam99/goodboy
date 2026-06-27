@@ -756,14 +756,16 @@ const DiffViewerContent = ({
         ) : error ? (
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
         ) : files.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center p-8">
-            <EmptyState
-              bordered
-              tone="success"
-              icon={CheckCircle2}
-              title={emptyStateLabel(view, isGitAware)}
-              description={emptyStateBlurb(view, isGitAware) ?? undefined}
-            />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-2xl px-6 py-5">
+              <EmptyState
+                bordered
+                tone="success"
+                icon={CheckCircle2}
+                title={emptyStateLabel(view, isGitAware)}
+                description={emptyStateBlurb(view, isGitAware) ?? undefined}
+              />
+            </div>
           </div>
         ) : (
           <>

@@ -195,7 +195,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
       <Divider />
       <div className="flex min-h-0 flex-1">
         {plans.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center p-6">
+          <div className="mx-auto w-full max-w-2xl px-6 py-5">
             <EmptyState
               bordered
               tone="success"
