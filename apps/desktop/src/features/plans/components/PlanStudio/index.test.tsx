@@ -48,8 +48,20 @@ describe('PlanStudio', () => {
     expect(screen.getByText(/no plans yet/i)).toBeDefined();
   });
 
-  it('shows No plan selected placeholder when nothing is selected', () => {
-    render(<PlanStudio sessionId={'sess-1' as never} />);
+  it('shows No plan selected placeholder when a plan exists but none is selected', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-deleted',
+        sessionId: 'sess-1',
+        title: 'Lonely plan',
+        bodyMd: 'body',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} initialPlanId={'missing' as never} />);
     expect(screen.getByText(/no plan selected/i)).toBeDefined();
   });
 
