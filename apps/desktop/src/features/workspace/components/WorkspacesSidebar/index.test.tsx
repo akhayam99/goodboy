@@ -26,7 +26,6 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as never[],
 }));
 
-vi.mock('../WorkspaceHeader', () => ({ WorkspaceHeader: () => null }));
 vi.mock('../SessionActivityBar', () => ({ SessionActivityBar: () => null }));
 vi.mock('../WorkspaceLinkDialog', () => ({ WorkspaceLinkDialog: () => null }));
 

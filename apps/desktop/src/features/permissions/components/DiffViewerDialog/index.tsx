@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
-import { CheckCircle2, FileEdit } from 'lucide-react';
-import { Dialog, Divider, ScrollFade, Skeleton } from '@goodboy/ui';
+import { CheckCircle2, FileEdit, X } from 'lucide-react';
+import { Dialog, Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -32,7 +32,7 @@ import {
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { type ReviewState } from './lib';
+import { TOOLBAR_ICON_BTN, type ReviewState } from './lib';
 import { FileRail } from './FileTree/FileRail';
 import { FileDiffCard } from './FileDiffCard';
 import { DiffToolbar } from './DiffToolbar';
@@ -650,35 +650,83 @@ const DiffViewerContent = ({
     [],
   );
 
+  const isEmpty = !loading && !error && files.length === 0;
+
   return (
     /* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- container handles keyboard nav */
     <div className="flex h-full min-h-0 w-full flex-col" onKeyDown={handleKeyDown}>
-      <DiffToolbar
-        title={title}
-        prNumber={prNumber}
-        openCommentsCount={comments.filter((c) => c.status === 'open').length}
-        reviewedCount={files.length > 0 ? reviewedCount : null}
-        filesCount={files.length}
-        sidebarCollapsed={sidebarCollapsed}
-        onToggleSidebar={toggleSidebar}
-        status={isGitAware ? status : null}
-        onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
-        refreshing={loading}
-        showClose={showToolbarClose}
-        onClose={onClose}
-        viewSelector={
-          isGitAware ? (
-            <DiffViewSelector
-              view={view}
-              onChange={setView}
-              commits={commits}
-              status={status}
-              filesCount={loading ? null : files.length}
-              loading={loading}
-            />
-          ) : null
-        }
-      />
+      {isEmpty ? (
+        isGitAware ? (
+          <>
+            <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
+              <div className="flex min-w-0 flex-1 items-center">
+                <DiffViewSelector
+                  view={view}
+                  onChange={setView}
+                  commits={commits}
+                  status={status}
+                  filesCount={loading ? null : files.length}
+                  loading={loading}
+                />
+              </div>
+              {showToolbarClose ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="close"
+                  aria-label="close"
+                  className={TOOLBAR_ICON_BTN}
+                >
+                  <X size={13} />
+                </button>
+              ) : null}
+            </div>
+            <Divider className="shrink-0" />
+          </>
+        ) : showToolbarClose ? (
+          <>
+            <div className="flex shrink-0 items-center justify-end px-2.5 py-1.5">
+              <button
+                type="button"
+                onClick={onClose}
+                title="close"
+                aria-label="close"
+                className={TOOLBAR_ICON_BTN}
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <Divider className="shrink-0" />
+          </>
+        ) : null
+      ) : (
+        <DiffToolbar
+          title={title}
+          prNumber={prNumber}
+          openCommentsCount={comments.filter((c) => c.status === 'open').length}
+          reviewedCount={files.length > 0 ? reviewedCount : null}
+          filesCount={files.length}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={toggleSidebar}
+          status={isGitAware ? status : null}
+          onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+          refreshing={loading}
+          showClose={showToolbarClose}
+          onClose={onClose}
+          viewSelector={
+            isGitAware ? (
+              <DiffViewSelector
+                view={view}
+                onChange={setView}
+                commits={commits}
+                status={status}
+                filesCount={loading ? null : files.length}
+                loading={loading}
+              />
+            ) : null
+          }
+        />
+      )}
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {loading ? (
@@ -708,27 +756,15 @@ const DiffViewerContent = ({
         ) : error ? (
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
         ) : files.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-            <span
-              aria-hidden
-              className="flex size-12 items-center justify-center rounded-full bg-muted/50"
-            >
-              <CheckCircle2 size={22} className="text-success" />
-            </span>
-            <div className="flex flex-col items-center gap-1.5">
-              <span className="text-sm font-medium text-foreground">
-                {emptyStateLabel(view, isGitAware)}
-              </span>
-              {emptyStateBlurb(view, isGitAware) ? (
-                <span className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                  {emptyStateBlurb(view, isGitAware)}
-                </span>
-              ) : null}
-              {isGitAware ? (
-                <span className="mt-1.5 text-[11px] text-muted-foreground/60">
-                  Pick another view from the selector above.
-                </span>
-              ) : null}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-2xl px-6 py-5">
+              <EmptyState
+                bordered
+                tone="success"
+                icon={CheckCircle2}
+                title={emptyStateLabel(view, isGitAware)}
+                description={emptyStateBlurb(view, isGitAware) ?? undefined}
+              />
             </div>
           </div>
         ) : (

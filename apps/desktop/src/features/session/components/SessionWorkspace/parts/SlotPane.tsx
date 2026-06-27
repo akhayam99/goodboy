@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { History, RotateCcw } from 'lucide-react';
-import { Dialog, Markdown, Textarea, cn } from '@goodboy/ui';
+import { CheckSquare, FileText, History, RotateCcw, Target } from 'lucide-react';
+import { Button, Dialog, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
+import type { LucideIcon } from 'lucide-react';
 import type { ContextSlotHistoryEntry, Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -30,6 +31,24 @@ const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
   last_output_summary: 'Write a manual summary',
+};
+
+const SLOT_ICON: Record<SlotKey, LucideIcon> = {
+  goal: Target,
+  decisions: CheckSquare,
+  last_output_summary: FileText,
+};
+
+const SLOT_TONE: Record<SlotKey, Tone> = {
+  goal: 'primary',
+  decisions: 'success',
+  last_output_summary: 'info',
+};
+
+const SLOT_EMPTY_DESCRIPTION: Record<SlotKey, string> = {
+  goal: 'What this session is meant to achieve.',
+  decisions: 'Choices already locked in for this session.',
+  last_output_summary: "Summary of the agent's most recent reply.",
 };
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary']);
@@ -125,18 +144,18 @@ export const SlotPane = ({ session, slotKey }: SlotPaneProps) => {
             maxRows={24}
           />
         ) : !hasValue ? (
-          <button
-            type="button"
-            onClick={startEditing}
-            disabled={isSummarizing}
-            className={cn(
-              'flex flex-col items-start gap-1 rounded-lg border border-dashed border-border-soft px-4 py-6 text-left transition-colors',
-              isSummarizing ? 'cursor-default' : 'hover:border-border hover:bg-foreground/[0.02]',
-            )}
-          >
-            <span className="text-sm text-muted-foreground">{SLOT_EMPTY_CTA[slotKey]}</span>
-            <span className="text-xs text-muted-foreground/50">Click to edit</span>
-          </button>
+          <EmptyState
+            bordered
+            tone={SLOT_TONE[slotKey]}
+            icon={SLOT_ICON[slotKey]}
+            title={SLOT_EMPTY_CTA[slotKey]}
+            description={SLOT_EMPTY_DESCRIPTION[slotKey]}
+            action={
+              <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
+                Add
+              </Button>
+            }
+          />
         ) : renderAsMarkdown ? (
           <div
             role={isSummarizing ? undefined : 'button'}

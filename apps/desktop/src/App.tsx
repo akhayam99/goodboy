@@ -22,6 +22,7 @@ import { WorkspaceSettingsPane } from './features/workspace/components/Workspace
 import { SessionSettingsPane } from './features/session/components/SessionSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
+import { WorkspaceHeader } from './features/workspace/components/WorkspaceHeader';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
@@ -757,6 +758,7 @@ export const App = () => {
       <NotificationToastBridge />
       <AppShell
         topBar={<AppTopBar onOpenSettings={openSettings} activeStudio={activeStudio} />}
+        workspaceBar={currentWorkspace ? <WorkspaceHeader /> : undefined}
         footer={
           currentWorkspace ? (
             <AppFooter

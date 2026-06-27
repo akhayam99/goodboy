@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
@@ -16,7 +17,7 @@ import {
 import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
-import { type AgentKind, inferAgentKindFromName } from '../../../../session/agent-kind';
+import { resolveAgentKind } from '../../../../session/agent-kind';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -30,9 +31,6 @@ import {
   resolveAttentionLens,
   selectOpenQuestions,
 } from '../../SessionOverviewPane/lib';
-
-const isResolverAgent = (agent: Agent, override: AgentKind | null): boolean =>
-  isStandaloneAgent(agent) && (override ?? inferAgentKindFromName(agent.name)) === 'resolver';
 
 type LensColumnProps = {
   readonly session: Session;
@@ -59,22 +57,50 @@ type LensGroup = {
 export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
-  const hasStandaloneAgent = useAppStore((s) =>
-    (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(isStandaloneAgent),
+  const messages = useAppStore((s) => s.messages[sessionId] ?? EMPTY_ARRAY);
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+
+  const firstUserTextByAgentId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of messages) {
+      if (m.role !== 'user') {
+        continue;
+      }
+      if (map.has(m.agentId)) {
+        continue;
+      }
+      map.set(m.agentId, m.content);
+    }
+    return map;
+  }, [messages]);
+
+  const isResolver = useMemo(
+    () => (agent: Agent) =>
+      resolveAgentKind(
+        agent.name,
+        firstUserTextByAgentId.get(agent.id) ?? null,
+        agentKindOverride[agent.id] ?? null,
+      ) === 'resolver',
+    [firstUserTextByAgentId, agentKindOverride],
   );
-  const hasRunningAgent = useAppStore((s) =>
-    (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(
-      (a) => a.status === 'running' && isStandaloneAgent(a),
-    ),
+
+  const hasNonResolverStandalone = useMemo(
+    () => phaseRuns.some((a) => isStandaloneAgent(a) && !isResolver(a)),
+    [phaseRuns, isResolver],
   );
+  const hasResolverAgent = useMemo(
+    () => phaseRuns.some((a) => isStandaloneAgent(a) && isResolver(a)),
+    [phaseRuns, isResolver],
+  );
+  const hasRunningAgent = useMemo(
+    () => phaseRuns.some((a) => a.status === 'running' && isStandaloneAgent(a) && !isResolver(a)),
+    [phaseRuns, isResolver],
+  );
+
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
-  const hasResolverAgent = useAppStore((s) =>
-    (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some((a) =>
-      isResolverAgent(a, s.agentKindOverride[a.id] ?? null),
-    ),
-  );
   const attentionLens = resolveAttentionLens(useSessionStageInfo(session), {
-    hasStandalone: hasStandaloneAgent,
+    hasNonResolverStandalone,
     hasWorkflow: activeWorkflows > 0,
     hasResolver: hasResolverAgent,
   });
@@ -90,18 +116,20 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
   const hasPr = useAppStore(
     (s) => s.sessionGithub[sessionId]?.pr != null || s.sessionGitlabMr[sessionId]?.mr != null,
   );
-  const openResolvers = useAppStore((s) => {
-    const runs = s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY;
-    return runs.reduce(
-      (n, r) =>
-        n +
-        (isResolverAgent(r, s.agentKindOverride[r.id] ?? null) &&
-        (r.status === 'pending' || r.status === 'running')
-          ? 1
-          : 0),
-      0,
-    );
-  });
+  const openResolvers = useMemo(
+    () =>
+      phaseRuns.reduce(
+        (n, r) =>
+          n +
+          (isStandaloneAgent(r) &&
+          isResolver(r) &&
+          (r.status === 'pending' || r.status === 'running')
+            ? 1
+            : 0),
+        0,
+      ),
+    [phaseRuns, isResolver],
+  );
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );

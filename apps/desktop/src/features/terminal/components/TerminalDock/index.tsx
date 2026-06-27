@@ -3,6 +3,7 @@ import { SquareTerminal } from 'lucide-react';
 import { Button, Divider, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
 import {
   GenericTerminalPanel,
   type TerminalDriver,
@@ -110,8 +111,10 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
 
   if (tabs.length === 0) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center">
+      <PaneShell title="Terminal" description="Run commands in this session's worktree.">
         <EmptyState
+          bordered
+          tone="info"
           icon={SquareTerminal}
           title="No terminal"
           description="Open a terminal to run commands in this worktree."
@@ -121,7 +124,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
             </Button>
           }
         />
-      </div>
+      </PaneShell>
     );
   }
 

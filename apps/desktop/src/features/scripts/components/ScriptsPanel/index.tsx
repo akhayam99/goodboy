@@ -1,7 +1,25 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Button, Input, StatusDot, Textarea, cn, type StatusDotProps } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  Input,
+  StatusDot,
+  Textarea,
+  cn,
+  type StatusDotProps,
+} from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScriptId } from '@goodboy/types';
-import { Check, Copy, Pencil, Play, Plus, ScrollText, Square, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Pencil,
+  Play,
+  Plus,
+  ScrollText,
+  Square,
+  SquareTerminal,
+  Trash2,
+} from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunStatus } from '../../scripts';
@@ -116,9 +134,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
       {error ? <p className="text-xs text-danger">{error}</p> : null}
 
       {list.length === 0 && draft === null && (
-        <p className="rounded-md border border-dashed border-border-soft px-3 py-6 text-center text-xs text-muted-foreground">
-          No scripts yet. Create one, e.g. <code className="font-mono">copy environments</code>.
-        </p>
+        <EmptyState
+          bordered
+          tone="info"
+          icon={SquareTerminal}
+          title="No scripts yet"
+          description="Create one to run setup or checks from inside this session."
+        />
       )}
 
       <ul className="flex flex-col gap-2">

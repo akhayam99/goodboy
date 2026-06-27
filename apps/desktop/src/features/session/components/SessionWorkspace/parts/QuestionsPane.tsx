@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { ArrowRight, Bot, CircleCheck } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { EmptyState, cn } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -295,18 +295,13 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     return (
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-8 text-center">
-            <span
-              aria-hidden
-              className="flex size-12 items-center justify-center rounded-md bg-success/10"
-            >
-              <CircleCheck size={24} aria-hidden className="text-success" />
-            </span>
-            <p className="text-sm font-medium text-foreground">No open questions</p>
-            <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-              When an agent needs a decision, it shows up here.
-            </p>
-          </div>
+          <EmptyState
+            bordered
+            tone="success"
+            icon={CircleCheck}
+            title="No open questions"
+            description="When an agent needs a decision, it shows up here."
+          />
           <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
         </div>
       </PaneShell>

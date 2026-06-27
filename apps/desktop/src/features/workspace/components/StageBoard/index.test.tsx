@@ -28,7 +28,6 @@ vi.mock('./StageColumn', () => ({
   ),
 }));
 
-vi.mock('../WorkspaceHeader', () => ({ WorkspaceHeader: () => <div /> }));
 vi.mock('../../../session/components/ArchiveSessionDialog', () => ({
   ArchiveSessionDialog: () => null,
 }));

@@ -212,4 +212,145 @@ describe('useWorkspaceRuns', () => {
     expect(result.current.aggregate.runningCount).toBe(2);
     expect(result.current.aggregate.agentCount).toBe(2);
   });
+
+  it('places a fully-done lane in completedLanes, not in lanes', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({
+            id: 'scout-1',
+            name: 'scout',
+            workflowRunId: 'run-1',
+            stepId: 'step-scout',
+            runId: 'r-scout',
+            status: 'completed',
+          }),
+          makeAgent({
+            id: 'impl-1',
+            name: 'impl',
+            workflowRunId: 'run-1',
+            stepId: 'step-impl',
+            runId: 'r-impl',
+            status: 'completed',
+          }),
+          makeAgent({
+            id: 'review-1',
+            name: 'review',
+            workflowRunId: 'run-1',
+            stepId: 'step-review',
+            runId: 'r-review',
+            status: 'completed',
+          }),
+        ],
+      },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.lanes).toHaveLength(0);
+    expect(result.current.completedLanes).toHaveLength(1);
+    expect(result.current.completedLanes![0]!.runId).toBe('run-1');
+  });
+
+  it('keeps a mixed-status lane (some done, some running) in lanes and NOT in completedLanes', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({
+            id: 'scout-1',
+            name: 'scout',
+            workflowRunId: 'run-1',
+            stepId: 'step-scout',
+            runId: 'r-scout',
+            status: 'completed',
+          }),
+          makeAgent({
+            id: 'impl-1',
+            name: 'impl',
+            workflowRunId: 'run-1',
+            stepId: 'step-impl',
+            runId: 'r-impl',
+            status: 'running',
+          }),
+        ],
+      },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.lanes).toHaveLength(1);
+    expect(result.current.lanes[0]!.runId).toBe('run-1');
+    expect(result.current.completedLanes).toHaveLength(0);
+  });
+
+  it('places a done freeAgent in completedFreeAgents and a running one in freeAgents', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({ id: 'running-1', name: 'explore', status: 'running' }),
+          makeAgent({ id: 'done-1', name: 'finished', status: 'completed' }),
+        ],
+      },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.freeAgents.map((n) => n.id)).toEqual(['running-1']);
+    expect(result.current.completedFreeAgents!.map((n) => n.id)).toEqual(['done-1']);
+  });
+
+  it('places a fully-stalled lane (all steps failed) in completedLanes, not in lanes', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({
+            id: 'scout-fail',
+            name: 'scout',
+            workflowRunId: 'run-1',
+            stepId: 'step-scout',
+            runId: 'r-scout',
+            status: 'failed',
+          }),
+          makeAgent({
+            id: 'impl-fail',
+            name: 'impl',
+            workflowRunId: 'run-1',
+            stepId: 'step-impl',
+            runId: 'r-impl',
+            status: 'failed',
+          }),
+          makeAgent({
+            id: 'review-fail',
+            name: 'review',
+            workflowRunId: 'run-1',
+            stepId: 'step-review',
+            runId: 'r-review',
+            status: 'failed',
+          }),
+        ],
+      },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.lanes).toHaveLength(0);
+    expect(result.current.completedLanes).toHaveLength(1);
+    expect(result.current.completedLanes![0]!.runId).toBe('run-1');
+  });
+
+  it('places a done resolver in completedResolveQueue and a running one in resolveQueue', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({
+            id: 'r-running',
+            name: 'resolve-active',
+            status: 'running',
+            sourceThreadId: 'thread-a',
+          }),
+          makeAgent({
+            id: 'r-done',
+            name: 'resolve-done',
+            status: 'completed',
+            sourceThreadId: 'thread-b',
+          }),
+        ],
+      },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.resolveQueue.map((n) => n.id)).toEqual(['r-running']);
+    expect(result.current.completedResolveQueue!.map((n) => n.id)).toEqual(['r-done']);
+  });
 });

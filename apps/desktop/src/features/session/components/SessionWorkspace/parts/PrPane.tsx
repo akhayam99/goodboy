@@ -102,15 +102,15 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   if (!pr) {
     return (
-      <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-lg border border-border-soft bg-elevated px-8 py-8 text-center">
+      <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-8 py-8 text-center">
         <div className="absolute right-3 top-3">
           <RefreshButton onClick={refresh} loading={loading} error={error} />
         </div>
         <span
           aria-hidden
-          className="flex size-14 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/15"
+          className="flex size-12 items-center justify-center rounded-full bg-primary/10"
         >
-          <GitPullRequest size={26} className="text-primary" />
+          <GitPullRequest size={24} className="text-primary" />
         </span>
         <div className="flex flex-col items-center gap-1.5">
           <h2 className="text-base font-semibold text-foreground">Open a pull request</h2>
