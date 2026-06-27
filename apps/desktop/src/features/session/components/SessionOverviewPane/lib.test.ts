@@ -1,15 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, OpenQuestion, SessionStageInfo } from '@goodboy/types';
+import type { AgentKind } from '../../agent-kind';
 import {
   isStandaloneAgent,
   resolveAttentionLens,
   selectAttention,
+  selectNonResolverStandaloneAgents,
   selectOpenQuestions,
   selectStandaloneAgents,
 } from './lib';
 
 const agent = (over: Partial<Agent>): Agent =>
-  ({ parentAgentId: null, workflowRunId: null, stepId: null, ...over }) as unknown as Agent;
+  ({
+    id: 'a',
+    name: '',
+    parentAgentId: null,
+    workflowRunId: null,
+    stepId: null,
+    ...over,
+  }) as unknown as Agent;
 
 const stage = (over: Partial<SessionStageInfo>): SessionStageInfo =>
   ({ stage: 'building', reason: '', ...over }) as SessionStageInfo;
@@ -76,7 +85,7 @@ describe('selectAttention', () => {
 });
 
 describe('resolveAttentionLens', () => {
-  const ctx = { hasStandalone: false, hasWorkflow: false, hasResolver: false };
+  const ctx = { hasNonResolverStandalone: false, hasWorkflow: false, hasResolver: false };
 
   it('returns null when not in the attention stage', () => {
     expect(resolveAttentionLens(stage({ stage: 'running' }), ctx)).toBeNull();
@@ -94,58 +103,78 @@ describe('resolveAttentionLens', () => {
     ).toBe('questions');
   });
 
-  it('prefers standalone agents over workflows', () => {
-    expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-        hasStandalone: true,
-        hasWorkflow: true,
-        hasResolver: false,
-      }),
-    ).toBe('agents');
-  });
+  const lensFor = (
+    hasNonResolverStandalone: boolean,
+    hasWorkflow: boolean,
+    hasResolver: boolean,
+  ) => {
+    if (hasNonResolverStandalone) return 'agents';
+    if (hasResolver) return 'resolve';
+    if (hasWorkflow) return 'workflows';
+    return null;
+  };
 
-  it('falls back to workflows when only a workflow is present', () => {
+  for (const hasNonResolverStandalone of [false, true]) {
+    for (const hasWorkflow of [false, true]) {
+      for (const hasResolver of [false, true]) {
+        const expected = lensFor(hasNonResolverStandalone, hasWorkflow, hasResolver);
+        it(`routes nonResolver=${hasNonResolverStandalone} workflow=${hasWorkflow} resolver=${hasResolver} to ${expected}`, () => {
+          expect(
+            resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
+              hasNonResolverStandalone,
+              hasWorkflow,
+              hasResolver,
+            }),
+          ).toBe(expected);
+        });
+      }
+    }
+  }
+
+  it('routes a workflow-only attention session to workflows, never null', () => {
     expect(
       resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-        hasStandalone: false,
+        hasNonResolverStandalone: false,
         hasWorkflow: true,
         hasResolver: false,
       }),
     ).toBe('workflows');
   });
 
-  it('defaults to agents when nothing else matches', () => {
-    expect(resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), ctx)).toBe('agents');
+  it('returns null when no agent, resolver or workflow is present', () => {
+    expect(resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), ctx)).toBeNull();
+  });
+});
+
+describe('selectNonResolverStandaloneAgents', () => {
+  const text = new Map<string, string>();
+
+  it('keeps a generic standalone agent', () => {
+    const list = [agent({ id: 'g' as Agent['id'], name: 'explore the repo' })];
+    expect(selectNonResolverStandaloneAgents(list, {}, text)).toHaveLength(1);
   });
 
-  it('routes to resolve when a resolver agent needs attention', () => {
-    expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-        hasStandalone: true,
-        hasWorkflow: false,
-        hasResolver: true,
-      }),
-    ).toBe('resolve');
+  it('excludes a name-classified resolver', () => {
+    const list = [agent({ id: 'r' as Agent['id'], name: 'resolve foo' })];
+    expect(selectNonResolverStandaloneAgents(list, {}, text)).toHaveLength(0);
   });
 
-  it('routes to resolve even when non-resolver standalones are also present', () => {
-    expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-        hasStandalone: true,
-        hasWorkflow: true,
-        hasResolver: true,
-      }),
-    ).toBe('resolve');
+  it('excludes an agent overridden to resolver', () => {
+    const list = [agent({ id: 'o' as Agent['id'], name: 'explore the repo' })];
+    const override: Record<string, AgentKind> = { o: 'resolver' };
+    expect(selectNonResolverStandaloneAgents(list, override, text)).toHaveLength(0);
   });
 
-  it('routes to agents when standalone is non-resolver', () => {
-    expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-        hasStandalone: true,
-        hasWorkflow: false,
-        hasResolver: false,
+  it('excludes a workflow-step agent that is not standalone', () => {
+    const list = [
+      agent({
+        id: 'w' as Agent['id'],
+        name: 'step agent',
+        workflowRunId: 'run' as Agent['workflowRunId'],
+        stepId: 'step' as Agent['stepId'],
       }),
-    ).toBe('agents');
+    ];
+    expect(selectNonResolverStandaloneAgents(list, {}, text)).toHaveLength(0);
   });
 });
 

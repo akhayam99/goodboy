@@ -53,7 +53,13 @@ export type WorkspaceRuns = {
   readonly freeAgents: SpawnNode[];
   readonly resolveQueue: SpawnNode[];
   readonly aggregate: RunsAggregate;
+  readonly completedLanes?: RunLaneModel[];
+  readonly completedFreeAgents?: SpawnNode[];
+  readonly completedResolveQueue?: SpawnNode[];
 };
+
+const isRunningOrPending = (status: SpawnNodeStatus): boolean =>
+  status === 'running' || status === 'queued' || status === 'planned';
 
 type CostByAgentId = ReadonlyMap<string, number>;
 
@@ -228,9 +234,12 @@ export const useWorkspaceRuns = (
       workflowById.set(w.id, w);
     }
 
-    const lanes: RunLaneModel[] = [];
-    const freeAgents: SpawnNode[] = [];
-    const resolveQueue: SpawnNode[] = [];
+    const activeLanes: RunLaneModel[] = [];
+    const completedLanes: RunLaneModel[] = [];
+    const activeFreeAgents: SpawnNode[] = [];
+    const completedFreeAgents: SpawnNode[] = [];
+    const activeResolveQueue: SpawnNode[] = [];
+    const completedResolveQueue: SpawnNode[] = [];
 
     let runningCount = 0;
     let stalledCount = 0;
@@ -324,7 +333,7 @@ export const useWorkspaceRuns = (
           }
           return sum + (costByAgentId.get(step.rootAgentId) ?? 0);
         }, 0);
-        lanes.push({
+        const laneModel: RunLaneModel = {
           runId: run.id,
           workflowName: workflow.name,
           sessionId: sid,
@@ -334,7 +343,13 @@ export const useWorkspaceRuns = (
           chainAfterId: run.chainAfterId ?? null,
           steps,
           costUsd: runCost,
-        });
+        };
+        const laneIsActive = steps.some((step) => isRunningOrPending(step.status));
+        if (laneIsActive) {
+          activeLanes.push(laneModel);
+        } else {
+          completedLanes.push(laneModel);
+        }
       }
 
       for (const agent of withKind) {
@@ -342,23 +357,40 @@ export const useWorkspaceRuns = (
           continue;
         }
         const node = agentToNode(agent, childrenByParentId, costByAgentId, selectedAgentId, 0);
+        const nodeActive = isRunningOrPending(node.status);
         if (agent.sourceThreadId != null) {
-          resolveQueue.push(node);
+          if (nodeActive) {
+            activeResolveQueue.push(node);
+          } else {
+            completedResolveQueue.push(node);
+          }
         } else {
-          freeAgents.push(node);
+          if (nodeActive) {
+            activeFreeAgents.push(node);
+          } else {
+            completedFreeAgents.push(node);
+          }
         }
       }
     }
 
     const aggregate: RunsAggregate = {
-      runCount: lanes.length,
+      runCount: activeLanes.length + completedLanes.length,
       agentCount,
       runningCount,
       stalledCount,
       spendUsd,
     };
 
-    return { lanes, freeAgents, resolveQueue, aggregate };
+    return {
+      lanes: activeLanes,
+      freeAgents: activeFreeAgents,
+      resolveQueue: activeResolveQueue,
+      aggregate,
+      completedLanes,
+      completedFreeAgents,
+      completedResolveQueue,
+    };
   }, [
     sessions,
     workspaceId,

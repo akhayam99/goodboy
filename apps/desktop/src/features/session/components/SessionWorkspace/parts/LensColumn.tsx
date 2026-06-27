@@ -59,8 +59,10 @@ type LensGroup = {
 export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
-  const hasStandaloneAgent = useAppStore((s) =>
-    (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(isStandaloneAgent),
+  const hasNonResolverStandalone = useAppStore((s) =>
+    (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(
+      (a) => isStandaloneAgent(a) && !isResolverAgent(a, s.agentKindOverride[a.id] ?? null),
+    ),
   );
   const hasRunningAgent = useAppStore((s) =>
     (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(
@@ -74,7 +76,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
     ),
   );
   const attentionLens = resolveAttentionLens(useSessionStageInfo(session), {
-    hasStandalone: hasStandaloneAgent,
+    hasNonResolverStandalone,
     hasWorkflow: activeWorkflows > 0,
     hasResolver: hasResolverAgent,
   });

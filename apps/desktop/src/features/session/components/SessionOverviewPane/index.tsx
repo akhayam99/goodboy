@@ -25,6 +25,8 @@ import { Chip, cn, Divider, Eyebrow, Input, ScrollFade, StatusDot, tintClasses }
 import type { Tone } from '@goodboy/ui';
 import type {
   Agent,
+  AgentId,
+  Message,
   Session,
   SessionId,
   SessionStage,
@@ -33,6 +35,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
+  agentHasUnread,
   EMPTY_ARRAY,
   useAppStore,
   useCurrentWorkspace,
@@ -56,15 +59,17 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
-import { inferAgentKindFromName } from '../../agent-kind';
+import { resolveAgentKind } from '../../agent-kind';
 import {
   resolveAttentionLens,
   selectAttention,
+  selectNonResolverStandaloneAgents,
   selectOpenQuestions,
   selectStandaloneAgents,
 } from './lib';
 import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
+import { useResolvableCount } from '../../hooks/useResolvableCount';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -85,6 +90,7 @@ type Nudge = {
   readonly label: string;
   readonly detail: string;
   readonly lens: LensKind;
+  readonly itemId?: string;
 };
 
 type Metric = {
@@ -97,7 +103,7 @@ type Metric = {
   readonly alert?: boolean;
 };
 
-const CONTEXT_LINKS: ReadonlyArray<{
+const PRIMARY_CONTEXT_LINKS: ReadonlyArray<{
   readonly kind: LensKind;
   readonly icon: LucideIcon;
   readonly tone: Tone;
@@ -106,6 +112,14 @@ const CONTEXT_LINKS: ReadonlyArray<{
   { kind: 'goal', icon: Target, tone: 'primary', label: 'Goal' },
   { kind: 'decisions', icon: CheckCheck, tone: 'success', label: 'Decisions' },
   { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Last output' },
+];
+
+const SECONDARY_CONTEXT_LINKS: ReadonlyArray<{
+  readonly kind: LensKind;
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+}> = [
   { kind: 'scripts', icon: Terminal, tone: 'info', label: 'Scripts' },
   { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
 ];
@@ -286,30 +300,62 @@ const StartCard = ({
   tone,
   label,
   onClick,
+  disabled,
+  hint,
+  primary,
 }: {
   readonly icon: LucideIcon;
   readonly tone: Tone;
   readonly label: string;
   readonly onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group flex items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors hover:border-border"
-  >
-    <span
-      aria-hidden
+  readonly disabled?: boolean;
+  readonly hint?: string;
+  readonly primary?: boolean;
+}) =>
+  disabled ? (
+    <div
+      aria-disabled="true"
+      className="flex cursor-default items-center gap-2.5 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left opacity-45 shadow-sm"
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
+          tintClasses(tone).bg,
+          tintClasses(tone).ring,
+        )}
+      >
+        <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
+      </span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="truncate text-sm font-medium text-foreground">{label}</span>
+        {hint ? <span className="truncate text-2xs text-muted-foreground">{hint}</span> : null}
+      </span>
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
-        tintClasses(tone).bg,
-        tintClasses(tone).ring,
+        'group flex items-center gap-2.5 rounded-lg border bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors',
+        primary
+          ? 'border-accent/40 ring-1 ring-accent/30 hover:border-accent/60'
+          : 'border-border-soft hover:border-border',
       )}
     >
-      <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
-    </span>
-    <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
-  </button>
-);
+      <span
+        aria-hidden
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
+          tintClasses(tone).bg,
+          tintClasses(tone).ring,
+        )}
+      >
+        <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
+      </span>
+      <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
+    </button>
+  );
 
 type PipelineSectionProps = {
   readonly session: Session;
@@ -319,7 +365,17 @@ type PipelineSectionProps = {
 
 const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSectionProps) => {
   const sessionList = useMemo(() => [session], [session]);
-  const { lanes, freeAgents, resolveQueue } = useWorkspaceRuns(workspaceId, sessionList);
+  const {
+    lanes,
+    freeAgents,
+    resolveQueue,
+    completedLanes,
+    completedFreeAgents,
+    completedResolveQueue,
+  } = useWorkspaceRuns(workspaceId, sessionList);
+  const resolvedCompletedLanes = completedLanes ?? EMPTY_ARRAY;
+  const resolvedCompletedFreeAgents = completedFreeAgents ?? EMPTY_ARRAY;
+  const resolvedCompletedResolveQueue = completedResolveQueue ?? EMPTY_ARRAY;
   const sessionId = session.id as SessionId;
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
@@ -341,7 +397,13 @@ const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSection
     return m;
   }, [phaseTemplates, sessionWorkflows]);
 
-  if (lanes.length === 0 && freeAgents.length === 0 && resolveQueue.length === 0) {
+  const hasRunning = lanes.length > 0 || freeAgents.length > 0 || resolveQueue.length > 0;
+  const hasCompleted =
+    resolvedCompletedLanes.length > 0 ||
+    resolvedCompletedFreeAgents.length > 0 ||
+    resolvedCompletedResolveQueue.length > 0;
+
+  if (!hasRunning && !hasCompleted) {
     return null;
   }
 
@@ -356,15 +418,15 @@ const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSection
     if (!run || !workflow) {
       return undefined;
     }
-    const runs = phaseRuns.filter(
+    const workflowAgents = phaseRuns.filter(
       (r) => r.workflowRunId === runId && r.stepId != null && r.parentAgentId == null,
     );
     return {
       workflow,
-      runs,
+      runs: workflowAgents,
       hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
       onAdvance: async (step) => {
-        const agent = runs.find((r) => r.stepId === step.id);
+        const agent = workflowAgents.find((r) => r.stepId === step.id);
         if (agent?.status === 'pending') {
           await activateWorkflowAgent(sessionId, agent.id, undefined, false);
         }
@@ -374,28 +436,54 @@ const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSection
 
   return (
     <div className="flex flex-col gap-2">
-      <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
-      <div className="flex flex-col gap-2">
-        {lanes.map((lane) => (
-          <PipelineLane
-            key={lane.runId}
-            lane={lane}
-            onOpen={() => open(lane.runId)}
-            advance={advanceFor(lane.runId)}
-          />
-        ))}
-        {freeAgents.map((agent) => (
-          <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
-        ))}
-        {resolveQueue.length > 0 ? (
-          <SummaryRow
-            icon={MessageSquareReply}
-            tone="success"
-            label={`${resolveQueue.length} in resolve queue`}
-            onClick={() => onSelectLens('resolve')}
-          />
-        ) : null}
-      </div>
+      {hasRunning ? (
+        <>
+          <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
+          <div className="flex flex-col gap-2">
+            {lanes.map((lane) => (
+              <PipelineLane
+                key={lane.runId}
+                lane={lane}
+                onOpen={() => open(lane.runId)}
+                advance={advanceFor(lane.runId)}
+              />
+            ))}
+            {freeAgents.map((agent) => (
+              <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
+            ))}
+            {resolveQueue.length > 0 ? (
+              <SummaryRow
+                icon={MessageSquareReply}
+                tone="success"
+                label={`${resolveQueue.length} in resolve queue`}
+                onClick={() => onSelectLens('resolve')}
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
+      {hasRunning && hasCompleted ? <Divider /> : null}
+      {hasCompleted ? (
+        <>
+          <Eyebrow label="Completed" muted className="px-0.5 font-medium" />
+          <div className="flex flex-col gap-2">
+            {resolvedCompletedLanes.map((lane) => (
+              <PipelineLane key={lane.runId} lane={lane} onOpen={() => open(lane.runId)} />
+            ))}
+            {resolvedCompletedFreeAgents.map((agent) => (
+              <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
+            ))}
+            {resolvedCompletedResolveQueue.length > 0 ? (
+              <SummaryRow
+                icon={MessageSquareReply}
+                tone="success"
+                label={`${resolvedCompletedResolveQueue.length} in resolve queue`}
+                onClick={() => onSelectLens('resolve')}
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 };
@@ -414,19 +502,53 @@ export const SessionOverviewPane = ({
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
-  const agents = selectStandaloneAgents(
+  const rawStandalone = selectStandaloneAgents(
     useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
   );
-  const runningAgents = agents.filter((a) => a.status === 'running').length;
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const messages = useAppStore(
+    (s) => s.messages[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Message>),
+  );
+  const firstUserTextByAgentId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of messages) {
+      if (m.role !== 'user' || map.has(m.agentId)) {
+        continue;
+      }
+      map.set(m.agentId, m.content);
+    }
+    return map;
+  }, [messages]);
+  const kindOf = (agent: Agent): ReturnType<typeof resolveAgentKind> =>
+    resolveAgentKind(
+      agent.name,
+      firstUserTextByAgentId.get(agent.id) ?? null,
+      agentKindOverride[agent.id] ?? null,
+    );
+  const hasResolver = rawStandalone.some((a) => kindOf(a) === 'resolver');
+  const nonResolverAgents = selectNonResolverStandaloneAgents(
+    rawStandalone,
+    agentKindOverride,
+    firstUserTextByAgentId,
+  );
+  const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
   const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
   const hasPr = useAppStore(
     (s) => s.sessionGithub[session.id]?.pr != null || s.sessionGitlabMr[session.id]?.mr != null,
   );
+  const resolvable = useResolvableCount(session.id as SessionId);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
 
   const openCount = openQuestions.length;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
-  const isFresh = activeWorkflows === 0 && agents.length === 0;
+  const isFresh = activeWorkflows === 0 && rawStandalone.length === 0;
   const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
+  const attentionLens = resolveAttentionLens(stage, {
+    hasNonResolverStandalone: nonResolverAgents.length > 0,
+    hasWorkflow: activeWorkflows > 0,
+    hasResolver,
+  });
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -434,6 +556,46 @@ export const SessionOverviewPane = ({
         detail: { sessionId: session.id as SessionId },
       }),
     );
+  };
+
+  const pickAgentId = (candidates: ReadonlyArray<Agent>): string | undefined => {
+    if (candidates.length === 0) {
+      return undefined;
+    }
+    const needsAttention =
+      candidates.find((a) => agentHasUnread(a, false)) ??
+      candidates.find((a) => a.status === 'failed') ??
+      candidates.find((a) => a.status === 'running');
+    return (needsAttention ?? candidates[0])!.id;
+  };
+
+  const attentionItemId = (lens: LensKind): string | undefined => {
+    if (lens === 'agents') {
+      return pickAgentId(nonResolverAgents);
+    }
+    if (lens === 'resolve') {
+      return pickAgentId(rawStandalone.filter((a) => kindOf(a) === 'resolver'));
+    }
+    if (lens === 'workflows') {
+      const runs = session.workflowRuns.filter((r) => r.discardedAt == null);
+      const withQuestions = runs.find((r) => workflowRunHasOpenQuestions(openQuestions, r.id));
+      return (withQuestions ?? runs[runs.length - 1])?.id;
+    }
+    return undefined;
+  };
+
+  const openNudge = (nudge: Nudge) => {
+    if (nudge.itemId && nudge.lens === 'workflows') {
+      setFocusedWorkflowRun(session.id as SessionId, nudge.itemId);
+      onSelectLens('workflows');
+      return;
+    }
+    if (nudge.itemId && (nudge.lens === 'agents' || nudge.lens === 'resolve')) {
+      onSelectLens(nudge.lens);
+      void selectAgent(session.id as SessionId, nudge.itemId as AgentId);
+      return;
+    }
+    onSelectLens(nudge.lens);
   };
 
   const nudges: Nudge[] = [];
@@ -445,15 +607,6 @@ export const SessionOverviewPane = ({
       lens: 'questions',
     });
   }
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const hasResolver = agents.some(
-    (a) => (agentKindOverride?.[a.id] ?? inferAgentKindFromName(a.name ?? '')) === 'resolver',
-  );
-  const attentionLens = resolveAttentionLens(stage, {
-    hasStandalone: agents.length > 0,
-    hasWorkflow: activeWorkflows > 0,
-    hasResolver,
-  });
   if (attention.active && attentionLens && attentionLens !== 'questions') {
     const attentionIcon =
       attentionLens === 'pr'
@@ -476,6 +629,7 @@ export const SessionOverviewPane = ({
       label: attentionLabel,
       detail: attention.reason,
       lens: attentionLens,
+      itemId: attentionItemId(attentionLens),
     });
   }
 
@@ -492,10 +646,13 @@ export const SessionOverviewPane = ({
       kind: 'agents',
       icon: Bot,
       tone: 'primary',
-      value: runningAgents > 0 ? `${runningAgents}/${agents.length}` : String(agents.length),
+      value:
+        runningAgents > 0
+          ? `${runningAgents}/${nonResolverAgents.length}`
+          : String(nonResolverAgents.length),
       label: runningAgents > 0 ? 'running' : 'agents',
-      active: agents.length > 0,
-      alert: attention.active,
+      active: nonResolverAgents.length > 0,
+      alert: attention.active && attentionLens === 'agents',
     },
     {
       kind: 'plans',
@@ -586,14 +743,83 @@ export const SessionOverviewPane = ({
           </div>
         </div>
 
+        <div className="grid grid-cols-3 gap-2">
+          {PRIMARY_CONTEXT_LINKS.map((link) => (
+            <SummaryRow
+              key={link.kind}
+              icon={link.icon}
+              tone={link.tone}
+              label={link.label}
+              onClick={() => onSelectLens(link.kind)}
+            />
+          ))}
+        </div>
+
         <div className="flex flex-col gap-2">
           <Eyebrow label="Start" muted className="px-0.5 font-medium" />
+          {isFresh ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated px-4 py-3.5">
+              <div className="flex flex-col gap-1">
+                <Eyebrow label="New session" className="text-muted-foreground/70" />
+                <p className="text-base font-semibold text-foreground">Choose how to start</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Three paths are available. Workflows are the recommended starting point for most
+                  tasks.
+                </p>
+              </div>
+              <ul className="flex flex-col gap-2">
+                <li className="flex items-start gap-2.5">
+                  <Workflow
+                    size={14}
+                    aria-hidden
+                    className={cn('mt-0.5 shrink-0', tintClasses('accent').icon)}
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                      Workflow
+                      <Chip tone="accent" size="sm" label="recommended" />
+                    </span>
+                    <span className="text-2xs text-muted-foreground">
+                      Runs a multi-step pipeline: scout, plan, implement, test, review.
+                    </span>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Bot
+                    size={14}
+                    aria-hidden
+                    className={cn('mt-0.5 shrink-0', tintClasses('primary').icon)}
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground">Agent</span>
+                    <span className="text-2xs text-muted-foreground">
+                      A single specialist for a one-off task.
+                    </span>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <MessageSquareReply
+                    size={14}
+                    aria-hidden
+                    className={cn('mt-0.5 shrink-0', tintClasses('success').icon)}
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground">Comment resolution</span>
+                    <span className="text-2xs text-muted-foreground">
+                      Addresses review comments on a pull request or diff.
+                    </span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          ) : null}
           <div className="grid grid-cols-3 gap-2">
             <StartCard
               icon={Workflow}
               tone="accent"
               label="New workflow"
               onClick={openWorkflowBuilder}
+              primary={isFresh}
             />
             <SpawnAgentControl sessionId={session.id as SessionId} className="mt-0" />
             <StartCard
@@ -601,6 +827,8 @@ export const SessionOverviewPane = ({
               tone="success"
               label="Resolve"
               onClick={() => onSelectLens('resolve')}
+              disabled={!resolvable.enabled}
+              hint={resolvable.disabledReason ?? undefined}
             />
           </div>
         </div>
@@ -611,9 +839,9 @@ export const SessionOverviewPane = ({
             <div className="flex flex-col gap-1.5">
               {nudges.map((nudge) => (
                 <button
-                  key={nudge.lens}
+                  key={nudge.itemId ?? nudge.lens}
                   type="button"
-                  onClick={() => onSelectLens(nudge.lens)}
+                  onClick={() => openNudge(nudge)}
                   className="group flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/[0.04] px-3 py-2.5 text-left shadow-sm transition-colors hover:border-warning/50 hover:bg-warning/[0.08]"
                 >
                   <nudge.icon size={15} aria-hidden className="shrink-0 text-warning" />
@@ -689,7 +917,7 @@ export const SessionOverviewPane = ({
         <div className="flex flex-col gap-2">
           <Eyebrow label="Jump to" muted className="px-0.5 font-medium" />
           <div className="flex flex-wrap gap-1.5">
-            {CONTEXT_LINKS.map((link) => (
+            {SECONDARY_CONTEXT_LINKS.map((link) => (
               <button
                 key={link.kind}
                 type="button"
