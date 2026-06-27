@@ -200,7 +200,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(payload.content).toContain('<<step-done');
   });
 
-  it('an implementer step with multiple clusters fans out under hands-free', async () => {
+  it('an implementer step with multiple clusters fans out', async () => {
     const clusters: ReadonlyArray<ImplementationCluster> = [
       { title: 'a', instructions: 'i1' },
       { title: 'b', instructions: 'i2' },
@@ -218,12 +218,12 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('an implementer step with multiple clusters does not fan out when hands-free is off', async () => {
+  it('an implementer step with multiple clusters fans out even when hands-free is off', async () => {
     const clusters: ReadonlyArray<ImplementationCluster> = [
       { title: 'a', instructions: 'i1' },
       { title: 'b', instructions: 'i2' },
     ];
-    const { sendTurn, activate } = buildHarness({
+    const { activate } = buildHarness({
       agent: makeAgent('implementer', 'Implement'),
       workflow: makeWorkflow('Implement'),
       plans: [makePlan({ clusters })],
@@ -232,8 +232,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
 
     await activate(SESSION_ID, AGENT_ID);
 
-    expect(fanOutClustersSpy).not.toHaveBeenCalled();
-    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
   });
 
   it('does not re-fan-out a consumed plan: a later step runs its own kickoff instead', async () => {

@@ -21,7 +21,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
 }));
 
-import { SCOUT_MAX_CHILDREN, fanOutScouts } from './scoutTree';
+import { SCOUT_MAX_CHILDREN, advanceScoutTree, fanOutScouts } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 
@@ -135,5 +135,90 @@ describe('fanOutScouts workflowRunId propagation', () => {
       expect(args.workflowRunId).toBe('wf-9');
     }
     expect(emitNotification).toHaveBeenCalled();
+  });
+});
+
+const WS = 'ws-1';
+
+function makeAdvanceStore(runs: ReadonlyArray<Agent>, fanout: boolean) {
+  const sendTurn = vi.fn(async (_args: { content: string }) => undefined);
+  const emitNotification = vi.fn(async () => undefined);
+  const refreshUnreadWorkspaces = vi.fn(async () => undefined);
+  const state: Record<string, unknown> = {
+    sessionPhaseRuns: { [SID]: runs },
+    agentModelOverride: {},
+    agentKindOverride: {},
+    transcripts: {},
+    agentTurnState: {},
+    sessionNudges: {},
+    workspaceOverrides: { [WS]: { scoutFanout: fanout } },
+    sessions: [{ id: SID, workspaceId: WS }],
+    sendTurn,
+    emitNotification,
+    refreshUnreadWorkspaces,
+  };
+  const get = (() => state) as unknown as GetFn;
+  const set = ((u: unknown) => {
+    const patch =
+      typeof u === 'function'
+        ? (u as (s: Record<string, unknown>) => Record<string, unknown>)(state)
+        : (u as Record<string, unknown>);
+    Object.assign(state, patch);
+  }) as unknown as SetFn;
+  return { state, get, set, sendTurn };
+}
+
+const scoutAgent = (over: Partial<Agent> = {}): Agent => ({
+  id: 'scout' as AgentId,
+  sessionId: SID,
+  ordinal: 0,
+  name: 'scout',
+  status: 'running',
+  kind: 'scout',
+  ...over,
+});
+
+const splitText = (n: number) =>
+  [
+    '<<scout-split>>',
+    JSON.stringify(Array.from({ length: n }, (_, i) => ({ area: `area-${i}`, query: `q-${i}` }))),
+    '<</scout-split>>',
+  ].join('\n');
+
+describe('advanceScoutTree split decision', () => {
+  it('fans out into sub-scouts when the domain is too large and fan-out is enabled', async () => {
+    const root = scoutAgent({ id: 'root-on' as AgentId });
+    const { get, set } = makeAdvanceStore([root], true);
+
+    await advanceScoutTree(set, get)(SID, 'root-on' as AgentId, splitText(3));
+
+    expect(hoisted.insertArgs).toHaveLength(3);
+    for (const args of hoisted.insertArgs) {
+      expect(args.kind).toBe('scout');
+      expect(args.parentAgentId).toBe('root-on');
+    }
+  });
+
+  it('self-explores in one agent without spawning sub-scouts when fan-out is disabled', async () => {
+    const root = scoutAgent({ id: 'root-off' as AgentId });
+    const { get, set, sendTurn } = makeAdvanceStore([root], false);
+
+    await advanceScoutTree(set, get)(SID, 'root-off' as AgentId, splitText(3));
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const [payload] = sendTurn.mock.calls[0]!;
+    expect(payload.content).toContain('do NOT split');
+  });
+
+  it('does not fan out past the depth cap even with a split marker', async () => {
+    const root = scoutAgent({ id: 'r' as AgentId });
+    const mid = scoutAgent({ id: 'm' as AgentId, parentAgentId: 'r' as AgentId });
+    const leaf = scoutAgent({ id: 'leaf' as AgentId, parentAgentId: 'm' as AgentId });
+    const { get, set } = makeAdvanceStore([root, mid, leaf], true);
+
+    await advanceScoutTree(set, get)(SID, 'leaf' as AgentId, splitText(3));
+
+    expect(hoisted.insertArgs).toHaveLength(0);
   });
 });
