@@ -115,6 +115,8 @@ function getDefaultBinary(providerId: ProviderId): string {
       return 'codex';
     case 'gemini':
       return 'gemini';
+    case 'opencode':
+      return 'opencode';
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);
@@ -241,6 +243,8 @@ function buildCliArgs(
       ];
     case 'gemini':
       return ['-m', model, '-p', `${systemPrompt}\n\n${userMessage}`];
+    case 'opencode':
+      return ['run', '--prompt', `${systemPrompt}\n\n${userMessage}`, '--model', model];
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);

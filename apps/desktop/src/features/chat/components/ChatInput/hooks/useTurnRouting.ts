@@ -87,7 +87,13 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
-  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+  const providerCandidates: ReadonlyArray<ProviderId> = [
+    'anthropic',
+    'cursor',
+    'codex',
+    'gemini',
+    'opencode',
+  ];
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
     if (effectiveModel) ids.add(effectiveModel);

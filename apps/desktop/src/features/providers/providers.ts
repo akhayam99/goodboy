@@ -33,6 +33,7 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   cursor: 'cursor',
   codex: 'codex',
   gemini: 'gemini',
+  opencode: 'opencode',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -40,6 +41,7 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
   gemini: 'https://antigravity.google/cli',
+  opencode: 'https://opencode.ai/docs',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
@@ -47,6 +49,7 @@ const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   cursor: 'cursor-agent',
   codex: 'codex',
   gemini: 'agy',
+  opencode: 'opencode',
 };
 
 const TAURI_GET_CMD: Record<ProviderId, string> = {
@@ -54,6 +57,7 @@ const TAURI_GET_CMD: Record<ProviderId, string> = {
   cursor: 'get_cursor_status',
   codex: 'get_codex_status',
   gemini: 'get_gemini_status',
+  opencode: 'get_opencode_status',
 };
 
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
@@ -70,6 +74,7 @@ export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus>
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
 export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
+export const getOpenCodeStatus = (): Promise<ProviderStatus> => getProviderStatus('opencode');
 
 export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthState> => {
   return invoke<AuthState>('check_provider_auth', { providerId });
@@ -131,12 +136,13 @@ export type ProviderStatuses = {
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
   readonly gemini: ProviderStatus | null;
+  readonly opencode: ProviderStatus | null;
 };
 
 export const buildProviderList = (
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
 ): ReadonlyArray<ProviderInfo> => {
-  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
+  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode'];
   return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
 };

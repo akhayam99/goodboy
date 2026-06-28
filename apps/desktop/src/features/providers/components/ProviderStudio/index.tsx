@@ -9,7 +9,7 @@ import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
 import { ProviderConnectPane } from './ProviderConnectPane';
 
-const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_ORDER: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode'];
 
 type Props = {
   readonly workspaceName: string;

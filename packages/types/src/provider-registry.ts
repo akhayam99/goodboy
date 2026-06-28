@@ -1,4 +1,4 @@
-export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini';
+export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini' | 'opencode';
 
 export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
 
@@ -9,6 +9,7 @@ export type ModelFamily =
   | 'gemini'
   | 'composer'
   | 'cursor-auto'
+  | 'opencode'
   | 'other';
 
 export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
@@ -49,4 +50,5 @@ export const PROVIDER_API_KEY_ENV: Record<ProviderId, string> = {
   cursor: 'CURSOR_API_KEY',
   codex: 'OPENAI_API_KEY',
   gemini: 'GEMINI_API_KEY',
+  opencode: 'OPENCODE_API_KEY',
 };

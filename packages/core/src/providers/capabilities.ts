@@ -2,6 +2,7 @@ import type { ModelEffort, ProviderId, ProviderRegistryCapabilities } from '@goo
 import { CURSOR_AUTO_MODEL, CURSOR_MODELS } from './cursor/models';
 import { CODEX_MODELS } from './codex/constants';
 import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './gemini/constants';
+import { OPENCODE_MODELS } from './opencode/constants';
 
 const OPUS_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high', 'extra-high', 'max'];
 const SONNET_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high'];
@@ -112,6 +113,12 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
   },
   gemini: {
     models: GEMINI_MODELS,
+    supportsTools: true,
+    supportsStream: true,
+    supportsCheapModel: true,
+  },
+  opencode: {
+    models: OPENCODE_MODELS,
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,

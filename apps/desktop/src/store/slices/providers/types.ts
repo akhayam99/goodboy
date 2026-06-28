@@ -41,4 +41,5 @@ export const INITIAL_LIFECYCLE_MAP: ProviderLifecycleMap = {
   cursor: IDLE_LIFECYCLE,
   codex: IDLE_LIFECYCLE,
   gemini: IDLE_LIFECYCLE,
+  opencode: IDLE_LIFECYCLE,
 };

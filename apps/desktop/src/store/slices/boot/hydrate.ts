@@ -9,6 +9,7 @@ import {
   getCodexStatus,
   getCursorStatus,
   getGeminiStatus,
+  getOpenCodeStatus,
   getProviderStatus,
   type ProviderAuthResults,
   type ProviderStatuses,
@@ -64,37 +65,43 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         });
 
         set({ bootPhase: 'detecting-cli' });
-        const [providerStatus, cursorStatus, codexStatus, geminiStatus] = await Promise.all([
-          getProviderStatus('anthropic'),
-          getCursorStatus(),
-          getCodexStatus(),
-          getGeminiStatus(),
-        ]);
+        const [providerStatus, cursorStatus, codexStatus, geminiStatus, openCodeStatus] =
+          await Promise.all([
+            getProviderStatus('anthropic'),
+            getCursorStatus(),
+            getCodexStatus(),
+            getGeminiStatus(),
+            getOpenCodeStatus(),
+          ]);
         const statuses: ProviderStatuses = {
           anthropic: providerStatus,
           cursor: cursorStatus,
           codex: codexStatus,
           gemini: geminiStatus,
+          opencode: openCodeStatus,
         };
         set({
           providerStatus,
           cursorStatus,
           codexStatus,
           geminiStatus,
+          openCodeStatus,
           providers: buildProviderList(statuses),
         });
 
-        const [anthropicAuth, cursorAuth, codexAuth, geminiAuth] = await Promise.all([
+        const [anthropicAuth, cursorAuth, codexAuth, geminiAuth, openCodeAuth] = await Promise.all([
           checkProviderAuth('anthropic'),
           checkProviderAuth('cursor'),
           checkProviderAuth('codex'),
           checkProviderAuth('gemini'),
+          checkProviderAuth('opencode'),
         ]);
         const authResults: ProviderAuthResults = {
           anthropic: anthropicAuth,
           cursor: cursorAuth,
           codex: codexAuth,
           gemini: geminiAuth,
+          opencode: openCodeAuth,
         };
         set({ authResults, providers: buildProviderList(statuses, authResults) });
 

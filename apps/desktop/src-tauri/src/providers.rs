@@ -32,6 +32,8 @@ pub struct CodexState(pub Mutex<ProviderStatus>);
 
 pub struct GeminiState(pub Mutex<ProviderStatus>);
 
+pub struct OpenCodeState(pub Mutex<ProviderStatus>);
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthStateKind {
@@ -60,6 +62,10 @@ pub fn detect_codex() -> ProviderStatus {
 
 pub fn detect_gemini() -> ProviderStatus {
     detect_binary("gemini", "agy")
+}
+
+pub fn detect_opencode() -> ProviderStatus {
+    detect_binary("opencode", "opencode")
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
@@ -473,6 +479,32 @@ fn check_gemini_auth() -> AuthState {
     }
 }
 
+fn opencode_creds_dir() -> Option<std::path::PathBuf> {
+    Some(dirs::home_dir()?.join(".opencode"))
+}
+
+fn opencode_creds_present() -> bool {
+    opencode_creds_dir()
+        .and_then(|d| std::fs::read_dir(d).ok())
+        .map(|mut entries| entries.any(|e| e.is_ok()))
+        .unwrap_or(false)
+}
+
+fn check_opencode_auth() -> AuthState {
+    // OpenCode persists session state under `~/.opencode/` after a successful
+    // login. Check for credentials directory presence.
+    if opencode_creds_present() {
+        return AuthState {
+            state: AuthStateKind::Connected,
+            identity: None,
+        };
+    }
+    AuthState {
+        state: AuthStateKind::Disconnected,
+        identity: None,
+    }
+}
+
 fn parse_codex_auth_output(output: &str) -> AuthState {
     let stripped: String = strip_ansi(output);
     let first_line = stripped
@@ -597,6 +629,26 @@ pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
     next
 }
 
+#[tauri::command]
+pub fn get_opencode_status(state: State<'_, OpenCodeState>) -> ProviderStatus {
+    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
+        id: "opencode".to_string(),
+        binary: "opencode".to_string(),
+        available: false,
+        version: None,
+        error: Some("status mutex poisoned".to_string()),
+    })
+}
+
+#[tauri::command]
+pub fn refresh_opencode_status(state: State<'_, OpenCodeState>) -> ProviderStatus {
+    let next = detect_opencode();
+    if let Ok(mut current) = state.0.lock() {
+        *current = next.clone();
+    }
+    next
+}
+
 // Sync entry point for callers that already run on a blocking thread (e.g.
 // the lifecycle PTY exit handler in provider_lifecycle.rs). Kept private so
 // only the async Tauri command shape leaks into the JS surface.
@@ -606,6 +658,7 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
         "cursor" => check_cursor_auth(),
         "codex" => check_codex_auth(),
         "gemini" => check_gemini_auth(),
+        "opencode" => check_opencode_auth(),
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,

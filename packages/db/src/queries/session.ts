@@ -70,7 +70,13 @@ function toState(kind: TurnState['kind'], payload: string): TurnState {
   return { kind, ...data } as TurnState;
 }
 
-const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex', 'gemini']);
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set([
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+]);
 
 function serializeEnabledProviders(
   providers: ReadonlyArray<ProviderId> | undefined,

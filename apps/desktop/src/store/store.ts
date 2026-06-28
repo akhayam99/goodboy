@@ -199,6 +199,7 @@ export type AppState = UpdaterState & {
   readonly cursorStatus: ProviderStatus | null;
   readonly codexStatus: ProviderStatus | null;
   readonly geminiStatus: ProviderStatus | null;
+  readonly openCodeStatus: ProviderStatus | null;
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
@@ -729,8 +730,15 @@ export const initialState: AppState = {
   cursorStatus: null,
   codexStatus: null,
   geminiStatus: null,
+  openCodeStatus: null,
   authResults: null,
-  providers: buildProviderList({ anthropic: null, cursor: null, codex: null, gemini: null }),
+  providers: buildProviderList({
+    anthropic: null,
+    cursor: null,
+    codex: null,
+    gemini: null,
+    opencode: null,
+  }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerCredentials: [],
   hydrated: false,

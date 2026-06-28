@@ -30,7 +30,13 @@ export type ModelBreakdownEntry = {
   readonly spentUsd: number;
 };
 
-const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+];
 const VENDOR_PREFIXES = ['claude', 'anthropic', 'gemini', 'google', 'cursor'];
 
 export const toProviderId = (provider: string): ProviderId | null => {

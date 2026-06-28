@@ -58,7 +58,13 @@ function formatError(err: unknown): string {
   return String(err);
 }
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+];
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {

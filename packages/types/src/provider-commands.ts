@@ -53,4 +53,13 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
     login: 'agy login',
     logout: 'rm -rf ~/.gemini/antigravity-cli && echo "antigravity credentials removed"',
   },
+  opencode: {
+    install: {
+      darwin: 'curl -fsSL https://opencode.ai/install | bash',
+      linux: 'curl -fsSL https://opencode.ai/install | bash',
+      win32: 'curl -fsSL https://opencode.ai/install | bash',
+    },
+    login: 'opencode auth login',
+    logout: 'opencode auth logout',
+  },
 };

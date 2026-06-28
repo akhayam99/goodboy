@@ -1,4 +1,8 @@
-import type { CodexModelPriceOverride, GeminiModelPriceOverride } from '@goodboy/core';
+import type {
+  CodexModelPriceOverride,
+  GeminiModelPriceOverride,
+  OpenCodeModelPriceOverride,
+} from '@goodboy/core';
 import shippedPricing from './pricing.json';
 
 type ModelPrice = {
@@ -13,6 +17,7 @@ export type PricingTable = {
   readonly cursor: Record<string, ModelPrice>;
   readonly codex: Record<string, ModelPrice>;
   readonly gemini: Record<string, ModelPrice>;
+  readonly opencode: Record<string, ModelPrice>;
 };
 
 const activeTable: PricingTable = shippedPricing as PricingTable;
@@ -34,7 +39,7 @@ declare global {
 const IS_DEV = import.meta.env.DEV === true;
 
 function priceForModel(
-  provider: 'anthropic' | 'cursor' | 'codex' | 'gemini',
+  provider: 'anthropic' | 'cursor' | 'codex' | 'gemini' | 'opencode',
   model: string,
 ): ModelPrice | null {
   const table: PricingTable =

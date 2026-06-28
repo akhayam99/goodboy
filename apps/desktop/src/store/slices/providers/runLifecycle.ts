@@ -78,6 +78,7 @@ function statusSlotPatch(
   cursorStatus?: ProviderStatus;
   codexStatus?: ProviderStatus;
   geminiStatus?: ProviderStatus;
+  openCodeStatus?: ProviderStatus;
 } {
   if (providerId === 'anthropic') {
     return { providerStatus: status };
@@ -87,6 +88,9 @@ function statusSlotPatch(
   }
   if (providerId === 'codex') {
     return { codexStatus: status };
+  }
+  if (providerId === 'opencode') {
+    return { openCodeStatus: status };
   }
   return { geminiStatus: status };
 }
@@ -181,6 +185,7 @@ export const runLifecycle = async (
         cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
         codex: providerId === 'codex' ? payload.status : state.codexStatus,
         gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
+        opencode: providerId === 'opencode' ? payload.status : state.openCodeStatus,
       };
       const authResults: ProviderAuthResults = {
         ...(state.authResults ?? {
@@ -188,6 +193,7 @@ export const runLifecycle = async (
           cursor: null,
           codex: null,
           gemini: null,
+          opencode: null,
         }),
         [providerId]: payload.auth,
       };

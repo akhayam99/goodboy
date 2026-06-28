@@ -58,6 +58,10 @@ export class SkillRegistry {
     return this.collectNestedSkills(`${rootPath}/.claude/skills`);
   }
 
+  private async collectOpenCodeSkills(rootPath: string): Promise<SkillCandidate[]> {
+    return this.collectNestedSkills(`${rootPath}/.opencode/skills`);
+  }
+
   private async collectNestedSkills(skillsDir: string): Promise<SkillCandidate[]> {
     let entries: string[];
     try {
@@ -86,12 +90,13 @@ export class SkillRegistry {
     rootPath: string,
     db: SqlDatabase,
   ): Promise<ReadonlyArray<Skill>> {
-    const [kaySkills, claudeSkills] = await Promise.all([
+    const [kaySkills, claudeSkills, opencodeSkills] = await Promise.all([
       this.collectKaySkills(rootPath),
       this.collectClaudeSkills(rootPath),
+      this.collectOpenCodeSkills(rootPath),
     ]);
 
-    const candidates = [...kaySkills, ...claudeSkills];
+    const candidates = [...kaySkills, ...claudeSkills, ...opencodeSkills];
 
     const existing = await listSkillsForWorkspace(db, workspaceId);
     const existingByPath = new Map<string, Skill>(existing.map((s) => [s.filePath, s]));

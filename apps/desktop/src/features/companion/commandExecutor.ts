@@ -46,7 +46,13 @@ import {
 } from '../integrations/gitlab/client';
 import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goal-from-issue';
 
-const PROVIDER_IDS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+];
 
 // Context slots a phone may edit. `files_touched` is machine-derived (the turn
 // loop owns it), so it's intentionally excluded from the writable set.

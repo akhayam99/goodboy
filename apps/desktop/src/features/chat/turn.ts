@@ -23,6 +23,8 @@ function parseForProvider(
       return parseCodexJsonLine(line, ctx);
     case 'gemini':
       return parseGeminiJsonLine(line, ctx);
+    case 'opencode':
+      return parseStreamJsonLine(line, ctx);
     default: {
       const _exhaustive: never = provider;
       void _exhaustive;

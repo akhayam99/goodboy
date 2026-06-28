@@ -9,7 +9,13 @@ import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/
 import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
 import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'cursor', 'gemini'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'codex',
+  'cursor',
+  'gemini',
+  'opencode',
+];
 
 type ConnectTarget = { readonly providerId: ProviderId; readonly action: ProviderLifecycleAction };
 

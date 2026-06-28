@@ -41,6 +41,7 @@ const WORKSPACE_PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
   'cursor',
   'codex',
   'gemini',
+  'opencode',
 ];
 
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
@@ -189,7 +190,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           </FieldRow>
 
           <FieldRow label="Default provider" help="New sessions start on it and can override it.">
-            <div className="flex flex-wrap justify-end gap-1">
+            <div className="flex flex-wrap justify-center gap-1 max-w-3/4">
               {WORKSPACE_PROVIDER_OPTIONS.map((id) => (
                 <ProviderChip
                   key={id}

@@ -57,7 +57,13 @@ const core = vi.hoisted(() => {
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
 vi.mock('@goodboy/core', () => core);
 vi.mock('../providers/providers', () => ({
-  PROVIDER_LABEL_LOWER: { anthropic: 'claude', cursor: 'cursor', codex: 'codex', gemini: 'gemini' },
+  PROVIDER_LABEL_LOWER: {
+    anthropic: 'claude',
+    cursor: 'cursor',
+    codex: 'codex',
+    gemini: 'gemini',
+    opencode: 'opencode',
+  },
 }));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -184,7 +190,13 @@ describe('queryProviders (read-only menu RPC)', () => {
     const res = await executeBridgeCommand(cmd('queryProviders', {}));
     expect(res.ok).toBe(true);
     const providers = (res.data as { providers: Array<{ id: string }> }).providers;
-    expect(providers.map((p) => p.id)).toEqual(['anthropic', 'cursor', 'codex', 'gemini']);
+    expect(providers.map((p) => p.id)).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+    ]);
   });
 
   it('reflects live connection state from the store and lists models per provider', async () => {

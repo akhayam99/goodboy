@@ -15,7 +15,13 @@ type Props = {
   readonly workspaceId: WorkspaceId | null;
 };
 
-const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+];
 
 const sanitizePrefix = (input: string): string =>
   input
@@ -134,7 +140,7 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
 
   return (
     <div className="flex w-full flex-col gap-4 text-left">
-      <div className="flex flex-col divide-y divide-border-soft/50 rounded-lg border border-border-soft/40 bg-subtle/20 px-4">
+      <div className="flex flex-col divide-y divide-border-soft/50 rounded-lg border border-border-soft/40 bg-subtle/20 p-4 ">
         <FieldRow
           label="Branch prefix"
           help="Prefixes every new session branch, e.g. your initials."

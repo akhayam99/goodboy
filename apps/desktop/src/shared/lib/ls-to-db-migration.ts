@@ -28,7 +28,7 @@ const PREFIX_AGENT_PROVIDER = 'goodboy:agent-provider:';
 
 const VERBOSITY_VALUES = ['brief', 'normal', 'verbose'] as const;
 const EFFORT_VALUES = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
-const PROVIDER_VALUES = ['anthropic', 'cursor', 'codex', 'gemini'] as const;
+const PROVIDER_VALUES = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode'] as const;
 const LEGACY_VERBOSITY_MAP: Record<string, 'brief' | 'normal' | 'verbose'> = {
   essential: 'brief',
   minimal: 'brief',

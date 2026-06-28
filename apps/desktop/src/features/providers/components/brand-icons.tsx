@@ -46,6 +46,16 @@ export const CursorIcon: LucideIcon = forwardRef<SVGSVGElement, LucideProps>((pr
 ));
 CursorIcon.displayName = 'CursorIcon';
 
+export const OpenCodeIcon: LucideIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
+  <svg ref={ref} {...svgProps(props)} viewBox="0 0 300 300">
+    <g transform="translate(30, 0)">
+      <path d="M180 240H60V120H180V240Z" fill="#4B4646" />
+      <path d="M180 60H60V240H180V60ZM240 300H0V0H240V300Z" fill="#F1ECEC" />
+    </g>
+  </svg>
+));
+OpenCodeIcon.displayName = 'OpenCodeIcon';
+
 export const ProviderStudioIcon: LucideIcon = forwardRef<SVGSVGElement, LucideProps>(
   (props, ref) => (
     <svg

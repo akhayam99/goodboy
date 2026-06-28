@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { ClaudeIcon, CursorIcon, GeminiIcon, OpenAIIcon } from './brand-icons';
+import { ClaudeIcon, CursorIcon, GeminiIcon, OpenAIIcon, OpenCodeIcon } from './brand-icons';
 
 export type ProviderBrand = {
   readonly icon: LucideIcon;
@@ -12,6 +12,7 @@ export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   cursor: { icon: CursorIcon, cssVar: '--color-provider-cursor' },
   codex: { icon: OpenAIIcon, cssVar: '--color-provider-codex' },
   gemini: { icon: GeminiIcon, cssVar: '--color-provider-gemini' },
+  opencode: { icon: OpenCodeIcon, cssVar: '--color-provider-opencode' },
 };
 
 export const brandColor = (providerId: ProviderId): string => {

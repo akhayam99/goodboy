@@ -108,6 +108,8 @@ function defaultBinary(providerId: ProviderId): string {
       return 'codex';
     case 'gemini':
       return 'gemini';
+    case 'opencode':
+      return 'opencode';
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);
