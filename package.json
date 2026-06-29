@@ -30,10 +30,10 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
-    "knip": "^6.17.2",
+    "knip": "^6.23.0",
     "lefthook": "^2.1.9",
-    "prettier": "^3.8.4",
-    "turbo": "^2.9.18",
+    "prettier": "^3.9.3",
+    "turbo": "^2.10.0",
     "typescript": "^5.6.3"
   },
   "pnpm": {
