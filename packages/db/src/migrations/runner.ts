@@ -18,6 +18,7 @@ export const migrate = async (
   db: Database,
   migrations: ReadonlyArray<Migration> = defaultMigrations,
 ): Promise<MigrateResult> => {
+  await abandonOpenTransaction(db);
   await db.exec(ENSURE_VERSION_TABLE);
 
   const rows = await db.select<{ version: number }>('SELECT version FROM schema_version');
@@ -32,11 +33,7 @@ export const migrate = async (
       skipped.push(migration.version);
       continue;
     }
-    await applyMigrationSql(db, migration);
-    await db.execute('INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?, ?)', [
-      migration.version,
-      Date.now(),
-    ]);
+    await applyMigration(db, migration);
     newlyApplied.push(migration.version);
   }
 
@@ -44,25 +41,108 @@ export const migrate = async (
   return { applied: newlyApplied, skipped, currentVersion };
 };
 
-async function applyMigrationSql(db: Database, migration: Migration): Promise<void> {
-  const statements = migration.sql
+type MigrationStep =
+  | { kind: 'pragma'; sql: string }
+  | { kind: 'transaction'; statements: ReadonlyArray<string> };
+
+async function applyMigration(db: Database, migration: Migration): Promise<void> {
+  const steps = planSteps(migration.sql);
+  const lastTransaction = steps.reduce(
+    (last, step, index) => (step.kind === 'transaction' ? index : last),
+    -1,
+  );
+  let versionRecorded = false;
+
+  for (const [index, step] of steps.entries()) {
+    if (step.kind === 'pragma') {
+      await db.exec(step.sql);
+      continue;
+    }
+    await db.exec('BEGIN IMMEDIATE');
+    try {
+      for (const stmt of step.statements) {
+        await execSkippingApplied(db, migration, stmt);
+      }
+      if (index === lastTransaction) {
+        await recordVersion(db, migration);
+        versionRecorded = true;
+      }
+      await db.exec('COMMIT');
+    } catch (err) {
+      await abandonOpenTransaction(db);
+      throw err;
+    }
+  }
+
+  if (!versionRecorded) {
+    await recordVersion(db, migration);
+  }
+}
+
+function planSteps(sql: string): ReadonlyArray<MigrationStep> {
+  const statements = sql
     .split(';')
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
+  const steps: MigrationStep[] = [];
+  let pending: string[] = [];
+
+  const flushPending = () => {
+    if (pending.length === 0) {
+      return;
+    }
+    steps.push({ kind: 'transaction', statements: pending });
+    pending = [];
+  };
+
   for (const stmt of statements) {
-    try {
-      await db.exec(stmt);
-    } catch (err) {
-      if (isAlreadyExistsError(err)) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[migrations] v${migration.version}: skipping idempotent statement (already applied): ${truncate(stmt)}`,
-        );
-        continue;
-      }
+    if (isPragma(stmt)) {
+      flushPending();
+      steps.push({ kind: 'pragma', sql: stmt });
+      continue;
+    }
+    pending.push(stmt);
+  }
+  flushPending();
+
+  return steps;
+}
+
+function isPragma(stmt: string): boolean {
+  return /^pragma\b/i.test(stmt);
+}
+
+async function execSkippingApplied(
+  db: Database,
+  migration: Migration,
+  stmt: string,
+): Promise<void> {
+  try {
+    await db.exec(stmt);
+  } catch (err) {
+    if (!isAlreadyExistsError(err)) {
       throw err;
     }
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[migrations] v${migration.version}: skipping idempotent statement (already applied): ${truncate(stmt)}`,
+    );
+  }
+}
+
+async function recordVersion(db: Database, migration: Migration): Promise<void> {
+  await db.execute('INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?, ?)', [
+    migration.version,
+    Date.now(),
+  ]);
+}
+
+async function abandonOpenTransaction(db: Database): Promise<void> {
+  try {
+    await db.exec('ROLLBACK');
+  } catch {
+    return;
   }
 }
 

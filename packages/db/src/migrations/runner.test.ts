@@ -15,6 +15,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
+import type { Database } from '../client';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
@@ -389,5 +390,135 @@ describe('migrate', () => {
     const afterDelete = await listGroupsForSession(db, session.id);
     expect(afterDelete).toHaveLength(1);
     expect(afterDelete[0]!.id).toBe(group2.id);
+  });
+});
+
+const upToV66 = migrations.filter((m) => m.version <= 66);
+
+const withCrashOn = (db: Database, shouldCrash: (sql: string) => boolean): Database => {
+  let armed = true;
+  const crash = (sql: string): void => {
+    if (armed && shouldCrash(sql)) {
+      armed = false;
+      throw new Error('simulated crash');
+    }
+  };
+  return {
+    async exec(sql) {
+      crash(sql);
+      await db.exec(sql);
+    },
+    async execute(sql, params = []) {
+      crash(sql);
+      return db.execute(sql, params);
+    },
+    select: (sql, params) => db.select(sql, params),
+  };
+};
+
+const seedProviderRun = async (db: Database): Promise<void> => {
+  await db.execute(
+    'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ['ws_crash', 'crash-test', '/tmp/crash-test', Date.now(), Date.now()],
+  );
+  await db.execute(
+    'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ['session_crash', 'ws_crash', 'crash test', 'idle', Date.now(), Date.now()],
+  );
+  await db.execute(
+    'INSERT INTO provider_runs (id, session_id, provider, model, status_kind, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ['run_crash', 'session_crash', 'anthropic', 'claude-opus-4', 'succeeded', Date.now()],
+  );
+};
+
+describe('migrate crash safety', () => {
+  it('rolls back an interrupted table rebuild instead of losing the table', async () => {
+    const db = makeTestDatabase();
+    await migrate(db, upToV66);
+    await seedProviderRun(db);
+
+    const crashing = withCrashOn(db, (sql) =>
+      sql.startsWith('ALTER TABLE provider_runs_new RENAME'),
+    );
+    await expect(migrate(crashing)).rejects.toThrow('simulated crash');
+
+    const runs = await db.select<{ id: string }>('SELECT id FROM provider_runs');
+    expect(runs).toEqual([{ id: 'run_crash' }]);
+    const recorded = await db.select<{ version: number }>(
+      'SELECT version FROM schema_version WHERE version = 67',
+    );
+    expect(recorded).toHaveLength(0);
+  });
+
+  it('completes the chain and preserves data on the run after a crash', async () => {
+    const db = makeTestDatabase();
+    await migrate(db, upToV66);
+    await seedProviderRun(db);
+
+    const crashing = withCrashOn(db, (sql) =>
+      sql.startsWith('ALTER TABLE provider_runs_new RENAME'),
+    );
+    await expect(migrate(crashing)).rejects.toThrow('simulated crash');
+
+    const result = await migrate(db);
+    expect(result.applied).toContain(67);
+    expect(result.currentVersion).toBe(migrations.at(-1)?.version);
+
+    const runs = await db.select<{ id: string; provider: string }>(
+      'SELECT id, provider FROM provider_runs',
+    );
+    expect(runs).toEqual([{ id: 'run_crash', provider: 'anthropic' }]);
+  });
+
+  it('records a version only together with its migration', async () => {
+    const db = makeTestDatabase();
+    await migrate(db, upToV66);
+    await seedProviderRun(db);
+
+    const crashing = withCrashOn(db, (sql) =>
+      sql.startsWith('INSERT OR IGNORE INTO schema_version'),
+    );
+    await expect(migrate(crashing)).rejects.toThrow('simulated crash');
+
+    const versions = await db.select<{ v: number }>('SELECT MAX(version) AS v FROM schema_version');
+    expect(versions).toEqual([{ v: 66 }]);
+    const runs = await db.select<{ id: string }>('SELECT id FROM provider_runs');
+    expect(runs).toEqual([{ id: 'run_crash' }]);
+  });
+
+  it('does not destroy surviving data left behind by an old interrupted rebuild', async () => {
+    const db = makeTestDatabase();
+    await migrate(db, upToV66);
+    await seedProviderRun(db);
+
+    const m067 = migrations.find((m) => m.version === 67);
+    const statements = (m067?.sql ?? '')
+      .split(';')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    for (const stmt of statements) {
+      if (stmt.startsWith('ALTER TABLE provider_runs_new RENAME')) {
+        break;
+      }
+      await db.exec(stmt);
+    }
+
+    await expect(migrate(db)).rejects.toThrow('no such table');
+    const survivors = await db.select<{ id: string }>('SELECT id FROM provider_runs_new');
+    expect(survivors).toEqual([{ id: 'run_crash' }]);
+  });
+
+  it('starts clean when a previous run left a transaction open', async () => {
+    const db = makeTestDatabase();
+    await db.exec('BEGIN');
+    const result = await migrate(db);
+    expect(result.applied).toEqual(migrations.map((m) => m.version));
+  });
+
+  it('keeps foreign key enforcement on after the chain runs', async () => {
+    const db = makeTestDatabase();
+    await migrate(db);
+    const fk = await db.select<{ foreign_keys: number }>('PRAGMA foreign_keys');
+    expect(fk).toEqual([{ foreign_keys: 1 }]);
   });
 });
