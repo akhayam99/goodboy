@@ -4,10 +4,12 @@ export {
   InvalidSlotKeyError,
   isSlotKey,
   serializeSlots,
+  serializeSlotsBudgeted,
   SLOT_KEYS,
   SLOT_LABELS,
   type SlotKey,
 } from './slots';
+export { PREAMBLE_SLOT_TOTAL_BUDGET, SLOT_BUDGETS } from './budgets';
 export {
   assessPlanReadiness,
   extractClusterDone,

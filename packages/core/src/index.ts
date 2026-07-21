@@ -19,6 +19,8 @@ export {
 export {
   ContextEngine,
   InvalidSlotKeyError,
+  PREAMBLE_SLOT_TOTAL_BUDGET,
+  SLOT_BUDGETS,
   SLOT_KEYS,
   SLOT_LABELS,
   assertSlotKey,
@@ -42,6 +44,7 @@ export {
   removeFromSlot,
   removeQuestionsFromSlot,
   serializeSlots,
+  serializeSlotsBudgeted,
   stripControlMarkers,
   wrapOpenQuestionAnswers,
   type AutoPopulateInput,
