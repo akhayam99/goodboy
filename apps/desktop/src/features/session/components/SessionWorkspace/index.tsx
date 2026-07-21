@@ -29,7 +29,7 @@ import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
-import { WorkflowStepper } from './parts/WorkflowStepper';
+import { ChatWorkflowHeader } from './parts/ChatWorkflowHeader';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { resolveRootAgent } from '../../agent-kind';
@@ -194,23 +194,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
-      <div
-        className={cn(
-          'flex min-w-0 shrink-0 items-center px-6',
-          showWorkflowStrip ? 'pb-1 pt-2.5' : 'py-2.5',
-        )}
-      >
+      <div className="flex min-w-0 shrink-0 items-center px-6 py-2.5">
         <AppBreadcrumb crumbs={crumbs} />
       </div>
-      {showWorkflowStrip && selectedAgentId != null ? (
-        <div className="flex min-w-0 shrink-0 items-center px-6 pb-2">
-          <WorkflowStepper
-            sessionId={sessionId}
-            session={session}
-            selectedAgentId={selectedAgentId}
-          />
-        </div>
-      ) : null}
       <Divider />
       <div className="flex min-h-0 flex-1">
         <div className="flex w-60 shrink-0 flex-col bg-background">
@@ -307,7 +293,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <ChatView
                     session={session}
                     isActive={isActive && selectedAgentId != null}
-                    hideBreadcrumb={showWorkflowStrip}
+                    header={
+                      showWorkflowStrip && selectedAgentId != null ? (
+                        <ChatWorkflowHeader
+                          sessionId={sessionId}
+                          session={session}
+                          selectedAgentId={selectedAgentId}
+                        />
+                      ) : undefined
+                    }
                   />
                 </div>
               </div>

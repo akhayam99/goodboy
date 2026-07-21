@@ -139,8 +139,9 @@ describe('ChatView', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('does not render the breadcrumb when it is hidden', () => {
-    render(<ChatView session={session} hideBreadcrumb />);
+  it('renders a custom header instead of the breadcrumb', () => {
+    render(<ChatView session={session} header={<div data-testid="custom-header" />} />);
+    expect(screen.getByTestId('custom-header')).toBeDefined();
     expect(chatBreadcrumbMock).not.toHaveBeenCalled();
   });
 

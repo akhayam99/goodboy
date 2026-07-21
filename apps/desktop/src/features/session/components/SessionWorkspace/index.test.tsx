@@ -60,7 +60,9 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 });
 
 vi.mock('../../../chat/components/ChatView', () => ({
-  ChatView: () => <div data-testid="chat-view" />,
+  ChatView: ({ header }: { header?: React.ReactNode }) => (
+    <div data-testid="chat-view">{header}</div>
+  ),
 }));
 vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
 vi.mock('../../../plans/components/PlanStudio', () => ({ PlanStudio: () => null }));
@@ -137,6 +139,9 @@ describe('SessionWorkspace agent overlay', () => {
     const { container } = render(<SessionWorkspace session={session} isActive />);
     expect(screen.getByTestId('workflow-stepper')).toBeDefined();
     expect(screen.getByTestId('chat-view')).toBeDefined();
+    expect(screen.getByTestId('chat-view').contains(screen.getByTestId('workflow-stepper'))).toBe(
+      true,
+    );
     expect(container.querySelector('.w-72')).toBeNull();
     expect(screen.queryByTestId('agents-section')).toBeNull();
     expect(
