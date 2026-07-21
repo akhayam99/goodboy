@@ -3,17 +3,14 @@ import {
   Activity,
   ArrowRight,
   Bot,
-  Check,
   CheckCheck,
   CircleHelp,
-  Clock,
   FileDiff,
   FileText,
   GitPullRequest,
   Layers,
   MessageSquareReply,
   Pencil,
-  Play,
   SquareTerminal,
   Target,
   Terminal,
@@ -21,19 +18,9 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { Chip, cn, Divider, Eyebrow, Input, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
+import { cn, Divider, Eyebrow, Input, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type {
-  Agent,
-  AgentId,
-  Message,
-  Session,
-  SessionId,
-  SessionStage,
-  Step,
-  Workflow as WorkflowModel,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { Agent, AgentId, Message, Session, SessionId, SessionStage } from '@goodboy/types';
 import {
   agentHasUnread,
   EMPTY_ARRAY,
@@ -45,16 +32,7 @@ import {
 } from '../../../../store';
 import type { FilesTouched, LensKind } from '../../../../store';
 import { STAGE_TONE } from '../../session-stage';
-import {
-  outcomeWord,
-  type SpawnNode,
-  type SpawnNodeStatus,
-} from '../../../orchestration/components/SpawnTree/lib';
-import type { RunLaneModel, StepModel } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { pickNextWorkflowStep } from '../../../workflows/components/WorkflowNextStepCta';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
-import { AgentKindChip } from '../AgentKindChip';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
@@ -72,6 +50,10 @@ import { PendingResolutionsStrip } from '../../../context/components/ContextPane
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
 import { pullRequestMeta } from '../../../github/components/PullRequestChip';
+import { PipelineSection } from './PipelineSection';
+import { StartRowContent } from './StartRowContent';
+import { StartTileContent } from './StartTileContent';
+import { SummaryRow } from './SummaryRow';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -126,177 +108,6 @@ const SECONDARY_CONTEXT_LINKS: ReadonlyArray<{
   { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
 ];
 
-const isGhostStep = (status: SpawnNodeStatus): boolean =>
-  status === 'planned' || status === 'queued';
-
-const StatusGlyph = ({ status }: { readonly status: SpawnNodeStatus }) =>
-  status === 'running' ? (
-    <StatusDot tone="info" size="md" pulsing />
-  ) : status === 'done' ? (
-    <span className="flex size-3.5 items-center justify-center rounded-full bg-success/15">
-      <Check size={9} aria-hidden className="text-success" />
-    </span>
-  ) : status === 'stalled' ? (
-    <span className="size-1.5 rounded-full bg-danger" aria-hidden />
-  ) : (
-    <Clock size={11} aria-hidden className="text-muted-foreground/60" />
-  );
-
-const StepBadge = ({
-  step,
-  onAdvance,
-}: {
-  readonly step: StepModel;
-  readonly onAdvance?: () => void;
-}) => {
-  const ghost = isGhostStep(step.status);
-  const statusIcon = onAdvance ? (
-    <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
-      <Play size={8} aria-hidden className="text-primary" fill="currentColor" />
-    </span>
-  ) : (
-    <StatusGlyph status={step.status} />
-  );
-  const inner = (
-    <>
-      <span className="flex size-3.5 shrink-0 items-center justify-center">{statusIcon}</span>
-      <AgentKindChip
-        kind={step.kind}
-        muted={ghost && onAdvance == null}
-        title={`${step.name || ''} ${ghost ? 'pending' : outcomeWord(step.status)}`.trim()}
-      />
-    </>
-  );
-  if (onAdvance) {
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAdvance();
-        }}
-        title={`start ${step.name || 'this step'}`}
-        className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-primary/40 transition-colors hover:bg-primary/10"
-      >
-        {inner}
-      </button>
-    );
-  }
-  return <span className="inline-flex shrink-0 items-center gap-1">{inner}</span>;
-};
-
-type LaneAdvance = {
-  readonly workflow: WorkflowModel;
-  readonly runs: ReadonlyArray<Agent>;
-  readonly hasOpenQuestions: boolean;
-  readonly onAdvance: (step: Step) => void | Promise<void>;
-};
-
-const PipelineLane = ({
-  lane,
-  onOpen,
-  advance,
-}: {
-  readonly lane: RunLaneModel;
-  readonly onOpen: () => void;
-  readonly advance?: LaneAdvance;
-}) => {
-  const done = lane.steps.filter((s) => s.status === 'done').length;
-  const nextStep = advance
-    ? pickNextWorkflowStep(advance.workflow, advance.runs, {
-        hasOpenQuestions: advance.hasOpenQuestions,
-      })
-    : null;
-  return (
-    <div className="group flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 shadow-sm transition-colors hover:border-border">
-      <button type="button" onClick={onOpen} className="flex w-full items-center gap-2 text-left">
-        <Workflow size={13} aria-hidden className="shrink-0 text-accent" />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {lane.workflowName}
-        </span>
-        {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
-        <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
-          {done}/{lane.steps.length}
-        </span>
-        <ArrowRight
-          size={14}
-          aria-hidden
-          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-        />
-      </button>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        {lane.steps.map((step) => (
-          <StepBadge
-            key={step.stepId}
-            step={step}
-            onAdvance={
-              nextStep && advance && step.stepId === nextStep.id
-                ? () => void advance.onAdvance(nextStep)
-                : undefined
-            }
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const SummaryRow = ({
-  icon: Icon,
-  tone,
-  label,
-  onClick,
-}: {
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-  readonly onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border"
-  >
-    <Icon size={14} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
-    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
-    <ArrowRight
-      size={14}
-      aria-hidden
-      className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-    />
-  </button>
-);
-
-const AgentRow = ({
-  agent,
-  onClick,
-}: {
-  readonly agent: SpawnNode;
-  readonly onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border"
-  >
-    <span className="flex size-3.5 shrink-0 items-center justify-center">
-      <StatusGlyph status={agent.status} />
-    </span>
-    <AgentKindChip kind={agent.kind} />
-    <span className="flex min-w-0 flex-1 flex-col">
-      <span className="truncate text-sm font-medium text-foreground">{agent.name}</span>
-      {agent.outputSummary ? (
-        <span className="truncate text-2xs text-muted-foreground">{agent.outputSummary}</span>
-      ) : null}
-    </span>
-    <ArrowRight
-      size={14}
-      aria-hidden
-      className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-    />
-  </button>
-);
-
 const startRowClass = (primary?: boolean): string =>
   cn(
     'group flex w-full items-center gap-3 rounded-lg border bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors',
@@ -305,45 +116,6 @@ const startRowClass = (primary?: boolean): string =>
       : 'border-border-soft hover:border-border',
   );
 
-const StartRowContent = ({
-  icon: Icon,
-  tone,
-  label,
-  description,
-  chip,
-}: {
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-  readonly description: string;
-  readonly chip?: boolean;
-}) => (
-  <>
-    <span
-      aria-hidden
-      className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-        tintClasses(tone).bg,
-        tintClasses(tone).ring,
-      )}
-    >
-      <Icon size={16} aria-hidden className={tintClasses(tone).icon} />
-    </span>
-    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-        {label}
-        {chip ? <Chip tone="accent" size="sm" label="recommended" /> : null}
-      </span>
-      <span className="truncate text-2xs text-muted-foreground">{description}</span>
-    </span>
-    <ArrowRight
-      size={15}
-      aria-hidden
-      className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-    />
-  </>
-);
-
 const startTileClass = (primary?: boolean): string =>
   cn(
     'group flex items-center gap-2.5 rounded-lg border bg-elevated px-3 py-2.5 text-left shadow-sm transition-colors',
@@ -351,161 +123,6 @@ const startTileClass = (primary?: boolean): string =>
       ? 'border-accent/40 ring-1 ring-accent/30 hover:border-accent/60'
       : 'border-border-soft hover:border-border',
   );
-
-const StartTileContent = ({
-  icon: Icon,
-  tone,
-  label,
-}: {
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-}) => (
-  <>
-    <span
-      aria-hidden
-      className={cn(
-        'flex size-8 shrink-0 items-center justify-center rounded-lg ring-1',
-        tintClasses(tone).bg,
-        tintClasses(tone).ring,
-      )}
-    >
-      <Icon size={15} aria-hidden className={tintClasses(tone).icon} />
-    </span>
-    <span className="min-w-0 truncate text-sm font-medium text-foreground">{label}</span>
-  </>
-);
-
-type PipelineSectionProps = {
-  readonly session: Session;
-  readonly workspaceId: WorkspaceId;
-  readonly onSelectLens: (lens: LensKind) => void;
-};
-
-const PipelineSection = ({ session, workspaceId, onSelectLens }: PipelineSectionProps) => {
-  const sessionList = useMemo(() => [session], [session]);
-  const {
-    lanes,
-    freeAgents,
-    resolveQueue,
-    completedLanes,
-    completedFreeAgents,
-    completedResolveQueue,
-  } = useWorkspaceRuns(workspaceId, sessionList);
-  const resolvedCompletedLanes = completedLanes ?? EMPTY_ARRAY;
-  const resolvedCompletedFreeAgents = completedFreeAgents ?? EMPTY_ARRAY;
-  const resolvedCompletedResolveQueue = completedResolveQueue ?? EMPTY_ARRAY;
-  const sessionId = session.id as SessionId;
-  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
-  const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
-  const phaseRuns = useAppStore(
-    (s) => s.sessionPhaseRuns?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates?.[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
-  );
-  const sessionWorkflows = useAppStore(
-    (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowModel>),
-  );
-  const openQuestions = useSessionOpenQuestions(sessionId);
-
-  const workflowById = useMemo(() => {
-    const m = new Map<string, WorkflowModel>();
-    for (const w of phaseTemplates) m.set(w.id, w);
-    for (const w of sessionWorkflows) m.set(w.id, w);
-    return m;
-  }, [phaseTemplates, sessionWorkflows]);
-
-  const hasRunning = lanes.length > 0 || freeAgents.length > 0 || resolveQueue.length > 0;
-  const hasCompleted =
-    resolvedCompletedLanes.length > 0 ||
-    resolvedCompletedFreeAgents.length > 0 ||
-    resolvedCompletedResolveQueue.length > 0;
-
-  if (!hasRunning && !hasCompleted) {
-    return null;
-  }
-
-  const open = (runId: string) => {
-    setFocusedWorkflowRun(sessionId, runId);
-    onSelectLens('workflows');
-  };
-
-  const advanceFor = (runId: string): LaneAdvance | undefined => {
-    const run = session.workflowRuns.find((r) => r.id === runId);
-    const workflow = run ? workflowById.get(run.workflowId) : undefined;
-    if (!run || !workflow) {
-      return undefined;
-    }
-    const workflowAgents = phaseRuns.filter(
-      (r) => r.workflowRunId === runId && r.stepId != null && r.parentAgentId == null,
-    );
-    return {
-      workflow,
-      runs: workflowAgents,
-      hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
-      onAdvance: async (step) => {
-        const agent = workflowAgents.find((r) => r.stepId === step.id);
-        if (agent?.status === 'pending') {
-          await activateWorkflowAgent(sessionId, agent.id, undefined, false);
-        }
-      },
-    };
-  };
-
-  return (
-    <div className="flex flex-col gap-2">
-      {hasRunning ? (
-        <>
-          <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
-          <div className="flex flex-col gap-2">
-            {lanes.map((lane) => (
-              <PipelineLane
-                key={lane.runId}
-                lane={lane}
-                onOpen={() => open(lane.runId)}
-                advance={advanceFor(lane.runId)}
-              />
-            ))}
-            {freeAgents.map((agent) => (
-              <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
-            ))}
-            {resolveQueue.length > 0 ? (
-              <SummaryRow
-                icon={MessageSquareReply}
-                tone="success"
-                label={`${resolveQueue.length} in resolve queue`}
-                onClick={() => onSelectLens('resolve')}
-              />
-            ) : null}
-          </div>
-        </>
-      ) : null}
-      {hasRunning && hasCompleted ? <Divider /> : null}
-      {hasCompleted ? (
-        <>
-          <Eyebrow label="Completed" muted className="px-0.5 font-medium" />
-          <div className="flex flex-col gap-2">
-            {resolvedCompletedLanes.map((lane) => (
-              <PipelineLane key={lane.runId} lane={lane} onOpen={() => open(lane.runId)} />
-            ))}
-            {resolvedCompletedFreeAgents.map((agent) => (
-              <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
-            ))}
-            {resolvedCompletedResolveQueue.length > 0 ? (
-              <SummaryRow
-                icon={MessageSquareReply}
-                tone="success"
-                label={`${resolvedCompletedResolveQueue.length} in resolve queue`}
-                onClick={() => onSelectLens('resolve')}
-              />
-            ) : null}
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-};
 
 export const SessionOverviewPane = ({
   session,
