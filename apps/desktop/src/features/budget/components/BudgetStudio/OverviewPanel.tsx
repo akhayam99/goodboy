@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetAlert, TelemetrySummary } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
 import { brandColor } from '../../../providers/components/provider-brand';
@@ -14,7 +14,6 @@ import { Widget } from './Widget';
 import {
   buildModelBreakdown,
   chronologicalTurnCosts,
-  formatTokens,
   providerLabel,
   toProviderId,
   type BudgetScope,

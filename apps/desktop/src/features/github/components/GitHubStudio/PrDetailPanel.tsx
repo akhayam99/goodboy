@@ -56,6 +56,7 @@ export const PrDetailPanel = ({
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
 
@@ -187,6 +188,8 @@ export const PrDetailPanel = ({
     return (
       <div className="flex h-full items-center justify-center px-6">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={Inbox}
           title="No session selected"
           description="Pick a session from the inbox to see its pull request."
@@ -238,6 +241,7 @@ export const PrDetailPanel = ({
   const openResolver = (agentId: AgentId) => {
     void (async () => {
       await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
       await selectAgent(sessionId, agentId);
       onClose();
     })();
@@ -259,6 +263,7 @@ export const PrDetailPanel = ({
         false,
       );
       await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
       await selectAgent(sessionId, agentId);
       onClose();
     })();
@@ -292,6 +297,7 @@ export const PrDetailPanel = ({
         );
       }
       await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
       await activateNextResolver(sessionId);
       onClose();
     })();

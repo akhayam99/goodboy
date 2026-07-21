@@ -76,9 +76,28 @@ vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
   useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
   useCurrentWorkspace: () => hooks.workspace,
+  useNonResolverStandaloneAgents: () =>
+    (store.sessionPhaseRuns['sess-1'] ?? []).filter((value) => {
+      const agent = value as {
+        id: string;
+        kind?: string;
+        name: string;
+        parentAgentId: string | null;
+        workflowRunId: string | null;
+        stepId: string | null;
+      };
+      const kind = store.agentKindOverride[agent.id] ?? agent.kind;
+      const isResolver = kind === 'resolver' || (kind == null && agent.name.startsWith('resolve'));
+      return (
+        agent.parentAgentId == null &&
+        !(agent.workflowRunId != null && agent.stepId != null) &&
+        !isResolver
+      );
+    }),
   useSessionOpenQuestions: () => hooks.openQuestions,
   useSessionPlans: () => hooks.plans,
   useSessionStageInfo: () => hooks.stage,
+  useSessionUnreadLens: () => null,
 }));
 
 vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({

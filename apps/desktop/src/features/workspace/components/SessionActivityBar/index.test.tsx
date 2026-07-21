@@ -17,6 +17,7 @@ const { state } = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useSessionCost: () => 0,
   useSessionHasUnread: () => false,
   useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle' }),
   useSessionViewPrefs: () => ({ group: 'none' as const, sort: 'recent' as const }),

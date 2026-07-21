@@ -97,19 +97,6 @@ describe('useBoardNavigation', () => {
     expect(setActiveLensMock).toHaveBeenCalledWith(SESSION_ID, null);
   });
 
-  it('openDiff dispatches goodboy:open-diff-viewer with detail.sessionId', async () => {
-    const dispatch = vi.spyOn(window, 'dispatchEvent');
-    const { result } = renderHook(() => useBoardNavigation());
-    result.current.openDiff(session);
-    await Promise.resolve();
-    const event = dispatch.mock.calls
-      .map((c) => c[0])
-      .find((e): e is CustomEvent => e.type === 'goodboy:open-diff-viewer');
-    expect(event).toBeTruthy();
-    expect((event as CustomEvent).detail).toEqual({ sessionId: SESSION_ID });
-    dispatch.mockRestore();
-  });
-
   it('openAgent selects the first agent then reveals chat', async () => {
     store.state.sessionPhaseRuns = { [SESSION_ID]: [{ id: 'agent-1' }] };
     const dispatch = vi.spyOn(window, 'dispatchEvent');

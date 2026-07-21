@@ -7,10 +7,14 @@ import {
   AGENT_KIND_PALETTE,
   type AgentKind,
   agentHomeLens,
+  classifyAgent,
   inferAgentKindFromName,
   inferAgentKindFromStep,
+  isStandaloneAgent,
   kindConsumesPlan,
   resolveAgentKind,
+  selectNonResolverStandaloneAgents,
+  selectStandaloneAgents,
 } from './agent-kind';
 
 const agentOf = (over: Partial<Agent> = {}): Agent => ({
@@ -48,18 +52,18 @@ describe('agentHomeLens', () => {
     );
   });
 
-  it('routes a cluster child (workflowRunId, no stepId) to workflows', () => {
-    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'implementer')).toBe('workflows');
+  it('routes a cluster child without a step binding to agents', () => {
+    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'implementer')).toBe('agents');
   });
 
-  it('routes a scout sub-agent (workflowRunId propagated, no stepId) to workflows', () => {
+  it('routes a scout sub-agent without a step binding to agents', () => {
     expect(
       agentHomeLens(agentOf({ workflowRunId: WF, parentAgentId: 'p1' as AgentId }), 'scout'),
-    ).toBe('workflows');
+    ).toBe('agents');
   });
 
-  it('workflowRunId wins over resolver kind', () => {
-    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'resolver')).toBe('workflows');
+  it('routes a resolver without a step binding to resolve', () => {
+    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'resolver')).toBe('resolve');
   });
 
   it('routes a resolver with no workflowRunId to resolve', () => {
@@ -74,6 +78,95 @@ describe('agentHomeLens', () => {
   it('does not route to workflows on stepId alone when workflowRunId is absent', () => {
     expect(agentHomeLens(agentOf({ stepId: STEP }), 'generic')).toBe('agents');
     expect(agentHomeLens(agentOf({ stepId: STEP }), 'resolver')).toBe('resolve');
+  });
+});
+
+describe('isStandaloneAgent', () => {
+  it('treats a top-level agent with no workflow binding as standalone', () => {
+    expect(isStandaloneAgent(agentOf())).toBe(true);
+  });
+
+  it('rejects a child agent', () => {
+    expect(isStandaloneAgent(agentOf({ parentAgentId: 'parent' as AgentId }))).toBe(false);
+  });
+
+  it('rejects an agent bound to a workflow step', () => {
+    expect(isStandaloneAgent(agentOf({ workflowRunId: WF, stepId: STEP }))).toBe(false);
+  });
+
+  it('keeps an agent that has a workflowRunId but no stepId', () => {
+    expect(isStandaloneAgent(agentOf({ workflowRunId: WF }))).toBe(true);
+  });
+});
+
+describe('selectStandaloneAgents', () => {
+  it('filters out child and workflow-bound agents', () => {
+    const agents = [
+      agentOf({ id: 'standalone' as AgentId }),
+      agentOf({ id: 'child' as AgentId, parentAgentId: 'parent' as AgentId }),
+      agentOf({ id: 'workflow' as AgentId, workflowRunId: WF, stepId: STEP }),
+    ];
+
+    expect(selectStandaloneAgents(agents)).toHaveLength(1);
+  });
+
+  it('returns an empty array when given none', () => {
+    expect(selectStandaloneAgents([])).toEqual([]);
+  });
+});
+
+describe('selectNonResolverStandaloneAgents', () => {
+  it('keeps a generic standalone agent', () => {
+    const agents = [agentOf({ id: 'generic' as AgentId, name: 'explore the repo' })];
+    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(1);
+  });
+
+  it('excludes a name-classified resolver', () => {
+    const agents = [agentOf({ id: 'resolver' as AgentId, name: 'resolve foo' })];
+    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(0);
+  });
+
+  it('prefers a persisted kind over name inference', () => {
+    const agents = [
+      agentOf({ id: 'persisted' as AgentId, name: 'resolve foo', kind: 'implementer' }),
+    ];
+    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(1);
+  });
+
+  it('excludes an agent with a persisted resolver kind', () => {
+    const agents = [
+      agentOf({ id: 'persisted' as AgentId, name: 'explore the repo', kind: 'resolver' }),
+    ];
+    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(0);
+  });
+
+  it('excludes an agent overridden to resolver', () => {
+    const agents = [
+      agentOf({ id: 'override' as AgentId, name: 'explore the repo', kind: 'implementer' }),
+    ];
+    const overrides: Record<string, AgentKind> = { override: 'resolver' };
+
+    expect(selectNonResolverStandaloneAgents(agents, overrides)).toHaveLength(0);
+  });
+
+  it('prefers a non-resolver override over persisted kind and name inference', () => {
+    const agents = [agentOf({ id: 'override' as AgentId, name: 'resolve foo', kind: 'resolver' })];
+    const overrides: Record<string, AgentKind> = { override: 'scout' };
+
+    expect(selectNonResolverStandaloneAgents(agents, overrides)).toHaveLength(1);
+  });
+
+  it('excludes a workflow-step agent that is not standalone', () => {
+    const agents = [
+      agentOf({
+        id: 'workflow' as AgentId,
+        name: 'step agent',
+        workflowRunId: WF,
+        stepId: STEP,
+      }),
+    ];
+
+    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(0);
   });
 });
 
@@ -201,6 +294,28 @@ describe('resolveAgentKind', () => {
     expect(resolveAgentKind('agent 1', null)).toBe('generic');
     expect(resolveAgentKind('agent 1', '')).toBe('generic');
     expect(resolveAgentKind('agent 1', 'hello')).toBe('generic');
+  });
+});
+
+describe('classifyAgent', () => {
+  it('prefers an override over persisted kind and name inference', () => {
+    expect(classifyAgent(agentOf({ name: 'plan migration', kind: 'scout' }), 'docs')).toBe('docs');
+  });
+
+  it('prefers a valid persisted kind over name inference', () => {
+    expect(classifyAgent(agentOf({ name: 'plan migration', kind: 'reviewer' }), null)).toBe(
+      'reviewer',
+    );
+  });
+
+  it('falls back to name inference for an invalid persisted kind', () => {
+    expect(classifyAgent(agentOf({ name: 'debug startup', kind: 'unknown' }), null)).toBe(
+      'debugger',
+    );
+  });
+
+  it('returns generic without a persisted kind or meaningful name', () => {
+    expect(classifyAgent(agentOf({ name: 'agent 1' }), null)).toBe('generic');
   });
 });
 

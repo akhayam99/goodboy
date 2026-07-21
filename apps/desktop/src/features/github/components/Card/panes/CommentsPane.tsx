@@ -68,7 +68,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
     return (
       <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <span>All review comments resolved 🎉</span>
+          <span>All review comments resolved</span>
           {resolvedCount > 0 && (
             <button
               type="button"

@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
+import {
+  classifyAgent,
+  selectNonResolverStandaloneAgents,
+  type AgentKind,
+} from '../features/session/agent-kind';
 import type {
   Agent,
   ContextSlot,
@@ -12,6 +18,7 @@ import type {
   SessionStage,
   SessionStageInfo,
   SessionViewPrefs,
+  TelemetryRecord,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
@@ -28,6 +35,23 @@ import {
 } from './slices/session-view';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
+const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
+
+export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
+  let sum = 0;
+  for (const record of records) {
+    if (record.kind === 'summarizer') {
+      continue;
+    }
+    sum += record.estimatedCostUsd;
+  }
+  return sum;
+};
+
+export const useSessionCost = (sessionId: SessionId): number => {
+  const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY);
+  return useMemo(() => sumSessionCost(records), [records]);
+};
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -403,6 +427,65 @@ export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolea
     return true;
   }
   return agent.lastFinishedAt > agent.lastViewedAt;
+};
+
+const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
+
+const useSessionAgentKindOverrides = (sessionId: SessionId): Readonly<Record<string, AgentKind>> =>
+  useAppStore(
+    useShallow((state) => {
+      const overrides: Record<string, AgentKind> = {};
+      for (const agent of state.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS) {
+        const override = state.agentKindOverride[agent.id];
+        if (override != null) {
+          overrides[agent.id] = override;
+        }
+      }
+      return overrides;
+    }),
+  );
+
+export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyArray<Agent> => {
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
+  const agentKindOverride = useSessionAgentKindOverrides(sessionId);
+  return useMemo(
+    () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
+    [phaseRuns, agentKindOverride],
+  );
+};
+
+export type SessionUnreadLens = 'agents' | 'resolve' | 'workflows' | null;
+
+export const useSessionUnreadLens = (sessionId: SessionId): SessionUnreadLens => {
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
+  const isCurrentSession = useAppStore((s) => s.currentSessionId === sessionId);
+  const agentKindOverride = useSessionAgentKindOverrides(sessionId);
+  return useMemo(() => {
+    let unreadAgent: Agent | null = null;
+    for (const agent of phaseRuns) {
+      if (!agentHasUnread(agent, isCurrentSession && agent.id === selectedAgentId)) {
+        continue;
+      }
+      if (
+        unreadAgent != null &&
+        (agent.lastFinishedAt ?? '') <= (unreadAgent.lastFinishedAt ?? '')
+      ) {
+        continue;
+      }
+      unreadAgent = agent;
+    }
+    if (unreadAgent == null) {
+      return null;
+    }
+    if (unreadAgent.workflowRunId != null && unreadAgent.stepId != null) {
+      return 'workflows';
+    }
+    if (classifyAgent(unreadAgent, agentKindOverride[unreadAgent.id] ?? null) === 'resolver') {
+      return 'resolve';
+    }
+    return 'agents';
+  }, [phaseRuns, selectedAgentId, isCurrentSession, agentKindOverride]);
 };
 
 export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {

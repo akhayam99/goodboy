@@ -81,6 +81,7 @@ export const ResolveBoard = ({
     return (
       <EmptyState
         bordered
+        tone="neutral"
         icon={Sparkles}
         title="Nothing to resolve"
         description="Open review comments will appear here."

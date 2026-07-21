@@ -703,7 +703,7 @@ const DiffViewerContent = ({
         <DiffToolbar
           title={title}
           prNumber={prNumber}
-          openCommentsCount={comments.filter((c) => c.status === 'open').length}
+          openCommentsCount={openComments.length}
           reviewedCount={files.length > 0 ? reviewedCount : null}
           filesCount={files.length}
           sidebarCollapsed={sidebarCollapsed}
@@ -844,7 +844,7 @@ export const DiffViewerPane = ({ workspaceName, onClose, ...rest }: DiffViewerPa
     icon={FileEdit}
     title="Diff"
     workspaceName={workspaceName}
-    closeLabel="back to overview"
+    closeLabel="Overview"
     onClose={onClose}
     variant="slot"
   >

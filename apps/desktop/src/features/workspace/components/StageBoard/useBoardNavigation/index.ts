@@ -7,7 +7,6 @@ import { markStepComplete } from '../../../../onboarding/onboarding-store';
 export type BoardNavigation = {
   readonly selectCard: (session: Session) => void;
   readonly openAgent: (session: Session) => void;
-  readonly openDiff: (session: Session) => void;
   readonly openTerminal: (session: Session) => void;
   readonly openIDE: (session: Session) => void;
   readonly openQuestions: (session: Session) => void;
@@ -39,15 +38,6 @@ export const useBoardNavigation = (): BoardNavigation => {
           void selectAgent(id, agent.id);
         }
         window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-      });
-    };
-
-    const openDiff = (session: Session): void => {
-      const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        window.dispatchEvent(
-          new CustomEvent('goodboy:open-diff-viewer', { detail: { sessionId: id } }),
-        );
       });
     };
 
@@ -95,7 +85,6 @@ export const useBoardNavigation = (): BoardNavigation => {
     return {
       selectCard,
       openAgent,
-      openDiff,
       openTerminal,
       openIDE,
       openQuestions,

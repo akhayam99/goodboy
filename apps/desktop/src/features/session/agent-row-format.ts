@@ -2,15 +2,7 @@ import type { TelemetryRecord } from '@goodboy/types';
 import { getModelDescriptor } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 
-export const formatTokens = (n: number): string => {
-  if (n < 1000) {
-    return `${n}`;
-  }
-  if (n < 100_000) {
-    return `${(n / 1000).toFixed(1)}k`;
-  }
-  return `${Math.round(n / 1000)}k`;
-};
+export { formatTokens } from '@goodboy/ui';
 
 export const formatCost = formatUsd;
 

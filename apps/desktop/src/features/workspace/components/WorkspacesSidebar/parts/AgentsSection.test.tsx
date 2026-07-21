@@ -107,6 +107,7 @@ vi.mock('../../../../../features/session/agent-row-format', () => ({
 }));
 vi.mock('../../../../../features/session/agent-kind', () => ({
   AGENT_KIND_DEFAULTS: new Proxy({}, { get: () => ({ model: 'm' }) }),
+  classifyAgent: () => 'implementer',
   inferAgentKindFromName: () => 'implementer',
   resolveAgentKind: () => 'implementer',
 }));

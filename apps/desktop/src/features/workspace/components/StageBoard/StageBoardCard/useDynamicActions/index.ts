@@ -81,7 +81,7 @@ export const useDynamicActions = (
         key: 'github',
         icon: GitPullRequest,
         color: 'text-info',
-        label: 'review on GitHub',
+        label: 'Open PR',
         onClick: () => nav.openGithub(session),
       });
     }

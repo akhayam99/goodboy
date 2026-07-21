@@ -1,12 +1,18 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { Archive, Code, RotateCcw, SquareTerminal, Trash2, type LucideIcon } from 'lucide-react';
 import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
-import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionStageInfo } from '../../../../../store';
+import type { Session, SessionId } from '@goodboy/types';
+import {
+  useAppStore,
+  useNonResolverStandaloneAgents,
+  useSessionCost,
+  useSessionStageInfo,
+} from '../../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
+import { pluralize } from '../../WorkspacesSidebar/lib';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { useDynamicActions } from './useDynamicActions';
 
@@ -35,23 +41,10 @@ export const StageBoardCard = memo(function StageBoardCard({
   const prState = useAppStore((s) => s.sessionGithub[id]?.pr?.state ?? null);
   const prNumber = useAppStore((s) => s.sessionGithub[id]?.pr?.number);
   const externalTask = useAppStore((s) => s.sessionExternalTasks?.[id] ?? null);
-  const agentCount = useAppStore((s) => (s.sessionPhaseRuns[id] ?? EMPTY_ARRAY).length);
+  const agentCount = useNonResolverStandaloneAgents(id).length;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const dynamicActions = useDynamicActions(session, nav, stage, reason);
-
-  const telemetry = useAppStore(
-    (s) => s.sessionTelemetry[id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
-  const sessionCost = useMemo(() => {
-    let sum = 0;
-    for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') {
-        continue;
-      }
-      sum += rec.estimatedCostUsd;
-    }
-    return sum;
-  }, [telemetry]);
+  const sessionCost = useSessionCost(id);
 
   const stageMeta = SESSION_STAGE_META[stage];
 
@@ -102,7 +95,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             )}
             {externalTask && <ExternalTaskChip task={externalTask} variant="badge" />}
             {agentCount > 0 && (
-              <Chip tone="neutral" size="sm" shape="pill" label={`${agentCount} agents`} />
+              <Chip tone="neutral" size="sm" shape="pill" label={pluralize(agentCount, 'agent')} />
             )}
             {isAutoMode && <Chip tone="danger" size="sm" label="auto" />}
           </span>

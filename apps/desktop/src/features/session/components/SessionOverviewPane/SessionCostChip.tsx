@@ -1,23 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import type { SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useEffect, useRef, useState } from 'react';
+import { cn, formatUsd } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { useSessionCost } from '../../../../store';
 
 export const SessionCostChip = ({ sessionId }: { sessionId: SessionId }) => {
-  const telemetry = useAppStore(
-    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
-  const sessionCost = useMemo(() => {
-    let sum = 0;
-    for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') {
-        continue;
-      }
-      sum += rec.estimatedCostUsd;
-    }
-    return sum;
-  }, [telemetry]);
-  const label = sessionCost === 0 ? '$0' : `$${sessionCost.toFixed(2)}`;
+  const sessionCost = useSessionCost(sessionId);
+  const label = formatUsd(sessionCost);
 
   const [pulse, setPulse] = useState(false);
   const prevCostRef = useRef(sessionCost);

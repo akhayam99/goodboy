@@ -155,7 +155,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
             onClick={openStudio}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Customize
+            Open PR studio
             <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
           </button>
         </div>
@@ -170,7 +170,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   const ciState = computeCiState(detail?.checks ?? []);
   const unresolved = (detail?.comments ?? []).filter(
-    (c) => c.source !== 'review' || c.resolved === false,
+    (c) => c.source === 'review' && c.resolved === false,
   ).length;
 
   return (
@@ -210,7 +210,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
         onClick={openStudio}
         className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
       >
-        Open in GitHub studio
+        Open PR
         <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
       </button>
 

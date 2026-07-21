@@ -17,20 +17,18 @@ import {
 import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
-import { resolveAgentKind } from '../../../../session/agent-kind';
+import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionStageInfo,
+  useSessionUnreadLens,
 } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
-import {
-  isStandaloneAgent,
-  resolveAttentionLens,
-  selectOpenQuestions,
-} from '../../SessionOverviewPane/lib';
+import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverviewPane/lib';
 
 type LensColumnProps = {
   readonly session: Session;
@@ -57,45 +55,25 @@ type LensGroup = {
 export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
-  const messages = useAppStore((s) => s.messages[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-
-  const firstUserTextByAgentId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const m of messages) {
-      if (m.role !== 'user') {
-        continue;
-      }
-      if (map.has(m.agentId)) {
-        continue;
-      }
-      map.set(m.agentId, m.content);
-    }
-    return map;
-  }, [messages]);
+  const nonResolverStandalone = useNonResolverStandaloneAgents(sessionId);
+  const unreadLens = useSessionUnreadLens(sessionId);
 
   const isResolver = useMemo(
     () => (agent: Agent) =>
-      resolveAgentKind(
-        agent.name,
-        firstUserTextByAgentId.get(agent.id) ?? null,
-        agentKindOverride[agent.id] ?? null,
-      ) === 'resolver',
-    [firstUserTextByAgentId, agentKindOverride],
+      classifyAgent(agent, agentKindOverride[agent.id] ?? null) === 'resolver',
+    [agentKindOverride],
   );
 
-  const hasNonResolverStandalone = useMemo(
-    () => phaseRuns.some((a) => isStandaloneAgent(a) && !isResolver(a)),
-    [phaseRuns, isResolver],
-  );
+  const hasNonResolverStandalone = nonResolverStandalone.length > 0;
   const hasResolverAgent = useMemo(
     () => phaseRuns.some((a) => isStandaloneAgent(a) && isResolver(a)),
     [phaseRuns, isResolver],
   );
   const hasRunningAgent = useMemo(
-    () => phaseRuns.some((a) => a.status === 'running' && isStandaloneAgent(a) && !isResolver(a)),
-    [phaseRuns, isResolver],
+    () => nonResolverStandalone.some((agent) => agent.status === 'running'),
+    [nonResolverStandalone],
   );
 
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
@@ -103,6 +81,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
     hasNonResolverStandalone,
     hasWorkflow: activeWorkflows > 0,
     hasResolver: hasResolverAgent,
+    unreadLens,
   });
   const activePlans = useSessionPlans(sessionId).filter((p) => p.status === 'active').length;
   const runningScripts = useAppStore((s) => {
@@ -164,14 +143,21 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           icon: Layers,
           tone: 'accent',
           count: activeWorkflows,
-          dot: attentionLens === 'workflows' ? 'attention' : undefined,
+          dot:
+            attentionLens === 'workflows' || unreadLens === 'workflows' ? 'attention' : undefined,
         },
         {
           kind: 'agents',
           label: 'Agents',
           icon: Bot,
           tone: 'primary',
-          dot: attentionLens === 'agents' ? 'attention' : hasRunningAgent ? 'running' : undefined,
+          count: nonResolverStandalone.length,
+          dot:
+            attentionLens === 'agents' || unreadLens === 'agents'
+              ? 'attention'
+              : hasRunningAgent
+                ? 'running'
+                : undefined,
         },
         {
           kind: 'resolve',
@@ -179,7 +165,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           icon: MessageSquareReply,
           tone: 'success',
           count: openResolvers,
-          dot: attentionLens === 'resolve' ? 'attention' : undefined,
+          dot: attentionLens === 'resolve' || unreadLens === 'resolve' ? 'attention' : undefined,
           secondaryDot: hasPendingBatch,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
@@ -252,6 +238,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
                   {row.count != null && row.count > 0 ? (
                     <span className="flex shrink-0 items-center gap-1.5">
                       {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                      {row.dot === 'running' ? <StatusDot tone="info" size="sm" pulsing /> : null}
                       <span
                         className={cn(
                           'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
