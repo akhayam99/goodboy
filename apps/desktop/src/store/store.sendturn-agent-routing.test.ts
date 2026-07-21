@@ -12,6 +12,8 @@ import type {
 
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
+const invokeSpy = vi.fn();
+const invokeAgentUpdateStatusSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
@@ -31,7 +33,7 @@ vi.mock('../features/permissions/permissions', () => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+  invoke: invokeSpy,
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({
@@ -46,7 +48,7 @@ vi.mock('../shared/lib/db', () => ({
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(),
+  insertProviderRun: vi.fn(async () => undefined),
   insertSession: vi.fn(),
   insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
@@ -126,13 +128,14 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowDelete: vi.fn(),
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
-  invokeAgentUpdateStatus: vi.fn(),
+  invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
   invokeAgentMarkViewed: vi.fn(async () => undefined),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
+  worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
 }));
 
 vi.mock('../shared/lib/repo', () => ({
@@ -193,7 +196,14 @@ describe('sendTurn, agent routing', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -296,12 +306,50 @@ describe('sendTurn, agent routing', () => {
 
     expect(runTurnSpy).toHaveBeenCalledOnce();
   });
+
+  it('stores summarized output when a non-workflow agent completes', async () => {
+    const useAppStore = await importStore();
+    setupTwoAgents(useAppStore, AGENT_A);
+    invokeSpy.mockResolvedValueOnce({
+      stdout: JSON.stringify({ result: 'Summarized agent output.' }),
+      stderr: '',
+      exitCode: 0,
+    });
+    runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
+      yield {
+        kind: 'assistant_text' as const,
+        runId: args.runId,
+        delta: 'raw free-agent output',
+        at: NOW,
+      };
+      yield { kind: 'done' as const, runId: args.runId, at: NOW };
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'finish the task' });
+
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_A,
+      expect.objectContaining({
+        status: 'completed',
+        outputSummary: 'Summarized agent output.',
+      }),
+    );
+  });
 });
 
 describe('sendTurn, resolver config (provider pin + effort)', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',

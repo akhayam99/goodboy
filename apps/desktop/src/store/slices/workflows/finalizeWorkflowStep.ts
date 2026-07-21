@@ -4,6 +4,7 @@ import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../../kickoff';
+import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -78,9 +79,17 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     }
 
     continueAttempts.delete(agentId);
+    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    if (session == null) {
+      return { shouldAutoAdvance: false };
+    }
+    const outputSummary = await summarizeAgentOutput({
+      output: assistantText,
+      providerId: session.providerPreference.defaultProvider,
+    });
     await invokeAgentUpdateStatus(agentId, {
       status: 'completed',
-      outputSummary: assistantText.slice(0, 2000),
+      outputSummary,
       completedAt: nowIso(),
     });
     const refreshed = await invokeAgentList(sessionId);

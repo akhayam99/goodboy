@@ -73,6 +73,7 @@ import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import {
   applyHeuristicTitle,
   buildGoalAttachmentsBlock,
@@ -751,9 +752,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           );
           shouldAutoAdvanceWorkflow = shouldAutoAdvance;
         } else {
+          const outputSummary = await summarizeAgentOutput({
+            output: assistantText,
+            providerId: session.providerPreference.defaultProvider,
+          });
           await invokeAgentUpdateStatus(resolvedAgentId, {
             status: 'completed',
-            outputSummary: assistantText.slice(0, 2000),
+            outputSummary,
             completedAt: now(),
           });
           const refreshedRuns = await invokeAgentList(sessionId);
