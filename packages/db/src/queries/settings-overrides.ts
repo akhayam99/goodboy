@@ -1,12 +1,12 @@
 import type {
   OverrideSettings,
   ProviderBindings,
+  ProviderId,
   SessionId,
   VerbosityLevel,
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import type { ProviderId } from '@goodboy/types';
 import type { Database } from '../client';
 
 type WorkspaceOverrideRow = {
