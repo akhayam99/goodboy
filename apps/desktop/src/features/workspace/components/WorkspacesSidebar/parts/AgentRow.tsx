@@ -14,7 +14,7 @@ import { ProviderIcon } from '../../../../../features/providers/components/Provi
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { AgentLifetime } from './AgentLifetime';
 
-type AgentRowProps = {
+type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -50,7 +50,7 @@ export function AgentRow({
   onRenameCommit,
   onRenameCancel,
   onDelete,
-}: AgentRowProps) {
+}: Props) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
     `agent ${run.ordinal + 1}`,

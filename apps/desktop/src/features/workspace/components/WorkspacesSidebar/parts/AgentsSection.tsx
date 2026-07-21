@@ -42,7 +42,7 @@ import { AdHocRow } from './AdHocRow';
 import { WorkflowRow } from './WorkflowRow';
 import { pluralize, workflowKindName, type WorkflowBlockReason } from '../lib';
 
-type AgentsSectionProps = {
+type Props = {
   task: Session;
   only?: 'workflows' | 'agents' | 'scripts' | 'resolve';
   workflowRunId?: WorkflowRunId;
@@ -56,7 +56,7 @@ export const AgentsSection = ({
   workflowRunId,
   workflowVariant = 'sidebar',
   showWorkflowAttach = true,
-}: AgentsSectionProps) => {
+}: Props) => {
   const showWorkflows = only == null || only === 'workflows';
   const showAgents = only == null || only === 'agents';
   const showScripts = only == null || only === 'scripts';

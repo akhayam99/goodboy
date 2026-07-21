@@ -39,13 +39,13 @@ const BoardSkeleton = () => (
   </div>
 );
 
-type StageBoardProps = {
+type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
   readonly onCreateSession: () => void;
 };
 
-export const StageBoard = ({ workspaceId, sessions, onCreateSession }: StageBoardProps) => {
+export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
   const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);

@@ -23,10 +23,11 @@ import {
   modelWeight,
   modelEffortLevels,
   parseModelId,
-  subfamilyLabel,
-  subfamilyTier,
 } from '../../utils/chat-constants';
 import { MARKER_ACCENT } from '../marker-accents';
+import { FlatVariantRow } from './FlatVariantRow';
+import { PickerSection } from './PickerSection';
+import { SubfamilyVariantRow } from './SubfamilyVariantRow';
 
 const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
 const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
@@ -355,107 +356,3 @@ export const ModelPicker = ({
     </div>
   );
 };
-
-function PickerSection({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-0.5 px-2.5 pb-1 pt-1.5">
-        <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
-          {label}
-        </span>
-        {hint ? (
-          <span className="text-2xs leading-tight text-muted-foreground/60">{hint}</span>
-        ) : null}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function SubfamilyVariantRow({
-  family,
-  subfamily,
-  ids,
-  selectedModel,
-  onSelect,
-}: {
-  family: ModelFamily;
-  subfamily: string;
-  ids: string[];
-  selectedModel: string;
-  onSelect: (id: string) => void;
-}) {
-  const tier = subfamilyTier(family, subfamily);
-  return (
-    <div className="flex items-center px-2.5 py-1.5 hover:bg-muted/60">
-      <span className={cn('flex-1 text-xs', TIER_TEXT[tier])}>
-        {subfamilyLabel(family, subfamily)}
-      </span>
-      <div className="flex flex-wrap gap-1">
-        {ids.map((id) => {
-          const selected = selectedModel === id;
-          const t = modelTier(id);
-          const chip = parseModelId(id).variantLabel;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onSelect(id)}
-              title={id}
-              className={cn(
-                'rounded px-1.5 py-0.5 font-mono text-2xs transition-colors',
-                selected ? cn('bg-muted font-semibold', TIER_TEXT[t]) : CHIP_INACTIVE,
-              )}
-            >
-              {chip}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function FlatVariantRow({
-  family: _family,
-  ids,
-  selectedModel,
-  onSelect,
-}: {
-  family: ModelFamily;
-  ids: string[];
-  selectedModel: string;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className={CHIP_ROW}>
-      {ids.map((id) => {
-        const selected = selectedModel === id;
-        const t = modelTier(id);
-        const chip = parseModelId(id).variantLabel;
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onSelect(id)}
-            title={id}
-            className={cn(
-              'rounded-full px-2.5 py-0.5 text-xs transition-colors',
-              selected ? cn('bg-muted font-semibold', TIER_TEXT[t]) : CHIP_INACTIVE,
-            )}
-          >
-            {chip}
-          </button>
-        );
-      })}
-    </div>
-  );
-}

@@ -56,7 +56,7 @@ function groupLabel(key: string, groupMode: SessionGroupKey): string {
   return key;
 }
 
-type SessionActivityBarProps = {
+type Props = {
   workspaceId: WorkspaceId;
   sessions: ReadonlyArray<Session>;
   archivedSessions: ReadonlyArray<Session>;
@@ -74,7 +74,7 @@ export const SessionActivityBar = ({
   onSelectSession,
   onNewSession,
   onArchivedTabOpen,
-}: SessionActivityBarProps) => {
+}: Props) => {
   const [tab, setTab] = useState<ActivityTab>('active');
   const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
     new Map(),
