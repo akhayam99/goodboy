@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ContextEngine } from '../context/engine';
-import { SLOT_KEYS } from '../context/slots';
+import { SLOT_KEYS, SLOT_LABELS } from '../context/slots';
 import { Summarizer } from './cli';
 
 function makeDb(): DbInterface {
@@ -103,6 +103,8 @@ describe('synthetic context engine round-trip', () => {
     for (const slot of after) {
       expect(slot.value).toBe(`seeded ${slot.key}`);
     }
+    const serialized = await engine.serialize(sessionId);
+    expect(serialized).toContain(`## ${SLOT_LABELS.last_output_summary}`);
   });
 
   it('partial state → summarizer updates some, leaves others alone', async () => {

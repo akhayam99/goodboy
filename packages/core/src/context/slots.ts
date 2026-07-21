@@ -18,7 +18,7 @@ export const SLOT_LABELS: Record<SlotKey, string> = {
   files_touched: 'files touched',
   decisions: 'decisions',
   open_questions: 'open questions',
-  last_output_summary: 'last output summary',
+  last_output_summary: 'session tldr',
 };
 
 const EMPTY_PLACEHOLDER = '·';

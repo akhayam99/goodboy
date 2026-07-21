@@ -53,6 +53,7 @@ describe('serializeSlotsBudgeted', () => {
 
     expect(output.length).toBeLessThanOrEqual(PREAMBLE_SLOT_TOTAL_BUDGET);
     expect(output).toContain('## files touched\n(omitted, over budget)');
+    expect(output).toContain('## session tldr');
     expect(output).toContain('q'.repeat(SLOT_BUDGETS.open_questions));
   });
 });
