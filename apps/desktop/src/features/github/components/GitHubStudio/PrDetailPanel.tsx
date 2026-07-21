@@ -188,6 +188,8 @@ export const PrDetailPanel = ({
     return (
       <div className="flex h-full items-center justify-center px-6">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={Inbox}
           title="No session selected"
           description="Pick a session from the inbox to see its pull request."

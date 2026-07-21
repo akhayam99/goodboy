@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { SectionHeader, cn } from '@goodboy/ui';
+import { EmptyState, SectionHeader, cn } from '@goodboy/ui';
 import {
   ArrowUpRight,
   Ban,
@@ -1146,19 +1146,13 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
         ) : forceExpanded ? (
           <div className="flex flex-col gap-3">
             <PendingResolutionsStrip sessionId={task.id} />
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-6 py-10 text-center">
-              <span
-                aria-hidden
-                className="flex size-12 items-center justify-center rounded-full bg-success/10"
-              >
-                <CheckCheck size={24} className="text-success" aria-hidden />
-              </span>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium text-foreground">Nothing to resolve</p>
-                <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-                  Spawn a resolver from a pull request comment or a diff selection and it will show
-                  up here.
-                </p>
+            <EmptyState
+              bordered
+              tone="success"
+              icon={CheckCheck}
+              title="Nothing to resolve"
+              description="Spawn a resolver from a pull request comment or a diff selection and it will show up here."
+              action={
                 <button
                   type="button"
                   onClick={() =>
@@ -1173,8 +1167,8 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                   Resolve comments
                   <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
                 </button>
-              </div>
-            </div>
+              }
+            />
           </div>
         ) : null
       ) : null}

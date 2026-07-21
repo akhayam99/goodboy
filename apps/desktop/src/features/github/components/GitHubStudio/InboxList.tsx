@@ -15,6 +15,8 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
     return (
       <div className="flex h-full items-center justify-center p-3">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={Inbox}
           title="No sessions yet"
           description="Sessions in this workspace will show up here."
