@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Step, Agent, Workflow } from '@goodboy/types';
-import { nextStep, isWorkflowComplete } from '../sequencer';
-import { WorkflowPropagator } from '../propagator';
+import { buildStepPrompt, nextStep, isWorkflowComplete } from '../sequencer';
+import { buildChainCarryForward } from '../propagator';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
 
@@ -37,65 +37,72 @@ const TEMPLATE: Workflow = {
   updatedAt: AT,
 };
 
-function completedRun(def: Step, summary: string): Agent {
+type Params = {
+  readonly definition: Step;
+  readonly summary: string;
+};
+
+const completedRun = ({ definition, summary }: Params): Agent => {
   return {
-    id: `run-${def.id}` as Agent['id'],
+    id: `run-${definition.id}` as Agent['id'],
     sessionId: 's1' as Agent['sessionId'],
-    stepId: def.id,
-    ordinal: def.ordinal,
-    name: def.name,
+    stepId: definition.id,
+    ordinal: definition.ordinal,
+    name: definition.name,
     status: 'completed',
     outputSummary: summary,
   };
-}
+};
 
 describe('phase orchestration end-to-end', () => {
-  it('drives planner → coder → reviewer with carry-forward context', async () => {
-    const summarizer = {
-      async summarizePhaseOutput(text: string): Promise<string> {
-        return `summary(${text})`;
-      },
-    };
-    const propagator = new WorkflowPropagator({ summarizer });
-
+  it('drives planner to coder to reviewer with carry-forward context', () => {
     const runs: Agent[] = [];
 
     const first = nextStep(TEMPLATE, runs);
     expect(first).toBe(PLANNER);
     expect(first?.ordinal).toBe(1);
-    runs.push(completedRun(PLANNER, 'plan output v1'));
+    runs.push(completedRun({ definition: PLANNER, summary: 'plan output v1' }));
 
     const second = nextStep(TEMPLATE, runs);
     expect(second).toBe(CODER);
     expect(second?.ordinal).toBe(2);
 
-    const transitionToCoder = await propagator.buildTransition({
-      fromOrdinal: PLANNER.ordinal,
-      toOrdinal: CODER.ordinal,
-      completedPhaseOutput: 'plan output v1',
-      existingSlots: [],
-      at: AT,
+    const carryForwardToCoder = buildChainCarryForward({
+      steps: runs.map((run) => ({
+        ordinal: run.ordinal,
+        name: run.name,
+        outputSummary: run.outputSummary,
+      })),
     });
-    expect(transitionToCoder.fromOrdinal).toBe(1);
-    expect(transitionToCoder.toOrdinal).toBe(2);
-    expect(transitionToCoder.carryForwardContext).toContain('plan output v1');
+    expect(carryForwardToCoder).toBe(
+      '## workflow handoff\n### step 1 output: planner\nplan output v1',
+    );
+    expect(
+      buildStepPrompt({
+        definition: CODER,
+        carryForwardContext: carryForwardToCoder,
+        userMessage: 'ship it',
+      }),
+    ).toBe(`implement plan\n\n${carryForwardToCoder}\n\nship it`);
 
-    runs.push(completedRun(CODER, 'code diff v1'));
+    runs.push(completedRun({ definition: CODER, summary: 'code diff v1' }));
 
     const third = nextStep(TEMPLATE, runs);
     expect(third).toBe(REVIEWER);
     expect(third?.ordinal).toBe(3);
 
-    const transitionToReviewer = await propagator.buildTransition({
-      fromOrdinal: CODER.ordinal,
-      toOrdinal: REVIEWER.ordinal,
-      completedPhaseOutput: 'code diff v1',
-      existingSlots: [],
-      at: AT,
+    const carryForwardToReviewer = buildChainCarryForward({
+      steps: runs.map((run) => ({
+        ordinal: run.ordinal,
+        name: run.name,
+        outputSummary: run.outputSummary,
+      })),
     });
-    expect(transitionToReviewer.carryForwardContext).toContain('code diff v1');
+    expect(carryForwardToReviewer).toBe(
+      '## workflow handoff\n### step 2 output: coder\ncode diff v1\n### earlier steps\n- step 1 planner: plan output v1',
+    );
 
-    runs.push(completedRun(REVIEWER, 'review notes'));
+    runs.push(completedRun({ definition: REVIEWER, summary: 'review notes' }));
 
     expect(nextStep(TEMPLATE, runs)).toBeNull();
     expect(isWorkflowComplete(TEMPLATE, runs)).toBe(true);

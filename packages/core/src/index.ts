@@ -139,8 +139,10 @@ export {
   Summarizer,
   SummarizerParseError,
   SummarizerSpawnError,
+  fallbackStepOutputSummary,
   inferNextActions,
   rewriteWorkflowGoal,
+  summarizeStepOutput,
   buildGoalRewriteUserPrompt,
   type ContextSlotDelta,
   type ContextSlotDeltaUpsert,
@@ -157,6 +159,7 @@ export {
 } from './summarizer';
 
 export {
+  buildChainCarryForward,
   buildStepPrompt,
   classifyWorkflowChain,
   currentStep,
@@ -164,6 +167,7 @@ export {
   isWorkflowComplete,
   nextStep,
   runsForWorkflowRun,
+  type ChainCarryForwardStep,
   type WorkflowChainState,
   WorkflowPropagator,
   type WorkflowPropagatorDeps,
