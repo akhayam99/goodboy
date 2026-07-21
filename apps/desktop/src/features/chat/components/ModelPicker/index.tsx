@@ -161,7 +161,7 @@ export const ModelPicker = ({
           disabled
             ? 'cursor-not-allowed bg-subtle opacity-60'
             : isOverride
-              ? cn(warningAccent.bg, 'ring-1 ring-border-soft hover:opacity-80')
+              ? cn(warningAccent.bg, warningAccent.hoverBg, 'ring-1 ring-warning/30')
               : 'bg-subtle hover:bg-muted',
         )}
       >

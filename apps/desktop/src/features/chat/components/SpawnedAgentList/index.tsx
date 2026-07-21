@@ -68,7 +68,7 @@ export const SpawnedAgentList = ({
           isSelected
             ? cn(accent.border, accent.bg)
             : navigable
-              ? 'border-border hover:opacity-80'
+              ? cn('border-border', accent.hoverBorder, accent.hoverBgSoft)
               : 'border-border-soft/60',
         );
         const inner = (
