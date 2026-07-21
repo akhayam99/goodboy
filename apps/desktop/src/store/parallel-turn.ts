@@ -305,6 +305,7 @@ export const runParallelBranch = async (
     await invokeAgentInsert({
       sessionId: session.id,
       stepId: def.id,
+      parentAgentId: orchestratingAgentId,
       ordinal: def.ordinal,
       name: def.name,
       status: 'running',

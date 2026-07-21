@@ -242,7 +242,7 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
   const agentsByRunId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
-      if (r.stepId == null || r.workflowRunId == null) {
+      if (r.parentAgentId != null || r.stepId == null || r.workflowRunId == null) {
         continue;
       }
       const bucket = map.get(r.workflowRunId) ?? [];

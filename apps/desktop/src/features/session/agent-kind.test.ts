@@ -70,6 +70,29 @@ describe('resolveRootAgent', () => {
     expect(agentHomeLens(resolved, classifyAgent(resolved, null))).toBe('workflows');
   });
 
+  it('routes a parallel branch with only a step binding to its orchestrator home', () => {
+    const orchestrator = agentOf({
+      id: 'orchestrator' as AgentId,
+      workflowRunId: WF,
+      stepId: STEP,
+      kind: 'implementer',
+    });
+    const branch = agentOf({
+      id: 'branch' as AgentId,
+      parentAgentId: orchestrator.id,
+      stepId: 'branch-step' as StepId,
+      kind: 'implementer',
+    });
+
+    const resolved = resolveRootAgent({ agents: [branch, orchestrator], agentId: branch.id });
+
+    expect(resolved).toBe(orchestrator);
+    if (resolved == null) {
+      throw new Error('Expected an orchestrating agent');
+    }
+    expect(agentHomeLens(resolved, classifyAgent(resolved, null))).toBe('workflows');
+  });
+
   it('stops at the highest available agent when a parent is missing', () => {
     const child = agentOf({ id: 'child' as AgentId, parentAgentId: 'missing' as AgentId });
 
