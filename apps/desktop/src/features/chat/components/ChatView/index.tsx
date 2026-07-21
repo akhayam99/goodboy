@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
@@ -44,15 +45,15 @@ import { MARKER_ACCENT } from '../marker-accents';
 const neutralAccent = MARKER_ACCENT.neutral;
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 
-type ChatViewProps = {
-  session: Session;
-  isActive?: boolean;
-  hideBreadcrumb?: boolean;
+type Props = {
+  readonly session: Session;
+  readonly isActive?: boolean;
+  readonly header?: ReactNode;
 };
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 
-export const ChatView = ({ session, isActive = true, hideBreadcrumb = false }: ChatViewProps) => {
+export const ChatView = ({ session, isActive = true, header }: Props) => {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
@@ -396,7 +397,7 @@ export const ChatView = ({ session, isActive = true, hideBreadcrumb = false }: C
 
   return (
     <div className="flex h-full flex-col">
-      {!hideBreadcrumb && <ChatBreadcrumb session={session} />}
+      {header !== undefined ? header : <ChatBreadcrumb session={session} />}
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade
           className="flex-1"
