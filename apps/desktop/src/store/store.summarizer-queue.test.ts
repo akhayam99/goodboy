@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type { SlotKey } from '@goodboy/core';
+import type { ContextSlot, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -87,6 +88,9 @@ vi.mock('../features/providers/provider-pricing', () => ({
 }));
 
 let resolveSummarize: (() => void) | null = null;
+type SummarizerUpsert = { readonly key: SlotKey; readonly value: string };
+let summarizerUpserts: ReadonlyArray<SummarizerUpsert> = [];
+let summarizerUpsertSequence: Array<ReadonlyArray<SummarizerUpsert>> = [];
 const summarizeSpy = vi.fn(
   () =>
     new Promise<void>((resolve) => {
@@ -100,8 +104,9 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     ...original,
     Summarizer: class {
       summarize() {
+        const upserts = summarizerUpsertSequence.shift() ?? summarizerUpserts;
         return summarizeSpy().then(() => ({
-          delta: { upserts: [] },
+          delta: { upserts },
           usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 },
           model: 'claude-haiku-4-5',
           nextActions: [],
@@ -111,16 +116,24 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   };
 });
 
+let dbSlots: ReadonlyArray<ContextSlot> = [];
+const upsertContextSlotSpy = vi.fn(
+  async (_database: unknown, _sessionId: SessionId, slot: ContextSlot, _author: string) => {
+    dbSlots = [...dbSlots.filter((existing) => existing.key !== slot.key), slot];
+  },
+);
+
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(),
+  insertProviderRun: vi.fn(async () => undefined),
   insertSession: vi.fn(),
   insertSessionWorktree: vi.fn(),
-  insertTelemetry: vi.fn(),
+  insertTelemetry: vi.fn(async () => undefined),
   insertWorkspace: vi.fn(),
   insertContextSlotHistory: vi.fn(async () => undefined),
-  listContextSlotsForSession: vi.fn(async () => []),
+  listContextSlotHistory: vi.fn(async () => []),
+  listContextSlotsForSession: vi.fn(async () => dbSlots),
   listMessagesForSession: vi.fn(async () => []),
   listSessionsForWorkspace: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),
@@ -131,9 +144,9 @@ vi.mock('@goodboy/db', () => ({
   summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  updateProviderRunStatus: vi.fn(),
+  updateProviderRunStatus: vi.fn(async () => undefined),
   updateSessionState: vi.fn(),
-  upsertContextSlot: vi.fn(),
+  upsertContextSlot: upsertContextSlotSpy,
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -192,6 +205,10 @@ describe('summarizer queue, coalescing and no-stack', () => {
   beforeEach(() => {
     summarizeSpy.mockReset();
     resolveSummarize = null;
+    summarizerUpserts = [];
+    summarizerUpsertSequence = [];
+    dbSlots = [];
+    upsertContextSlotSpy.mockClear();
     summarizeSpy.mockResolvedValue(undefined);
   });
 
@@ -225,13 +242,21 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const state = useAppStore.getState();
     const queue = {
       inFlight: true,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     summarizerQueues.set(SESSION_ID, queue);
 
     for (let i = 1; i <= 4; i++) {
       if (queue.inFlight) {
-        queue.queued = { turnInput: `input-${i}`, turnOutput: `output-${i}` };
+        queue.queued = {
+          turnInput: `input-${i}`,
+          turnOutput: `output-${i}`,
+          oversizeRetried: false,
+        };
       }
     }
 
@@ -258,7 +283,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: false,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     sq.set(SESSION_ID, queue);
 
@@ -279,17 +308,29 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     sq.set(SESSION_ID, queue);
 
     for (let i = 0; i < 10; i++) {
       if (queue.inFlight) {
-        queue.queued = { turnInput: `t${i}`, turnOutput: `o${i}` };
+        queue.queued = {
+          turnInput: `t${i}`,
+          turnOutput: `o${i}`,
+          oversizeRetried: false,
+        };
       }
     }
 
-    expect(queue.queued).toEqual({ turnInput: 't9', turnOutput: 'o9' });
+    expect(queue.queued).toEqual({
+      turnInput: 't9',
+      turnOutput: 'o9',
+      oversizeRetried: false,
+    });
 
     sq.delete(SESSION_ID);
   });
@@ -305,12 +346,16 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     sq.set(SESSION_ID, queue);
 
     const before = Date.now();
-    queue.queued = { turnInput: 'next-input', turnOutput: '' };
+    queue.queued = { turnInput: 'next-input', turnOutput: '', oversizeRetried: false };
     const elapsed = Date.now() - before;
 
     expect(elapsed).toBeLessThan(50);
@@ -318,5 +363,178 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(queue.inFlight).toBe(true);
 
     sq.delete(SESSION_ID);
+  });
+
+  it('skips a conflicting slot write without blocking non-conflicting upserts', async () => {
+    let resolveFirst: () => void = () => undefined;
+    summarizeSpy
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    summarizerUpserts = [
+      { key: 'goal', value: 'summarized goal' },
+      { key: 'decisions', value: '- summarized decision' },
+    ];
+    dbSlots = [
+      { key: 'goal', value: 'original goal', enabled: true },
+      { key: 'decisions', value: '- original decision', enabled: true },
+    ];
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: dbSlots },
+      summarizerStatus: {},
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
+
+    const concurrentGoal: ContextSlot = {
+      key: 'goal',
+      value: 'concurrent user goal',
+      enabled: true,
+    };
+    dbSlots = [concurrentGoal, { key: 'decisions', value: '- original decision', enabled: true }];
+    useAppStore.setState({ sessionSlots: { [SESSION_ID]: dbSlots } });
+    summarizerUpserts = [];
+    resolveFirst();
+
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
+    expect(upsertContextSlotSpy.mock.calls[0]?.[2]).toMatchObject({
+      key: 'decisions',
+      value: '- summarized decision',
+    });
+    expect(useAppStore.getState().sessionSlots[SESSION_ID]).toContainEqual(concurrentGoal);
+  });
+
+  it('coalesces multiple conflicts into one follow-up pass', async () => {
+    let resolveFirst: () => void = () => undefined;
+    summarizeSpy
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    summarizerUpserts = [
+      { key: 'goal', value: 'summarized goal' },
+      { key: 'decisions', value: '- summarized decision' },
+    ];
+    dbSlots = [
+      { key: 'goal', value: 'original goal', enabled: true },
+      { key: 'decisions', value: '- original decision', enabled: true },
+    ];
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: dbSlots },
+      summarizerStatus: {},
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
+    dbSlots = [
+      { key: 'goal', value: 'concurrent goal', enabled: true },
+      { key: 'decisions', value: '- concurrent decision', enabled: true },
+    ];
+    useAppStore.setState({ sessionSlots: { [SESSION_ID]: dbSlots } });
+    summarizerUpserts = [];
+    resolveFirst();
+
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(summarizeSpy).toHaveBeenCalledTimes(2);
+    expect(upsertContextSlotSpy).not.toHaveBeenCalled();
+  });
+
+  it('re-enqueues only once when every pass changes an oversize slot', async () => {
+    summarizerUpsertSequence = Array.from({ length: 10 }, (_, index) => [
+      { key: 'goal', value: `${index}${'x'.repeat(561)}` },
+    ]);
+    dbSlots = [{ key: 'goal', value: 'original goal', enabled: true }];
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: dbSlots },
+      summarizerStatus: {},
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(summarizeSpy).toHaveBeenCalledTimes(2);
+    expect(upsertContextSlotSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-enqueue for an unchanged slot above twice its budget', async () => {
+    const oversizeGoal = 'x'.repeat(561);
+    summarizerUpserts = [{ key: 'goal', value: oversizeGoal }];
+    dbSlots = [{ key: 'goal', value: oversizeGoal, enabled: true }];
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: dbSlots },
+      summarizerStatus: {},
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(summarizeSpy).toHaveBeenCalledTimes(1);
+    expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
   });
 });

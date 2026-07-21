@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ContextEngine } from './engine';
-import { InvalidSlotKeyError, serializeSlots, SLOT_KEYS } from './slots';
+import { InvalidSlotKeyError, serializeSlots, SLOT_KEYS, SLOT_LABELS } from './slots';
 
 function makeDb(): DbInterface {
   const db = new Database(':memory:');
@@ -42,7 +42,7 @@ describe('serializeSlots', () => {
   it('emits every slot key with placeholder when missing', () => {
     const out = serializeSlots([]);
     for (const key of SLOT_KEYS) {
-      expect(out).toContain(`## ${key.replace(/_/g, ' ')}`);
+      expect(out).toContain(`## ${SLOT_LABELS[key]}`);
     }
     expect(out.split('·').length - 1).toBe(SLOT_KEYS.length);
   });

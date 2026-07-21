@@ -1,4 +1,12 @@
-import { serializeSlots, type SlotKey, PROVIDER_CAPABILITIES } from '@goodboy/core';
+import {
+  isSlotKey,
+  PREAMBLE_SLOT_TOTAL_BUDGET,
+  PROVIDER_CAPABILITIES,
+  serializeSlotsBudgeted,
+  SLOT_KEYS,
+  SLOT_LABELS,
+  type SlotKey,
+} from '@goodboy/core';
 import type { ContextSlot, TurnEvent } from '@goodboy/types';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 
@@ -14,10 +22,42 @@ export const buildContextPreamble = (
   slotFilter?: ReadonlyArray<SlotKey>,
 ): string => {
   const parts: string[] = [];
+  const enabledSlots = sharedSlots.filter((slot) => slot.enabled !== false);
   const filtered = slotFilter
-    ? sharedSlots.filter((s) => (slotFilter as ReadonlyArray<string>).includes(s.key))
-    : sharedSlots;
-  const rendered = filtered.length > 0 ? serializeSlots(filtered) : '';
+    ? enabledSlots.filter((slot) => (slotFilter as ReadonlyArray<string>).includes(slot.key))
+    : enabledSlots;
+  const rendered = filtered.length > 0 ? serializeSlotsBudgeted({ slots: filtered }) : '';
+  if (import.meta.env.DEV && rendered.length > PREAMBLE_SLOT_TOTAL_BUDGET * 0.8) {
+    const byKey = new Map<SlotKey, ContextSlot>();
+    for (const slot of filtered) {
+      if (isSlotKey(slot.key)) {
+        byKey.set(slot.key, slot);
+      }
+    }
+    const emptySerialized = serializeSlotsBudgeted({ slots: [] });
+    const slotChars: Record<SlotKey, number> = {
+      goal: 0,
+      files_touched: 0,
+      decisions: 0,
+      open_questions: 0,
+      last_output_summary: 0,
+    };
+    for (const key of SLOT_KEYS) {
+      const emptySection = `## ${SLOT_LABELS[key]}\n·`;
+      const omittedSection = `## ${SLOT_LABELS[key]}\n(omitted, over budget)`;
+      if (rendered.includes(omittedSection)) {
+        slotChars[key] = omittedSection.length;
+        continue;
+      }
+      const slot = byKey.get(key);
+      const isolated = serializeSlotsBudgeted({ slots: slot == null ? [] : [slot] });
+      slotChars[key] = emptySection.length + isolated.length - emptySerialized.length;
+    }
+    console.debug('[context-preamble] serialized slot budget usage', {
+      totalChars: rendered.length,
+      slotChars,
+    });
+  }
   if (rendered.length > 0) {
     parts.push('## shared context (already loaded by orchestrator, do not re-derive)\n' + rendered);
   }

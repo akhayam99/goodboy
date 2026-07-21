@@ -18,19 +18,20 @@ type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
 const SLOT_TITLE: Record<SlotKey, string> = {
   goal: 'Goal',
   decisions: 'Decisions',
-  last_output_summary: 'Last output',
+  last_output_summary: 'Session summary',
 };
 
 const SLOT_DESCRIPTION: Record<SlotKey, string> = {
   goal: 'What this session is meant to achieve.',
   decisions: 'Choices already locked in for this session.',
-  last_output_summary: "Summary of the agent's most recent reply.",
+  last_output_summary:
+    'What this session has accomplished, its current state, and what is in flight.',
 };
 
 const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
-  last_output_summary: 'Write a manual summary',
+  last_output_summary: 'Write a manual session summary',
 };
 
 const SLOT_ICON: Record<SlotKey, LucideIcon> = {
@@ -48,7 +49,8 @@ const SLOT_TONE: Record<SlotKey, Tone> = {
 const SLOT_EMPTY_DESCRIPTION: Record<SlotKey, string> = {
   goal: 'What this session is meant to achieve.',
   decisions: 'Choices already locked in for this session.',
-  last_output_summary: "Summary of the agent's most recent reply.",
+  last_output_summary:
+    'What this session has accomplished, its current state, and what is in flight.',
 };
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary']);

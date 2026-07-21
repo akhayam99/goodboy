@@ -23,6 +23,10 @@ describe('AGENT_KIND_SLOTS', () => {
     expect(AGENT_KIND_SLOTS.debugger).not.toContain('open_questions');
   });
 
+  it('resolver receives the goal and touched files', () => {
+    expect(slotsForKind('resolver')).toEqual(['goal', 'files_touched']);
+  });
+
   it('generic has no entry → fallback (all slots)', () => {
     expect(slotsForKind('generic')).toBeUndefined();
   });
