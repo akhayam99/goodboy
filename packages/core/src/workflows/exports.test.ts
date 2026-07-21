@@ -8,7 +8,6 @@ describe('phases barrel exports', () => {
     expect(core.buildChainCarryForward).toBeTypeOf('function');
     expect(core.buildStepPrompt).toBeTypeOf('function');
     expect(core.isWorkflowComplete).toBeTypeOf('function');
-    expect(core.WorkflowPropagator).toBeTypeOf('function');
   });
 
   it('exposes the same symbols from the phases sub-barrel', () => {
@@ -16,7 +15,6 @@ describe('phases barrel exports', () => {
     expect(phases.buildChainCarryForward).toBeTypeOf('function');
     expect(phases.buildStepPrompt).toBeTypeOf('function');
     expect(phases.isWorkflowComplete).toBeTypeOf('function');
-    expect(phases.WorkflowPropagator).toBeTypeOf('function');
   });
 
   it('does NOT expose WorkflowRegistry from the root @goodboy/core barrel (node-only)', () => {

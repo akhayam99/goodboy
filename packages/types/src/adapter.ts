@@ -97,6 +97,8 @@ export type TurnEvent =
       fromStep: { ordinal: number; name: string };
       toStep: { ordinal: number; name: string };
       carryForwardContext: string;
+      degraded?: true;
+      durationMs?: number;
       at: IsoDateTime;
     }
   | {

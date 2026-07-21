@@ -1,5 +1,3 @@
-import type { ContextSlot, IsoDateTime, StepTransition } from '@goodboy/types';
-
 const EARLIER_STEP_PREVIEW_LENGTH = 280;
 const NO_OUTPUT = '(no output captured)';
 
@@ -51,39 +49,3 @@ export const buildChainCarryForward = ({ steps }: Params): string => {
   });
   return lines.join('\n');
 };
-
-export type WorkflowPropagatorDeps = {
-  readonly summarizer: { summarizePhaseOutput(text: string): Promise<string> };
-};
-
-type LegacyTransitionInput = {
-  readonly fromOrdinal: number;
-  readonly toOrdinal: number;
-  readonly completedPhaseOutput: string;
-  readonly existingSlots: ReadonlyArray<ContextSlot>;
-  readonly at: IsoDateTime;
-};
-
-export class WorkflowPropagator {
-  constructor(_deps?: WorkflowPropagatorDeps) {}
-
-  buildChainCarryForward({ steps }: Params): string {
-    return buildChainCarryForward({ steps });
-  }
-
-  buildTransition({
-    fromOrdinal,
-    toOrdinal,
-    completedPhaseOutput,
-    at,
-  }: LegacyTransitionInput): Promise<StepTransition> {
-    return Promise.resolve({
-      fromOrdinal,
-      toOrdinal,
-      carryForwardContext: buildChainCarryForward({
-        steps: [{ ordinal: fromOrdinal, name: '', outputSummary: completedPhaseOutput }],
-      }),
-      at,
-    });
-  }
-}

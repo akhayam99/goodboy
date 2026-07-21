@@ -6,7 +6,11 @@ import type {
   ProviderRunId,
   Session,
   SessionId,
+  StepId,
   TurnEvent,
+  Workflow,
+  WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -336,6 +340,203 @@ describe('sendTurn, agent routing', () => {
         outputSummary: 'Summarized agent output.',
       }),
     );
+  });
+});
+
+describe('sendTurn, workflow carry-forward', () => {
+  beforeEach(async () => {
+    runTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preference',
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('injects the same full chain on retry without duplicating slots', async () => {
+    const useAppStore = await importStore();
+    const workflowId = 'workflow-carry' as WorkflowId;
+    const workflowRunId = 'workflow-run-carry' as WorkflowRunId;
+    const planStepId = 'step-plan' as StepId;
+    const researchStepId = 'step-research' as StepId;
+    const implementStepId = 'step-implement' as StepId;
+    const reviewStepId = 'step-review' as StepId;
+    const planAgentId = 'agent-plan' as AgentId;
+    const researchAgentId = 'agent-research' as AgentId;
+    const implementAgentId = 'agent-implement' as AgentId;
+    const reviewAgentId = 'agent-review' as AgentId;
+    const researchSummary = `${'r'.repeat(275)}\nresearch tail omitted`;
+    const workflow: Workflow = {
+      id: workflowId,
+      workspaceId: WORKSPACE_ID,
+      name: 'carry-forward workflow',
+      description: '',
+      steps: [
+        { id: planStepId, workflowId, ordinal: 0, name: 'Plan', promptPrefix: '' },
+        { id: researchStepId, workflowId, ordinal: 1, name: 'Research', promptPrefix: '' },
+        {
+          id: implementStepId,
+          workflowId,
+          ordinal: 2,
+          name: 'Implement',
+          promptPrefix: '',
+        },
+        { id: reviewStepId, workflowId, ordinal: 3, name: 'Review', promptPrefix: 'review' },
+      ],
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    let agents: Agent[] = [
+      {
+        ...buildAgent(planAgentId, 0),
+        stepId: planStepId,
+        workflowRunId,
+        name: 'Plan',
+        status: 'completed',
+        outputSummary: 'Plan outcome.\nPlan details omitted.',
+      },
+      {
+        ...buildAgent(researchAgentId, 1),
+        stepId: researchStepId,
+        workflowRunId,
+        name: 'Research',
+        status: 'completed',
+        outputSummary: researchSummary,
+      },
+      {
+        ...buildAgent(implementAgentId, 2),
+        stepId: implementStepId,
+        workflowRunId,
+        name: 'Implement',
+        status: 'completed',
+        outputSummary: '',
+        startedAt: '2026-05-18T00:00:01.000Z' as IsoDateTime,
+        completedAt: '2026-05-18T00:00:04.000Z' as IsoDateTime,
+      },
+      {
+        ...buildAgent(reviewAgentId, 3),
+        stepId: reviewStepId,
+        workflowRunId,
+        name: 'Review',
+      },
+    ];
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => agents,
+    );
+    invokeAgentUpdateStatusSpy.mockImplementation(
+      async (
+        id: AgentId,
+        fields: {
+          readonly status: Agent['status'];
+          readonly startedAt?: IsoDateTime;
+          readonly completedAt?: IsoDateTime;
+        },
+      ) => {
+        let updated: Agent | null = null;
+        agents = agents.map((agent) => {
+          if (agent.id !== id) {
+            return agent;
+          }
+          updated = {
+            ...agent,
+            status: fields.status,
+            ...(fields.startedAt != null && { startedAt: fields.startedAt }),
+            ...(fields.completedAt != null && { completedAt: fields.completedAt }),
+          };
+          return updated;
+        });
+        return updated ?? agents.find((agent) => agent.id === id) ?? agents[0]!;
+      },
+    );
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          workflowRuns: [
+            {
+              id: workflowRunId,
+              workflowId,
+              ordinal: 0,
+              currentStep: 3,
+              autoRun: false,
+              triggerMode: 'immediate',
+            },
+          ],
+        },
+      ],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: agents },
+      selectedAgentId: { [SESSION_ID]: reviewAgentId },
+      transcripts: { [reviewAgentId]: [] },
+      sessionSlots: {
+        [SESSION_ID]: [{ key: 'decisions', value: 'decision-slot-only-value', enabled: true }],
+      },
+      phaseTemplates: { [WORKSPACE_ID]: [workflow] },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'first attempt' });
+    expect(agents.find((agent) => agent.id === reviewAgentId)?.status).toBe('failed');
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'retry' });
+
+    const transitions = (useAppStore.getState().transcripts[reviewAgentId] ?? []).filter(
+      (event) => event.kind === 'step_transition',
+    );
+    const expectedCarryForward = [
+      '## workflow handoff',
+      '### step 2 output: Implement',
+      '(no output captured)',
+      '### earlier steps',
+      `- step 1 Research: ${researchSummary.slice(0, 280)}`,
+      '- step 0 Plan: Plan outcome.',
+    ].join('\n');
+    expect(transitions).toEqual([
+      expect.objectContaining({
+        carryForwardContext: expectedCarryForward,
+        degraded: true,
+        durationMs: 3000,
+      }),
+      expect.objectContaining({
+        carryForwardContext: expectedCarryForward,
+        degraded: true,
+        durationMs: 3000,
+      }),
+    ]);
+    expect(runTurnSpy.mock.calls.map((call) => call[0]?.prompt)).toEqual([
+      expect.stringContaining(expectedCarryForward),
+      expect.stringContaining(expectedCarryForward),
+    ]);
   });
 });
 

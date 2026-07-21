@@ -8,12 +8,7 @@ export {
   runsForWorkflowRun,
   type WorkflowChainState,
 } from './sequencer';
-export {
-  buildChainCarryForward,
-  type ChainCarryForwardStep,
-  WorkflowPropagator,
-  type WorkflowPropagatorDeps,
-} from './propagator';
+export { buildChainCarryForward, type ChainCarryForwardStep } from './propagator';
 export { WORKFLOW_LIBRARY, type WorkflowLibraryEntry, type WorkflowLibraryStep } from './library';
 export { seedWorkflowLibrary, type SeedResult, type SeedWorkflowLibraryDeps } from './seeder';
 export {

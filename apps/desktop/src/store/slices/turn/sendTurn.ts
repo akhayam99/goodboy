@@ -1,7 +1,7 @@
 import {
-  WorkflowPropagator,
   autoModelForRole,
   buildClaudeFlags,
+  buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
   extractCommentResolved,
@@ -208,37 +208,45 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const nextDef = template.steps.find((s) => s.id === activeAgentRow!.stepId) ?? null;
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-          const prevDef =
-            sortedDefs
-              .filter((d) => d.ordinal < nextDef.ordinal)
-              .reverse()
-              .find((d) => runAgents.some((r) => r.stepId === d.id && r.status === 'completed')) ??
-            null;
-          const prevRun = prevDef
-            ? (runAgents.find((r) => r.stepId === prevDef.id && r.status === 'completed') ?? null)
-            : null;
-          const isFirstTurnOfStep = !runAgents.some(
-            (r) => r.stepId === nextDef.id && r.status !== 'pending',
+          const completedPredecessors = sortedDefs
+            .filter((definition) => definition.ordinal < nextDef.ordinal)
+            .flatMap((definition) => {
+              const completedAgent = runAgents.find(
+                (agent) => agent.stepId === definition.id && agent.status === 'completed',
+              );
+              return completedAgent == null ? [] : [completedAgent];
+            });
+          const immediatePredecessor = completedPredecessors.at(-1) ?? null;
+          const hasAssistantTurn = (before.transcripts[activeAgentId] ?? []).some(
+            (event) => event.kind === 'assistant_text',
           );
-          if (prevDef && prevRun && isFirstTurnOfStep) {
-            const propagator = new WorkflowPropagator({
-              summarizer: { summarizePhaseOutput: async (text) => text },
+          if (immediatePredecessor != null && !hasAssistantTurn) {
+            const carryForwardContext = buildChainCarryForward({
+              steps: completedPredecessors.map((agent) => ({
+                ordinal: agent.ordinal,
+                name: agent.name,
+                outputSummary: agent.outputSummary,
+              })),
             });
-            const transition = await propagator.buildTransition({
-              fromOrdinal: prevDef.ordinal,
-              toOrdinal: nextDef.ordinal,
-              completedPhaseOutput: prevRun.outputSummary ?? '',
-              existingSlots: get().sessionSlots[sessionId] ?? [],
-              at: now(),
-            });
-            phasePromptCarryForward = transition.carryForwardContext;
+            const isDegraded = (immediatePredecessor.outputSummary ?? '').trim().length === 0;
+            const durationMs =
+              immediatePredecessor.startedAt != null && immediatePredecessor.completedAt != null
+                ? new Date(immediatePredecessor.completedAt).getTime() -
+                  new Date(immediatePredecessor.startedAt).getTime()
+                : null;
+            phasePromptCarryForward = carryForwardContext;
             phaseTransitionEvent = {
               kind: 'step_transition',
               runId: 'pending' as ProviderRunId,
-              fromStep: { ordinal: prevDef.ordinal, name: prevDef.name },
+              fromStep: {
+                ordinal: immediatePredecessor.ordinal,
+                name: immediatePredecessor.name,
+              },
               toStep: { ordinal: nextDef.ordinal, name: nextDef.name },
-              carryForwardContext: transition.carryForwardContext,
-              at: transition.at,
+              carryForwardContext,
+              ...(isDegraded && { degraded: true }),
+              ...(durationMs != null && { durationMs }),
+              at: now(),
             };
           }
           phaseDefinition = nextDef;

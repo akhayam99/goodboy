@@ -169,8 +169,6 @@ export {
   runsForWorkflowRun,
   type ChainCarryForwardStep,
   type WorkflowChainState,
-  WorkflowPropagator,
-  type WorkflowPropagatorDeps,
   WORKFLOW_LIBRARY,
   type WorkflowLibraryEntry,
   type WorkflowLibraryStep,
