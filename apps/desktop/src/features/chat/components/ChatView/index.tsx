@@ -43,6 +43,9 @@ import { selectClusterDashboard } from './clusterDashboard';
 import { ParallelColumn } from './ParallelColumn';
 import { useScrollPin } from './useScrollPin';
 import { dayKey, formatDayLabel } from './lib';
+import { MARKER_ACCENT } from '../marker-accents';
+
+const neutralAccent = MARKER_ACCENT.neutral;
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 
 type ChatViewProps = {
@@ -349,7 +352,9 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
           ))}
         </div>
         {allParallelTerminal ? (
-          <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-2">
+          <div
+            className={`flex items-center justify-between border-t bg-muted/40 px-4 py-2 ${neutralAccent.border}`}
+          >
             <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
             <button
               type="button"

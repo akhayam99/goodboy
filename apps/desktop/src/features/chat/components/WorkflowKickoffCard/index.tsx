@@ -3,6 +3,10 @@ import { ChevronRight, Rocket } from 'lucide-react';
 import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
+import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
+
+const accent = MARKER_ACCENT.primary;
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'workflow_kickoff' }>;
@@ -23,23 +27,32 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
   const preview = item.parsed ? item.goal : '';
 
   return (
-    <div className="border-l-2 border-primary/40">
-      <button
+    <div>
+      <TranscriptShell
+        as="button"
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-r-md py-1 pl-2 pr-2 text-left motion-safe:transition-colors hover:bg-primary/5"
+        tone="primary"
+        variant="leftBorder"
+        className="group flex w-full items-center gap-2 text-left motion-safe:transition-opacity hover:opacity-80"
       >
         <ChevronRight
           size={11}
           aria-hidden
           className={cn(
-            'shrink-0 text-primary/50 motion-safe:transition-transform',
+            'shrink-0 opacity-50 motion-safe:transition-transform',
+            accent.icon,
             open && 'rotate-90',
           )}
         />
-        <Rocket size={11} aria-hidden className="shrink-0 text-primary" />
-        <span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-primary/80">
+        <Rocket size={11} aria-hidden className={cn('shrink-0', accent.icon)} />
+        <span
+          className={cn(
+            'shrink-0 text-2xs font-medium uppercase tracking-wide opacity-80',
+            accent.text,
+          )}
+        >
           workflow start
         </span>
         {preview.length > 0 ? (
@@ -48,10 +61,15 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
           <span className="flex-1" />
         )}
         <span className="shrink-0 font-mono text-2xs text-muted-foreground">{timestamp}</span>
-      </button>
+      </TranscriptShell>
 
       {open ? (
-        <div className="ml-2 flex flex-col gap-2.5 border-l border-primary/20 py-2 pl-3 pr-2">
+        <TranscriptShell
+          tone="primary"
+          variant="leftBorder"
+          nested
+          className="ml-2 flex flex-col gap-2.5"
+        >
           {item.parsed ? (
             <>
               {item.goal.length > 0 ? (
@@ -81,7 +99,7 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
               <Markdown text={item.raw} />
             </div>
           )}
-        </div>
+        </TranscriptShell>
       ) : null}
     </div>
   );

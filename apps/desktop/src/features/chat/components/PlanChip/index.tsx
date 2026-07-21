@@ -3,14 +3,15 @@ import { FileText } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { extractPlanFromMarker } from '@goodboy/core';
 import { useSessionPlans } from '../../../../store';
+import { TranscriptShell } from '../TranscriptShell';
 import { MARKER_ACCENT } from '../marker-accents';
+
+const accent = MARKER_ACCENT.primary;
 
 type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
 };
-
-const accent = MARKER_ACCENT.plan;
 
 export const PlanChip = ({ assistantText, sessionId }: Props) => {
   const plan = useMemo(() => extractPlanFromMarker(assistantText), [assistantText]);
@@ -31,14 +32,17 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
   };
 
   return (
-    <button
+    <TranscriptShell
+      as="button"
       type="button"
       onClick={onClick}
       data-testid="plan-chip"
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full border ${accent.border} ${accent.bg} px-2.5 py-1 text-[11px] font-medium ${accent.text} hover:opacity-80`}
+      tone="primary"
+      variant="pill"
+      className={`inline-flex w-fit items-center gap-1.5 text-[11px] font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
       <FileText size={11} aria-hidden />
       <span>{plan.title}</span>
-    </button>
+    </TranscriptShell>
   );
 };

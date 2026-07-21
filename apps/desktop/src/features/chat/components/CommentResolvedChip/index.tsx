@@ -4,6 +4,11 @@ import { cn } from '@goodboy/ui';
 import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
+
+const infoAccent = MARKER_ACCENT.info;
+const successAccent = MARKER_ACCENT.success;
 
 type Props = {
   readonly assistantText: string;
@@ -77,13 +82,17 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
 
   if (state.kind === 'resolved' || resolvedOnGithub) {
     return (
-      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">
+      <TranscriptShell
+        tone="success"
+        variant="pill"
+        className={`mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium ${successAccent.text}`}
+      >
         <CheckCheck size={11} aria-hidden />
         <span>conversation resolved</span>
         <span className="text-muted-foreground/70">·</span>
         <GitCommit size={10} aria-hidden className="text-muted-foreground/80" />
         <span className="font-mono text-muted-foreground/80">{shaShort}</span>
-      </div>
+      </TranscriptShell>
     );
   }
 
@@ -120,8 +129,12 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
 
   if (queued) {
     return (
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-info/30 bg-info/5 px-2.5 py-1.5 text-[11px]">
-        <Clock size={12} aria-hidden className="text-info" />
+      <TranscriptShell
+        tone="info"
+        variant="boxed"
+        className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+      >
+        <Clock size={12} aria-hidden className={infoAccent.icon} />
         <span className="font-medium text-foreground">solved locally · pending push</span>
         <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           <GitCommit size={9} aria-hidden />
@@ -161,13 +174,17 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
             <X size={10} aria-hidden />
           </button>
         </div>
-      </div>
+      </TranscriptShell>
     );
   }
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-success/30 bg-success/5 px-2.5 py-1.5 text-[11px]">
-      <CheckCheck size={12} aria-hidden className="text-success" />
+    <TranscriptShell
+      tone="success"
+      variant="boxed"
+      className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+    >
+      <CheckCheck size={12} aria-hidden className={successAccent.icon} />
       <span className="font-medium text-foreground">fix committed locally</span>
       <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
         <GitCommit size={9} aria-hidden />
@@ -194,7 +211,9 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           aria-label="push and mark as solved now"
           title="push and resolve this thread immediately"
           className={cn(
-            'relative inline-flex items-center gap-1 rounded-full border border-info/40 px-2 py-0.5 text-[10px] font-semibold text-info transition-colors hover:bg-info/10 disabled:cursor-not-allowed disabled:opacity-60',
+            'relative inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
+            infoAccent.border,
+            infoAccent.text,
             busy && 'animate-border-pulse',
           )}
         >
@@ -215,6 +234,6 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           <X size={10} aria-hidden />
         </button>
       </div>
-    </div>
+    </TranscriptShell>
   );
 };

@@ -22,6 +22,11 @@ import { CommentWontfixChip } from '../CommentWontfixChip';
 import { PlanChip } from '../PlanChip';
 import { ClustersCard } from '../ClustersCard';
 import { ToolCallCard } from '../ToolCallCard';
+import { TranscriptShell } from '../TranscriptShell';
+import { MARKER_ACCENT } from '../marker-accents';
+
+const dangerAccent = MARKER_ACCENT.danger;
+const infoAccent = MARKER_ACCENT.info;
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -75,9 +80,9 @@ function TranscriptCardImpl({
       return <UsageRow usage={item.usage} />;
     case 'error':
       return (
-        <div className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+        <TranscriptShell tone="danger" variant="boxed" className={`text-sm ${dangerAccent.text}`}>
           {item.message}
-        </div>
+        </TranscriptShell>
       );
     case 'auth_required':
       return (
@@ -143,7 +148,9 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
   const inner = (
     <>
       <FileEdit size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="text-2xs uppercase tracking-wide text-info/80">{EDIT_LABEL[editType]}</span>
+      <span className={`text-2xs uppercase tracking-wide ${infoAccent.text}`}>
+        {EDIT_LABEL[editType]}
+      </span>
       <code className="min-w-0 truncate font-mono text-xs text-foreground/80" title={path}>
         {rel}
       </code>
@@ -151,7 +158,7 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
         <ArrowUpRight
           size={11}
           aria-hidden
-          className="ml-auto shrink-0 text-info/60 opacity-0 transition-opacity group-hover:opacity-100"
+          className={`ml-auto shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ${infoAccent.icon}`}
         />
       ) : null}
     </>
@@ -159,22 +166,29 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
 
   if (onOpenDiff) {
     return (
-      <button
+      <TranscriptShell
+        as="button"
         type="button"
         onClick={() => onOpenDiff(path)}
         title="View file"
         aria-label="View file"
-        className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md border border-info/30 bg-info/5 px-2 py-1 transition-colors hover:border-info/50 hover:bg-info/10"
+        tone="info"
+        variant="boxed"
+        className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 transition-opacity hover:opacity-80"
       >
         {inner}
-      </button>
+      </TranscriptShell>
     );
   }
 
   return (
-    <div className="group inline-flex w-fit max-w-full items-center gap-2 rounded-md border border-info/30 bg-info/5 px-2 py-1">
+    <TranscriptShell
+      tone="info"
+      variant="boxed"
+      className="group inline-flex w-fit max-w-full items-center gap-2"
+    >
       {inner}
-    </div>
+    </TranscriptShell>
   );
 }
 
@@ -189,7 +203,11 @@ function UsageStat({ value, label }: { value: string; label: string }) {
 
 function UsageRow({ usage }: { usage: Extract<TranscriptItem, { kind: 'usage' }>['usage'] }) {
   return (
-    <div className="flex w-fit flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md bg-subtle/40 px-2 py-1 text-xs text-muted-foreground">
+    <TranscriptShell
+      tone="neutral"
+      variant="boxed"
+      className="flex w-fit flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground"
+    >
       <UsageStat value={formatTokens(usage.inputTokens)} label="in" />
       <span aria-hidden className="text-muted-foreground/30">
         ·
@@ -213,7 +231,7 @@ function UsageRow({ usage }: { usage: Extract<TranscriptItem, { kind: 'usage' }>
           </span>
         </>
       ) : null}
-    </div>
+    </TranscriptShell>
   );
 }
 
@@ -223,7 +241,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
   const hasCommentResolvedMarker =
     resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
   return (
-    <div className="group relative rounded-md bg-subtle/40 px-3 py-2 text-[13px]">
+    <TranscriptShell tone="neutral" variant="boxed" className="group relative text-[13px]">
       {hasCommentResolvedMarker ? null : (
         <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
           <CopyButton value={text} label="message" />
@@ -239,7 +257,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
           <CommentWontfixChip assistantText={text} sessionId={sessionId} />
         </div>
       ) : null}
-    </div>
+    </TranscriptShell>
   );
 }
 
@@ -271,7 +289,7 @@ function InlineCopyButton({ value }: { value: string }) {
       onClick={(e) => void onCopy(e)}
       title={copied ? 'copied' : 'copy message'}
       aria-label="copy message"
-      className="rounded p-0.5 text-foreground/60 transition-colors hover:bg-primary/20 hover:text-foreground"
+      className="rounded p-0.5 text-foreground/60 transition-opacity hover:opacity-80 hover:text-foreground"
     >
       {copied ? <Check size={11} aria-hidden /> : <Copy size={11} aria-hidden />}
     </button>
@@ -440,7 +458,12 @@ function UserText({
 }) {
   const atts = attachments ?? [];
   return (
-    <div className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-md border border-info/30 bg-info/10 px-4 pb-1.5 pt-2.5">
+    <TranscriptShell
+      tone="info"
+      variant="boxed"
+      emphasis
+      className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5"
+    >
       {atts.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">
           {atts.map((a) => (
@@ -458,7 +481,7 @@ function UserText({
         <span className="font-mono">{formatHHMM(at)}</span>
         {text.length > 0 && <InlineCopyButton value={text} />}
       </div>
-    </div>
+    </TranscriptShell>
   );
 }
 

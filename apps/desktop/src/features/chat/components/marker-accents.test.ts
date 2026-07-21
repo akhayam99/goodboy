@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MARKER_ACCENT, type MarkerAccent, type MarkerType, type Tone } from './marker-accents';
+import { MARKER_ACCENT, type MarkerAccent, type Tone } from './marker-accents';
 
 const TONES: ReadonlyArray<Tone> = [
   'primary',
@@ -10,24 +10,6 @@ const TONES: ReadonlyArray<Tone> = [
   'danger',
   'operations',
   'neutral',
-];
-
-const MARKER_TONES: Readonly<Record<MarkerType, Tone>> = {
-  plan: 'primary',
-  clusters: 'merged',
-  handoff: 'info',
-  resolve: 'success',
-  wontfix: 'warning',
-  error: 'danger',
-};
-
-const MARKERS: ReadonlyArray<MarkerType> = [
-  'plan',
-  'clusters',
-  'handoff',
-  'resolve',
-  'wontfix',
-  'error',
 ];
 
 describe('MARKER_ACCENT', () => {
@@ -64,9 +46,5 @@ describe('MARKER_ACCENT', () => {
       bg: 'bg-muted',
       bgSoft: 'bg-muted',
     });
-  });
-
-  it.each(MARKERS)('%s aliases its semantic tone', (marker) => {
-    expect(MARKER_ACCENT[marker]).toBe(MARKER_ACCENT[MARKER_TONES[marker]]);
   });
 });

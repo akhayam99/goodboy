@@ -3,7 +3,9 @@ import { cn } from '@goodboy/ui';
 import { Check, Clock, Loader2 } from 'lucide-react';
 import { MARKER_ACCENT } from '../marker-accents';
 
-const accent = MARKER_ACCENT.clusters;
+const accent = MARKER_ACCENT.merged;
+const infoAccent = MARKER_ACCENT.info;
+const successAccent = MARKER_ACCENT.success;
 
 export type SpawnStatus = Agent['status'] | 'planned';
 
@@ -26,10 +28,10 @@ type Props = {
 
 const statusIcon = (status: SpawnStatus) =>
   status === 'running' ? (
-    <Loader2 size={14} className="animate-spin text-info" aria-hidden />
+    <Loader2 size={14} className={cn('animate-spin', infoAccent.icon)} aria-hidden />
   ) : status === 'completed' ? (
-    <span className="flex size-4 items-center justify-center rounded-full bg-success/15">
-      <Check size={10} className="text-success" aria-hidden />
+    <span className={cn('flex size-4 items-center justify-center rounded-full', successAccent.bg)}>
+      <Check size={10} className={successAccent.icon} aria-hidden />
     </span>
   ) : status === 'failed' ? (
     <span className="size-2 rounded-full bg-danger" aria-hidden />
@@ -66,7 +68,7 @@ export const SpawnedAgentList = ({
           isSelected
             ? cn(accent.border, accent.bg)
             : navigable
-              ? 'border-border hover:border-merged/40 hover:bg-merged/5'
+              ? 'border-border hover:opacity-80'
               : 'border-border-soft/60',
         );
         const inner = (

@@ -26,9 +26,11 @@ import {
   subfamilyLabel,
   subfamilyTier,
 } from '../../utils/chat-constants';
+import { MARKER_ACCENT } from '../marker-accents';
 
 const CHIP_ROW = 'flex flex-wrap gap-1 px-2.5 pb-2' as const;
 const CHIP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+const warningAccent = MARKER_ACCENT.warning;
 
 export type Props = {
   readonly providers: ReadonlyArray<ProviderId>;
@@ -159,7 +161,7 @@ export const ModelPicker = ({
           disabled
             ? 'cursor-not-allowed bg-subtle opacity-60'
             : isOverride
-              ? 'bg-warning/15 ring-1 ring-warning/30 hover:bg-warning/25'
+              ? cn(warningAccent.bg, 'ring-1 ring-border-soft hover:opacity-80')
               : 'bg-subtle hover:bg-muted',
         )}
       >
@@ -197,7 +199,9 @@ export const ModelPicker = ({
           <div
             className={cn(
               'mx-2 mb-1 flex items-start gap-1.5 rounded px-2 py-1 text-[10px] leading-relaxed',
-              isOverride ? 'bg-warning/10 text-warning' : 'bg-muted/40 text-muted-foreground',
+              isOverride
+                ? cn(warningAccent.bg, warningAccent.text)
+                : 'bg-muted/40 text-muted-foreground',
             )}
           >
             <span className="font-semibold uppercase tracking-wide">

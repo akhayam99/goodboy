@@ -4,6 +4,10 @@ import type { PlanId, SessionId } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
+import { TranscriptShell } from '../TranscriptShell';
+import { MARKER_ACCENT } from '../marker-accents';
+
+const accent = MARKER_ACCENT.info;
 
 type Props = {
   readonly assistantText: string;
@@ -39,15 +43,18 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
     });
   };
   return (
-    <button
+    <TranscriptShell
+      as="button"
       type="button"
       onClick={onClick}
       data-testid="handoff-chip"
-      className="inline-flex w-fit items-center gap-1.5 rounded-full border border-info/40 bg-info/10 px-2.5 py-1 text-[11px] font-medium text-info hover:bg-info/20"
+      tone="info"
+      variant="pill"
+      className={`inline-flex w-fit items-center gap-1.5 text-[11px] font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
       <ArrowRight size={11} aria-hidden />
       <span>spawn {meta.label.toLowerCase()}</span>
       {handoff.reason ? <span className="text-muted-foreground">· {handoff.reason}</span> : null}
-    </button>
+    </TranscriptShell>
   );
 };

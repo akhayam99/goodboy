@@ -9,6 +9,9 @@ import {
   type AgentKind,
 } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { MARKER_ACCENT } from '../marker-accents';
+
+const workflowAccent = MARKER_ACCENT.primary;
 
 type Props = {
   readonly session: Session;
@@ -134,7 +137,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
             <>
               <Separator />
               <span
-                className="inline-flex shrink-0 items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${workflowAccent.bg} ${workflowAccent.text}`}
                 title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
               >
                 <GitBranch size={9} aria-hidden />

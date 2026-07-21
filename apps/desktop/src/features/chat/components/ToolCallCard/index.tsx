@@ -3,6 +3,7 @@ import { ChevronRight, Wrench } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
 import { StructuredData } from './StructuredData';
 
 type Props = {
@@ -15,7 +16,7 @@ export const ToolCallCard = ({ item }: Props) => {
   const running = !item.ended;
 
   const iconColor = item.isError
-    ? MARKER_ACCENT.error.icon
+    ? MARKER_ACCENT.danger.icon
     : running
       ? 'text-muted-foreground/60'
       : MARKER_ACCENT.operations.icon;
@@ -60,29 +61,38 @@ export const ToolCallCard = ({ item }: Props) => {
           </div>
           {rawMode ? (
             <>
-              <pre className="min-w-0 whitespace-pre-wrap break-words border-l-2 border-primary/30 p-1.5 font-mono text-xs text-muted-foreground">
-                input: {JSON.stringify(item.input, null, 2)}
-              </pre>
-              {item.ended ? (
-                <pre className="min-w-0 whitespace-pre-wrap break-words border-l-2 border-primary/30 p-1.5 font-mono text-xs text-muted-foreground">
-                  output: {JSON.stringify(item.output, null, 2)}
+              <TranscriptShell tone="operations" variant="leftBorder" nested className="min-w-0">
+                <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
+                  input: {JSON.stringify(item.input, null, 2)}
                 </pre>
+              </TranscriptShell>
+              {item.ended ? (
+                <TranscriptShell
+                  tone={item.isError ? 'danger' : 'success'}
+                  variant="leftBorder"
+                  nested
+                  className="min-w-0"
+                >
+                  <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
+                    output: {JSON.stringify(item.output, null, 2)}
+                  </pre>
+                </TranscriptShell>
               ) : null}
             </>
           ) : (
             <>
-              <div className="border-l-2 border-primary/20 p-1.5 text-xs">
+              <TranscriptShell tone="operations" variant="leftBorder" nested className="text-xs">
                 <StructuredData data={item.input} label="input" />
-              </div>
+              </TranscriptShell>
               {item.ended ? (
-                <div
-                  className={cn(
-                    'border-l-2 p-1.5 text-xs',
-                    item.isError ? 'border-danger/30' : 'border-success/30',
-                  )}
+                <TranscriptShell
+                  tone={item.isError ? 'danger' : 'success'}
+                  variant="leftBorder"
+                  nested
+                  className="text-xs"
                 >
                   <StructuredData data={item.output} label="output" />
-                </div>
+                </TranscriptShell>
               ) : null}
             </>
           )}

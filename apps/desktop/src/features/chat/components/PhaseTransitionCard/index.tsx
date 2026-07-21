@@ -4,6 +4,11 @@ import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 import { formatStepDuration } from './formatStepDuration';
+import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
+
+const accent = MARKER_ACCENT.merged;
+const warningAccent = MARKER_ACCENT.warning;
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
@@ -15,26 +20,41 @@ export const PhaseTransitionCard = ({ item }: Props) => {
   const hasContext = item.carryForwardContext.trim().length > 0;
 
   return (
-    <div className="border-l-2 border-merged/40">
-      <button
+    <div>
+      <TranscriptShell
+        as="button"
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-r-md py-1 pl-2 pr-2 text-left motion-safe:transition-colors hover:bg-merged/5"
+        tone="merged"
+        variant="leftBorder"
+        className="group flex w-full items-center gap-2 text-left motion-safe:transition-opacity hover:opacity-80"
       >
         <ChevronRight
           size={11}
           aria-hidden
           className={cn(
-            'shrink-0 text-merged/50 motion-safe:transition-transform',
+            'shrink-0 opacity-50 motion-safe:transition-transform',
+            accent.icon,
             open && 'rotate-90',
           )}
         />
-        <span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-merged/80">
+        <span
+          className={cn(
+            'shrink-0 text-2xs font-medium uppercase tracking-wide opacity-80',
+            accent.text,
+          )}
+        >
           step
         </span>
         {item.degraded === true && (
-          <span className="shrink-0 rounded-md bg-warning/15 px-1 py-px text-2xs font-medium text-warning">
+          <span
+            className={cn(
+              'shrink-0 rounded-md px-1 py-px text-2xs font-medium',
+              warningAccent.bg,
+              warningAccent.text,
+            )}
+          >
             degraded handoff
           </span>
         )}
@@ -42,7 +62,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
           <span className="truncate">
             {item.fromStep.ordinal + 1}. {item.fromStep.name}
           </span>
-          <ArrowRight size={11} aria-hidden className="shrink-0 text-merged/60" />
+          <ArrowRight size={11} aria-hidden className={cn('shrink-0 opacity-60', accent.icon)} />
           <span className="truncate">
             {item.toStep.ordinal + 1}. {item.toStep.name}
           </span>
@@ -53,17 +73,22 @@ export const PhaseTransitionCard = ({ item }: Props) => {
           )}
           <span>{timestamp}</span>
         </span>
-      </button>
+      </TranscriptShell>
 
       {open && hasContext ? (
-        <div className="ml-2 flex flex-col gap-1 border-l border-merged/20 py-2 pl-3 pr-2">
+        <TranscriptShell
+          tone="merged"
+          variant="leftBorder"
+          nested
+          className="ml-2 flex flex-col gap-1"
+        >
           <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
             carried forward
           </span>
           <div className="overflow-x-auto text-xs text-foreground/80">
             <Markdown text={item.carryForwardContext} />
           </div>
-        </div>
+        </TranscriptShell>
       ) : null}
     </div>
   );

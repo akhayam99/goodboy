@@ -8,8 +8,6 @@ export type Tone =
   | 'operations'
   | 'neutral';
 
-export type MarkerType = 'plan' | 'clusters' | 'handoff' | 'resolve' | 'wontfix' | 'error';
-
 export type MarkerAccent = {
   readonly border: string;
   readonly borderSoft: string;
@@ -18,8 +16,6 @@ export type MarkerAccent = {
   readonly text: string;
   readonly icon: string;
 };
-
-type AccentKey = Tone | MarkerType;
 
 const primary: MarkerAccent = {
   border: 'border-primary/40',
@@ -93,7 +89,7 @@ const neutral: MarkerAccent = {
   icon: 'text-muted-foreground',
 };
 
-export const MARKER_ACCENT: Readonly<Record<AccentKey, MarkerAccent>> = {
+export const MARKER_ACCENT: Readonly<Record<Tone, MarkerAccent>> = {
   primary,
   merged,
   info,
@@ -102,10 +98,4 @@ export const MARKER_ACCENT: Readonly<Record<AccentKey, MarkerAccent>> = {
   danger,
   operations,
   neutral,
-  plan: primary,
-  clusters: merged,
-  handoff: info,
-  resolve: success,
-  wontfix: warning,
-  error: danger,
 };
