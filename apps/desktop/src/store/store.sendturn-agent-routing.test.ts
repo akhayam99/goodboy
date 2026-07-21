@@ -216,7 +216,9 @@ describe('sendTurn, agent routing', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
   });
 
@@ -361,7 +363,9 @@ describe('sendTurn, workflow carry-forward', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
   });
 
@@ -719,7 +723,9 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
   });
 
