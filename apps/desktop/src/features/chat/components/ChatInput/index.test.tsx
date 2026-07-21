@@ -348,6 +348,49 @@ describe('ChatInput, input wiring', () => {
     );
   });
 
+  it('provider override persists across multiple sends (regression for bug D)', async () => {
+    const user = userEvent.setup();
+    render(
+      <ChatInput
+        session={makeSession({
+          providerPreference: {
+            defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
+            allowTurnOverride: true,
+          },
+          providerOverride: 'cursor',
+        })}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'first cursor turn');
+    await user.keyboard('{Enter}');
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledOnce();
+    });
+
+    await user.type(textarea, 'second cursor turn');
+    await user.keyboard('{Enter}');
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(sendTurnMock).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        content: 'first cursor turn',
+        override: { providerId: 'cursor', model: 'composer-2' },
+      }),
+    );
+    expect(sendTurnMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        content: 'second cursor turn',
+        override: { providerId: 'cursor', model: 'composer-2' },
+      }),
+    );
+  });
+
   it('sends cursor when the picker shows cursor even with an anthropic agent model pin', async () => {
     mockStore.setState({
       agentModelOverride: { 'agent-1': 'claude-haiku-4-5' },
