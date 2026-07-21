@@ -8,7 +8,7 @@ export const AGENT_KIND_SLOTS: Partial<Record<AgentKind, ReadonlyArray<SlotKey>>
   reviewer: ['goal', 'files_touched', 'last_output_summary'],
   scout: ['goal', 'last_output_summary'],
   docs: ['goal', 'last_output_summary'],
-  resolver: ['files_touched'],
+  resolver: ['goal', 'files_touched'],
 };
 
 export const slotsForKind = (kind: AgentKind): ReadonlyArray<SlotKey> | undefined => {

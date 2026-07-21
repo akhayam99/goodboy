@@ -116,7 +116,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
   const contextRows: ReadonlyArray<LensRow> = [
     { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
     { kind: 'decisions', label: 'Decisions', icon: CheckCheck, tone: 'success' },
-    { kind: 'last_output_summary', label: 'Last output', icon: Activity, tone: 'info' },
+    { kind: 'last_output_summary', label: 'Session TLDR', icon: Activity, tone: 'info' },
     {
       kind: 'pr',
       label: 'Pull request',

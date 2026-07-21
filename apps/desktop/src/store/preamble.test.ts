@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { ContextSlot, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
+import { describe, expect, it, vi } from 'vitest';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 
 const NOW = '2026-05-11T00:00:00.000Z' as IsoDateTime;
@@ -34,6 +34,42 @@ describe('buildContextPreamble', () => {
     const out = buildContextPreamble([slot('open_questions', 'q?')], ['goal']);
     expect(out).not.toContain('## shared context');
     expect(out).toContain('context handoff protocol');
+  });
+
+  it('budget-compacts oversized slots before rendering the preamble', () => {
+    const decisions = Array.from(
+      { length: 20 },
+      (_, index) => `- decision-${index}-${'x'.repeat(80)}`,
+    ).join('\n');
+    const out = buildContextPreamble([slot('decisions', decisions)]);
+    expect(out).toContain('- ...');
+    expect(out).not.toContain('decision-19');
+  });
+
+  it('logs serialized slot sizes in development above 80 percent of the total budget', () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+    const slots = [
+      slot('goal', 'g'.repeat(280)),
+      slot('files_touched', 'f'.repeat(600)),
+      slot('decisions', 'd'.repeat(1_200)),
+      slot('open_questions', 'q'.repeat(800)),
+      slot('last_output_summary', 's'.repeat(900)),
+    ];
+    buildContextPreamble(slots);
+    expect(debug).toHaveBeenCalledWith(
+      '[context-preamble] serialized slot budget usage',
+      expect.objectContaining({
+        totalChars: expect.any(Number),
+        slotChars: expect.objectContaining({
+          goal: expect.any(Number),
+          files_touched: expect.any(Number),
+          decisions: expect.any(Number),
+          open_questions: expect.any(Number),
+          last_output_summary: expect.any(Number),
+        }),
+      }),
+    );
+    debug.mockRestore();
   });
 });
 

@@ -91,7 +91,7 @@ const PRIMARY_CONTEXT_LINKS: ReadonlyArray<{
 }> = [
   { kind: 'goal', icon: Target, tone: 'primary', label: 'Goal' },
   { kind: 'decisions', icon: CheckCheck, tone: 'success', label: 'Decisions' },
-  { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Last output' },
+  { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Session TLDR' },
 ];
 
 const SECONDARY_CONTEXT_LINKS: ReadonlyArray<{

@@ -520,11 +520,11 @@ describe('SessionOverviewPane context links', () => {
     expect(onSelectLens).toHaveBeenCalledWith('goal');
   });
 
-  it('routes Decisions and Last output from the primary strip', () => {
+  it('routes Decisions and Session TLDR from the primary strip', () => {
     const onSelectLens = renderPane();
     fireEvent.click(screen.getByRole('button', { name: /^decisions$/i }));
     expect(onSelectLens).toHaveBeenCalledWith('decisions');
-    fireEvent.click(screen.getByRole('button', { name: /^last output$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^session tldr$/i }));
     expect(onSelectLens).toHaveBeenCalledWith('last_output_summary');
   });
 
@@ -542,7 +542,7 @@ describe('SessionOverviewPane context links', () => {
     expect(screen.getByRole('button', { name: /^goal$/i })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /^decisions$/i }));
     expect(onSelectLens).toHaveBeenCalledWith('decisions');
-    fireEvent.click(screen.getByRole('button', { name: /^last output$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^session tldr$/i }));
     expect(onSelectLens).toHaveBeenCalledWith('last_output_summary');
   });
 });
