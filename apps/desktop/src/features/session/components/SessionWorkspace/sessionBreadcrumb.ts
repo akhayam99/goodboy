@@ -13,6 +13,7 @@ export type SessionBreadcrumbInput = {
   studio: SessionStudio | null;
   selectedAgentName: string | null;
   overlayHomeLens: LensKind | null;
+  suppressAgentTail: boolean;
   focusedWorkflowName: string | null;
   focusedPlanTitle: string | null;
   lensLabel: (lens: LensKind) => string;
@@ -32,6 +33,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     studio,
     selectedAgentName,
     overlayHomeLens,
+    suppressAgentTail,
     focusedWorkflowName,
     focusedPlanTitle,
     lensLabel,
@@ -73,6 +75,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
       { id: 'mr', label: 'Merge request' },
     ]);
+  }
+
+  if (suppressAgentTail && selectedAgentName != null && overlayHomeLens != null) {
+    return sealLast([overview]);
   }
 
   if (selectedAgentName != null && overlayHomeLens != null) {

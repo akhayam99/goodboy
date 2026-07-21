@@ -20,6 +20,7 @@ const base = (
   studio: null,
   selectedAgentName: null,
   overlayHomeLens: null,
+  suppressAgentTail: false,
   focusedWorkflowName: null,
   focusedPlanTitle: null,
   lensLabel,
@@ -88,6 +89,22 @@ describe('buildSessionBreadcrumb', () => {
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
     expect(h.toLens).not.toHaveBeenCalled();
+  });
+
+  it('suppresses the workflow agent tail when the workflow strip is present', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          selectedAgentName: 'scout-1',
+          overlayHomeLens: 'workflows',
+          suppressAgentTail: true,
+        },
+        h,
+      ),
+    );
+    expect(labels(crumbs)).toEqual(['Overview']);
+    expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
   it('degrades a workflows lens with no focused run to a two-crumb leaf trail', () => {
