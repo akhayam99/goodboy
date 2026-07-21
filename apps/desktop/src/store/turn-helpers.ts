@@ -4,6 +4,7 @@ import {
   extractClustersFromMarker,
   extractHandoff,
   extractPlanFromMarker,
+  SLOT_BUDGETS,
   Summarizer,
   type ExtractedHandoff,
   type SlotKey,
@@ -104,6 +105,13 @@ type SummarizerTaskQueue = {
 
 export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
 
+type Params = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly entry: SummarizerQueueEntry;
+};
+
 function scheduleIdle(fn: () => void): void {
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(() => fn());
@@ -111,6 +119,32 @@ function scheduleIdle(fn: () => void): void {
     queueMicrotask(fn);
   }
 }
+
+const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
+  void runSummarizer(set, get, sessionId, entry.turnInput, entry.turnOutput).finally(() => {
+    const queue = summarizerQueues.get(sessionId);
+    if (queue == null) {
+      return;
+    }
+    const next = queue.queued;
+    if (next == null) {
+      queue.inFlight = false;
+      return;
+    }
+    queue.queued = null;
+    scheduleIdle(() => {
+      runQueuedSummarizer({ set, get, sessionId, entry: next });
+    });
+  });
+};
+
+const reenqueueSummarizer = ({ set, get, sessionId, entry }: Params): void => {
+  const queue = summarizerQueues.get(sessionId);
+  if (queue?.queued != null) {
+    return;
+  }
+  enqueueSummarizer(set, get, sessionId, entry.turnInput, entry.turnOutput);
+};
 
 export const enqueueSummarizer = (
   set: SetFn,
@@ -132,31 +166,9 @@ export const enqueueSummarizer = (
 
   queue.inFlight = true;
   queue.queued = null;
-
-  const run = (): void => {
-    void runSummarizer(set, get, sessionId, turnInput, turnOutput).finally(() => {
-      const q = summarizerQueues.get(sessionId);
-      if (!q) {
-        return;
-      }
-      const next = q.queued;
-      if (next) {
-        q.queued = null;
-        scheduleIdle(() => {
-          void runSummarizer(set, get, sessionId, next.turnInput, next.turnOutput).finally(() => {
-            const q2 = summarizerQueues.get(sessionId);
-            if (q2) {
-              q2.inFlight = false;
-            }
-          });
-        });
-      } else {
-        q.inFlight = false;
-      }
-    });
-  };
-
-  scheduleIdle(run);
+  scheduleIdle(() => {
+    runQueuedSummarizer({ set, get, sessionId, entry: { turnInput, turnOutput } });
+  });
 };
 
 async function runSummarizer(
@@ -193,6 +205,7 @@ async function runSummarizer(
     const providerId = session.providerPreference.defaultProvider;
     const summarizer = new Summarizer({ providerId, invokeFn: invoke });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
+    const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
     const ghPr = get().sessionGithub[sessionId]?.pr ?? null;
     const prState = ghPr
       ? {
@@ -202,21 +215,51 @@ async function runSummarizer(
       : null;
     const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState });
 
-    const changedKeys = (
-      await Promise.all(
-        result.delta.upserts.map(async (upsert) => {
-          const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
-          const prevValue = existing && existing.value !== upsert.value ? existing.value : null;
-          const next: ContextSlot = {
+    const upsertResults = await Promise.all(
+      result.delta.upserts.map(async (upsert) => {
+        const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
+        if (existing?.value !== slotValueSnapshot.get(upsert.key)) {
+          return {
             key: upsert.key,
             value: upsert.value,
-            enabled: existing?.enabled ?? true,
+            previousValue: null,
+            didChange: false,
+            hasConflict: true,
           };
-          await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer');
-          return prevValue !== null ? upsert.key : null;
-        }),
+        }
+        const didChange = existing?.value !== upsert.value;
+        const previousValue = existing != null && didChange ? existing.value : null;
+        const next: ContextSlot = {
+          key: upsert.key,
+          value: upsert.value,
+          enabled: existing?.enabled ?? true,
+        };
+        await upsertContextSlot(tauriDatabase, sessionId, next, 'summarizer');
+        return {
+          key: upsert.key,
+          value: upsert.value,
+          previousValue,
+          didChange,
+          hasConflict: false,
+        };
+      }),
+    );
+    const changedKeys = upsertResults
+      .filter(
+        (upsert): upsert is typeof upsert & { previousValue: string } =>
+          upsert.previousValue !== null,
       )
-    ).filter((k): k is SlotKey => k !== null);
+      .map((upsert) => upsert.key);
+    const hasConflict = upsertResults.some((upsert) => upsert.hasConflict);
+    const hasChangedOversizeSlot = upsertResults.some(
+      (upsert) =>
+        !upsert.hasConflict &&
+        upsert.didChange &&
+        upsert.value.length > SLOT_BUDGETS[upsert.key] * 2,
+    );
+    if (hasConflict || hasChangedOversizeSlot) {
+      reenqueueSummarizer({ set, get, sessionId, entry: { turnInput, turnOutput } });
+    }
 
     if (
       !get().sessionGithub[sessionId]?.pr &&

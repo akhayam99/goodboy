@@ -9,7 +9,7 @@ export const toggleSessionSlot = (set: SetFn, get: GetFn) => {
     const existing = get().sessionSlots[sessionId] ?? [];
     const prev = existing.find((s) => s.key === key);
     const next: ContextSlot = { key, value: prev?.value ?? '', enabled };
-    await upsertContextSlot(tauriDatabase, sessionId, next);
+    await upsertContextSlot(tauriDatabase, sessionId, next, 'user');
     set((state) => ({
       sessionSlots: {
         ...state.sessionSlots,
