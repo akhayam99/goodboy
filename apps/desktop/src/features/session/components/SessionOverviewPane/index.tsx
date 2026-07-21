@@ -45,8 +45,8 @@ import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
-import { pullRequestMeta } from '../../../github/components/PullRequestChip';
 import { PipelineSection } from './PipelineSection';
+import { LinkedWorkSection } from './LinkedWorkSection';
 import { StartRowContent } from './StartRowContent';
 import { StartTileContent } from './StartTileContent';
 import { SummaryRow } from './SummaryRow';
@@ -145,25 +145,6 @@ export const SessionOverviewPane = ({
   const unreadLens = useSessionUnreadLens(session.id as SessionId);
   const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
   const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
-  const pullRequestState = useAppStore((s) => s.sessionGithub[session.id]?.pr?.state ?? null);
-  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[session.id]?.mr ?? null);
-  const mergeRequestState =
-    mergeRequest == null
-      ? null
-      : mergeRequest.draft
-        ? 'draft'
-        : mergeRequest.state === 'merged'
-          ? 'merged'
-          : mergeRequest.state === 'closed'
-            ? 'closed'
-            : 'open';
-  const pullRequestLabel =
-    pullRequestState != null
-      ? pullRequestMeta(pullRequestState).label
-      : mergeRequestState != null
-        ? pullRequestMeta(mergeRequestState).label
-        : 'None';
-  const hasPr = pullRequestState != null || mergeRequest != null;
   const resolvable = useResolvableCount(session.id as SessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -310,14 +291,6 @@ export const SessionOverviewPane = ({
       label: openCount === 1 ? 'question' : 'questions',
       active: openCount > 0,
       alert: openCount > 0,
-    },
-    {
-      kind: 'pr',
-      icon: GitPullRequest,
-      tone: 'accent',
-      value: pullRequestLabel,
-      label: 'pull request',
-      active: hasPr,
     },
   ];
 
@@ -503,6 +476,8 @@ export const SessionOverviewPane = ({
             onSelectLens={onSelectLens}
           />
         ) : null}
+
+        <LinkedWorkSection sessionId={session.id as SessionId} onSelectLens={onSelectLens} />
 
         {resolvableItems > 0 ? (
           <div className="flex flex-col gap-2">

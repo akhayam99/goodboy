@@ -2,7 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { OpenQuestion, Session, SessionStageInfo, Workspace } from '@goodboy/types';
+import type {
+  OpenQuestion,
+  Session,
+  SessionExternalTask,
+  SessionStageInfo,
+  Workspace,
+} from '@goodboy/types';
 import type { FilesTouched } from '../../../../store';
 
 type Store = {
@@ -15,6 +21,7 @@ type Store = {
     { pr?: unknown; detail?: { comments: ReadonlyArray<unknown> } | null }
   >;
   sessionGitlabMr: Record<string, { mr?: unknown }>;
+  sessionExternalTasks: Record<string, SessionExternalTask>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
@@ -44,6 +51,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionGithub: {} as Record<string, { pr?: unknown }>,
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
+    sessionExternalTasks: {} as Record<string, SessionExternalTask>,
     setFocusedWorkflowRun: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
@@ -181,6 +189,7 @@ beforeEach(() => {
   store.scriptRuns = {};
   store.sessionGithub = {};
   store.sessionGitlabMr = {};
+  store.sessionExternalTasks = {};
   store.setFocusedWorkflowRun.mockReset();
   store.activateWorkflowAgent.mockReset();
   store.activateWorkflowAgent.mockResolvedValue(undefined);
@@ -301,7 +310,7 @@ describe('SessionOverviewPane resolve section', () => {
   it('surfaces the resolve section and routes a comment row to the resolve lens', () => {
     store.sessionGithub = {
       'sess-1': {
-        pr: { number: 1 },
+        pr: { number: 1, title: 'Resolve review', state: 'open' },
         detail: { comments: [{ source: 'review', resolved: false }] },
       },
     };
