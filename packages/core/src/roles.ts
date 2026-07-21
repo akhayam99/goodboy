@@ -9,7 +9,7 @@ export type RoleDefaults = {
   readonly description: string;
 };
 
-export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
+export const ROLE_DEFAULTS = {
   scout: {
     provider: 'anthropic',
     model: 'claude-haiku-4-5',
@@ -70,7 +70,7 @@ export const ROLE_DEFAULTS: Readonly<Record<AgentRole, RoleDefaults>> = {
     effort: 'medium',
     description: 'user-defined role',
   },
-};
+} as const satisfies Readonly<Record<AgentRole, RoleDefaults>>;
 
 const KNOWN_ROLES = new Set<string>(Object.keys(ROLE_DEFAULTS));
 

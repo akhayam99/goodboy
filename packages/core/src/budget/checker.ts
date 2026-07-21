@@ -56,7 +56,7 @@ export const checkProviderBudget = async (
     return UNSET_RESULT;
   }
 
-  const row = ruleRows[0] as BudgetRuleRow;
+  const row = ruleRows[0]!;
   const rule: BudgetRule = {
     id: row.id,
     provider: row.provider,
@@ -107,7 +107,7 @@ export const checkSessionBudget = async (
     return UNSET_RESULT;
   }
 
-  const budgetRow = budgetRows[0] as SessionBudgetRow;
+  const budgetRow = budgetRows[0]!;
   const budget: SessionBudget = {
     sessionId: budgetRow.session_id as SessionId,
     softCapUsd: budgetRow.soft_cap_usd,

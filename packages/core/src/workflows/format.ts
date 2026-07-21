@@ -1,5 +1,5 @@
 import type { AgentRole, ProviderId } from '@goodboy/types';
-import { getCheapModel, getDefaultBinary } from '../summarizer/client';
+import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const VALID_ROLES: ReadonlySet<AgentRole> = new Set<AgentRole>([
   'scout',
