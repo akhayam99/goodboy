@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Step, Agent, Workflow } from '@goodboy/types';
+import type { Step, Agent, Workflow, WorkflowRunId } from '@goodboy/types';
 import {
   buildStepPrompt,
   classifyWorkflowChain,
@@ -7,6 +7,7 @@ import {
   findReusableAgent,
   isWorkflowComplete,
   nextStep,
+  runsForWorkflowRun,
 } from './sequencer';
 
 const D1: Step = {
@@ -167,6 +168,35 @@ describe('isWorkflowComplete', () => {
       makeRun('d3', 'pending', 3),
     ];
     expect(isWorkflowComplete(TEMPLATE, runs)).toBe(false);
+  });
+
+  it('advances past completed parallel branch rows scoped to the workflow run', () => {
+    const workflowRunId = 'workflow-run-parallel' as WorkflowRunId;
+    const parallelTemplate: Workflow = {
+      ...TEMPLATE,
+      steps: [{ ...D1, parallelGroup: 7 }, { ...D2, parallelGroup: 7 }, D3],
+    };
+    const rows = [
+      { ...makeRun('d1', 'pending', 1), workflowRunId },
+      { ...makeRun('d2', 'pending', 2), workflowRunId },
+      { ...makeRun('d3', 'pending', 3), workflowRunId },
+      { ...makeRun('d1', 'completed', 1, 'branch-a'), workflowRunId },
+      { ...makeRun('d2', 'completed', 2, 'branch-b'), workflowRunId },
+      {
+        ...makeRun('d1', 'completed', 1, 'foreign'),
+        workflowRunId: 'workflow-run-foreign' as WorkflowRunId,
+      },
+    ];
+    const scopedRows = runsForWorkflowRun(rows, workflowRunId);
+
+    expect(nextStep(parallelTemplate, scopedRows)).toBe(D3);
+    expect(isWorkflowComplete(parallelTemplate, scopedRows)).toBe(false);
+    expect(
+      isWorkflowComplete(parallelTemplate, [
+        ...scopedRows,
+        { ...makeRun('d3', 'completed', 3), workflowRunId },
+      ]),
+    ).toBe(true);
   });
 });
 

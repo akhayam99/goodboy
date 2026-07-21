@@ -22,4 +22,8 @@ export {
   type GoalRewriteDeps,
   type GoalRewriteInput,
 } from './goal-rewrite';
-export { fallbackStepOutputSummary, summarizeStepOutput } from './step-output';
+export {
+  fallbackStepOutputSummary,
+  isFallbackStepOutputSummary,
+  summarizeStepOutput,
+} from './step-output';

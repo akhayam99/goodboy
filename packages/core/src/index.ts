@@ -140,6 +140,7 @@ export {
   SummarizerParseError,
   SummarizerSpawnError,
   fallbackStepOutputSummary,
+  isFallbackStepOutputSummary,
   inferNextActions,
   rewriteWorkflowGoal,
   summarizeStepOutput,

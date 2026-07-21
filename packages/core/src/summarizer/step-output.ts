@@ -10,6 +10,7 @@ const MAX_SUMMARY_LENGTH = 1200;
 const MAX_FIRST_LINE_LENGTH = 120;
 const FALLBACK_HEAD_LENGTH = 1500;
 const FALLBACK_TAIL_LENGTH = 400;
+const FALLBACK_JOINER = '\n...\n';
 
 const STEP_OUTPUT_SYSTEM_PROMPT = `Condense an AI coding agent step output into compact markdown for the next workflow step.
 
@@ -26,6 +27,10 @@ Output ONLY the compact markdown summary. No preamble, no surrounding quotes, no
 
 type Params = {
   readonly output: string;
+};
+
+type FallbackDetection = {
+  readonly summary: string;
 };
 
 type OneShotResult = {
@@ -91,5 +96,10 @@ export const fallbackStepOutputSummary = ({ output }: Params): string => {
   if (output.length <= FALLBACK_HEAD_LENGTH + FALLBACK_TAIL_LENGTH) {
     return output;
   }
-  return `${output.slice(0, FALLBACK_HEAD_LENGTH)}\n...\n${output.slice(-FALLBACK_TAIL_LENGTH)}`;
+  return `${output.slice(0, FALLBACK_HEAD_LENGTH)}${FALLBACK_JOINER}${output.slice(-FALLBACK_TAIL_LENGTH)}`;
 };
+
+export const isFallbackStepOutputSummary = ({ summary }: FallbackDetection): boolean =>
+  summary.length === FALLBACK_HEAD_LENGTH + FALLBACK_JOINER.length + FALLBACK_TAIL_LENGTH &&
+  summary.slice(FALLBACK_HEAD_LENGTH, FALLBACK_HEAD_LENGTH + FALLBACK_JOINER.length) ===
+    FALLBACK_JOINER;

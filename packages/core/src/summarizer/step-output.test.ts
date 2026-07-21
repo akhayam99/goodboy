@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { SummarizerDeps } from './client';
 import { SummarizerParseError } from './client';
-import { fallbackStepOutputSummary, summarizeStepOutput } from './step-output';
+import {
+  fallbackStepOutputSummary,
+  isFallbackStepOutputSummary,
+  summarizeStepOutput,
+} from './step-output';
 
 describe('summarizeStepOutput', () => {
   it('uses the summarizer invoke channel and dedicated handoff prompt', async () => {
@@ -57,10 +61,11 @@ describe('summarizeStepOutput', () => {
 describe('fallbackStepOutputSummary', () => {
   it('keeps short output and joins the exact long-output head and tail', () => {
     const longOutput = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    const fallback = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
 
     expect(fallbackStepOutputSummary({ output: 'short' })).toBe('short');
-    expect(fallbackStepOutputSummary({ output: longOutput })).toBe(
-      `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
-    );
+    expect(fallbackStepOutputSummary({ output: longOutput })).toBe(fallback);
+    expect(isFallbackStepOutputSummary({ summary: fallback })).toBe(true);
+    expect(isFallbackStepOutputSummary({ summary: 'short\n...\nsummary' })).toBe(false);
   });
 });
