@@ -77,6 +77,8 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const sessionsSidebarCollapsed = useAppStore((s) => s.sessionsSidebarCollapsed);
+  const toggleSessionsSidebar = useAppStore((s) => s.toggleSessionsSidebar);
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
@@ -686,6 +688,7 @@ export const App = () => {
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+b', toggleSessionsSidebar, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+[', () => navigateSession(-1), { ignoreInInputs: false });
@@ -804,7 +807,7 @@ export const App = () => {
             />
           ) : undefined
         }
-        leftHidden={!currentSession}
+        leftHidden={!currentSession || sessionsSidebarCollapsed}
         leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         main={
           <div className="relative h-full w-full">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import { ChatView } from '../../../chat/components/ChatView';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
@@ -29,6 +29,9 @@ import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
+import { WorkflowStrip } from './parts/WorkflowStrip';
+import { WorkflowsPane } from './parts/WorkflowsPane';
+import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -70,12 +73,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
-  const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
-  const sessionWorkflows = useAppStore(
-    (s) => s.sessionWorkflows[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
+  const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const plans = useSessionPlans(sessionId);
 
   useEffect(() => {
@@ -111,6 +109,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showLens = selectedAgentId == null && !showStudio;
   const onBareOverview = showLens && lens === null;
   const overlayHome = agentHome ?? 'agents';
+  const showWorkflowStrip = showAgentOverlay && overlayHome === 'workflows';
 
   const selectedAgentName = useMemo(
     () =>
@@ -120,15 +119,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     [phaseRuns, selectedAgentId],
   );
   const focusedWorkflowName = useMemo(() => {
-    if (focusedWorkflowRunId == null) return null;
-    const run = session.workflowRuns.find((r) => r.id === focusedWorkflowRunId);
-    if (!run) return null;
-    const workflow =
-      phaseTemplates.find((w) => w.id === run.workflowId) ??
-      sessionWorkflows.find((w) => w.id === run.workflowId) ??
-      null;
-    return workflow ? workflowKindName(workflow) : null;
-  }, [focusedWorkflowRunId, session.workflowRuns, phaseTemplates, sessionWorkflows]);
+    const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
+    const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
+    return visibleRun == null ? null : workflowKindName(visibleRun.workflow);
+  }, [focusedWorkflowRunId, attachedWorkflowRuns, lens]);
   const focusedPlanTitle = useMemo(
     () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
     [plans, focusedPlanId],
@@ -141,6 +135,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         studio,
         selectedAgentName,
         overlayHomeLens: overlayHome,
+        suppressAgentTail: showWorkflowStrip,
         focusedWorkflowName,
         focusedPlanTitle,
         lensLabel: (l) => LENS_LABEL[l],
@@ -162,6 +157,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       studio,
       selectedAgentName,
       overlayHome,
+      showWorkflowStrip,
       focusedWorkflowName,
       focusedPlanTitle,
       sessionId,
@@ -185,8 +181,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
-      <div className="flex shrink-0 items-center px-6 py-2.5">
+      <div className="flex min-w-0 shrink-0 items-center gap-2 px-6 py-2.5">
         <AppBreadcrumb crumbs={crumbs} />
+        {showWorkflowStrip && selectedAgentId != null ? (
+          <WorkflowStrip
+            sessionId={sessionId}
+            session={session}
+            selectedAgentId={selectedAgentId}
+          />
+        ) : null}
       </div>
       <Divider />
       <div className="flex min-h-0 flex-1">
@@ -218,15 +221,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 {lens === 'plans' ? (
                   <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
                 ) : null}
-                {lens === 'workflows' ? (
-                  <PaneShell
-                    title="Workflows"
-                    description="Sequences of agents that drive this session toward its goal."
-                    width="3xl"
-                  >
-                    <AgentsSection task={session} only="workflows" />
-                  </PaneShell>
-                ) : null}
+                {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
                 {lens === 'resolve' ? (
                   <PaneShell
                     title="Resolve"
@@ -270,23 +265,27 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
             {showAgentOverlay ? (
               <div className="absolute inset-0 z-20 flex bg-background motion-safe:animate-studio-in">
-                <div className="flex w-72 shrink-0 flex-col bg-background">
-                  <button
-                    type="button"
-                    onClick={() => setActiveLens(sessionId, overlayHome)}
-                    className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                  >
-                    <ArrowLeft size={14} aria-hidden className="shrink-0" />
-                    <span className="truncate">{LENS_LABEL[overlayHome]}</span>
-                  </button>
-                  <Divider />
-                  <ScrollFade className="min-h-0 flex-1">
-                    <div className="px-2 py-2">
-                      <AgentsSection task={session} only={overlayHome} />
+                {overlayHome === 'workflows' ? null : (
+                  <>
+                    <div className="flex w-72 shrink-0 flex-col bg-background">
+                      <button
+                        type="button"
+                        onClick={() => setActiveLens(sessionId, overlayHome)}
+                        className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                      >
+                        <ArrowLeft size={14} aria-hidden className="shrink-0" />
+                        <span className="truncate">{LENS_LABEL[overlayHome]}</span>
+                      </button>
+                      <Divider />
+                      <ScrollFade className="min-h-0 flex-1">
+                        <div className="px-2 py-2">
+                          <AgentsSection task={session} only={overlayHome} />
+                        </div>
+                      </ScrollFade>
                     </div>
-                  </ScrollFade>
-                </div>
-                <Divider orientation="vertical" />
+                    <Divider orientation="vertical" />
+                  </>
+                )}
                 <div className="min-h-0 min-w-0 flex-1">
                   <ChatView session={session} isActive={isActive && selectedAgentId != null} />
                 </div>

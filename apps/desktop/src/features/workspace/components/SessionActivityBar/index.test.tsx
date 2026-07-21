@@ -11,6 +11,7 @@ const { state } = vi.hoisted(() => ({
     sessionExternalTasks: {} as Record<string, unknown>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
+    setSessionsSidebarCollapsed: vi.fn(),
   },
 }));
 
@@ -91,6 +92,7 @@ function clickCheckbox(index: number): HTMLElement {
 beforeEach(() => {
   state.bulkUnarchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
+  state.setSessionsSidebarCollapsed.mockClear();
   state.sessionExternalTasks = {};
 });
 
@@ -106,6 +108,12 @@ describe('SessionActivityBar, baseline', () => {
   it('renders empty-state copy when no sessions in active tab', () => {
     renderBar([]);
     expect(screen.getByText(/no sessions yet/i)).toBeDefined();
+  });
+
+  it('collapses the sessions sidebar from the header button', () => {
+    renderBar([]);
+    fireEvent.click(screen.getByRole('button', { name: 'hide sessions' }));
+    expect(state.setSessionsSidebarCollapsed).toHaveBeenCalledWith(true);
   });
 });
 

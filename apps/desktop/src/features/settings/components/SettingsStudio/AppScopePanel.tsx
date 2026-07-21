@@ -23,6 +23,7 @@ type Props = {
 const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly label: string }> = [
   { combo: ['⌘', 'K'], label: 'command palette' },
   { combo: ['⌘', 'N'], label: 'new session' },
+  { combo: ['⌘', 'B'], label: 'toggle sessions sidebar' },
   { combo: ['⌘', '1', '..', '9'], label: 'jump to workspace 1 to 9' },
   { combo: ['⌘', '['], label: 'back (lens history)' },
   { combo: ['⌘', ']'], label: 'forward (lens history)' },

@@ -1,13 +1,9 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import { cn } from '@goodboy/ui';
 import {
-  Ban,
-  Check,
   ChevronDown,
   ChevronRight,
   ChevronUp,
-  Link2,
-  Pause,
   Play,
   Workflow as WorkflowIcon,
   Zap,
@@ -38,6 +34,7 @@ import { WorkflowStepRow } from './WorkflowStepRow';
 import { ScoutSubtree } from './ScoutSubtree';
 import { ClusterChildRow } from './ClusterChildRow';
 import { WorkflowKillButton } from './WorkflowKillButton';
+import { WorkflowRunStatus } from './WorkflowRunStatus';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -53,6 +50,7 @@ type Props = {
   readonly workflowExpand: Readonly<Record<string, boolean>> | undefined;
   readonly workflowNameByRunId: ReadonlyMap<string, string>;
   readonly forceExpanded: boolean;
+  readonly variant?: 'sidebar' | 'detail';
   readonly toggleWorkflowExpand: AppStore['toggleWorkflowExpand'];
   readonly startWorkflowRun: AppStore['startWorkflowRun'];
   readonly setWorkflowRunAutoRun: AppStore['setWorkflowRunAutoRun'];
@@ -93,6 +91,7 @@ export const WorkflowRow = ({
   workflowExpand,
   workflowNameByRunId,
   forceExpanded,
+  variant = 'sidebar',
   toggleWorkflowExpand,
   startWorkflowRun,
   setWorkflowRunAutoRun,
@@ -130,72 +129,88 @@ export const WorkflowRow = ({
   const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
   const isCompleted = !isDiscarded && total > 0 && done >= total;
   const unreadCount = countUnread(wfAgents);
-  const expanded =
-    focusedWorkflowRunId != null
+  const isDetail = variant === 'detail';
+  const expanded = isDetail
+    ? true
+    : focusedWorkflowRunId != null
       ? run.id === focusedWorkflowRunId
       : (workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0)));
   const hasStarted = wfAgents.length > 0;
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
-  const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
   const predecessorName = run.chainAfterId
     ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
     : 'previous';
   return (
-    <div className={cn('flex flex-col', forceExpanded && 'gap-1.5', isDiscarded && 'opacity-70')}>
-      <div className="flex items-center gap-0.5">
-        <button
-          type="button"
-          onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
-          title={workflow.name || name}
-          aria-expanded={expanded}
-          aria-label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
-        >
-          {expanded ? (
-            <ChevronDown size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
-          ) : (
-            <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
-          )}
-          {forceExpanded ? (
-            <WorkflowIcon size={13} aria-hidden className="shrink-0 text-accent" />
-          ) : null}
-          <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-            {name}
-          </span>
-          {unreadCount > 0 ? (
-            <span
-              className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
-              title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
-            >
-              <span aria-hidden className="size-1.5 rounded-full bg-warning" />
-              {unreadCount}
+    <div
+      className={cn(
+        'flex flex-col',
+        isDetail ? 'gap-4' : forceExpanded && 'gap-1.5',
+        isDiscarded && 'opacity-70',
+      )}
+    >
+      <div className={cn('flex gap-2', isDetail ? 'items-start' : 'items-center gap-0.5')}>
+        {isDetail ? (
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+              <WorkflowIcon size={17} aria-hidden className="text-accent" />
             </span>
-          ) : null}
-          {isDiscarded ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              <Ban size={10} aria-hidden /> discarded
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-base font-semibold text-foreground">{name}</h2>
+                <WorkflowRunStatus
+                  run={run}
+                  workflow={workflow}
+                  agents={wfAgents}
+                  predecessorName={predecessorName}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {done}/{total} steps
+              </span>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
+            title={workflow.name || name}
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
+          >
+            {expanded ? (
+              <ChevronDown size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
+            ) : (
+              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
+            )}
+            {forceExpanded ? (
+              <WorkflowIcon size={13} aria-hidden className="shrink-0 text-accent" />
+            ) : null}
+            <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+              {name}
             </span>
-          ) : isCompleted ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-success">
-              <Check size={10} aria-hidden /> completed
-            </span>
-          ) : isQueuedManual ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              <Pause size={10} aria-hidden /> queued (manual)
-            </span>
-          ) : isQueuedAfter ? (
-            <span
-              className="inline-flex max-w-[10rem] shrink-0 items-center gap-1 truncate rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-              title={`after ${predecessorName}`}
-            >
-              <Link2 size={10} aria-hidden /> after {predecessorName}
-            </span>
-          ) : total > 0 ? (
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
-              {done}/{total}
-            </span>
-          ) : null}
-        </button>
+            {unreadCount > 0 ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+                title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
+              >
+                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                {unreadCount}
+              </span>
+            ) : null}
+            <WorkflowRunStatus
+              run={run}
+              workflow={workflow}
+              agents={wfAgents}
+              predecessorName={predecessorName}
+            />
+            {total > 0 ? (
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
+                {done}/{total}
+              </span>
+            ) : null}
+          </button>
+        )}
         {!isDiscarded && !isCompleted && (
           <div className="flex shrink-0 items-center">
             {isQueuedManual ? (
@@ -259,7 +274,12 @@ export const WorkflowRow = ({
       </div>
       {expanded ? (
         wfAgents.length > 0 ? (
-          <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
+          <div
+            className={cn(
+              'flex flex-col gap-1 pb-1',
+              isDetail ? null : forceExpanded ? 'pl-1' : 'pl-3',
+            )}
+          >
             {wfAgents.map((run, index) => {
               const isActionable = run.stepId === actionableStepId && run.status === 'pending';
               const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
@@ -360,13 +380,13 @@ export const WorkflowRow = ({
             })}
           </div>
         ) : (
-          <p className="pb-1 pl-3 text-2xs text-muted-foreground/60">
+          <p className={cn('pb-1 text-2xs text-muted-foreground/60', !isDetail && 'pl-3')}>
             No agents yet for this workflow.
           </p>
         )
       ) : null}
       {expanded && !isDiscarded && wfBlockReason === 'failed-step' ? (
-        <div className={cn('pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
+        <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
           <WorkflowNextStepCta
             workflow={workflow}
             runs={wfAgents}
@@ -376,7 +396,7 @@ export const WorkflowRow = ({
         </div>
       ) : null}
       {expanded ? (
-        <div className="pb-1 pl-3">
+        <div className={cn('pb-1', !isDetail && 'pl-3')}>
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
         </div>
       ) : null}
