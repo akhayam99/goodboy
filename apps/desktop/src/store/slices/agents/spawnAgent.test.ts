@@ -137,6 +137,16 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     listConsumptionsForPlanSpy.mockResolvedValue([]);
   });
 
+  it('persists an inferred kind when no override is provided', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'debug startup crash' });
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'debugger', name: 'debug startup crash' }),
+    );
+  });
+
   it('fans out an explicit (triggeredPlanId) plan with 2+ clusters', async () => {
     const { sendTurn, spawn } = buildHarness([makePlan({ clusters: TWO_CLUSTERS })]);
 

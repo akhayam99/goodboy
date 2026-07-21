@@ -17,7 +17,7 @@ import {
 import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
-import { classifyAgent } from '../../../../session/agent-kind';
+import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -28,11 +28,7 @@ import {
   useSessionUnreadLens,
 } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
-import {
-  isStandaloneAgent,
-  resolveAttentionLens,
-  selectOpenQuestions,
-} from '../../SessionOverviewPane/lib';
+import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverviewPane/lib';
 
 type LensColumnProps = {
   readonly session: Session;
@@ -147,7 +143,8 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           icon: Layers,
           tone: 'accent',
           count: activeWorkflows,
-          dot: attentionLens === 'workflows' ? 'attention' : undefined,
+          dot:
+            attentionLens === 'workflows' || unreadLens === 'workflows' ? 'attention' : undefined,
         },
         {
           kind: 'agents',
@@ -155,7 +152,12 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           icon: Bot,
           tone: 'primary',
           count: nonResolverStandalone.length,
-          dot: attentionLens === 'agents' ? 'attention' : hasRunningAgent ? 'running' : undefined,
+          dot:
+            attentionLens === 'agents' || unreadLens === 'agents'
+              ? 'attention'
+              : hasRunningAgent
+                ? 'running'
+                : undefined,
         },
         {
           kind: 'resolve',
@@ -163,7 +165,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           icon: MessageSquareReply,
           tone: 'success',
           count: openResolvers,
-          dot: attentionLens === 'resolve' ? 'attention' : undefined,
+          dot: attentionLens === 'resolve' || unreadLens === 'resolve' ? 'attention' : undefined,
           secondaryDot: hasPendingBatch,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
@@ -236,6 +238,7 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
                   {row.count != null && row.count > 0 ? (
                     <span className="flex shrink-0 items-center gap-1.5">
                       {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                      {row.dot === 'running' ? <StatusDot tone="info" size="sm" pulsing /> : null}
                       <span
                         className={cn(
                           'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',

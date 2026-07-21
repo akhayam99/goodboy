@@ -85,6 +85,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const workspaceVerbositySeed =
       state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
+    const resolvedKind = args.kindOverride ?? inferAgentKindFromName(resolvedName);
     const inserted = await invokeAgentInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -92,7 +93,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       ordinal: nextOrdinal,
       name: resolvedName,
       status: 'pending',
-      ...(args.kindOverride !== undefined && { kind: args.kindOverride }),
+      kind: resolvedKind,
       ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
       ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
@@ -122,9 +123,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     }));
     const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
     const effectiveKind: AgentKind =
-      args.kindOverride ??
-      (inserted.kind as AgentKind | undefined) ??
-      inferAgentKindFromName(resolvedName);
+      args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;
     const isImplementer = effectiveKind === 'implementer';
     const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
     const engagePlan = isImplementer || (kindConsumesPlan(effectiveKind) && hasExplicitPlanContext);

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { resolveAgentKind } from '../../agent-kind';
+import { classifyAgent, type AgentKind } from '../../agent-kind';
 import {
   buildResolverIndex,
   resolverStatus,
@@ -14,10 +14,9 @@ export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const messages = useAppStore((s) => s.messages[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore(
     useShallow((s) => {
-      const out: Record<string, ReturnType<typeof resolveAgentKind>> = {};
+      const out: Record<string, AgentKind> = {};
       const runs = s.sessionPhaseRuns[sessionId];
       if (!runs) {
         return out;
@@ -63,33 +62,15 @@ export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
     }),
   );
 
-  const firstUserTextByAgentId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const m of messages) {
-      if (m.role !== 'user') {
-        continue;
-      }
-      if (map.has(m.agentId)) {
-        continue;
-      }
-      map.set(m.agentId, m.content);
-    }
-    return map;
-  }, [messages]);
-
   const resolverAgents = useMemo(
     () =>
       phaseRuns.filter(
         (r) =>
           r.parentAgentId == null &&
           r.stepId == null &&
-          resolveAgentKind(
-            r.name,
-            firstUserTextByAgentId.get(r.id) ?? null,
-            agentKindOverride[r.id] ?? null,
-          ) === 'resolver',
+          classifyAgent(r, agentKindOverride[r.id] ?? null) === 'resolver',
       ),
-    [phaseRuns, firstUserTextByAgentId, agentKindOverride],
+    [phaseRuns, agentKindOverride],
   );
 
   return useMemo(() => {

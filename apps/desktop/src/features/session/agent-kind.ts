@@ -6,7 +6,7 @@ export type AgentKind = AgentKindLabel;
 export type AgentHomeLens = 'agents' | 'resolve' | 'workflows';
 
 export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
-  if (agent.workflowRunId != null) {
+  if (agent.workflowRunId != null && agent.stepId != null) {
     return 'workflows';
   }
   if (kind === 'resolver') {
@@ -308,6 +308,22 @@ export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKi
   }
   return inferAgentKindFromName(agent.name);
 };
+
+export const isStandaloneAgent = (agent: Agent): boolean =>
+  agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null);
+
+export const selectStandaloneAgents = (agents: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
+  agents.filter(isStandaloneAgent);
+
+export const selectNonResolverStandaloneAgents = (
+  agents: ReadonlyArray<Agent>,
+  agentKindOverride: Readonly<Record<string, AgentKind>>,
+): ReadonlyArray<Agent> =>
+  agents.filter(
+    (agent) =>
+      isStandaloneAgent(agent) &&
+      classifyAgent(agent, agentKindOverride[agent.id] ?? null) !== 'resolver',
+  );
 
 export const resolveAgentKind = (
   name: string,

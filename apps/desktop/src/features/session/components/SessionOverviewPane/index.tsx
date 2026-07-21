@@ -39,13 +39,8 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
-import { classifyAgent } from '../../agent-kind';
-import {
-  resolveAttentionLens,
-  selectAttention,
-  selectOpenQuestions,
-  selectStandaloneAgents,
-} from './lib';
+import { classifyAgent, selectStandaloneAgents } from '../../agent-kind';
+import { resolveAttentionLens, selectAttention, selectOpenQuestions } from './lib';
 import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentMenu';
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';

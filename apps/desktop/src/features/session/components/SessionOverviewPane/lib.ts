@@ -1,24 +1,9 @@
-import type { Agent, OpenQuestion, SessionStageInfo } from '@goodboy/types';
-import { classifyAgent, type AgentKind } from '../../agent-kind';
+import type { OpenQuestion, SessionStageInfo } from '@goodboy/types';
 
 export type AttentionSummary = {
   readonly active: boolean;
   readonly reason: string;
 };
-
-export const isStandaloneAgent = (agent: Agent): boolean =>
-  agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null);
-
-export const selectStandaloneAgents = (agents: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
-  agents.filter(isStandaloneAgent);
-
-export const selectNonResolverStandaloneAgents = (
-  agents: ReadonlyArray<Agent>,
-  agentKindOverride: Readonly<Record<string, AgentKind>>,
-): ReadonlyArray<Agent> =>
-  agents.filter(
-    (a) => isStandaloneAgent(a) && classifyAgent(a, agentKindOverride[a.id] ?? null) !== 'resolver',
-  );
 
 export const selectAttention = (stage: SessionStageInfo): AttentionSummary => ({
   active: stage.stage === 'attention',

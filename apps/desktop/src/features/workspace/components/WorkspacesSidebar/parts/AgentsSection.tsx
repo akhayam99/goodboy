@@ -30,7 +30,7 @@ import { pickNextWorkflowStep } from '../../../../../features/workflows/componen
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format';
-import { type AgentKind, resolveAgentKind } from '../../../../../features/session/agent-kind';
+import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
 import { formatError } from '../../../../../shared/lib/errors';
 import { SectionToggle } from './SectionToggle';
 import { PlanReadySuggestion } from './PlanReadySuggestion';
@@ -340,14 +340,14 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
 
   const firstUserTextByAgentId = useMemo(() => {
     const map = new Map<string, string>();
-    for (const m of messages) {
-      if (m.role !== 'user') {
+    for (const message of messages) {
+      if (message.role !== 'user') {
         continue;
       }
-      if (map.has(m.agentId)) {
+      if (map.has(message.agentId)) {
         continue;
       }
-      map.set(m.agentId, m.content);
+      map.set(message.agentId, message.content);
     }
     return map;
   }, [messages]);
@@ -358,13 +358,9 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
         (r) =>
           r.parentAgentId == null &&
           r.stepId == null &&
-          resolveAgentKind(
-            r.name,
-            firstUserTextByAgentId.get(r.id) ?? null,
-            agentKindOverride[r.id] ?? null,
-          ) === 'resolver',
+          classifyAgent(r, agentKindOverride[r.id] ?? null) === 'resolver',
       ),
-    [sorted, firstUserTextByAgentId, agentKindOverride],
+    [sorted, agentKindOverride],
   );
   const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
   const commentByThreadId = useMemo(() => {

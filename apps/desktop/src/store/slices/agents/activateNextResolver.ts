@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { resolveAgentKind } from '../../../features/session/agent-kind';
+import { classifyAgent } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
 export const activateNextResolver = (set: SetFn, get: GetFn) => {
@@ -7,7 +7,7 @@ export const activateNextResolver = (set: SetFn, get: GetFn) => {
     const pending = get().pendingResolverKickoff;
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const resolvers = runs.filter(
-      (a) => resolveAgentKind(a.name, null, get().agentKindOverride[a.id] ?? null) === 'resolver',
+      (agent) => classifyAgent(agent, get().agentKindOverride[agent.id] ?? null) === 'resolver',
     );
     const anyRunning = resolvers.some((a) => a.status === 'running');
     if (anyRunning) {

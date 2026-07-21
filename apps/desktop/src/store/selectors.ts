@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
-import { classifyAgent, type AgentKind } from '../features/session/agent-kind';
-import { selectNonResolverStandaloneAgents } from '../features/session/components/SessionOverviewPane/lib';
+import {
+  classifyAgent,
+  selectNonResolverStandaloneAgents,
+  type AgentKind,
+} from '../features/session/agent-kind';
 import type {
   Agent,
   ContextSlot,
@@ -428,13 +431,12 @@ export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolea
 
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 
-export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyArray<Agent> => {
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
-  const agentKindOverride = useAppStore(
-    useShallow((s) => {
+const useSessionAgentKindOverrides = (sessionId: SessionId): Readonly<Record<string, AgentKind>> =>
+  useAppStore(
+    useShallow((state) => {
       const overrides: Record<string, AgentKind> = {};
-      for (const agent of s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS) {
-        const override = s.agentKindOverride[agent.id];
+      for (const agent of state.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS) {
+        const override = state.agentKindOverride[agent.id];
         if (override != null) {
           overrides[agent.id] = override;
         }
@@ -442,6 +444,10 @@ export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyAr
       return overrides;
     }),
   );
+
+export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyArray<Agent> => {
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
+  const agentKindOverride = useSessionAgentKindOverrides(sessionId);
   return useMemo(
     () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
     [phaseRuns, agentKindOverride],
@@ -454,22 +460,21 @@ export const useSessionUnreadLens = (sessionId: SessionId): SessionUnreadLens =>
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const isCurrentSession = useAppStore((s) => s.currentSessionId === sessionId);
-  const agentKindOverride = useAppStore(
-    useShallow((s) => {
-      const overrides: Record<string, AgentKind> = {};
-      for (const agent of s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS) {
-        const override = s.agentKindOverride[agent.id];
-        if (override != null) {
-          overrides[agent.id] = override;
-        }
-      }
-      return overrides;
-    }),
-  );
+  const agentKindOverride = useSessionAgentKindOverrides(sessionId);
   return useMemo(() => {
-    const unreadAgent = phaseRuns.find((agent) =>
-      agentHasUnread(agent, isCurrentSession && agent.id === selectedAgentId),
-    );
+    let unreadAgent: Agent | null = null;
+    for (const agent of phaseRuns) {
+      if (!agentHasUnread(agent, isCurrentSession && agent.id === selectedAgentId)) {
+        continue;
+      }
+      if (
+        unreadAgent != null &&
+        (agent.lastFinishedAt ?? '') <= (unreadAgent.lastFinishedAt ?? '')
+      ) {
+        continue;
+      }
+      unreadAgent = agent;
+    }
     if (unreadAgent == null) {
       return null;
     }

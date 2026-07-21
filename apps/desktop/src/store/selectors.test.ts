@@ -132,4 +132,27 @@ describe('useSessionUnreadLens', () => {
 
     expect(result.current).toBeNull();
   });
+
+  it('routes to the most recently finished unread agent lens', () => {
+    store.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        createAgent({
+          id: 'older-resolver' as AgentId,
+          kind: 'resolver',
+          lastFinishedAt: '2026-07-21T10:00:00.000Z',
+        }),
+        createAgent({
+          id: 'newer-workflow' as AgentId,
+          kind: 'implementer',
+          workflowRunId: 'workflow-1' as WorkflowRunId,
+          stepId: 'step-1' as StepId,
+          lastFinishedAt: '2026-07-21T11:00:00.000Z',
+        }),
+      ],
+    };
+
+    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
+
+    expect(result.current).toBe('workflows');
+  });
 });
