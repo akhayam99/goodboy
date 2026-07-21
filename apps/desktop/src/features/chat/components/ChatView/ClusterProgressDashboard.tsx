@@ -16,7 +16,7 @@ type Props = {
   readonly onAdvance: (childAgentId: AgentId) => void;
 };
 
-const accent = MARKER_ACCENT.clusters;
+const accent = MARKER_ACCENT.merged;
 
 export const ClusterProgressDashboard = ({
   sessionId,
@@ -75,7 +75,7 @@ export const ClusterProgressDashboard = ({
             'mt-1 flex items-center justify-center gap-1.5 self-end rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
             confirming
               ? cn(accent.border, accent.bg, accent.text)
-              : 'border-border text-muted-foreground hover:border-merged/40 hover:bg-merged/5',
+              : cn('border-border text-muted-foreground', accent.hoverBorder, accent.hoverBgSoft),
           )}
         >
           {confirming ? 'advance without marker?' : 'advance to next cluster'}

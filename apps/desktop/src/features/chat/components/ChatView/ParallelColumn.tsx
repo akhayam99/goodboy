@@ -4,9 +4,11 @@ import type { Agent, ProviderRunId } from '@goodboy/types';
 import { ScrollFade, StatusDot } from '@goodboy/ui';
 import { useAppStore, useTranscript } from '../../../../store';
 import { filterEventsByRunId, reduceTranscript } from '../../utils/transcript-items';
+import { clusterOperations } from '../../utils/cluster-operations';
 import { inferAgentKindFromName } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { TranscriptCard } from '../TranscriptCards';
+import { OperationsCluster } from '../OperationsCluster';
 import { useScrollPin } from './useScrollPin';
 
 type Props = {
@@ -28,7 +30,8 @@ export const ParallelColumn = ({
 }: Props) => {
   const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
   const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
-  const { scrollerRef, pinned, onScroll } = useScrollPin([items]);
+  const rows = useMemo(() => clusterOperations(items), [items]);
+  const { scrollerRef, pinned, onScroll } = useScrollPin([rows]);
   const fadeHostRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto');
@@ -70,18 +73,31 @@ export const ParallelColumn = ({
       </div>
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade className="flex-1" viewportClassName="px-3 py-3">
-          {items.length === 0 ? (
+          {rows.length === 0 ? (
             <p className="text-xs text-muted-foreground">no events yet for {label}.</p>
           ) : (
             <ul className="flex flex-col gap-2.5">
-              {items.map((item) => (
-                <li key={item.key}>
-                  <TranscriptCard
-                    item={item}
-                    workingDir={workingDir}
-                    onRefreshAuth={onRefreshAuth}
-                    onOpenDiff={onOpenDiff}
-                  />
+              {rows.map((row) => (
+                <li key={row.key}>
+                  {row.kind === 'operations' ? (
+                    <OperationsCluster
+                      items={row.items}
+                      sessionId={agent?.sessionId ?? null}
+                      agentId={agent?.id ?? null}
+                      workingDir={workingDir}
+                      onRefreshAuth={onRefreshAuth}
+                      onOpenDiff={onOpenDiff}
+                    />
+                  ) : (
+                    <TranscriptCard
+                      item={row.item}
+                      sessionId={agent?.sessionId ?? null}
+                      agentId={agent?.id ?? null}
+                      workingDir={workingDir}
+                      onRefreshAuth={onRefreshAuth}
+                      onOpenDiff={onOpenDiff}
+                    />
+                  )}
                 </li>
               ))}
             </ul>

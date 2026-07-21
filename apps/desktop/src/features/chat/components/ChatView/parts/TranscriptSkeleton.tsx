@@ -1,4 +1,7 @@
 import { Skeleton, SkeletonText } from '@goodboy/ui';
+import { MARKER_ACCENT } from '../../marker-accents';
+
+const accent = MARKER_ACCENT.neutral;
 
 export const TranscriptSkeleton = () => {
   return (
@@ -14,7 +17,7 @@ export const TranscriptSkeleton = () => {
           {/* operations chip line */}
           <Skeleton className="h-5 w-32 rounded-md" />
           {/* assistant reply */}
-          <div className="rounded-md bg-subtle/40 px-3 py-2">
+          <div className={`rounded-md px-3 py-2 ${accent.bgSoft}`}>
             <SkeletonText lines={3} />
           </div>
         </div>

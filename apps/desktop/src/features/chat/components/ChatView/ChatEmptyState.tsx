@@ -186,7 +186,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
 
 function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-border-soft bg-muted px-1 font-mono text-[10px] leading-none text-muted-foreground">
+    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-border-soft bg-muted px-1 font-mono text-2xs leading-none text-muted-foreground">
       {children}
     </kbd>
   );

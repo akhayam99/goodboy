@@ -5,6 +5,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptCard } from '../TranscriptCards';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
 
 type OperationsClusterProps = {
   readonly items: ReadonlyArray<TranscriptItem>;
@@ -28,6 +29,8 @@ function runningTool(
 }
 
 const accent = MARKER_ACCENT.operations;
+const dangerAccent = MARKER_ACCENT.danger;
+const successAccent = MARKER_ACCENT.success;
 
 export const OperationsCluster = ({
   items,
@@ -63,14 +66,16 @@ export const OperationsCluster = ({
 
   return (
     <div className="group">
-      <button
+      <TranscriptShell
+        as="button"
         type="button"
         aria-expanded={open}
         aria-label={ariaLabel}
         onClick={() => setOpen((v) => !v)}
+        tone={showError ? 'danger' : 'operations'}
+        variant="leftBorder"
         className={cn(
-          'relative flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
-          showError && 'border border-danger/20 bg-danger/5',
+          'relative flex w-full items-center gap-2 text-left text-xs motion-safe:transition-opacity group-hover:opacity-80',
           running != null && 'animate-border-pulse',
         )}
       >
@@ -105,19 +110,22 @@ export const OperationsCluster = ({
             <span aria-hidden className="text-muted-foreground/40">
               ·
             </span>
-            <span className="text-primary">{successCount} success</span>
+            <span className={successAccent.text}>{successCount} success</span>
             <span aria-hidden className="text-muted-foreground/40">
               ·
             </span>
-            <span className="text-danger">{errorCount} failed</span>
+            <span className={dangerAccent.text}>{errorCount} failed</span>
           </span>
         ) : summary.length > 0 ? (
           <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
         ) : null}
-      </button>
+      </TranscriptShell>
       {open ? (
-        <div
-          className={cn('ml-2 mt-0.5 flex min-w-0 flex-col gap-0.5 border-l pl-3', accent.border)}
+        <TranscriptShell
+          tone="operations"
+          variant="leftBorder"
+          nested
+          className="ml-2 mt-0.5 flex min-w-0 flex-col gap-0.5"
         >
           {items.map((item) => (
             <TranscriptCard
@@ -130,7 +138,7 @@ export const OperationsCluster = ({
               onOpenDiff={onOpenDiff}
             />
           ))}
-        </div>
+        </TranscriptShell>
       ) : null}
     </div>
   );

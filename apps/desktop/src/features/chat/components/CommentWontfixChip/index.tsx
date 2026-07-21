@@ -4,6 +4,11 @@ import { cn } from '@goodboy/ui';
 import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
+
+const successAccent = MARKER_ACCENT.success;
+const warningAccent = MARKER_ACCENT.warning;
 
 type Props = {
   readonly assistantText: string;
@@ -37,10 +42,14 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
 
   if (state.kind === 'resolved' || resolvedOnGithub) {
     return (
-      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">
+      <TranscriptShell
+        tone="success"
+        variant="pill"
+        className={`mt-2 inline-flex items-center gap-1.5 text-xs font-medium ${successAccent.text}`}
+      >
         <CheckCheck size={11} aria-hidden />
         <span>marked solved with explanation</span>
-      </div>
+      </TranscriptShell>
     );
   }
 
@@ -60,8 +69,12 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
   };
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-[11px]">
-      <Ban size={12} aria-hidden className="text-warning" />
+    <TranscriptShell
+      tone="warning"
+      variant="boxed"
+      className="mt-2 flex flex-wrap items-center gap-1.5 text-xs"
+    >
+      <Ban size={12} aria-hidden className={warningAccent.icon} />
       <span className="font-medium text-foreground">not worth a change</span>
       <span className="min-w-0 max-w-xs truncate text-muted-foreground/80" title={marker.reason}>
         {marker.reason}
@@ -75,7 +88,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
           aria-label="post the explanation and mark the thread solved"
           title="post the reason as a reply and resolve the thread on GitHub"
           className={cn(
-            'relative inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
+            'relative inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
             busy && 'animate-border-pulse',
           )}
         >
@@ -93,6 +106,6 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
           <X size={10} aria-hidden />
         </button>
       </div>
-    </div>
+    </TranscriptShell>
   );
 };

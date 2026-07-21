@@ -8,6 +8,11 @@ import type {
 } from '@goodboy/types';
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
+
+const dangerAccent = MARKER_ACCENT.danger;
+const warningAccent = MARKER_ACCENT.warning;
 
 type Props = {
   readonly sessionPreference: SessionProviderPreference;
@@ -45,19 +50,23 @@ export const RoutingIndicator = ({
 
   if (decision.reason === 'all-exceeded') {
     return (
-      <div className="flex items-center gap-2 rounded-md border border-danger/30 bg-danger/5 px-2.5 py-1.5 text-xs text-danger">
+      <TranscriptShell
+        tone="danger"
+        variant="boxed"
+        className={`flex items-center gap-2 text-xs ${dangerAccent.text}`}
+      >
         <AlertTriangle size={13} aria-hidden className="shrink-0" />
         <span className="flex-1">all provider budgets exceeded</span>
         {onSendAnyway ? (
           <button
             type="button"
             onClick={onSendAnyway}
-            className="shrink-0 rounded border border-danger/30 px-2 py-0.5 font-medium text-danger transition-colors hover:bg-danger/10"
+            className={`shrink-0 rounded border px-2 py-0.5 font-medium transition-colors ${dangerAccent.border} ${dangerAccent.hoverBg} ${dangerAccent.text}`}
           >
             send anyway
           </button>
         ) : null}
-      </div>
+      </TranscriptShell>
     );
   }
 
@@ -75,11 +84,15 @@ export const RoutingIndicator = ({
       : `${fromLabel} disconnected`;
 
   return (
-    <div className="flex w-fit items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-xs text-warning">
+    <TranscriptShell
+      tone="warning"
+      variant="boxed"
+      className={`flex w-fit items-center gap-1.5 text-xs ${warningAccent.text}`}
+    >
       <AlertTriangle size={13} aria-hidden className="shrink-0" />
       <span>
         fallback: {label} / {decision.selectedModel} ({cause})
       </span>
-    </div>
+    </TranscriptShell>
   );
 };

@@ -28,10 +28,30 @@ describe('PhaseTransitionCard', () => {
     expect(screen.queryByText('carry me forward')).toBeNull();
   });
 
-  it('reveals the carry-forward context when expanded', () => {
+  it('renders plain legacy context when expanded', () => {
     render(<PhaseTransitionCard item={item} />);
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('carry me forward')).toBeDefined();
+  });
+
+  it('strips the redundant workflow heading and renders structured sections', () => {
+    const structuredItem = {
+      ...item,
+      carryForwardContext: [
+        '## workflow handoff',
+        '### step 1 output: discover',
+        'Ready to build.',
+        '### earlier steps',
+        '- step 0 (scope): Requirements settled.',
+      ].join('\n'),
+    } satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
+    render(<PhaseTransitionCard item={structuredItem} />);
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.queryByRole('heading', { name: 'workflow handoff' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'step 1 output: discover' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'earlier steps' })).toBeDefined();
+    expect(screen.getByText('step 0 (scope): Requirements settled.')).toBeDefined();
   });
 
   it('renders the degraded handoff badge only when degraded', () => {

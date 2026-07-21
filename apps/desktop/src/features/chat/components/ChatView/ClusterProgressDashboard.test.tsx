@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { ClusterProgressDashboard } from './ClusterProgressDashboard';
 import type { ClusterDashboardItem } from './clusterDashboard';
+import { MARKER_ACCENT } from '../marker-accents';
 
 const agent = (over: {
   id: string;
@@ -300,4 +301,4 @@ describe('ClusterProgressDashboard', () => {
   });
 });
 
-const MARKER_ACCENT_BG = 'bg-merged/10';
+const MARKER_ACCENT_BG = MARKER_ACCENT.merged.bg;

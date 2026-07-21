@@ -5,8 +5,10 @@ import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { QuestionCard } from '../../../context/components/QuestionsTab/QuestionCard';
 import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
+import { MARKER_ACCENT } from '../marker-accents';
 
 const RESOLVED_BY_AGENT = '[resolved by agent]';
+const successAccent = MARKER_ACCENT.success;
 
 type Props = {
   question: OpenQuestion;
@@ -73,7 +75,7 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
     <div
       className={cn(
         'rounded-lg border bg-elevated px-3 py-2 shadow-sm',
-        resolvedByAgent ? 'border-border-soft opacity-80' : 'border-success/30',
+        resolvedByAgent ? 'border-border-soft opacity-80' : successAccent.border,
       )}
     >
       <button
@@ -90,7 +92,7 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
           {expanded ? (
             <Markdown
               text={question.text}
-              className="min-w-0 gap-1.5 break-words text-[13px] leading-relaxed text-foreground"
+              className="min-w-0 gap-1.5 break-words text-sm leading-relaxed text-foreground"
             />
           ) : (
             <p className="min-w-0 break-words text-xs leading-relaxed text-foreground line-clamp-1">
@@ -117,7 +119,7 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
               <span className="text-2xs font-medium text-muted-foreground">You answered:</span>
               <Markdown
                 text={question.userAnswer ?? ''}
-                className="mt-0.5 gap-1.5 break-words text-[13px] leading-relaxed text-foreground"
+                className="mt-0.5 gap-1.5 break-words text-sm leading-relaxed text-foreground"
               />
             </>
           )}

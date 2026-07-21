@@ -1,6 +1,10 @@
 import { Button } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
+import { TranscriptShell } from '../TranscriptShell';
+import { MARKER_ACCENT } from '../marker-accents';
+
+const accent = MARKER_ACCENT.warning;
 
 type Props = {
   readonly providerId: ProviderId;
@@ -20,9 +24,9 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
   };
 
   return (
-    <div className="rounded-md border border-warning/40 bg-warning/5 px-3 py-3 text-sm">
+    <TranscriptShell tone="warning" variant="boxed" className="text-sm">
       <div className="flex items-start gap-2">
-        <span className="mt-0.5 text-warning">⚠</span>
+        <span className={`mt-0.5 ${accent.icon}`}>⚠</span>
         <div className="flex-1">
           <p className="font-medium text-foreground">{label} is not signed in.</p>
           {identity ? (
@@ -38,6 +42,6 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
           </div>
         </div>
       </div>
-    </div>
+    </TranscriptShell>
   );
 };

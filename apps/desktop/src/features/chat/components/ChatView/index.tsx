@@ -10,7 +10,7 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -22,9 +22,6 @@ import {
 import { detectParallelRunIds, reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
-import { ThinkingIndicator } from '../ThinkingIndicator';
-import { TranscriptCard } from '../TranscriptCards';
-import { OperationsCluster } from '../OperationsCluster';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatBreadcrumb } from '../ChatBreadcrumb';
 import { ChatInput } from '../ChatInput';
@@ -36,13 +33,15 @@ import {
 } from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
-import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { ChatEmptyState } from './ChatEmptyState';
 import { ClusterProgressDashboard } from './ClusterProgressDashboard';
 import { selectClusterDashboard } from './clusterDashboard';
 import { ParallelColumn } from './ParallelColumn';
+import { TranscriptRows } from './TranscriptRows';
 import { useScrollPin } from './useScrollPin';
-import { dayKey, formatDayLabel } from './lib';
+import { MARKER_ACCENT } from '../marker-accents';
+
+const neutralAccent = MARKER_ACCENT.neutral;
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 
 type ChatViewProps = {
@@ -349,7 +348,9 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
           ))}
         </div>
         {allParallelTerminal ? (
-          <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-2">
+          <div
+            className={`flex items-center justify-between border-t bg-muted/40 px-4 py-2 ${neutralAccent.border}`}
+          >
             <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
             <button
               type="button"
@@ -442,89 +443,17 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
               aria-live="polite"
               aria-relevant="additions"
             >
-              {(() => {
-                const out: React.ReactNode[] = [];
-                let lastDay: string | null = null;
-                let userTurnOrdinal = 0;
-
-                const flushOrdinal = (ordinal: number) => {
-                  const cards = oqByTurnOrdinal.get(ordinal);
-                  if (!cards || cards.length === 0) {
-                    return;
-                  }
-                  out.push(
-                    <li key={`oq-${ordinal}`}>
-                      <OpenQuestionCluster questions={cards} sessionId={session.id} />
-                    </li>,
-                  );
-                };
-
-                rows.forEach((row, idx) => {
-                  if (row.kind === 'item' && row.item.kind === 'oq_answer') {
-                    flushOrdinal(userTurnOrdinal);
-                    userTurnOrdinal += 1;
-                    return;
-                  }
-                  if (row.kind === 'item' && row.item.kind === 'user_text') {
-                    flushOrdinal(userTurnOrdinal);
-                    userTurnOrdinal += 1;
-                    const at = row.item.at;
-                    const day = dayKey(at);
-                    const dayChanged = day !== lastDay;
-                    if (idx > 0 && !dayChanged) {
-                      out.push(
-                        <li key={`turn-${row.key}`}>
-                          <Divider />
-                        </li>,
-                      );
-                    }
-                    if (dayChanged) {
-                      out.push(
-                        <li key={`day-${day}-${idx}`} className="flex justify-center">
-                          <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground">
-                            {formatDayLabel(at)}
-                          </span>
-                        </li>,
-                      );
-                      lastDay = day;
-                    }
-                  }
-                  out.push(
-                    <li
-                      key={row.key}
-                      className="[content-visibility:auto] [contain-intrinsic-size:auto_80px]"
-                    >
-                      {row.kind === 'operations' ? (
-                        <OperationsCluster
-                          items={row.items}
-                          sessionId={session.id}
-                          agentId={selectedAgentId}
-                          workingDir={worktreePath}
-                          onRefreshAuth={handleRefreshAuth}
-                          onOpenDiff={handleOpenDiff}
-                        />
-                      ) : (
-                        <TranscriptCard
-                          item={row.item}
-                          sessionId={session.id}
-                          agentId={selectedAgentId}
-                          workingDir={worktreePath}
-                          onRefreshAuth={handleRefreshAuth}
-                          onOpenDiff={handleOpenDiff}
-                        />
-                      )}
-                    </li>,
-                  );
-                });
-
-                flushOrdinal(userTurnOrdinal);
-                return out;
-              })()}
-              {isThinking ? (
-                <li>
-                  <ThinkingIndicator context={thinkingContext} />
-                </li>
-              ) : null}
+              <TranscriptRows
+                rows={rows}
+                oqByTurnOrdinal={oqByTurnOrdinal}
+                sessionId={session.id}
+                selectedAgentId={selectedAgentId}
+                workingDir={worktreePath}
+                onRefreshAuth={handleRefreshAuth}
+                onOpenDiff={handleOpenDiff}
+                isThinking={isThinking}
+                thinkingContext={thinkingContext}
+              />
             </ul>
           )}
         </ScrollFade>

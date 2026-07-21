@@ -4,6 +4,7 @@ import { extractClustersFromMarker } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptShell } from '../TranscriptShell';
 import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
 import { selectInlineClusterRuns } from '../ChatView/clusterDashboard';
 
@@ -12,7 +13,7 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-const accent = MARKER_ACCENT.clusters;
+const accent = MARKER_ACCENT.merged;
 
 export const ClustersCard = ({ assistantText, sessionId }: Props) => {
   const clusters = useMemo(() => extractClustersFromMarker(assistantText), [assistantText]);
@@ -51,22 +52,21 @@ export const ClustersCard = ({ assistantText, sessionId }: Props) => {
   };
 
   return (
-    <div
-      className={`mt-2 rounded-lg border ${accent.border} ${accent.bg} px-3 py-2`}
-      data-testid="clusters-card"
-    >
-      <div className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-medium ${accent.text}`}>
-        <Layers size={12} aria-hidden />
-        <span>
-          {clusters.length} cluster{clusters.length !== 1 ? 's' : ''}
-        </span>
+    <TranscriptShell tone="merged" variant="boxed" emphasis className="mt-2">
+      <div data-testid="clusters-card">
+        <div className={`mb-1.5 flex items-center gap-1.5 text-xs font-medium ${accent.text}`}>
+          <Layers size={12} aria-hidden />
+          <span>
+            {clusters.length} cluster{clusters.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <SpawnedAgentList
+          items={items}
+          selectedAgentId={selectedAgentId ?? undefined}
+          onSelect={onSelect}
+          variant="inline"
+        />
       </div>
-      <SpawnedAgentList
-        items={items}
-        selectedAgentId={selectedAgentId ?? undefined}
-        onSelect={onSelect}
-        variant="inline"
-      />
-    </div>
+    </TranscriptShell>
   );
 };

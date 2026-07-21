@@ -1,4 +1,5 @@
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>;
@@ -6,7 +7,11 @@ type Props = {
 
 export const SkillInvocationCard = ({ item }: Props) => {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-l-2 border-primary/40 pl-3 py-1">
+    <TranscriptShell
+      tone="primary"
+      variant="leftBorder"
+      className="flex flex-wrap items-center gap-2"
+    >
       <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
         skill
       </span>
@@ -19,6 +24,6 @@ export const SkillInvocationCard = ({ item }: Props) => {
           {arg}
         </span>
       ))}
-    </div>
+    </TranscriptShell>
   );
 };
