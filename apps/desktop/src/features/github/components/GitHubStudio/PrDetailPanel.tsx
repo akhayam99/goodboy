@@ -56,6 +56,7 @@ export const PrDetailPanel = ({
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
 
@@ -238,6 +239,7 @@ export const PrDetailPanel = ({
   const openResolver = (agentId: AgentId) => {
     void (async () => {
       await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
       await selectAgent(sessionId, agentId);
       onClose();
     })();

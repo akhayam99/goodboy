@@ -844,7 +844,7 @@ export const DiffViewerPane = ({ workspaceName, onClose, ...rest }: DiffViewerPa
     icon={FileEdit}
     title="Diff"
     workspaceName={workspaceName}
-    closeLabel="back to overview"
+    closeLabel="Overview"
     onClose={onClose}
     variant="slot"
   >
