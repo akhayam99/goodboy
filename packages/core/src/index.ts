@@ -160,6 +160,7 @@ export {
 
 export {
   buildChainCarryForward,
+  buildParallelCarryForward,
   buildStepPrompt,
   classifyWorkflowChain,
   currentStep,
@@ -168,6 +169,7 @@ export {
   nextStep,
   runsForWorkflowRun,
   type ChainCarryForwardStep,
+  type ParallelCarryForwardBranch,
   type WorkflowChainState,
   WORKFLOW_LIBRARY,
   type WorkflowLibraryEntry,

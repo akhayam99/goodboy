@@ -208,14 +208,47 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const nextDef = template.steps.find((s) => s.id === activeAgentRow!.stepId) ?? null;
         if (nextDef) {
           const sortedDefs = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-          const completedPredecessors = sortedDefs
-            .filter((definition) => definition.ordinal < nextDef.ordinal)
-            .flatMap((definition) => {
+          const predecessorDefinitions = sortedDefs.filter(
+            (definition) => definition.ordinal < nextDef.ordinal,
+          );
+          const completedPredecessors = predecessorDefinitions.flatMap(
+            (definition, _index, definitions) => {
+              if (definition.parallelGroup !== undefined) {
+                const groupDefinitions = definitions.filter(
+                  (candidate) => candidate.parallelGroup === definition.parallelGroup,
+                );
+                if (groupDefinitions.at(-1)?.id !== definition.id) {
+                  return [];
+                }
+                const representative = groupDefinitions
+                  .map((groupDefinition) =>
+                    runAgents.find(
+                      (agent) =>
+                        agent.stepId === groupDefinition.id && agent.status === 'completed',
+                    ),
+                  )
+                  .find((agent) => agent != null);
+                if (representative == null) {
+                  return [];
+                }
+                const groupSummary = representative.outputSummary ?? '';
+                return [
+                  {
+                    ...representative,
+                    ordinal: groupDefinitions.at(-1)?.ordinal ?? definition.ordinal,
+                    name: groupDefinitions[0]?.name ?? definition.name,
+                    outputSummary: groupSummary.startsWith('## workflow handoff\n')
+                      ? groupSummary.slice('## workflow handoff\n'.length)
+                      : groupSummary,
+                  },
+                ];
+              }
               const completedAgent = runAgents.find(
                 (agent) => agent.stepId === definition.id && agent.status === 'completed',
               );
               return completedAgent == null ? [] : [completedAgent];
-            });
+            },
+          );
           const immediatePredecessor = completedPredecessors.at(-1) ?? null;
           const hasAssistantTurn = (before.transcripts[activeAgentId] ?? []).some(
             (event) => event.kind === 'assistant_text',
@@ -528,6 +561,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         userTurnText,
         userPromptForPhase,
         phasePromptCarryForward,
+        phaseWorkflowRunId,
         now,
       });
       return;

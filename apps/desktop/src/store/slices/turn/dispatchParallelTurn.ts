@@ -12,6 +12,7 @@ import type {
   Step,
   TurnState,
   Workflow,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
@@ -39,6 +40,7 @@ type Params = {
   userTurnText: string;
   userPromptForPhase: string;
   phasePromptCarryForward: string;
+  phaseWorkflowRunId: WorkflowRunId | null;
   now: () => IsoDateTime;
 };
 
@@ -59,6 +61,7 @@ export const dispatchParallelTurn = async (
     userTurnText,
     userPromptForPhase,
     phasePromptCarryForward,
+    phaseWorkflowRunId,
     now,
   }: Params,
 ): Promise<void> => {
@@ -141,6 +144,7 @@ export const dispatchParallelTurn = async (
     const result = await runParallelBranch(
       {
         session,
+        ...(phaseWorkflowRunId != null && { workflowRunId: phaseWorkflowRunId }),
         orchestratingAgentId: activeAgentId,
         workspace,
         currentDef: parallelDispatch.currentDef,

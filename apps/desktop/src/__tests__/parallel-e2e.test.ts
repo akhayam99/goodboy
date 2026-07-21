@@ -142,6 +142,7 @@ function makeInputs(
 ): ParallelBranchInputs {
   return {
     session: makeSession(),
+    workflowRunId: 'run-1' as WorkflowRunId,
     orchestratingAgentId: 'orchestrator-agent' as AgentId,
     workspace: makeWorkspace(),
     currentDef: groupDefs[0]!,
@@ -185,10 +186,17 @@ function wirePhaseRunSpies(
     name: string;
     status: AgentStatus;
     runId: ProviderRunId;
+    workflowRunId?: WorkflowRunId;
   }>,
 ): void {
   phaseRunInsertSpy.mockImplementation(
-    async (args: { stepId: string; ordinal: number; name: string; providerRunId: string }) => {
+    async (args: {
+      stepId: string;
+      workflowRunId?: WorkflowRunId;
+      ordinal: number;
+      name: string;
+      providerRunId: string;
+    }) => {
       const row = {
         id: `pr-${args.stepId}` as AgentId,
         sessionId: SESSION_ID,
@@ -197,6 +205,7 @@ function wirePhaseRunSpies(
         name: args.name,
         status: 'running' as AgentStatus,
         runId: args.providerRunId as ProviderRunId,
+        ...(args.workflowRunId != null && { workflowRunId: args.workflowRunId }),
       };
       insertedPhaseRuns.push(row);
       return row;
@@ -295,7 +304,29 @@ describe('parallel e2e, fan-out/fan-in', () => {
     expect(phaseRunUpdateStatusSpy).toHaveBeenCalledTimes(3);
 
     const phaseTransitions = events.filter((e) => e.kind === 'step_transition');
-    expect(phaseTransitions).toHaveLength(1);
+    expect(phaseTransitions).toEqual([
+      expect.objectContaining({
+        carryForwardContext: [
+          '## workflow handoff',
+          '### parallel group output: d-a',
+          '#### branch 1: d-a',
+          'run-a output',
+          '#### branch 2: d-b',
+          'run-b output',
+          '#### branch 3: d-c',
+          'run-c output',
+        ].join('\n'),
+      }),
+    ]);
+    expect(phaseRunInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ workflowRunId: 'run-1' }),
+    );
+    expect(phaseRunUpdateStatusSpy).toHaveBeenCalledWith(
+      'pr-d-a',
+      expect.objectContaining({
+        outputSummary: expect.stringContaining('### parallel group output: d-a'),
+      }),
+    );
   });
 
   it('error path: 1 of 3 runs fails → partial merge proceeds, anyFailed=true, group still completes', async () => {
@@ -345,6 +376,13 @@ describe('parallel e2e, fan-out/fan-in', () => {
     expect(seenRunIds.has(idA as ProviderRunId)).toBe(true);
     expect(seenRunIds.has(idB as ProviderRunId)).toBe(true);
     expect(seenRunIds.has(idC as ProviderRunId)).toBe(false);
+
+    const phaseTransition = events.find((event) => event.kind === 'step_transition');
+    expect(phaseTransition).toEqual(
+      expect.objectContaining({
+        carryForwardContext: expect.stringContaining('#### branch 3: d-c (failed)\nrun failed'),
+      }),
+    );
   });
 
   it('all-fail path: all 3 runs fail → allFailed=true, group completedAt not set', async () => {

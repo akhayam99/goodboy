@@ -1,5 +1,6 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
+  buildParallelCarryForward,
   buildStepPrompt,
   detectConflicts,
   fanOut,
@@ -35,6 +36,7 @@ import type {
   SessionId,
   TurnEvent,
   Workspace,
+  WorkflowRunId,
 } from '@goodboy/types';
 import {
   invokeParallelGroupCreate,
@@ -48,6 +50,7 @@ import { inferAgentKindFromName } from '../features/session/agent-kind';
 
 export type ParallelBranchInputs = {
   readonly session: Session;
+  readonly workflowRunId?: WorkflowRunId;
   readonly orchestratingAgentId: AgentId;
   readonly workspace: Workspace;
   readonly currentDef: Step;
@@ -192,11 +195,17 @@ function buildSchedulerDeps(args: BuildSchedulerDepsArgs): SchedulerDeps {
       if (!handler) {
         return { status: 'failed', outputSummary: null, error: 'no settle handler registered' };
       }
-      handler.onEvent(onEvent);
+      let outputSummary = '';
+      handler.onEvent((event) => {
+        onEvent(event);
+        if (event.kind === 'assistant_text') {
+          outputSummary += event.delta;
+        }
+      });
       const result = await handler.promise;
       return {
         status: result.status,
-        outputSummary: null,
+        outputSummary: outputSummary.trim().length > 0 ? outputSummary.trim() : null,
         ...(result.error !== undefined && { error: result.error }),
       };
     },
@@ -306,6 +315,7 @@ export const runParallelBranch = async (
       sessionId: session.id,
       stepId: def.id,
       parentAgentId: orchestratingAgentId,
+      ...(inputs.workflowRunId != null && { workflowRunId: inputs.workflowRunId }),
       ordinal: def.ordinal,
       name: def.name,
       status: 'running',
@@ -320,6 +330,7 @@ export const runParallelBranch = async (
     id: crypto.randomUUID() as ParallelAgentId,
     groupId,
     stepId: def.id,
+    ...(inputs.workflowRunId != null && { workflowRunId: inputs.workflowRunId }),
     parallelIndex: i,
     runId: runIds[i]!,
     status: 'running',
@@ -364,6 +375,21 @@ export const runParallelBranch = async (
     );
 
     const merge = await awaitMerge(handle);
+    const carryForwardContext = buildParallelCarryForward({
+      groupName: currentDef.name,
+      branches: cappedDefs.map((def, index) => {
+        const status = merge.runStatuses.find((runStatus) => runStatus.runId === runIds[index]);
+        return {
+          name: def.name,
+          status: status?.status,
+          outputSummary: status?.outputSummary,
+          error: status?.error,
+        };
+      }),
+    });
+    const representativeRunId = merge.runStatuses.find(
+      (runStatus) => runStatus.status === 'completed',
+    )?.runId;
 
     for (let i = 0; i < cappedDefs.length; i++) {
       const def = cappedDefs[i]!;
@@ -375,6 +401,11 @@ export const runParallelBranch = async (
         await invokeAgentUpdateStatus(row.id, {
           status: (status?.status ?? 'failed') as AgentStatus,
           completedAt: now(),
+          ...(status?.runId === representativeRunId && carryForwardContext.length > 0
+            ? { outputSummary: carryForwardContext }
+            : status?.outputSummary != null
+              ? { outputSummary: status.outputSummary }
+              : {}),
         });
       }
     }
@@ -423,7 +454,7 @@ export const runParallelBranch = async (
         runId: runIds[0]!,
         fromStep: { ordinal: currentDef.ordinal, name: currentDef.name },
         toStep: { ordinal: currentDef.ordinal + 1, name: 'next' },
-        carryForwardContext: '',
+        carryForwardContext,
         at: now(),
       });
     }
