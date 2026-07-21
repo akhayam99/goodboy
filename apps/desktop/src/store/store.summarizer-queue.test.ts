@@ -88,7 +88,9 @@ vi.mock('../features/providers/provider-pricing', () => ({
 }));
 
 let resolveSummarize: (() => void) | null = null;
-let summarizerUpserts: ReadonlyArray<{ readonly key: SlotKey; readonly value: string }> = [];
+type SummarizerUpsert = { readonly key: SlotKey; readonly value: string };
+let summarizerUpserts: ReadonlyArray<SummarizerUpsert> = [];
+let summarizerUpsertSequence: Array<ReadonlyArray<SummarizerUpsert>> = [];
 const summarizeSpy = vi.fn(
   () =>
     new Promise<void>((resolve) => {
@@ -102,7 +104,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     ...original,
     Summarizer: class {
       summarize() {
-        const upserts = summarizerUpserts;
+        const upserts = summarizerUpsertSequence.shift() ?? summarizerUpserts;
         return summarizeSpy().then(() => ({
           delta: { upserts },
           usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 },
@@ -204,6 +206,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     summarizeSpy.mockReset();
     resolveSummarize = null;
     summarizerUpserts = [];
+    summarizerUpsertSequence = [];
     dbSlots = [];
     upsertContextSlotSpy.mockClear();
     summarizeSpy.mockResolvedValue(undefined);
@@ -239,13 +242,21 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const state = useAppStore.getState();
     const queue = {
       inFlight: true,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     summarizerQueues.set(SESSION_ID, queue);
 
     for (let i = 1; i <= 4; i++) {
       if (queue.inFlight) {
-        queue.queued = { turnInput: `input-${i}`, turnOutput: `output-${i}` };
+        queue.queued = {
+          turnInput: `input-${i}`,
+          turnOutput: `output-${i}`,
+          oversizeRetried: false,
+        };
       }
     }
 
@@ -272,7 +283,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: false,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     sq.set(SESSION_ID, queue);
 
@@ -293,17 +308,29 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     sq.set(SESSION_ID, queue);
 
     for (let i = 0; i < 10; i++) {
       if (queue.inFlight) {
-        queue.queued = { turnInput: `t${i}`, turnOutput: `o${i}` };
+        queue.queued = {
+          turnInput: `t${i}`,
+          turnOutput: `o${i}`,
+          oversizeRetried: false,
+        };
       }
     }
 
-    expect(queue.queued).toEqual({ turnInput: 't9', turnOutput: 'o9' });
+    expect(queue.queued).toEqual({
+      turnInput: 't9',
+      turnOutput: 'o9',
+      oversizeRetried: false,
+    });
 
     sq.delete(SESSION_ID);
   });
@@ -319,12 +346,16 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
-      queued: null as null | { turnInput: string; turnOutput: string },
+      queued: null as null | {
+        turnInput: string;
+        turnOutput: string;
+        oversizeRetried: boolean;
+      },
     };
     sq.set(SESSION_ID, queue);
 
     const before = Date.now();
-    queue.queued = { turnInput: 'next-input', turnOutput: '' };
+    queue.queued = { turnInput: 'next-input', turnOutput: '', oversizeRetried: false };
     const elapsed = Date.now() - before;
 
     expect(elapsed).toBeLessThan(50);
@@ -446,9 +477,10 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(upsertContextSlotSpy).not.toHaveBeenCalled();
   });
 
-  it('re-enqueues once for a changed slot above twice its budget', async () => {
-    const oversizeGoal = 'x'.repeat(561);
-    summarizerUpserts = [{ key: 'goal', value: oversizeGoal }];
+  it('re-enqueues only once when every pass changes an oversize slot', async () => {
+    summarizerUpsertSequence = Array.from({ length: 10 }, (_, index) => [
+      { key: 'goal', value: `${index}${'x'.repeat(561)}` },
+    ]);
     dbSlots = [{ key: 'goal', value: 'original goal', enabled: true }];
 
     const { useAppStore } = await import('./store');

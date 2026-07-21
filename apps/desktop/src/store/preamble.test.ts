@@ -30,6 +30,18 @@ describe('buildContextPreamble', () => {
     expect(out).not.toContain('a.ts');
   });
 
+  it('drops disabled slots from shared context', () => {
+    const disabledDecision: ContextSlot = {
+      key: 'decisions',
+      value: 'hidden decision',
+      enabled: false,
+    };
+    const out = buildContextPreamble([slot('goal', 'visible goal'), disabledDecision]);
+
+    expect(out).toContain('visible goal');
+    expect(out).not.toContain('hidden decision');
+  });
+
   it('empty filter result → no shared context block', () => {
     const out = buildContextPreamble([slot('open_questions', 'q?')], ['goal']);
     expect(out).not.toContain('## shared context');
@@ -50,7 +62,7 @@ describe('buildContextPreamble', () => {
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
     const slots = [
       slot('goal', 'g'.repeat(280)),
-      slot('files_touched', 'f'.repeat(600)),
+      slot('files_touched', 'f'.repeat(1_600)),
       slot('decisions', 'd'.repeat(1_200)),
       slot('open_questions', 'q'.repeat(800)),
       slot('last_output_summary', 's'.repeat(900)),

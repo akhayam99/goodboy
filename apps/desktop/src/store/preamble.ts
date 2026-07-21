@@ -22,9 +22,10 @@ export const buildContextPreamble = (
   slotFilter?: ReadonlyArray<SlotKey>,
 ): string => {
   const parts: string[] = [];
+  const enabledSlots = sharedSlots.filter((slot) => slot.enabled !== false);
   const filtered = slotFilter
-    ? sharedSlots.filter((s) => (slotFilter as ReadonlyArray<string>).includes(s.key))
-    : sharedSlots;
+    ? enabledSlots.filter((slot) => (slotFilter as ReadonlyArray<string>).includes(slot.key))
+    : enabledSlots;
   const rendered = filtered.length > 0 ? serializeSlotsBudgeted({ slots: filtered }) : '';
   if (import.meta.env.DEV && rendered.length > PREAMBLE_SLOT_TOTAL_BUDGET * 0.8) {
     const byKey = new Map<SlotKey, ContextSlot>();

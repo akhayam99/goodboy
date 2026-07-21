@@ -96,6 +96,7 @@ export const toRelPath = (absPath: string, workingDir: string): string => {
 type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
+  readonly oversizeRetried: boolean;
 };
 
 type SummarizerTaskQueue = {
@@ -121,7 +122,7 @@ function scheduleIdle(fn: () => void): void {
 }
 
 const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
-  void runSummarizer(set, get, sessionId, entry.turnInput, entry.turnOutput).finally(() => {
+  void runSummarizer({ set, get, sessionId, entry }).finally(() => {
     const queue = summarizerQueues.get(sessionId);
     if (queue == null) {
       return;
@@ -143,7 +144,26 @@ const reenqueueSummarizer = ({ set, get, sessionId, entry }: Params): void => {
   if (queue?.queued != null) {
     return;
   }
-  enqueueSummarizer(set, get, sessionId, entry.turnInput, entry.turnOutput);
+  enqueueSummarizerEntry({ set, get, sessionId, entry });
+};
+
+const enqueueSummarizerEntry = ({ set, get, sessionId, entry }: Params): void => {
+  let queue = summarizerQueues.get(sessionId);
+  if (!queue) {
+    queue = { inFlight: false, queued: null };
+    summarizerQueues.set(sessionId, queue);
+  }
+
+  if (queue.inFlight) {
+    queue.queued = entry;
+    return;
+  }
+
+  queue.inFlight = true;
+  queue.queued = null;
+  scheduleIdle(() => {
+    runQueuedSummarizer({ set, get, sessionId, entry });
+  });
 };
 
 export const enqueueSummarizer = (
@@ -153,31 +173,16 @@ export const enqueueSummarizer = (
   turnInput: string,
   turnOutput: string,
 ): void => {
-  let queue = summarizerQueues.get(sessionId);
-  if (!queue) {
-    queue = { inFlight: false, queued: null };
-    summarizerQueues.set(sessionId, queue);
-  }
-
-  if (queue.inFlight) {
-    queue.queued = { turnInput, turnOutput };
-    return;
-  }
-
-  queue.inFlight = true;
-  queue.queued = null;
-  scheduleIdle(() => {
-    runQueuedSummarizer({ set, get, sessionId, entry: { turnInput, turnOutput } });
+  enqueueSummarizerEntry({
+    set,
+    get,
+    sessionId,
+    entry: { turnInput, turnOutput, oversizeRetried: false },
   });
 };
 
-async function runSummarizer(
-  set: SetFn,
-  get: GetFn,
-  sessionId: SessionId,
-  turnInput: string,
-  turnOutput: string,
-): Promise<void> {
+const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<void> => {
+  const { turnInput, turnOutput } = entry;
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
   set((state) => {
@@ -257,8 +262,16 @@ async function runSummarizer(
         upsert.didChange &&
         upsert.value.length > SLOT_BUDGETS[upsert.key] * 2,
     );
-    if (hasConflict || hasChangedOversizeSlot) {
-      reenqueueSummarizer({ set, get, sessionId, entry: { turnInput, turnOutput } });
+    if (hasConflict) {
+      reenqueueSummarizer({ set, get, sessionId, entry });
+    }
+    if (!hasConflict && hasChangedOversizeSlot && !entry.oversizeRetried) {
+      reenqueueSummarizer({
+        set,
+        get,
+        sessionId,
+        entry: { ...entry, oversizeRetried: true },
+      });
     }
 
     if (
@@ -381,7 +394,7 @@ async function runSummarizer(
       sessionId,
     });
   }
-}
+};
 
 export const capturePlanFromTurn = async (
   set: SetFn,
