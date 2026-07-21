@@ -16,7 +16,7 @@ Never silently drop facts that are still valid. Per slot:
 - decisions: append new decisions to the existing list. When a new decision reverses or supersedes an earlier one, REPLACE the earlier entry with the final decision.
 - open_questions: drop only items the latest user turn explicitly resolves. Add new ones only when the assistant is blocked on the user.
 - files_touched: one path per line; append unique paths; never duplicate or drop prior paths unless a file was deleted.
-- last_output_summary: the rolling cumulative TLDR of the whole session. On every turn, REWORK the previous TLDR together with the latest assistant turn into a new TLDR covering what the session has accomplished so far, the current state, and what is in flight. REPLACE is the storage mechanism, so emit the full cumulative TLDR. Do not summarize only the latest turn and do not append a turn-by-turn log.
+- last_output_summary: the rolling cumulative summary of the whole session. On every turn, REWORK the previous summary together with the latest assistant turn into a new summary covering what the session has accomplished so far, the current state, and what is in flight. REPLACE is the storage mechanism, so emit the full cumulative summary. Do not summarize only the latest turn and do not append a turn-by-turn log.
 
 SLOT BUDGETS (hard maximum characters per emitted value)
 ${SLOT_KEYS.map((key) => `- ${key}: ${SLOT_BUDGETS[key]}`).join('\n')}

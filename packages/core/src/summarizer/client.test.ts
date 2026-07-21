@@ -57,7 +57,7 @@ function makeClaudeJsonOutput(text: string, inputTokens = 100, outputTokens = 20
 }
 
 describe('Summarizer client prompt', () => {
-  it('defines cumulative session tldr, compaction, decisions, and goal rules', async () => {
+  it('defines cumulative session summary, compaction, decisions, and goal rules', async () => {
     let request: Record<string, unknown> | undefined;
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(
       _cmd: string,
@@ -85,7 +85,7 @@ describe('Summarizer client prompt', () => {
     }
 
     expect(systemPrompt).toBe(SUMMARIZER_SYSTEM_PROMPT);
-    expect(systemPrompt).toContain('- last_output_summary (session tldr)');
+    expect(systemPrompt).toContain('- last_output_summary (session summary)');
     expect(systemPrompt).toContain(
       '- goal: 280\n- files_touched: 1600\n- decisions: 1200\n- open_questions: 800\n- last_output_summary: 900\n\nIf a current or updated slot exceeds its budget, emit a compacted full value within the budget. Merge semantic duplicates, replace superseded decisions with the final decision, and keep the most recent and most relevant facts.',
     );
@@ -93,7 +93,7 @@ describe('Summarizer client prompt', () => {
       'When a new decision reverses or supersedes an earlier one, REPLACE the earlier entry with the final decision.',
     );
     expect(systemPrompt).toContain(
-      'On every turn, REWORK the previous TLDR together with the latest assistant turn into a new TLDR covering what the session has accomplished so far, the current state, and what is in flight.',
+      'On every turn, REWORK the previous summary together with the latest assistant turn into a new summary covering what the session has accomplished so far, the current state, and what is in flight.',
     );
     expect(systemPrompt).toContain(
       'Never exceed two sentences. If the current value exceeds two sentences, rewrite it down to two sentences or fewer.',
