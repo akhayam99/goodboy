@@ -3,7 +3,7 @@ import { Gauge } from 'lucide-react';
 import type { ProviderId, ProviderName } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { formatTokens } from '../../../../../features/session/agent-row-format';
-import { ProviderGlyph } from './ProviderGlyph';
+import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
 
 export type ProviderContextUsage = {
   readonly provider: ProviderName;
@@ -61,7 +61,7 @@ function ProviderBar({
       <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
         <span className={cn('flex items-center gap-0.5', tone(pct, 'text'))}>
           {showProvider ? (
-            <ProviderGlyph provider={usage.provider} />
+            <ProviderIcon provider={usage.provider} variant="glyph" />
           ) : (
             <Gauge size={9} aria-hidden />
           )}

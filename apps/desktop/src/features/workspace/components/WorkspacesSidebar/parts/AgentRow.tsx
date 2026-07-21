@@ -10,7 +10,7 @@ import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderGlyph } from './ProviderGlyph';
+import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { AgentLifetime } from './AgentLifetime';
 
@@ -172,7 +172,7 @@ export function AgentRow({
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-1.5">
-              <ProviderGlyph provider={telemetry?.provider} />
+              <ProviderIcon provider={telemetry?.provider} variant="glyph" />
               <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
                 <AgentLifetime run={run} />
               </span>

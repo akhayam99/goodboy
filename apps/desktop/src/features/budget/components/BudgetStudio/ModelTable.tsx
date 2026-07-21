@@ -1,5 +1,5 @@
 import { formatTokens, formatUsdPrecise } from '@goodboy/ui';
-import { ProviderIcon } from './ProviderIcon';
+import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { formatModel, type ModelBreakdownEntry } from './lib';
 
 type Props = {

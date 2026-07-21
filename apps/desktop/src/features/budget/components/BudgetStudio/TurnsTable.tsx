@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { ProviderIcon } from './ProviderIcon';
+import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { Widget } from './Widget';
 import { formatModel, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 

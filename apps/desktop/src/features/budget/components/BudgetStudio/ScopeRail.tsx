@@ -1,7 +1,7 @@
 import { cn, formatUsd } from '@goodboy/ui';
 import { LayoutDashboard } from 'lucide-react';
 import type { ProviderSpendEntry } from '../../../../store';
-import { ProviderIcon } from './ProviderIcon';
+import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { providerLabel, spendBarColor, type BudgetScope, type SessionSpend } from './lib';
 
 type Props = {

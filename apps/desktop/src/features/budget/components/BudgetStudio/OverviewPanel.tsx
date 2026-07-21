@@ -3,10 +3,10 @@ import { StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui
 import type { BudgetAlert, TelemetrySummary } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
 import { brandColor } from '../../../providers/components/provider-brand';
+import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
 import { ModelTable } from './ModelTable';
 import { PanelShell } from './PanelShell';
-import { ProviderIcon } from './ProviderIcon';
 import { SpendBar } from './SpendBar';
 import { Sparkline } from './Sparkline';
 import { TurnsTable } from './TurnsTable';

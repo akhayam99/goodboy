@@ -25,6 +25,10 @@ import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
+import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
+import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
+import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug';
+import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { goalFromSentry } from '../goal-from-sentry';
 import { sentryFetchIssueDetail, type SentryIssue, type SentryIssueDetail } from '../client';
@@ -38,40 +42,14 @@ type Props = {
 
 const SLUG_MAX_LEN = 30;
 
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]+/g, '')
-    .trim()
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
-}
+const slugify = (input: string): string => slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
 
-function sanitizeSlug(input: string): string {
-  return input
-    .replace(/[^a-zA-Z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
-}
+const sanitizeSlug = (input: string): string =>
+  sanitizeBranchSlug({ input, maxLength: SLUG_MAX_LEN });
 
-function sanitizePrefix(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '')
-    .replace(/^-+/, '')
-    .slice(0, 16);
-}
+const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input });
 
-function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
-  if (!s) {
-    return false;
-  }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
-}
+const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
 const LEVEL_TONE: Record<string, string> = {
   fatal: 'border-danger/40 bg-danger/10 text-danger',

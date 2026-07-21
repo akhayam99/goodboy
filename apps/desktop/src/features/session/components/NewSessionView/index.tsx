@@ -23,6 +23,10 @@ import { goalFromIssue } from '../../../../features/integrations/linear/goal-fro
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
+import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
+import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
+import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';
+import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 
 type Props = {
   onClose: () => void;
@@ -113,42 +117,16 @@ function getDefaultBinary(providerId: ProviderId): string {
 
 const SLUG_MAX_LEN = 48;
 
-function slugifyLive(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]+/g, '')
-    .trim()
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
-}
+const slugifyLive = (input: string): string => slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
 
-function sanitizeBranchSlug(input: string): string {
-  return input
-    .replace(/[^a-zA-Z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
-}
+const sanitizeBranchSlug = (input: string): string =>
+  sanitizeBranchSlugValue({ input, maxLength: SLUG_MAX_LEN });
 
-function sanitizePrefix(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '')
-    .replace(/^-+/, '')
-    .slice(0, 16);
-}
+const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input });
 
 const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
-function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
-  if (!s) {
-    return false;
-  }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
-}
+const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
 async function generateBranchSlug(goal: string, providerId: ProviderId): Promise<string> {
   const systemPrompt =
