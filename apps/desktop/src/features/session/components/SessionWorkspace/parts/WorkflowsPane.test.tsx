@@ -132,6 +132,7 @@ describe('WorkflowsPane', () => {
   it('shows one full detail without a rail and puts attach in the header', () => {
     render(<WorkflowsPane session={buildSession({ runIds: ['run-1'] })} />);
 
+    expect(screen.queryByTestId('pane-shell')).toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Attached workflows' })).toBeNull();
     expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-1');
     expect(screen.getByRole('button', { name: 'Attach another workflow' })).toBeDefined();
@@ -142,6 +143,9 @@ describe('WorkflowsPane', () => {
     render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
 
     expect(screen.getByRole('complementary', { name: 'Attached workflows' })).toBeDefined();
+    expect(screen.queryByTestId('pane-shell')).toBeNull();
+    expect(screen.getByText('Workflows')).toBeDefined();
+    expect(screen.getByText('2')).toBeDefined();
     expect(screen.getByText('First workflow')).toBeDefined();
     expect(screen.getByText('Second workflow')).toBeDefined();
     expect(screen.getAllByText('0/2 steps')).toHaveLength(2);

@@ -78,7 +78,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   }
 
   if (suppressAgentTail && selectedAgentName != null && overlayHomeLens != null) {
-    return sealLast([overview]);
+    return [overview, workflowsList];
   }
 
   if (selectedAgentName != null && overlayHomeLens != null) {
