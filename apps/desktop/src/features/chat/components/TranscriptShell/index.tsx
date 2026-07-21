@@ -41,8 +41,8 @@ export const TranscriptShell = ({
     variant === 'boxed' && accent.border,
     variant === 'boxed' && (emphasis ? accent.bg : accent.bgSoft),
     variant === 'leftBorder' &&
-      (nested ? 'border-l py-2 pl-3 pr-2' : 'rounded-r-md border-l-2 py-1 pl-2 pr-2'),
-    variant === 'leftBorder' && (nested ? accent.borderSoft : accent.border),
+      (nested ? 'py-2 pl-3 pr-2' : 'rounded-r-md border-l-2 py-1 pl-2 pr-2'),
+    variant === 'leftBorder' && !nested && accent.border,
     variant === 'pill' && 'rounded-full border px-2.5 py-1',
     variant === 'pill' && accent.border,
     variant === 'pill' && accent.bg,

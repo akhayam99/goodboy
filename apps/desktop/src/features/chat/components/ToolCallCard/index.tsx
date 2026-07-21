@@ -61,7 +61,12 @@ export const ToolCallCard = ({ item }: Props) => {
           </div>
           {rawMode ? (
             <>
-              <TranscriptShell tone="operations" variant="leftBorder" nested className="min-w-0">
+              <TranscriptShell
+                tone="operations"
+                variant="leftBorder"
+                nested
+                className={cn('min-w-0 rounded-md', MARKER_ACCENT.operations.bgSoft)}
+              >
                 <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
                   input: {JSON.stringify(item.input, null, 2)}
                 </pre>
@@ -71,7 +76,10 @@ export const ToolCallCard = ({ item }: Props) => {
                   tone={item.isError ? 'danger' : 'success'}
                   variant="leftBorder"
                   nested
-                  className="min-w-0"
+                  className={cn(
+                    'min-w-0 rounded-md',
+                    item.isError ? MARKER_ACCENT.danger.bgSoft : MARKER_ACCENT.success.bgSoft,
+                  )}
                 >
                   <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
                     output: {JSON.stringify(item.output, null, 2)}
@@ -81,7 +89,12 @@ export const ToolCallCard = ({ item }: Props) => {
             </>
           ) : (
             <>
-              <TranscriptShell tone="operations" variant="leftBorder" nested className="text-xs">
+              <TranscriptShell
+                tone="operations"
+                variant="leftBorder"
+                nested
+                className={cn('rounded-md text-xs', MARKER_ACCENT.operations.bgSoft)}
+              >
                 <StructuredData data={item.input} label="input" />
               </TranscriptShell>
               {item.ended ? (
@@ -89,7 +102,10 @@ export const ToolCallCard = ({ item }: Props) => {
                   tone={item.isError ? 'danger' : 'success'}
                   variant="leftBorder"
                   nested
-                  className="text-xs"
+                  className={cn(
+                    'rounded-md text-xs',
+                    item.isError ? MARKER_ACCENT.danger.bgSoft : MARKER_ACCENT.success.bgSoft,
+                  )}
                 >
                   <StructuredData data={item.output} label="output" />
                 </TranscriptShell>

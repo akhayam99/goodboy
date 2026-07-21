@@ -44,15 +44,13 @@ describe('TranscriptShell', () => {
     expect(screen.getByText('content').className).toContain('bg-success/10');
   });
 
-  it('uses the soft tone and nested insets for nested left borders', () => {
+  it('uses pure indentation for nested left borders', () => {
     render(
       <TranscriptShell tone="merged" variant="leftBorder" nested>
         content
       </TranscriptShell>,
     );
-    expect(screen.getByText('content').className.split(' ')).toEqual(
-      expect.arrayContaining(['border-l', 'border-merged/20', 'py-2', 'pl-3', 'pr-2']),
-    );
+    expect(screen.getByText('content').className.split(' ')).toEqual(['py-2', 'pl-3', 'pr-2']);
   });
 
   it('renders children and merges a caller class', () => {
