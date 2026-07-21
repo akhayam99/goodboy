@@ -85,7 +85,12 @@ describe('selectAttention', () => {
 });
 
 describe('resolveAttentionLens', () => {
-  const ctx = { hasNonResolverStandalone: false, hasWorkflow: false, hasResolver: false };
+  const ctx = {
+    hasNonResolverStandalone: false,
+    hasWorkflow: false,
+    hasResolver: false,
+    unreadLens: null,
+  };
 
   it('returns null when not in the attention stage', () => {
     expect(resolveAttentionLens(stage({ stage: 'running' }), ctx)).toBeNull();
@@ -101,6 +106,17 @@ describe('resolveAttentionLens', () => {
     expect(
       resolveAttentionLens(stage({ stage: 'attention', reason: 'an open question' }), ctx),
     ).toBe('questions');
+  });
+
+  it('routes an unread resolver reply to resolve when standalone agents are present', () => {
+    expect(
+      resolveAttentionLens(stage({ stage: 'attention', reason: 'unread agent reply' }), {
+        hasNonResolverStandalone: true,
+        hasWorkflow: false,
+        hasResolver: true,
+        unreadLens: 'resolve',
+      }),
+    ).toBe('resolve');
   });
 
   const lensFor = (
@@ -124,6 +140,7 @@ describe('resolveAttentionLens', () => {
               hasNonResolverStandalone,
               hasWorkflow,
               hasResolver,
+              unreadLens: null,
             }),
           ).toBe(expected);
         });
@@ -137,6 +154,7 @@ describe('resolveAttentionLens', () => {
         hasNonResolverStandalone: false,
         hasWorkflow: true,
         hasResolver: false,
+        unreadLens: null,
       }),
     ).toBe('workflows');
   });
@@ -147,22 +165,20 @@ describe('resolveAttentionLens', () => {
 });
 
 describe('selectNonResolverStandaloneAgents', () => {
-  const text = new Map<string, string>();
-
   it('keeps a generic standalone agent', () => {
     const list = [agent({ id: 'g' as Agent['id'], name: 'explore the repo' })];
-    expect(selectNonResolverStandaloneAgents(list, {}, text)).toHaveLength(1);
+    expect(selectNonResolverStandaloneAgents(list, {})).toHaveLength(1);
   });
 
   it('excludes a name-classified resolver', () => {
     const list = [agent({ id: 'r' as Agent['id'], name: 'resolve foo' })];
-    expect(selectNonResolverStandaloneAgents(list, {}, text)).toHaveLength(0);
+    expect(selectNonResolverStandaloneAgents(list, {})).toHaveLength(0);
   });
 
   it('excludes an agent overridden to resolver', () => {
     const list = [agent({ id: 'o' as Agent['id'], name: 'explore the repo' })];
     const override: Record<string, AgentKind> = { o: 'resolver' };
-    expect(selectNonResolverStandaloneAgents(list, override, text)).toHaveLength(0);
+    expect(selectNonResolverStandaloneAgents(list, override)).toHaveLength(0);
   });
 
   it('excludes a workflow-step agent that is not standalone', () => {
@@ -174,7 +190,7 @@ describe('selectNonResolverStandaloneAgents', () => {
         stepId: 'step' as Agent['stepId'],
       }),
     ];
-    expect(selectNonResolverStandaloneAgents(list, {}, text)).toHaveLength(0);
+    expect(selectNonResolverStandaloneAgents(list, {})).toHaveLength(0);
   });
 });
 

@@ -298,6 +298,17 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
   return 'generic';
 };
 
+export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKind => {
+  if (override != null) {
+    return override;
+  }
+  const persistedKind = AGENT_KIND_ORDER.find((kind) => kind === agent.kind);
+  if (persistedKind != null) {
+    return persistedKind;
+  }
+  return inferAgentKindFromName(agent.name);
+};
+
 export const resolveAgentKind = (
   name: string,
   firstUserText: string | null,

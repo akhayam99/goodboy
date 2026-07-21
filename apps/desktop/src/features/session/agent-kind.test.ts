@@ -7,6 +7,7 @@ import {
   AGENT_KIND_PALETTE,
   type AgentKind,
   agentHomeLens,
+  classifyAgent,
   inferAgentKindFromName,
   inferAgentKindFromStep,
   kindConsumesPlan,
@@ -201,6 +202,28 @@ describe('resolveAgentKind', () => {
     expect(resolveAgentKind('agent 1', null)).toBe('generic');
     expect(resolveAgentKind('agent 1', '')).toBe('generic');
     expect(resolveAgentKind('agent 1', 'hello')).toBe('generic');
+  });
+});
+
+describe('classifyAgent', () => {
+  it('prefers an override over persisted kind and name inference', () => {
+    expect(classifyAgent(agentOf({ name: 'plan migration', kind: 'scout' }), 'docs')).toBe('docs');
+  });
+
+  it('prefers a valid persisted kind over name inference', () => {
+    expect(classifyAgent(agentOf({ name: 'plan migration', kind: 'reviewer' }), null)).toBe(
+      'reviewer',
+    );
+  });
+
+  it('falls back to name inference for an invalid persisted kind', () => {
+    expect(classifyAgent(agentOf({ name: 'debug startup', kind: 'unknown' }), null)).toBe(
+      'debugger',
+    );
+  });
+
+  it('returns generic without a persisted kind or meaningful name', () => {
+    expect(classifyAgent(agentOf({ name: 'agent 1' }), null)).toBe('generic');
   });
 });
 

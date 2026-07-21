@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
+import { classifyAgent, type AgentKind } from '../features/session/agent-kind';
+import { selectNonResolverStandaloneAgents } from '../features/session/components/SessionOverviewPane/lib';
 import type {
   Agent,
   ContextSlot,
@@ -421,6 +424,63 @@ export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolea
     return true;
   }
   return agent.lastFinishedAt > agent.lastViewedAt;
+};
+
+const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
+
+export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyArray<Agent> => {
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
+  const agentKindOverride = useAppStore(
+    useShallow((s) => {
+      const overrides: Record<string, AgentKind> = {};
+      for (const agent of s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS) {
+        const override = s.agentKindOverride[agent.id];
+        if (override != null) {
+          overrides[agent.id] = override;
+        }
+      }
+      return overrides;
+    }),
+  );
+  return useMemo(
+    () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
+    [phaseRuns, agentKindOverride],
+  );
+};
+
+export type SessionUnreadLens = 'agents' | 'resolve' | 'workflows' | null;
+
+export const useSessionUnreadLens = (sessionId: SessionId): SessionUnreadLens => {
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
+  const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
+  const isCurrentSession = useAppStore((s) => s.currentSessionId === sessionId);
+  const agentKindOverride = useAppStore(
+    useShallow((s) => {
+      const overrides: Record<string, AgentKind> = {};
+      for (const agent of s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS) {
+        const override = s.agentKindOverride[agent.id];
+        if (override != null) {
+          overrides[agent.id] = override;
+        }
+      }
+      return overrides;
+    }),
+  );
+  return useMemo(() => {
+    const unreadAgent = phaseRuns.find((agent) =>
+      agentHasUnread(agent, isCurrentSession && agent.id === selectedAgentId),
+    );
+    if (unreadAgent == null) {
+      return null;
+    }
+    if (unreadAgent.workflowRunId != null && unreadAgent.stepId != null) {
+      return 'workflows';
+    }
+    if (classifyAgent(unreadAgent, agentKindOverride[unreadAgent.id] ?? null) === 'resolver') {
+      return 'resolve';
+    }
+    return 'agents';
+  }, [phaseRuns, selectedAgentId, isCurrentSession, agentKindOverride]);
 };
 
 export const useSessionHasUnread = (sessionId: SessionId | null): boolean => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -20,15 +20,17 @@ import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
 import { cn, Divider, Eyebrow, Input, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Agent, AgentId, Message, Session, SessionId, SessionStage } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId, SessionStage } from '@goodboy/types';
 import {
   agentHasUnread,
   EMPTY_ARRAY,
   useAppStore,
   useCurrentWorkspace,
+  useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionStageInfo,
+  useSessionUnreadLens,
 } from '../../../../store';
 import type { FilesTouched, LensKind } from '../../../../store';
 import { STAGE_TONE } from '../../session-stage';
@@ -37,11 +39,10 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
-import { resolveAgentKind } from '../../agent-kind';
+import { classifyAgent } from '../../agent-kind';
 import {
   resolveAttentionLens,
   selectAttention,
-  selectNonResolverStandaloneAgents,
   selectOpenQuestions,
   selectStandaloneAgents,
 } from './lib';
@@ -142,31 +143,11 @@ export const SessionOverviewPane = ({
     useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
   );
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const messages = useAppStore(
-    (s) => s.messages[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Message>),
+  const hasResolver = rawStandalone.some(
+    (agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null) === 'resolver',
   );
-  const firstUserTextByAgentId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const m of messages) {
-      if (m.role !== 'user' || map.has(m.agentId)) {
-        continue;
-      }
-      map.set(m.agentId, m.content);
-    }
-    return map;
-  }, [messages]);
-  const kindOf = (agent: Agent): ReturnType<typeof resolveAgentKind> =>
-    resolveAgentKind(
-      agent.name,
-      firstUserTextByAgentId.get(agent.id) ?? null,
-      agentKindOverride[agent.id] ?? null,
-    );
-  const hasResolver = rawStandalone.some((a) => kindOf(a) === 'resolver');
-  const nonResolverAgents = selectNonResolverStandaloneAgents(
-    rawStandalone,
-    agentKindOverride,
-    firstUserTextByAgentId,
-  );
+  const nonResolverAgents = useNonResolverStandaloneAgents(session.id as SessionId);
+  const unreadLens = useSessionUnreadLens(session.id as SessionId);
   const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
   const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
   const pullRequestState = useAppStore((s) => s.sessionGithub[session.id]?.pr?.state ?? null);
@@ -207,6 +188,7 @@ export const SessionOverviewPane = ({
     hasNonResolverStandalone: nonResolverAgents.length > 0,
     hasWorkflow: activeWorkflows > 0,
     hasResolver,
+    unreadLens,
   });
 
   const openWorkflowBuilder = () => {
@@ -233,7 +215,11 @@ export const SessionOverviewPane = ({
       return pickAgentId(nonResolverAgents);
     }
     if (lens === 'resolve') {
-      return pickAgentId(rawStandalone.filter((a) => kindOf(a) === 'resolver'));
+      return pickAgentId(
+        rawStandalone.filter(
+          (agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null) === 'resolver',
+        ),
+      );
     }
     if (lens === 'workflows') {
       const runs = session.workflowRuns.filter((r) => r.discardedAt == null);
