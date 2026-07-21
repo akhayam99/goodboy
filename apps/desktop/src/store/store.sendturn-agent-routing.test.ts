@@ -311,19 +311,15 @@ describe('sendTurn, agent routing', () => {
     expect(runTurnSpy).toHaveBeenCalledOnce();
   });
 
-  it('stores summarized output when a non-workflow agent completes', async () => {
+  it('stores deterministic fallback output without an LLM call for a non-workflow agent', async () => {
     const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
-    invokeSpy.mockResolvedValueOnce({
-      stdout: JSON.stringify({ result: 'Summarized agent output.' }),
-      stderr: '',
-      exitCode: 0,
-    });
+    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
     runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
       yield {
         kind: 'assistant_text' as const,
         runId: args.runId,
-        delta: 'raw free-agent output',
+        delta: assistantText,
         at: NOW,
       };
       yield { kind: 'done' as const, runId: args.runId, at: NOW };
@@ -337,8 +333,11 @@ describe('sendTurn, agent routing', () => {
       AGENT_A,
       expect.objectContaining({
         status: 'completed',
-        outputSummary: 'Summarized agent output.',
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
       }),
+    );
+    expect(JSON.stringify(invokeSpy.mock.calls)).not.toContain(
+      'Condense an AI coding agent step output',
     );
   });
 });
@@ -677,6 +676,25 @@ describe('sendTurn, workflow carry-forward', () => {
       expect.stringContaining(expectedCarryForward),
       expect.stringContaining(expectedCarryForward),
     ]);
+
+    const fallbackSummary = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+    agents = agents.map((agent) =>
+      agent.id === implementAgentId ? { ...agent, outputSummary: fallbackSummary } : agent,
+    );
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'fallback retry' });
+
+    const fallbackTransition = (useAppStore.getState().transcripts[reviewAgentId] ?? [])
+      .filter((event) => event.kind === 'step_transition')
+      .at(-1);
+    expect(fallbackTransition).toEqual(
+      expect.objectContaining({
+        degraded: true,
+        carryForwardContext: expect.stringContaining(fallbackSummary),
+      }),
+    );
   });
 });
 

@@ -9,6 +9,8 @@ import {
   extractPlanFromMarker,
   extractScoutSplit,
   findReusableAgent,
+  fallbackStepOutputSummary,
+  isFallbackStepOutputSummary,
   resolveModelForProvider,
   runsForWorkflowRun,
   turnReducer,
@@ -73,7 +75,6 @@ import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
-import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import {
   applyHeuristicTitle,
   buildGoalAttachmentsBlock,
@@ -261,7 +262,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                 outputSummary: agent.outputSummary,
               })),
             });
-            const isDegraded = (immediatePredecessor.outputSummary ?? '').trim().length === 0;
+            const predecessorSummary = immediatePredecessor.outputSummary ?? '';
+            const isDegraded =
+              predecessorSummary.trim().length === 0 ||
+              isFallbackStepOutputSummary({ summary: predecessorSummary });
             const durationMs =
               immediatePredecessor.startedAt != null && immediatePredecessor.completedAt != null
                 ? new Date(immediatePredecessor.completedAt).getTime() -
@@ -794,10 +798,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           );
           shouldAutoAdvanceWorkflow = shouldAutoAdvance;
         } else {
-          const outputSummary = await summarizeAgentOutput({
-            output: assistantText,
-            providerId: session.providerPreference.defaultProvider,
-          });
+          const outputSummary = fallbackStepOutputSummary({ output: assistantText });
           await invokeAgentUpdateStatus(resolvedAgentId, {
             status: 'completed',
             outputSummary,

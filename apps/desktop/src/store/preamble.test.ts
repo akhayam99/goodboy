@@ -117,6 +117,43 @@ describe('buildPriorTurnsBlock', () => {
     expect(out.indexOf('hi there')).toBeLessThan(out.indexOf('bye'));
   });
 
+  it('renders workflow handoffs in chronological position', () => {
+    const events: TurnEvent[] = [
+      { kind: 'user_text', runId: RUN, text: 'implement', at: NOW },
+      { kind: 'assistant_text', runId: RUN, delta: 'implementation complete', at: NOW },
+      {
+        kind: 'step_transition',
+        runId: RUN,
+        fromStep: { ordinal: 0, name: 'Implement' },
+        toStep: { ordinal: 1, name: 'Review' },
+        carryForwardContext: 'changed `src/auth.ts`',
+        at: NOW,
+      },
+      { kind: 'user_text', runId: RUN, text: 'review', at: NOW },
+    ];
+
+    const out = buildPriorTurnsBlock(events, 1000);
+
+    expect(out).toContain('workflow handoff (carried forward): changed `src/auth.ts`');
+    expect(out.indexOf('implementation complete')).toBeLessThan(out.indexOf('workflow handoff'));
+    expect(out.indexOf('workflow handoff')).toBeLessThan(out.indexOf('review'));
+  });
+
+  it('applies the prior-turn token budget to workflow handoffs', () => {
+    const events: TurnEvent[] = [
+      {
+        kind: 'step_transition',
+        runId: RUN,
+        fromStep: { ordinal: 0, name: 'Implement' },
+        toStep: { ordinal: 1, name: 'Review' },
+        carryForwardContext: 'x'.repeat(4000),
+        at: NOW,
+      },
+    ];
+
+    expect(buildPriorTurnsBlock(events, 10)).toBe('');
+  });
+
   it('drops oldest first when over budget', () => {
     const longText = 'x'.repeat(4000);
     const events: TurnEvent[] = [

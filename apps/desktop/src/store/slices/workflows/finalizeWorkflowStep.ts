@@ -1,5 +1,5 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractStepDone } from '@goodboy/core';
+import { extractStepDone, fallbackStepOutputSummary } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -80,13 +80,13 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
 
     continueAttempts.delete(agentId);
     const session = get().sessions.find((candidate) => candidate.id === sessionId);
-    if (session == null) {
-      return { shouldAutoAdvance: false };
-    }
-    const outputSummary = await summarizeAgentOutput({
-      output: assistantText,
-      providerId: session.providerPreference.defaultProvider,
-    });
+    const outputSummary =
+      session == null
+        ? fallbackStepOutputSummary({ output: assistantText })
+        : await summarizeAgentOutput({
+            output: assistantText,
+            providerId: session.providerPreference.defaultProvider,
+          });
     await invokeAgentUpdateStatus(agentId, {
       status: 'completed',
       outputSummary,

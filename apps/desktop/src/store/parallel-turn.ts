@@ -4,6 +4,7 @@ import {
   buildStepPrompt,
   detectConflicts,
   fanOut,
+  fallbackStepOutputSummary,
   awaitMerge,
   cancelGroup,
   resolveConflicts,
@@ -404,7 +405,7 @@ export const runParallelBranch = async (
           ...(status?.runId === representativeRunId && carryForwardContext.length > 0
             ? { outputSummary: carryForwardContext }
             : status?.outputSummary != null
-              ? { outputSummary: status.outputSummary }
+              ? { outputSummary: fallbackStepOutputSummary({ output: status.outputSummary }) }
               : {}),
         });
       }

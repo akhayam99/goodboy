@@ -329,6 +329,37 @@ describe('parallel e2e, fan-out/fan-in', () => {
     );
   });
 
+  it('caps raw output stored for non-representative completed branches', async () => {
+    const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
+    wirePhaseRunSpies(insertedPhaseRuns);
+    const { effects } = makeEffects();
+    const inputs = makeInputs([makeDef('d-a', 1), makeDef('d-b', 2)]);
+    const branchPromise = runParallelBranch(inputs, makeDeps(effects));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const spawnedRunIds = (
+      invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<
+        [{ runs: ReadonlyArray<{ runId: string }> }]
+      >
+    ).map(([args]) => args.runs[0]!.runId) as [string, string];
+    const [representativeRunId, rawRunId] = spawnedRunIds;
+    const rawOutput = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    emitLine(representativeRunId, 'representative output');
+    emitLine(rawRunId, rawOutput);
+    emitEnd(representativeRunId, 0);
+    emitEnd(rawRunId, 0);
+
+    await branchPromise;
+
+    expect(phaseRunUpdateStatusSpy).toHaveBeenCalledWith(
+      'pr-d-b',
+      expect.objectContaining({
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+      }),
+    );
+  });
+
   it('error path: 1 of 3 runs fails → partial merge proceeds, anyFailed=true, group still completes', async () => {
     const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
     wirePhaseRunSpies(insertedPhaseRuns);

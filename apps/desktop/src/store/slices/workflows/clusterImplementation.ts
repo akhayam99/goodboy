@@ -7,7 +7,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone } from '@goodboy/core';
+import { extractClusterDone, fallbackStepOutputSummary } from '@goodboy/core';
 import {
   invokeAgentInsert,
   invokeAgentList,
@@ -234,7 +234,9 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
 
     continueAttempts.delete(childAgentId);
     const outputSummary =
-      assistantText.length > 0 ? assistantText.slice(0, 2000) : 'advanced to next cluster manually';
+      assistantText.length > 0
+        ? fallbackStepOutputSummary({ output: assistantText })
+        : 'advanced to next cluster manually';
     await invokeAgentUpdateStatus(childAgentId, {
       status: 'completed',
       outputSummary,

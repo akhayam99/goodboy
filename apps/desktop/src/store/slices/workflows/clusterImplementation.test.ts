@@ -466,6 +466,28 @@ describe('advanceClusterImplementation', () => {
     expect(state.selectedAgentId).toBe(PARENT);
   });
 
+  it('stores deterministic head and tail output for a completed cluster', async () => {
+    const child = childAgent({ id: 'summary-child', ordinal: 0, status: 'running' });
+    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    const { get, set } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'summary-child', ordinal: 0, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, child.id, assistantText, { force: true });
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      child.id,
+      expect.objectContaining({
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+      }),
+    );
+  });
+
   it('completes the container and auto-advances when the last child finishes', async () => {
     const c0 = childAgent({ id: 'm0', ordinal: 0, status: 'completed' });
     const c1 = childAgent({ id: 'm1', ordinal: 1 });

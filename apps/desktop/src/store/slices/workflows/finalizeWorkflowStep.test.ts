@@ -81,10 +81,14 @@ const session: Session = {
   updatedAt: NOW,
 };
 
-const buildHarness = () => {
+type Params = {
+  readonly sessions?: ReadonlyArray<Session>;
+};
+
+const buildHarness = ({ sessions = [session] }: Params = {}) => {
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
-    sessions: [session],
+    sessions,
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
     sendTurn: vi.fn(),
@@ -165,5 +169,22 @@ describe('finalizeWorkflowStep output summary', () => {
       AGENT_ID,
       expect.objectContaining({ outputSummary: 'timeout output' }),
     );
+  });
+
+  it('completes with deterministic fallback when the session row is missing', async () => {
+    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    const finalize = buildHarness({ sessions: [] });
+
+    const result = await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
+
+    expect(summarizeStepOutputSpy).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({
+        status: 'completed',
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+      }),
+    );
+    expect(result).toEqual({ shouldAutoAdvance: true });
   });
 });
