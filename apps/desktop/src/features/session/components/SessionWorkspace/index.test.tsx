@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 
@@ -79,7 +79,13 @@ vi.mock('../../../../app/components/AppBreadcrumb', () => ({
 vi.mock('../SessionOverviewPane', () => ({ SessionOverviewPane: () => null }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/SessionTopBar', () => ({ SessionTopBar: () => null }));
-vi.mock('./parts/LensColumn', () => ({ LensColumn: () => null }));
+vi.mock('./parts/LensColumn', () => ({
+  LensColumn: ({ onSelectOverview }: { onSelectOverview: () => void }) => (
+    <button type="button" onClick={onSelectOverview}>
+      Overview
+    </button>
+  ),
+}));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
@@ -185,5 +191,17 @@ describe('SessionWorkspace workflow breadcrumb', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.getByTestId('breadcrumb').textContent).toBe('Overview / Workflows / refactor');
+  });
+});
+
+describe('SessionWorkspace overview', () => {
+  it('keeps the lens column visible and selects Overview', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }));
+
+    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
   });
 });

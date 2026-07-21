@@ -7,6 +7,7 @@ export type AppShellProps = {
   footer?: ReactNode;
   leftSidebar?: ReactNode;
   leftHidden?: boolean;
+  leftCollapsed?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
@@ -18,6 +19,7 @@ const LEFT_SIDEBAR_MIN = 260;
 const LEFT_SIDEBAR_MAX = 640;
 const LEFT_SIDEBAR_DEFAULT = 340;
 const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
+const LEFT_RAIL_WIDTH = 44;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
@@ -43,6 +45,7 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 function buildLayout(opts: {
   collapsed: boolean;
   leftHidden: boolean;
+  leftCollapsed: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
   hasFooter: boolean;
@@ -56,6 +59,7 @@ function buildLayout(opts: {
   const {
     collapsed,
     leftHidden,
+    leftCollapsed,
     hasLeftSidebar,
     hasRightSidebar,
     hasFooter,
@@ -84,8 +88,8 @@ function buildLayout(opts: {
     };
   }
 
-  const leftCol = leftHidden ? '0px' : `${leftWidthPx}px`;
-  const handleCol = leftHidden ? '0px' : '6px';
+  const leftCol = leftHidden ? '0px' : leftCollapsed ? `${LEFT_RAIL_WIDTH}px` : `${leftWidthPx}px`;
+  const handleCol = leftHidden || leftCollapsed ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
       templateAreas: hasFooter
@@ -112,6 +116,7 @@ export const AppShell = ({
   footer,
   leftSidebar,
   leftHidden = false,
+  leftCollapsed = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
@@ -121,6 +126,7 @@ export const AppShell = ({
   const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
+  const isLeftResizeDisabled = leftHidden || leftCollapsed;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
     readPersistedWidth(
       LEFT_SIDEBAR_STORAGE_KEY,
@@ -225,6 +231,7 @@ export const AppShell = ({
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
     leftHidden,
+    leftCollapsed,
     hasLeftSidebar,
     hasRightSidebar,
     hasFooter,
@@ -266,16 +273,16 @@ export const AppShell = ({
             role="separator"
             aria-orientation="vertical"
             aria-label="resize left sidebar"
-            tabIndex={leftHidden ? -1 : 0}
-            onMouseDown={leftHidden ? undefined : startDrag('left')}
-            onKeyDown={leftHidden ? undefined : onLeftKeyDown}
+            tabIndex={isLeftResizeDisabled ? -1 : 0}
+            onMouseDown={isLeftResizeDisabled ? undefined : startDrag('left')}
+            onKeyDown={isLeftResizeDisabled ? undefined : onLeftKeyDown}
             className={cn(
               'group relative select-none overflow-hidden',
-              leftHidden ? 'pointer-events-none' : 'cursor-col-resize',
+              isLeftResizeDisabled ? 'pointer-events-none' : 'cursor-col-resize',
             )}
             style={{ gridArea: 'lhandle' }}
           >
-            {!leftHidden && (
+            {!isLeftResizeDisabled && (
               <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
             )}
           </div>

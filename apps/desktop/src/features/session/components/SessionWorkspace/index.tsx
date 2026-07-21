@@ -107,7 +107,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showStudio = studio != null;
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
-  const onBareOverview = showLens && lens === null;
   const overlayHome = agentHome ?? 'agents';
   const showWorkflowStrip = showAgentOverlay && overlayHome === 'workflows';
 
@@ -193,19 +192,16 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       </div>
       <Divider />
       <div className="flex min-h-0 flex-1">
-        {onBareOverview ? null : (
-          <>
-            <div className="flex w-60 shrink-0 flex-col bg-background">
-              <LensColumn
-                session={session}
-                activeLens={lens}
-                onSelect={onSelectLens}
-                filesCount={filesTouched.count}
-              />
-            </div>
-            <Divider orientation="vertical" />
-          </>
-        )}
+        <div className="flex w-60 shrink-0 flex-col bg-background">
+          <LensColumn
+            session={session}
+            activeLens={lens}
+            onSelectOverview={onSelectOverview}
+            onSelect={onSelectLens}
+            filesCount={filesTouched.count}
+          />
+        </div>
+        <Divider orientation="vertical" />
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-1">
             {showLens ? (

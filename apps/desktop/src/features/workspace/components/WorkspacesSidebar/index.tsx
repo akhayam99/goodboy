@@ -11,11 +11,13 @@ import {
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
+import { SessionsRail } from './parts/SessionsRail';
 
 export const WorkspacesSidebar = () => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
+  const sessionsSidebarCollapsed = useAppStore((s) => s.sessionsSidebarCollapsed);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const onSelectSession = useCallback(
     (id: SessionId) => {
@@ -35,6 +37,10 @@ export const WorkspacesSidebar = () => {
     }
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
+
+  if (sessionsSidebarCollapsed && currentSession != null) {
+    return <SessionsRail />;
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">

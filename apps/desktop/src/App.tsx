@@ -807,7 +807,8 @@ export const App = () => {
             />
           ) : undefined
         }
-        leftHidden={!currentSession || sessionsSidebarCollapsed}
+        leftHidden={!currentSession}
+        leftCollapsed={sessionsSidebarCollapsed}
         leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         main={
           <div className="relative h-full w-full">

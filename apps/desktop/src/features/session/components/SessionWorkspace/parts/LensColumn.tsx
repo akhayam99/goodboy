@@ -8,6 +8,7 @@ import {
   FileDiff,
   FileText,
   GitPullRequest,
+  LayoutDashboard,
   Layers,
   MessageSquareReply,
   SquareTerminal,
@@ -33,6 +34,7 @@ import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverview
 type LensColumnProps = {
   readonly session: Session;
   readonly activeLens: LensKind | null;
+  readonly onSelectOverview: () => void;
   readonly onSelect: (lens: LensKind) => void;
   readonly filesCount: number;
 };
@@ -52,7 +54,13 @@ type LensGroup = {
   readonly rows: ReadonlyArray<LensRow>;
 };
 
-export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensColumnProps) => {
+export const LensColumn = ({
+  session,
+  activeLens,
+  onSelectOverview,
+  onSelect,
+  filesCount,
+}: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
@@ -113,26 +121,6 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );
 
-  const contextRows: ReadonlyArray<LensRow> = [
-    { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
-    { kind: 'decisions', label: 'Decisions', icon: CheckCheck, tone: 'success' },
-    { kind: 'last_output_summary', label: 'Session summary', icon: Activity, tone: 'info' },
-    {
-      kind: 'pr',
-      label: 'Pull request',
-      icon: GitPullRequest,
-      tone: 'accent',
-      dot: hasPr ? 'running' : undefined,
-    },
-    {
-      kind: 'questions',
-      label: 'Questions',
-      icon: CircleHelp,
-      tone: 'warning',
-      count: openCount,
-    },
-  ];
-
   const groups: ReadonlyArray<LensGroup> = [
     {
       label: 'Work',
@@ -168,7 +156,26 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
           dot: attentionLens === 'resolve' || unreadLens === 'resolve' ? 'attention' : undefined,
           secondaryDot: hasPendingBatch,
         },
+        {
+          kind: 'questions',
+          label: 'Questions',
+          icon: CircleHelp,
+          tone: 'warning',
+          count: openCount,
+        },
+      ],
+    },
+    {
+      label: 'Changes',
+      rows: [
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
+        {
+          kind: 'pr',
+          label: 'Pull request',
+          icon: GitPullRequest,
+          tone: 'accent',
+          dot: hasPr ? 'running' : undefined,
+        },
       ],
     },
     {
@@ -180,7 +187,11 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
     },
     {
       label: 'Context',
-      rows: contextRows,
+      rows: [
+        { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
+        { kind: 'decisions', label: 'Decisions', icon: CheckCheck, tone: 'success' },
+        { kind: 'last_output_summary', label: 'Session summary', icon: Activity, tone: 'info' },
+      ],
     },
     {
       label: 'Infra',
@@ -199,6 +210,37 @@ export const LensColumn = ({ session, activeLens, onSelect, filesCount }: LensCo
   return (
     <ScrollFade className="min-h-0 flex-1">
       <nav className="flex flex-col gap-4 px-2 py-3">
+        <button
+          type="button"
+          onClick={onSelectOverview}
+          aria-current={activeLens === null ? 'page' : undefined}
+          className={cn(
+            'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            activeLens === null
+              ? 'bg-foreground/[0.06] text-foreground'
+              : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
+              tintClasses('neutral').bg,
+              tintClasses('neutral').ring,
+            )}
+          >
+            <LayoutDashboard size={12} aria-hidden className={tintClasses('neutral').icon} />
+          </span>
+          <span
+            className={cn(
+              'min-w-0 flex-1 truncate text-[13px]',
+              activeLens === null && 'font-medium',
+            )}
+          >
+            Overview
+          </span>
+        </button>
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
