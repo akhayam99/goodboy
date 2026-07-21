@@ -13,6 +13,7 @@ import { selectNonResolverStandaloneAgents } from '../../../../session/component
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
+import { pluralize } from '../../WorkspacesSidebar/lib';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { useDynamicActions } from './useDynamicActions';
 
@@ -112,7 +113,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             )}
             {externalTask && <ExternalTaskChip task={externalTask} variant="badge" />}
             {agentCount > 0 && (
-              <Chip tone="neutral" size="sm" shape="pill" label={`${agentCount} agents`} />
+              <Chip tone="neutral" size="sm" shape="pill" label={pluralize(agentCount, 'agent')} />
             )}
             {isAutoMode && <Chip tone="danger" size="sm" label="auto" />}
           </span>

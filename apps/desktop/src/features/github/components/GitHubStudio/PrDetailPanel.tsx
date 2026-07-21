@@ -263,6 +263,7 @@ export const PrDetailPanel = ({
         false,
       );
       await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
       await selectAgent(sessionId, agentId);
       onClose();
     })();
@@ -296,6 +297,7 @@ export const PrDetailPanel = ({
         );
       }
       await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
       await activateNextResolver(sessionId);
       onClose();
     })();

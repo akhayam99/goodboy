@@ -155,7 +155,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
             onClick={openStudio}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Open PR
+            Open PR studio
             <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
           </button>
         </div>

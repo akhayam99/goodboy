@@ -25,7 +25,6 @@ export {
   useWorkspaceHasUnread,
   useHasUnreadElsewhere,
   useWorkspaces,
-  sumSessionCost,
   type FilesTouched,
 } from './selectors';
 export { useTranscript } from './transcript';

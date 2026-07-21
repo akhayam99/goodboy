@@ -9,7 +9,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
-  EMPTY_ARRAY,
   useAppStore,
   useSessionCost,
   useSessionStageInfo,
