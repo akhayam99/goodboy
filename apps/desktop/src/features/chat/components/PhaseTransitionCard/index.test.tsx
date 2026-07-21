@@ -14,7 +14,7 @@ const item = {
   fromStep: { ordinal: 0, name: 'discover' },
   toStep: { ordinal: 1, name: 'plan' },
   carryForwardContext: 'carry me forward',
-} as Extract<TranscriptItem, { kind: 'step_transition' }>;
+} satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
 
 describe('PhaseTransitionCard', () => {
   it('renders the step transition header with both step names', () => {
@@ -32,5 +32,26 @@ describe('PhaseTransitionCard', () => {
     render(<PhaseTransitionCard item={item} />);
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('carry me forward')).toBeDefined();
+  });
+
+  it('renders the degraded handoff badge only when degraded', () => {
+    const { rerender } = render(<PhaseTransitionCard item={item} />);
+    expect(screen.queryByText('degraded handoff')).toBeNull();
+
+    const degradedItem = {
+      ...item,
+      degraded: true,
+    } satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
+    rerender(<PhaseTransitionCard item={degradedItem} />);
+    expect(screen.getByText('degraded handoff')).toBeDefined();
+  });
+
+  it('renders the step duration when present', () => {
+    const timedItem = {
+      ...item,
+      durationMs: 252_000,
+    } satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
+    render(<PhaseTransitionCard item={timedItem} />);
+    expect(screen.getByText('4m 12s')).toBeDefined();
   });
 });
