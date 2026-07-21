@@ -103,14 +103,6 @@ export type Agent = Readonly<{
   sourceCommentUrl?: string;
 }>;
 
-export type StepTransition = Readonly<{
-  workflowRunId?: WorkflowRunId;
-  fromOrdinal: number;
-  toOrdinal: number;
-  carryForwardContext: string;
-  at: IsoDateTime;
-}>;
-
 export type ParallelGroup = {
   readonly id: ParallelGroupId;
   readonly sessionId: SessionId;

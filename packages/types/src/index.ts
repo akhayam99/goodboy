@@ -109,7 +109,6 @@ export type {
   ParallelGroup,
   Step,
   StepDef,
-  StepTransition,
   Workflow,
 } from './workflow';
 export type {

@@ -3,6 +3,7 @@ import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
+import { formatStepDuration } from './formatStepDuration';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
@@ -32,6 +33,11 @@ export const PhaseTransitionCard = ({ item }: Props) => {
         <span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-merged/80">
           step
         </span>
+        {item.degraded === true && (
+          <span className="shrink-0 rounded-md bg-warning/15 px-1 py-px text-2xs font-medium text-warning">
+            degraded handoff
+          </span>
+        )}
         <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-foreground/70">
           <span className="truncate">
             {item.fromStep.ordinal + 1}. {item.fromStep.name}
@@ -41,7 +47,12 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             {item.toStep.ordinal + 1}. {item.toStep.name}
           </span>
         </span>
-        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{timestamp}</span>
+        <span className="flex shrink-0 items-center gap-1.5 font-mono text-2xs text-muted-foreground">
+          {item.durationMs != null && (
+            <span>{formatStepDuration({ durationMs: item.durationMs })}</span>
+          )}
+          <span>{timestamp}</span>
+        </span>
       </button>
 
       {open && hasContext ? (

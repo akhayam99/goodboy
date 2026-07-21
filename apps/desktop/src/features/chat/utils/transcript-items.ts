@@ -43,6 +43,8 @@ export type TranscriptItem =
       fromStep: { ordinal: number; name: string };
       toStep: { ordinal: number; name: string };
       carryForwardContext: string;
+      degraded?: true;
+      durationMs?: number;
       at: string;
     }
   | {
@@ -227,6 +229,8 @@ export const reduceTranscript = (
           fromStep: event.fromStep,
           toStep: event.toStep,
           carryForwardContext: event.carryForwardContext,
+          degraded: event.degraded,
+          durationMs: event.durationMs,
           at: event.at,
         });
         break;

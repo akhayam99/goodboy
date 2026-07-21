@@ -6,12 +6,18 @@ import type {
   ProviderRunId,
   Session,
   SessionId,
+  StepId,
   TurnEvent,
+  Workflow,
+  WorkflowId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
+const invokeSpy = vi.fn();
+const invokeAgentUpdateStatusSpy = vi.fn();
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
@@ -31,7 +37,7 @@ vi.mock('../features/permissions/permissions', () => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+  invoke: invokeSpy,
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({
@@ -46,7 +52,7 @@ vi.mock('../shared/lib/db', () => ({
 vi.mock('@goodboy/db', () => ({
   getSetting: vi.fn(),
   insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(),
+  insertProviderRun: vi.fn(async () => undefined),
   insertSession: vi.fn(),
   insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
@@ -126,13 +132,14 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowDelete: vi.fn(),
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
-  invokeAgentUpdateStatus: vi.fn(),
+  invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
   invokeAgentMarkViewed: vi.fn(async () => undefined),
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
+  worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
 }));
 
 vi.mock('../shared/lib/repo', () => ({
@@ -193,7 +200,14 @@ describe('sendTurn, agent routing', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -202,7 +216,9 @@ describe('sendTurn, agent routing', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
   });
 
@@ -296,12 +312,407 @@ describe('sendTurn, agent routing', () => {
 
     expect(runTurnSpy).toHaveBeenCalledOnce();
   });
+
+  it('stores deterministic fallback output without an LLM call for a non-workflow agent', async () => {
+    const useAppStore = await importStore();
+    setupTwoAgents(useAppStore, AGENT_A);
+    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
+      yield {
+        kind: 'assistant_text' as const,
+        runId: args.runId,
+        delta: assistantText,
+        at: NOW,
+      };
+      yield { kind: 'done' as const, runId: args.runId, at: NOW };
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'finish the task' });
+
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_A,
+      expect.objectContaining({
+        status: 'completed',
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+      }),
+    );
+    expect(JSON.stringify(invokeSpy.mock.calls)).not.toContain(
+      'Condense an AI coding agent step output',
+    );
+  });
+});
+
+describe('sendTurn, workflow carry-forward', () => {
+  beforeEach(async () => {
+    runTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preference',
+    });
+  });
+
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    vi.clearAllMocks();
+  });
+
+  it('collapses a completed parallel group into one predecessor entry', async () => {
+    const useAppStore = await importStore();
+    const workflowId = 'workflow-parallel-carry' as WorkflowId;
+    const workflowRunId = 'workflow-run-parallel-carry' as WorkflowRunId;
+    const apiStepId = 'step-api' as StepId;
+    const uiStepId = 'step-ui' as StepId;
+    const reviewStepId = 'step-review-parallel' as StepId;
+    const apiAgentId = 'agent-api' as AgentId;
+    const uiAgentId = 'agent-ui' as AgentId;
+    const reviewAgentId = 'agent-review-parallel' as AgentId;
+    const mergedSummary = [
+      '## workflow handoff',
+      '### parallel group output: API',
+      '#### branch 1: API',
+      'Added endpoint.',
+      '#### branch 2: UI',
+      'Built form.',
+    ].join('\n');
+    const workflow: Workflow = {
+      id: workflowId,
+      workspaceId: WORKSPACE_ID,
+      name: 'parallel carry-forward workflow',
+      description: '',
+      steps: [
+        {
+          id: apiStepId,
+          workflowId,
+          ordinal: 0,
+          name: 'API',
+          promptPrefix: '',
+          parallelGroup: 9,
+        },
+        {
+          id: uiStepId,
+          workflowId,
+          ordinal: 1,
+          name: 'UI',
+          promptPrefix: '',
+          parallelGroup: 9,
+        },
+        { id: reviewStepId, workflowId, ordinal: 2, name: 'Review', promptPrefix: 'review' },
+      ],
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    const agents: Agent[] = [
+      {
+        ...buildAgent(apiAgentId, 0),
+        stepId: apiStepId,
+        workflowRunId,
+        name: 'API',
+        status: 'completed',
+        outputSummary: mergedSummary,
+      },
+      {
+        ...buildAgent(uiAgentId, 1),
+        stepId: uiStepId,
+        workflowRunId,
+        name: 'UI',
+        status: 'completed',
+        outputSummary: 'Built form.',
+      },
+      {
+        ...buildAgent(reviewAgentId, 2),
+        stepId: reviewStepId,
+        workflowRunId,
+        name: 'Review',
+      },
+    ];
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue(agents);
+    invokeAgentUpdateStatusSpy.mockImplementation(async (id: AgentId, fields: object) => ({
+      ...agents.find((agent) => agent.id === id)!,
+      ...fields,
+    }));
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          workflowRuns: [
+            {
+              id: workflowRunId,
+              workflowId,
+              ordinal: 0,
+              currentStep: 2,
+              autoRun: false,
+              triggerMode: 'immediate',
+            },
+          ],
+        },
+      ],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: agents },
+      selectedAgentId: { [SESSION_ID]: reviewAgentId },
+      transcripts: { [reviewAgentId]: [] },
+      phaseTemplates: { [WORKSPACE_ID]: [workflow] },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'review group' });
+
+    const expectedCarryForward = [
+      '## workflow handoff',
+      '### step 1 output: API',
+      '### parallel group output: API',
+      '#### branch 1: API',
+      'Added endpoint.',
+      '#### branch 2: UI',
+      'Built form.',
+    ].join('\n');
+    expect(runTurnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ prompt: expect.stringContaining(expectedCarryForward) }),
+    );
+    expect(runTurnSpy.mock.calls[0]?.[0]?.prompt).not.toContain('### earlier steps');
+    expect(
+      (useAppStore.getState().transcripts[reviewAgentId] ?? []).filter(
+        (event) => event.kind === 'step_transition',
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        fromStep: { ordinal: 1, name: 'API' },
+        carryForwardContext: expectedCarryForward,
+      }),
+    ]);
+  });
+
+  it('injects the same full chain on retry without duplicating slots', async () => {
+    const useAppStore = await importStore();
+    const workflowId = 'workflow-carry' as WorkflowId;
+    const workflowRunId = 'workflow-run-carry' as WorkflowRunId;
+    const planStepId = 'step-plan' as StepId;
+    const researchStepId = 'step-research' as StepId;
+    const implementStepId = 'step-implement' as StepId;
+    const reviewStepId = 'step-review' as StepId;
+    const planAgentId = 'agent-plan' as AgentId;
+    const researchAgentId = 'agent-research' as AgentId;
+    const implementAgentId = 'agent-implement' as AgentId;
+    const reviewAgentId = 'agent-review' as AgentId;
+    const researchSummary = `${'r'.repeat(275)}\nresearch tail omitted`;
+    const workflow: Workflow = {
+      id: workflowId,
+      workspaceId: WORKSPACE_ID,
+      name: 'carry-forward workflow',
+      description: '',
+      steps: [
+        { id: planStepId, workflowId, ordinal: 0, name: 'Plan', promptPrefix: '' },
+        { id: researchStepId, workflowId, ordinal: 1, name: 'Research', promptPrefix: '' },
+        {
+          id: implementStepId,
+          workflowId,
+          ordinal: 2,
+          name: 'Implement',
+          promptPrefix: '',
+        },
+        { id: reviewStepId, workflowId, ordinal: 3, name: 'Review', promptPrefix: 'review' },
+      ],
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    let agents: Agent[] = [
+      {
+        ...buildAgent(planAgentId, 0),
+        stepId: planStepId,
+        workflowRunId,
+        name: 'Plan',
+        status: 'completed',
+        outputSummary: 'Plan outcome.\nPlan details omitted.',
+      },
+      {
+        ...buildAgent(researchAgentId, 1),
+        stepId: researchStepId,
+        workflowRunId,
+        name: 'Research',
+        status: 'completed',
+        outputSummary: researchSummary,
+      },
+      {
+        ...buildAgent(implementAgentId, 2),
+        stepId: implementStepId,
+        workflowRunId,
+        name: 'Implement',
+        status: 'completed',
+        outputSummary: '',
+        startedAt: '2026-05-18T00:00:01.000Z' as IsoDateTime,
+        completedAt: '2026-05-18T00:00:04.000Z' as IsoDateTime,
+      },
+      {
+        ...buildAgent(reviewAgentId, 3),
+        stepId: reviewStepId,
+        workflowRunId,
+        name: 'Review',
+      },
+    ];
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => agents,
+    );
+    invokeAgentUpdateStatusSpy.mockImplementation(
+      async (
+        id: AgentId,
+        fields: {
+          readonly status: Agent['status'];
+          readonly startedAt?: IsoDateTime;
+          readonly completedAt?: IsoDateTime;
+        },
+      ) => {
+        let updated: Agent | null = null;
+        agents = agents.map((agent) => {
+          if (agent.id !== id) {
+            return agent;
+          }
+          updated = {
+            ...agent,
+            status: fields.status,
+            ...(fields.startedAt != null && { startedAt: fields.startedAt }),
+            ...(fields.completedAt != null && { completedAt: fields.completedAt }),
+          };
+          return updated;
+        });
+        return updated ?? agents.find((agent) => agent.id === id) ?? agents[0]!;
+      },
+    );
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          workflowRuns: [
+            {
+              id: workflowRunId,
+              workflowId,
+              ordinal: 0,
+              currentStep: 3,
+              autoRun: false,
+              triggerMode: 'immediate',
+            },
+          ],
+        },
+      ],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: agents },
+      selectedAgentId: { [SESSION_ID]: reviewAgentId },
+      transcripts: { [reviewAgentId]: [] },
+      sessionSlots: {
+        [SESSION_ID]: [{ key: 'decisions', value: 'decision-slot-only-value', enabled: true }],
+      },
+      phaseTemplates: { [WORKSPACE_ID]: [workflow] },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'first attempt' });
+    expect(agents.find((agent) => agent.id === reviewAgentId)?.status).toBe('failed');
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'retry' });
+
+    const transitions = (useAppStore.getState().transcripts[reviewAgentId] ?? []).filter(
+      (event) => event.kind === 'step_transition',
+    );
+    const expectedCarryForward = [
+      '## workflow handoff',
+      '### step 2 output: Implement',
+      '(no output captured)',
+      '### earlier steps',
+      `- step 1 Research: ${researchSummary.slice(0, 280)}`,
+      '- step 0 Plan: Plan outcome.',
+    ].join('\n');
+    expect(transitions).toEqual([
+      expect.objectContaining({
+        carryForwardContext: expectedCarryForward,
+        degraded: true,
+        durationMs: 3000,
+      }),
+      expect.objectContaining({
+        carryForwardContext: expectedCarryForward,
+        degraded: true,
+        durationMs: 3000,
+      }),
+    ]);
+    expect(runTurnSpy.mock.calls.map((call) => call[0]?.prompt)).toEqual([
+      expect.stringContaining(expectedCarryForward),
+      expect.stringContaining(expectedCarryForward),
+    ]);
+
+    const fallbackSummary = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+    agents = agents.map((agent) =>
+      agent.id === implementAgentId ? { ...agent, outputSummary: fallbackSummary } : agent,
+    );
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'fallback retry' });
+
+    const fallbackTransition = (useAppStore.getState().transcripts[reviewAgentId] ?? [])
+      .filter((event) => event.kind === 'step_transition')
+      .at(-1);
+    expect(fallbackTransition).toEqual(
+      expect.objectContaining({
+        degraded: true,
+        carryForwardContext: expect.stringContaining(fallbackSummary),
+      }),
+    );
+  });
 });
 
 describe('sendTurn, resolver config (provider pin + effort)', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -312,7 +723,9 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
   });
 

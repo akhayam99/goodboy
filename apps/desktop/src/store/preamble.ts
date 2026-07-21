@@ -71,22 +71,35 @@ export const buildPriorTurnsBlock = (
   transcripts: ReadonlyArray<TurnEvent>,
   maxTokens: number,
 ): string => {
-  type Line = { role: 'user' | 'assistant'; text: string };
+  type Line = { label: 'user' | 'assistant' | 'workflow handoff (carried forward)'; text: string };
   const grouped: Line[] = [];
   let pendingAssistant = '';
   for (const ev of transcripts) {
     if (ev.kind === 'user_text') {
       if (pendingAssistant.length > 0) {
-        grouped.push({ role: 'assistant', text: pendingAssistant });
+        grouped.push({ label: 'assistant', text: pendingAssistant });
         pendingAssistant = '';
       }
-      grouped.push({ role: 'user', text: ev.text });
-    } else if (ev.kind === 'assistant_text') {
+      grouped.push({ label: 'user', text: ev.text });
+      continue;
+    }
+    if (ev.kind === 'assistant_text') {
       pendingAssistant += ev.delta;
+      continue;
+    }
+    if (ev.kind === 'step_transition') {
+      if (pendingAssistant.length > 0) {
+        grouped.push({ label: 'assistant', text: pendingAssistant });
+        pendingAssistant = '';
+      }
+      grouped.push({
+        label: 'workflow handoff (carried forward)',
+        text: ev.carryForwardContext,
+      });
     }
   }
   if (pendingAssistant.length > 0) {
-    grouped.push({ role: 'assistant', text: pendingAssistant });
+    grouped.push({ label: 'assistant', text: pendingAssistant });
   }
 
   if (grouped.length === 0) {
@@ -101,7 +114,7 @@ export const buildPriorTurnsBlock = (
     if (text.length === 0) {
       continue;
     }
-    const formatted = `${line.role}: ${text}`;
+    const formatted = `${line.label}: ${text}`;
     const cost = estimateTokens(formatted);
     if (cost > budget) {
       break;

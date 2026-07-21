@@ -128,6 +128,34 @@ describe('reduceTranscript, request + decision pair', () => {
   });
 });
 
+describe('reduceTranscript, step_transition', () => {
+  it('passes degraded handoff metadata through to the transcript item', () => {
+    const event = {
+      kind: 'step_transition',
+      runId: RUN,
+      fromStep: { ordinal: 0, name: 'discover' },
+      toStep: { ordinal: 1, name: 'plan' },
+      carryForwardContext: 'carry me forward',
+      degraded: true,
+      durationMs: 252_000,
+      at: AT,
+    } satisfies TurnEvent;
+
+    expect(reduceTranscript([event])).toEqual([
+      {
+        kind: 'step_transition',
+        key: 'phase-0',
+        fromStep: event.fromStep,
+        toStep: event.toStep,
+        carryForwardContext: event.carryForwardContext,
+        degraded: true,
+        durationMs: 252_000,
+        at: AT,
+      },
+    ]);
+  });
+});
+
 function userTextEvent(text: string): TurnEvent {
   return { kind: 'user_text', runId: RUN, text, at: AT };
 }

@@ -1,5 +1,9 @@
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractScoutSplit, type ExtractedScoutArea } from '@goodboy/core';
+import {
+  extractScoutSplit,
+  fallbackStepOutputSummary,
+  type ExtractedScoutArea,
+} from '@goodboy/core';
 import {
   invokeAgentInsert,
   invokeAgentList,
@@ -290,6 +294,12 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
       }
     }
 
-    await settleScout(set, get, sessionId, agentId, assistantText.slice(0, 2000));
+    await settleScout(
+      set,
+      get,
+      sessionId,
+      agentId,
+      fallbackStepOutputSummary({ output: assistantText }),
+    );
   };
 };

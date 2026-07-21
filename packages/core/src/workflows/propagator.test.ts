@@ -1,75 +1,98 @@
 import { describe, expect, it } from 'vitest';
-import type { ContextSlot, IsoDateTime } from '@goodboy/types';
-import { WorkflowPropagator } from './propagator';
+import { buildChainCarryForward, buildParallelCarryForward } from './propagator';
 
-const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
-
-function makeSummarizer(summary: string) {
-  return {
-    async summarizePhaseOutput(_text: string): Promise<string> {
-      return summary;
-    },
-  };
-}
-
-const SLOTS: ReadonlyArray<ContextSlot> = [{ key: 'goal', value: 'refactor auth', enabled: true }];
-
-describe('WorkflowPropagator.buildTransition', () => {
-  it('combines summary and serialized slots in carryForwardContext', async () => {
-    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('phase summary') });
-    const result = await propagator.buildTransition({
-      fromOrdinal: 0,
-      toOrdinal: 1,
-      completedPhaseOutput: 'raw output',
-      existingSlots: SLOTS,
-      at: AT,
-    });
-
-    expect(result.fromOrdinal).toBe(0);
-    expect(result.toOrdinal).toBe(1);
-    expect(result.at).toBe(AT);
-    expect(result.carryForwardContext).toContain('phase summary');
-    expect(result.carryForwardContext).toContain('refactor auth');
+describe('buildChainCarryForward', () => {
+  it('returns an empty string without predecessors', () => {
+    expect(buildChainCarryForward({ steps: [] })).toBe('');
   });
 
-  it('empty summary → slots text present without a leading double-newline', async () => {
-    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('') });
-    const result = await propagator.buildTransition({
-      fromOrdinal: 1,
-      toOrdinal: 2,
-      completedPhaseOutput: 'output',
-      existingSlots: SLOTS,
-      at: AT,
+  it('renders the full immediate predecessor summary without earlier steps', () => {
+    const result = buildChainCarryForward({
+      steps: [
+        { ordinal: 2, name: 'Implement', outputSummary: 'Changed `src/auth.ts`.\n- Tests pass' },
+      ],
     });
 
-    expect(result.carryForwardContext).not.toMatch(/^\n\n/);
-    expect(result.carryForwardContext).toContain('refactor auth');
+    expect(result).toBe(
+      '## workflow handoff\n### step 2 output: Implement\nChanged `src/auth.ts`.\n- Tests pass',
+    );
+    expect(result).not.toContain('### earlier steps');
   });
 
-  it('no slots → summary joined with serialized slot headers', async () => {
-    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('only summary') });
-    const result = await propagator.buildTransition({
-      fromOrdinal: 0,
-      toOrdinal: 1,
-      completedPhaseOutput: 'output',
-      existingSlots: [],
-      at: AT,
+  it('sorts predecessors and degrades older summaries by distance', () => {
+    const nearestSummary = `${'n'.repeat(275)}\nnearest tail`;
+    const result = buildChainCarryForward({
+      steps: [
+        { ordinal: 3, name: 'Review', outputSummary: 'Review passed.\nNo blockers.' },
+        { ordinal: 1, name: 'Plan', outputSummary: 'Plan selected option A.\nPlan details.' },
+        { ordinal: 2, name: 'Implement', outputSummary: nearestSummary },
+      ],
     });
 
-    expect(result.carryForwardContext).toContain('only summary');
+    expect(result).toContain('### step 3 output: Review\nReview passed.\nNo blockers.');
+    expect(result).toContain(`- step 2 Implement: ${nearestSummary.slice(0, 280)}`);
+    expect(result).toContain('- step 1 Plan: Plan selected option A.');
+    expect(result.indexOf('- step 2')).toBeLessThan(result.indexOf('- step 1'));
   });
 
-  it('empty summary and no slots → carryForwardContext contains only slot headers', async () => {
-    const propagator = new WorkflowPropagator({ summarizer: makeSummarizer('') });
-    const result = await propagator.buildTransition({
-      fromOrdinal: 0,
-      toOrdinal: 1,
-      completedPhaseOutput: '',
-      existingSlots: [],
-      at: AT,
+  it('degrades missing and empty output without throwing', () => {
+    const result = buildChainCarryForward({
+      steps: [
+        undefined,
+        { ordinal: 1, name: 'Plan' },
+        { ordinal: 2, name: 'Implement', outputSummary: '' },
+      ],
     });
 
-    expect(result.carryForwardContext).not.toMatch(/^\n\n/);
-    expect(result.carryForwardContext.trim().length).toBeGreaterThan(0);
+    expect(result).toContain('### step 2 output: Implement\n(no output captured)');
+    expect(result).toContain('- step 1 Plan: (no output captured)');
+  });
+});
+
+describe('buildParallelCarryForward', () => {
+  it('returns an empty string without branch statuses', () => {
+    expect(buildParallelCarryForward({ groupName: 'Implementation', branches: [] })).toBe('');
+  });
+
+  it('renders completed summaries and failed branch errors', () => {
+    const result = buildParallelCarryForward({
+      groupName: 'Implementation',
+      branches: [
+        { name: 'API', status: 'completed', outputSummary: 'Added the API route.' },
+        {
+          name: 'UI',
+          status: 'failed',
+          outputSummary: 'This summary is not rendered.',
+          error: 'Typecheck failed\nadditional diagnostics',
+        },
+      ],
+    });
+
+    expect(result).toBe(
+      [
+        '## workflow handoff',
+        '### parallel group output: Implementation',
+        '#### branch 1: API',
+        'Added the API route.',
+        '#### branch 2: UI (failed)',
+        'Typecheck failed',
+      ].join('\n'),
+    );
+  });
+
+  it('degrades every branch body when the merged block exceeds 3000 characters', () => {
+    const result = buildParallelCarryForward({
+      groupName: 'Wide implementation',
+      branches: Array.from({ length: 5 }, (_, index) => ({
+        name: `Worker ${index + 1}`,
+        status: 'completed',
+        outputSummary: String(index + 1).repeat(700),
+      })),
+    });
+
+    expect(result).toContain(`#### branch 1: Worker 1\n${'1'.repeat(280)}`);
+    expect(result).not.toContain('1'.repeat(281));
+    expect(result).toContain(`#### branch 5: Worker 5\n${'5'.repeat(280)}`);
+    expect(result).not.toContain('5'.repeat(281));
   });
 });

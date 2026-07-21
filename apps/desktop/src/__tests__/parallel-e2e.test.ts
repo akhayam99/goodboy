@@ -142,6 +142,7 @@ function makeInputs(
 ): ParallelBranchInputs {
   return {
     session: makeSession(),
+    workflowRunId: 'run-1' as WorkflowRunId,
     orchestratingAgentId: 'orchestrator-agent' as AgentId,
     workspace: makeWorkspace(),
     currentDef: groupDefs[0]!,
@@ -185,10 +186,17 @@ function wirePhaseRunSpies(
     name: string;
     status: AgentStatus;
     runId: ProviderRunId;
+    workflowRunId?: WorkflowRunId;
   }>,
 ): void {
   phaseRunInsertSpy.mockImplementation(
-    async (args: { stepId: string; ordinal: number; name: string; providerRunId: string }) => {
+    async (args: {
+      stepId: string;
+      workflowRunId?: WorkflowRunId;
+      ordinal: number;
+      name: string;
+      providerRunId: string;
+    }) => {
       const row = {
         id: `pr-${args.stepId}` as AgentId,
         sessionId: SESSION_ID,
@@ -197,6 +205,7 @@ function wirePhaseRunSpies(
         name: args.name,
         status: 'running' as AgentStatus,
         runId: args.providerRunId as ProviderRunId,
+        ...(args.workflowRunId != null && { workflowRunId: args.workflowRunId }),
       };
       insertedPhaseRuns.push(row);
       return row;
@@ -295,7 +304,60 @@ describe('parallel e2e, fan-out/fan-in', () => {
     expect(phaseRunUpdateStatusSpy).toHaveBeenCalledTimes(3);
 
     const phaseTransitions = events.filter((e) => e.kind === 'step_transition');
-    expect(phaseTransitions).toHaveLength(1);
+    expect(phaseTransitions).toEqual([
+      expect.objectContaining({
+        carryForwardContext: [
+          '## workflow handoff',
+          '### parallel group output: d-a',
+          '#### branch 1: d-a',
+          'run-a output',
+          '#### branch 2: d-b',
+          'run-b output',
+          '#### branch 3: d-c',
+          'run-c output',
+        ].join('\n'),
+      }),
+    ]);
+    expect(phaseRunInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ workflowRunId: 'run-1' }),
+    );
+    expect(phaseRunUpdateStatusSpy).toHaveBeenCalledWith(
+      'pr-d-a',
+      expect.objectContaining({
+        outputSummary: expect.stringContaining('### parallel group output: d-a'),
+      }),
+    );
+  });
+
+  it('caps raw output stored for non-representative completed branches', async () => {
+    const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
+    wirePhaseRunSpies(insertedPhaseRuns);
+    const { effects } = makeEffects();
+    const inputs = makeInputs([makeDef('d-a', 1), makeDef('d-b', 2)]);
+    const branchPromise = runParallelBranch(inputs, makeDeps(effects));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const spawnedRunIds = (
+      invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<
+        [{ runs: ReadonlyArray<{ runId: string }> }]
+      >
+    ).map(([args]) => args.runs[0]!.runId) as [string, string];
+    const [representativeRunId, rawRunId] = spawnedRunIds;
+    const rawOutput = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    emitLine(representativeRunId, 'representative output');
+    emitLine(rawRunId, rawOutput);
+    emitEnd(representativeRunId, 0);
+    emitEnd(rawRunId, 0);
+
+    await branchPromise;
+
+    expect(phaseRunUpdateStatusSpy).toHaveBeenCalledWith(
+      'pr-d-b',
+      expect.objectContaining({
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+      }),
+    );
   });
 
   it('error path: 1 of 3 runs fails → partial merge proceeds, anyFailed=true, group still completes', async () => {
@@ -345,6 +407,13 @@ describe('parallel e2e, fan-out/fan-in', () => {
     expect(seenRunIds.has(idA as ProviderRunId)).toBe(true);
     expect(seenRunIds.has(idB as ProviderRunId)).toBe(true);
     expect(seenRunIds.has(idC as ProviderRunId)).toBe(false);
+
+    const phaseTransition = events.find((event) => event.kind === 'step_transition');
+    expect(phaseTransition).toEqual(
+      expect.objectContaining({
+        carryForwardContext: expect.stringContaining('#### branch 3: d-c (failed)\nrun failed'),
+      }),
+    );
   });
 
   it('all-fail path: all 3 runs fail → allFailed=true, group completedAt not set', async () => {

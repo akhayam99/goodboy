@@ -221,4 +221,19 @@ describe('advanceScoutTree split decision', () => {
 
     expect(hoisted.insertArgs).toHaveLength(0);
   });
+
+  it('stores deterministic head and tail output for a completed scout', async () => {
+    const scout = scoutAgent({ id: 'summary-scout' as AgentId });
+    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    const { get, set } = makeAdvanceStore([scout], true);
+
+    await advanceScoutTree(set, get)(SID, scout.id, assistantText);
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      scout.id,
+      expect.objectContaining({
+        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+      }),
+    );
+  });
 });
