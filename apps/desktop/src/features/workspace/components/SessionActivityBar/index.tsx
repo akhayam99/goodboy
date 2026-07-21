@@ -1,6 +1,14 @@
 import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, Check, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import { Button, cn, ScrollArea, StatusDot } from '@goodboy/ui';
+import {
+  Archive,
+  Check,
+  ChevronRight,
+  PanelLeftClose,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
+import { Button, cn, ScrollArea, StatusDot, Tooltip } from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -74,6 +82,7 @@ export const SessionActivityBar = ({
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<SessionId>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const bulkUnarchiveTask = useAppStore((s) => s.bulkUnarchiveTask);
+  const setSessionsSidebarCollapsed = useAppStore((s) => s.setSessionsSidebarCollapsed);
 
   const prefs = useSessionViewPrefs(workspaceId);
 
@@ -155,6 +164,16 @@ export const SessionActivityBar = ({
                 Archived
               </button>
               <SessionViewMenu workspaceId={workspaceId} />
+              <Tooltip content="hide sessions (⌘B)" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => setSessionsSidebarCollapsed(true)}
+                  aria-label="hide sessions"
+                  className="inline-flex shrink-0 items-center justify-center rounded p-1 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+                >
+                  <PanelLeftClose size={13} aria-hidden />
+                </button>
+              </Tooltip>
             </div>
           </div>
 
