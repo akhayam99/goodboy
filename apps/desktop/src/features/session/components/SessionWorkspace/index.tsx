@@ -40,7 +40,7 @@ const LENS_LABEL: Record<LensKind, string> = {
   terminal: 'Terminal',
   goal: 'Goal',
   decisions: 'Decisions',
-  last_output_summary: 'Session TLDR',
+  last_output_summary: 'Session summary',
   pr: 'Pull request',
   files: 'Diff',
 };

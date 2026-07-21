@@ -18,7 +18,7 @@ type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
 const SLOT_TITLE: Record<SlotKey, string> = {
   goal: 'Goal',
   decisions: 'Decisions',
-  last_output_summary: 'Session TLDR',
+  last_output_summary: 'Session summary',
 };
 
 const SLOT_DESCRIPTION: Record<SlotKey, string> = {
@@ -31,7 +31,7 @@ const SLOT_DESCRIPTION: Record<SlotKey, string> = {
 const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
-  last_output_summary: 'Write a manual session TLDR',
+  last_output_summary: 'Write a manual session summary',
 };
 
 const SLOT_ICON: Record<SlotKey, LucideIcon> = {
