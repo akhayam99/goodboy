@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { autoModelForRole } from './auto-model';
+import { CURSOR_MODELS } from './cursor/models';
 
 describe('autoModelForRole', () => {
   it('returns null when no providers are available', () => {
@@ -71,10 +72,16 @@ describe('autoModelForRole', () => {
       expect(['gemini', 'codex']).toContain(result?.provider);
     });
 
-    it('cursor provider: picks a model for a mid-tier role', () => {
+    it('cursor provider: picks a real cursor slug for a mid-tier role, not auto', () => {
       const result = autoModelForRole('product', ['cursor']);
       expect(result?.provider).toBe('cursor');
-      expect(typeof result?.model).toBe('string');
+      expect(result?.model).not.toBe('auto');
+      expect(CURSOR_MODELS.some((m) => m.id === result?.model)).toBe(true);
+    });
+
+    it('cursor provider: picks a real expensive slug for a high-tier role', () => {
+      const result = autoModelForRole('planner', ['cursor']);
+      expect(result).toEqual({ provider: 'cursor', model: 'claude-opus-4-7-thinking-high' });
     });
   });
 });

@@ -9,6 +9,7 @@ import {
   extractPlanFromMarker,
   extractScoutSplit,
   findReusableAgent,
+  resolveModelForProvider,
   runsForWorkflowRun,
   turnReducer,
   type ClaudeFlagSet,
@@ -320,18 +321,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       phaseDefinition != null && !phaseDefinition.modelOverride
         ? (autoModelForRole(phaseDefinition.role ?? 'custom', [provider])?.model ?? null)
         : null;
-    const model =
-      phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
-        ? phaseDefinition.modelOverride
-        : autoStepModel != null
-          ? autoStepModel
-          : turnOverrideActive
-            ? routingDecision.selectedModel
-            : routingDecision.fallbackUsed
+    const model = resolveModelForProvider({
+      provider,
+      modelId:
+        phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
+          ? phaseDefinition.modelOverride
+          : autoStepModel != null
+            ? autoStepModel
+            : turnOverrideActive
               ? routingDecision.selectedModel
-              : agentModelApplies
-                ? agentKindModel
-                : routingDecision.selectedModel;
+              : routingDecision.fallbackUsed
+                ? routingDecision.selectedModel
+                : agentModelApplies
+                  ? agentKindModel
+                  : routingDecision.selectedModel,
+    });
 
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};

@@ -17,7 +17,7 @@ describe.skipIf(!enabled)('CursorAdapter, integration (requires cursor-agent + a
     const request: TurnRequest = {
       runId: 'run_integration' as ProviderRunId,
       sessionId: 'sess_integration' as SessionId,
-      model: 'cursor-small',
+      model: 'composer-2',
       workingDir: '/tmp',
       systemPrompt: 'You are a test assistant. Be brief.',
       userMessage: 'Reply with only: "integration ok"',

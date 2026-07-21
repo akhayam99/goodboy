@@ -11,9 +11,9 @@ import type {
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
 import {
-  autoModelForRole,
-  getDefaultTurnModel,
   isWorkflowComplete,
+  recommendedModelForRole,
+  resolveModelForProvider,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -104,10 +104,12 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       });
       const resolvedProvider = step.providerOverride ?? sessionDefaultProvider;
       agentProviderOverrides[agent.id] = resolvedProvider;
-      agentModelOverrides[agent.id] =
-        step.modelOverride ??
-        autoModelForRole(step.role ?? 'custom', [sessionDefaultProvider])?.model ??
-        getDefaultTurnModel(sessionDefaultProvider);
+      agentModelOverrides[agent.id] = resolveModelForProvider({
+        provider: resolvedProvider,
+        modelId:
+          step.modelOverride ??
+          recommendedModelForRole({ role: step.role ?? 'custom', provider: resolvedProvider }),
+      });
       agentKindOverrides[agent.id] = kind;
       if (step.effort) {
         agentEffortOverrides[agent.id] = step.effort;

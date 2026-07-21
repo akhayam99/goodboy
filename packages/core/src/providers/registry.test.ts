@@ -97,6 +97,10 @@ describe('getCapabilities', () => {
     expect(getDefaultTurnModel('gemini')).toBe('gemini-3.5-flash');
   });
 
+  it('getDefaultTurnModel for cursor returns the composer turn model', () => {
+    expect(getDefaultTurnModel('cursor')).toBe('composer-2');
+  });
+
   it('all models have required fields', () => {
     for (const id of listSupportedProviders()) {
       const caps = getCapabilities(id);
