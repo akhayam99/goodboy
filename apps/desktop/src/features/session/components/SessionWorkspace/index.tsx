@@ -29,9 +29,10 @@ import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
-import { WorkflowStrip } from './parts/WorkflowStrip';
+import { WorkflowStepper } from './parts/WorkflowStepper';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
+import { resolveRootAgent } from '../../agent-kind';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -117,6 +118,17 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         : null,
     [phaseRuns, selectedAgentId],
   );
+  const stripWorkflowName = useMemo(() => {
+    if (selectedAgentId == null) {
+      return null;
+    }
+    const rootAgent = resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
+    if (rootAgent?.workflowRunId == null) {
+      return null;
+    }
+    const attachedRun = attachedWorkflowRuns.find(({ run }) => run.id === rootAgent.workflowRunId);
+    return attachedRun == null ? null : workflowKindName(attachedRun.workflow);
+  }, [attachedWorkflowRuns, phaseRuns, selectedAgentId]);
   const focusedWorkflowName = useMemo(() => {
     const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
     const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
@@ -135,6 +147,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         selectedAgentName,
         overlayHomeLens: overlayHome,
         suppressAgentTail: showWorkflowStrip,
+        stripWorkflowName,
         focusedWorkflowName,
         focusedPlanTitle,
         lensLabel: (l) => LENS_LABEL[l],
@@ -157,6 +170,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       selectedAgentName,
       overlayHome,
       showWorkflowStrip,
+      stripWorkflowName,
       focusedWorkflowName,
       focusedPlanTitle,
       sessionId,
@@ -180,16 +194,23 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
-      <div className="flex min-w-0 shrink-0 items-center gap-2 px-6 py-2.5">
+      <div
+        className={cn(
+          'flex min-w-0 shrink-0 items-center px-6',
+          showWorkflowStrip ? 'pb-1 pt-2.5' : 'py-2.5',
+        )}
+      >
         <AppBreadcrumb crumbs={crumbs} />
-        {showWorkflowStrip && selectedAgentId != null ? (
-          <WorkflowStrip
+      </div>
+      {showWorkflowStrip && selectedAgentId != null ? (
+        <div className="flex min-w-0 shrink-0 items-center px-6 pb-2">
+          <WorkflowStepper
             sessionId={sessionId}
             session={session}
             selectedAgentId={selectedAgentId}
           />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       <Divider />
       <div className="flex min-h-0 flex-1">
         <div className="flex w-60 shrink-0 flex-col bg-background">

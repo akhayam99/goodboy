@@ -96,8 +96,8 @@ vi.mock('./parts/PaneShell', () => ({
 vi.mock('./hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));
-vi.mock('./parts/WorkflowStrip', () => ({
-  WorkflowStrip: () => <div data-testid="workflow-strip" />,
+vi.mock('./parts/WorkflowStepper', () => ({
+  WorkflowStepper: () => <div data-testid="workflow-stepper" />,
 }));
 
 import { SessionWorkspace } from './index';
@@ -133,9 +133,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionWorkspace agent overlay', () => {
-  it('uses the full overlay width and workflow strip for workflow agents', () => {
+  it('uses the full overlay width and workflow stepper for workflow agents', () => {
     const { container } = render(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('workflow-strip')).toBeDefined();
+    expect(screen.getByTestId('workflow-stepper')).toBeDefined();
     expect(screen.getByTestId('chat-view')).toBeDefined();
     expect(container.querySelector('.w-72')).toBeNull();
     expect(screen.queryByTestId('agents-section')).toBeNull();
@@ -149,7 +149,7 @@ describe('SessionWorkspace agent overlay', () => {
   it('keeps the agents-home overlay panel unchanged', () => {
     hooks.agentHome = 'agents';
     const { container } = render(<SessionWorkspace session={session} isActive />);
-    expect(screen.queryByTestId('workflow-strip')).toBeNull();
+    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
     expect(container.querySelector('.w-72')).not.toBeNull();
     expect(screen.getByTestId('agents-section').getAttribute('data-home')).toBe('agents');
     expect(screen.getByRole('button', { name: 'Agents' })).toBeDefined();
@@ -162,6 +162,44 @@ describe('SessionWorkspace agent overlay', () => {
 });
 
 describe('SessionWorkspace workflow breadcrumb', () => {
+  it('uses the selected workflow agent run name in the overlay breadcrumb', () => {
+    const workflowAgent = {
+      ...selectedAgent,
+      stepId: 'step-1',
+      workflowRunId: 'run-1',
+    } as Agent;
+    store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
+    store.phaseTemplates = {
+      'workspace-1': [
+        {
+          id: 'workflow-1',
+          name: 'Release flow',
+          steps: [],
+        },
+      ],
+    };
+    const workflowSession = {
+      ...session,
+      workflowRuns: [
+        {
+          id: 'run-1',
+          workflowId: 'workflow-1',
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: true,
+          triggerMode: 'immediate',
+        },
+      ],
+    } as unknown as Session;
+
+    render(<SessionWorkspace session={workflowSession} isActive />);
+
+    expect(screen.getByTestId('breadcrumb').textContent).toBe(
+      'Overview / Workflows / Release flow',
+    );
+  });
+
   it('uses the visible workflow name when the only run is not explicitly focused', () => {
     store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = {};

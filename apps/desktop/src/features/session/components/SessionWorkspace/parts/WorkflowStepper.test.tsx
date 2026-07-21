@@ -19,8 +19,6 @@ type Store = {
   phaseTemplates: Record<string, ReadonlyArray<Workflow>>;
   sessionWorkflows: Record<string, ReadonlyArray<Workflow>>;
   selectAgent: ReturnType<typeof vi.fn>;
-  setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
-  setActiveLens: ReturnType<typeof vi.fn>;
 };
 
 const { store } = vi.hoisted(() => ({
@@ -29,8 +27,6 @@ const { store } = vi.hoisted(() => ({
     phaseTemplates: {},
     sessionWorkflows: {},
     selectAgent: vi.fn(async () => undefined),
-    setFocusedWorkflowRun: vi.fn(),
-    setActiveLens: vi.fn(),
   } as Store,
 }));
 
@@ -39,7 +35,7 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
 }));
 
-import { WorkflowStrip } from './WorkflowStrip';
+import { WorkflowStepper } from './WorkflowStepper';
 
 const NOW = '2026-07-21T00:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'session-1' as SessionId;
@@ -134,16 +130,18 @@ beforeEach(() => {
   store.sessionWorkflows = {};
   store.selectAgent.mockReset();
   store.selectAgent.mockResolvedValue(undefined);
-  store.setFocusedWorkflowRun.mockReset();
-  store.setActiveLens.mockReset();
 });
 
 afterEach(cleanup);
 
-describe('WorkflowStrip', () => {
+describe('WorkflowStepper', () => {
   it('maps statuses and accents the selected child parent step', () => {
     render(
-      <WorkflowStrip sessionId={SESSION_ID} session={session} selectedAgentId={selectedChild.id} />,
+      <WorkflowStepper
+        sessionId={SESSION_ID}
+        session={session}
+        selectedAgentId={selectedChild.id}
+      />,
     );
 
     expect(screen.getByLabelText('Plan status: completed')).toBeDefined();
@@ -154,14 +152,16 @@ describe('WorkflowStrip', () => {
     expect(screen.getByRole('button', { name: '2 Build' }).getAttribute('aria-current')).toBe(
       'step',
     );
-    expect(screen.getByRole('button', { name: '2 Build' }).parentElement?.className).toContain(
-      'bg-primary/10',
-    );
+    expect(screen.getByRole('button', { name: '2 Build' }).className).toContain('font-medium');
   });
 
   it('selects an available step root and keeps pending steps inert', () => {
     render(
-      <WorkflowStrip sessionId={SESSION_ID} session={session} selectedAgentId={selectedChild.id} />,
+      <WorkflowStepper
+        sessionId={SESSION_ID}
+        session={session}
+        selectedAgentId={selectedChild.id}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: '1 Plan' }));
@@ -179,7 +179,11 @@ describe('WorkflowStrip', () => {
 
   it('opens clusters, marks the selected child, and selects another child', () => {
     render(
-      <WorkflowStrip sessionId={SESSION_ID} session={session} selectedAgentId={selectedChild.id} />,
+      <WorkflowStepper
+        sessionId={SESSION_ID}
+        session={session}
+        selectedAgentId={selectedChild.id}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'clusters 1/2 for Build' }));
@@ -191,16 +195,6 @@ describe('WorkflowStrip', () => {
     expect(store.selectAgent).toHaveBeenCalledWith(SESSION_ID, runningChild.id);
   });
 
-  it('opens the workflow lens at the focused run from the workflow chip', () => {
-    render(
-      <WorkflowStrip sessionId={SESSION_ID} session={session} selectedAgentId={selectedChild.id} />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Release flow' }));
-    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
-  });
-
   it('renders nothing for a non-workflow agent', () => {
     const standalone = createAgent({
       id: 'standalone',
@@ -210,7 +204,7 @@ describe('WorkflowStrip', () => {
     });
     store.sessionPhaseRuns = { [SESSION_ID]: [standalone] };
     const { container } = render(
-      <WorkflowStrip sessionId={SESSION_ID} session={session} selectedAgentId={standalone.id} />,
+      <WorkflowStepper sessionId={SESSION_ID} session={session} selectedAgentId={standalone.id} />,
     );
     expect(container.innerHTML).toBe('');
   });
