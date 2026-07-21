@@ -162,8 +162,8 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
       <button
         type="button"
         onClick={() => onOpenDiff(path)}
-        title="open diff"
-        aria-label={`open the diff for ${rel}`}
+        title="View file"
+        aria-label="View file"
         className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-md border border-info/30 bg-info/5 px-2 py-1 transition-colors hover:border-info/50 hover:bg-info/10"
       >
         {inner}

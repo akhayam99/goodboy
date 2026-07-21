@@ -1170,7 +1170,7 @@ export function AgentsSection({ task, only }: AgentsSectionProps) {
                   }
                   className="mt-1 inline-flex items-center justify-center gap-1 self-center rounded-lg bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
                 >
-                  Resolve PR comments
+                  Resolve comments
                   <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
                 </button>
               </div>

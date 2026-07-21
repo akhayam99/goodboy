@@ -274,8 +274,8 @@ function ResolveClusterRow({
               e.stopPropagation();
               onJump();
             }}
-            title="go to the source comment"
-            aria-label="go to the source comment"
+            title="Go to comment"
+            aria-label="Go to comment"
             className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <MessageSquareReply size={11} aria-hidden />

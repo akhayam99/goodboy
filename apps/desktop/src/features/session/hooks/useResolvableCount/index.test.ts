@@ -59,7 +59,7 @@ describe('useResolvableCount', () => {
     expect(result.current.pending).toBe(0);
   });
 
-  it('counts open diff comments', () => {
+  it('counts unresolved diff comments', () => {
     store.state = {
       ...store.state,
       diffComments: {
