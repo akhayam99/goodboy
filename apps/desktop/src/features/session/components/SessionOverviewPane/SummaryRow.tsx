@@ -6,18 +6,22 @@ import type { Tone } from '@goodboy/ui';
 type Props = {
   readonly icon: LucideIcon;
   readonly tone: Tone;
+  readonly value?: string;
   readonly label: string;
   readonly onClick: () => void;
 };
 
-export const SummaryRow = ({ icon: Icon, tone, label, onClick }: Props) => (
+export const SummaryRow = ({ icon: Icon, tone, value, label, onClick }: Props) => (
   <button
     type="button"
     onClick={onClick}
     className="group flex items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border"
   >
     <Icon size={14} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
-    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
+    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{value ?? label}</span>
+    {value != null ? (
+      <span className="shrink-0 text-2xs text-muted-foreground">{label}</span>
+    ) : null}
     <ArrowRight
       size={14}
       aria-hidden
