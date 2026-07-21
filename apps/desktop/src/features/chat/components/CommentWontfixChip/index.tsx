@@ -45,7 +45,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
       <TranscriptShell
         tone="success"
         variant="pill"
-        className={`mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium ${successAccent.text}`}
+        className={`mt-2 inline-flex items-center gap-1.5 text-xs font-medium ${successAccent.text}`}
       >
         <CheckCheck size={11} aria-hidden />
         <span>marked solved with explanation</span>
@@ -72,7 +72,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
     <TranscriptShell
       tone="warning"
       variant="boxed"
-      className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+      className="mt-2 flex flex-wrap items-center gap-1.5 text-xs"
     >
       <Ban size={12} aria-hidden className={warningAccent.icon} />
       <span className="font-medium text-foreground">not worth a change</span>
@@ -88,7 +88,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
           aria-label="post the explanation and mark the thread solved"
           title="post the reason as a reply and resolve the thread on GitHub"
           className={cn(
-            'relative inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-[10px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
+            'relative inline-flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
             busy && 'animate-border-pulse',
           )}
         >

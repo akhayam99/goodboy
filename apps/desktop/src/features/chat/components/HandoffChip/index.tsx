@@ -50,7 +50,7 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
       data-testid="handoff-chip"
       tone="info"
       variant="pill"
-      className={`inline-flex w-fit items-center gap-1.5 text-[11px] font-medium transition-opacity hover:opacity-80 ${accent.text}`}
+      className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
       <ArrowRight size={11} aria-hidden />
       <span>spawn {meta.label.toLowerCase()}</span>

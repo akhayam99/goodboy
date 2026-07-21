@@ -54,7 +54,7 @@ export const ClustersCard = ({ assistantText, sessionId }: Props) => {
   return (
     <TranscriptShell tone="merged" variant="boxed" emphasis className="mt-2">
       <div data-testid="clusters-card">
-        <div className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-medium ${accent.text}`}>
+        <div className={`mb-1.5 flex items-center gap-1.5 text-xs font-medium ${accent.text}`}>
           <Layers size={12} aria-hidden />
           <span>
             {clusters.length} cluster{clusters.length !== 1 ? 's' : ''}

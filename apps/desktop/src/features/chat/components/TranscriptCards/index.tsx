@@ -241,7 +241,7 @@ function AssistantText({ text, sessionId }: { text: string; sessionId: SessionId
   const hasCommentResolvedMarker =
     resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
   return (
-    <TranscriptShell tone="neutral" variant="boxed" className="group relative text-[13px]">
+    <TranscriptShell tone="neutral" variant="boxed" className="group relative text-sm">
       {hasCommentResolvedMarker ? null : (
         <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
           <CopyButton value={text} label="message" />

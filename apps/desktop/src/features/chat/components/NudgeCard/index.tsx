@@ -71,7 +71,7 @@ export const NudgeCard = ({
   }, [autoFocusPrimary]);
 
   return (
-    <TranscriptShell tone={severity} variant="boxed" className="relative text-[11px]">
+    <TranscriptShell tone={severity} variant="boxed" className="relative text-xs">
       <section data-testid={testId} aria-label={ariaLabel}>
         {onDismiss ? (
           <button
@@ -102,7 +102,7 @@ export const NudgeCard = ({
                     onClick={primary.onClick}
                     data-testid={primary.testId}
                     className={cn(
-                      'rounded px-2 py-0.5 text-[10px] font-semibold hover:opacity-90',
+                      'rounded px-2 py-0.5 text-2xs font-semibold hover:opacity-90',
                       SEVERITY_PRIMARY[severity],
                     )}
                   >
@@ -114,7 +114,7 @@ export const NudgeCard = ({
                     type="button"
                     onClick={secondary.onClick}
                     data-testid={secondary.testId}
-                    className="rounded border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted"
+                    className="rounded border border-border px-2 py-0.5 text-2xs font-semibold text-foreground hover:bg-muted"
                   >
                     {secondary.label}
                   </button>
@@ -124,7 +124,7 @@ export const NudgeCard = ({
                     type="button"
                     onClick={tertiary.onClick}
                     data-testid={tertiary.testId}
-                    className="rounded px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="rounded px-2 py-0.5 text-2xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     {tertiary.label}
                   </button>

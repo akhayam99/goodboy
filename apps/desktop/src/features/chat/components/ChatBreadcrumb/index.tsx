@@ -137,7 +137,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
             <>
               <Separator />
               <span
-                className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${workflowAccent.bg} ${workflowAccent.text}`}
+                className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium ${workflowAccent.bg} ${workflowAccent.text}`}
                 title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
               >
                 <GitBranch size={9} aria-hidden />
@@ -158,7 +158,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
             type="button"
             onClick={onPickParent}
             title={`spawned by ${parentAgent.name}. go to parent`}
-            className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <CornerLeftUp size={10} aria-hidden />
             <span className="max-w-[8rem] truncate">{parentAgent.name}</span>

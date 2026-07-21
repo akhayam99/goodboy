@@ -92,7 +92,7 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
           {expanded ? (
             <Markdown
               text={question.text}
-              className="min-w-0 gap-1.5 break-words text-[13px] leading-relaxed text-foreground"
+              className="min-w-0 gap-1.5 break-words text-sm leading-relaxed text-foreground"
             />
           ) : (
             <p className="min-w-0 break-words text-xs leading-relaxed text-foreground line-clamp-1">
@@ -119,7 +119,7 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
               <span className="text-2xs font-medium text-muted-foreground">You answered:</span>
               <Markdown
                 text={question.userAnswer ?? ''}
-                className="mt-0.5 gap-1.5 break-words text-[13px] leading-relaxed text-foreground"
+                className="mt-0.5 gap-1.5 break-words text-sm leading-relaxed text-foreground"
               />
             </>
           )}

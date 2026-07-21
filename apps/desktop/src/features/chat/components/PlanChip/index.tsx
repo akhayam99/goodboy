@@ -39,7 +39,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       data-testid="plan-chip"
       tone="primary"
       variant="pill"
-      className={`inline-flex w-fit items-center gap-1.5 text-[11px] font-medium transition-opacity hover:opacity-80 ${accent.text}`}
+      className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
       <FileText size={11} aria-hidden />
       <span>{plan.title}</span>

@@ -198,7 +198,7 @@ export const ModelPicker = ({
         >
           <div
             className={cn(
-              'mx-2 mb-1 flex items-start gap-1.5 rounded px-2 py-1 text-[10px] leading-relaxed',
+              'mx-2 mb-1 flex items-start gap-1.5 rounded px-2 py-1 text-2xs leading-relaxed',
               isOverride
                 ? cn(warningAccent.bg, warningAccent.text)
                 : 'bg-muted/40 text-muted-foreground',
@@ -247,7 +247,7 @@ export const ModelPicker = ({
                     className={cn('rounded-full px-2.5 py-0.5 transition-colors', chipTone)}
                   >
                     {PROVIDER_LABEL[id]}
-                    {!isConnected && <span className="ml-0.5 text-[9px] text-warning">↗</span>}
+                    {!isConnected && <span className="ml-0.5 text-2xs text-warning">↗</span>}
                   </button>
                 );
               })}
@@ -372,7 +372,7 @@ function PickerSection({
           {label}
         </span>
         {hint ? (
-          <span className="text-[10px] leading-tight text-muted-foreground/60">{hint}</span>
+          <span className="text-2xs leading-tight text-muted-foreground/60">{hint}</span>
         ) : null}
       </div>
       {children}
@@ -411,7 +411,7 @@ function SubfamilyVariantRow({
               onClick={() => onSelect(id)}
               title={id}
               className={cn(
-                'rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors',
+                'rounded px-1.5 py-0.5 font-mono text-2xs transition-colors',
                 selected ? cn('bg-muted font-semibold', TIER_TEXT[t]) : CHIP_INACTIVE,
               )}
             >

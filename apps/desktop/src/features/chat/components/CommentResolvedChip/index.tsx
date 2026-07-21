@@ -85,7 +85,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
       <TranscriptShell
         tone="success"
         variant="pill"
-        className={`mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium ${successAccent.text}`}
+        className={`mt-2 inline-flex items-center gap-1.5 text-xs font-medium ${successAccent.text}`}
       >
         <CheckCheck size={11} aria-hidden />
         <span>conversation resolved</span>
@@ -132,11 +132,11 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
       <TranscriptShell
         tone="info"
         variant="boxed"
-        className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+        className="mt-2 flex flex-wrap items-center gap-1.5 text-xs"
       >
         <Clock size={12} aria-hidden className={infoAccent.icon} />
         <span className="font-medium text-foreground">solved locally · pending push</span>
-        <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
           <GitCommit size={9} aria-hidden />
           {shaShort}
         </span>
@@ -146,7 +146,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
             type="button"
             onClick={() => setActiveLens(sessionId, 'resolve')}
             title="open the Resolve lens to publish queued comments"
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             Go to Resolve
             <ArrowUpRight size={10} aria-hidden />
@@ -157,7 +157,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
             disabled={busy}
             title="push and resolve this one now"
             className={cn(
-              'relative inline-flex items-center gap-1 rounded-full bg-info px-2 py-0.5 text-[10px] font-semibold text-info-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
+              'relative inline-flex items-center gap-1 rounded-full bg-info px-2 py-0.5 text-2xs font-semibold text-info-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
               busy && 'animate-border-pulse',
             )}
           >
@@ -182,11 +182,11 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
     <TranscriptShell
       tone="success"
       variant="boxed"
-      className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+      className="mt-2 flex flex-wrap items-center gap-1.5 text-xs"
     >
       <CheckCheck size={12} aria-hidden className={successAccent.icon} />
       <span className="font-medium text-foreground">fix committed locally</span>
-      <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+      <span className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
         <GitCommit size={9} aria-hidden />
         {shaShort}
       </span>
@@ -198,7 +198,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           data-testid="comment-resolved-queue"
           aria-label="mark solved, push later"
           title="mark solved and batch it for a single push later"
-          className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-[10px] font-semibold text-success-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-2xs font-semibold text-success-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Clock size={9} aria-hidden />
           Mark solved (push later)
@@ -211,7 +211,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
           aria-label="push and mark as solved now"
           title="push and resolve this thread immediately"
           className={cn(
-            'relative inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
+            'relative inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
             infoAccent.border,
             infoAccent.text,
             busy && 'animate-border-pulse',
