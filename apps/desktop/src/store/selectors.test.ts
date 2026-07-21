@@ -34,6 +34,7 @@ const createRecord = ({ kind, estimatedCostUsd }: Params): TelemetryRecord =>
 type AgentParams = {
   readonly id: AgentId;
   readonly kind?: string;
+  readonly parentAgentId?: AgentId;
   readonly workflowRunId?: WorkflowRunId;
   readonly stepId?: StepId;
   readonly lastFinishedAt?: string;
@@ -42,6 +43,7 @@ type AgentParams = {
 const createAgent = ({
   id,
   kind,
+  parentAgentId,
   workflowRunId,
   stepId,
   lastFinishedAt = '2026-07-21T10:00:00.000Z',
@@ -53,6 +55,7 @@ const createAgent = ({
     name: 'agent',
     status: 'completed',
     kind,
+    parentAgentId,
     workflowRunId,
     stepId,
     lastFinishedAt,
@@ -92,6 +95,31 @@ describe('useSessionUnreadLens', () => {
           kind: 'resolver',
           workflowRunId: 'workflow-1' as WorkflowRunId,
           stepId: 'step-1' as StepId,
+        }),
+      ],
+    };
+
+    const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
+
+    expect(result.current).toBe('workflows');
+  });
+
+  it('routes a cluster child reply through its workflow-step parent', () => {
+    const parentId = 'parent' as AgentId;
+    store.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        createAgent({
+          id: parentId,
+          kind: 'implementer',
+          workflowRunId: 'workflow-1' as WorkflowRunId,
+          stepId: 'step-1' as StepId,
+          lastFinishedAt: '2026-07-21T09:00:00.000Z',
+        }),
+        createAgent({
+          id: AGENT_ID,
+          kind: 'scout',
+          parentAgentId: parentId,
+          workflowRunId: 'workflow-1' as WorkflowRunId,
         }),
       ],
     };

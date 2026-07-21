@@ -1,9 +1,34 @@
 import { classifyFirstTurn, type AgentKindLabel, type WorkflowLibraryStep } from '@goodboy/core';
-import type { Agent, AgentRole } from '@goodboy/types';
+import type { Agent, AgentId, AgentRole } from '@goodboy/types';
 
 export type AgentKind = AgentKindLabel;
 
 export type AgentHomeLens = 'agents' | 'resolve' | 'workflows';
+
+type Params = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly agentId: AgentId;
+};
+
+export const resolveRootAgent = ({ agents, agentId }: Params): Agent | null => {
+  const agentsById = new Map(agents.map((agent) => [agent.id, agent]));
+  let agent = agentsById.get(agentId) ?? null;
+  const visited = new Set<AgentId>();
+
+  while (agent != null) {
+    visited.add(agent.id);
+    if (agent.parentAgentId == null || visited.has(agent.parentAgentId)) {
+      return agent;
+    }
+    const parent = agentsById.get(agent.parentAgentId) ?? null;
+    if (parent == null) {
+      return agent;
+    }
+    agent = parent;
+  }
+
+  return null;
+};
 
 export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
   if (agent.workflowRunId != null && agent.stepId != null) {

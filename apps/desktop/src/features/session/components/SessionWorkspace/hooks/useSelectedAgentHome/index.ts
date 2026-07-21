@@ -1,23 +1,32 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import { agentHomeLens, classifyAgent, type AgentHomeLens } from '../../../../agent-kind';
+import {
+  agentHomeLens,
+  classifyAgent,
+  resolveRootAgent,
+  type AgentHomeLens,
+} from '../../../../agent-kind';
 
 export const useSelectedAgentHome = (sessionId: SessionId): AgentHomeLens | null => {
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const override = useAppStore((s) =>
-    selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
-  );
+  const rootAgent = useMemo(() => {
+    if (selectedAgentId == null) {
+      return null;
+    }
+    return resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
+  }, [selectedAgentId, phaseRuns]);
+  const override = useAppStore((s) => {
+    if (rootAgent == null) {
+      return null;
+    }
+    return s.agentKindOverride[rootAgent.id] ?? null;
+  });
   return useMemo(() => {
-    if (!selectedAgentId) {
+    if (rootAgent == null) {
       return null;
     }
-    const agent = phaseRuns.find((r) => r.id === selectedAgentId);
-    if (!agent) {
-      return null;
-    }
-    const kind = classifyAgent(agent, override);
-    return agentHomeLens(agent, kind);
-  }, [selectedAgentId, phaseRuns, override]);
+    return agentHomeLens(rootAgent, classifyAgent(rootAgent, override));
+  }, [rootAgent, override]);
 };

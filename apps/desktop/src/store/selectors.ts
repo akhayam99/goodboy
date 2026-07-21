@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
 import {
+  agentHomeLens,
   classifyAgent,
+  resolveRootAgent,
   selectNonResolverStandaloneAgents,
   type AgentKind,
 } from '../features/session/agent-kind';
@@ -478,13 +480,12 @@ export const useSessionUnreadLens = (sessionId: SessionId): SessionUnreadLens =>
     if (unreadAgent == null) {
       return null;
     }
-    if (unreadAgent.workflowRunId != null && unreadAgent.stepId != null) {
-      return 'workflows';
+    const rootAgent = resolveRootAgent({ agents: phaseRuns, agentId: unreadAgent.id });
+    if (rootAgent == null) {
+      return null;
     }
-    if (classifyAgent(unreadAgent, agentKindOverride[unreadAgent.id] ?? null) === 'resolver') {
-      return 'resolve';
-    }
-    return 'agents';
+    const kind = classifyAgent(rootAgent, agentKindOverride[rootAgent.id] ?? null);
+    return agentHomeLens(rootAgent, kind);
   }, [phaseRuns, selectedAgentId, isCurrentSession, agentKindOverride]);
 };
 

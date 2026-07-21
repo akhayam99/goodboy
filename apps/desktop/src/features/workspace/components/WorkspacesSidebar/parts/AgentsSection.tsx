@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { EmptyState, SectionHeader, cn } from '@goodboy/ui';
 import { ArrowUpRight, CheckCheck, Layers } from 'lucide-react';
@@ -207,6 +207,38 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
   }, []);
 
   const sorted = useMemo(() => [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal), [phaseRuns]);
+  useEffect(() => {
+    if (selectedAgentId == null) {
+      return;
+    }
+    const agentsById = new Map(sorted.map((agent) => [agent.id, agent]));
+    const ancestorIds: AgentId[] = [];
+    const visited = new Set<AgentId>([selectedAgentId]);
+    let agent = agentsById.get(selectedAgentId) ?? null;
+
+    while (agent?.parentAgentId != null) {
+      const parent = agentsById.get(agent.parentAgentId) ?? null;
+      if (parent == null || visited.has(parent.id)) {
+        break;
+      }
+      ancestorIds.push(parent.id);
+      visited.add(parent.id);
+      agent = parent;
+    }
+    if (ancestorIds.length === 0) {
+      return;
+    }
+    setClusterExpand((previous) => {
+      if (ancestorIds.every((id) => previous.get(id) === true)) {
+        return previous;
+      }
+      const next = new Map(previous);
+      for (const id of ancestorIds) {
+        next.set(id, true);
+      }
+      return next;
+    });
+  }, [selectedAgentId, sorted]);
   const agentsByRunId = useMemo(() => {
     const map = new Map<string, Agent[]>();
     for (const r of sorted) {
