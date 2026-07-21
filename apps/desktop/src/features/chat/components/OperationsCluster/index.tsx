@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -79,14 +79,6 @@ export const OperationsCluster = ({
           running != null && 'animate-border-pulse',
         )}
       >
-        <ChevronRight
-          size={11}
-          aria-hidden
-          className={cn(
-            'shrink-0 text-muted-foreground/60 motion-safe:transition-transform',
-            open && 'rotate-90',
-          )}
-        />
         <Layers size={11} aria-hidden className={cn('shrink-0', accent.icon)} />
         <span className={cn('font-medium', accent.text)}>operations</span>
         <span

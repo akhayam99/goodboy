@@ -14,6 +14,7 @@ export type SessionBreadcrumbInput = {
   selectedAgentName: string | null;
   overlayHomeLens: LensKind | null;
   suppressAgentTail: boolean;
+  stripWorkflowName: string | null;
   focusedWorkflowName: string | null;
   focusedPlanTitle: string | null;
   lensLabel: (lens: LensKind) => string;
@@ -34,6 +35,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedAgentName,
     overlayHomeLens,
     suppressAgentTail,
+    stripWorkflowName,
     focusedWorkflowName,
     focusedPlanTitle,
     lensLabel,
@@ -77,7 +79,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     ]);
   }
 
-  if (suppressAgentTail && selectedAgentName != null && overlayHomeLens != null) {
+  if (suppressAgentTail) {
+    if (stripWorkflowName != null) {
+      return [overview, workflowsList, { id: 'workflow-run', label: stripWorkflowName }];
+    }
     return [overview, workflowsList];
   }
 

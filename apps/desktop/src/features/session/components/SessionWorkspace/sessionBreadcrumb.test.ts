@@ -21,6 +21,7 @@ const base = (
   selectedAgentName: null,
   overlayHomeLens: null,
   suppressAgentTail: false,
+  stripWorkflowName: null,
   focusedWorkflowName: null,
   focusedPlanTitle: null,
   lensLabel,
@@ -91,7 +92,26 @@ describe('buildSessionBreadcrumb', () => {
     expect(h.toLens).not.toHaveBeenCalled();
   });
 
-  it('suppresses the workflow agent tail when the workflow strip is present', () => {
+  it('replaces the workflow agent tail with the workflow name when the stepper is present', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          selectedAgentName: 'scout-1',
+          overlayHomeLens: 'workflows',
+          suppressAgentTail: true,
+          stripWorkflowName: 'Release flow',
+        },
+        h,
+      ),
+    );
+    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Release flow']);
+    expect(crumbs[0]?.onClick).toBeDefined();
+    expect(crumbs[1]?.onClick).toBeDefined();
+    expect(crumbs[2]?.onClick).toBeUndefined();
+  });
+
+  it('falls back to the workflow list when the stepper workflow name is unavailable', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
       base(

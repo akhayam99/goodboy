@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Divider } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import type { ThinkingContext } from '../../utils/thinking-context';
@@ -60,13 +59,6 @@ export const TranscriptRows = ({
       const at = row.item.at;
       const day = dayKey(at);
       const dayChanged = day !== lastDay;
-      if (idx > 0 && !dayChanged) {
-        out.push(
-          <li key={`turn-${row.key}`}>
-            <Divider />
-          </li>,
-        );
-      }
       if (dayChanged) {
         out.push(
           <li key={`day-${day}-${idx}`} className="flex justify-center">
