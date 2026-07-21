@@ -4,6 +4,7 @@ import type {
   AgentId,
   AgentStatus,
   IsoDateTime,
+  ProviderId,
   Session,
   SessionId,
   StepId,
@@ -491,8 +492,10 @@ describe('attachWorkflowToSession trigger modes', () => {
       providers: [],
       transcripts: {},
       agentTurnState: {},
-      agentModelOverride: {},
-      agentKindOverride: {},
+      agentModelOverride: {} as Record<string, string>,
+      agentKindOverride: {} as Record<string, string>,
+      agentProviderOverride: {} as Record<string, ProviderId>,
+      agentEffortOverride: {} as Record<string, string>,
       sessionWorkflows: {},
       reprocessGoalForWorkflow: vi.fn(async () => undefined),
       maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
@@ -609,5 +612,28 @@ describe('attachWorkflowToSession trigger modes', () => {
     expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('immediate');
     expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+  });
+
+  it('uses the step provider when recommending the attached agent model', async () => {
+    const state = baseState([], []);
+    const workflow = makeWorkflow(WF_ID, [{ stepId: 's0', name: 'Scout' }]);
+    state.phaseTemplates = {
+      [WS_ID]: [
+        {
+          ...workflow,
+          steps: workflow.steps.map((step) => ({
+            ...step,
+            role: 'scout' as const,
+            providerOverride: 'cursor' as const,
+          })),
+        },
+      ],
+    };
+    const { set, get } = harness(state);
+
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { autoRun: false });
+
+    expect(state.agentProviderOverride['agent-1']).toBe('cursor');
+    expect(state.agentModelOverride['agent-1']).toBe('composer-2-fast');
   });
 });

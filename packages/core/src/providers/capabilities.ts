@@ -1,5 +1,5 @@
 import type { ModelEffort, ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
-import { CURSOR_AUTO_MODEL, CURSOR_MODELS } from './cursor/models';
+import { CURSOR_MODELS } from './cursor/models';
 import { CODEX_MODELS } from './codex/constants';
 import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './gemini/constants';
 
@@ -123,9 +123,6 @@ export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities =>
 };
 
 export const getDefaultTurnModel = (id: ProviderId): string => {
-  if (id === 'cursor') {
-    return CURSOR_AUTO_MODEL;
-  }
   if (id === 'gemini') {
     return GEMINI_DEFAULT_MODEL;
   }

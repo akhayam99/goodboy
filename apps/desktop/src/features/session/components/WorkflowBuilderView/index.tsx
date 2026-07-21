@@ -26,12 +26,11 @@ import { Button, Divider, Skeleton, Textarea, cn } from '@goodboy/ui';
 import {
   PlannerClient,
   type PlannerOutput,
-  autoModelForRole,
   defaultsForRole,
-  getDefaultTurnModel,
   isWorkflowComplete,
   polishStepInstruction,
   polishWorkflowGoal,
+  recommendedModelForRole,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import type {
@@ -382,10 +381,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const draggingKey = drag?.kind === 'step' ? (steps[drag.fromIndex]?.key ?? null) : null;
 
   const recommendedProvider = (_step: EditableStep): ProviderId => providerId;
-  const recommendedModel = (step: EditableStep): string =>
-    autoModelForRole(step.role ?? 'custom', [providerId])?.model ?? getDefaultTurnModel(providerId);
   const resolvedProvider = (step: EditableStep): ProviderId =>
     step.providerOverride ?? recommendedProvider(step);
+  const recommendedModel = (step: EditableStep): string =>
+    recommendedModelForRole({ role: step.role ?? 'custom', provider: resolvedProvider(step) });
   const resolvedModel = (step: EditableStep): string =>
     step.modelOverride !== undefined && step.modelOverride !== ''
       ? step.modelOverride

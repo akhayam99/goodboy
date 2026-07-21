@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
@@ -76,10 +76,15 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
     getDefaultTurnModel(defaultProvider);
   const effectiveProvider: ProviderId =
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
-  const effectiveModel =
-    selectedModel ??
-    session.modelOverride ??
-    (effectiveProvider === defaultProvider ? defaultModel : getDefaultTurnModel(effectiveProvider));
+  const effectiveModel = resolveModelForProvider({
+    provider: effectiveProvider,
+    modelId:
+      selectedModel ??
+      session.modelOverride ??
+      (effectiveProvider === defaultProvider
+        ? defaultModel
+        : getDefaultTurnModel(effectiveProvider)),
+  });
   const effectiveEffort = clampEffort(effectiveModel, effort);
   const routingOverride: TurnProviderOverride | undefined = allowOverride
     ? { providerId: effectiveProvider, model: effectiveModel }

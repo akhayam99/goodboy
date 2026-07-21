@@ -57,7 +57,7 @@ function makeRequest(): TurnRequest {
   return {
     runId: 'run_1' as ProviderRunId,
     sessionId: 'sess_1' as SessionId,
-    model: 'cursor-small',
+    model: 'composer-2',
     workingDir: '/tmp/demo',
     systemPrompt: 'sys',
     userMessage: 'hi',

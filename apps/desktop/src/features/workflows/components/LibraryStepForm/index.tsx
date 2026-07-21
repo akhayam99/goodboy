@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input, Textarea, Tooltip } from '@goodboy/ui';
 import { X } from 'lucide-react';
-import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
+import { recommendedModelForRole } from '@goodboy/core';
 import type {
   AgentEffort,
   AgentRole,
@@ -55,9 +55,8 @@ export const LibraryStepForm = ({
   );
 
   const recommendedProv: ProviderId = connectedProviders[0] ?? 'anthropic';
-  const recommendedMod: string =
-    autoModelForRole(role, [recommendedProv])?.model ?? getDefaultTurnModel(recommendedProv);
   const effProvider: ProviderId = providerOverride !== '' ? providerOverride : recommendedProv;
+  const recommendedMod: string = recommendedModelForRole({ role, provider: effProvider });
   const modelValue = modelOverride !== '' ? modelOverride : recommendedMod;
 
   type FormState = {

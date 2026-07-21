@@ -81,7 +81,13 @@ export {
   getDefaultTurnModel,
 } from './providers/capabilities';
 
-export { autoModelForRole, type AutoModelChoice } from './providers/auto-model';
+export {
+  autoModelForRole,
+  recommendedModelForRole,
+  type AutoModelChoice,
+} from './providers/auto-model';
+
+export { resolveModelForProvider } from './providers/model-map';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
 

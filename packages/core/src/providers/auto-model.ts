@@ -1,11 +1,15 @@
 import type { ModelCostTier, ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from './capabilities';
-import { CURSOR_AUTO_MODEL } from './cursor/models';
+import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
 import { defaultsForRole } from '../roles';
 
 export type AutoModelChoice = {
   readonly provider: ProviderId;
   readonly model: string;
+};
+
+type Params = {
+  readonly role: string;
+  readonly provider: ProviderId;
 };
 
 const COST_RANK: Readonly<Record<ModelCostTier, number>> = {
@@ -46,8 +50,9 @@ export const autoModelForRole = (
   if (best === null) {
     return null;
   }
-  return {
-    provider: best.provider,
-    model: best.provider === 'cursor' ? CURSOR_AUTO_MODEL : best.model,
-  };
+  return { provider: best.provider, model: best.model };
+};
+
+export const recommendedModelForRole = ({ role, provider }: Params): string => {
+  return autoModelForRole(role, [provider])?.model ?? getDefaultTurnModel(provider);
 };

@@ -175,29 +175,45 @@ vi.mock('../../turn', () => ({
   readDroppedAttachment: readDroppedAttachmentMock,
 }));
 
-vi.mock('@goodboy/core', () => ({
-  buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
-  getDefaultTurnModel: (id: string) => (id === 'cursor' ? 'auto' : 'claude-3-5-sonnet-latest'),
-  getModelDescriptor: () => null,
-  PROVIDER_CAPABILITIES: {
+vi.mock('@goodboy/core', () => {
+  const capabilities = {
     anthropic: {
-      models: [{ id: 'claude-3-5-sonnet-latest', tier: 'turn', contextWindow: 200_000 }],
+      models: [{ id: 'claude-sonnet-4-6', tier: 'turn', contextWindow: 200_000 }],
     },
     cursor: {
       models: [
-        { id: 'auto', tier: 'turn', contextWindow: 200_000 },
-        { id: 'claude-sonnet-4-5', tier: 'turn', contextWindow: 200_000 },
+        { id: 'composer-2', tier: 'turn', contextWindow: 200_000 },
+        { id: 'claude-4.6-sonnet-medium', tier: 'turn', contextWindow: 200_000 },
       ],
     },
     codex: { models: [{ id: 'codex-latest', tier: 'turn', contextWindow: 128_000 }] },
-  },
-  resolveProvider: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-3-5-sonnet-latest',
-    reason: 'preference',
-  })),
-  assessTurnWeight: () => 'small',
-}));
+  };
+  const defaultTurnModel = (id: string) => (id === 'cursor' ? 'composer-2' : 'claude-sonnet-4-6');
+  return {
+    buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
+    getDefaultTurnModel: defaultTurnModel,
+    getModelDescriptor: () => null,
+    PROVIDER_CAPABILITIES: capabilities,
+    resolveModelForProvider: ({
+      provider,
+      modelId,
+    }: {
+      provider: keyof typeof capabilities;
+      modelId: string;
+    }) =>
+      capabilities[provider].models.some((m) => m.id === modelId)
+        ? modelId
+        : provider === 'cursor' && modelId === 'claude-sonnet-4-6'
+          ? 'claude-4.6-sonnet-medium'
+          : defaultTurnModel(provider),
+    resolveProvider: vi.fn(async () => ({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-6',
+      reason: 'preference',
+    })),
+    assessTurnWeight: () => 'small',
+  };
+});
 
 import { ChatInput } from './index';
 
@@ -302,10 +318,37 @@ describe('ChatInput, input wiring', () => {
     expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }));
   });
 
-  it('provider override persists across sends (regression for bug D)', async () => {
+  it('maps a stale session model into the selected provider namespace', async () => {
     const setSessionConfig = vi.fn(async () => undefined);
     mockStore.setState({ setSessionConfig });
 
+    const user = userEvent.setup();
+    render(
+      <ChatInput
+        session={makeSession({
+          providerPreference: {
+            defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
+            allowTurnOverride: true,
+          },
+          providerOverride: 'cursor',
+          modelOverride: 'claude-sonnet-4-6',
+        })}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'hello cursor');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledOnce();
+    expect(sendTurnMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        override: { providerId: 'cursor', model: 'claude-4.6-sonnet-medium' },
+      }),
+    );
+  });
+
+  it('provider override persists across multiple sends (regression for bug D)', async () => {
     const user = userEvent.setup();
     render(
       <ChatInput
@@ -320,13 +363,30 @@ describe('ChatInput, input wiring', () => {
     );
 
     const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hello cursor');
+    await user.type(textarea, 'first cursor turn');
     await user.keyboard('{Enter}');
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledOnce();
+    });
 
-    expect(sendTurnMock).toHaveBeenCalledOnce();
-    expect(sendTurnMock).toHaveBeenCalledWith(
+    await user.type(textarea, 'second cursor turn');
+    await user.keyboard('{Enter}');
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(sendTurnMock).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
-        override: { providerId: 'cursor', model: 'auto' },
+        content: 'first cursor turn',
+        override: { providerId: 'cursor', model: 'composer-2' },
+      }),
+    );
+    expect(sendTurnMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        content: 'second cursor turn',
+        override: { providerId: 'cursor', model: 'composer-2' },
       }),
     );
   });
@@ -355,7 +415,7 @@ describe('ChatInput, input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        override: { providerId: 'cursor', model: 'auto' },
+        override: { providerId: 'cursor', model: 'composer-2' },
       }),
     );
   });

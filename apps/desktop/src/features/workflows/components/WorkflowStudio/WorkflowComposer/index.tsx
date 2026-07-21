@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { Button, Divider, FieldRow, Input, SectionHeader, ScrollFade, cn } from '@goodboy/ui';
 import { Check, Plus, Sparkles, X } from 'lucide-react';
-import { autoModelForRole, getDefaultTurnModel } from '@goodboy/core';
+import { recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../../form';
@@ -98,13 +98,13 @@ export const WorkflowComposer = ({
 
   const recommendedProvider = (_def: DefinitionForm): ProviderId => defaultProvider;
 
-  const recommendedModel = (def: DefinitionForm): string =>
-    autoModelForRole(def.role, [defaultProvider])?.model ?? getDefaultTurnModel(defaultProvider);
-
   const resolvedProvider = (def: DefinitionForm): ProviderId =>
     def.providerOverride !== undefined && def.providerOverride !== ''
       ? (def.providerOverride as ProviderId)
       : recommendedProvider(def);
+
+  const recommendedModel = (def: DefinitionForm): string =>
+    recommendedModelForRole({ role: def.role, provider: resolvedProvider(def) });
 
   const resolvedModel = (def: DefinitionForm): string =>
     def.modelOverride !== undefined && def.modelOverride !== ''

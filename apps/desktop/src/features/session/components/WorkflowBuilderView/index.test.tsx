@@ -72,15 +72,30 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../ProviderSelect', () => ({
   ProviderSelect: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <button type="button" onClick={() => onChange(value === '' ? 'anthropic' : '')}>
+    <button type="button" onClick={() => onChange(value === '' ? 'cursor' : '')}>
       provider:{value === '' ? 'default' : value}
     </button>
   ),
 }));
 
 vi.mock('../ModelSelect', () => ({
-  ModelSelect: ({ value, onChange }: { value: string; onChange: (model: string) => void }) => (
-    <button type="button" onClick={() => onChange('claude-opus-4-6')}>
+  ModelSelect: ({
+    value,
+    onChange,
+    provider,
+    recommendedModel,
+  }: {
+    value: string;
+    onChange: (model: string) => void;
+    provider: string;
+    recommendedModel: string;
+  }) => (
+    <button
+      type="button"
+      data-provider={provider}
+      data-recommended-model={recommendedModel}
+      onClick={() => onChange('claude-opus-4-6')}
+    >
       model:{value === '' ? 'auto' : value}
     </button>
   ),
@@ -581,17 +596,21 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
     expect(steps[1]!.role).toBe('scout');
   });
 
-  it('providerOverride on a step is included in the saved workflow template', async () => {
+  it('uses a step provider override for its recommendation and saved template', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
     expandStep(0);
 
     fireEvent.click(screen.getAllByRole('button', { name: /^provider:default$/i })[0]!);
 
+    const model = screen.getAllByRole('button', { name: /^model:auto$/i })[0]!;
+    expect(model.dataset['provider']).toBe('cursor');
+    expect(model.dataset['recommendedModel']).toBe('composer-2-fast');
+
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     const saved = mockSavePhaseTemplate.mock.calls[0]![0];
-    expect(saved.steps[0]!.providerOverride).toBe('anthropic');
+    expect(saved.steps[0]!.providerOverride).toBe('cursor');
     expect(saved.steps[1]!.providerOverride).toBeUndefined();
   });
 });

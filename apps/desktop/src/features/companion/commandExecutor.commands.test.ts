@@ -37,7 +37,7 @@ const core = vi.hoisted(() => {
         { id: 'claude-haiku', label: 'Haiku', tier: 'utility' },
       ],
     },
-    cursor: { models: [{ id: 'cursor-fast', label: 'Cursor Fast', tier: 'turn' }] },
+    cursor: { models: [{ id: 'composer-2', label: 'Composer 2', tier: 'turn' }] },
     codex: { models: [{ id: 'gpt-5-codex', label: 'Codex', tier: 'turn' }] },
     gemini: { models: [{ id: 'gemini-2-pro', label: 'Gemini Pro', tier: 'turn' }] },
   } as Record<string, { models: Array<{ id: string; label: string; tier: string }> }>;
@@ -203,9 +203,11 @@ describe('queryProviders (read-only menu RPC)', () => {
       }
     ).providers;
     const anthropic = providers.find((p) => p.id === 'anthropic')!;
+    const cursor = providers.find((p) => p.id === 'cursor')!;
     const codex = providers.find((p) => p.id === 'codex')!;
     expect(anthropic.connection).toBe('connected');
     expect(anthropic.defaultModel).toBe('claude-opus-4-8');
+    expect(cursor.defaultModel).toBe('composer-2');
     expect(codex.connection).toBe('missing'); // not in store → falls back
     expect(anthropic.models.length).toBeGreaterThan(0);
   });
