@@ -72,7 +72,9 @@ vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', (
   ),
 }));
 vi.mock('../../../../app/components/AppBreadcrumb', () => ({
-  AppBreadcrumb: () => <div data-testid="breadcrumb" />,
+  AppBreadcrumb: ({ crumbs }: { crumbs: ReadonlyArray<{ label: string }> }) => (
+    <div data-testid="breadcrumb">{crumbs.map((crumb) => crumb.label).join(' / ')}</div>
+  ),
 }));
 vi.mock('../SessionOverviewPane', () => ({ SessionOverviewPane: () => null }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
@@ -150,5 +152,38 @@ describe('SessionWorkspace agent overlay', () => {
         .getAllByTestId('divider')
         .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
     ).toHaveLength(2);
+  });
+});
+
+describe('SessionWorkspace workflow breadcrumb', () => {
+  it('uses the visible workflow name when the only run is not explicitly focused', () => {
+    store.activeLens = { [SESSION_ID]: 'workflows' };
+    store.selectedAgentId = {};
+    store.phaseTemplates = {
+      'workspace-1': [
+        {
+          id: 'workflow-1',
+          name: 'refactor',
+          steps: [],
+        },
+      ],
+    };
+    const workflowSession = {
+      ...session,
+      workflowRuns: [
+        {
+          id: 'run-1',
+          workflowId: 'workflow-1',
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: true,
+          triggerMode: 'immediate',
+        },
+      ],
+    } as unknown as Session;
+
+    render(<SessionWorkspace session={workflowSession} isActive />);
+
+    expect(screen.getByTestId('breadcrumb').textContent).toBe('Overview / Workflows / refactor');
   });
 });

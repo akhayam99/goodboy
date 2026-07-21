@@ -13,7 +13,6 @@ import type {
   ProviderRunId,
   Session,
   TelemetryRecord,
-  Workflow,
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -32,6 +31,7 @@ import { PendingResolutionsStrip } from '../../../../../features/context/compone
 import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format';
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
 import { formatError } from '../../../../../shared/lib/errors';
+import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { SectionToggle } from './SectionToggle';
 import { PlanReadySuggestion } from './PlanReadySuggestion';
 import { ResolveCluster } from './ResolveCluster';
@@ -45,9 +45,18 @@ import { pluralize, workflowKindName, type WorkflowBlockReason } from '../lib';
 type AgentsSectionProps = {
   task: Session;
   only?: 'workflows' | 'agents' | 'scripts' | 'resolve';
+  workflowRunId?: WorkflowRunId;
+  workflowVariant?: 'sidebar' | 'detail';
+  showWorkflowAttach?: boolean;
 };
 
-export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
+export const AgentsSection = ({
+  task,
+  only,
+  workflowRunId,
+  workflowVariant = 'sidebar',
+  showWorkflowAttach = true,
+}: AgentsSectionProps) => {
   const showWorkflows = only == null || only === 'workflows';
   const showAgents = only == null || only === 'agents';
   const showScripts = only == null || only === 'scripts';
@@ -157,24 +166,7 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
   const forceAdvanceWorkflowStep = useAppStore((s) => s.forceAdvanceWorkflowStep);
   const renameAgent = useAppStore((s) => s.renameAgent);
   const deleteAgent = useAppStore((s) => s.deleteAgent);
-  const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
-  const sessionWorkflows = useAppStore(
-    (s) => s.sessionWorkflows[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
-  const attachedRuns = useMemo<ReadonlyArray<{ run: WorkflowRun; workflow: Workflow }>>(() => {
-    const byId = new Map<string, Workflow>();
-    for (const w of phaseTemplates) byId.set(w.id, w);
-    for (const w of sessionWorkflows) byId.set(w.id, w);
-    return [...task.workflowRuns]
-      .sort((a, b) => a.ordinal - b.ordinal)
-      .map((run) => {
-        const workflow = byId.get(run.workflowId);
-        return workflow ? { run, workflow } : null;
-      })
-      .filter((e): e is { run: WorkflowRun; workflow: Workflow } => e !== null);
-  }, [task.workflowRuns, phaseTemplates, sessionWorkflows]);
+  const attachedRuns = useAttachedWorkflowRuns({ session: task });
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
@@ -659,6 +651,10 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
   };
 
   const hasAnyWorkflow = attachedRuns.length > 0;
+  const visibleWorkflowRuns =
+    workflowRunId == null
+      ? attachedRuns
+      : attachedRuns.filter(({ run }) => run.id === workflowRunId);
 
   const wfExpanded = forceExpanded || workflowExpanded;
   const agExpanded = forceExpanded || agentsExpanded;
@@ -687,12 +683,14 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
             ) : (
               <>
                 <div className={cn('flex flex-col', forceExpanded ? 'gap-3' : 'gap-0.5')}>
-                  {attachedRuns.map(({ run, workflow }, index) => (
+                  {visibleWorkflowRuns.map(({ run, workflow }) => (
                     <WorkflowRow
                       key={run.id}
                       run={run}
                       workflow={workflow}
-                      index={index}
+                      index={attachedRuns.findIndex(
+                        ({ run: candidate }) => candidate.id === run.id,
+                      )}
                       task={task}
                       attachedRuns={attachedRuns}
                       agentsByRunId={agentsByRunId}
@@ -703,6 +701,7 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
                       workflowExpand={workflowExpand}
                       workflowNameByRunId={workflowNameByRunId}
                       forceExpanded={forceExpanded}
+                      variant={workflowVariant}
                       toggleWorkflowExpand={toggleWorkflowExpand}
                       startWorkflowRun={startWorkflowRun}
                       setWorkflowRunAutoRun={setWorkflowRunAutoRun}
@@ -730,7 +729,9 @@ export const AgentsSection = ({ task, only }: AgentsSectionProps) => {
                     />
                   ))}
                 </div>
-                <WorkflowStartButton sessionId={task.id} variant="attach" />
+                {showWorkflowAttach ? (
+                  <WorkflowStartButton sessionId={task.id} variant="attach" />
+                ) : null}
               </>
             )
           ) : (

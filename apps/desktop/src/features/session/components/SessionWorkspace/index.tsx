@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import { ChatView } from '../../../chat/components/ChatView';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
@@ -30,6 +30,8 @@ import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
 import { WorkflowStrip } from './parts/WorkflowStrip';
+import { WorkflowsPane } from './parts/WorkflowsPane';
+import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -71,12 +73,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
-  const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
-  const sessionWorkflows = useAppStore(
-    (s) => s.sessionWorkflows[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
-  );
+  const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const plans = useSessionPlans(sessionId);
 
   useEffect(() => {
@@ -122,15 +119,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     [phaseRuns, selectedAgentId],
   );
   const focusedWorkflowName = useMemo(() => {
-    if (focusedWorkflowRunId == null) return null;
-    const run = session.workflowRuns.find((r) => r.id === focusedWorkflowRunId);
-    if (!run) return null;
-    const workflow =
-      phaseTemplates.find((w) => w.id === run.workflowId) ??
-      sessionWorkflows.find((w) => w.id === run.workflowId) ??
-      null;
-    return workflow ? workflowKindName(workflow) : null;
-  }, [focusedWorkflowRunId, session.workflowRuns, phaseTemplates, sessionWorkflows]);
+    const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
+    const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
+    return visibleRun == null ? null : workflowKindName(visibleRun.workflow);
+  }, [focusedWorkflowRunId, attachedWorkflowRuns, lens]);
   const focusedPlanTitle = useMemo(
     () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
     [plans, focusedPlanId],
@@ -229,15 +221,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 {lens === 'plans' ? (
                   <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
                 ) : null}
-                {lens === 'workflows' ? (
-                  <PaneShell
-                    title="Workflows"
-                    description="Sequences of agents that drive this session toward its goal."
-                    width="3xl"
-                  >
-                    <AgentsSection task={session} only="workflows" />
-                  </PaneShell>
-                ) : null}
+                {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
                 {lens === 'resolve' ? (
                   <PaneShell
                     title="Resolve"
