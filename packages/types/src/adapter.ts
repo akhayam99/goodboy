@@ -1,5 +1,6 @@
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { MessageAttachment } from './message';
+import type { ClaudePermissionMode } from './permission';
 import type { ProviderName } from './provider';
 import type { ProviderId } from './provider-registry';
 
@@ -23,7 +24,7 @@ export type DetectResult =
   | { kind: 'available'; binary: string; version: string }
   | { kind: 'missing'; binary: string; reason: string };
 
-export type PermissionMode = 'default' | 'bypassPermissions' | 'plan' | 'acceptEdits';
+export type PermissionMode = Exclude<ClaudePermissionMode, 'dontAsk'>;
 
 export type TurnPermissionFlags = {
   readonly mode: PermissionMode;
