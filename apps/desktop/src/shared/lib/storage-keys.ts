@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
+  sessionsSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
 } as const;
 
 export const STORAGE_PREFIXES = {

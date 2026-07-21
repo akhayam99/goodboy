@@ -277,6 +277,7 @@ export type AppState = UpdaterState & {
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly boardReady: boolean;
+  readonly sessionsSidebarCollapsed: boolean;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
@@ -693,6 +694,8 @@ export type AppActions = {
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
   acceptSessionNudgeHandoff(sessionId: SessionId): Promise<void>;
+  setSessionsSidebarCollapsed(next: boolean): void;
+  toggleSessionsSidebar(): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
@@ -798,6 +801,7 @@ export const initialState: AppState = {
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,
+  sessionsSidebarCollapsed: false,
   sessionViewPrefs: {},
   activeLens: {},
   lensHistory: {},
