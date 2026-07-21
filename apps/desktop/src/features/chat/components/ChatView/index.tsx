@@ -47,11 +47,12 @@ import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 type ChatViewProps = {
   session: Session;
   isActive?: boolean;
+  hideBreadcrumb?: boolean;
 };
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 
-export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
+export const ChatView = ({ session, isActive = true, hideBreadcrumb = false }: ChatViewProps) => {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
@@ -395,7 +396,7 @@ export const ChatView = ({ session, isActive = true }: ChatViewProps) => {
 
   return (
     <div className="flex h-full flex-col">
-      <ChatBreadcrumb session={session} />
+      {!hideBreadcrumb && <ChatBreadcrumb session={session} />}
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade
           className="flex-1"

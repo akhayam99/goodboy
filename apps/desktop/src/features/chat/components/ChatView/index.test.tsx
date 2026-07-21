@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
+const chatBreadcrumbMock = vi.hoisted(() => vi.fn());
+
 const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(() => ({
   openQuestions: { current: [] as ReadonlyArray<unknown> },
   answeredQuestions: { current: [] as ReadonlyArray<unknown> },
@@ -65,7 +67,10 @@ vi.mock('../AuthRequiredCallout', () => ({
 }));
 
 vi.mock('../ChatBreadcrumb', () => ({
-  ChatBreadcrumb: () => null,
+  ChatBreadcrumb: (props: unknown) => {
+    chatBreadcrumbMock(props);
+    return null;
+  },
 }));
 
 vi.mock('../ChatInput', () => ({
@@ -119,6 +124,7 @@ beforeEach(() => {
   state.loadSessionOpenQuestions.mockClear();
   state.loadSessionAnsweredQuestions.mockClear();
   state.clearOpenQuestionScroll.mockClear();
+  chatBreadcrumbMock.mockClear();
   openQuestions.current = [];
   answeredQuestions.current = [];
   transcriptItems.current = [];
@@ -131,6 +137,11 @@ describe('ChatView', () => {
   it('renders without throwing on an empty session', () => {
     const { container } = render(<ChatView session={session} />);
     expect(container.firstChild).not.toBeNull();
+  });
+
+  it('does not render the breadcrumb when it is hidden', () => {
+    render(<ChatView session={session} hideBreadcrumb />);
+    expect(chatBreadcrumbMock).not.toHaveBeenCalled();
   });
 
   it('loads open and answered questions on mount', () => {

@@ -103,8 +103,9 @@ describe('buildSessionBreadcrumb', () => {
         h,
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview']);
-    expect(last(crumbs)?.onClick).toBeUndefined();
+    expect(labels(crumbs)).toEqual(['Overview', 'Workflows']);
+    expect(crumbs[0]?.onClick).toBeDefined();
+    expect(crumbs[1]?.onClick).toBeDefined();
   });
 
   it('degrades a workflows lens with no focused run to a two-crumb leaf trail', () => {

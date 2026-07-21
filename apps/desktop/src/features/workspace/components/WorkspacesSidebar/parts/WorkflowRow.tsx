@@ -156,7 +156,9 @@ export const WorkflowRow = ({
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-base font-semibold text-foreground">{name}</h2>
+                <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
+                  {name}
+                </h2>
                 <WorkflowRunStatus
                   run={run}
                   workflow={workflow}
