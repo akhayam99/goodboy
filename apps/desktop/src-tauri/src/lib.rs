@@ -25,6 +25,7 @@ mod skills;
 mod summarize;
 mod terminal;
 mod turn;
+mod util;
 mod worktree;
 
 pub use secrets::read as read_secret;

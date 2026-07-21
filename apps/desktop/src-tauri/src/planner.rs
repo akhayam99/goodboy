@@ -11,20 +11,7 @@ pub enum PlannerError {
     UnknownProvider(String),
 }
 
-impl Serialize for PlannerError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serde_json::Map::new();
-        map.insert(
-            "kind".to_string(),
-            serde_json::Value::String(self.kind().to_string()),
-        );
-        map.insert(
-            "message".to_string(),
-            serde_json::Value::String(self.to_string()),
-        );
-        serde_json::Value::Object(map).serialize(serializer)
-    }
-}
+crate::util::impl_error_serialize!(PlannerError);
 
 impl PlannerError {
     fn kind(&self) -> &'static str {

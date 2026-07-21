@@ -165,20 +165,7 @@ pub enum ConfigExportError {
     Json(#[from] serde_json::Error),
 }
 
-impl Serialize for ConfigExportError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serde_json::Map::new();
-        map.insert(
-            "kind".to_string(),
-            serde_json::Value::String(self.kind().to_string()),
-        );
-        map.insert(
-            "message".to_string(),
-            serde_json::Value::String(self.to_string()),
-        );
-        serde_json::Value::Object(map).serialize(serializer)
-    }
-}
+crate::util::impl_error_serialize!(ConfigExportError);
 
 impl ConfigExportError {
     fn kind(&self) -> &'static str {
@@ -379,7 +366,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
 
     Ok(ConfigBundle {
         schema_version: SCHEMA_VERSION,
-        exported_at: iso_now(),
+        exported_at: crate::util::iso_now(),
         workspaces,
         skills,
         phase_templates,
@@ -497,7 +484,7 @@ pub fn import_config(
     conn.execute_batch("BEGIN")?;
 
     let result = (|| -> Result<ImportStats, rusqlite::Error> {
-        let now_ms = now_ms();
+        let now_ms = crate::util::now_ms();
 
         // Workspaces — upsert (preserve existing data, add missing).
         for w in &bundle.workspaces {
@@ -668,30 +655,9 @@ pub fn import_config(
 // Utilities
 // ---------------------------------------------------------------------------
 
-fn iso_now() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64;
-    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        year, month, day, hour, min, sec
-    )
-}
-
-fn now_ms() -> i64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64
-}
-
 fn ms_col_to_iso(ms: i64) -> String {
     let secs = ms / 1000;
-    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
+    let (year, month, day, hour, min, sec) = crate::util::epoch_secs_to_datetime(secs);
     format!(
         "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
         year, month, day, hour, min, sec
@@ -712,7 +678,7 @@ fn iso_to_ms(s: &str) -> Option<i64> {
 
     let mut days: i64 = 0;
     for y in 1970..year {
-        days += if is_leap_year(y) { 366 } else { 365 };
+        days += if crate::util::is_leap_year(y) { 366 } else { 365 };
     }
     for m in 1..month {
         days += days_in_month(year, m);
@@ -722,16 +688,12 @@ fn iso_to_ms(s: &str) -> Option<i64> {
     Some(total_secs * 1000)
 }
 
-fn is_leap_year(y: i64) -> bool {
-    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
-}
-
 fn days_in_month(y: i64, m: u32) -> i64 {
     match m {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
         4 | 6 | 9 | 11 => 30,
         2 => {
-            if is_leap_year(y) {
+            if crate::util::is_leap_year(y) {
                 29
             } else {
                 28
@@ -739,35 +701,6 @@ fn days_in_month(y: i64, m: u32) -> i64 {
         }
         _ => 30,
     }
-}
-
-fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u32) {
-    let sec = (s % 60) as u32;
-    s /= 60;
-    let min = (s % 60) as u32;
-    s /= 60;
-    let hour = (s % 24) as u32;
-    s /= 24;
-    let mut year: i64 = 1970;
-    loop {
-        let days = if is_leap_year(year) { 366 } else { 365 };
-        if s < days {
-            break;
-        }
-        s -= days;
-        year += 1;
-    }
-    let mut month: u32 = 1;
-    loop {
-        let d = days_in_month(year, month);
-        if s < d {
-            break;
-        }
-        s -= d;
-        month += 1;
-    }
-    let day = s as u32 + 1;
-    (year, month, day, hour, min, sec)
 }
 
 // ---------------------------------------------------------------------------
