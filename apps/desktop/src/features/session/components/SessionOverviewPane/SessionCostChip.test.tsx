@@ -2,26 +2,22 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId, TelemetryRecord } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
-  state: { sessionTelemetry: {} as Record<string, ReadonlyArray<TelemetryRecord>> },
+  state: { sessionCost: 0 },
 }));
 
 vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useSessionCost: () => state.sessionCost,
 }));
 
 import { SessionCostChip } from './SessionCostChip';
 
-const rec = (kind: string, cost: number): TelemetryRecord =>
-  ({ kind, estimatedCostUsd: cost }) as unknown as TelemetryRecord;
-
 const SID = 'sess-1' as SessionId;
 
 beforeEach(() => {
-  state.sessionTelemetry = {};
+  state.sessionCost = 0;
 });
 afterEach(cleanup);
 
@@ -31,10 +27,8 @@ describe('SessionCostChip', () => {
     expect(screen.getByRole('button').textContent).toBe('$0');
   });
 
-  it('sums turn costs and excludes summarizer records', () => {
-    state.sessionTelemetry = {
-      [SID]: [rec('turn', 1.5), rec('summarizer', 9.99), rec('turn', 0.25)],
-    };
+  it('formats the session cost', () => {
+    state.sessionCost = 1.75;
     render(<SessionCostChip sessionId={SID} />);
     expect(screen.getByRole('button').textContent).toBe('$1.75');
   });

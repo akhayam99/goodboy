@@ -170,7 +170,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   const ciState = computeCiState(detail?.checks ?? []);
   const unresolved = (detail?.comments ?? []).filter(
-    (c) => c.source !== 'review' || c.resolved === false,
+    (c) => c.source === 'review' && c.resolved === false,
   ).length;
 
   return (

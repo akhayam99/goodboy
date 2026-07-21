@@ -1,9 +1,15 @@
 import { memo, useMemo } from 'react';
 import { Archive, Code, RotateCcw, SquareTerminal, Trash2, type LucideIcon } from 'lucide-react';
 import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
-import type { Session, SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionStageInfo } from '../../../../../store';
+import type { Message, Session, SessionId } from '@goodboy/types';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionCost,
+  useSessionStageInfo,
+} from '../../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
+import { selectNonResolverStandaloneAgents } from '../../../../session/components/SessionOverviewPane/lib';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
@@ -35,23 +41,27 @@ export const StageBoardCard = memo(function StageBoardCard({
   const prState = useAppStore((s) => s.sessionGithub[id]?.pr?.state ?? null);
   const prNumber = useAppStore((s) => s.sessionGithub[id]?.pr?.number);
   const externalTask = useAppStore((s) => s.sessionExternalTasks?.[id] ?? null);
-  const agentCount = useAppStore((s) => (s.sessionPhaseRuns[id] ?? EMPTY_ARRAY).length);
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
-  const dynamicActions = useDynamicActions(session, nav, stage, reason);
-
-  const telemetry = useAppStore(
-    (s) => s.sessionTelemetry[id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
-  const sessionCost = useMemo(() => {
-    let sum = 0;
-    for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') {
+  const agents = useAppStore((s) => s.sessionPhaseRuns[id] ?? EMPTY_ARRAY);
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const messages = useAppStore((s) => s.messages[id] ?? (EMPTY_ARRAY as ReadonlyArray<Message>));
+  const firstUserTextByAgentId = useMemo(() => {
+    const textByAgentId = new Map<string, string>();
+    for (const message of messages) {
+      if (message.role !== 'user' || textByAgentId.has(message.agentId)) {
         continue;
       }
-      sum += rec.estimatedCostUsd;
+      textByAgentId.set(message.agentId, message.content);
     }
-    return sum;
-  }, [telemetry]);
+    return textByAgentId;
+  }, [messages]);
+  const agentCount = selectNonResolverStandaloneAgents(
+    agents,
+    agentKindOverride,
+    firstUserTextByAgentId,
+  ).length;
+  const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
+  const dynamicActions = useDynamicActions(session, nav, stage, reason);
+  const sessionCost = useSessionCost(id);
 
   const stageMeta = SESSION_STAGE_META[stage];
 

@@ -1,6 +1,6 @@
-import { formatUsdPrecise } from '@goodboy/ui';
+import { formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { ProviderIcon } from './ProviderIcon';
-import { formatModel, formatTokens, type ModelBreakdownEntry } from './lib';
+import { formatModel, type ModelBreakdownEntry } from './lib';
 
 type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;

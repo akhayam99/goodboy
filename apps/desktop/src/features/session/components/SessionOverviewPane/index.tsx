@@ -71,6 +71,7 @@ import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
+import { pullRequestMeta } from '../../../github/components/PullRequestChip';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -551,9 +552,25 @@ export const SessionOverviewPane = ({
   );
   const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
   const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
-  const hasPr = useAppStore(
-    (s) => s.sessionGithub[session.id]?.pr != null || s.sessionGitlabMr[session.id]?.mr != null,
-  );
+  const pullRequestState = useAppStore((s) => s.sessionGithub[session.id]?.pr?.state ?? null);
+  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[session.id]?.mr ?? null);
+  const mergeRequestState =
+    mergeRequest == null
+      ? null
+      : mergeRequest.draft
+        ? 'draft'
+        : mergeRequest.state === 'merged'
+          ? 'merged'
+          : mergeRequest.state === 'closed'
+            ? 'closed'
+            : 'open';
+  const pullRequestLabel =
+    pullRequestState != null
+      ? pullRequestMeta(pullRequestState).label
+      : mergeRequestState != null
+        ? pullRequestMeta(mergeRequestState).label
+        : 'None';
+  const hasPr = pullRequestState != null || mergeRequest != null;
   const resolvable = useResolvableCount(session.id as SessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -700,7 +717,7 @@ export const SessionOverviewPane = ({
       kind: 'pr',
       icon: GitPullRequest,
       tone: 'accent',
-      value: hasPr ? 'Open' : 'None',
+      value: pullRequestLabel,
       label: 'pull request',
       active: hasPr,
     },

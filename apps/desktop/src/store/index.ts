@@ -8,6 +8,7 @@ export {
   useFilesTouched,
   useSessionAnsweredQuestions,
   useSessionById,
+  useSessionCost,
   useSessionLoading,
   useSessionOpenQuestions,
   useSessionPlans,
@@ -24,6 +25,7 @@ export {
   useWorkspaceHasUnread,
   useHasUnreadElsewhere,
   useWorkspaces,
+  sumSessionCost,
   type FilesTouched,
 } from './selectors';
 export { useTranscript } from './transcript';

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { cn, formatUsdPrecise } from '@goodboy/ui';
+import { cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { ProviderIcon } from './ProviderIcon';
 import { Widget } from './Widget';
-import { formatModel, formatTokens, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
+import { formatModel, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;

@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { ArrowUpRight, Check, Copy, FileEdit, ImageOff } from 'lucide-react';
-import { CopyButton, Divider, Markdown, Skeleton, cn, formatUsd } from '@goodboy/ui';
+import { CopyButton, Divider, Markdown, Skeleton, cn, formatTokens, formatUsd } from '@goodboy/ui';
 import type { AgentId, MessageAttachment, ProviderId, SessionId } from '@goodboy/types';
 import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -176,16 +176,6 @@ function FileEditBlock({ path, editType, workingDir, onOpenDiff }: FileEditBlock
       {inner}
     </div>
   );
-}
-
-function formatTokens(n: number): string {
-  if (n < 1000) {
-    return String(n);
-  }
-  if (n < 10_000) {
-    return `${(n / 1000).toFixed(1)}k`;
-  }
-  return `${Math.round(n / 1000)}k`;
 }
 
 function UsageStat({ value, label }: { value: string; label: string }) {

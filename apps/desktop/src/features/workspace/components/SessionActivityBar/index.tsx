@@ -6,12 +6,12 @@ import type {
   SessionGroupKey,
   SessionId,
   SessionStage,
-  TelemetryRecord,
   WorkspaceId,
 } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useSessionCost,
   useSessionStageInfo,
   useSessionViewPrefs,
   useSortedGroupedSessions,
@@ -318,21 +318,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
     (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
   );
 
-  const telemetry = useAppStore(
-    (s) =>
-      s.sessionTelemetry[session.id as SessionId] ??
-      (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
-  const sessionCost = useMemo(() => {
-    let sum = 0;
-    for (const rec of telemetry) {
-      if (rec.kind === 'summarizer') {
-        continue;
-      }
-      sum += rec.estimatedCostUsd;
-    }
-    return sum;
-  }, [telemetry]);
+  const sessionCost = useSessionCost(session.id as SessionId);
 
   const body = (
     <button

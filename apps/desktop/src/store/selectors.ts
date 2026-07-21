@@ -12,6 +12,7 @@ import type {
   SessionStage,
   SessionStageInfo,
   SessionViewPrefs,
+  TelemetryRecord,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
@@ -28,6 +29,23 @@ import {
 } from './slices/session-view';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
+const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
+
+export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
+  let sum = 0;
+  for (const record of records) {
+    if (record.kind === 'summarizer') {
+      continue;
+    }
+    sum += record.estimatedCostUsd;
+  }
+  return sum;
+};
+
+export const useSessionCost = (sessionId: SessionId): number => {
+  const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY);
+  return useMemo(() => sumSessionCost(records), [records]);
+};
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>

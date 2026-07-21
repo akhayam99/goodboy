@@ -27,9 +27,9 @@ describe('formatTokens', () => {
     expect(formatTokens(99_999)).toBe('100.0k');
   });
 
-  it('renders integer k at or above 100k', () => {
-    expect(formatTokens(100_000)).toBe('100k');
-    expect(formatTokens(1_234_567)).toBe('1235k');
+  it('renders decimal k below one million and decimal M at or above it', () => {
+    expect(formatTokens(100_000)).toBe('100.0k');
+    expect(formatTokens(1_234_567)).toBe('1.23M');
   });
 });
 

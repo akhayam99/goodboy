@@ -703,7 +703,7 @@ const DiffViewerContent = ({
         <DiffToolbar
           title={title}
           prNumber={prNumber}
-          openCommentsCount={comments.filter((c) => c.status === 'open').length}
+          openCommentsCount={openComments.length}
           reviewedCount={files.length > 0 ? reviewedCount : null}
           filesCount={files.length}
           sidebarCollapsed={sidebarCollapsed}
