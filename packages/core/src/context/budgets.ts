@@ -8,4 +8,4 @@ export const SLOT_BUDGETS = {
   last_output_summary: 900,
 } satisfies Record<SlotKey, number>;
 
-export const PREAMBLE_SLOT_TOTAL_BUDGET = 4_800;
+export const PREAMBLE_SLOT_TOTAL_BUDGET = 5_600;

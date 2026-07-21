@@ -119,10 +119,10 @@ export const serializeSlotsBudgeted = ({ slots }: Params): string => {
         keptLines.push(line);
       }
     }
-    const body =
-      keptLines.length > 0
-        ? `${keptLines.join('\n')}\n${COMPACTING_PLACEHOLDER}`
-        : COMPACTING_PLACEHOLDER;
+    const compactedContentBudget = budget - COMPACTING_PLACEHOLDER.length - 1;
+    const compactedLines =
+      keptLines.length > 0 ? keptLines.join('\n') : lines[0]!.slice(0, compactedContentBudget);
+    const body = `${compactedLines}\n${COMPACTING_PLACEHOLDER}`;
     sections.push({ key, body });
   }
 

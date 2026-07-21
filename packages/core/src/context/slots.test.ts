@@ -24,6 +24,16 @@ describe('serializeSlotsBudgeted', () => {
     expect(output).not.toContain(latest);
   });
 
+  it('hard-slices a first line that exceeds the decisions budget', () => {
+    const decision = 'd'.repeat(SLOT_BUDGETS.decisions + 1);
+    const output = serializeSlotsBudgeted({
+      slots: [slot({ key: 'decisions', value: decision })],
+    });
+
+    expect(output).toContain(`## decisions\n${'d'.repeat(1_194)}\n- ...`);
+    expect(output).not.toContain(`## decisions\n- ...`);
+  });
+
   it('keeps the most recent file paths when truncating', () => {
     const oldest = 'src/oldest.ts';
     const newest = 'src/newest.ts';
@@ -37,7 +47,7 @@ describe('serializeSlotsBudgeted', () => {
     expect(output).toContain('- ...');
   });
 
-  it('omits files before higher-priority slots when the total is over budget', () => {
+  it('renders every slot at its per-slot budget without omitting a section', () => {
     const output = serializeSlotsBudgeted({
       slots: [
         slot({ key: 'goal', value: 'g'.repeat(SLOT_BUDGETS.goal) }),
@@ -52,8 +62,11 @@ describe('serializeSlotsBudgeted', () => {
     });
 
     expect(output.length).toBeLessThanOrEqual(PREAMBLE_SLOT_TOTAL_BUDGET);
-    expect(output).toContain('## files touched\n(omitted, over budget)');
-    expect(output).toContain('## session tldr');
+    expect(output).not.toContain('(omitted, over budget)');
+    expect(output).toContain('g'.repeat(SLOT_BUDGETS.goal));
+    expect(output).toContain('d'.repeat(SLOT_BUDGETS.decisions));
+    expect(output).toContain('f'.repeat(SLOT_BUDGETS.files_touched));
     expect(output).toContain('q'.repeat(SLOT_BUDGETS.open_questions));
+    expect(output).toContain('s'.repeat(SLOT_BUDGETS.last_output_summary));
   });
 });

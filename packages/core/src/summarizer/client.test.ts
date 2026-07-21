@@ -4,6 +4,7 @@ import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { Summarizer as ClientSummarizer, type SummarizerDeps } from './client';
 import { Summarizer, SummarizerParseError, SummarizerSpawnError } from './cli';
+import { SUMMARIZER_SYSTEM_PROMPT } from './prompt';
 
 type MockChild = EventEmitter & {
   stdout: Readable;
@@ -83,6 +84,7 @@ describe('Summarizer client prompt', () => {
       throw new Error('invalid summarizer system prompt');
     }
 
+    expect(systemPrompt).toBe(SUMMARIZER_SYSTEM_PROMPT);
     expect(systemPrompt).toContain('- last_output_summary (session tldr)');
     expect(systemPrompt).toContain(
       '- goal: 280\n- files_touched: 1600\n- decisions: 1200\n- open_questions: 800\n- last_output_summary: 900\n\nIf a current or updated slot exceeds its budget, emit a compacted full value within the budget. Merge semantic duplicates, replace superseded decisions with the final decision, and keep the most recent and most relevant facts.',
@@ -119,6 +121,7 @@ describe('Summarizer (CLI-based)', () => {
     expect(args).toContain('--output-format');
     expect(args).toContain('json');
     expect(args).toContain('--no-session-persistence');
+    expect(args[args.indexOf('--system-prompt') + 1]).toBe(SUMMARIZER_SYSTEM_PROMPT);
   });
 
   it('spawns cursor-agent CLI with correct args for cursor provider', async () => {
