@@ -4,6 +4,7 @@ import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 import { formatStepDuration } from './formatStepDuration';
+import { stripWorkflowHandoffHeading } from './stripWorkflowHandoffHeading';
 import { MARKER_ACCENT } from '../marker-accents';
 import { TranscriptShell } from '../TranscriptShell';
 
@@ -17,7 +18,8 @@ type Props = {
 export const PhaseTransitionCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
   const timestamp = formatCardTime(item.at);
-  const hasContext = item.carryForwardContext.trim().length > 0;
+  const context = stripWorkflowHandoffHeading({ context: item.carryForwardContext });
+  const hasContext = context.trim().length > 0;
 
   return (
     <div>
@@ -86,7 +88,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             carried forward
           </span>
           <div className="overflow-x-auto text-xs text-foreground/80">
-            <Markdown text={item.carryForwardContext} />
+            <Markdown text={context} />
           </div>
         </TranscriptShell>
       ) : null}
