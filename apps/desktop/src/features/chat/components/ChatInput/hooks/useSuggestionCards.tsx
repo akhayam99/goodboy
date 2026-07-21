@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ClipboardCheck, Telescope } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
-import type { SessionNudge } from '../../../../../store/store';
+import type { SessionNudge } from '../../../../../store/types';
 import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
 import { NudgeCard } from '../../NudgeCard';
 import { RightSizeCard } from '../../RightSizeCard';

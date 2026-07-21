@@ -50,7 +50,7 @@ import {
 import { heuristicAgentTitle } from '../shared/lib/agent-title-heuristic';
 import { formatError } from '../shared/lib/errors';
 import { buildProviderSpendBreakdown } from './slices/budget';
-import type { SessionNudge } from './store';
+import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
 
 export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string => {

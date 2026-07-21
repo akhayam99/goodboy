@@ -1,5 +1,5 @@
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
-import type { SessionLoadingFlags } from './store';
+import type { SessionLoadingFlags } from './types';
 import type { SetFn } from './slice-types';
 
 export const EMPTY_LOADING: SessionLoadingFlags = {

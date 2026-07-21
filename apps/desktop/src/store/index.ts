@@ -1,4 +1,5 @@
-export { useAppStore, type BootPhase, type ProviderSpendEntry } from './store';
+export { useAppStore, type ProviderSpendEntry } from './store';
+export type { BootPhase } from './types';
 
 export {
   agentHasUnread,
