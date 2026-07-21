@@ -13,6 +13,7 @@ import {
   isStandaloneAgent,
   kindConsumesPlan,
   resolveAgentKind,
+  resolveRootAgent,
   selectNonResolverStandaloneAgents,
   selectStandaloneAgents,
 } from './agent-kind';
@@ -44,6 +45,68 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
 function makeStep(role: string, name = role): WorkflowLibraryStep {
   return { name, role, promptPrefix: '', expectedOutput: '' };
 }
+
+describe('resolveRootAgent', () => {
+  it('routes a cluster child through its topmost workflow-step ancestor', () => {
+    const root = agentOf({
+      id: 'root' as AgentId,
+      workflowRunId: WF,
+      stepId: STEP,
+      kind: 'implementer',
+    });
+    const child = agentOf({
+      id: 'child' as AgentId,
+      parentAgentId: root.id,
+      workflowRunId: WF,
+      kind: 'scout',
+    });
+
+    const resolved = resolveRootAgent({ agents: [child, root], agentId: child.id });
+
+    expect(resolved).toBe(root);
+    if (resolved == null) {
+      throw new Error('Expected a root agent');
+    }
+    expect(agentHomeLens(resolved, classifyAgent(resolved, null))).toBe('workflows');
+  });
+
+  it('routes a parallel branch with only a step binding to its orchestrator home', () => {
+    const orchestrator = agentOf({
+      id: 'orchestrator' as AgentId,
+      workflowRunId: WF,
+      stepId: STEP,
+      kind: 'implementer',
+    });
+    const branch = agentOf({
+      id: 'branch' as AgentId,
+      parentAgentId: orchestrator.id,
+      stepId: 'branch-step' as StepId,
+      kind: 'implementer',
+    });
+
+    const resolved = resolveRootAgent({ agents: [branch, orchestrator], agentId: branch.id });
+
+    expect(resolved).toBe(orchestrator);
+    if (resolved == null) {
+      throw new Error('Expected an orchestrating agent');
+    }
+    expect(agentHomeLens(resolved, classifyAgent(resolved, null))).toBe('workflows');
+  });
+
+  it('stops at the highest available agent when a parent is missing', () => {
+    const child = agentOf({ id: 'child' as AgentId, parentAgentId: 'missing' as AgentId });
+
+    expect(resolveRootAgent({ agents: [child], agentId: child.id })).toBe(child);
+    expect(resolveRootAgent({ agents: [child], agentId: 'unknown' as AgentId })).toBeNull();
+  });
+
+  it('stops safely when the parent chain contains a cycle', () => {
+    const first = agentOf({ id: 'first' as AgentId, parentAgentId: 'second' as AgentId });
+    const second = agentOf({ id: 'second' as AgentId, parentAgentId: first.id });
+
+    expect(resolveRootAgent({ agents: [first, second], agentId: first.id })).toBe(second);
+  });
+});
 
 describe('agentHomeLens', () => {
   it('routes a full workflow step agent (workflowRunId + stepId) to workflows', () => {

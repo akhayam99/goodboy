@@ -304,11 +304,18 @@ describe('sendTurn, parallel agents branch', () => {
     invokeParallelPhaseRunSpawnSpy.mockResolvedValue([]);
     const insertedPhaseRuns: Agent[] = [];
     phaseRunInsertSpy.mockImplementation(
-      async (args: { stepId: string; providerRunId: string; ordinal: number; name: string }) => {
+      async (args: {
+        stepId: string;
+        parentAgentId: AgentId;
+        providerRunId: string;
+        ordinal: number;
+        name: string;
+      }) => {
         const row: Agent = {
           id: `phase-run-${args.stepId}` as AgentId,
           sessionId: SESSION_ID,
           stepId: args.stepId as StepId,
+          parentAgentId: args.parentAgentId,
           ordinal: args.ordinal,
           name: args.name,
           status: 'running',
@@ -391,6 +398,14 @@ describe('sendTurn, parallel agents branch', () => {
 
     expect(parallelPhaseGroupUpdateCompletedAtSpy).toHaveBeenCalledOnce();
     expect(phaseRunInsertSpy).toHaveBeenCalledTimes(2);
+    expect(phaseRunInsertSpy).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ parentAgentId: 'agent-1' }),
+    );
+    expect(phaseRunInsertSpy).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ parentAgentId: 'agent-1' }),
+    );
     expect(phaseRunUpdateStatusSpy).toHaveBeenCalledTimes(2);
   });
 

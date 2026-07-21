@@ -82,10 +82,20 @@ vi.mock('./AgentRow', () => ({
 vi.mock('./WorkflowStartButton', () => ({
   WorkflowStartButton: () => <div data-testid="wf-start" />,
 }));
-vi.mock('./WorkflowStepRow', () => ({ WorkflowStepRow: () => null }));
+vi.mock('./WorkflowStepRow', () => ({
+  WorkflowStepRow: ({ run }: { run: Agent }) => (
+    <div data-testid={`workflow-step-${run.id}`}>{run.name}</div>
+  ),
+}));
 vi.mock('./ResolveCluster', () => ({ ResolveCluster: () => null }));
 vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }));
-vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
+vi.mock('./ClusterChildRow', () => ({
+  ClusterChildRow: ({ child, isSelected }: { child: Agent; isSelected: boolean }) => (
+    <div data-testid={`cluster-child-${child.id}`} data-selected={isSelected}>
+      {child.name}
+    </div>
+  ),
+}));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 vi.mock('../../../../scripts/components/ScriptsSection', () => ({
   ScriptsSection: () => <div data-testid="scripts" />,
@@ -377,6 +387,40 @@ describe('AgentsSection collapse defaults', () => {
     ]);
 
     expect(screen.getByTitle('3 agent replies to review').textContent).toContain('3');
+  });
+
+  it('selecting a cluster child expands its container subtree', () => {
+    h.state.selectedAgentId = { [SESSION_ID]: 'child-1' as AgentId };
+    renderWorkflowWith([
+      buildAgent({
+        id: 'child-1' as AgentId,
+        name: 'cluster child',
+        parentAgentId: 'wf-1' as AgentId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+      }),
+    ]);
+
+    const childRow = screen.getByTestId('cluster-child-child-1');
+    expect(childRow.textContent).toBe('cluster child');
+    expect(childRow.dataset.selected).toBe('true');
+  });
+
+  it('renders a workflow-bound child only inside its parent subtree', () => {
+    h.state.selectedAgentId = { [SESSION_ID]: 'child-1' as AgentId };
+    renderWorkflowWith([
+      buildAgent({
+        id: 'child-1' as AgentId,
+        name: 'parallel branch',
+        parentAgentId: 'wf-1' as AgentId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        stepId: 'step-1' as StepId,
+      }),
+    ]);
+
+    expect(screen.queryByTestId('workflow-step-wf-1')).not.toBeNull();
+    expect(screen.queryByTestId('workflow-step-child-1')).toBeNull();
+    expect(screen.queryByTestId('cluster-child-child-1')).not.toBeNull();
+    expect(screen.queryByTestId('agent-row')).toBeNull();
   });
 
   it('picking an agent selects it and reveals the chat (full-width swap trigger)', () => {
