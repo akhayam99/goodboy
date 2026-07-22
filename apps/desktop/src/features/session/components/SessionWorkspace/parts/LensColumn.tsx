@@ -88,6 +88,7 @@ export const LensColumn = ({
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
   const areAgentsLoading = loading?.agents === true;
   const arePlansLoading = loading?.plans === true;
+  const areQuestionsLoading = useAppStore((s) => s.sessionOpenQuestions[sessionId] === undefined);
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -202,7 +203,7 @@ export const LensColumn = ({
           icon: CircleHelp,
           tone: 'warning',
           count: openCount,
-          isCountLoading: areAgentsLoading,
+          isCountLoading: areQuestionsLoading,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],

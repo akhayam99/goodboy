@@ -4,24 +4,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const { hooks, remote, store } = vi.hoisted(() => ({
-  hooks: { agentCount: 0, planCount: 0, questionCount: 0 },
-  remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
-  store: {
-    agentKindOverride: {},
-    sessionPhaseRuns: {},
-    scriptRuns: {},
-    terminalSessions: {},
-    sessionGithub: {},
-    sessionGitlabMr: {},
-    sessionPendingResolutions: {},
-    sessionExternalTasks: {},
-    workspaceIntegrations: {},
-    sessionLoading: {
-      'session-1': { agents: false, plans: false },
+const { hooks, remote, store } = vi.hoisted(() => {
+  const sessionOpenQuestions: Record<string, ReadonlyArray<unknown>> = {
+    'session-1': [],
+  };
+  return {
+    hooks: { agentCount: 0, planCount: 0, questionCount: 0 },
+    remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
+    store: {
+      agentKindOverride: {},
+      sessionPhaseRuns: {},
+      scriptRuns: {},
+      terminalSessions: {},
+      sessionGithub: {},
+      sessionGitlabMr: {},
+      sessionPendingResolutions: {},
+      sessionExternalTasks: {},
+      workspaceIntegrations: {},
+      sessionLoading: {
+        'session-1': { agents: false, plans: false },
+      },
+      sessionOpenQuestions,
     },
-  },
-}));
+  };
+});
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
@@ -73,6 +79,7 @@ beforeEach(() => {
   store.sessionExternalTasks = {};
   store.workspaceIntegrations = {};
   store.sessionLoading['session-1'] = { agents: false, plans: false };
+  store.sessionOpenQuestions = { 'session-1': [] };
 });
 
 afterEach(cleanup);
@@ -159,6 +166,7 @@ describe('LensColumn', () => {
     hooks.planCount = 2;
     hooks.questionCount = 1;
     store.sessionLoading['session-1'] = { agents: true, plans: true };
+    store.sessionOpenQuestions = {};
 
     render(
       <LensColumn
@@ -182,6 +190,7 @@ describe('LensColumn', () => {
   it('shows loaded agent and plan counts', () => {
     hooks.agentCount = 3;
     hooks.planCount = 2;
+    hooks.questionCount = 1;
 
     render(
       <LensColumn
@@ -195,8 +204,27 @@ describe('LensColumn', () => {
 
     expect(screen.getByRole('button', { name: 'Agents 3' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Plans 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Questions 1' })).toBeDefined();
     expect(screen.queryByTestId('lens-count-loading-agents')).toBeNull();
     expect(screen.queryByTestId('lens-count-loading-plans')).toBeNull();
+  });
+
+  it('keeps the question badge loading until questions resolve', () => {
+    hooks.questionCount = 2;
+    store.sessionOpenQuestions = {};
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByTestId('lens-count-loading-questions')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Questions' }).textContent).not.toContain('2');
   });
 
   it('shows provider counts and hides GitLab issues on a GitLab remote', () => {

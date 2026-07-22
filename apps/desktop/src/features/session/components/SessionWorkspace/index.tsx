@@ -109,6 +109,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   const lens: LensKind | null = activeLens ?? null;
   const isOverviewLoading = sessionLoading?.agents === true || sessionLoading?.plans === true;
+  const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
   const onSelectLens = (next: LensKind) => {
     setActiveLens(sessionId, next);
   };
@@ -241,7 +242,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               <div className="absolute inset-0 z-0">
                 {lens === null ? (
                   isOverviewLoading ? (
-                    <SessionOverviewSkeleton />
+                    <SessionOverviewSkeleton isFreshLayout={isFreshOverviewLayout} />
                   ) : (
                     <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
                   )
