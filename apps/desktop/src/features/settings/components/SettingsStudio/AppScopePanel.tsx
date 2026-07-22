@@ -46,6 +46,7 @@ const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly lab
   { combo: ['⌘', '⇧', 'H'], label: 'jump to GitHub or GitLab' },
   { combo: ['⌘', '⇧', 'E'], label: 'jump to decisions' },
   { combo: ['⌘', '⇧', 'U'], label: 'jump to session summary' },
+  { combo: ['⌘', '⇧', '⎋'], label: 'back to board' },
   { combo: ['⌘', '↵'], label: 'send message (queue if running)' },
   { combo: ['⌘', '⇧', 'A'], label: 'archive current session' },
   { combo: ['⌘', '.'], label: 'delete current session' },

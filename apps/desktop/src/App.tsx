@@ -712,6 +712,9 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+u', () => goToLens('last_output_summary'), {
     ignoreInInputs: false,
   });
+  useKeyboardShortcut('cmd+shift+escape', () => void setCurrentSession(null), {
+    ignoreInInputs: false,
+  });
   useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false });

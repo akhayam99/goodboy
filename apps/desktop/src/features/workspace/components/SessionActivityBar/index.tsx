@@ -185,11 +185,14 @@ export const SessionActivityBar = ({
               onClick={onNewSession}
               aria-label="create new session"
               title="new session"
-              className="mb-1 w-full justify-center gap-1.5 px-2 text-xs"
+              className="group mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />
               New
-              <KbdPill aria-hidden className="h-4 min-w-4 px-1 text-[9px]">
+              <KbdPill
+                aria-hidden
+                className="h-4 min-w-4 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
+              >
                 ⌘N
               </KbdPill>
             </Button>
