@@ -1,12 +1,24 @@
 import type { ModelEffort, ModelTier } from '@goodboy/types';
 
-export const CODEX_DEFAULT_MODEL = 'gpt-5.5';
+export const CODEX_DEFAULT_MODEL = 'gpt-5.6';
 export const CODEX_CHEAP_MODEL = 'gpt-5.4-mini';
 
 const CODEX_EFFORT: ReadonlyArray<ModelEffort> = ['minimal', 'low', 'medium', 'high'];
 const CODEX_MINI_EFFORT: ReadonlyArray<ModelEffort> = ['minimal', 'low', 'medium'];
 
 export const CODEX_MODELS: ReadonlyArray<ModelTier> = [
+  {
+    id: 'gpt-5.6',
+    tier: 'turn',
+    contextWindow: 200_000,
+    family: 'gpt',
+    subfamily: 'gpt-5',
+    label: 'GPT-5.6',
+    variantLabel: '5.6',
+    costTier: 'expensive',
+    weight: 28,
+    effort: CODEX_EFFORT,
+  },
   {
     id: 'gpt-5.5',
     tier: 'turn',
