@@ -111,6 +111,8 @@ const selectedAgent = {
   ordinal: 0,
   name: 'Selected agent',
   status: 'running',
+  stepId: 'step-1',
+  workflowRunId: 'run-1',
 } as Agent;
 const session = {
   id: SESSION_ID,
@@ -151,7 +153,34 @@ describe('SessionWorkspace agent overlay', () => {
     ).toHaveLength(1);
   });
 
+  it('hides the workflow stepper for a standalone resolver', () => {
+    const standaloneResolver = {
+      ...selectedAgent,
+      id: 'resolver-1',
+      name: 'Standalone resolver',
+      kind: 'resolver',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
+    hooks.agentHome = 'resolve';
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.getByTestId('breadcrumb').textContent).toBe(
+      'Overview / Resolve / Standalone resolver',
+    );
+  });
+
   it('keeps the agents-home overlay panel unchanged', () => {
+    const standaloneAgent = {
+      ...selectedAgent,
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
     hooks.agentHome = 'agents';
     const { container } = render(<SessionWorkspace session={session} isActive />);
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
