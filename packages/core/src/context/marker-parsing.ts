@@ -30,7 +30,37 @@ const SCOUT_SPLIT_CLOSE = '<</scout-split>>';
 const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const QUESTION_CLOSE = '<</ctx-question>>';
 const QUESTION_ATTR_RE = /(?<![\w-])([\w-]+)="([^"]*)"/g;
-const HANDOFF_RE = /<<handoff\s+([^\s>][^>]*?)>>/g;
+const HANDOFF_OPEN = '<<handoff';
+const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
+const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
+const CLUSTER_DONE_OPEN = '<<cluster-done';
+
+const extractSelfClosingInner = (text: string, open: string): ReadonlyArray<string> => {
+  const out: string[] = [];
+  let i = 0;
+  while (true) {
+    const start = text.indexOf(open, i);
+    if (start === -1) {
+      break;
+    }
+    const afterOpen = start + open.length;
+    const gt = text.indexOf('>', afterOpen);
+    if (gt === -1) {
+      break;
+    }
+    if (text[gt + 1] !== '>') {
+      i = afterOpen;
+      continue;
+    }
+    const inner = text.slice(afterOpen, gt);
+    const capture = inner.replace(/^\s+/, '');
+    if (inner.length > capture.length && capture.length > 0) {
+      out.push(capture);
+    }
+    i = gt + 2;
+  }
+  return out;
+};
 
 const extractBlockContents = (text: string, open: string, close: string): ReadonlyArray<string> => {
   const out: string[] = [];
@@ -201,11 +231,8 @@ export type ExtractedHandoff = {
 };
 
 export const extractHandoff = (assistantText: string): ExtractedHandoff | null => {
-  HANDOFF_RE.lastIndex = 0;
   let last: ExtractedHandoff | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = HANDOFF_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosingInner(assistantText, HANDOFF_OPEN)) {
     const attrs = parseHandoffAttrs(inner);
     const kindRaw = attrs.kind?.toLowerCase() ?? '';
     if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) {
@@ -237,8 +264,6 @@ function parseHandoffAttrs(inner: string): Record<string, string> {
   return out;
 }
 
-const COMMENT_RESOLVED_RE = /<<comment-resolved\s+([^\s>][^>]*?)>>/g;
-
 export type ExtractedCommentResolution = {
   readonly threadId: string;
   readonly commitSha: string;
@@ -247,11 +272,8 @@ export type ExtractedCommentResolution = {
 export const extractCommentResolved = (
   assistantText: string,
 ): ExtractedCommentResolution | null => {
-  COMMENT_RESOLVED_RE.lastIndex = 0;
   let last: ExtractedCommentResolution | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = COMMENT_RESOLVED_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_RESOLVED_OPEN)) {
     const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const commitSha = (attrs.commit ?? attrs.sha ?? '').trim();
@@ -269,19 +291,15 @@ export const isReviewThreadId = (threadId: string): boolean => {
   return REVIEW_THREAD_ID_RE.test(threadId);
 };
 
-const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^\s>][^>]*?)>>/g;
-
 export type ExtractedCommentWontfix = {
   readonly threadId: string;
   readonly reason: string;
 };
 
 export const extractCommentWontfix = (assistantText: string): ExtractedCommentWontfix | null => {
-  COMMENT_WONTFIX_RE.lastIndex = 0;
   let last: ExtractedCommentWontfix | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = COMMENT_WONTFIX_RE.exec(assistantText)) !== null) {
-    const attrs = parseHandoffAttrs(m[1] ?? '');
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_WONTFIX_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const reason = (attrs.reason ?? '').trim();
     if (threadId.length === 0 || reason.length === 0) {
@@ -292,7 +310,6 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
   return last;
 };
 
-const CLUSTER_DONE_RE = /<<cluster-done\s+([^\s>][^>]*?)>>/g;
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
 
 export type ExtractedCluster = {
@@ -345,11 +362,8 @@ export const extractClustersFromMarker = (
 };
 
 export const extractClusterDone = (assistantText: string): { readonly id: string } | null => {
-  CLUSTER_DONE_RE.lastIndex = 0;
   let last: { id: string } | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = CLUSTER_DONE_RE.exec(assistantText)) !== null) {
-    const inner = m[1] ?? '';
+  for (const inner of extractSelfClosingInner(assistantText, CLUSTER_DONE_OPEN)) {
     const attrs = parseHandoffAttrs(inner);
     const id = (attrs.id ?? '').trim();
     if (id.length === 0) {

@@ -646,6 +646,8 @@ describe('marker parsing, ReDoS hardening', () => {
     expect(extractPlanFromMarker(openers)).toBeNull();
     const spaces = '<<handoff' + ' '.repeat(200_000) + 'x';
     expect(extractHandoff(spaces)).toBeNull();
+    const handoffOpeners = '<<handoff\t!'.repeat(80_000);
+    expect(extractHandoff(handoffOpeners)).toBeNull();
     const dashes = '<<ctx-question ' + '-'.repeat(200_000) + '="x">>body<</ctx-question>>';
     expect(extractMarkers(dashes).questions[0]?.text).toBe('body');
     const fences = '<<clusters>>```' + '\t'.repeat(200_000) + '<</clusters>>';
