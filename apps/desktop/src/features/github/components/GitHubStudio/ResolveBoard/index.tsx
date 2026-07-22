@@ -20,7 +20,7 @@ import { shortModelWithVersion } from '../../../../session/agent-row-format';
 import { ProviderSelect } from '../../../../session/components/ProviderSelect';
 import { ModelSelect } from '../../../../session/components/ModelSelect';
 import { EffortSelect } from '../../../../session/components/EffortSelect';
-import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
+import type { ResolveMode, ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
 import {
   ResolverStateBadge,
@@ -59,6 +59,8 @@ export const ResolveBoard = ({
   const [configById, setConfigById] = useState<Readonly<Record<string, CardConfig>>>({});
   const [deselected, setDeselected] = useState<ReadonlySet<string>>(new Set());
   const [overrideOpen, setOverrideOpen] = useState(false);
+  const [mode, setMode] = useState<ResolveMode>('fix');
+  const [hint, setHint] = useState('');
 
   const getConfig = (id: string): CardConfig => configById[id] ?? DEFAULT_CONFIG;
   const patchConfig = (id: string, next: CardConfig) =>
@@ -103,7 +105,7 @@ export const ResolveBoard = ({
     setDeselected(allSelected ? new Set(selectable.map((t) => t.head.id)) : new Set());
 
   const choiceById: Record<string, ResolveModelChoice> = Object.fromEntries(
-    threads.map((t) => [t.head.id, getConfig(t.head.id)]),
+    threads.map((t) => [t.head.id, { ...getConfig(t.head.id), mode, hint }]),
   );
 
   return (
@@ -128,7 +130,7 @@ export const ResolveBoard = ({
           <button
             type="button"
             onClick={() => setOverrideOpen((v) => !v)}
-            title="apply one provider/model/effort to every comment"
+            title="apply one resolver configuration to every comment"
             className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-xs transition-colors hover:bg-muted/50"
           >
             <Sliders size={12} aria-hidden className="text-muted-foreground" />
@@ -143,8 +145,12 @@ export const ResolveBoard = ({
               className="absolute right-0 top-8 z-20 w-64"
               title="Apply to all comments"
               config={aggregate === 'mixed' ? DEFAULT_CONFIG : aggregate}
+              mode={mode}
+              hint={hint}
               connectedProviders={connectedProviders}
               onChange={(next) => applyToAll(next)}
+              onMode={setMode}
+              onHint={setHint}
               footer={
                 <button
                   type="button"
@@ -180,7 +186,11 @@ export const ResolveBoard = ({
               connectedProviders={connectedProviders}
               onToggle={() => toggle(t.head.id)}
               onConfig={(next) => patchConfig(t.head.id, next)}
-              onResolve={() => onSpawnOne(t, getConfig(t.head.id))}
+              onResolve={() => onSpawnOne(t, { ...getConfig(t.head.id), mode, hint })}
+              mode={mode}
+              hint={hint}
+              onMode={setMode}
+              onHint={setHint}
               onOpenResolver={onOpenResolver}
               onOpenThread={
                 t.head.threadId ? () => onOpenThread(t.head.threadId as string) : undefined
@@ -202,6 +212,10 @@ function ResolveCard({
   onToggle,
   onConfig,
   onResolve,
+  mode,
+  hint,
+  onMode,
+  onHint,
   onOpenResolver,
   onOpenThread,
 }: {
@@ -213,6 +227,10 @@ function ResolveCard({
   onToggle: () => void;
   onConfig: (next: CardConfig) => void;
   onResolve: () => void;
+  mode: ResolveMode;
+  hint: string;
+  onMode: (next: ResolveMode) => void;
+  onHint: (next: string) => void;
   onOpenResolver?: (agentId: AgentId) => void;
   onOpenThread?: () => void;
 }) {
@@ -309,8 +327,12 @@ function ResolveCard({
                       className="absolute left-0 top-8 z-20 w-60"
                       title="Resolve with"
                       config={config}
+                      mode={mode}
+                      hint={hint}
                       connectedProviders={connectedProviders}
                       onChange={onConfig}
+                      onMode={onMode}
+                      onHint={onHint}
                       footer={
                         <button
                           type="button"
@@ -358,15 +380,23 @@ function ConfigPanel({
   className,
   title,
   config,
+  mode,
+  hint,
   connectedProviders,
   onChange,
+  onMode,
+  onHint,
   footer,
 }: {
   className?: string;
   title: string;
   config: CardConfig;
+  mode: ResolveMode;
+  hint: string;
   connectedProviders: ReadonlyArray<ProviderId>;
   onChange: (next: CardConfig) => void;
+  onMode: (next: ResolveMode) => void;
+  onHint: (next: string) => void;
   footer?: ReactNode;
 }) {
   const onProvider = (next: ProviderId | '') => {
@@ -405,6 +435,36 @@ function ConfigPanel({
         value={config.effort}
         onChange={onEffort}
         disabled={false}
+      />
+      <div className="relative">
+        <select
+          aria-label="Resolver mode"
+          value={mode}
+          onChange={(event) => {
+            const nextMode = event.target.value;
+            if (nextMode !== 'fix' && nextMode !== 'analyze') {
+              return;
+            }
+            onMode(nextMode);
+          }}
+          className="w-full appearance-none rounded-md border border-border-soft bg-subtle px-2 py-1.5 pr-7 text-xs text-foreground transition-colors hover:border-border hover:bg-muted/50"
+        >
+          <option value="fix">Fix</option>
+          <option value="analyze">Analyze</option>
+        </select>
+        <ChevronDown
+          size={11}
+          aria-hidden
+          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+        />
+      </div>
+      <textarea
+        aria-label="Resolver hint"
+        value={hint}
+        onChange={(event) => onHint(event.target.value)}
+        rows={2}
+        placeholder="Optional notes for the resolver: how to fix, what to avoid..."
+        className="w-full resize-none rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
       />
       {footer}
     </div>

@@ -27,9 +27,16 @@ type Params = {
   readonly pr: PullRequestState;
   readonly replies: ReadonlyArray<PrComment>;
   readonly mode?: ResolveMode;
+  readonly hint?: string;
 };
 
-const buildCommentAgentPrompt = ({ comment: c, pr, replies, mode = 'fix' }: Params): string => {
+const buildCommentAgentPrompt = ({
+  comment: c,
+  pr,
+  replies,
+  mode = 'fix',
+  hint = '',
+}: Params): string => {
   const lines: Array<string> = [];
   lines.push(`Context: PR #${pr.number} on branch \`${pr.headBranch}\`.`);
   if (c.source === 'review' && c.path) {
@@ -69,6 +76,12 @@ const buildCommentAgentPrompt = ({ comment: c, pr, replies, mode = 'fix' }: Para
     lines.push('Use verdict="wontfix" instead when the comment is not worth fixing.');
     lines.push('The summary must be one paragraph of plain text with no double quotes.');
   }
+  const operatorNotes = hint.trim();
+  if (operatorNotes.length > 0) {
+    lines.push('');
+    lines.push('Operator notes:');
+    lines.push(operatorNotes);
+  }
   return lines.join('\n');
 };
 
@@ -88,6 +101,8 @@ export type ResolveModelChoice = {
   readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: EffortLevel;
+  readonly mode?: ResolveMode;
+  readonly hint?: string;
 };
 
 export const buildCommentAgentArgs = (
@@ -95,16 +110,16 @@ export const buildCommentAgentArgs = (
   pr: PullRequestState,
   choice: ResolveModelChoice = {},
   replies: ReadonlyArray<PrComment> = [],
-  mode: ResolveMode = 'fix',
 ): CommentAgentArgs => {
   const defaults = AGENT_KIND_DEFAULTS.resolver;
+  const mode = choice.mode ?? 'fix';
   return {
     name: buildCommentAgentTitle(c),
     kind: 'resolver',
     model: choice.model ?? defaults.model,
     ...(choice.provider !== undefined && { provider: choice.provider }),
     effort: choice.effort ?? defaults.effort,
-    initialPrompt: buildCommentAgentPrompt({ comment: c, pr, replies, mode }),
+    initialPrompt: buildCommentAgentPrompt({ comment: c, pr, replies, mode, hint: choice.hint }),
     ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
     sourceCommentUrl: c.url,
     ...(mode !== 'fix' && { mode }),

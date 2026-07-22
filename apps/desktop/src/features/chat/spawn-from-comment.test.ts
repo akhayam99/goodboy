@@ -129,7 +129,7 @@ describe('spawn-from-comment', () => {
 
   it('keeps the omitted and explicit fix-mode prompts byte-identical', () => {
     const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
-    const explicit = buildCommentAgentArgs(makeComment(), PR, {}, [], 'fix').initialPrompt;
+    const explicit = buildCommentAgentArgs(makeComment(), PR, { mode: 'fix' }).initialPrompt;
     expect(omitted).toBe(explicit);
     expect(omitted).toBe(
       [
@@ -143,8 +143,27 @@ describe('spawn-from-comment', () => {
     );
   });
 
+  it('keeps omitted, empty and whitespace-only hint prompts byte-identical', () => {
+    const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
+    const empty = buildCommentAgentArgs(makeComment(), PR, { hint: '' }).initialPrompt;
+    const whitespace = buildCommentAgentArgs(makeComment(), PR, { hint: '  \n\t ' }).initialPrompt;
+    expect(empty).toBe(omitted);
+    expect(whitespace).toBe(omitted);
+  });
+
+  it('appends trimmed operator notes to the kickoff prompt', () => {
+    const args = buildCommentAgentArgs(makeComment(), PR, {
+      hint: '  Use the existing helper.\nAvoid schema changes.  ',
+    });
+    expect(args.initialPrompt).toContain(
+      'Comment URL: https://github.com/o/r/pull/9108#discussion_r1\n\nOperator notes:\nUse the existing helper.\nAvoid schema changes.',
+    );
+  });
+
   it('appends the read-only analysis contract in analyze mode', () => {
-    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {}, [], 'analyze');
+    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
+      mode: 'analyze',
+    });
     expect(args.mode).toBe('analyze');
     expect(args.initialPrompt).toContain('do not modify or commit any file');
     expect(args.initialPrompt).toContain(

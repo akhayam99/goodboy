@@ -6,10 +6,13 @@ import type {
   IsoDateTime,
   PlanId,
   PlanWithCount,
+  PrComment,
+  PullRequestState,
   Session,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { buildCommentAgentArgs } from '../../../features/chat/spawn-from-comment';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -58,6 +61,35 @@ const TWO_CLUSTERS: ReadonlyArray<ImplementationCluster> = [
   { title: 'a', instructions: 'i1' },
   { title: 'b', instructions: 'i2' },
 ];
+
+const PR = {
+  number: 9108,
+  title: 'resolve: foo',
+  url: 'https://github.com/o/r/pull/9108',
+  state: 'open',
+  mergeable: true,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'kay/foo',
+  isDraft: false,
+  reviewDecision: 'changes_requested',
+  body: '',
+  updatedAt: '2026-05-15T00:00:00Z',
+} satisfies PullRequestState;
+
+const COMMENT = {
+  id: 'review-1',
+  author: 'alice',
+  authorAvatarUrl: null,
+  body: 'this should use a helper',
+  createdAt: '2026-05-15T10:00:00Z',
+  url: 'https://github.com/o/r/pull/9108#discussion_r1',
+  source: 'review',
+  path: 'src/foo.ts',
+  line: 42,
+  resolved: false,
+  threadId: 'PRRT_7',
+} satisfies PrComment;
 
 function makePlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
   return {
@@ -121,13 +153,18 @@ function buildHarness(plans: ReadonlyArray<PlanWithCount>) {
     agentProviderOverride: {},
     agentEffortOverride: {},
     agentKindOverride: {},
+    pendingResolverKickoff: {},
     sendTurn,
   };
-  const set = vi.fn();
   const get = (() => state) as unknown as Parameters<typeof spawnAgent>[1];
+  const set = vi.fn((update: Parameters<Parameters<typeof spawnAgent>[0]>[0]) => {
+    const patch = typeof update === 'function' ? update(get()) : update;
+    Object.assign(state, patch);
+  });
   return {
+    getState: get,
     sendTurn,
-    spawn: spawnAgent(set as unknown as Parameters<typeof spawnAgent>[0], get),
+    spawn: spawnAgent(set, get),
   };
 }
 
@@ -188,6 +225,25 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
     expect(sendTurn).toHaveBeenCalledTimes(1);
     expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('fix the typo in README');
+  });
+
+  it('stores mode instructions and hint for a deferred batch resolver', async () => {
+    const { getState, sendTurn, spawn } = buildHarness([]);
+    const args = buildCommentAgentArgs(COMMENT, PR, {
+      mode: 'analyze',
+      hint: 'Avoid schema changes.',
+    });
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'resolver',
+      initialPrompt: args.initialPrompt,
+      deferKickoff: true,
+    });
+
+    const kickoff = getState().pendingResolverKickoff[INSERTED_ID];
+    expect(kickoff).toContain('Analysis mode: do not modify or commit any file.');
+    expect(kickoff).toContain('Operator notes:\nAvoid schema changes.');
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 
   it('consumes the plan on ad-hoc fan-out so a re-spawn cannot fan out again', async () => {
