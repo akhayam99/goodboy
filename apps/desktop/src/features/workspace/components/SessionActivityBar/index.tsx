@@ -17,6 +17,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
+  EMPTY_ARRAY,
   useAppStore,
   useSessionCost,
   useSessionStageInfo,
@@ -332,8 +333,8 @@ const SessionActivityItem = memo(function SessionActivityItem({
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const prState = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr?.state ?? null);
   const prMeta = prState ? pullRequestMeta(prState) : null;
-  const externalTask = useAppStore(
-    (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
+  const externalTasks = useAppStore(
+    (s) => s.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
   );
 
   const sessionCost = useSessionCost(session.id as SessionId);
@@ -342,7 +343,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
     <button
       type="button"
       onClick={onClick}
-      title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTask ? ` · ${externalTask.identifier}` : ''}`}
+      title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
         'flex w-full flex-col items-start gap-1.5 rounded-lg border px-2.5 py-2.5 text-left transition-colors',
         isActive
@@ -369,7 +370,13 @@ const SessionActivityItem = memo(function SessionActivityItem({
         <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
           {session.goal}
         </span>
-        {externalTask && <ExternalTaskChip task={externalTask} variant="icon" />}
+        {externalTasks.map((task) => (
+          <ExternalTaskChip
+            key={`${task.provider}:${task.externalId}`}
+            task={task}
+            variant="icon"
+          />
+        ))}
         {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
       </span>
       <span className="flex w-full items-center gap-1.5 pl-[14px]">

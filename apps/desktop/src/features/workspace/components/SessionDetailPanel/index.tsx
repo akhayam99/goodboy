@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Input, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { SessionStageBadge } from '../../../session/components/SessionStageBadge';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
@@ -81,8 +81,8 @@ type SessionDetailPanelProps = {
 
 export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDetailPanelProps) => {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
-  const externalTask = useAppStore(
-    (s) => s.sessionExternalTasks?.[session.id as SessionId] ?? null,
+  const externalTasks = useAppStore(
+    (s) => s.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
   );
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
@@ -242,7 +242,13 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
             </>
           )}
         </div>
-        {externalTask ? <ExternalTaskChip task={externalTask} variant="full" /> : null}
+        {externalTasks.map((task) => (
+          <ExternalTaskChip
+            key={`${task.provider}:${task.externalId}`}
+            task={task}
+            variant="full"
+          />
+        ))}
         <OverflowMenu
           items={folderItems}
           label="open worktree"

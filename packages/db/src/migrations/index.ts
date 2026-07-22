@@ -68,6 +68,7 @@ import { m067GeminiProviderRun } from './m067-gemini-provider-run';
 import { m068ProviderRunsGeminiRepair } from './m068-provider-runs-gemini-repair';
 import { m069RefactorExampleOnly } from './m069-refactor-example-only';
 import { m070StepLibraryExampleOnly } from './m070-step-library-example-only';
+import { m071SessionExternalTaskMultipleLinks } from './m071-session-external-task-multiple-links';
 
 export type Migration = {
   readonly version: number;
@@ -145,4 +146,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 68, sql: m068ProviderRunsGeminiRepair },
   { version: 69, sql: m069RefactorExampleOnly },
   { version: 70, sql: m070StepLibraryExampleOnly },
+  { version: 71, sql: m071SessionExternalTaskMultipleLinks },
 ];

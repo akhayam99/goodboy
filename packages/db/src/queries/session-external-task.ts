@@ -3,42 +3,44 @@ import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
 type SessionExternalTaskRow = {
-  session_id: string;
-  provider: string;
-  external_id: string;
-  identifier: string;
-  url: string;
-  title: string;
-  created_at: number;
+  readonly session_id: string;
+  readonly provider: string;
+  readonly external_id: string;
+  readonly identifier: string;
+  readonly url: string;
+  readonly title: string;
+  readonly created_at: number;
 };
 
-function toDomain(row: SessionExternalTaskRow): SessionExternalTask {
-  return {
-    sessionId: row.session_id as SessionId,
-    provider: row.provider as SessionExternalTaskProvider,
-    externalId: row.external_id,
-    identifier: row.identifier,
-    url: row.url,
-    title: row.title,
-    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-  };
-}
+type ToDomainParams = {
+  readonly row: SessionExternalTaskRow;
+};
 
-export const setSessionExternalTask = async (
-  db: Database,
-  task: SessionExternalTask,
-): Promise<void> => {
-  const created = Date.parse(task.createdAt);
+const toDomain = ({ row }: ToDomainParams): SessionExternalTask => ({
+  sessionId: row.session_id as SessionId,
+  provider: row.provider as SessionExternalTaskProvider,
+  externalId: row.external_id,
+  identifier: row.identifier,
+  url: row.url,
+  title: row.title,
+  createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+});
+
+type UpsertParams = {
+  readonly db: Database;
+  readonly task: SessionExternalTask;
+};
+
+export const upsertSessionExternalTask = async ({ db, task }: UpsertParams): Promise<void> => {
   await db.execute(
     `INSERT INTO session_external_tasks (session_id, provider, external_id, identifier, url, title, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT (session_id) DO UPDATE SET
-       provider = excluded.provider,
-       external_id = excluded.external_id,
+     ON CONFLICT (session_id, provider, external_id) DO UPDATE SET
        identifier = excluded.identifier,
        url = excluded.url,
        title = excluded.title`,
@@ -49,40 +51,66 @@ export const setSessionExternalTask = async (
       task.identifier,
       task.url,
       task.title,
-      created,
+      Date.parse(task.createdAt),
     ],
   );
 };
 
-export const getSessionExternalTask = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<SessionExternalTask | null> => {
-  const rows = await db.select<SessionExternalTaskRow>(
-    'SELECT * FROM session_external_tasks WHERE session_id = ? LIMIT 1',
-    [sessionId],
-  );
-  const row = rows[0];
-  return row ? toDomain(row) : null;
+type ListForSessionParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
 };
 
-export const listExternalTasksForWorkspace = async (
-  db: Database,
-  workspaceId: string,
-): Promise<ReadonlyArray<SessionExternalTask>> => {
+export const listSessionExternalTasks = async ({
+  db,
+  sessionId,
+}: ListForSessionParams): Promise<ReadonlyArray<SessionExternalTask>> => {
+  const rows = await db.select<SessionExternalTaskRow>(
+    `SELECT session_id, provider, external_id, identifier, url, title, created_at
+       FROM session_external_tasks
+      WHERE session_id = ?
+      ORDER BY created_at ASC, provider ASC, external_id ASC`,
+    [sessionId],
+  );
+  return rows.map((row) => toDomain({ row }));
+};
+
+type ListForWorkspaceParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+};
+
+export const listExternalTasksForWorkspace = async ({
+  db,
+  workspaceId,
+}: ListForWorkspaceParams): Promise<ReadonlyArray<SessionExternalTask>> => {
   const rows = await db.select<SessionExternalTaskRow>(
     `SELECT t.session_id, t.provider, t.external_id, t.identifier, t.url, t.title, t.created_at
        FROM session_external_tasks t
        INNER JOIN sessions s ON s.id = t.session_id
-      WHERE s.workspace_id = ?`,
+      WHERE s.workspace_id = ?
+      ORDER BY t.created_at ASC, t.provider ASC, t.external_id ASC`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map((row) => toDomain({ row }));
 };
 
-export const removeSessionExternalTask = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<void> => {
-  await db.execute('DELETE FROM session_external_tasks WHERE session_id = ?', [sessionId]);
+type DeleteParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly provider: SessionExternalTaskProvider;
+  readonly externalId: string;
+};
+
+export const deleteSessionExternalTask = async ({
+  db,
+  sessionId,
+  provider,
+  externalId,
+}: DeleteParams): Promise<void> => {
+  await db.execute(
+    `DELETE FROM session_external_tasks
+      WHERE session_id = ? AND provider = ? AND external_id = ?`,
+    [sessionId, provider, externalId],
+  );
 };

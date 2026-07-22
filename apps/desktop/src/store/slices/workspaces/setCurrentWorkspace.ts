@@ -60,6 +60,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       slotHistory: {},
       sessionWorktrees: {},
       sessionBranches: {},
+      sessionExternalTasks: {},
       sessionPhaseRuns: {},
       selectedAgentId: {},
       agentRunHistory: {},
@@ -119,7 +120,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
         listAgentsForSessions(tauriDatabase, sessionIds),
-        listExternalTasksForWorkspace(tauriDatabase, id),
+        listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
       ]);
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
@@ -142,8 +143,10 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           }
         }
       }
-      const externalTasksMap: Record<string, SessionExternalTask> = {};
-      for (const task of externalTasks) externalTasksMap[task.sessionId] = task;
+      const externalTasksMap: Record<string, SessionExternalTask[]> = {};
+      for (const task of externalTasks) {
+        externalTasksMap[task.sessionId] = [...(externalTasksMap[task.sessionId] ?? []), task];
+      }
       set((state) => ({
         sessions,
         sessionWorktrees,

@@ -21,7 +21,7 @@ type Store = {
     { pr?: unknown; detail?: { comments: ReadonlyArray<unknown> } | null }
   >;
   sessionGitlabMr: Record<string, { mr?: unknown }>;
-  sessionExternalTasks: Record<string, SessionExternalTask>;
+  sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
@@ -51,7 +51,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionGithub: {} as Record<string, { pr?: unknown }>,
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
-    sessionExternalTasks: {} as Record<string, SessionExternalTask>,
+    sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     setFocusedWorkflowRun: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),

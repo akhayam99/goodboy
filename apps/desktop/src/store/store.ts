@@ -39,6 +39,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
   SessionExternalTaskProvider,
+  SessionExternalTask,
   Workspace,
   WorkspaceId,
   WorkspaceScriptId,
@@ -178,6 +179,15 @@ export type AppActions = {
     };
     mobileShared?: boolean;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
+  linkSessionExternalTask(
+    sessionId: SessionId,
+    task: Omit<SessionExternalTask, 'sessionId'>,
+  ): Promise<void>;
+  unlinkSessionExternalTask(
+    sessionId: SessionId,
+    provider: SessionExternalTaskProvider,
+    externalId: string,
+  ): Promise<void>;
   changeSessionBranch(
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },

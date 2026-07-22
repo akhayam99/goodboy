@@ -18,7 +18,7 @@ import {
   insertSession,
   insertSessionWorktree,
   listWorkspaces,
-  setSessionExternalTask,
+  upsertSessionExternalTask,
   setSetting as dbSetSetting,
   upsertContextSlot,
 } from '@goodboy/db';
@@ -192,7 +192,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
         createdAt: now,
       };
       try {
-        await setSessionExternalTask(tauriDatabase, externalTaskRow);
+        await upsertSessionExternalTask({ db: tauriDatabase, task: externalTaskRow });
       } catch {
         externalTaskRow = null;
       }
@@ -306,7 +306,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       currentSessionId: session.id,
       sessionSummary: null,
       sessionExternalTasks: externalTaskRow
-        ? { ...state.sessionExternalTasks, [session.id]: externalTaskRow }
+        ? { ...state.sessionExternalTasks, [session.id]: [externalTaskRow] }
         : state.sessionExternalTasks,
       sessionWorktrees: {
         ...state.sessionWorktrees,

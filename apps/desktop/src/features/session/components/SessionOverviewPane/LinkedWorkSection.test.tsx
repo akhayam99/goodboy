@@ -30,7 +30,7 @@ type Store = {
       } | null;
     }
   >;
-  sessionExternalTasks: Record<string, SessionExternalTask>;
+  sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
 };
 
 const { store, mocks } = vi.hoisted(() => ({
@@ -45,6 +45,7 @@ const { store, mocks } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
 }));
 
@@ -123,17 +124,28 @@ describe('LinkedWorkSection', () => {
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
   });
 
-  it('renders the full external task chip with its default studio action', () => {
+  it('renders every external task with its default studio action', () => {
     store.sessionExternalTasks = {
-      'sess-1': {
-        sessionId: 'sess-1',
-        provider: 'linear',
-        externalId: 'linear-42',
-        identifier: 'ENG-42',
-        url: 'https://linear.app/acme/issue/ENG-42',
-        title: 'Track linked work',
-        createdAt: '2026-07-21T10:00:00.000Z',
-      } as SessionExternalTask,
+      'sess-1': [
+        {
+          sessionId: 'sess-1',
+          provider: 'linear',
+          externalId: 'linear-42',
+          identifier: 'ENG-42',
+          url: 'https://linear.app/acme/issue/ENG-42',
+          title: 'Track linked work',
+          createdAt: '2026-07-21T10:00:00.000Z',
+        } as SessionExternalTask,
+        {
+          sessionId: 'sess-1',
+          provider: 'sentry',
+          externalId: 'sentry-7',
+          identifier: 'GOODBOY-7',
+          url: 'https://sentry.io/organizations/acme/issues/7/',
+          title: 'TypeError',
+          createdAt: '2026-07-21T10:00:00.000Z',
+        } as SessionExternalTask,
+      ],
     };
     const handler = vi.fn();
     window.addEventListener('goodboy:open-linear-studio', handler);
@@ -142,6 +154,7 @@ describe('LinkedWorkSection', () => {
 
     expect(screen.getByText('ENG-42')).toBeDefined();
     expect(screen.getByText('Track linked work')).toBeDefined();
+    expect(screen.getByText('GOODBOY-7')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'open ENG-42 in Linear studio' }));
     expect(handler).toHaveBeenCalledOnce();
     expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({

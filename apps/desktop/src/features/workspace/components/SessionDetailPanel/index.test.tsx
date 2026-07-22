@@ -19,6 +19,7 @@ const { state, toastMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
@@ -113,15 +114,17 @@ describe('SessionDetailPanel', () => {
 
   it('renders the external task chip (full variant) when a task is mapped', () => {
     state.sessionExternalTasks = {
-      'sess-1': {
-        sessionId: 'sess-1',
-        provider: 'linear',
-        externalId: 'ext-1',
-        identifier: 'GB-9',
-        url: 'https://linear.app/x',
-        title: 'wire metadata',
-        createdAt: '2026-06-22T00:00:00.000Z',
-      },
+      'sess-1': [
+        {
+          sessionId: 'sess-1',
+          provider: 'linear',
+          externalId: 'ext-1',
+          identifier: 'GB-9',
+          url: 'https://linear.app/x',
+          title: 'wire metadata',
+          createdAt: '2026-06-22T00:00:00.000Z',
+        },
+      ],
     };
     render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
     expect(screen.getByRole('button', { name: /open GB-9 in Linear studio/i })).toBeDefined();

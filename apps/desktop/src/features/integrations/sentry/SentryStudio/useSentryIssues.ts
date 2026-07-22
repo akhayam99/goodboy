@@ -22,12 +22,14 @@ export const dedupById = (issues: ReadonlyArray<SentryIssue>): SentryIssue[] => 
 };
 
 export const resolveSentrySessions = (
-  sessionExternalTasks: Readonly<Record<string, SessionExternalTask>>,
+  sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>,
 ): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
-  for (const [sessionId, task] of Object.entries(sessionExternalTasks)) {
-    if (task && task.provider === 'sentry' && !byIssue.has(task.externalId)) {
-      byIssue.set(task.externalId, sessionId as SessionId);
+  for (const [sessionId, tasks] of Object.entries(sessionExternalTasks)) {
+    for (const task of tasks) {
+      if (task.provider === 'sentry' && !byIssue.has(task.externalId)) {
+        byIssue.set(task.externalId, sessionId as SessionId);
+      }
     }
   }
   return byIssue;

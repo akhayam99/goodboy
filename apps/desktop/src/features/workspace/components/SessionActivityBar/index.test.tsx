@@ -258,15 +258,17 @@ describe('SessionActivityBar, external task chip', () => {
 
   it('renders the icon-variant chip and appends the identifier to the item title', () => {
     state.sessionExternalTasks = {
-      'a-1': {
-        sessionId: 'a-1',
-        provider: 'linear',
-        externalId: 'ext-1',
-        identifier: 'GB-7',
-        url: 'https://linear.app/x',
-        title: 'mapped task',
-        createdAt: '2026-06-22T00:00:00.000Z',
-      },
+      'a-1': [
+        {
+          sessionId: 'a-1',
+          provider: 'linear',
+          externalId: 'ext-1',
+          identifier: 'GB-7',
+          url: 'https://linear.app/x',
+          title: 'mapped task',
+          createdAt: '2026-06-22T00:00:00.000Z',
+        },
+      ],
     };
     renderBar([], [makeSession('a-1', 'active one')]);
     expect(screen.getByLabelText(/GB-7 from Linear/i)).toBeDefined();
@@ -276,15 +278,17 @@ describe('SessionActivityBar, external task chip', () => {
 
   it('renders the matching glyph for a non-linear provider', () => {
     state.sessionExternalTasks = {
-      'a-1': {
-        sessionId: 'a-1',
-        provider: 'sentry',
-        externalId: 'ext-2',
-        identifier: 'SENTRY-9',
-        url: 'https://sentry.io/x',
-        title: 'crash',
-        createdAt: '2026-06-22T00:00:00.000Z',
-      },
+      'a-1': [
+        {
+          sessionId: 'a-1',
+          provider: 'sentry',
+          externalId: 'ext-2',
+          identifier: 'SENTRY-9',
+          url: 'https://sentry.io/x',
+          title: 'crash',
+          createdAt: '2026-06-22T00:00:00.000Z',
+        },
+      ],
     };
     renderBar([], [makeSession('a-1', 'crashy')]);
     expect(screen.getByText('S')).toBeDefined();

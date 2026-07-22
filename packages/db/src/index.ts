@@ -24,10 +24,10 @@ export {
   deleteWorkspaceIntegration,
 } from './queries/workspace-integration';
 export {
-  setSessionExternalTask,
-  getSessionExternalTask,
+  upsertSessionExternalTask,
+  listSessionExternalTasks,
   listExternalTasksForWorkspace,
-  removeSessionExternalTask,
+  deleteSessionExternalTask,
 } from './queries/session-external-task';
 export {
   insertSession,
