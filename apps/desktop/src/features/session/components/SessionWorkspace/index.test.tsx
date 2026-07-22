@@ -18,6 +18,7 @@ type Store = {
   resolverState: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'>;
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
+  sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
   setActiveLens: ReturnType<typeof vi.fn>;
   setSessionStudio: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
@@ -41,6 +42,7 @@ const { store, hooks } = vi.hoisted(() => ({
     resolverState: {},
     agentTurnState: {},
     agentKindOverride: {},
+    sessionLoading: {},
     setActiveLens: vi.fn(),
     setSessionStudio: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
@@ -88,7 +90,9 @@ vi.mock('../../../../app/components/AppBreadcrumb', () => ({
     <div data-testid="breadcrumb">{crumbs.map((crumb) => crumb.label).join(' / ')}</div>
   ),
 }));
-vi.mock('../SessionOverviewPane', () => ({ SessionOverviewPane: () => null }));
+vi.mock('../SessionOverviewPane', () => ({
+  SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
+}));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/SessionTopBar', () => ({ SessionTopBar: () => null }));
 vi.mock('./parts/LensColumn', () => ({
@@ -150,6 +154,7 @@ beforeEach(() => {
   store.resolverState = {};
   store.agentTurnState = {};
   store.agentKindOverride = {};
+  store.sessionLoading = {};
   store.setActiveLens.mockReset();
   hooks.agentHome = 'workflows';
 });
@@ -307,6 +312,39 @@ describe('SessionWorkspace workflow breadcrumb', () => {
 });
 
 describe('SessionWorkspace overview', () => {
+  it('renders the overview skeleton while key session data is loading', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionLoading = { [SESSION_ID]: { agents: true, plans: false } };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
+  });
+
+  it('keeps the overview skeleton visible while plans are loading', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionLoading = { [SESSION_ID]: { agents: false, plans: true } };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
+  });
+
+  it('renders cached overview content immediately when key loads are done', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionLoading = { [SESSION_ID]: { agents: false, plans: false } };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+  });
+
   it('keeps the lens column visible and selects Overview', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};

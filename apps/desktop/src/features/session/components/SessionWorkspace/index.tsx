@@ -37,6 +37,7 @@ import { resolveRootAgent } from '../../agent-kind';
 import { ForceResolveAction } from '../ForceResolveAction';
 import { canForceResolve } from '../ForceResolveAction/canForceResolve';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
+import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -83,6 +84,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const plans = useSessionPlans(sessionId);
+  const sessionLoading = useAppStore((s) => s.sessionLoading[sessionId]);
 
   useEffect(() => {
     if (activeLens === undefined) {
@@ -106,6 +108,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [isActive, workingDir, sessionId, filesTouched.count, reconcileSessionBranch]);
 
   const lens: LensKind | null = activeLens ?? null;
+  const isOverviewLoading = sessionLoading?.agents === true || sessionLoading?.plans === true;
+  const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
   const onSelectLens = (next: LensKind) => {
     setActiveLens(sessionId, next);
   };
@@ -237,7 +241,11 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             {showLens ? (
               <div className="absolute inset-0 z-0">
                 {lens === null ? (
-                  <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+                  isOverviewLoading ? (
+                    <SessionOverviewSkeleton isFreshLayout={isFreshOverviewLayout} />
+                  ) : (
+                    <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+                  )
                 ) : null}
                 {lens === 'questions' ? <QuestionsPane session={session} /> : null}
                 {lens === 'plans' ? (

@@ -18,7 +18,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react';
-import { KbdPill, ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
@@ -49,6 +49,7 @@ type LensRow = {
   readonly icon: LucideIcon;
   readonly tone: Tone;
   readonly count?: number;
+  readonly isCountLoading?: boolean;
   readonly dot?: 'attention' | 'running';
   readonly secondaryDot?: boolean;
 };
@@ -84,6 +85,10 @@ export const LensColumn = ({
   filesCount,
 }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
+  const loading = useAppStore((s) => s.sessionLoading[sessionId]);
+  const areAgentsLoading = loading?.agents === true;
+  const arePlansLoading = loading?.plans === true;
+  const areQuestionsLoading = useAppStore((s) => s.sessionOpenQuestions[sessionId] === undefined);
   const openCount = selectOpenQuestions(useSessionOpenQuestions(sessionId)).length;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -174,6 +179,7 @@ export const LensColumn = ({
           icon: Bot,
           tone: 'primary',
           count: nonResolverStandalone.length,
+          isCountLoading: areAgentsLoading,
           dot:
             attentionLens === 'agents' || unreadLens === 'agents'
               ? 'attention'
@@ -187,6 +193,7 @@ export const LensColumn = ({
           icon: MessageSquareReply,
           tone: 'success',
           count: openResolvers,
+          isCountLoading: areAgentsLoading,
           dot: attentionLens === 'resolve' || unreadLens === 'resolve' ? 'attention' : undefined,
           secondaryDot: hasPendingBatch,
         },
@@ -196,6 +203,7 @@ export const LensColumn = ({
           icon: CircleHelp,
           tone: 'warning',
           count: openCount,
+          isCountLoading: areQuestionsLoading,
         },
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
       ],
@@ -203,7 +211,14 @@ export const LensColumn = ({
     {
       label: 'Artifacts',
       rows: [
-        { kind: 'plans', label: 'Plans', icon: FileText, tone: 'success', count: activePlans },
+        {
+          kind: 'plans',
+          label: 'Plans',
+          icon: FileText,
+          tone: 'success',
+          count: activePlans,
+          isCountLoading: arePlansLoading,
+        },
         { kind: 'scripts', label: 'Scripts', icon: Terminal, tone: 'info', count: runningScripts },
       ],
     },
@@ -303,6 +318,7 @@ export const LensColumn = ({
               const active = activeLens === row.kind;
               const shortcut = LENS_SHORTCUTS[row.kind];
               const hasBadge =
+                row.isCountLoading === true ||
                 (row.count != null && row.count > 0) ||
                 row.dot != null ||
                 row.secondaryDot === true;
@@ -347,7 +363,11 @@ export const LensColumn = ({
                           'min-w-10 justify-end group-hover:opacity-0 group-focus-visible:opacity-0',
                       )}
                     >
-                      {row.count != null && row.count > 0 ? (
+                      {row.isCountLoading === true ? (
+                        <span data-testid={`lens-count-loading-${row.kind}`}>
+                          <Skeleton className="h-4 w-6 rounded-full" />
+                        </span>
+                      ) : row.count != null && row.count > 0 ? (
                         <span className="flex shrink-0 items-center gap-1.5">
                           {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
                           {row.dot === 'running' ? (
