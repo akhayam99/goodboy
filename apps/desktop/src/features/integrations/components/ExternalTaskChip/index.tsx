@@ -1,10 +1,13 @@
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 
-type ExternalTaskChipProps = {
+type Props = {
   task: SessionExternalTask;
   variant?: 'full' | 'icon' | 'badge';
   onClick?: () => void;
+  appearance?: 'chip' | 'row';
+  ariaLabel?: string;
 };
 
 type ProviderMeta = {
@@ -42,9 +45,16 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   },
 };
 
-export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTaskChipProps) => {
+export const ExternalTaskChip = ({
+  task,
+  variant = 'full',
+  onClick,
+  appearance = 'chip',
+  ariaLabel,
+}: Props) => {
   const meta = PROVIDER_META[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
+  const isRow = appearance === 'row';
 
   const glyph = (
     <span
@@ -84,15 +94,30 @@ export const ExternalTaskChip = ({ task, variant = 'full', onClick }: ExternalTa
         handleClick();
       }}
       title={tooltip}
-      aria-label={`open ${task.identifier} in ${meta.label} studio`}
+      aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
       className={cn(
-        'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
-        meta.colorClasses,
+        isRow
+          ? 'group flex w-full min-w-0 items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border'
+          : 'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
+        !isRow && meta.colorClasses,
       )}
     >
       {glyph}
-      <span className="shrink-0 font-mono">{task.identifier}</span>
-      {variant === 'full' && <span className="truncate">{task.title}</span>}
+      <span className={cn('shrink-0 font-mono', isRow && 'text-xs font-semibold text-foreground')}>
+        {task.identifier}
+      </span>
+      {variant === 'full' ? (
+        <span className={cn('truncate', isRow && 'min-w-0 flex-1 text-sm text-foreground')}>
+          {task.title}
+        </span>
+      ) : null}
+      {isRow ? (
+        <ArrowRight
+          size={14}
+          aria-hidden
+          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+        />
+      ) : null}
     </button>
   );
 };

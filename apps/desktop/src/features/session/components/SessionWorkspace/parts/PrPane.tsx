@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   Clock,
   GitBranch,
+  GitFork,
+  GitMerge,
   GitPullRequest,
   MessageSquare,
   RefreshCw,
@@ -11,9 +13,9 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { Eyebrow, cn } from '@goodboy/ui';
+import type { PrCheckRun, PullRequestStateKind, Session, SessionId } from '@goodboy/types';
+import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { appendOperatorNotes } from '../../../utils/appendOperatorNotes';
@@ -22,18 +24,76 @@ import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnCon
 import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../AgentSpawnConfig/defaultAgentSpawnConfig';
 import { useAppStore } from '../../../../../store';
 import { PaneShell } from './PaneShell';
+import { PrListRow } from './PrListRow';
 
-type PrPaneProps = {
+type Props = {
   readonly session: Session;
 };
 
-export const PrPane = ({ session }: PrPaneProps) => {
+type PullRequestProvider = 'github' | 'gitlab';
+
+export const PrPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind(session.workspaceId);
+  const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
+  const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
+  const [selectedProvider, setSelectedProvider] = useState<PullRequestProvider | null>(null);
+  const defaultProvider: PullRequestProvider =
+    remoteKind === 'gitlab' && mergeRequest != null
+      ? 'gitlab'
+      : pullRequest != null
+        ? 'github'
+        : mergeRequest != null
+          ? 'gitlab'
+          : remoteKind === 'gitlab'
+            ? 'gitlab'
+            : 'github';
+  const activeProvider = selectedProvider ?? defaultProvider;
+  const mergeRequestState: PullRequestStateKind | null =
+    mergeRequest == null
+      ? null
+      : mergeRequest.draft
+        ? 'draft'
+        : mergeRequest.state === 'merged'
+          ? 'merged'
+          : mergeRequest.state === 'closed'
+            ? 'closed'
+            : 'open';
+  const hasPullRequests = pullRequest != null || mergeRequest != null;
+
   return (
-    <PaneShell title="Pull request" description="Review status for this session.">
+    <PaneShell title="Pull requests" description="Review status for this session.">
       <div className="flex flex-col gap-3">
-        {remoteKind === 'gitlab' ? (
+        {hasPullRequests ? (
+          <div className="flex flex-col gap-1.5">
+            <Eyebrow label="Pull requests" muted className="px-0.5 font-medium" />
+            <div className="flex flex-col gap-1">
+              {pullRequest != null ? (
+                <PrListRow
+                  provider="GitHub"
+                  icon={GitFork}
+                  identifier={`#${pullRequest.number}`}
+                  title={pullRequest.title}
+                  state={pullRequestMeta(pullRequest.state).label}
+                  isSelected={activeProvider === 'github'}
+                  onClick={() => setSelectedProvider('github')}
+                />
+              ) : null}
+              {mergeRequest != null && mergeRequestState != null ? (
+                <PrListRow
+                  provider="GitLab"
+                  icon={GitMerge}
+                  identifier={`!${mergeRequest.iid}`}
+                  title={mergeRequest.title}
+                  state={pullRequestMeta(mergeRequestState).label}
+                  isSelected={activeProvider === 'gitlab'}
+                  onClick={() => setSelectedProvider('gitlab')}
+                />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+        {activeProvider === 'gitlab' ? (
           <GitlabMrStrip sessionId={sessionId} />
         ) : (
           <GithubPrCard session={session} />

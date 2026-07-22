@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  PullRequestState,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
 
 type SpawnAgent = (
@@ -9,7 +15,8 @@ type SpawnAgent = (
 ) => Promise<string>;
 
 type Store = {
-  readonly sessionGithub: Record<string, unknown>;
+  sessionGithub: Record<string, unknown>;
+  sessionGitlabMr: Record<string, unknown>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly createPrForSession: ReturnType<typeof vi.fn>;
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
@@ -33,6 +40,7 @@ const h = vi.hoisted(() => ({
   } satisfies AgentSpawnConfigValue,
   store: {
     sessionGithub: {},
+    sessionGitlabMr: {},
     refreshSessionPr: vi.fn(),
     createPrForSession: vi.fn(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-1'),
@@ -62,6 +70,20 @@ import { PrPane } from './PrPane';
 
 const DATE = '2026-07-22T10:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'session-1' as SessionId;
+const PULL_REQUEST = {
+  number: 42,
+  title: 'Refactor authentication',
+  url: 'https://github.com/acme/goodboy/pull/42',
+  state: 'open',
+  mergeable: true,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'ak/refactor-auth',
+  isDraft: false,
+  reviewDecision: 'review_required',
+  body: 'Refactors authentication.',
+  updatedAt: DATE,
+} satisfies PullRequestState;
 const session: Session = {
   id: SESSION_ID,
   workspaceId: 'workspace-1' as WorkspaceId,
@@ -78,6 +100,8 @@ const session: Session = {
 };
 
 beforeEach(() => {
+  h.store.sessionGithub = {};
+  h.store.sessionGitlabMr = {};
   h.store.createPrForSession.mockClear();
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
@@ -87,6 +111,26 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
+  it('renders the stored pull request as a selected list row above its detail', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+
+    render(<PrPane session={session} />);
+
+    const listRow = screen.getByRole('button', {
+      name: /GitHub #42 Refactor authentication In review/i,
+    });
+    expect(listRow.getAttribute('aria-current')).toBe('true');
+    expect(screen.getAllByText('Refactor authentication')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
+  });
+
   it('spawns a draft agent with the chosen config and operator notes', async () => {
     render(<PrPane session={session} />);
     fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
