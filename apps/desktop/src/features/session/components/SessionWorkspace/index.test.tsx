@@ -13,6 +13,11 @@ type Store = {
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   focusedPlanId: Record<string, string | null>;
+  sessionGithub: Record<string, unknown>;
+  sessionPendingResolutions: Record<string, ReadonlyArray<{ threadId: string }>>;
+  resolverState: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'>;
+  agentTurnState: Record<string, unknown>;
+  agentKindOverride: Record<string, unknown>;
   setActiveLens: ReturnType<typeof vi.fn>;
   setSessionStudio: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
@@ -31,6 +36,11 @@ const { store, hooks } = vi.hoisted(() => ({
     phaseTemplates: {},
     sessionWorkflows: {},
     focusedPlanId: {},
+    sessionGithub: {},
+    sessionPendingResolutions: {},
+    resolverState: {},
+    agentTurnState: {},
+    agentKindOverride: {},
     setActiveLens: vi.fn(),
     setSessionStudio: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
@@ -101,6 +111,11 @@ vi.mock('./hooks/useSelectedAgentHome', () => ({
 vi.mock('./parts/WorkflowStepper', () => ({
   WorkflowStepper: () => <div data-testid="workflow-stepper" />,
 }));
+vi.mock('../ForceResolveAction', () => ({
+  ForceResolveAction: ({ agent }: { agent: Agent }) => (
+    <div data-testid="force-resolve-action">{agent.name}</div>
+  ),
+}));
 
 import { SessionWorkspace } from './index';
 
@@ -130,6 +145,11 @@ beforeEach(() => {
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
   store.focusedPlanId = {};
+  store.sessionGithub = {};
+  store.sessionPendingResolutions = {};
+  store.resolverState = {};
+  store.agentTurnState = {};
+  store.agentKindOverride = {};
   store.setActiveLens.mockReset();
   hooks.agentHome = 'workflows';
 });
@@ -172,6 +192,26 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('breadcrumb').textContent).toBe(
       'Overview / Resolve / Standalone resolver',
     );
+  });
+
+  it('shows the force resolve action in a markerless resolver header', () => {
+    const standaloneResolver = {
+      ...selectedAgent,
+      id: 'resolver-1',
+      name: 'Markerless resolver',
+      kind: 'resolver',
+      status: 'completed',
+      stepId: undefined,
+      workflowRunId: undefined,
+      sourceThreadId: 'thread-1',
+    } as Agent;
+    store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
+    hooks.agentHome = 'resolve';
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('force-resolve-action').textContent).toBe('Markerless resolver');
   });
 
   it('keeps the agents-home overlay panel unchanged', () => {

@@ -34,6 +34,9 @@ import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { resolveRootAgent } from '../../agent-kind';
+import { ForceResolveAction } from '../ForceResolveAction';
+import { canForceResolve } from '../ForceResolveAction/canForceResolve';
+import { useResolverIndex } from '../../hooks/useResolverIndex';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -119,6 +122,25 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   );
   const selectedAgentName = selectedAgent?.name ?? (selectedAgentId != null ? 'Agent' : null);
   const showWorkflowStrip = showAgentOverlay && selectedAgent?.workflowRunId != null;
+  const selectedThreadId = selectedAgent?.sourceThreadId ?? null;
+  const resolverIndex = useResolverIndex(sessionId);
+  const selectedResolverLink =
+    selectedThreadId == null ? undefined : resolverIndex.byThreadId.get(selectedThreadId);
+  const selectedResolverStatus =
+    selectedResolverLink?.agent.id === selectedAgentId ? selectedResolverLink.status : null;
+  const selectedTurnState = useAppStore((state) =>
+    selectedAgentId == null ? undefined : state.agentTurnState[selectedAgentId],
+  );
+  const showForceResolveHeader =
+    showAgentOverlay &&
+    overlayHome === 'resolve' &&
+    selectedAgent != null &&
+    selectedResolverStatus != null &&
+    canForceResolve({
+      agent: selectedAgent,
+      status: selectedResolverStatus,
+      turnState: selectedTurnState,
+    });
   const stripWorkflowName = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
@@ -310,6 +332,19 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                           session={session}
                           selectedAgentId={selectedAgentId}
                         />
+                      ) : showForceResolveHeader &&
+                        selectedAgent != null &&
+                        selectedResolverStatus != null ? (
+                        <>
+                          <div className="flex h-[var(--chat-header-h)] shrink-0 items-center justify-end px-3">
+                            <ForceResolveAction
+                              agent={selectedAgent}
+                              sessionId={sessionId}
+                              status={selectedResolverStatus}
+                            />
+                          </div>
+                          <Divider className="shrink-0" />
+                        </>
                       ) : undefined
                     }
                   />
