@@ -83,7 +83,8 @@ describe('LinkedWorkSection', () => {
 
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
 
-    expect(screen.getByText('#42 Ship linked work')).toBeDefined();
+    expect(screen.getByText('#42')).toBeDefined();
+    expect(screen.getByText('Ship linked work')).toBeDefined();
     expect(screen.getByText('In review · 2 unresolved')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /#42 Ship linked work/i }));
     expect(onSelectLens).toHaveBeenCalledWith('pr');
@@ -99,9 +100,10 @@ describe('LinkedWorkSection', () => {
 
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
 
-    expect(screen.getByText('#17 GitLab work')).toBeDefined();
+    expect(screen.getByText('!17')).toBeDefined();
+    expect(screen.getByText('GitLab work')).toBeDefined();
     expect(screen.getByText('Draft')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /#17 GitLab work/i }));
+    fireEvent.click(screen.getByRole('button', { name: /!17 GitLab work/i }));
     expect(onSelectLens).toHaveBeenCalledWith('pr');
   });
 
@@ -117,16 +119,26 @@ describe('LinkedWorkSection', () => {
 
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByText('#7 First issue')).toBeDefined();
-    expect(screen.getByText('#9 Second issue')).toBeDefined();
-    expect(screen.getAllByText('linked issue')).toHaveLength(2);
+    expect(screen.getByText('#7')).toBeDefined();
+    expect(screen.getByText('First issue')).toBeDefined();
+    expect(screen.getByText('#9')).toBeDefined();
+    expect(screen.getByText('Second issue')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /#9 Second issue/i }));
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
   });
 
-  it('renders every external task with its default studio action', () => {
+  it('routes every external task to its provider lens', () => {
     store.sessionExternalTasks = {
       'sess-1': [
+        {
+          sessionId: 'sess-1',
+          provider: 'gitlab',
+          externalId: 'gitlab-3',
+          identifier: 'acme/repo#3',
+          url: 'https://gitlab.com/acme/repo/-/issues/3',
+          title: 'GitLab task',
+          createdAt: '2026-07-21T10:00:00.000Z',
+        } as SessionExternalTask,
         {
           sessionId: 'sess-1',
           provider: 'linear',
@@ -147,27 +159,37 @@ describe('LinkedWorkSection', () => {
         } as SessionExternalTask,
       ],
     };
-    const handler = vi.fn();
-    window.addEventListener('goodboy:open-linear-studio', handler);
+    const onSelectLens = vi.fn();
 
-    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
+    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
 
     expect(screen.getByText('ENG-42')).toBeDefined();
     expect(screen.getByText('Track linked work')).toBeDefined();
     expect(screen.getByText('GOODBOY-7')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'open ENG-42 in Linear studio' }));
-    expect(handler).toHaveBeenCalledOnce();
-    expect((handler.mock.calls[0]![0] as CustomEvent).detail).toEqual({
-      issueExternalId: 'linear-42',
-    });
-    window.removeEventListener('goodboy:open-linear-studio', handler);
+    fireEvent.click(screen.getByRole('button', { name: 'open ENG-42 integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open GOODBOY-7 integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open acme/repo#3 integration' }));
+    expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
   });
 
-  it('returns null when no linked work exists', () => {
-    const { container } = render(
-      <LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />,
-    );
+  it('navigates from the link menu to each provider lens', () => {
+    const onSelectLens = vi.fn();
+    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
 
-    expect(container.firstChild).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'link work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Linear' }));
+    fireEvent.click(screen.getByRole('button', { name: 'link work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sentry' }));
+    fireEvent.click(screen.getByRole('button', { name: 'link work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'GitLab issues' }));
+
+    expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
+  });
+
+  it('keeps the link hub visible when no linked work exists', () => {
+    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByText('No linked work yet.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'link work' })).toBeDefined();
   });
 });
