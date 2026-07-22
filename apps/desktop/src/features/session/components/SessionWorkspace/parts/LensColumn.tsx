@@ -289,7 +289,7 @@ export const LensColumn = ({
           </span>
           <KbdPill
             aria-hidden
-            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-60"
+            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
           >
             ⌘⇧O
           </KbdPill>
@@ -378,12 +378,7 @@ export const LensColumn = ({
                   {shortcut != null ? (
                     <KbdPill
                       aria-hidden
-                      className={cn(
-                        'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] transition-opacity',
-                        hasBadge
-                          ? 'opacity-0 group-hover:opacity-60 group-focus-visible:opacity-60'
-                          : 'opacity-60',
-                      )}
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
                     >
                       {shortcut}
                     </KbdPill>

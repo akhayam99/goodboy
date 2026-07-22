@@ -153,4 +153,14 @@ describe('App lens shortcuts', () => {
 
     expect(setActiveLens.mock.calls).toEqual(expected.map(([, lens]) => ['session-1', lens]));
   });
+
+  it('returns to the board on cmd+shift+escape', () => {
+    render(<App />);
+
+    act(() => {
+      shortcutHandlers.get('cmd+shift+escape')?.();
+    });
+
+    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
+  });
 });

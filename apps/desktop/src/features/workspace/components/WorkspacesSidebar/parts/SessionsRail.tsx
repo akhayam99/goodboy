@@ -18,7 +18,7 @@ export const SessionsRail = () => {
           <PanelLeftOpen size={15} aria-hidden />
         </button>
       </Tooltip>
-      <Tooltip content="back to board" side="right">
+      <Tooltip content="back to board · ⌘⇧⎋" side="right">
         <button
           type="button"
           onClick={() => void setCurrentSession(null)}
