@@ -9,7 +9,6 @@ import type {
   SessionStageInfo,
   Workspace,
 } from '@goodboy/types';
-import type { FilesTouched } from '../../../../store';
 
 type Store = {
   sessionBranches: Record<string, string>;
@@ -66,7 +65,6 @@ const { store, hooks, runs } = vi.hoisted(() => ({
   hooks: {
     workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,
     openQuestions: [] as ReadonlyArray<OpenQuestion>,
-    plans: [] as ReadonlyArray<{ status: string }>,
     stage: { stage: 'building', reason: '' } as SessionStageInfo,
   },
   runs: {
@@ -103,7 +101,6 @@ vi.mock('../../../../store', () => ({
       );
     }),
   useSessionOpenQuestions: () => hooks.openQuestions,
-  useSessionPlans: () => hooks.plans,
   useSessionStageInfo: () => hooks.stage,
   useSessionUnreadLens: () => null,
 }));
@@ -168,16 +165,8 @@ const baseSession = (over: Partial<Session> = {}): Session =>
     ...over,
   }) as unknown as Session;
 
-const files: FilesTouched = { count: 3 } as unknown as FilesTouched;
-
-const renderPane = (session = baseSession(), onSelectLens = vi.fn(), filesTouched = files) => {
-  render(
-    <SessionOverviewPane
-      session={session}
-      filesTouched={filesTouched}
-      onSelectLens={onSelectLens}
-    />,
-  );
+const renderPane = (session = baseSession(), onSelectLens = vi.fn()) => {
+  render(<SessionOverviewPane session={session} onSelectLens={onSelectLens} />);
   return onSelectLens;
 };
 
@@ -205,7 +194,6 @@ beforeEach(() => {
   store.messages = {};
   hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
   hooks.openQuestions = [];
-  hooks.plans = [];
   hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
   runs.lanes = [];
   runs.freeAgents = [];
@@ -334,32 +322,26 @@ describe('SessionOverviewPane resolve section', () => {
   });
 });
 
-describe('SessionOverviewPane at-a-glance strip', () => {
-  beforeEach(() => {
+describe('SessionOverviewPane rail deduplication', () => {
+  it('omits overview metrics after work exists', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
-  });
-
-  it('renders the metrics strip and hides the get-started CTAs once work exists', () => {
     renderPane();
-    expect(screen.getByText('At a glance')).toBeDefined();
-    expect(screen.queryByText('Get started')).toBeNull();
+    expect(screen.queryByText('At a glance')).toBeNull();
+    expect(screen.queryByText('1/1')).toBeNull();
   });
 
-  it('reports running agents as a ratio', () => {
+  it('omits context links owned by the lens rail', () => {
     renderPane();
-    expect(screen.getByText('1/1')).toBeDefined();
-    expect(screen.getByText('running')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^goal$/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^decisions$/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^session summary$/i })).toBeNull();
   });
 
-  it('uses the singular files label for a single change', () => {
-    renderPane(baseSession(), vi.fn(), { count: 1 } as unknown as FilesTouched);
-    expect(screen.getByText('file')).toBeDefined();
-  });
-
-  it('selects the lens when a metric is clicked', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByText('files'));
-    expect(onSelectLens).toHaveBeenCalledWith('files');
+  it('omits jump-to links owned by the lens rail', () => {
+    renderPane();
+    expect(screen.queryByRole('button', { name: /^scripts$/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^terminal$/i })).toBeNull();
+    expect(screen.queryByText('Jump to')).toBeNull();
   });
 });
 
@@ -417,7 +399,7 @@ describe('SessionOverviewPane nudges', () => {
     expect(onSelectLens).toHaveBeenCalledWith('workflows');
   });
 
-  it('keeps the agents metric calm when attention routes to resolve', () => {
+  it('routes resolver attention without rendering a duplicate agent metric', () => {
     store.sessionPhaseRuns = {
       'sess-1': [
         {
@@ -433,8 +415,7 @@ describe('SessionOverviewPane nudges', () => {
     hooks.stage = { stage: 'attention', reason: 'idle' } as SessionStageInfo;
     renderPane();
     expect(screen.getByText(/a resolver needs you/i)).toBeDefined();
-    const metric = screen.getByText('agents').closest('button');
-    expect(metric?.className).not.toContain('border-warning');
+    expect(screen.queryByText('agents')).toBeNull();
   });
 });
 
@@ -519,40 +500,6 @@ describe('SessionOverviewPane completed bucket (cluster D)', () => {
     renderPane();
     expect(screen.queryByText('Activity')).toBeNull();
     expect(screen.queryByText('Completed')).toBeNull();
-  });
-});
-
-describe('SessionOverviewPane context links', () => {
-  it('selects the goal lens from the primary context strip', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /^goal$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('goal');
-  });
-
-  it('routes Decisions and Session summary from the primary strip', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /^decisions$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('decisions');
-    fireEvent.click(screen.getByRole('button', { name: /^session summary$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('last_output_summary');
-  });
-
-  it('routes Scripts and Terminal from the muted jump-to row', () => {
-    const onSelectLens = renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /^scripts$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('scripts');
-    fireEvent.click(screen.getByRole('button', { name: /^terminal$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('terminal');
-  });
-
-  it('renders the primary context strip on a non-fresh session and routes correctly', () => {
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent()] };
-    const onSelectLens = renderPane();
-    expect(screen.getByRole('button', { name: /^goal$/i })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /^decisions$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('decisions');
-    fireEvent.click(screen.getByRole('button', { name: /^session summary$/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('last_output_summary');
   });
 });
 
