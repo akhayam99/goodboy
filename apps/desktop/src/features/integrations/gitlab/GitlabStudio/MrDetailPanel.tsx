@@ -12,7 +12,10 @@ import {
 } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { ScrollFade } from '@goodboy/ui';
-import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
+import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
+import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
+import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
@@ -57,6 +60,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   const [targetBranch, setTargetBranch] = useState('main');
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | 'merge' | null>(null);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
 
   useEffect(() => {
     void refreshSessionMr(sessionId, { silent: true });
@@ -115,9 +119,10 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
       ].join('\n');
       const agentId = await spawnAgent(sessionId, {
         name: 'open merge request',
-        initialPrompt: prompt,
-        model: AGENT_KIND_DEFAULTS.generic.model,
-        effort: AGENT_KIND_DEFAULTS.generic.effort,
+        initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
+        model: agentConfig.model,
+        ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
+        effort: agentConfig.effort,
       });
       await setCurrentSession(sessionId);
       await selectAgent(sessionId, agentId);
@@ -289,6 +294,11 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                     aria-label="Target branch"
                   />
                 </div>
+                <AgentSpawnConfig
+                  value={agentConfig}
+                  onChange={setAgentConfig}
+                  disabled={busy !== null}
+                />
                 <div className="flex items-center gap-3 pt-1">
                   <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                     <input
