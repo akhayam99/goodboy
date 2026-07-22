@@ -8,6 +8,7 @@ import {
   resolverBadgeState,
 } from '../../../../session/components/ResolverStateBadge';
 import { CommentSnippet } from '../../../../session/components/CommentSnippet';
+import { ForceResolveAction } from '../../../../session/components/ForceResolveAction';
 import type { ResolverStatus } from '../lib';
 
 type Props = {
@@ -149,6 +150,9 @@ export const ResolveClusterRow = ({
           </button>
         </div>
       ) : null}
+      <div className="pl-7">
+        <ForceResolveAction agent={agent} sessionId={agent.sessionId} status={status} />
+      </div>
     </div>
   );
 };
