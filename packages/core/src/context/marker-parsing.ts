@@ -17,12 +17,62 @@ export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyA
   return out;
 };
 
-const DECISION_RE = /<<ctx-decision>>([\s\S]*?)<<\/ctx-decision>>/g;
-const QUESTION_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>([\s\S]*?)<<\/ctx-question>>/g;
-const QUESTION_ATTR_RE = /([\w-]+)="([^"]*)"/g;
-const RESOLVED_RE = /<<ctx-resolved>>([\s\S]*?)<<\/ctx-resolved>>/g;
-const PLAN_RE = /<<plan>>([\s\S]*?)<<\/plan>>/g;
-const HANDOFF_RE = /<<handoff\s+([^>]+?)>>/g;
+const DECISION_OPEN = '<<ctx-decision>>';
+const DECISION_CLOSE = '<</ctx-decision>>';
+const RESOLVED_OPEN = '<<ctx-resolved>>';
+const RESOLVED_CLOSE = '<</ctx-resolved>>';
+const PLAN_OPEN = '<<plan>>';
+const PLAN_CLOSE = '<</plan>>';
+const CLUSTERS_OPEN = '<<clusters>>';
+const CLUSTERS_CLOSE = '<</clusters>>';
+const SCOUT_SPLIT_OPEN = '<<scout-split>>';
+const SCOUT_SPLIT_CLOSE = '<</scout-split>>';
+const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
+const QUESTION_CLOSE = '<</ctx-question>>';
+const QUESTION_ATTR_RE = /(?<![\w-])([\w-]+)="([^"]*)"/g;
+const HANDOFF_RE = /<<handoff\s+([^\s>][^>]*?)>>/g;
+
+const extractBlockContents = (text: string, open: string, close: string): ReadonlyArray<string> => {
+  const out: string[] = [];
+  let i = 0;
+  while (true) {
+    const start = text.indexOf(open, i);
+    if (start === -1) {
+      break;
+    }
+    const contentStart = start + open.length;
+    const end = text.indexOf(close, contentStart);
+    if (end === -1) {
+      break;
+    }
+    const value = text.slice(contentStart, end).trim();
+    if (value.length > 0) {
+      out.push(value);
+    }
+    i = end + close.length;
+  }
+  return out;
+};
+
+const stripBlocks = (text: string, open: string, close: string): string => {
+  let out = '';
+  let i = 0;
+  while (true) {
+    const start = text.indexOf(open, i);
+    if (start === -1) {
+      out += text.slice(i);
+      break;
+    }
+    const end = text.indexOf(close, start + open.length);
+    if (end === -1) {
+      out += text.slice(i);
+      break;
+    }
+    out += text.slice(i, start);
+    i = end + close.length;
+  }
+  return out;
+};
 const HANDOFF_ATTR_RE = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
 
 export type ExtractedQuestion = {
@@ -38,9 +88,9 @@ export const extractMarkers = (
   readonly questions: ReadonlyArray<ExtractedQuestion>;
   readonly resolved: ReadonlyArray<string>;
 } => {
-  const decisions = extractAll(assistantText, DECISION_RE);
+  const decisions = extractBlockContents(assistantText, DECISION_OPEN, DECISION_CLOSE);
   const questions = extractQuestions(assistantText);
-  const resolved = extractAll(assistantText, RESOLVED_RE);
+  const resolved = extractBlockContents(assistantText, RESOLVED_OPEN, RESOLVED_CLOSE);
   return { decisions, questions, resolved };
 };
 
@@ -56,11 +106,17 @@ function parseQuestionAttrs(raw: string): Record<string, string> {
 
 function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
   const out: ExtractedQuestion[] = [];
-  QUESTION_RE.lastIndex = 0;
+  QUESTION_OPEN_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = QUESTION_RE.exec(text)) !== null) {
+  while ((m = QUESTION_OPEN_RE.exec(text)) !== null) {
+    const bodyStart = QUESTION_OPEN_RE.lastIndex;
+    const closeIdx = text.indexOf(QUESTION_CLOSE, bodyStart);
+    if (closeIdx === -1) {
+      continue;
+    }
+    QUESTION_OPEN_RE.lastIndex = closeIdx + QUESTION_CLOSE.length;
     const attrs = parseQuestionAttrs(m[1] ?? '');
-    const body = (m[2] ?? '').trim();
+    const body = text.slice(bodyStart, closeIdx).trim();
     if (body.length === 0) {
       continue;
     }
@@ -88,7 +144,7 @@ export type ExtractedPlan = {
 };
 
 export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
-  const matches = extractAll(assistantText, PLAN_RE);
+  const matches = extractBlockContents(assistantText, PLAN_OPEN, PLAN_CLOSE);
   if (matches.length === 0) {
     return null;
   }
@@ -115,7 +171,12 @@ function parsePlanBody(raw: string): ExtractedPlan | null {
     return null;
   }
   const restLines = lines.slice(firstIdx + 1);
-  let bodyMd = restLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  const joined = restLines.join('\n').replace(/^\n+/, '');
+  let end = joined.length;
+  while (end > 0 && joined[end - 1] === '\n') {
+    end -= 1;
+  }
+  let bodyMd = joined.slice(0, end);
   if (bodyMd.length === 0) {
     bodyMd = title;
   }
@@ -176,7 +237,7 @@ function parseHandoffAttrs(inner: string): Record<string, string> {
   return out;
 }
 
-const COMMENT_RESOLVED_RE = /<<comment-resolved\s+([^>]+?)>>/g;
+const COMMENT_RESOLVED_RE = /<<comment-resolved\s+([^\s>][^>]*?)>>/g;
 
 export type ExtractedCommentResolution = {
   readonly threadId: string;
@@ -208,7 +269,7 @@ export const isReviewThreadId = (threadId: string): boolean => {
   return REVIEW_THREAD_ID_RE.test(threadId);
 };
 
-const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^>]+?)>>/g;
+const COMMENT_WONTFIX_RE = /<<comment-wontfix\s+([^\s>][^>]*?)>>/g;
 
 export type ExtractedCommentWontfix = {
   readonly threadId: string;
@@ -231,8 +292,7 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
   return last;
 };
 
-const CLUSTERS_RE = /<<clusters>>([\s\S]*?)<<\/clusters>>/g;
-const CLUSTER_DONE_RE = /<<cluster-done\s+([^>]+?)>>/g;
+const CLUSTER_DONE_RE = /<<cluster-done\s+([^\s>][^>]*?)>>/g;
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
 
 export type ExtractedCluster = {
@@ -243,18 +303,11 @@ export type ExtractedCluster = {
 export const extractClustersFromMarker = (
   assistantText: string,
 ): ReadonlyArray<ExtractedCluster> | null => {
-  CLUSTERS_RE.lastIndex = 0;
-  let raw: string | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = CLUSTERS_RE.exec(assistantText)) !== null) {
-    const inner = (m[1] ?? '').trim();
-    if (inner.length > 0) {
-      raw = inner;
-    }
-  }
-  if (raw === null) {
+  const blocks = extractBlockContents(assistantText, CLUSTERS_OPEN, CLUSTERS_CLOSE);
+  if (blocks.length === 0) {
     return null;
   }
+  const raw = blocks[blocks.length - 1]!;
 
   const json = stripJsonFences(raw);
   let parsed: unknown;
@@ -323,8 +376,6 @@ export const extractStepDone = (assistantText: string): { readonly id: string } 
   return last;
 };
 
-const SCOUT_SPLIT_RE = /<<scout-split>>([\s\S]*?)<<\/scout-split>>/g;
-
 export type ExtractedScoutArea = {
   readonly area: string;
   readonly query: string;
@@ -333,18 +384,11 @@ export type ExtractedScoutArea = {
 export const extractScoutSplit = (
   assistantText: string,
 ): ReadonlyArray<ExtractedScoutArea> | null => {
-  SCOUT_SPLIT_RE.lastIndex = 0;
-  let raw: string | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = SCOUT_SPLIT_RE.exec(assistantText)) !== null) {
-    const inner = (m[1] ?? '').trim();
-    if (inner.length > 0) {
-      raw = inner;
-    }
-  }
-  if (raw === null) {
+  const blocks = extractBlockContents(assistantText, SCOUT_SPLIT_OPEN, SCOUT_SPLIT_CLOSE);
+  if (blocks.length === 0) {
     return null;
   }
+  const raw = blocks[blocks.length - 1]!;
 
   const json = stripJsonFences(raw);
   let parsed: unknown;
@@ -381,9 +425,15 @@ export const extractScoutSplit = (
   return out.length > 0 ? out : null;
 };
 
+const FENCE_OPEN_RE = /^```(?:json)?/i;
+
 function stripJsonFences(raw: string): string {
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
-  return (fenced?.[1] ?? raw).trim();
+  const trimmed = raw.trim();
+  const open = FENCE_OPEN_RE.exec(trimmed);
+  if (open === null || !trimmed.endsWith('```') || trimmed.length < open[0].length + 3) {
+    return trimmed;
+  }
+  return trimmed.slice(open[0].length, trimmed.length - 3).trim();
 }
 
 function extractJsonArray(text: string): string | null {
@@ -418,7 +468,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
   if (stepLines.length < 2) {
     return { ready: false, reason: 'too-few-steps' };
   }
-  const outsidePlan = input.assistantText.replace(PLAN_RE, '').trim();
+  const outsidePlan = stripBlocks(input.assistantText, PLAN_OPEN, PLAN_CLOSE).trim();
   if (PLAN_OPEN_QUESTION_RE.test(outsidePlan)) {
     return { ready: false, reason: 'has-open-question' };
   }
@@ -448,16 +498,3 @@ export const stripControlMarkers = (text: string): string => {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 };
-
-function extractAll(text: string, re: RegExp): ReadonlyArray<string> {
-  const out: string[] = [];
-  re.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const value = (m[1] ?? '').trim();
-    if (value.length > 0) {
-      out.push(value);
-    }
-  }
-  return out;
-}

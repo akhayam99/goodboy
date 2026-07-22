@@ -607,3 +607,48 @@ describe('extractStepDone', () => {
     expect(stripControlMarkers(text)).toBe('result\n\ndone');
   });
 });
+
+describe('marker parsing, ReDoS hardening', () => {
+  it('keeps angle brackets and non-closing tags inside block content', () => {
+    const plan = extractPlanFromMarker('<<plan>># T\n\nUse a < b and </plan> inline\n<</plan>>');
+    expect(plan?.title).toBe('T');
+    expect(plan?.bodyMd).toContain('a < b');
+    expect(plan?.bodyMd).toContain('</plan>');
+  });
+
+  it('extracts clusters whose json values contain angle brackets', () => {
+    const text = '<<clusters>>[{"title":"A < B","instructions":"do <stuff>"}]<</clusters>>';
+    expect(extractClustersFromMarker(text)).toEqual([
+      { title: 'A < B', instructions: 'do <stuff>' },
+    ]);
+  });
+
+  it('strips fenced json inside scout-split content', () => {
+    const text = '<<scout-split>>```json\n[{"area":"x<y","query":"q"}]\n```<</scout-split>>';
+    expect(extractScoutSplit(text)).toEqual([{ area: 'x<y', query: 'q' }]);
+  });
+
+  it('parses questions with dashed attribute names and body angle brackets', () => {
+    const { questions } = extractMarkers(
+      '<<ctx-question data-x="1" suggestions="a|b">>Pick a < b?<</ctx-question>>',
+    );
+    expect(questions[0]?.text).toBe('Pick a < b?');
+    expect(questions[0]?.suggestedAnswers).toEqual(['a', 'b']);
+  });
+
+  it('collapses repeated leading whitespace in self-closing markers', () => {
+    const handoff = extractHandoff('<<handoff   kind="scout" reason="go">>');
+    expect(handoff).toEqual({ kind: 'scout', reason: 'go', planId: null });
+  });
+
+  it('returns fast on adversarial no-closer input (linear, not polynomial)', () => {
+    const openers = '<<plan>>' + '<<plan>>a'.repeat(60_000);
+    expect(extractPlanFromMarker(openers)).toBeNull();
+    const spaces = '<<handoff' + ' '.repeat(200_000) + 'x';
+    expect(extractHandoff(spaces)).toBeNull();
+    const dashes = '<<ctx-question ' + '-'.repeat(200_000) + '="x">>body<</ctx-question>>';
+    expect(extractMarkers(dashes).questions[0]?.text).toBe('body');
+    const fences = '<<clusters>>```' + '\t'.repeat(200_000) + '<</clusters>>';
+    expect(extractClustersFromMarker(fences)).toBeNull();
+  });
+});
