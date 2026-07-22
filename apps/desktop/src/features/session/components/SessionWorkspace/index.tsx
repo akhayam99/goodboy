@@ -237,11 +237,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             {showLens ? (
               <div className="absolute inset-0 z-0">
                 {lens === null ? (
-                  <SessionOverviewPane
-                    session={session}
-                    filesTouched={filesTouched}
-                    onSelectLens={onSelectLens}
-                  />
+                  <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
                 ) : null}
                 {lens === 'questions' ? <QuestionsPane session={session} /> : null}
                 {lens === 'plans' ? (

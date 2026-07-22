@@ -1,25 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
-  Activity,
   ArrowRight,
   Bot,
-  CheckCheck,
   CircleHelp,
-  FileDiff,
-  FileText,
   GitPullRequest,
   Layers,
   MessageSquareReply,
   Pencil,
-  SquareTerminal,
-  Target,
-  Terminal,
   Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { cn, Divider, Eyebrow, Input, ScrollFade, StatusDot, tintClasses } from '@goodboy/ui';
-import type { Tone } from '@goodboy/ui';
+import { cn, Eyebrow, Input, ScrollFade, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId, SessionStage } from '@goodboy/types';
 import {
   agentHasUnread,
@@ -28,13 +20,13 @@ import {
   useCurrentWorkspace,
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
-  useSessionPlans,
   useSessionStageInfo,
   useSessionUnreadLens,
 } from '../../../../store';
-import type { FilesTouched, LensKind } from '../../../../store';
+import type { LensKind } from '../../../../store';
 import { STAGE_TONE } from '../../session-stage';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
+import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
@@ -45,6 +37,7 @@ import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
+import { CompletedSection } from './CompletedSection';
 import { PipelineSection } from './PipelineSection';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { StartRowContent } from './StartRowContent';
@@ -53,7 +46,6 @@ import { SummaryRow } from './SummaryRow';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
-  readonly filesTouched: FilesTouched;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -73,37 +65,6 @@ type Nudge = {
   readonly itemId?: string;
 };
 
-type Metric = {
-  readonly kind: LensKind;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly value: string;
-  readonly label: string;
-  readonly active: boolean;
-  readonly alert?: boolean;
-};
-
-const PRIMARY_CONTEXT_LINKS: ReadonlyArray<{
-  readonly kind: LensKind;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-}> = [
-  { kind: 'goal', icon: Target, tone: 'primary', label: 'Goal' },
-  { kind: 'decisions', icon: CheckCheck, tone: 'success', label: 'Decisions' },
-  { kind: 'last_output_summary', icon: Activity, tone: 'info', label: 'Session summary' },
-];
-
-const SECONDARY_CONTEXT_LINKS: ReadonlyArray<{
-  readonly kind: LensKind;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-  readonly label: string;
-}> = [
-  { kind: 'scripts', icon: Terminal, tone: 'info', label: 'Scripts' },
-  { kind: 'terminal', icon: SquareTerminal, tone: 'neutral', label: 'Terminal' },
-];
-
 const startRowClass = (primary?: boolean): string =>
   cn(
     'group flex w-full items-center gap-3 rounded-lg border bg-elevated px-3.5 py-3 text-left shadow-sm transition-colors',
@@ -120,17 +81,15 @@ const startTileClass = (primary?: boolean): string =>
       : 'border-border-soft hover:border-border',
   );
 
-export const SessionOverviewPane = ({
-  session,
-  filesTouched,
-  onSelectLens,
-}: SessionOverviewPaneProps) => {
+export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPaneProps) => {
   const stage = useSessionStageInfo(session);
   const rename = useSessionTitleRename({
     sessionId: session.id as SessionId,
     currentTitle: session.goal,
   });
   const workspace = useCurrentWorkspace();
+  const sessionList = useMemo(() => [session], [session]);
+  const runs = useWorkspaceRuns(session.workspaceId, sessionList);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
@@ -144,7 +103,6 @@ export const SessionOverviewPane = ({
   const nonResolverAgents = useNonResolverStandaloneAgents(session.id as SessionId);
   const unreadLens = useSessionUnreadLens(session.id as SessionId);
   const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
-  const activePlans = useSessionPlans(session.id).filter((p) => p.status === 'active').length;
   const resolvable = useResolvableCount(session.id as SessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -157,6 +115,8 @@ export const SessionOverviewPane = ({
   const openCount = openQuestions.length;
   const resolvableItems = resolvable.prComments + resolvable.diffComments + resolvable.pending;
   const commentsToResolve = resolvable.prComments + resolvable.diffComments;
+  const resolveQueueItems = runs.resolveQueue.length + (runs.completedResolveQueue?.length ?? 0);
+  const hasResolveItems = resolvableItems > 0 || resolveQueueItems > 0;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && rawStandalone.length === 0;
   const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
@@ -254,46 +214,6 @@ export const SessionOverviewPane = ({
     });
   }
 
-  const metrics: Metric[] = [
-    {
-      kind: 'files',
-      icon: FileDiff,
-      tone: 'info',
-      value: String(filesTouched.count),
-      label: filesTouched.count === 1 ? 'file' : 'files',
-      active: filesTouched.count > 0,
-    },
-    {
-      kind: 'agents',
-      icon: Bot,
-      tone: 'primary',
-      value:
-        runningAgents > 0
-          ? `${runningAgents}/${nonResolverAgents.length}`
-          : String(nonResolverAgents.length),
-      label: runningAgents > 0 ? 'running' : 'agents',
-      active: nonResolverAgents.length > 0,
-      alert: attention.active && attentionLens === 'agents',
-    },
-    {
-      kind: 'plans',
-      icon: FileText,
-      tone: 'success',
-      value: String(activePlans),
-      label: activePlans === 1 ? 'plan' : 'plans',
-      active: activePlans > 0,
-    },
-    {
-      kind: 'questions',
-      icon: CircleHelp,
-      tone: 'warning',
-      value: String(openCount),
-      label: openCount === 1 ? 'question' : 'questions',
-      active: openCount > 0,
-      alert: openCount > 0,
-    },
-  ];
-
   return (
     <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
       <div className="animate-fade-in mx-auto flex max-w-3xl flex-col gap-6">
@@ -356,17 +276,38 @@ export const SessionOverviewPane = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {PRIMARY_CONTEXT_LINKS.map((link) => (
-            <SummaryRow
-              key={link.kind}
-              icon={link.icon}
-              tone={link.tone}
-              label={link.label}
-              onClick={() => onSelectLens(link.kind)}
-            />
-          ))}
-        </div>
+        {nudges.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <Eyebrow label="Needs you" muted className="px-0.5 font-medium" />
+            <div className="flex flex-col gap-1.5">
+              {nudges.map((nudge) => (
+                <button
+                  key={nudge.itemId ?? nudge.lens}
+                  type="button"
+                  onClick={() => openNudge(nudge)}
+                  className="group flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/[0.04] px-3 py-2.5 text-left shadow-sm transition-colors hover:border-warning/50 hover:bg-warning/[0.08]"
+                >
+                  <nudge.icon size={15} aria-hidden className="shrink-0 text-warning" />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium text-foreground">
+                      {nudge.label}
+                    </span>
+                    {nudge.detail ? (
+                      <span className="truncate text-2xs text-muted-foreground">
+                        {nudge.detail}
+                      </span>
+                    ) : null}
+                  </span>
+                  <ArrowRight
+                    size={14}
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground/40 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {isFresh ? (
           <div className="flex flex-col gap-2">
@@ -436,50 +377,17 @@ export const SessionOverviewPane = ({
           </div>
         )}
 
-        {nudges.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <Eyebrow label="Needs you" muted className="px-0.5 font-medium" />
-            <div className="flex flex-col gap-1.5">
-              {nudges.map((nudge) => (
-                <button
-                  key={nudge.itemId ?? nudge.lens}
-                  type="button"
-                  onClick={() => openNudge(nudge)}
-                  className="group flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/[0.04] px-3 py-2.5 text-left shadow-sm transition-colors hover:border-warning/50 hover:bg-warning/[0.08]"
-                >
-                  <nudge.icon size={15} aria-hidden className="shrink-0 text-warning" />
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium text-foreground">
-                      {nudge.label}
-                    </span>
-                    {nudge.detail ? (
-                      <span className="truncate text-2xs text-muted-foreground">
-                        {nudge.detail}
-                      </span>
-                    ) : null}
-                  </span>
-                  <ArrowRight
-                    size={14}
-                    aria-hidden
-                    className="shrink-0 text-muted-foreground/40 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
         {workspace ? (
           <PipelineSection
             session={session}
             workspaceId={workspace.id}
+            lanes={runs.lanes}
+            freeAgents={runs.freeAgents}
             onSelectLens={onSelectLens}
           />
         ) : null}
 
-        <LinkedWorkSection sessionId={session.id as SessionId} onSelectLens={onSelectLens} />
-
-        {resolvableItems > 0 ? (
+        {hasResolveItems ? (
           <div className="flex flex-col gap-2">
             <Eyebrow label="Resolve" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-2">
@@ -494,66 +402,32 @@ export const SessionOverviewPane = ({
                   onClick={() => onSelectLens('resolve')}
                 />
               ) : null}
+              {resolveQueueItems > 0 ? (
+                <SummaryRow
+                  icon={MessageSquareReply}
+                  tone="success"
+                  label={`${resolveQueueItems} in resolve queue`}
+                  onClick={() => onSelectLens('resolve')}
+                />
+              ) : null}
             </div>
           </div>
         ) : null}
+
+        <LinkedWorkSection sessionId={session.id as SessionId} onSelectLens={onSelectLens} />
+
+        <CompletedSection
+          sessionId={session.id as SessionId}
+          lanes={runs.completedLanes ?? EMPTY_ARRAY}
+          freeAgents={runs.completedFreeAgents ?? EMPTY_ARRAY}
+          onSelectLens={onSelectLens}
+        />
 
         {!isFresh && nudges.length === 0 && !isRunning ? (
           <span className="px-0.5 text-2xs text-muted-foreground/70">
             All clear, nothing running.
           </span>
         ) : null}
-
-        {!isFresh ? (
-          <div className="flex flex-col gap-2">
-            <Eyebrow label="At a glance" muted className="px-0.5 font-medium" />
-            <div className="flex flex-wrap items-stretch gap-1.5">
-              {metrics.map((metric) => (
-                <button
-                  key={metric.kind}
-                  type="button"
-                  onClick={() => onSelectLens(metric.kind)}
-                  className={cn(
-                    'group inline-flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-left transition-colors',
-                    metric.alert
-                      ? 'border-warning/40 hover:border-warning/60'
-                      : 'border-border-soft hover:border-border hover:bg-foreground/[0.02]',
-                    !metric.active && 'opacity-55',
-                  )}
-                >
-                  <metric.icon
-                    size={13}
-                    aria-hidden
-                    className={cn('shrink-0', tintClasses(metric.tone).icon)}
-                  />
-                  <span className="text-sm font-semibold leading-none text-foreground tabular-nums">
-                    {metric.value}
-                  </span>
-                  <span className="text-2xs text-muted-foreground">{metric.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        <Divider />
-
-        <div className="flex flex-col gap-2">
-          <Eyebrow label="Jump to" muted className="px-0.5 font-medium" />
-          <div className="flex flex-wrap gap-1.5">
-            {SECONDARY_CONTEXT_LINKS.map((link) => (
-              <button
-                key={link.kind}
-                type="button"
-                onClick={() => onSelectLens(link.kind)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft bg-background px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-foreground/[0.03] hover:text-foreground"
-              >
-                <link.icon size={13} aria-hidden className={tintClasses(link.tone).icon} />
-                {link.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </ScrollFade>
   );
