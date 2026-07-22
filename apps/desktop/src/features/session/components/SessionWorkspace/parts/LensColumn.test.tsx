@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const { remote, store } = vi.hoisted(() => ({
+const { hooks, remote, store } = vi.hoisted(() => ({
+  hooks: { agentCount: 0, planCount: 0, questionCount: 0 },
   remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
   store: {
     agentKindOverride: {},
@@ -16,15 +17,30 @@ const { remote, store } = vi.hoisted(() => ({
     sessionPendingResolutions: {},
     sessionExternalTasks: {},
     workspaceIntegrations: {},
+    sessionLoading: {
+      'session-1': { agents: false, plans: false },
+    },
   },
 }));
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-  useNonResolverStandaloneAgents: () => [],
-  useSessionOpenQuestions: () => [],
-  useSessionPlans: () => [],
+  useNonResolverStandaloneAgents: () =>
+    Array.from({ length: hooks.agentCount }, (_, index) => ({
+      id: `agent-${index}`,
+      status: 'running',
+    })),
+  useSessionOpenQuestions: () =>
+    Array.from({ length: hooks.questionCount }, (_, index) => ({
+      id: `question-${index}`,
+      status: 'open',
+    })),
+  useSessionPlans: () =>
+    Array.from({ length: hooks.planCount }, (_, index) => ({
+      id: `plan-${index}`,
+      status: 'active',
+    })),
   useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle' }),
   useSessionUnreadLens: () => null,
 }));
@@ -51,8 +67,12 @@ const SESSION = {
 
 beforeEach(() => {
   remote.kind = 'github';
+  hooks.agentCount = 0;
+  hooks.planCount = 0;
+  hooks.questionCount = 0;
   store.sessionExternalTasks = {};
   store.workspaceIntegrations = {};
+  store.sessionLoading['session-1'] = { agents: false, plans: false };
 });
 
 afterEach(cleanup);
@@ -131,6 +151,52 @@ describe('LensColumn', () => {
       '⌘⇧D',
     );
     expect(screen.getByRole('button', { name: 'Linear' }).querySelector('kbd')).toBeNull();
+  });
+
+  it('reserves loading badges while keeping rows selectable', () => {
+    const onSelect = vi.fn();
+    hooks.agentCount = 3;
+    hooks.planCount = 2;
+    hooks.questionCount = 1;
+    store.sessionLoading['session-1'] = { agents: true, plans: true };
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={onSelect}
+        filesCount={0}
+      />,
+    );
+
+    const agents = screen.getByRole('button', { name: 'Agents' });
+    expect(screen.getByTestId('lens-count-loading-agents')).toBeDefined();
+    expect(screen.getByTestId('lens-count-loading-questions')).toBeDefined();
+    expect(screen.getByTestId('lens-count-loading-plans')).toBeDefined();
+    expect(agents.textContent).not.toContain('3');
+    fireEvent.click(agents);
+    expect(onSelect).toHaveBeenCalledWith('agents');
+  });
+
+  it('shows loaded agent and plan counts', () => {
+    hooks.agentCount = 3;
+    hooks.planCount = 2;
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Agents 3' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Plans 2' })).toBeDefined();
+    expect(screen.queryByTestId('lens-count-loading-agents')).toBeNull();
+    expect(screen.queryByTestId('lens-count-loading-plans')).toBeNull();
   });
 
   it('shows provider counts and hides GitLab issues on a GitLab remote', () => {
