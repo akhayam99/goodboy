@@ -19,6 +19,8 @@ type Store = {
   phaseTemplates: Record<string, ReadonlyArray<Workflow>>;
   sessionWorkflows: Record<string, ReadonlyArray<Workflow>>;
   selectAgent: ReturnType<typeof vi.fn>;
+  agentTurnState: Record<string, unknown>;
+  skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
 };
 
 const { store } = vi.hoisted(() => ({
@@ -27,6 +29,8 @@ const { store } = vi.hoisted(() => ({
     phaseTemplates: {},
     sessionWorkflows: {},
     selectAgent: vi.fn(async () => undefined),
+    agentTurnState: {},
+    skipStuckStepAndAdvance: vi.fn(async () => undefined),
   } as Store,
 }));
 

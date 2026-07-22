@@ -6,6 +6,7 @@ import { Popover, cn } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { resolveRootAgent } from '../../../agent-kind';
 import { WorkflowStripStatus } from './WorkflowStripStatus';
+import { WorkflowStepperAdvance } from './WorkflowStepperAdvance';
 
 const POPOVER_WIDTH = 224;
 const POPOVER_EDGE_INSET = 8;
@@ -164,6 +165,12 @@ export const WorkflowStepper = ({ sessionId, session, selectedAgentId }: Props) 
           </div>
         );
       })}
+      <WorkflowStepperAdvance
+        sessionId={sessionId}
+        workflowRunId={run.id}
+        workflow={workflow}
+        runs={phaseRuns}
+      />
       {openClusterRoot != null && popoverPosition != null
         ? createPortal(
             <>
