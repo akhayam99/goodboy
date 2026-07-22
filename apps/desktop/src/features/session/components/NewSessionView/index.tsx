@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
 import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
@@ -23,6 +23,12 @@ import { goalFromIssue } from '../../../../features/integrations/linear/goal-fro
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
+import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
+import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
+import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';
+import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
+import { BranchModeToggle } from './BranchModeToggle';
+import { Section } from './Section';
 
 type Props = {
   onClose: () => void;
@@ -102,7 +108,7 @@ function getDefaultBinary(providerId: ProviderId): string {
     case 'codex':
       return 'codex';
     case 'gemini':
-      return 'gemini';
+      return 'agy';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;
@@ -113,42 +119,16 @@ function getDefaultBinary(providerId: ProviderId): string {
 
 const SLUG_MAX_LEN = 48;
 
-function slugifyLive(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]+/g, '')
-    .trim()
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
-}
+const slugifyLive = (input: string): string => slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
 
-function sanitizeBranchSlug(input: string): string {
-  return input
-    .replace(/[^a-zA-Z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+/, '')
-    .slice(0, SLUG_MAX_LEN);
-}
+const sanitizeBranchSlug = (input: string): string =>
+  sanitizeBranchSlugValue({ input, maxLength: SLUG_MAX_LEN });
 
-function sanitizePrefix(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '')
-    .replace(/^-+/, '')
-    .slice(0, 16);
-}
+const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input });
 
 const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
-function isValidBranchSlug(slug: string): boolean {
-  const s = slug.trim();
-  if (!s) {
-    return false;
-  }
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s) && !s.includes('..');
-}
+const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
 async function generateBranchSlug(goal: string, providerId: ProviderId): Promise<string> {
   const systemPrompt =
@@ -597,89 +577,3 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     </div>
   );
 };
-
-type Tone = 'primary' | 'success';
-
-const TONE_BG: Record<Tone, string> = {
-  primary: 'bg-primary/10',
-  success: 'bg-success/10',
-};
-
-function Section({
-  icon,
-  tone,
-  title,
-  subtitle,
-  children,
-}: {
-  icon: ReactNode;
-  tone: Tone;
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-2">
-      <header className="flex items-start gap-2">
-        <span
-          className={cn(
-            'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
-            TONE_BG[tone],
-          )}
-        >
-          {icon}
-        </span>
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <p className="text-2xs leading-relaxed text-muted-foreground">{subtitle}</p>
-        </div>
-      </header>
-      {children}
-    </section>
-  );
-}
-
-function BranchModeToggle({
-  mode,
-  onChange,
-  disabled,
-}: {
-  mode: 'new' | 'existing';
-  onChange: (next: 'new' | 'existing') => void;
-  disabled: boolean;
-}) {
-  const modes: ReadonlyArray<{ id: 'new' | 'existing'; label: string }> = [
-    { id: 'new', label: 'New' },
-    { id: 'existing', label: 'Existing' },
-  ];
-  return (
-    <div
-      role="tablist"
-      aria-label="branch source"
-      className="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
-    >
-      {modes.map((m) => {
-        const active = mode === m.id;
-        return (
-          <button
-            key={m.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            disabled={disabled}
-            onClick={() => onChange(m.id)}
-            className={cn(
-              'rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors',
-              active
-                ? 'bg-muted text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-              disabled && 'cursor-not-allowed opacity-50',
-            )}
-          >
-            {m.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}

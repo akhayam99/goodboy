@@ -1,13 +1,10 @@
-import { type ChildProcess } from 'node:child_process';
-import { EventEmitter } from 'node:events';
-import { Readable } from 'node:stream';
 import Database from 'better-sqlite3';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ContextEngine } from '../context/engine';
 import { SLOT_KEYS, SLOT_LABELS } from '../context/slots';
-import { Summarizer } from './cli';
+import { Summarizer, type SummarizerDeps } from './client';
 
 function makeDb(): DbInterface {
   const db = new Database(':memory:');
@@ -42,29 +39,11 @@ async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void>
   );
 }
 
-function makeMockSpawnWithOutput(text: string): typeof import('node:child_process').spawn {
-  return vi.fn().mockImplementation(() => {
-    const child = new EventEmitter() as EventEmitter & {
-      stdout: Readable;
-      stderr: Readable;
-      killed: boolean;
-      exitCode: number | null;
-      kill: () => boolean;
-    };
-    child.stdout = new Readable({ read() {} });
-    child.stderr = new Readable({ read() {} });
-    child.killed = false;
-    child.exitCode = null;
-    child.kill = () => true;
-    setImmediate(() => {
-      child.stdout.push(text);
-      child.stdout.push(null);
-      child.stderr.push(null);
-      setImmediate(() => child.emit('close', 0));
-    });
-    return child as unknown as ChildProcess;
-  }) as unknown as typeof import('node:child_process').spawn;
-}
+const makeInvokeFnWithOutput = (text: string): SummarizerDeps['invokeFn'] => {
+  return async <T>(): Promise<T> => {
+    return { stdout: text, stderr: '', exitCode: 0 } as T;
+  };
+};
 
 async function applyDelta(
   engine: ContextEngine,
@@ -85,8 +64,8 @@ describe('synthetic context engine round-trip', () => {
     const engine = new ContextEngine({ db });
 
     const fakeUpserts = SLOT_KEYS.map((key) => ({ key, value: `seeded ${key}` }));
-    const spawnFn = makeMockSpawnWithOutput(JSON.stringify({ upserts: fakeUpserts }));
-    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
+    const invokeFn = makeInvokeFnWithOutput(JSON.stringify({ upserts: fakeUpserts }));
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
 
     const before = await engine.load(sessionId);
     expect(before).toHaveLength(0);
@@ -117,7 +96,7 @@ describe('synthetic context engine round-trip', () => {
     await engine.upsert(sessionId, 'goal', 'original goal');
     await engine.upsert(sessionId, 'decisions', 'original decision');
 
-    const spawnFn = makeMockSpawnWithOutput(
+    const invokeFn = makeInvokeFnWithOutput(
       JSON.stringify({
         upserts: [
           { key: 'goal', value: 'updated goal' },
@@ -125,7 +104,7 @@ describe('synthetic context engine round-trip', () => {
         ],
       }),
     );
-    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
 
     const before = await engine.load(sessionId);
     const result = await summarizer.summarize({
@@ -153,8 +132,8 @@ describe('synthetic context engine round-trip', () => {
       await engine.upsert(sessionId, key, `pre-${key}`);
     }
 
-    const spawnFn = makeMockSpawnWithOutput(JSON.stringify({ upserts: [] }));
-    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
+    const invokeFn = makeInvokeFnWithOutput(JSON.stringify({ upserts: [] }));
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
 
     const before = await engine.load(sessionId);
     const result = await summarizer.summarize({
@@ -177,10 +156,10 @@ describe('synthetic context engine round-trip', () => {
     const engine = new ContextEngine({ db });
 
     for (let i = 0; i < 5; i += 1) {
-      const spawnFn = makeMockSpawnWithOutput(
+      const invokeFn = makeInvokeFnWithOutput(
         JSON.stringify({ upserts: [{ key: 'goal', value: `iteration ${i}` }] }),
       );
-      const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
+      const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
       const slots = await engine.load(sessionId);
       const result = await summarizer.summarize({
         prevSlots: slots,
@@ -204,10 +183,10 @@ describe('synthetic context engine round-trip', () => {
     const engine = new ContextEngine({ db });
 
     const huge = 'x'.repeat(50_000);
-    const spawnFn = makeMockSpawnWithOutput(
+    const invokeFn = makeInvokeFnWithOutput(
       JSON.stringify({ upserts: [{ key: 'last_output_summary', value: huge }] }),
     );
-    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
 
     const result = await summarizer.summarize({
       prevSlots: [],
@@ -228,7 +207,7 @@ describe('synthetic context engine round-trip', () => {
     await seedSession(db, sessionId);
     const engine = new ContextEngine({ db });
 
-    const spawnFn = makeMockSpawnWithOutput(
+    const invokeFn = makeInvokeFnWithOutput(
       JSON.stringify({
         upserts: [
           { key: 'goal', value: 'ok' },
@@ -236,7 +215,7 @@ describe('synthetic context engine round-trip', () => {
         ],
       }),
     );
-    const summarizer = new Summarizer({ providerId: 'cursor', spawnFn });
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
 
     const result = await summarizer.summarize({
       prevSlots: [],

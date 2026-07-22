@@ -10,11 +10,11 @@ import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderGlyph } from './ProviderGlyph';
+import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { AgentLifetime } from './AgentLifetime';
 
-type AgentRowProps = {
+type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -50,7 +50,7 @@ export function AgentRow({
   onRenameCommit,
   onRenameCancel,
   onDelete,
-}: AgentRowProps) {
+}: Props) {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
     `agent ${run.ordinal + 1}`,
@@ -172,7 +172,7 @@ export function AgentRow({
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-1.5">
-              <ProviderGlyph provider={telemetry?.provider} />
+              <ProviderIcon provider={telemetry?.provider} variant="glyph" />
               <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
                 <AgentLifetime run={run} />
               </span>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { BootPhase } from '../../../store';
+import type { BootPhase } from '../../../store/types';
 import { openUrl } from '../../../shared/lib/editor';
 import { DogMascot } from '../../../shared/components/DogMascot';
 

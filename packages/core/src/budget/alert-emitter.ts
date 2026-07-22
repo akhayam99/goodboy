@@ -1,6 +1,12 @@
-import type { BudgetAlert, BudgetAlertKind, BudgetCheckResult, BudgetPeriod } from '@goodboy/types';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
-import type { ProviderName } from '@goodboy/types';
+import type {
+  BudgetAlert,
+  BudgetAlertKind,
+  BudgetCheckResult,
+  BudgetPeriod,
+  IsoDateTime,
+  ProviderName,
+  SessionId,
+} from '@goodboy/types';
 import type { Database } from '@goodboy/db';
 import {
   getSessionBudget,
@@ -15,13 +21,10 @@ export type AlertEmitterDeps = {
   checkSessionBudget: (sessionId: SessionId) => Promise<BudgetCheckResult>;
 };
 
-export const getCurrentPeriodKey = (period: BudgetPeriod): string => {
+export const getCurrentPeriodKey = (_period: BudgetPeriod): string => {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-  if (period === 'monthly') {
-    return `${year}-${month}`;
-  }
   return `${year}-${month}`;
 };
 

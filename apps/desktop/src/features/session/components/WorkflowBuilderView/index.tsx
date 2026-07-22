@@ -1,9 +1,8 @@
-import { type ReactNode, Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   AlertTriangle,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Hand,
@@ -20,7 +19,6 @@ import {
   Target,
   Undo2,
   Wand2,
-  type LucideIcon,
 } from 'lucide-react';
 import { Button, Divider, Skeleton, Textarea, cn } from '@goodboy/ui';
 import {
@@ -59,16 +57,18 @@ import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
 import { formatError } from '../../../../shared/lib/errors';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { useToast } from '../../../../app/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
+import { ChainAfterSelect } from './parts/ChainAfterSelect';
+import { LaunchToggleRow } from './parts/LaunchToggleRow';
+import { SectionHeader } from './parts/SectionHeader';
+import { StageHeading } from './parts/StageHeading';
+import { StepperRail } from './parts/StepperRail';
+import { TriggerButton } from './parts/TriggerButton';
 
 type Props = {
   readonly session: Session;
@@ -140,11 +140,8 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
 
 type Stage = 0 | 1 | 2;
 
-const STAGE_META: ReadonlyArray<{ readonly label: string; readonly icon: LucideIcon }> = [
-  { label: 'Goal', icon: Target },
-  { label: 'Approach', icon: Layers },
-  { label: 'Steps', icon: ListChecks },
-];
+const SECTION_LABEL_CLS =
+  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70';
 
 const initialStage = (d: WorkflowBuilderDraft | undefined): Stage => {
   if (!d) {
@@ -1245,228 +1242,3 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     </StudioShell>
   );
 };
-
-type SectionHeaderProps = {
-  readonly icon: LucideIcon;
-  readonly label: string;
-  readonly htmlFor?: string;
-  readonly children?: ReactNode;
-};
-
-const SECTION_LABEL_CLS =
-  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70';
-
-const SectionHeader = ({ icon: Icon, label, htmlFor, children }: SectionHeaderProps) => (
-  <div className="flex items-center gap-2">
-    {htmlFor ? (
-      <label htmlFor={htmlFor} className={SECTION_LABEL_CLS}>
-        <Icon size={11} aria-hidden /> {label}
-      </label>
-    ) : (
-      <span className={SECTION_LABEL_CLS}>
-        <Icon size={11} aria-hidden /> {label}
-      </span>
-    )}
-    {children ? (
-      <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">{children}</div>
-    ) : null}
-  </div>
-);
-
-type TriggerButtonProps = {
-  readonly active: boolean;
-  readonly disabled: boolean;
-  readonly onClick: () => void;
-  readonly icon: ReactNode;
-  readonly label: string;
-};
-
-const TriggerButton = ({ active, disabled, onClick, icon, label }: TriggerButtonProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-pressed={active}
-    className={cn(
-      'inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors',
-      active
-        ? 'bg-background text-foreground shadow-sm'
-        : 'text-muted-foreground hover:text-foreground',
-    )}
-  >
-    {icon} {label}
-  </button>
-);
-
-type ChainRun = { readonly run: { readonly id: WorkflowRunId }; readonly template: Workflow };
-
-type ChainAfterSelectProps = {
-  readonly runs: ReadonlyArray<ChainRun>;
-  readonly value: WorkflowRunId | null;
-  readonly disabled: boolean;
-  readonly onChange: (id: WorkflowRunId) => void;
-};
-
-const ChainAfterSelect = ({ runs, value, disabled, onChange }: ChainAfterSelectProps) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
-  const selected = runs.find((r) => r.run.id === value) ?? null;
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
-        aria-label="run after which workflow"
-        className={cn(
-          'flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
-          open
-            ? 'border-primary bg-primary/5'
-            : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
-      >
-        <Link2 size={11} className="shrink-0 text-muted-foreground" aria-hidden />
-        <span className="max-w-[12rem] truncate font-medium text-foreground">
-          {selected?.template.name ?? 'Select workflow'}
-        </span>
-        <ChevronDown
-          size={11}
-          className={cn(
-            'shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-180',
-          )}
-          aria-hidden
-        />
-      </button>
-      {open ? (
-        <div
-          className={cn(POPUP_BASE, 'min-w-[12rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
-        >
-          {runs.map(({ run, template }) => {
-            const active = run.id === value;
-            return (
-              <button
-                key={run.id}
-                type="button"
-                onClick={() => {
-                  onChange(run.id);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
-                  active
-                    ? 'bg-primary/10 text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                )}
-              >
-                <span className="flex-1 truncate">{template.name}</span>
-                {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-};
-
-type LaunchToggleRowProps = {
-  readonly title: string;
-  readonly description: string;
-  readonly checked: boolean;
-  readonly onChange: (v: boolean) => void;
-  readonly disabled: boolean;
-  readonly beta?: boolean;
-};
-
-const LaunchToggleRow = ({
-  title,
-  description,
-  checked,
-  onChange,
-  disabled,
-  beta,
-}: LaunchToggleRowProps) => (
-  <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-    <p className="min-w-0 text-2xs leading-relaxed text-muted-foreground/60">{description}</p>
-    <ToggleSwitch
-      label={title}
-      beta={beta}
-      checked={checked}
-      onChange={onChange}
-      disabled={disabled}
-    />
-  </div>
-);
-
-type StepperRailProps = {
-  readonly current: Stage;
-  readonly canReach: (i: Stage) => boolean;
-  readonly disabled: boolean;
-  readonly onJump: (i: Stage) => void;
-};
-
-const StepperRail = ({ current, canReach, disabled, onJump }: StepperRailProps) => (
-  <nav
-    aria-label="workflow builder steps"
-    className="flex shrink-0 items-center justify-center gap-0.5 px-6 py-3"
-  >
-    {STAGE_META.map((meta, i) => {
-      const step = i as Stage;
-      const reachable = canReach(step);
-      const active = current === step;
-      const done = current > step;
-      const Icon = meta.icon;
-      return (
-        <Fragment key={meta.label}>
-          {i > 0 ? (
-            <ChevronRight size={12} className="shrink-0 text-muted-foreground/30" aria-hidden />
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onJump(step)}
-            disabled={disabled || (!done && !reachable)}
-            aria-current={active ? 'step' : undefined}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              active && 'bg-primary/10 text-primary ring-1 ring-primary/20',
-              done && !active && 'text-foreground hover:bg-muted/50',
-              !active && !done && reachable && 'text-muted-foreground hover:bg-muted/40',
-              !active && !done && !reachable && 'cursor-not-allowed text-muted-foreground/40',
-            )}
-          >
-            <span
-              className={cn(
-                'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums',
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : done
-                    ? 'bg-success/15 text-success'
-                    : 'bg-muted/60 text-muted-foreground',
-              )}
-            >
-              {done ? <Check size={10} aria-hidden /> : i + 1}
-            </span>
-            <span className="text-xs font-medium">{meta.label}</span>
-          </button>
-        </Fragment>
-      );
-    })}
-  </nav>
-);
-
-type StageHeadingProps = {
-  readonly title: string;
-  readonly subtitle: string;
-};
-
-const StageHeading = ({ title, subtitle }: StageHeadingProps) => (
-  <header className="flex flex-col gap-1">
-    <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
-    <p className="text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
-  </header>
-);

@@ -70,7 +70,7 @@ pub fn set_workspace_overrides(
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
     let scout_val: Option<i64> = overrides.scout_fanout.map(|v| if v { 1 } else { 0 });
-    let now = now_ms();
+    let now = crate::util::now_ms();
     conn.execute(
         "UPDATE workspaces
          SET default_provider_id = ?1,
@@ -133,7 +133,7 @@ pub fn set_session_overrides(
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
-    let now = now_ms();
+    let now = crate::util::now_ms();
     conn.execute(
         "UPDATE sessions
          SET default_provider_id = ?1,
@@ -154,12 +154,4 @@ pub fn set_session_overrides(
         ],
     )?;
     Ok(())
-}
-
-fn now_ms() -> i64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64
 }

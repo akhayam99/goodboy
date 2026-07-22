@@ -14,6 +14,14 @@ export type ClaudePermissionMode =
   | 'dontAsk'
   | 'plan';
 
+export const CLAUDE_PERMISSION_MODES = [
+  'default',
+  'acceptEdits',
+  'bypassPermissions',
+  'dontAsk',
+  'plan',
+] as const satisfies readonly ClaudePermissionMode[];
+
 export type PermissionRuleScope = 'workspace' | 'session' | 'global';
 
 export type PermissionDecisionKind = 'allow' | 'deny' | 'ask';

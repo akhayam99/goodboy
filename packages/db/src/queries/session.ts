@@ -1,3 +1,4 @@
+import { CLAUDE_PERMISSION_MODES, PROVIDER_IDS } from '@goodboy/types';
 import type {
   ClaudePermissionMode,
   IsoDateTime,
@@ -7,6 +8,7 @@ import type {
   SessionId,
   SessionProviderPreference,
   TurnState,
+  VerbosityLevel,
   WorkflowId,
   WorkflowRun,
   WorkflowRunId,
@@ -27,7 +29,7 @@ type SessionWorkflowRow = {
   discarded_at: string | null;
 };
 
-function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
+const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -41,7 +43,7 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
   };
-}
+};
 
 type SessionRow = {
   id: string;
@@ -65,12 +67,12 @@ type SessionRow = {
   updated_at: number;
 };
 
-function toState(kind: TurnState['kind'], payload: string): TurnState {
+const toState = (kind: TurnState['kind'], payload: string): TurnState => {
   const data = JSON.parse(payload) as Record<string, unknown>;
   return { kind, ...data } as TurnState;
-}
+};
 
-const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(['anthropic', 'cursor', 'codex', 'gemini']);
+const VALID_PROVIDER_IDS: ReadonlySet<string> = new Set(PROVIDER_IDS);
 
 function serializeEnabledProviders(
   providers: ReadonlyArray<ProviderId> | undefined,
@@ -92,22 +94,16 @@ function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | 
   return parsed.length > 0 ? parsed : undefined;
 }
 
-const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set([
-  'default',
-  'acceptEdits',
-  'bypassPermissions',
-  'dontAsk',
-  'plan',
-]);
+const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set(CLAUDE_PERMISSION_MODES);
 
-function toPermissionMode(raw: string | null): ClaudePermissionMode {
+const toPermissionMode = (raw: string | null): ClaudePermissionMode => {
   if (raw !== null && VALID_PERMISSION_MODES.has(raw)) {
     return raw as ClaudePermissionMode;
   }
   return 'bypassPermissions';
-}
+};
 
-function toProviderPreference(row: SessionRow): SessionProviderPreference {
+const toProviderPreference = (row: SessionRow): SessionProviderPreference => {
   const defaultProvider: ProviderId = VALID_PROVIDER_IDS.has(row.provider_default)
     ? (row.provider_default as ProviderId)
     : 'anthropic';
@@ -117,13 +113,13 @@ function toProviderPreference(row: SessionRow): SessionProviderPreference {
     allowTurnOverride: row.provider_allow_override !== 0,
     ...(enabledProviders && { enabledProviders }),
   };
-}
+};
 
-function toDomain(
+const toDomain = (
   row: SessionRow,
   contextSlots: Session['contextSlots'],
   workflowRuns: ReadonlyArray<WorkflowRun> = [],
-): Session {
+): Session => {
   return {
     id: row.id as SessionId,
     workspaceId: row.workspace_id as WorkspaceId,
@@ -150,7 +146,7 @@ function toDomain(
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
   };
-}
+};
 
 async function loadWorkflowsForSession(
   db: Database,
@@ -164,7 +160,7 @@ async function loadWorkflowsForSession(
 }
 
 export type SessionConfigUpdate = {
-  verbosity?: 'brief' | 'normal' | 'verbose' | null;
+  verbosity?: VerbosityLevel | null;
   effort?: ModelEffort | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
@@ -212,10 +208,10 @@ export const updateSessionConfig = async (
   await db.execute(`UPDATE sessions SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
-function splitState(state: TurnState): { kind: TurnState['kind']; payload: string } {
+const splitState = (state: TurnState): { kind: TurnState['kind']; payload: string } => {
   const { kind, ...rest } = state;
   return { kind, payload: JSON.stringify(rest) };
-}
+};
 
 export const insertSession = async (db: Database, session: Session): Promise<void> => {
   const { kind, payload } = splitState(session.state);
@@ -318,10 +314,10 @@ export const getSessionById = async (db: Database, id: SessionId): Promise<Sessi
   return toDomain(row, [], workflowRuns);
 };
 
-async function hydrateSessions(
+const hydrateSessions = async (
   db: Database,
   rows: ReadonlyArray<SessionRow>,
-): Promise<ReadonlyArray<Session>> {
+): Promise<ReadonlyArray<Session>> => {
   if (rows.length === 0) {
     return [];
   }
@@ -340,7 +336,7 @@ async function hydrateSessions(
   }
 
   return rows.map((row) => toDomain(row, [], runsBySession.get(row.id) ?? []));
-}
+};
 
 export const listSessionsForWorkspace = async (
   db: Database,

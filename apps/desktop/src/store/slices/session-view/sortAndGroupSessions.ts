@@ -6,7 +6,7 @@ import type {
   SessionStage,
   SessionViewPrefs,
 } from '@goodboy/types';
-import type { SessionGithubState } from '../../store';
+import type { SessionGithubState } from '../../types';
 import { PR_GROUP_ORDER, STAGE_ORDER, type GroupedSessions } from './types';
 
 function compareStrLocale(a: string, b: string): number {

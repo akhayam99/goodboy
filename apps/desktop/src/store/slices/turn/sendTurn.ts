@@ -4,12 +4,7 @@ import {
   buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
-  extractCommentResolved,
-  extractCommentWontfix,
-  extractPlanFromMarker,
-  extractScoutSplit,
   findReusableAgent,
-  fallbackStepOutputSummary,
   isFallbackStepOutputSummary,
   resolveModelForProvider,
   runsForWorkflowRun,
@@ -25,7 +20,6 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import type {
-  Agent,
   AgentId,
   AttachmentInput,
   BudgetAlert,
@@ -47,11 +41,7 @@ import type {
 import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
-import {
-  invokeAgentInsert,
-  invokeAgentList,
-  invokeAgentUpdateStatus,
-} from '../../../features/workflows/workflows';
+import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
@@ -62,11 +52,7 @@ import {
 import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
-import {
-  AGENT_KIND_DEFAULTS,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { refreshPricingTable } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
@@ -84,6 +70,8 @@ import {
   toRelPath,
 } from '../../turn-helpers';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
+import { completeResolvedAgent } from './completeResolvedAgent';
+import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
 import { dispatchParallelTurn } from './dispatchParallelTurn';
@@ -458,26 +446,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
         : runsForSession;
       const reusable = findReusableAgent(scopedRuns, phaseDefinition.id);
-      let resolved: Agent;
-      if (reusable) {
-        resolved = await invokeAgentUpdateStatus(reusable.id, {
-          status: 'running',
-          providerRunId: runId,
-          startedAt: now(),
-        });
-      } else {
-        resolved = await invokeAgentInsert({
-          sessionId,
-          stepId: phaseDefinition.id,
-          ...(phaseWorkflowRunId != null && { workflowRunId: phaseWorkflowRunId }),
-          ordinal: phaseDefinition.ordinal,
-          name: phaseDefinition.name,
-          status: 'running',
-          providerRunId: runId,
-          startedAt: now(),
-          kind: inferAgentKindFromName(phaseDefinition.name),
-        });
-      }
+      const resolved = await resolvePhaseAgent({
+        sessionId,
+        definition: phaseDefinition,
+        workflowRunId: phaseWorkflowRunId,
+        reusable,
+        providerRunId: runId,
+        now,
+      });
       resolvedAgentId = resolved.id;
       const refreshedRuns = await invokeAgentList(sessionId);
       set((state) => ({
@@ -486,7 +462,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (phaseTransitionEvent) {
         get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
       }
-    } else if (!phaseDefinition && parallelDispatch === null) {
+    }
+    if (!phaseDefinition && parallelDispatch === null) {
       await invokeAgentUpdateStatus(activeAgentId, {
         status: 'running',
         providerRunId: runId,
@@ -775,54 +752,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           : { kind: 'succeeded', finishedAt: now() },
       );
       if (resolvedAgentId && !wasCancelled) {
-        const ranAgent = get().sessionPhaseRuns[sessionId]?.find((r) => r.id === resolvedAgentId);
-        const ranKind = ranAgent
-          ? ((ranAgent.kind as AgentKind | undefined) ??
-            get().agentKindOverride[resolvedAgentId] ??
-            inferAgentKindFromName(ranAgent.name))
-          : null;
-        const isScoutNode =
-          ranKind === 'scout' &&
-          (ranAgent?.parentAgentId != null || extractScoutSplit(assistantText) != null);
-        if (isScoutNode) {
-          await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
-        } else if (ranAgent?.parentAgentId) {
-          await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText);
-        } else if (!!ranAgent?.stepId && !!ranAgent?.workflowRunId) {
-          const planCapturedThisTurn = extractPlanFromMarker(assistantText) !== null;
-          const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
-            sessionId,
-            resolvedAgentId,
-            assistantText,
-            planCapturedThisTurn,
-          );
+        const shouldAutoAdvance = await completeResolvedAgent({
+          set,
+          get,
+          sessionId,
+          resolvedAgentId,
+          assistantText,
+          now,
+        });
+        if (shouldAutoAdvance !== null) {
           shouldAutoAdvanceWorkflow = shouldAutoAdvance;
-        } else {
-          const outputSummary = fallbackStepOutputSummary({ output: assistantText });
-          await invokeAgentUpdateStatus(resolvedAgentId, {
-            status: 'completed',
-            outputSummary,
-            completedAt: now(),
-          });
-          const refreshedRuns = await invokeAgentList(sessionId);
-          set((state) => ({
-            sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-          }));
-          void get().refreshUnreadWorkspaces();
-
-          if (ranKind === 'resolver') {
-            const resolvedMarker = extractCommentResolved(assistantText);
-            const wontfixMarker = extractCommentWontfix(assistantText);
-            const nextState = resolvedMarker ? 'committed' : wontfixMarker ? 'wontfix' : 'awaiting';
-            set((state) => ({
-              resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
-            }));
-            if (resolvedMarker || wontfixMarker) {
-              void get().activateNextResolver(sessionId);
-            }
-          }
         }
-      } else if (resolvedAgentId && wasCancelled) {
+      }
+      if (resolvedAgentId && wasCancelled) {
         const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },

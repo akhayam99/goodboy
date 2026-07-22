@@ -233,20 +233,7 @@ pub enum PhaseError {
     RunNotFound(String),
 }
 
-impl Serialize for PhaseError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serde_json::Map::new();
-        map.insert(
-            "kind".to_string(),
-            serde_json::Value::String(self.kind().to_string()),
-        );
-        map.insert(
-            "message".to_string(),
-            serde_json::Value::String(self.to_string()),
-        );
-        serde_json::Value::Object(map).serialize(serializer)
-    }
-}
+crate::util::impl_error_serialize!(PhaseError);
 
 impl PhaseError {
     fn kind(&self) -> &'static str {
@@ -430,7 +417,7 @@ pub fn workflow_upsert(
     input: PhaseTemplateUpsertInput,
 ) -> Result<WorkflowRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let now = iso_now();
+    let now = crate::util::iso_now();
 
     // Resolve id: use provided or look up by (workspace_id, name) or generate new.
     let id = if let Some(ref given_id) = input.id {
@@ -449,7 +436,7 @@ pub fn workflow_upsert(
                 None => None,
             }
         };
-        existing.unwrap_or_else(uuid_v4)
+        existing.unwrap_or_else(crate::util::uuid_v4)
     };
 
     let created_at: String = {
@@ -492,7 +479,7 @@ pub fn workflow_upsert(
     let mut kept_ids: Vec<String> = Vec::with_capacity(input.steps.len());
     let mut steps = Vec::with_capacity(input.steps.len());
     for def in &input.steps {
-        let def_id = def.id.clone().unwrap_or_else(uuid_v4);
+        let def_id = def.id.clone().unwrap_or_else(crate::util::uuid_v4);
         conn.execute(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
@@ -749,8 +736,8 @@ pub fn step_def_upsert(
     input: StepDefUpsertInput,
 ) -> Result<StepDefRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let now = iso_now();
-    let id = input.id.clone().unwrap_or_else(uuid_v4);
+    let now = crate::util::iso_now();
+    let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
     let created_at: String = {
         let mut stmt =
             conn.prepare("SELECT created_at FROM step_library WHERE id = ?1 LIMIT 1")?;
@@ -878,7 +865,7 @@ pub fn agent_insert(
     input: PhaseRunInsertInput,
 ) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let id = input.id.clone().unwrap_or_else(uuid_v4);
+    let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
 
     conn.execute(
         "INSERT INTO agents
@@ -1097,90 +1084,4 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
     )?;
     let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
-}
-
-// ---------------------------------------------------------------------------
-// Utilities (mirrors skills.rs — kept independent per module)
-// ---------------------------------------------------------------------------
-
-fn uuid_v4() -> String {
-    use sha2::{Digest, Sha256};
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let t = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    let pid = std::process::id();
-    static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let seq = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let input = format!("{}-{}-{}", t.as_nanos(), pid, seq);
-    let hash = Sha256::digest(input.as_bytes());
-    format!(
-        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-4{:01x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
-        hash[0], hash[1], hash[2], hash[3],
-        hash[4], hash[5],
-        hash[6] & 0x0f, hash[7],
-        (hash[8] & 0x3f) | 0x80, hash[9],
-        hash[10], hash[11], hash[12], hash[13], hash[14], hash[15],
-    )
-}
-
-fn iso_now() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64;
-    let (year, month, day, hour, min, sec) = epoch_secs_to_datetime(secs);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        year, month, day, hour, min, sec
-    )
-}
-
-fn is_leap_year(y: i64) -> bool {
-    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
-}
-
-fn days_in_month(y: i64, m: u32) -> i64 {
-    match m {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if is_leap_year(y) {
-                29
-            } else {
-                28
-            }
-        }
-        _ => unreachable!(),
-    }
-}
-
-fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u32) {
-    let sec = (s % 60) as u32;
-    s /= 60;
-    let min = (s % 60) as u32;
-    s /= 60;
-    let hour = (s % 24) as u32;
-    s /= 24;
-    let mut year: i64 = 1970;
-    loop {
-        let days = if is_leap_year(year) { 366 } else { 365 };
-        if s < days {
-            break;
-        }
-        s -= days;
-        year += 1;
-    }
-    let mut month: u32 = 1;
-    loop {
-        let d = days_in_month(year, month);
-        if s < d {
-            break;
-        }
-        s -= d;
-        month += 1;
-    }
-    let day = s as u32 + 1;
-    (year, month, day, hour, min, sec)
 }

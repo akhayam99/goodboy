@@ -519,79 +519,60 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
 
 #[tauri::command]
 pub fn get_provider_status(state: State<'_, ProviderState>) -> ProviderStatus {
-    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
-        id: "anthropic".to_string(),
-        binary: "claude".to_string(),
-        available: false,
-        version: None,
-        error: Some("status mutex poisoned".to_string()),
-    })
+    get_status(&state.0, "anthropic", "claude")
 }
 
 #[tauri::command]
 pub fn refresh_provider_status(state: State<'_, ProviderState>) -> ProviderStatus {
-    let next = detect_claude();
-    if let Ok(mut current) = state.0.lock() {
-        *current = next.clone();
-    }
-    next
+    refresh_status(&state.0, detect_claude)
 }
 
 #[tauri::command]
 pub fn get_cursor_status(state: State<'_, CursorState>) -> ProviderStatus {
-    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
-        id: "cursor".to_string(),
-        binary: "cursor-agent".to_string(),
-        available: false,
-        version: None,
-        error: Some("status mutex poisoned".to_string()),
-    })
+    get_status(&state.0, "cursor", "cursor-agent")
 }
 
 #[tauri::command]
 pub fn refresh_cursor_status(state: State<'_, CursorState>) -> ProviderStatus {
-    let next = detect_cursor();
-    if let Ok(mut current) = state.0.lock() {
-        *current = next.clone();
-    }
-    next
+    refresh_status(&state.0, detect_cursor)
 }
 
 #[tauri::command]
 pub fn get_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
-    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
-        id: "codex".to_string(),
-        binary: "codex".to_string(),
-        available: false,
-        version: None,
-        error: Some("status mutex poisoned".to_string()),
-    })
+    get_status(&state.0, "codex", "codex")
 }
 
 #[tauri::command]
 pub fn refresh_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
-    let next = detect_codex();
-    if let Ok(mut current) = state.0.lock() {
-        *current = next.clone();
-    }
-    next
+    refresh_status(&state.0, detect_codex)
 }
 
 #[tauri::command]
 pub fn get_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
-    state.0.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
-        id: "gemini".to_string(),
-        binary: "agy".to_string(),
+    get_status(&state.0, "gemini", "agy")
+}
+
+#[tauri::command]
+pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
+    refresh_status(&state.0, detect_gemini)
+}
+
+fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> ProviderStatus {
+    state.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
+        id: id.to_string(),
+        binary: binary.to_string(),
         available: false,
         version: None,
         error: Some("status mutex poisoned".to_string()),
     })
 }
 
-#[tauri::command]
-pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
-    let next = detect_gemini();
-    if let Ok(mut current) = state.0.lock() {
+fn refresh_status(
+    state: &Mutex<ProviderStatus>,
+    detect: fn() -> ProviderStatus,
+) -> ProviderStatus {
+    let next = detect();
+    if let Ok(mut current) = state.lock() {
         *current = next.clone();
     }
     next

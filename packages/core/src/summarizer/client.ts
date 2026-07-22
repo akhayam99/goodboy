@@ -1,35 +1,9 @@
 import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { computeCostUsd } from '../providers/claude/cost';
-import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
-import { CURSOR_AUTO_MODEL } from '../providers/cursor/models';
+import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 import { isSlotKey, SLOT_KEYS, type SlotKey } from '../context/slots';
 import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
 import { SUMMARIZER_SYSTEM_PROMPT } from './prompt';
-
-export const getCheapModel = (providerId: ProviderId): string => {
-  if (providerId === 'cursor') {
-    return CURSOR_AUTO_MODEL;
-  }
-  const caps = PROVIDER_CAPABILITIES[providerId];
-  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
-};
-
-export const getDefaultBinary = (providerId: ProviderId): string => {
-  switch (providerId) {
-    case 'anthropic':
-      return 'claude';
-    case 'cursor':
-      return 'cursor-agent';
-    case 'codex':
-      return 'codex';
-    case 'gemini':
-      return 'gemini';
-    default: {
-      const _exhaustive: never = providerId;
-      throw new Error(`unknown provider: ${_exhaustive}`);
-    }
-  }
-};
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
 

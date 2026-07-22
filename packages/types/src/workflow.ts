@@ -94,7 +94,7 @@ export type Agent = Readonly<{
   lastFinishedAt?: IsoDateTime;
   lastViewedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
-  verbosity?: 'brief' | 'normal' | 'verbose';
+  verbosity?: VerbosityLevel;
   effort?: ModelEffort;
   modelOverride?: string;
   providerOverride?: string;

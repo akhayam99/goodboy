@@ -12,6 +12,7 @@ import { GeminiAdapter } from './gemini/adapter';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type { ProviderRegistryCapabilities };
+export { getCapabilities } from './capabilities';
 
 export type ProviderDeps = {
   readonly binary?: string;
@@ -45,9 +46,7 @@ export const createProvider = (id: ProviderId, deps: ProviderDeps = {}): Provide
 };
 
 export const listSupportedProviders = (): ReadonlyArray<ProviderId> => {
-  return ['anthropic', 'cursor', 'codex', 'gemini'];
-};
-
-export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities => {
-  return PROVIDER_CAPABILITIES[id];
+  return Object.keys(PROVIDER_CAPABILITIES).filter(
+    (providerId): providerId is ProviderId => providerId in PROVIDER_CAPABILITIES,
+  );
 };

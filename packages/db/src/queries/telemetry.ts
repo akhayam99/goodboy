@@ -90,14 +90,14 @@ const SUMMARY_SELECT = `
   COUNT(*) AS count
 `;
 
-function toSummary(row: SummaryRow | undefined): TelemetrySummary {
+const toSummary = (row: SummaryRow | undefined): TelemetrySummary => {
   return {
     inputTokens: row?.input ?? 0,
     outputTokens: row?.output ?? 0,
     estimatedCostUsd: row?.cost ?? 0,
     recordCount: row?.count ?? 0,
   };
-}
+};
 
 export const summarizeSessionTelemetry = async (
   db: Database,

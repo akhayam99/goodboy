@@ -55,7 +55,7 @@ describe('autoModelForRole', () => {
     it('picks the expensive codex model for a high-tier role', () => {
       expect(autoModelForRole('planner', ['codex'])).toEqual({
         provider: 'codex',
-        model: 'gpt-5.5',
+        model: 'gpt-5.6',
       });
     });
 

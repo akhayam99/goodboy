@@ -75,7 +75,7 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
-export { PROVIDER_API_KEY_ENV } from './provider-registry';
+export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
 export type { ProviderCredential } from './provider-credential';
 export { CLI_CREDENTIAL } from './provider-credential';
 export type {
@@ -145,6 +145,7 @@ export type {
   PermissionRulePattern,
   PermissionRuleScope,
 } from './permission';
+export { CLAUDE_PERMISSION_MODES } from './permission';
 export type {
   DiffComment,
   DiffCommentAnchor,

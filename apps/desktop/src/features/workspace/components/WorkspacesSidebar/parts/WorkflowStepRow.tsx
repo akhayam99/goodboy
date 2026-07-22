@@ -10,7 +10,7 @@ import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderGlyph } from './ProviderGlyph';
+import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import type { WorkflowBlockReason } from '../lib';
 
@@ -225,9 +225,10 @@ export function WorkflowStepRow({
             </span>
           )}
           <div className="flex shrink-0 items-center gap-1.5">
-            <ProviderGlyph
+            <ProviderIcon
               provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
               muted={isPendingFuture}
+              variant="glyph"
             />
             <span
               className={cn(

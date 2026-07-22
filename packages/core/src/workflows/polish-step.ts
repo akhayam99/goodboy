@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import { getCheapModel, getDefaultBinary } from '../summarizer/client';
+import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const STEP_POLISH_SYSTEM_PROMPT = `You polish step instructions for AI coding workflows.
 

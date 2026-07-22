@@ -171,6 +171,20 @@ describe('finalizeWorkflowStep output summary', () => {
     );
   });
 
+  it('does not fail the step when the agent stopped to ask an open question', async () => {
+    const finalize = buildHarness();
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      'I need input. <<ctx-question>>which flow types?<</ctx-question>>',
+      false,
+    );
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(result).toEqual({ shouldAutoAdvance: false });
+  });
+
   it('completes with deterministic fallback when the session row is missing', async () => {
     const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
     const finalize = buildHarness({ sessions: [] });

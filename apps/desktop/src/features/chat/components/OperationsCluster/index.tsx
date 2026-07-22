@@ -7,7 +7,7 @@ import { TranscriptCard } from '../TranscriptCards';
 import { MARKER_ACCENT } from '../marker-accents';
 import { TranscriptShell } from '../TranscriptShell';
 
-type OperationsClusterProps = {
+type Props = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
@@ -39,7 +39,7 @@ export const OperationsCluster = ({
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
-}: OperationsClusterProps) => {
+}: Props) => {
   const [open, setOpen] = useState(false);
   const running = runningTool(items);
   const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);

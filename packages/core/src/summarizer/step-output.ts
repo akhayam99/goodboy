@@ -1,10 +1,5 @@
-import {
-  getCheapModel,
-  getDefaultBinary,
-  SummarizerParseError,
-  SummarizerSpawnError,
-  type SummarizerDeps,
-} from './client';
+import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
+import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
 
 const MAX_SUMMARY_LENGTH = 1200;
 const MAX_FIRST_LINE_LENGTH = 120;

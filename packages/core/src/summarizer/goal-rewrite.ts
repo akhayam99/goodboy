@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import { getCheapModel, getDefaultBinary } from './client';
+import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const GOAL_REWRITE_SYSTEM_PROMPT = `You clean the "goal" note for an AI coding session that is driven by a multi-step agent workflow. Each workflow step runs as its own dedicated agent, so the goal note must describe ONLY the desired end result, never the process used to reach it.
 

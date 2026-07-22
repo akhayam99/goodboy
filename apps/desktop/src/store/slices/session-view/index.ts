@@ -1,4 +1,5 @@
 import { getSessionViewPrefs } from './getSessionViewPrefs';
+import { createInitialSessionViewState } from './createInitialSessionViewState';
 import { sessionsSidebarStorage } from './sessionsSidebarStorage';
 import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
@@ -21,14 +22,8 @@ export type { SessionStudio, LensKind, LensHistory } from './types';
 
 export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {
   return {
+    ...createInitialSessionViewState({}),
     sessionsSidebarCollapsed: sessionsSidebarStorage.read(),
-    sessionViewPrefs: {},
-    activeLens: {},
-    lensHistory: {},
-    focusedPlanId: {},
-    sessionStudio: {},
-    workflowExpand: {},
-    focusedWorkflowRunId: {},
     setSessionsSidebarCollapsed: (next) => {
       sessionsSidebarStorage.write(next);
       set({ sessionsSidebarCollapsed: next });

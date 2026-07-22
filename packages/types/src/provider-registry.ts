@@ -1,5 +1,12 @@
 export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini';
 
+export const PROVIDER_IDS = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+] as const satisfies readonly ProviderId[];
+
 export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
 
 export type ModelFamily =
@@ -44,9 +51,9 @@ export type ProviderInfo = {
   readonly identity: string | null;
 };
 
-export const PROVIDER_API_KEY_ENV: Record<ProviderId, string> = {
+export const PROVIDER_API_KEY_ENV = {
   anthropic: 'ANTHROPIC_API_KEY',
   cursor: 'CURSOR_API_KEY',
   codex: 'OPENAI_API_KEY',
   gemini: 'GEMINI_API_KEY',
-};
+} satisfies Record<ProviderId, string>;

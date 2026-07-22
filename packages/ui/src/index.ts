@@ -12,11 +12,6 @@ export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 export { Dialog } from './components/Dialog';
 export type { DialogProps, DialogSize } from './components/Dialog';
-export { DialogSectionHeader } from './components/DialogSectionHeader';
-export type {
-  DialogSectionHeaderProps,
-  DialogSectionHeaderTone,
-} from './components/DialogSectionHeader';
 export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { EmptyState } from './components/EmptyState';
@@ -40,7 +35,7 @@ export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
 export { Select } from './components/Select';
 export type { SelectProps, SelectSize } from './components/Select';
-export { Skeleton, SkeletonRow, SkeletonCard, SkeletonText } from './components/Skeleton';
+export { Skeleton, SkeletonText } from './components/Skeleton';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
 export { StatusDot } from './components/StatusDot';

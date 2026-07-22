@@ -6,20 +6,14 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { useAppStore, useSessions } from '../../../../store';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
 
 const SLUG_MAX_LEN = 48;
 
 export const slugify = (input: string): string => {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]+/g, '')
-    .trim()
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, SLUG_MAX_LEN)
-    .replace(/-+$/, '');
+  return slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
 };
 
 export const gitlabBranchSlug = (issue: GitlabIssue): string => {

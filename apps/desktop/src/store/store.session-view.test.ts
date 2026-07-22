@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
-import type { SessionGithubState } from './store';
+import type { SessionGithubState } from './types';
 import {
   createSessionViewSlice,
   deriveSessionStage,

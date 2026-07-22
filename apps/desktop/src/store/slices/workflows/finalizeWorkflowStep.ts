@@ -1,5 +1,5 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractStepDone, fallbackStepOutputSummary } from '@goodboy/core';
+import { extractMarkers, extractStepDone, fallbackStepOutputSummary } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -54,6 +54,11 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     const hasMarker = extractStepDone(assistantText) !== null;
     const satisfied = !!opts?.force || hasMarker || planCapturedThisTurn;
     if (!satisfied) {
+      const askedQuestion = extractMarkers(assistantText).questions.length > 0;
+      if (askedQuestion) {
+        continueAttempts.delete(agentId);
+        return { shouldAutoAdvance: false };
+      }
       const handsFree = isHandsFree(get, sessionId, agent.workflowRunId);
       const attempts = continueAttempts.get(agentId) ?? 0;
       if (handsFree && attempts < MAX_CONTINUE) {

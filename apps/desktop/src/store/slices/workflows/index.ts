@@ -17,6 +17,7 @@ import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
 import { saveStepDef } from './saveStepDef';
 import { advanceScoutTree } from './scoutTree';
+import { skipStuckStepAndAdvance } from './skipStuckStepAndAdvance';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { startWorkflowRun } from './startWorkflowRun';
 import type { GetFn, SetFn } from './types';
@@ -42,6 +43,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     advanceClusterImplementation: advanceClusterImplementation(set, get),
     finalizeWorkflowStep: finalizeWorkflowStep(set, get),
     forceAdvanceWorkflowStep: forceAdvanceWorkflowStep(set, get),
+    skipStuckStepAndAdvance: skipStuckStepAndAdvance(set, get),
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
   };

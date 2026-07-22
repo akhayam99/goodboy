@@ -76,20 +76,7 @@ pub enum LifecycleError {
     Io(String),
 }
 
-impl Serialize for LifecycleError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serde_json::Map::new();
-        map.insert(
-            "kind".to_string(),
-            serde_json::Value::String(self.kind().to_string()),
-        );
-        map.insert(
-            "message".to_string(),
-            serde_json::Value::String(self.to_string()),
-        );
-        serde_json::Value::Object(map).serialize(serializer)
-    }
-}
+crate::util::impl_error_serialize!(LifecycleError);
 
 impl LifecycleError {
     fn kind(&self) -> &'static str {

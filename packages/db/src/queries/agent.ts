@@ -8,6 +8,7 @@ import type {
   ProviderRunId,
   SessionId,
   StepId,
+  VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -179,7 +180,7 @@ export const restoreAgent = async (db: Database, id: AgentId): Promise<void> => 
 };
 
 export type AgentConfigUpdate = {
-  verbosity?: 'brief' | 'normal' | 'verbose' | null;
+  verbosity?: VerbosityLevel | null;
   effort?: ModelEffort | null;
   modelOverride?: string | null;
   providerOverride?: ProviderId | null;

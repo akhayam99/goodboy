@@ -24,12 +24,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
-import {
-  useAppStore,
-  type AppState,
-  type SessionLoadingFlags,
-  type SummarizerSessionStatus,
-} from './store';
+import { useAppStore } from './store';
+import type { AppState, SessionLoadingFlags, SummarizerSessionStatus } from './types';
 import {
   deriveSessionStage,
   sortAndGroupSessions,
