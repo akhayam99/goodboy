@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrComment } from '@goodboy/types';
+import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
 
 const h = vi.hoisted(() => ({
@@ -76,7 +77,7 @@ describe('ResolveBoard', () => {
   });
 
   it('spawns a single comment via its Resolve button', () => {
-    const onSpawnOne = vi.fn();
+    const onSpawnOne = vi.fn<(thread: CommentThread, choice: ResolveModelChoice) => void>();
     render(
       <ResolveBoard
         threads={[thread({ id: 'c1' })]}
@@ -90,6 +91,77 @@ describe('ResolveBoard', () => {
     });
     expect(onSpawnOne).toHaveBeenCalledTimes(1);
     expect(onSpawnOne.mock.calls[0]?.[0]?.head?.id).toBe('c1');
+    expect(onSpawnOne.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ mode: 'fix', hint: '' }),
+    );
+  });
+
+  it('applies mode and hint to a single resolver', () => {
+    const onSpawnOne = vi.fn<(thread: CommentThread, choice: ResolveModelChoice) => void>();
+    render(
+      <ResolveBoard
+        threads={[thread({ id: 'c1' })]}
+        onSpawnOne={onSpawnOne}
+        onSpawnBatch={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Resolve with/i }));
+    });
+    act(() => {
+      fireEvent.change(screen.getByRole('combobox', { name: /Resolver mode/i }), {
+        target: { value: 'analyze' },
+      });
+      fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
+        target: { value: 'Avoid schema changes.' },
+      });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /^Resolve$/i }));
+    });
+    expect(onSpawnOne.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ mode: 'analyze', hint: 'Avoid schema changes.' }),
+    );
+  });
+
+  it('shares mode and hint across every resolver in a batch', () => {
+    const onSpawnBatch =
+      vi.fn<
+        (
+          threads: ReadonlyArray<CommentThread>,
+          choiceById: Readonly<Record<string, ResolveModelChoice>>,
+        ) => void
+      >();
+    render(
+      <ResolveBoard
+        threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
+        onSpawnOne={vi.fn()}
+        onSpawnBatch={onSpawnBatch}
+        onOpenThread={vi.fn()}
+      />,
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
+    });
+    act(() => {
+      fireEvent.change(screen.getByRole('combobox', { name: /Resolver mode/i }), {
+        target: { value: 'analyze' },
+      });
+      fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
+        target: { value: 'Keep the public API stable.' },
+      });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Spawn resolver for 2 comments/i }));
+    });
+    const choices = onSpawnBatch.mock.calls[0]?.[1];
+    expect(choices?.c1).toEqual(
+      expect.objectContaining({ mode: 'analyze', hint: 'Keep the public API stable.' }),
+    );
+    expect(choices?.c2).toEqual(
+      expect.objectContaining({ mode: 'analyze', hint: 'Keep the public API stable.' }),
+    );
   });
 
   it('renders the head comment plus its replies as context', () => {
