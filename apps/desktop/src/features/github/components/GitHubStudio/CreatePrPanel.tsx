@@ -3,7 +3,10 @@ import type { SessionId } from '@goodboy/types';
 import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
 import { ArrowRight, GitBranch, Sparkles } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
-import { AGENT_KIND_DEFAULTS } from '../../../session/agent-kind';
+import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
+import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
+import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -42,6 +45,7 @@ export const CreatePrPanel = ({
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
 
   useEffect(() => {
     if (!workspaceRoot) {
@@ -100,9 +104,10 @@ export const CreatePrPanel = ({
       ].join('\n');
       const agentId = await spawnAgent(sessionId, {
         name: 'open pull request',
-        initialPrompt: prompt,
-        model: AGENT_KIND_DEFAULTS.generic.model,
-        effort: AGENT_KIND_DEFAULTS.generic.effort,
+        initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
+        model: agentConfig.model,
+        ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
+        effort: agentConfig.effort,
       });
       await setCurrentSession(sessionId);
       await selectAgent(sessionId, agentId);
@@ -171,6 +176,11 @@ export const CreatePrPanel = ({
                 ))}
               </datalist>
             </div>
+            <AgentSpawnConfig
+              value={agentConfig}
+              onChange={setAgentConfig}
+              disabled={busy !== null}
+            />
             <div className="flex items-center gap-3 pt-1">
               <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                 <input

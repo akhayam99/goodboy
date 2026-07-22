@@ -16,7 +16,10 @@ import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
-import { AGENT_KIND_DEFAULTS } from '../../../agent-kind';
+import { appendOperatorNotes } from '../../../utils/appendOperatorNotes';
+import { AgentSpawnConfig } from '../../AgentSpawnConfig';
+import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
+import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../AgentSpawnConfig/defaultAgentSpawnConfig';
 import { useAppStore } from '../../../../../store';
 import { PaneShell } from './PaneShell';
 
@@ -56,6 +59,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   const [busy, setBusy] = useState<'draft' | 'ai' | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
 
   const openStudio = () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
@@ -88,9 +92,10 @@ const GithubPrCard = ({ session }: { session: Session }) => {
       ].join('\n');
       const agentId = await spawnAgent(sessionId, {
         name: 'open pull request',
-        initialPrompt: prompt,
-        model: AGENT_KIND_DEFAULTS.generic.model,
-        effort: AGENT_KIND_DEFAULTS.generic.effort,
+        initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
+        model: agentConfig.model,
+        ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
+        effort: agentConfig.effort,
       });
       setActiveLens(sessionId, 'agents');
       await selectAgent(sessionId, agentId);
@@ -125,6 +130,12 @@ const GithubPrCard = ({ session }: { session: Session }) => {
             </span>
           ) : null}
         </div>
+        <AgentSpawnConfig
+          value={agentConfig}
+          onChange={setAgentConfig}
+          disabled={busy !== null}
+          className="w-full max-w-sm"
+        />
         <div className="flex flex-col items-stretch gap-2 pt-1 sm:flex-row sm:items-center">
           <button
             type="button"
