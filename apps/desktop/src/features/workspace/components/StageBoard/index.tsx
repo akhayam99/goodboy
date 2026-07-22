@@ -22,12 +22,12 @@ const SKELETON_COLUMNS = [3, 2, 2, 1, 2];
 
 const BoardSkeleton = () => (
   <div
-    className="flex min-h-0 flex-1 gap-4 overflow-x-hidden"
+    className="mx-auto flex min-h-0 w-fit max-w-full flex-1 gap-4 overflow-x-hidden"
     role="status"
     aria-label="Loading board"
   >
     {SKELETON_COLUMNS.map((cards, col) => (
-      <div key={col} className="flex min-h-0 w-72 shrink-0 flex-col gap-3">
+      <div key={col} className="flex min-h-0 w-[17rem] min-w-[13.5rem] flex-col gap-3">
         <Skeleton className="h-4 w-24 rounded-full" />
         <div className="flex flex-col gap-2">
           {Array.from({ length: cards }).map((_, i) => (
@@ -109,27 +109,29 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
           </div>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto">
-          {STAGES.map((stage) => (
+        <div className="flex min-h-0 flex-1 overflow-x-auto">
+          <div className="mx-auto flex min-h-0 w-fit max-w-full gap-4">
+            {STAGES.map((stage) => (
+              <StageColumn
+                key={stage}
+                spec={{ kind: 'stage', stage }}
+                sessions={byStage.get(stage) ?? EMPTY_ARRAY}
+                nav={nav}
+                onArchive={onArchive}
+                onDelete={onDelete}
+                onRestore={nav.restore}
+              />
+            ))}
             <StageColumn
-              key={stage}
-              spec={{ kind: 'stage', stage }}
-              sessions={byStage.get(stage) ?? EMPTY_ARRAY}
+              key="archived"
+              spec={{ kind: 'archived' }}
+              sessions={archived}
               nav={nav}
               onArchive={onArchive}
               onDelete={onDelete}
               onRestore={nav.restore}
             />
-          ))}
-          <StageColumn
-            key="archived"
-            spec={{ kind: 'archived' }}
-            sessions={archived}
-            nav={nav}
-            onArchive={onArchive}
-            onDelete={onDelete}
-            onRestore={nav.restore}
-          />
+          </div>
         </div>
       )}
 
