@@ -92,7 +92,12 @@ describe('LensColumn', () => {
         .getAllByText(/^(Work|Artifacts|Context|Integrations|Infra)$/)
         .map((heading) => heading.textContent),
     ).toEqual(['Work', 'Artifacts', 'Context', 'Integrations', 'Infra']);
-    expect(screen.getAllByRole('button').map((button) => button.textContent?.trim())).toEqual([
+    expect(
+      screen.getAllByRole('button').map((button) => {
+        const shortcut = button.querySelector('kbd')?.textContent ?? '';
+        return button.textContent?.replace(shortcut, '').trim();
+      }),
+    ).toEqual([
       'Overview',
       'Workflows',
       'Agents',
@@ -109,6 +114,23 @@ describe('LensColumn', () => {
       'Sentry',
       'Terminal',
     ]);
+  });
+
+  it('shows shortcuts on bound rows only', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens="agents"
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Diff' }).querySelector('kbd')?.textContent).toBe(
+      '⌘⇧D',
+    );
+    expect(screen.getByRole('button', { name: 'Linear' }).querySelector('kbd')).toBeNull();
   });
 
   it('shows provider counts and hides GitLab issues on a GitLab remote', () => {

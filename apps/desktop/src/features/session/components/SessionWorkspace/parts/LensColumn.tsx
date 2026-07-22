@@ -18,7 +18,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react';
-import { ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { KbdPill, ScrollFade, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
@@ -57,6 +57,24 @@ type LensGroup = {
   readonly label: string;
   readonly rows: ReadonlyArray<LensRow>;
 };
+
+const LENS_SHORTCUTS = {
+  questions: '⌘⇧Q',
+  agents: '⌘⇧B',
+  workflows: '⌘⇧W',
+  resolve: '⌘⇧R',
+  plans: '⌘⇧L',
+  scripts: '⌘⇧S',
+  terminal: '⌘J',
+  goal: '⌘⇧G',
+  decisions: '⌘⇧E',
+  last_output_summary: '⌘⇧U',
+  pr: '⌘⇧H',
+  files: '⌘⇧D',
+  linear: null,
+  sentry: null,
+  gitlab_issues: null,
+} satisfies Readonly<Record<LensKind, string | null>>;
 
 export const LensColumn = ({
   session,
@@ -244,7 +262,7 @@ export const LensColumn = ({
           onClick={onSelectOverview}
           aria-current={activeLens === null ? 'page' : undefined}
           className={cn(
-            'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+            'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             activeLens === null
               ? 'bg-foreground/[0.06] text-foreground'
@@ -263,12 +281,18 @@ export const LensColumn = ({
           </span>
           <span
             className={cn(
-              'min-w-0 flex-1 truncate text-[13px]',
+              'min-w-0 flex-1 truncate pr-12 text-[13px]',
               activeLens === null && 'font-medium',
             )}
           >
             Overview
           </span>
+          <KbdPill
+            aria-hidden
+            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-60"
+          >
+            ⌘⇧O
+          </KbdPill>
         </button>
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
@@ -277,6 +301,11 @@ export const LensColumn = ({
             </span>
             {group.rows.map((row) => {
               const active = activeLens === row.kind;
+              const shortcut = LENS_SHORTCUTS[row.kind];
+              const hasBadge =
+                (row.count != null && row.count > 0) ||
+                row.dot != null ||
+                row.secondaryDot === true;
               return (
                 <button
                   key={row.kind}
@@ -284,7 +313,7 @@ export const LensColumn = ({
                   onClick={() => onSelect(row.kind)}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                    'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                     active
                       ? 'bg-foreground/[0.06] text-foreground'
@@ -302,33 +331,62 @@ export const LensColumn = ({
                     <row.icon size={12} aria-hidden className={tintClasses(row.tone).icon} />
                   </span>
                   <span
-                    className={cn('min-w-0 flex-1 truncate text-[13px]', active && 'font-medium')}
+                    className={cn(
+                      'min-w-0 flex-1 truncate text-[13px]',
+                      shortcut != null && !hasBadge && 'pr-12',
+                      active && 'font-medium',
+                    )}
                   >
                     {row.label}
                   </span>
-                  {row.count != null && row.count > 0 ? (
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
-                      {row.dot === 'running' ? <StatusDot tone="info" size="sm" pulsing /> : null}
-                      <span
-                        className={cn(
-                          'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                          row.dot === 'attention'
-                            ? 'bg-warning/15 text-warning'
-                            : 'bg-muted text-muted-foreground',
-                        )}
-                      >
-                        {row.count}
-                      </span>
+                  {hasBadge ? (
+                    <span
+                      className={cn(
+                        'flex shrink-0 items-center gap-1.5 transition-opacity',
+                        shortcut != null &&
+                          'min-w-10 justify-end group-hover:opacity-0 group-focus-visible:opacity-0',
+                      )}
+                    >
+                      {row.count != null && row.count > 0 ? (
+                        <span className="flex shrink-0 items-center gap-1.5">
+                          {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                          {row.dot === 'running' ? (
+                            <StatusDot tone="info" size="sm" pulsing />
+                          ) : null}
+                          <span
+                            className={cn(
+                              'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
+                              row.dot === 'attention'
+                                ? 'bg-warning/15 text-warning'
+                                : 'bg-muted text-muted-foreground',
+                            )}
+                          >
+                            {row.count}
+                          </span>
+                        </span>
+                      ) : row.dot ? (
+                        <StatusDot
+                          tone={row.dot === 'attention' ? 'warning' : 'info'}
+                          size="sm"
+                          pulsing={row.dot === 'running'}
+                        />
+                      ) : row.secondaryDot ? (
+                        <StatusDot tone="accent" size="sm" />
+                      ) : null}
                     </span>
-                  ) : row.dot ? (
-                    <StatusDot
-                      tone={row.dot === 'attention' ? 'warning' : 'info'}
-                      size="sm"
-                      pulsing={row.dot === 'running'}
-                    />
-                  ) : row.secondaryDot ? (
-                    <StatusDot tone="accent" size="sm" />
+                  ) : null}
+                  {shortcut != null ? (
+                    <KbdPill
+                      aria-hidden
+                      className={cn(
+                        'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] transition-opacity',
+                        hasBadge
+                          ? 'opacity-0 group-hover:opacity-60 group-focus-visible:opacity-60'
+                          : 'opacity-60',
+                      )}
+                    >
+                      {shortcut}
+                    </KbdPill>
                   ) : null}
                 </button>
               );
