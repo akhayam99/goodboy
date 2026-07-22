@@ -5,6 +5,8 @@ import type { EffortLevel } from './utils/chat-constants';
 
 const TITLE_MAX = 60;
 
+export type ResolveMode = 'fix' | 'analyze';
+
 function shortPath(path: string): string {
   const segments = path.split('/');
   const last = segments.at(-1) ?? path;
@@ -20,11 +22,14 @@ export const buildCommentAgentTitle = (c: PrComment): string => {
   return truncate(`resolve: ${who} comment`, TITLE_MAX);
 };
 
-function buildCommentAgentPrompt(
-  c: PrComment,
-  pr: PullRequestState,
-  replies: ReadonlyArray<PrComment>,
-): string {
+type Params = {
+  readonly comment: PrComment;
+  readonly pr: PullRequestState;
+  readonly replies: ReadonlyArray<PrComment>;
+  readonly mode?: ResolveMode;
+};
+
+const buildCommentAgentPrompt = ({ comment: c, pr, replies, mode = 'fix' }: Params): string => {
   const lines: Array<string> = [];
   lines.push(`Context: PR #${pr.number} on branch \`${pr.headBranch}\`.`);
   if (c.source === 'review' && c.path) {
@@ -53,8 +58,19 @@ function buildCommentAgentPrompt(
     lines.push('');
     lines.push(`Review thread id (for the resolution marker): ${c.threadId}`);
   }
+  if (mode === 'analyze') {
+    lines.push('');
+    lines.push('Analysis mode: do not modify or commit any file.');
+    lines.push('Investigate the comment and produce a short analysis.');
+    lines.push('Decide whether the comment is worth fixing.');
+    lines.push(
+      `End with exactly one marker in this form: <<comment-analysis threadId="${c.threadId ?? ''}" verdict="fix" summary="...">>.`,
+    );
+    lines.push('Use verdict="wontfix" instead when the comment is not worth fixing.');
+    lines.push('The summary must be one paragraph of plain text with no double quotes.');
+  }
   return lines.join('\n');
-}
+};
 
 export type CommentAgentArgs = {
   readonly name: string;
@@ -65,6 +81,7 @@ export type CommentAgentArgs = {
   readonly initialPrompt: string;
   readonly sourceThreadId?: string;
   readonly sourceCommentUrl: string;
+  readonly mode?: ResolveMode;
 };
 
 export type ResolveModelChoice = {
@@ -78,6 +95,7 @@ export const buildCommentAgentArgs = (
   pr: PullRequestState,
   choice: ResolveModelChoice = {},
   replies: ReadonlyArray<PrComment> = [],
+  mode: ResolveMode = 'fix',
 ): CommentAgentArgs => {
   const defaults = AGENT_KIND_DEFAULTS.resolver;
   return {
@@ -86,9 +104,10 @@ export const buildCommentAgentArgs = (
     model: choice.model ?? defaults.model,
     ...(choice.provider !== undefined && { provider: choice.provider }),
     effort: choice.effort ?? defaults.effort,
-    initialPrompt: buildCommentAgentPrompt(c, pr, replies),
+    initialPrompt: buildCommentAgentPrompt({ comment: c, pr, replies, mode }),
     ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
     sourceCommentUrl: c.url,
+    ...(mode !== 'fix' && { mode }),
   };
 };
 

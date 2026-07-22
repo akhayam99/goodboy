@@ -126,4 +126,32 @@ describe('spawn-from-comment', () => {
     );
     expect(args.initialPrompt).not.toContain('thread id');
   });
+
+  it('keeps the omitted and explicit fix-mode prompts byte-identical', () => {
+    const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
+    const explicit = buildCommentAgentArgs(makeComment(), PR, {}, [], 'fix').initialPrompt;
+    expect(omitted).toBe(explicit);
+    expect(omitted).toBe(
+      [
+        'Context: PR #9108 on branch `kay/foo`.',
+        'alice left a review comment on `src/foo.ts:42`:',
+        '',
+        '> this should use a helper',
+        '',
+        'Comment URL: https://github.com/o/r/pull/9108#discussion_r1',
+      ].join('\n'),
+    );
+  });
+
+  it('appends the read-only analysis contract in analyze mode', () => {
+    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {}, [], 'analyze');
+    expect(args.mode).toBe('analyze');
+    expect(args.initialPrompt).toContain('do not modify or commit any file');
+    expect(args.initialPrompt).toContain(
+      '<<comment-analysis threadId="PRRT_7" verdict="fix" summary="...">>',
+    );
+    expect(args.initialPrompt).toContain(
+      'summary must be one paragraph of plain text with no double quotes',
+    );
+  });
 });
