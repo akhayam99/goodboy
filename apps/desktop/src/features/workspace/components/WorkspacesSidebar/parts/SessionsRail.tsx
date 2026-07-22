@@ -8,7 +8,7 @@ export const SessionsRail = () => {
 
   return (
     <div className="flex w-full flex-col items-center gap-1 pt-2">
-      <Tooltip content="show sessions (⌘B)" side="right">
+      <Tooltip content="show sessions · ⌘B" side="right">
         <button
           type="button"
           onClick={toggleSessionsSidebar}
@@ -28,7 +28,7 @@ export const SessionsRail = () => {
           <Kanban size={15} aria-hidden />
         </button>
       </Tooltip>
-      <Tooltip content="new session" side="right">
+      <Tooltip content="new session · ⌘N" side="right">
         <button
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}

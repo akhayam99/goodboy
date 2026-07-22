@@ -8,7 +8,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { Button, cn, ScrollArea, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, KbdPill, cn, ScrollArea, StatusDot, Tooltip } from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -165,7 +165,7 @@ export const SessionActivityBar = ({
                 Archived
               </button>
               <SessionViewMenu workspaceId={workspaceId} />
-              <Tooltip content="hide sessions (⌘B)" side="bottom">
+              <Tooltip content="hide sessions · ⌘B" side="bottom">
                 <button
                   type="button"
                   onClick={() => setSessionsSidebarCollapsed(true)}
@@ -189,6 +189,9 @@ export const SessionActivityBar = ({
             >
               <Plus size={13} aria-hidden />
               New
+              <KbdPill aria-hidden className="h-4 min-w-4 px-1 text-[9px]">
+                ⌘N
+              </KbdPill>
             </Button>
           )}
 
