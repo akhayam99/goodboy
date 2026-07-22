@@ -31,6 +31,7 @@ const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const QUESTION_CLOSE = '<</ctx-question>>';
 const QUESTION_ATTR_RE = /(?<![\w-])([\w-]+)="([^"]*)"/g;
 const HANDOFF_OPEN = '<<handoff';
+const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
@@ -291,6 +292,84 @@ export const isReviewThreadId = (threadId: string): boolean => {
   return REVIEW_THREAD_ID_RE.test(threadId);
 };
 
+export type ExtractedCommentAnalysis = {
+  readonly threadId: string;
+  readonly verdict: 'fix' | 'wontfix';
+  readonly summary: string;
+};
+
+type CommentAnalysisAttrs = {
+  readonly threadid?: string;
+  readonly verdict?: string;
+  readonly summary?: string;
+};
+
+const parseCommentAnalysisAttrs = (inner: string): CommentAnalysisAttrs | null => {
+  const attrs: Record<string, string> = {};
+  let index = 0;
+  while (index < inner.length) {
+    while (index < inner.length && inner[index]?.trim() === '') {
+      index += 1;
+    }
+    if (index === inner.length) {
+      break;
+    }
+    const keyStart = index;
+    while (index < inner.length && inner[index]?.trim() !== '' && inner[index] !== '=') {
+      index += 1;
+    }
+    const key = inner.slice(keyStart, index).toLowerCase();
+    if (key !== 'threadid' && key !== 'verdict' && key !== 'summary') {
+      return null;
+    }
+    if (attrs[key] != null) {
+      return null;
+    }
+    while (index < inner.length && inner[index]?.trim() === '') {
+      index += 1;
+    }
+    if (inner[index] !== '=') {
+      return null;
+    }
+    index += 1;
+    while (index < inner.length && inner[index]?.trim() === '') {
+      index += 1;
+    }
+    if (inner[index] !== '"') {
+      return null;
+    }
+    const valueStart = index + 1;
+    const valueEnd = inner.indexOf('"', valueStart);
+    if (valueEnd === -1) {
+      return null;
+    }
+    attrs[key] = inner.slice(valueStart, valueEnd);
+    index = valueEnd + 1;
+    if (index < inner.length && inner[index]?.trim() !== '') {
+      return null;
+    }
+  }
+  return attrs;
+};
+
+export const extractCommentAnalysis = (assistantText: string): ExtractedCommentAnalysis | null => {
+  let last: ExtractedCommentAnalysis | null = null;
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_ANALYSIS_OPEN)) {
+    const attrs = parseCommentAnalysisAttrs(inner);
+    const threadId = attrs?.threadid?.trim() ?? '';
+    const verdict = attrs?.verdict?.trim() ?? '';
+    const summary = attrs?.summary?.trim() ?? '';
+    if (!threadId.startsWith('PRRT_') || summary.length === 0) {
+      continue;
+    }
+    if (verdict !== 'fix' && verdict !== 'wontfix') {
+      continue;
+    }
+    last = { threadId, verdict, summary };
+  }
+  return last;
+};
+
 export type ExtractedCommentWontfix = {
   readonly threadId: string;
   readonly reason: string;
@@ -491,7 +570,8 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 
 const BLOCK_MARKER_ALT =
   'plan|clusters|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
-const SELF_MARKER_ALT = 'handoff|comment-resolved|comment-wontfix|cluster-done|step-done';
+const SELF_MARKER_ALT =
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|cluster-done|step-done';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,

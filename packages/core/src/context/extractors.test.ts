@@ -4,6 +4,7 @@ import {
   assessPlanReadiness,
   extractClusterDone,
   extractClustersFromMarker,
+  extractCommentAnalysis,
   extractCommentResolved,
   extractCommentWontfix,
   extractFilesTouched,
@@ -289,6 +290,70 @@ describe('extractCommentResolved', () => {
       threadId: 'PRT_2',
       commitSha: 'bbb',
     });
+  });
+});
+
+describe('extractCommentAnalysis', () => {
+  it('parses a valid analysis marker', () => {
+    const text =
+      'analysis complete. <<comment-analysis threadId="PRRT_9" verdict="fix" summary="the guard should move before the lookup">>';
+    expect(extractCommentAnalysis(text)).toEqual({
+      threadId: 'PRRT_9',
+      verdict: 'fix',
+      summary: 'the guard should move before the lookup',
+    });
+  });
+
+  it('rejects markers with missing attributes', () => {
+    expect(
+      extractCommentAnalysis('<<comment-analysis threadId="PRRT_1" verdict="fix">>'),
+    ).toBeNull();
+    expect(
+      extractCommentAnalysis('<<comment-analysis verdict="fix" summary="worth fixing">>'),
+    ).toBeNull();
+    expect(
+      extractCommentAnalysis('<<comment-analysis threadId="PRRT_1" summary="worth fixing">>'),
+    ).toBeNull();
+  });
+
+  it('rejects non-review thread ids', () => {
+    expect(
+      extractCommentAnalysis(
+        '<<comment-analysis threadId="PRT_1" verdict="fix" summary="worth fixing">>',
+      ),
+    ).toBeNull();
+  });
+
+  it('rejects unsupported verdicts', () => {
+    expect(
+      extractCommentAnalysis(
+        '<<comment-analysis threadId="PRRT_1" verdict="maybe" summary="uncertain">>',
+      ),
+    ).toBeNull();
+  });
+
+  it('rejects double quotes inside the summary', () => {
+    expect(
+      extractCommentAnalysis(
+        '<<comment-analysis threadId="PRRT_1" verdict="fix" summary="replace the "unsafe" cast">>',
+      ),
+    ).toBeNull();
+  });
+
+  it('returns the last well-formed marker', () => {
+    const text =
+      '<<comment-analysis threadId="PRRT_1" verdict="wontfix" summary="already covered">> <<comment-analysis threadId="PRRT_2" verdict="fix" summary="add the guard">>';
+    expect(extractCommentAnalysis(text)).toEqual({
+      threadId: 'PRRT_2',
+      verdict: 'fix',
+      summary: 'add the guard',
+    });
+  });
+
+  it('is stripped from visible text', () => {
+    const text =
+      'result\n<<comment-analysis threadId="PRRT_1" verdict="fix" summary="add the guard">>\ndone';
+    expect(stripControlMarkers(text)).toBe('result\n\ndone');
   });
 });
 
