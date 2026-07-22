@@ -261,6 +261,13 @@ describe('ChatInput, input wiring', () => {
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
   });
 
+  it('focuses the textarea when requested by a transcript CTA', () => {
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole('textbox');
+    window.dispatchEvent(new CustomEvent('goodboy:focus-composer'));
+    expect(document.activeElement).toBe(textarea);
+  });
+
   it('textarea stays enabled when session is running so user can queue next message', () => {
     render(
       <ChatInput

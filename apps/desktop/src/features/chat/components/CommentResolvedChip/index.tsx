@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, CheckCheck, Clock, GitCommit, Upload, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { extractCommentResolved, isReviewThreadId } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { commentChipDismissal } from '../../../../shared/utils/commentChipDismissal';
 import { MARKER_ACCENT } from '../marker-accents';
 import { TranscriptShell } from '../TranscriptShell';
 
@@ -13,6 +14,7 @@ const successAccent = MARKER_ACCENT.success;
 type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
+  readonly agentId?: AgentId | null;
 };
 
 type ChipState =
@@ -21,28 +23,7 @@ type ChipState =
   | { kind: 'resolved' }
   | { kind: 'dismissed' };
 
-const DISMISS_PREFIX = 'goodboy:comment-dismissed:';
-
-function readDismissed(threadId: string | undefined): boolean {
-  if (!threadId) {
-    return false;
-  }
-  try {
-    return localStorage.getItem(DISMISS_PREFIX + threadId) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function persistDismissed(threadId: string) {
-  try {
-    localStorage.setItem(DISMISS_PREFIX + threadId, '1');
-  } catch {
-    void 0;
-  }
-}
-
-export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
+export const CommentResolvedChip = ({ assistantText, sessionId, agentId = null }: Props) => {
   const marker = useMemo(() => extractCommentResolved(assistantText), [assistantText]);
   const threadId = marker?.threadId;
 
@@ -51,6 +32,7 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
   const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const selectAgent = useAppStore((s) => s.selectAgent);
 
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
   const resolvedOnGithub = useAppStore((s) =>
@@ -67,7 +49,9 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
   );
 
   const [state, setState] = useState<ChipState>(() =>
-    readDismissed(threadId) ? { kind: 'dismissed' } : { kind: 'idle' },
+    threadId != null && commentChipDismissal.read({ threadId })
+      ? { kind: 'dismissed' }
+      : { kind: 'idle' },
   );
 
   useEffect(() => {
@@ -223,7 +207,23 @@ export const CommentResolvedChip = ({ assistantText, sessionId }: Props) => {
         <button
           type="button"
           onClick={() => {
-            persistDismissed(marker.threadId);
+            if (agentId === null) {
+              return;
+            }
+            void selectAgent(sessionId, agentId).then(() => {
+              window.dispatchEvent(new CustomEvent('goodboy:focus-composer'));
+            });
+          }}
+          disabled={busy || agentId === null}
+          data-testid="comment-resolved-continue"
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Continue working
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            commentChipDismissal.persist({ threadId: marker.threadId });
             setState({ kind: 'dismissed' });
           }}
           disabled={busy}

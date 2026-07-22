@@ -1,7 +1,8 @@
 import { CopyButton, Markdown } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import { ClustersCard } from '../ClustersCard';
+import { CommentAnalysisChip } from '../CommentAnalysisChip';
 import { CommentResolvedChip } from '../CommentResolvedChip';
 import { CommentWontfixChip } from '../CommentWontfixChip';
 import { HandoffChip } from '../HandoffChip';
@@ -11,9 +12,10 @@ import { TranscriptShell } from '../TranscriptShell';
 type Props = {
   text: string;
   sessionId: SessionId | null;
+  agentId?: AgentId | null;
 };
 
-export const AssistantText = ({ text, sessionId }: Props) => {
+export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
   const displayText = stripControlMarkers(text);
   const resolvedMarker = extractCommentResolved(text);
   const hasCommentResolvedMarker =
@@ -31,7 +33,8 @@ export const AssistantText = ({ text, sessionId }: Props) => {
           <PlanChip assistantText={text} sessionId={sessionId} />
           <ClustersCard assistantText={text} sessionId={sessionId} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
-          <CommentResolvedChip assistantText={text} sessionId={sessionId} />
+          <CommentAnalysisChip assistantText={text} sessionId={sessionId} agentId={agentId} />
+          <CommentResolvedChip assistantText={text} sessionId={sessionId} agentId={agentId} />
           <CommentWontfixChip assistantText={text} sessionId={sessionId} />
         </div>
       ) : null}

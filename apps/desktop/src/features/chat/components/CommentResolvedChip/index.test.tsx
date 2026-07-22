@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   queueMock: vi.fn(async () => {}),
   dequeueMock: vi.fn(async () => {}),
   loadMock: vi.fn(async () => {}),
+  selectMock: vi.fn(async () => {}),
   pr: { number: 123 } as { number: number } | null,
   pending: [] as Array<{ threadId: string }>,
 }));
@@ -24,6 +25,7 @@ vi.mock('../../../../store', () => ({
       dequeueResolution: typeof h.dequeueMock;
       resolveGithubThread: typeof h.resolveMock;
       loadPendingResolutions: typeof h.loadMock;
+      selectAgent: typeof h.selectMock;
       sessionGithub: Record<string, { pr: { number: number } | null; detail: null }>;
       sessionPendingResolutions: Record<string, Array<{ threadId: string }>>;
     }) => T,
@@ -33,6 +35,7 @@ vi.mock('../../../../store', () => ({
       dequeueResolution: h.dequeueMock,
       resolveGithubThread: h.resolveMock,
       loadPendingResolutions: h.loadMock,
+      selectAgent: h.selectMock,
       sessionGithub: { s: { pr: h.pr, detail: null } },
       sessionPendingResolutions: { s: h.pending },
     }),
@@ -46,6 +49,8 @@ beforeEach(() => {
   h.queueMock.mockReset().mockResolvedValue(undefined);
   h.dequeueMock.mockReset().mockResolvedValue(undefined);
   h.loadMock.mockReset().mockResolvedValue(undefined);
+  h.selectMock.mockReset().mockResolvedValue(undefined);
+  localStorage.clear();
   h.pr = { number: 123 };
   h.pending = [];
 });
@@ -99,5 +104,26 @@ describe('CommentResolvedChip', () => {
     h.pending = [{ threadId: 'PRRT_kwDOABC123' }];
     render(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
     expect(screen.getByText(/pending push/i)).toBeDefined();
+  });
+
+  it('selects the resolver and focuses the composer when continuing work', async () => {
+    h.extractMock.mockReturnValue({ threadId: 'PRRT_kwDOABC123', commitSha: 'abcdef1234567890' });
+    const focus = vi.fn();
+    window.addEventListener('goodboy:focus-composer', focus);
+    render(
+      <CommentResolvedChip
+        assistantText="x"
+        sessionId={'s' as never}
+        agentId={'agent-1' as never}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('comment-resolved-continue'));
+    });
+
+    expect(h.selectMock).toHaveBeenCalledWith('s', 'agent-1');
+    expect(focus).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:focus-composer', focus);
   });
 });
