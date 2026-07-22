@@ -19,7 +19,7 @@ export const getDefaultBinary = (providerId: ProviderId): string => {
     case 'codex':
       return 'codex';
     case 'gemini':
-      return 'gemini';
+      return 'agy';
     default: {
       const _exhaustive: never = providerId;
       throw new Error(`unknown provider: ${_exhaustive}`);

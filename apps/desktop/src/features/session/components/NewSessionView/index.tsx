@@ -108,7 +108,7 @@ function getDefaultBinary(providerId: ProviderId): string {
     case 'codex':
       return 'codex';
     case 'gemini':
-      return 'gemini';
+      return 'agy';
     default: {
       const _exhaustive: never = providerId;
       void _exhaustive;
