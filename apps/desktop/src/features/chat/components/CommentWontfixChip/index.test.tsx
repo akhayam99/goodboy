@@ -54,12 +54,14 @@ describe('CommentWontfixChip', () => {
   it('posts the reason and resolves the thread when clicked', async () => {
     h.extractMock.mockReturnValue({ threadId: 'PRRT_9', reason: 'already covered upstream' });
     render(<CommentWontfixChip assistantText="x" sessionId={'s' as never} />);
-    expect(screen.getByText('already covered upstream')).toBeDefined();
+    const explanation = screen.getByRole('textbox', { name: 'explanation' });
+    expect((explanation as HTMLTextAreaElement).value).toBe('already covered upstream');
+    fireEvent.change(explanation, { target: { value: 'covered by the new helper' } });
     await act(async () => {
       fireEvent.click(screen.getByTestId('comment-wontfix-explain'));
     });
     expect(h.resolveMock).toHaveBeenCalledWith('s', 'PRRT_9', {
-      reason: 'already covered upstream',
+      reason: 'covered by the new helper',
     });
     expect(screen.getByText(/marked solved with explanation/i)).toBeDefined();
   });

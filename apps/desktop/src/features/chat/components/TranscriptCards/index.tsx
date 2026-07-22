@@ -48,7 +48,7 @@ function TranscriptCardImpl({
         />
       );
     case 'assistant_text':
-      return <AssistantText text={item.text} sessionId={sessionId} />;
+      return <AssistantText text={item.text} sessionId={sessionId} agentId={agentId} />;
     case 'tool_call':
       return <ToolCallCard item={item} />;
     case 'file_edit':

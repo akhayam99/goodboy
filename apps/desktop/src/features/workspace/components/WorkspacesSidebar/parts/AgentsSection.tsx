@@ -136,7 +136,7 @@ export const AgentsSection = ({
   );
   const resolverState = useAppStore(
     useShallow((s) => {
-      const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
+      const out: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'> = {};
       const runs = s.sessionPhaseRuns[task.id];
       if (!runs) {
         return out;

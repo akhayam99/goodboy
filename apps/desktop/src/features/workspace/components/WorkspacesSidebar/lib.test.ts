@@ -95,6 +95,10 @@ describe('resolverStatus', () => {
     expect(resolverStatus(agent, empty, new Set(['t2']), undefined)).toBe('committed');
   });
 
+  it('reports "analyzed" from the resolver state', () => {
+    expect(resolverStatus(makeAgent('completed'), empty, empty, 'analyzed')).toBe('analyzed');
+  });
+
   it('reports "wontfix" from the resolver state', () => {
     expect(resolverStatus(makeAgent('completed'), empty, empty, 'wontfix')).toBe('wontfix');
   });

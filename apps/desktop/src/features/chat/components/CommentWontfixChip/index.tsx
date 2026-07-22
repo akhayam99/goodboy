@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Ban, CheckCheck, MessageSquareReply, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Textarea, cn } from '@goodboy/ui';
 import { extractCommentWontfix, isReviewThreadId } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -35,6 +35,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
   );
 
   const [state, setState] = useState<ChipState>({ kind: 'idle' });
+  const [reason, setReason] = useState(marker?.reason ?? '');
 
   if (!marker || !isReviewThreadId(marker.threadId)) {
     return null;
@@ -64,7 +65,7 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
       return;
     }
     setState({ kind: 'resolving' });
-    const ok = await resolveGithubThread(sessionId, marker.threadId, { reason: marker.reason });
+    const ok = await resolveGithubThread(sessionId, marker.threadId, { reason });
     setState(ok ? { kind: 'resolved' } : { kind: 'idle' });
   };
 
@@ -76,14 +77,20 @@ export const CommentWontfixChip = ({ assistantText, sessionId }: Props) => {
     >
       <Ban size={12} aria-hidden className={warningAccent.icon} />
       <span className="font-medium text-foreground">not worth a change</span>
-      <span className="min-w-0 max-w-xs truncate text-muted-foreground/80" title={marker.reason}>
-        {marker.reason}
-      </span>
+      <Textarea
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        disabled={busy}
+        aria-label="explanation"
+        autoGrow
+        maxRows={5}
+        className="min-h-8 min-w-64 flex-1 resize-none bg-background/60 px-2 py-1 text-xs leading-relaxed"
+      />
       <div className="ml-auto flex items-center gap-1">
         <button
           type="button"
           onClick={() => void markSolved()}
-          disabled={busy}
+          disabled={busy || reason.trim().length === 0}
           data-testid="comment-wontfix-explain"
           aria-label="post the explanation and mark the thread solved"
           title="post the reason as a reply and resolve the thread on GitHub"

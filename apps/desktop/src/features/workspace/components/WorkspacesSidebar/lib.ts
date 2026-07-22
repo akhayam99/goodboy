@@ -15,13 +15,14 @@ export const pluralize = (count: number, singular: string) =>
 
 export type WorkflowBlockReason = 'questions' | 'summarizer' | 'failed-step';
 
-export type ResolverState = 'awaiting' | 'committed' | 'wontfix';
+export type ResolverState = 'awaiting' | 'committed' | 'wontfix' | 'analyzed';
 export type ResolverStatus =
   | 'running'
   | 'failed'
   | 'pending'
   | 'resolved'
   | 'committed'
+  | 'analyzed'
   | 'wontfix'
   | 'awaiting'
   | 'done';
@@ -47,6 +48,9 @@ export function resolverStatus(
   }
   if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) {
     return 'committed';
+  }
+  if (state === 'analyzed') {
+    return 'analyzed';
   }
   if (state === 'wontfix') {
     return 'wontfix';
