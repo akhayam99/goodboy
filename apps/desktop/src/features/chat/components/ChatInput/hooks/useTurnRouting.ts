@@ -7,12 +7,12 @@ import type { VerbosityLevel } from '../../../../../features/settings/verbosity'
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
 
-type UseTurnRoutingArgs = {
+type Params = {
   readonly session: Session;
   readonly isRunning: boolean;
 };
 
-export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
+export const useTurnRouting = ({ session, isRunning }: Params) => {
   const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
   const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
@@ -45,7 +45,13 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
     const initialAgent = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
       : null;
-    return initialAgent?.modelOverride ?? session.modelOverride ?? null;
+    const persistedModel = initialAgent?.modelOverride ?? session.modelOverride ?? null;
+    if (persistedModel === null) {
+      return null;
+    }
+    const initialProvider =
+      selectedProvider ?? agentProviderOverride ?? session.providerPreference.defaultProvider;
+    return resolveModelForProvider({ provider: initialProvider, modelId: persistedModel });
   });
   const [effort, setEffortState] = useState<EffortLevel>(
     () => asEffortLevel(session.effort) ?? 'medium',
@@ -70,10 +76,13 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
 
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
-  const defaultModel =
-    agentModelOverride ??
-    session.providerPreference.defaultModel ??
-    getDefaultTurnModel(defaultProvider);
+  const defaultModel = resolveModelForProvider({
+    provider: defaultProvider,
+    modelId:
+      agentModelOverride ??
+      session.providerPreference.defaultModel ??
+      getDefaultTurnModel(defaultProvider),
+  });
   const effectiveProvider: ProviderId =
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
   const effectiveModel = resolveModelForProvider({
@@ -158,10 +167,25 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
         return;
       }
       if (!allowOverride || isRunning) return;
-      setSelectedProvider(id);
-      setSelectedModel(null);
+      setSelectedProviderState(id);
+      setSelectedModelState(null);
+      void storeSetSessionConfig(session.id, { providerOverride: id, modelOverride: null });
+      if (selectedAgentId) {
+        void storeSetAgentConfig(session.id, selectedAgentId, {
+          providerOverride: id,
+          modelOverride: null,
+        });
+      }
     },
-    [connectedProviderIds, allowOverride, isRunning, setSelectedProvider, setSelectedModel],
+    [
+      connectedProviderIds,
+      allowOverride,
+      isRunning,
+      storeSetSessionConfig,
+      storeSetAgentConfig,
+      session.id,
+      selectedAgentId,
+    ],
   );
 
   const onSelectModel = useCallback(
@@ -208,4 +232,4 @@ export function useTurnRouting({ session, isRunning }: UseTurnRoutingArgs) {
     onSelectModel,
     onResetTurnOverride,
   };
-}
+};

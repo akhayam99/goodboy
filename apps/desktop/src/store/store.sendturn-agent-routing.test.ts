@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProviderId,
   ProviderRunId,
   Session,
   SessionId,
@@ -13,6 +14,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
@@ -1033,6 +1035,38 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     });
 
     expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-sonnet-4-5');
+  });
+
+  it('guards a stale codex session model after switching back to anthropic', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    const switchedProvider: ProviderId = 'anthropic';
+    const staleSession = {
+      ...buildSession(),
+      providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+      providerOverride: switchedProvider,
+      modelOverride: 'gpt-5-codex',
+    } satisfies Session;
+    useAppStore.setState({ sessions: [staleSession] });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: staleSession.modelOverride,
+      reason: 'override',
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: {
+        providerId: switchedProvider,
+        model: staleSession.modelOverride,
+      },
+    });
+
+    const spawnedModel = runTurnSpy.mock.calls[0]?.[0]?.model;
+    expect(PROVIDER_CAPABILITIES.anthropic.models.map((model) => model.id)).toContain(spawnedModel);
   });
 
   it('keeps the agent kind model pin when no per-turn override is supplied', async () => {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
@@ -351,6 +351,47 @@ describe('ChatInput, input wiring', () => {
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({
         override: { providerId: 'cursor', model: 'claude-4.6-sonnet-medium' },
+      }),
+    );
+  });
+
+  it('clears a codex model when switching the composer back to claude', async () => {
+    const setSessionConfig = vi.fn(async () => undefined);
+    mockStore.setState({ setSessionConfig });
+
+    const user = userEvent.setup();
+    render(
+      <ChatInput
+        session={makeSession({
+          providerPreference: {
+            defaultProvider: 'anthropic' as Session['providerPreference']['defaultProvider'],
+            allowTurnOverride: true,
+          },
+          providerOverride: 'codex',
+          modelOverride: 'codex-latest',
+        })}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /Codex/ }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'model picker' })).getByRole('button', {
+        name: 'Claude',
+      }),
+    );
+
+    expect(setSessionConfig).toHaveBeenCalledWith('session-1', {
+      providerOverride: 'anthropic',
+      modelOverride: null,
+    });
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'back to claude');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        override: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
       }),
     );
   });

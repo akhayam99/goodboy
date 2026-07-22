@@ -153,11 +153,10 @@ export async function* runTurn(
         if (!receivedAnyLine) {
           const tail = stderr.trim().split('\n').slice(-5).join('\n');
           const detail = tail.length > 0 ? `: ${tail}` : '';
-          if (exitCode !== null && exitCode !== 0) {
-            error = new Error(`provider exited with code ${exitCode}${detail}`);
-          } else if (tail.length > 0) {
-            error = new Error(`provider emitted no events${detail}`);
-          }
+          error =
+            exitCode !== null && exitCode !== 0
+              ? new Error(`provider exited with code ${exitCode}${detail}`)
+              : new Error(`provider emitted no events${detail}`);
         }
         ended = true;
         flush();
