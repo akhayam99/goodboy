@@ -31,6 +31,7 @@ import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
 import { ChatWorkflowHeader } from './parts/ChatWorkflowHeader';
 import { WorkflowsPane } from './parts/WorkflowsPane';
+import { IntegrationPane } from './parts/IntegrationPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { resolveRootAgent } from '../../agent-kind';
 
@@ -247,6 +248,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <SlotPane session={session} slotKey={lens} />
                 ) : null}
                 {lens === 'pr' ? <PrPane session={session} /> : null}
+                {lens === 'linear' ? (
+                  <IntegrationPane sessionId={sessionId} provider="linear" />
+                ) : null}
+                {lens === 'sentry' ? (
+                  <IntegrationPane sessionId={sessionId} provider="sentry" />
+                ) : null}
+                {lens === 'gitlab_issues' ? (
+                  <IntegrationPane sessionId={sessionId} provider="gitlab" />
+                ) : null}
                 {lens === 'files' ? (
                   <FilesPane
                     sessionId={sessionId}
