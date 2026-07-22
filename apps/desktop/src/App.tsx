@@ -608,7 +608,7 @@ export const App = () => {
     [currentSession, lensGo],
   );
 
-  const goToLens = useCallback((kind: LensKind) => {
+  const goToLens = useCallback((kind: LensKind | null) => {
     const s = useAppStore.getState();
     if (!s.currentSessionId) {
       return;
@@ -706,6 +706,12 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+l', () => goToLens('plans'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+s', () => goToLens('scripts'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+q', () => goToLens('questions'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+o', () => goToLens(null), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+h', () => goToLens('pr'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+e', () => goToLens('decisions'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+u', () => goToLens('last_output_summary'), {
+    ignoreInInputs: false,
+  });
   useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false });
