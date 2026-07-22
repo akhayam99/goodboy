@@ -3,13 +3,16 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
   Bot,
+  Bug,
   CheckCheck,
   CircleHelp,
   FileDiff,
   FileText,
-  GitPullRequest,
+  GitBranch,
+  GitFork,
   LayoutDashboard,
   Layers,
+  ListTodo,
   MessageSquareReply,
   SquareTerminal,
   Target,
@@ -29,6 +32,7 @@ import {
   useSessionUnreadLens,
 } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
+import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverviewPane/lib';
 
 type LensColumnProps = {
@@ -67,6 +71,13 @@ export const LensColumn = ({
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const nonResolverStandalone = useNonResolverStandaloneAgents(sessionId);
   const unreadLens = useSessionUnreadLens(sessionId);
+  const remoteKind = useRemoteHostKind(session.workspaceId);
+  const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const hasGitlabIntegration = useAppStore((s) =>
+    (s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY).some(
+      (integration) => integration.provider === 'gitlab',
+    ),
+  );
 
   const isResolver = useMemo(
     () => (agent: Agent) =>
@@ -120,6 +131,11 @@ export const LensColumn = ({
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );
+  const linearCount = externalTasks.filter((task) => task.provider === 'linear').length;
+  const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
+  const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
+  const isGitlabRemote = remoteKind === 'gitlab';
+  const shouldShowGitlabIssues = remoteKind != null && !isGitlabRemote && hasGitlabIntegration;
 
   const groups: ReadonlyArray<LensGroup> = [
     {
@@ -163,19 +179,7 @@ export const LensColumn = ({
           tone: 'warning',
           count: openCount,
         },
-      ],
-    },
-    {
-      label: 'Changes',
-      rows: [
         { kind: 'files', label: 'Diff', icon: FileDiff, tone: 'info', count: filesCount },
-        {
-          kind: 'pr',
-          label: 'Pull request',
-          icon: GitPullRequest,
-          tone: 'accent',
-          dot: hasPr ? 'running' : undefined,
-        },
       ],
     },
     {
@@ -191,6 +195,31 @@ export const LensColumn = ({
         { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
         { kind: 'decisions', label: 'Decisions', icon: CheckCheck, tone: 'success' },
         { kind: 'last_output_summary', label: 'Session summary', icon: Activity, tone: 'info' },
+      ],
+    },
+    {
+      label: 'Integrations',
+      rows: [
+        {
+          kind: 'pr',
+          label: isGitlabRemote ? 'GitLab' : 'GitHub',
+          icon: isGitlabRemote ? GitFork : GitBranch,
+          tone: 'accent',
+          dot: hasPr ? 'running' : undefined,
+        },
+        { kind: 'linear', label: 'Linear', icon: ListTodo, tone: 'primary', count: linearCount },
+        { kind: 'sentry', label: 'Sentry', icon: Bug, tone: 'warning', count: sentryCount },
+        ...(shouldShowGitlabIssues
+          ? [
+              {
+                kind: 'gitlab_issues',
+                label: 'GitLab issues',
+                icon: GitFork,
+                tone: 'accent',
+                count: gitlabCount,
+              } satisfies LensRow,
+            ]
+          : []),
       ],
     },
     {

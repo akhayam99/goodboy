@@ -575,6 +575,20 @@ describe('store contract', () => {
       expect(readPersistedLens(SESSION_ID)).toBeNull();
     });
 
+    it('degrades an unknown persisted lens to Overview', async () => {
+      globalThis.localStorage.setItem(
+        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
+        'removed-integration',
+      );
+      expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('restores a persisted integration lens', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'linear');
+      expect(readPersistedLens(SESSION_ID)).toBe('linear');
+    });
+
     it('lensGo walks back and forward through visited lenses', async () => {
       const store = await getStore();
       store.getState().setActiveLens(SESSION_ID, 'agents');

@@ -24,9 +24,12 @@ export type LensKind =
   | 'decisions'
   | 'last_output_summary'
   | 'pr'
-  | 'files';
+  | 'files'
+  | 'linear'
+  | 'sentry'
+  | 'gitlab_issues';
 
-export const LENS_KINDS = new Set<LensKind>([
+export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'questions',
   'agents',
   'workflows',
@@ -39,6 +42,9 @@ export const LENS_KINDS = new Set<LensKind>([
   'last_output_summary',
   'pr',
   'files',
+  'linear',
+  'sentry',
+  'gitlab_issues',
 ]);
 
 export type SessionStudio =

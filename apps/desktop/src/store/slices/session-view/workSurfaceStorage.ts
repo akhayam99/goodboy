@@ -1,20 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
-import type { LensKind } from './types';
-
-const RESTORABLE = new Set<LensKind>([
-  'questions',
-  'agents',
-  'workflows',
-  'plans',
-  'scripts',
-  'terminal',
-  'goal',
-  'decisions',
-  'last_output_summary',
-  'pr',
-  'files',
-]);
+import { LENS_KINDS, type LensKind } from './types';
 
 const storageKey = (sessionId: SessionId): string =>
   `${STORAGE_PREFIXES.workSurfaceView}${sessionId}`;
@@ -22,10 +8,10 @@ const storageKey = (sessionId: SessionId): string =>
 export const readPersistedLens = (sessionId: SessionId): LensKind | null => {
   try {
     const raw = localStorage.getItem(storageKey(sessionId));
-    if (!raw || !RESTORABLE.has(raw as LensKind)) {
+    if (raw == null) {
       return null;
     }
-    return raw as LensKind;
+    return [...LENS_KINDS].find((lens) => lens === raw) ?? null;
   } catch {
     return null;
   }
@@ -34,7 +20,5 @@ export const readPersistedLens = (sessionId: SessionId): LensKind | null => {
 export const writePersistedLens = (sessionId: SessionId, lens: LensKind | null): void => {
   try {
     localStorage.setItem(storageKey(sessionId), lens ?? '');
-  } catch {
-    // localStorage unavailable, ignore
-  }
+  } catch {}
 };

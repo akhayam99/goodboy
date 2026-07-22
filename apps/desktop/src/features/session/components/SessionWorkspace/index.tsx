@@ -47,6 +47,9 @@ const LENS_LABEL: Record<LensKind, string> = {
   last_output_summary: 'Session summary',
   pr: 'Pull request',
   files: 'Diff',
+  linear: 'Linear',
+  sentry: 'Sentry',
+  gitlab_issues: 'GitLab issues',
 };
 
 type SessionWorkspaceProps = {
