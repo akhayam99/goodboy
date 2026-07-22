@@ -1,4 +1,5 @@
 import {
+  extractCommentAnalysis,
   extractCommentResolved,
   extractCommentWontfix,
   extractPlanFromMarker,
@@ -76,11 +77,19 @@ export const completeResolvedAgent = async ({
 
   const resolvedMarker = extractCommentResolved(assistantText);
   const wontfixMarker = extractCommentWontfix(assistantText);
-  const nextState = resolvedMarker ? 'committed' : wontfixMarker ? 'wontfix' : 'awaiting';
+  const analysisMarker = extractCommentAnalysis(assistantText);
+  const nextState =
+    resolvedMarker !== null
+      ? 'committed'
+      : wontfixMarker !== null
+        ? 'wontfix'
+        : analysisMarker !== null
+          ? 'analyzed'
+          : 'awaiting';
   set((state) => ({
     resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
   }));
-  if (resolvedMarker || wontfixMarker) {
+  if (resolvedMarker !== null || wontfixMarker !== null || analysisMarker !== null) {
     void get().activateNextResolver(sessionId);
   }
   return null;

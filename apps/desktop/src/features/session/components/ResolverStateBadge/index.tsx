@@ -7,6 +7,7 @@ export type ResolverBadgeState =
   | 'running'
   | 'queued'
   | 'committed'
+  | 'analyzed'
   | 'resolved'
   | 'wontfix'
   | 'awaiting'
@@ -20,6 +21,8 @@ export const resolverBadgeState = (status: ResolverStatus): ResolverBadgeState =
       return 'queued';
     case 'committed':
       return 'committed';
+    case 'analyzed':
+      return 'analyzed';
     case 'resolved':
       return 'resolved';
     case 'wontfix':
@@ -43,6 +46,7 @@ const COPY: Record<ResolverBadgeState, string> = {
   running: 'working',
   queued: 'queued',
   committed: 'pending push',
+  analyzed: 'verdict ready',
   resolved: 'resolved',
   wontfix: 'explained',
   awaiting: 'needs you',
@@ -63,7 +67,7 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
       <GitCommit size={10} className="text-warning" aria-hidden />
     ) : state === 'wontfix' ? (
       <Ban size={10} className="text-muted-foreground/70" aria-hidden />
-    ) : state === 'awaiting' ? (
+    ) : state === 'awaiting' || state === 'analyzed' ? (
       <AlertTriangle size={10} className="text-warning" aria-hidden />
     ) : (
       <Check size={10} className="text-muted-foreground/70" aria-hidden />
@@ -74,7 +78,7 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
         'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
         state === 'resolved'
           ? 'bg-success/10 text-success'
-          : state === 'committed' || state === 'awaiting'
+          : state === 'committed' || state === 'awaiting' || state === 'analyzed'
             ? 'bg-warning/10 text-warning'
             : state === 'failed'
               ? 'bg-danger/10 text-danger'

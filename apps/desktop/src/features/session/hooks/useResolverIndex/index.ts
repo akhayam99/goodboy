@@ -47,7 +47,7 @@ export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
   );
   const resolverState = useAppStore(
     useShallow((s) => {
-      const out: Record<string, 'awaiting' | 'committed' | 'wontfix'> = {};
+      const out: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'> = {};
       const runs = s.sessionPhaseRuns[sessionId];
       if (!runs) {
         return out;
