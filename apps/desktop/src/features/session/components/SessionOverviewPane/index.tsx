@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   ArrowRight,
   Bot,
@@ -26,6 +26,7 @@ import {
 import type { LensKind } from '../../../../store';
 import { STAGE_TONE } from '../../session-stage';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
+import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
@@ -36,6 +37,7 @@ import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
+import { CompletedSection } from './CompletedSection';
 import { PipelineSection } from './PipelineSection';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { StartRowContent } from './StartRowContent';
@@ -86,6 +88,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
     currentTitle: session.goal,
   });
   const workspace = useCurrentWorkspace();
+  const sessionList = useMemo(() => [session], [session]);
+  const runs = useWorkspaceRuns(session.workspaceId, sessionList);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
@@ -111,6 +115,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
   const openCount = openQuestions.length;
   const resolvableItems = resolvable.prComments + resolvable.diffComments + resolvable.pending;
   const commentsToResolve = resolvable.prComments + resolvable.diffComments;
+  const resolveQueueItems = runs.resolveQueue.length + (runs.completedResolveQueue?.length ?? 0);
+  const hasResolveItems = resolvableItems > 0 || resolveQueueItems > 0;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && rawStandalone.length === 0;
   const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
@@ -375,13 +381,13 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
           <PipelineSection
             session={session}
             workspaceId={workspace.id}
+            lanes={runs.lanes}
+            freeAgents={runs.freeAgents}
             onSelectLens={onSelectLens}
           />
         ) : null}
 
-        <LinkedWorkSection sessionId={session.id as SessionId} onSelectLens={onSelectLens} />
-
-        {resolvableItems > 0 ? (
+        {hasResolveItems ? (
           <div className="flex flex-col gap-2">
             <Eyebrow label="Resolve" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-2">
@@ -396,9 +402,26 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                   onClick={() => onSelectLens('resolve')}
                 />
               ) : null}
+              {resolveQueueItems > 0 ? (
+                <SummaryRow
+                  icon={MessageSquareReply}
+                  tone="success"
+                  label={`${resolveQueueItems} in resolve queue`}
+                  onClick={() => onSelectLens('resolve')}
+                />
+              ) : null}
             </div>
           </div>
         ) : null}
+
+        <LinkedWorkSection sessionId={session.id as SessionId} onSelectLens={onSelectLens} />
+
+        <CompletedSection
+          sessionId={session.id as SessionId}
+          lanes={runs.completedLanes ?? EMPTY_ARRAY}
+          freeAgents={runs.completedFreeAgents ?? EMPTY_ARRAY}
+          onSelectLens={onSelectLens}
+        />
 
         {!isFresh && nudges.length === 0 && !isRunning ? (
           <span className="px-0.5 text-2xs text-muted-foreground/70">

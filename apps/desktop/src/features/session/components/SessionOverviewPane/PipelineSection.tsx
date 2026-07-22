@@ -1,35 +1,30 @@
 import { useMemo } from 'react';
-import { MessageSquareReply } from 'lucide-react';
-import { Divider, Eyebrow } from '@goodboy/ui';
+import { Eyebrow } from '@goodboy/ui';
 import type { Agent, Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
-import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
+import type { SpawnNode } from '../../../orchestration/components/SpawnTree/lib';
+import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { AgentRow } from './AgentRow';
 import type { LaneAdvance } from './LaneAdvance';
 import { PipelineLane } from './PipelineLane';
-import { SummaryRow } from './SummaryRow';
 
 type Props = {
   readonly session: Session;
   readonly workspaceId: WorkspaceId;
+  readonly lanes: ReadonlyArray<RunLaneModel>;
+  readonly freeAgents: ReadonlyArray<SpawnNode>;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const PipelineSection = ({ session, workspaceId, onSelectLens }: Props) => {
-  const sessionList = useMemo(() => [session], [session]);
-  const {
-    lanes,
-    freeAgents,
-    resolveQueue,
-    completedLanes,
-    completedFreeAgents,
-    completedResolveQueue,
-  } = useWorkspaceRuns(workspaceId, sessionList);
-  const resolvedCompletedLanes = completedLanes ?? EMPTY_ARRAY;
-  const resolvedCompletedFreeAgents = completedFreeAgents ?? EMPTY_ARRAY;
-  const resolvedCompletedResolveQueue = completedResolveQueue ?? EMPTY_ARRAY;
+export const PipelineSection = ({
+  session,
+  workspaceId,
+  lanes,
+  freeAgents,
+  onSelectLens,
+}: Props) => {
   const sessionId = session.id as SessionId;
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
@@ -51,13 +46,7 @@ export const PipelineSection = ({ session, workspaceId, onSelectLens }: Props) =
     return m;
   }, [phaseTemplates, sessionWorkflows]);
 
-  const hasRunning = lanes.length > 0 || freeAgents.length > 0 || resolveQueue.length > 0;
-  const hasCompleted =
-    resolvedCompletedLanes.length > 0 ||
-    resolvedCompletedFreeAgents.length > 0 ||
-    resolvedCompletedResolveQueue.length > 0;
-
-  if (!hasRunning && !hasCompleted) {
+  if (lanes.length === 0 && freeAgents.length === 0) {
     return null;
   }
 
@@ -90,54 +79,20 @@ export const PipelineSection = ({ session, workspaceId, onSelectLens }: Props) =
 
   return (
     <div className="flex flex-col gap-2">
-      {hasRunning ? (
-        <>
-          <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
-          <div className="flex flex-col gap-2">
-            {lanes.map((lane) => (
-              <PipelineLane
-                key={lane.runId}
-                lane={lane}
-                onOpen={() => open(lane.runId)}
-                advance={advanceFor(lane.runId)}
-              />
-            ))}
-            {freeAgents.map((agent) => (
-              <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
-            ))}
-            {resolveQueue.length > 0 ? (
-              <SummaryRow
-                icon={MessageSquareReply}
-                tone="success"
-                label={`${resolveQueue.length} in resolve queue`}
-                onClick={() => onSelectLens('resolve')}
-              />
-            ) : null}
-          </div>
-        </>
-      ) : null}
-      {hasRunning && hasCompleted ? <Divider /> : null}
-      {hasCompleted ? (
-        <>
-          <Eyebrow label="Completed" muted className="px-0.5 font-medium" />
-          <div className="flex flex-col gap-2">
-            {resolvedCompletedLanes.map((lane) => (
-              <PipelineLane key={lane.runId} lane={lane} onOpen={() => open(lane.runId)} />
-            ))}
-            {resolvedCompletedFreeAgents.map((agent) => (
-              <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
-            ))}
-            {resolvedCompletedResolveQueue.length > 0 ? (
-              <SummaryRow
-                icon={MessageSquareReply}
-                tone="success"
-                label={`${resolvedCompletedResolveQueue.length} in resolve queue`}
-                onClick={() => onSelectLens('resolve')}
-              />
-            ) : null}
-          </div>
-        </>
-      ) : null}
+      <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
+      <div className="flex flex-col gap-2">
+        {lanes.map((lane) => (
+          <PipelineLane
+            key={lane.runId}
+            lane={lane}
+            onOpen={() => open(lane.runId)}
+            advance={advanceFor(lane.runId)}
+          />
+        ))}
+        {freeAgents.map((agent) => (
+          <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
+        ))}
+      </div>
     </div>
   );
 };

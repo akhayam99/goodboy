@@ -156,6 +156,36 @@ const spawnNode = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+const completedLane = (over: Record<string, unknown> = {}) => ({
+  runId: 'completed-run',
+  workflowName: 'Completed workflow',
+  sessionId: 'sess-1',
+  sessionGoal: 'g',
+  stage: 'done',
+  autoRun: false,
+  chainAfterId: null,
+  steps: [
+    {
+      stepId: 'scout-step',
+      name: 'Scout',
+      kind: 'scout',
+      status: 'done',
+      rootAgentId: null,
+      children: [],
+    },
+    {
+      stepId: 'build-step',
+      name: 'Build',
+      kind: 'implementer',
+      status: 'done',
+      rootAgentId: null,
+      children: [],
+    },
+  ],
+  costUsd: 0,
+  ...over,
+});
+
 const baseSession = (over: Partial<Session> = {}): Session =>
   ({
     id: 'sess-1',
@@ -450,17 +480,18 @@ describe('SessionOverviewPane pipeline agent cards', () => {
     expect(onSelectLens).toHaveBeenCalledWith('agents');
   });
 
-  it('renders the resolve-queue summary separately from agent cards', () => {
+  it('renders the resolve queue only in the Resolve section', () => {
     runs.freeAgents = [spawnNode({ name: 'free agent' })];
     runs.resolveQueue = [spawnNode({ id: 'r', name: 'resolver' })];
     const onSelectLens = renderPane();
     expect(screen.getByText('free agent')).toBeDefined();
-    expect(screen.getByText('1 in resolve queue')).toBeDefined();
+    expect(screen.getByText('Resolve')).toBeDefined();
+    expect(screen.getAllByText('1 in resolve queue')).toHaveLength(1);
     fireEvent.click(screen.getByText('1 in resolve queue'));
     expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 
-  it('hides the activity section entirely when no lanes, agents or resolvers', () => {
+  it('hides the activity section entirely when no lanes or agents exist', () => {
     renderPane();
     expect(screen.queryByText('Activity')).toBeNull();
   });
@@ -470,13 +501,18 @@ describe('SessionOverviewPane completed bucket (cluster D)', () => {
   it('renders a completed free agent under "Completed" while a running one appears under "Activity"', () => {
     runs.freeAgents = [spawnNode({ id: 'running-node', name: 'active agent', status: 'running' })];
     runs.completedFreeAgents = [
-      spawnNode({ id: 'done-node', name: 'finished agent', status: 'done' }),
+      spawnNode({
+        id: 'done-node',
+        name: 'finished agent',
+        status: 'done',
+        outputSummary: 'final summary',
+      }),
     ];
     renderPane();
     expect(screen.getByText('Activity')).toBeDefined();
     expect(screen.getByText('active agent')).toBeDefined();
     expect(screen.getByText('Completed')).toBeDefined();
-    expect(screen.getByText('finished agent')).toBeDefined();
+    expect(screen.getByRole('button', { name: /finished agent final summary/i })).toBeDefined();
   });
 
   it('omits the "Completed" heading when all completed buckets are empty', () => {
@@ -487,6 +523,7 @@ describe('SessionOverviewPane completed bucket (cluster D)', () => {
   });
 
   it('omits the "Activity" heading when only completed items exist', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
     runs.completedFreeAgents = [
       spawnNode({ id: 'done-node', name: 'finished agent', status: 'done' }),
     ];
@@ -494,12 +531,88 @@ describe('SessionOverviewPane completed bucket (cluster D)', () => {
     expect(screen.queryByText('Activity')).toBeNull();
     expect(screen.getByText('Completed')).toBeDefined();
     expect(screen.getByText('finished agent')).toBeDefined();
+    const completed = screen.getByText('Completed');
+    const allClear = screen.getByText('All clear, nothing running.');
+    expect(completed.compareDocumentPosition(allClear) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+      0,
+    );
   });
 
   it('returns null (no activity section at all) when all six buckets are empty', () => {
     renderPane();
     expect(screen.queryByText('Activity')).toBeNull();
     expect(screen.queryByText('Completed')).toBeNull();
+  });
+
+  it('caps completed items at four and routes agent overflow', () => {
+    runs.completedFreeAgents = Array.from({ length: 6 }, (_, index) =>
+      spawnNode({ id: `done-${index}`, name: `finished agent ${index}`, status: 'done' }),
+    );
+    const onSelectLens = renderPane();
+    expect(screen.getByText('finished agent 0')).toBeDefined();
+    expect(screen.getByText('finished agent 3')).toBeDefined();
+    expect(screen.queryByText('finished agent 4')).toBeNull();
+    fireEvent.click(screen.getByText('View all agents'));
+    expect(onSelectLens).toHaveBeenCalledWith('agents');
+  });
+
+  it('renders completed workflows as one row with inline step pills and a done count', () => {
+    runs.completedLanes = [completedLane()];
+    renderPane();
+    expect(screen.getByRole('button', { name: /completed workflow/i })).toBeDefined();
+    expect(screen.getByTitle('Scout done')).toBeDefined();
+    expect(screen.getByTitle('Build done')).toBeDefined();
+    expect(screen.getByText('2/2')).toBeDefined();
+  });
+
+  it('focuses a completed workflow before opening its lens', () => {
+    runs.completedLanes = [completedLane({ runId: 'done-run-7' })];
+    const onSelectLens = renderPane();
+    fireEvent.click(screen.getByRole('button', { name: /completed workflow/i }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'done-run-7');
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('renders one overflow row per hidden completed kind', () => {
+    runs.completedLanes = Array.from({ length: 5 }, (_, index) =>
+      completedLane({ runId: `done-run-${index}`, workflowName: `Workflow ${index}` }),
+    );
+    runs.completedFreeAgents = [spawnNode({ name: 'hidden finished agent', status: 'done' })];
+    const onSelectLens = renderPane();
+    fireEvent.click(screen.getByText('View all workflows'));
+    fireEvent.click(screen.getByText('View all agents'));
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+    expect(onSelectLens).toHaveBeenCalledWith('agents');
+  });
+
+  it('keeps active and completed resolver counts out of Completed', () => {
+    runs.resolveQueue = [spawnNode({ id: 'active-resolver' })];
+    runs.completedResolveQueue = [spawnNode({ id: 'done-resolver', status: 'done' })];
+    renderPane();
+    expect(screen.getAllByText('2 in resolve queue')).toHaveLength(1);
+    expect(screen.getByText('Resolve')).toBeDefined();
+    expect(screen.queryByText('Activity')).toBeNull();
+    expect(screen.queryByText('Completed')).toBeNull();
+  });
+});
+
+describe('SessionOverviewPane section order', () => {
+  it('orders status sections from nudges through completed work', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+    hooks.stage = { stage: 'attention', reason: 'idle' } as SessionStageInfo;
+    runs.freeAgents = [spawnNode({ name: 'active agent' })];
+    runs.resolveQueue = [spawnNode({ id: 'resolver', name: 'resolver' })];
+    runs.completedFreeAgents = [spawnNode({ name: 'finished agent', status: 'done' })];
+    renderPane();
+    const sections = ['Needs you', 'Start', 'Activity', 'Resolve', 'Linked work', 'Completed'].map(
+      (label) => screen.getByText(label),
+    );
+    for (let index = 0; index < sections.length - 1; index += 1) {
+      expect(
+        sections[index]!.compareDocumentPosition(sections[index + 1]!) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).not.toBe(0);
+    }
   });
 });
 
