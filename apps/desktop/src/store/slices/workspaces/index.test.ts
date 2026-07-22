@@ -16,6 +16,7 @@ import type {
   PlanWithCount,
   ProviderRunId,
   Session,
+  SessionExternalTask,
   SessionId,
   Skill,
   SkillId,
@@ -76,7 +77,8 @@ vi.mock('@goodboy/db', () => ({
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
   findWorkspaceByRootPath: vi.fn(async () => null),
-  setSessionExternalTask: vi.fn(async () => undefined),
+  upsertSessionExternalTask: vi.fn(async () => undefined),
+  deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listContextSlotsForSession: vi.fn(async () => []),
   insertContextSlotHistory: vi.fn(async () => undefined),
@@ -618,6 +620,45 @@ describe('store contract', () => {
       expect(db.updateAgentStatus).toHaveBeenCalledWith(expect.anything(), AGENT_ID, {
         status: 'pending',
       });
+    });
+
+    it('loads every external task grouped by session', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const tasks: ReadonlyArray<SessionExternalTask> = [
+        {
+          sessionId: SESSION_ID,
+          provider: 'linear',
+          externalId: 'linear-1',
+          identifier: 'GB-1',
+          url: 'https://linear.app/acme/issue/GB-1',
+          title: 'Linear task',
+          createdAt: NOW,
+        },
+        {
+          sessionId: SESSION_ID,
+          provider: 'sentry',
+          externalId: 'sentry-2',
+          identifier: 'GOODBOY-2',
+          url: 'https://sentry.io/organizations/acme/issues/2/',
+          title: 'Sentry task',
+          createdAt: NOW,
+        },
+      ];
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listExternalTasksForWorkspace).mockResolvedValueOnce(tasks);
+      store.setState({ workspaces: [buildWorkspace()] });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(db.listExternalTasksForWorkspace).toHaveBeenCalledWith({
+        db: expect.anything(),
+        workspaceId: WS_ID,
+      });
+      expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual(tasks);
     });
 
     it('setCurrentWorkspace(null) clears the active workspace and resets workspaceSummary etc.', async () => {

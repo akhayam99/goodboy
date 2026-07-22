@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const { store } = vi.hoisted(() => ({
+const { remote, store } = vi.hoisted(() => ({
+  remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
   store: {
     agentKindOverride: {},
     sessionPhaseRuns: {},
@@ -13,6 +14,8 @@ const { store } = vi.hoisted(() => ({
     sessionGithub: {},
     sessionGitlabMr: {},
     sessionPendingResolutions: {},
+    sessionExternalTasks: {},
+    workspaceIntegrations: {},
   },
 }));
 
@@ -34,12 +37,23 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
+vi.mock('../../../../worktree/useRemoteHostKind', () => ({
+  useRemoteHostKind: () => remote.kind,
+}));
+
 import { LensColumn } from './LensColumn';
 
 const SESSION = {
   id: 'session-1',
+  workspaceId: 'workspace-1',
   workflowRuns: [],
 } as unknown as Session;
+
+beforeEach(() => {
+  remote.kind = 'github';
+  store.sessionExternalTasks = {};
+  store.workspaceIntegrations = {};
+});
 
 afterEach(cleanup);
 
@@ -75,9 +89,9 @@ describe('LensColumn', () => {
 
     expect(
       screen
-        .getAllByText(/^(Work|Changes|Artifacts|Context|Infra)$/)
+        .getAllByText(/^(Work|Artifacts|Context|Integrations|Infra)$/)
         .map((heading) => heading.textContent),
-    ).toEqual(['Work', 'Changes', 'Artifacts', 'Context', 'Infra']);
+    ).toEqual(['Work', 'Artifacts', 'Context', 'Integrations', 'Infra']);
     expect(screen.getAllByRole('button').map((button) => button.textContent?.trim())).toEqual([
       'Overview',
       'Workflows',
@@ -85,13 +99,57 @@ describe('LensColumn', () => {
       'Resolve',
       'Questions',
       'Diff',
-      'Pull request',
       'Plans',
       'Scripts',
       'Goal',
       'Decisions',
       'Session summary',
+      'GitHub',
+      'Linear',
+      'Sentry',
       'Terminal',
     ]);
+  });
+
+  it('shows provider counts and hides GitLab issues on a GitLab remote', () => {
+    store.workspaceIntegrations = {
+      'workspace-1': [{ provider: 'gitlab' }],
+    };
+    store.sessionExternalTasks = {
+      'session-1': [
+        { provider: 'linear' },
+        { provider: 'linear' },
+        { provider: 'sentry' },
+        { provider: 'gitlab' },
+      ],
+    };
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Linear 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Sentry 1' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'GitLab issues 1' })).toBeDefined();
+
+    cleanup();
+    remote.kind = 'gitlab';
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'GitLab' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /GitLab issues/ })).toBeNull();
   });
 });

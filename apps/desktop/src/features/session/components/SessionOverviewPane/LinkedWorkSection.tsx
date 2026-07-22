@@ -1,7 +1,7 @@
 import { CircleDot, GitPullRequest } from 'lucide-react';
 import { Eyebrow } from '@goodboy/ui';
 import type { PullRequestStateKind, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
@@ -16,7 +16,7 @@ type Props = {
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
-  const externalTask = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? null);
+  const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const pullRequest = github?.pr ?? null;
   const linkedIssues = github?.linkedIssues ?? [];
   const unresolvedReviewComments =
@@ -28,7 +28,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
     pullRequest == null &&
     mergeRequest == null &&
     linkedIssues.length === 0 &&
-    externalTask == null
+    externalTasks.length === 0
   ) {
     return null;
   }
@@ -82,7 +82,13 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
             onClick={() => void openUrl(issue.url)}
           />
         ))}
-        {externalTask != null ? <ExternalTaskChip task={externalTask} variant="full" /> : null}
+        {externalTasks.map((task) => (
+          <ExternalTaskChip
+            key={`${task.provider}:${task.externalId}`}
+            task={task}
+            variant="full"
+          />
+        ))}
       </div>
     </div>
   );

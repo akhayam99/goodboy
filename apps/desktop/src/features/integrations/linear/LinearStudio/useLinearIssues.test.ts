@@ -72,13 +72,13 @@ describe('buildIssueGroups', () => {
 
 describe('resolveIssueSessions', () => {
   const NO_BRANCHES: Record<string, string> = {};
-  const NO_TASKS: Record<string, SessionExternalTask> = {};
+  const NO_TASKS: Record<string, ReadonlyArray<SessionExternalTask>> = {};
   const NO_PRS = new Map<string, SessionPrRef>();
 
   it('links by external task', () => {
     const issue = makeIssue({ id: 'lin-x' });
-    const tasks: Record<string, SessionExternalTask> = {
-      s1: { externalId: 'lin-x', provider: 'linear' } as SessionExternalTask,
+    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
+      s1: [{ externalId: 'lin-x', provider: 'linear' } as SessionExternalTask],
     };
     const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, tasks, NO_PRS);
     expect(map.get('lin-x')).toBe('s1');
@@ -113,8 +113,8 @@ describe('resolveIssueSessions', () => {
 
   it('prefers the external-task link over a branch match', () => {
     const issue = makeIssue({ id: 'lin-x', branchName: 'amin/ser-1-fix' });
-    const tasks: Record<string, SessionExternalTask> = {
-      s2: { externalId: 'lin-x', provider: 'linear' } as SessionExternalTask,
+    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
+      s2: [{ externalId: 'lin-x', provider: 'linear' } as SessionExternalTask],
     };
     const branches = { s1: 'amin/ser-1-fix' };
     const map = resolveIssueSessions(

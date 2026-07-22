@@ -16,6 +16,7 @@ import type {
   PlanWithCount,
   ProviderRunId,
   Session,
+  SessionExternalTask,
   SessionId,
   Skill,
   SkillId,
@@ -76,7 +77,8 @@ vi.mock('@goodboy/db', () => ({
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
   findWorkspaceByRootPath: vi.fn(async () => null),
-  setSessionExternalTask: vi.fn(async () => undefined),
+  upsertSessionExternalTask: vi.fn(async () => undefined),
+  deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listContextSlotsForSession: vi.fn(async () => []),
   insertContextSlotHistory: vi.fn(async () => undefined),
@@ -799,8 +801,8 @@ describe('store contract', () => {
       const store = await getStore();
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
-      const { setSessionExternalTask } = await import('@goodboy/db');
-      const spy = setSessionExternalTask as unknown as ReturnType<typeof vi.fn>;
+      const { upsertSessionExternalTask } = await import('@goodboy/db');
+      const spy = upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>;
 
       const { session } = await store
         .getState()
@@ -808,17 +810,17 @@ describe('store contract', () => {
 
       expect(spy).toHaveBeenCalledTimes(1);
       const cached = store.getState().sessionExternalTasks[session.id];
-      expect(cached?.provider).toBe('gitlab');
-      expect(cached?.externalId).toBe('101');
-      expect(cached?.sessionId).toBe(session.id);
+      expect(cached?.[0]?.provider).toBe('gitlab');
+      expect(cached?.[0]?.externalId).toBe('101');
+      expect(cached?.[0]?.sessionId).toBe(session.id);
     });
 
     it('still creates the session but caches no task when persistence fails', async () => {
       const store = await getStore();
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
-      const { setSessionExternalTask } = await import('@goodboy/db');
-      (setSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      const { upsertSessionExternalTask } = await import('@goodboy/db');
+      (upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error('db down'),
       );
 
@@ -828,6 +830,66 @@ describe('store contract', () => {
 
       expect(session.id).toBeDefined();
       expect(store.getState().sessionExternalTasks[session.id]).toBeUndefined();
+    });
+  });
+
+  describe('session external task links', () => {
+    const LINEAR_TASK: Omit<SessionExternalTask, 'sessionId'> = {
+      provider: 'linear',
+      externalId: 'linear-42',
+      identifier: 'GB-42',
+      url: 'https://linear.app/acme/issue/GB-42',
+      title: 'Link this issue',
+      createdAt: NOW,
+    };
+    const SENTRY_TASK: Omit<SessionExternalTask, 'sessionId'> = {
+      provider: 'sentry',
+      externalId: 'sentry-7',
+      identifier: 'GOODBOY-7',
+      url: 'https://sentry.io/organizations/acme/issues/7/',
+      title: 'TypeError',
+      createdAt: NOW,
+    };
+
+    it('persists and caches every linked task', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+
+      await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);
+      await store.getState().linkSessionExternalTask(SESSION_ID, SENTRY_TASK);
+
+      expect(vi.mocked(db.upsertSessionExternalTask)).toHaveBeenCalledTimes(2);
+      expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([
+        { ...LINEAR_TASK, sessionId: SESSION_ID },
+        { ...SENTRY_TASK, sessionId: SESSION_ID },
+      ]);
+    });
+
+    it('persists a composite-key unlink and keeps the other tasks', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({
+        sessionExternalTasks: {
+          [SESSION_ID]: [
+            { ...LINEAR_TASK, sessionId: SESSION_ID },
+            { ...SENTRY_TASK, sessionId: SESSION_ID },
+          ],
+        },
+      });
+
+      await store
+        .getState()
+        .unlinkSessionExternalTask(SESSION_ID, LINEAR_TASK.provider, LINEAR_TASK.externalId);
+
+      expect(vi.mocked(db.deleteSessionExternalTask)).toHaveBeenCalledWith({
+        db: expect.anything(),
+        sessionId: SESSION_ID,
+        provider: 'linear',
+        externalId: 'linear-42',
+      });
+      expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([
+        { ...SENTRY_TASK, sessionId: SESSION_ID },
+      ]);
     });
   });
 

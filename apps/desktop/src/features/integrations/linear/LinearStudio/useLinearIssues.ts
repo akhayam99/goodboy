@@ -115,14 +115,16 @@ export const resolveIssueSessions = (
   issues: ReadonlyArray<LinearIssue>,
   sessions: ReadonlyArray<Session>,
   sessionBranches: Readonly<Record<string, string>>,
-  sessionExternalTasks: Readonly<Record<string, SessionExternalTask>>,
+  sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>,
   sessionPr: ReadonlyMap<string, SessionPrRef>,
 ): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
   for (const session of sessions) {
-    const task = sessionExternalTasks[session.id];
-    if (task && task.provider === 'linear' && !byIssue.has(task.externalId)) {
-      byIssue.set(task.externalId, session.id);
+    const tasks = sessionExternalTasks[session.id] ?? [];
+    for (const task of tasks) {
+      if (task.provider === 'linear' && !byIssue.has(task.externalId)) {
+        byIssue.set(task.externalId, session.id);
+      }
     }
   }
   for (const issue of issues) {

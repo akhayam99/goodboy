@@ -1,19 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
+import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
 import {
-  getSessionExternalTask,
-  removeSessionExternalTask,
-  setSessionExternalTask,
+  deleteSessionExternalTask,
+  listExternalTasksForWorkspace,
+  listSessionExternalTasks,
+  upsertSessionExternalTask,
 } from './session-external-task';
 
 const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
 
-async function seed() {
+type SeedParams = {
+  readonly throughVersion?: number;
+};
+
+const seed = async ({ throughVersion = 71 }: SeedParams) => {
   const db = makeTestDatabase();
-  await migrate(db);
+  await migrate(
+    db,
+    migrations.filter((migration) => migration.version <= throughVersion),
+  );
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
@@ -24,107 +33,135 @@ async function seed() {
     [sessionId, workspaceId, 'goal', 'idle', now, now],
   );
   return db;
-}
+};
 
-function makeTask(overrides: Partial<SessionExternalTask> = {}): SessionExternalTask {
-  return {
-    sessionId,
-    provider: 'linear',
-    externalId: 'lin-uuid-1',
-    identifier: 'SER-123',
-    url: 'https://linear.app/serenis/issue/SER-123',
-    title: 'Add user signup',
-    createdAt: new Date('2026-05-21T10:00:00Z').toISOString() as IsoDateTime,
-    ...overrides,
-  };
-}
+type MakeTaskParams = {
+  readonly overrides?: Partial<SessionExternalTask>;
+};
+
+const makeTask = ({ overrides = {} }: MakeTaskParams): SessionExternalTask => ({
+  sessionId,
+  provider: 'linear',
+  externalId: 'lin-uuid-1',
+  identifier: 'SER-123',
+  url: 'https://linear.app/serenis/issue/SER-123',
+  title: 'Add user signup',
+  createdAt: new Date('2026-05-21T10:00:00Z').toISOString() as IsoDateTime,
+  ...overrides,
+});
 
 describe('session_external_tasks queries', () => {
-  it('set + get round-trip', async () => {
-    const db = await seed();
-    const task = makeTask();
-    await setSessionExternalTask(db, task);
-
-    const got = await getSessionExternalTask(db, sessionId);
-    expect(got).not.toBeNull();
-    expect(got!.identifier).toBe('SER-123');
-    expect(got!.url).toBe(task.url);
-    expect(got!.title).toBe(task.title);
-  });
-
-  it('persists a sentry-provider task (widened provider CHECK)', async () => {
-    const db = await seed();
-    const task = makeTask({
-      provider: 'sentry',
-      externalId: 'sentry-issue-42',
-      identifier: 'GOODBOY-7A',
-      url: 'https://sentry.io/organizations/goodboy/issues/42/',
-      title: 'TypeError: undefined is not a function',
+  it('stores and lists multiple links for one session', async () => {
+    const db = await seed({});
+    const linear = makeTask({});
+    const sentry = makeTask({
+      overrides: {
+        provider: 'sentry',
+        externalId: 'sentry-42',
+        identifier: 'GOODBOY-7A',
+        url: 'https://sentry.io/organizations/goodboy/issues/42/',
+        title: 'TypeError',
+      },
     });
-    await setSessionExternalTask(db, task);
+    await upsertSessionExternalTask({ db, task: linear });
+    await upsertSessionExternalTask({ db, task: sentry });
 
-    const got = await getSessionExternalTask(db, sessionId);
-    expect(got!.provider).toBe('sentry');
-    expect(got!.externalId).toBe('sentry-issue-42');
-    expect(got!.identifier).toBe('GOODBOY-7A');
+    const forSession = await listSessionExternalTasks({ db, sessionId });
+    const forWorkspace = await listExternalTasksForWorkspace({ db, workspaceId });
+    expect(forSession.map((task) => task.provider)).toEqual(['linear', 'sentry']);
+    expect(forWorkspace).toEqual(forSession);
   });
 
-  it('round-trips a gitlab-provider task', async () => {
-    const db = await seed();
-    const task = makeTask({
-      provider: 'gitlab',
-      externalId: '101',
-      identifier: 'acme/web#7',
-      url: 'https://gitlab.com/acme/web/-/issues/7',
+  it('upserts only the matching composite key', async () => {
+    const db = await seed({});
+    const original = makeTask({});
+    const other = makeTask({
+      overrides: {
+        provider: 'gitlab',
+        externalId: '101',
+        identifier: 'acme/web#7',
+        url: 'https://gitlab.com/acme/web/-/issues/7',
+      },
     });
-    await setSessionExternalTask(db, task);
+    await upsertSessionExternalTask({ db, task: original });
+    await upsertSessionExternalTask({ db, task: other });
+    await upsertSessionExternalTask({
+      db,
+      task: makeTask({ overrides: { identifier: 'SER-999', title: 'Renamed' } }),
+    });
 
-    const got = await getSessionExternalTask(db, sessionId);
-    expect(got!.provider).toBe('gitlab');
-    expect(got!.externalId).toBe('101');
-    expect(got!.identifier).toBe('acme/web#7');
+    const tasks = await listSessionExternalTasks({ db, sessionId });
+    expect(
+      tasks.map(({ provider, identifier, title }) => ({ provider, identifier, title })),
+    ).toEqual([
+      { provider: 'gitlab', identifier: 'acme/web#7', title: 'Add user signup' },
+      { provider: 'linear', identifier: 'SER-999', title: 'Renamed' },
+    ]);
   });
 
-  it('rejects an unknown provider via the CHECK constraint', async () => {
-    const db = await seed();
+  it('rejects an unknown provider', async () => {
+    const db = await seed({});
     await expect(
-      setSessionExternalTask(db, makeTask({ provider: 'asana' as never })),
+      upsertSessionExternalTask({
+        db,
+        task: makeTask({ overrides: { provider: 'asana' as never } }),
+      }),
     ).rejects.toThrow(/CHECK constraint/);
   });
 
-  it('set on conflict replaces fields (1:1 per session)', async () => {
-    const db = await seed();
-    await setSessionExternalTask(db, makeTask());
-    await setSessionExternalTask(
+  it('deletes only the matching composite key', async () => {
+    const db = await seed({});
+    await upsertSessionExternalTask({ db, task: makeTask({}) });
+    await upsertSessionExternalTask({
       db,
-      makeTask({ identifier: 'SER-999', title: 'Renamed', externalId: 'lin-uuid-2' }),
-    );
+      task: makeTask({
+        overrides: { provider: 'sentry', externalId: '42', identifier: 'GOODBOY-42' },
+      }),
+    });
 
-    const got = await getSessionExternalTask(db, sessionId);
-    expect(got!.identifier).toBe('SER-999');
-    expect(got!.title).toBe('Renamed');
-    expect(got!.externalId).toBe('lin-uuid-2');
+    await deleteSessionExternalTask({
+      db,
+      sessionId,
+      provider: 'linear',
+      externalId: 'lin-uuid-1',
+    });
+
+    const tasks = await listSessionExternalTasks({ db, sessionId });
+    expect(tasks.map((task) => task.identifier)).toEqual(['GOODBOY-42']);
   });
 
-  it('cascade deletes on session delete', async () => {
-    const db = await seed();
-    await setSessionExternalTask(db, makeTask());
+  it('cascade deletes every link with its session', async () => {
+    const db = await seed({});
+    await upsertSessionExternalTask({ db, task: makeTask({}) });
     await db.execute('DELETE FROM sessions WHERE id = ?', [sessionId]);
 
-    const got = await getSessionExternalTask(db, sessionId);
-    expect(got).toBeNull();
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([]);
   });
 
-  it('remove drops the row without touching the session', async () => {
-    const db = await seed();
-    await setSessionExternalTask(db, makeTask());
-    await removeSessionExternalTask(db, sessionId);
+  it('preserves an existing row while removing the one-link constraint', async () => {
+    const db = await seed({ throughVersion: 70 });
+    const original = makeTask({});
+    await db.execute(
+      `INSERT INTO session_external_tasks
+        (session_id, provider, external_id, identifier, url, title, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        original.sessionId,
+        original.provider,
+        original.externalId,
+        original.identifier,
+        original.url,
+        original.title,
+        Date.parse(original.createdAt),
+      ],
+    );
+    const migration = migrations.find((candidate) => candidate.version === 71);
+    if (migration == null) {
+      throw new Error('Migration 71 should exist');
+    }
 
-    const got = await getSessionExternalTask(db, sessionId);
-    expect(got).toBeNull();
-    const sessions = await db.select<{ id: string }>('SELECT id FROM sessions WHERE id = ?', [
-      sessionId,
-    ]);
-    expect(sessions).toHaveLength(1);
+    await migrate(db, [migration]);
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
   });
 });

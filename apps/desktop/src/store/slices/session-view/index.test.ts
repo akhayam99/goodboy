@@ -78,7 +78,8 @@ vi.mock('@goodboy/db', () => ({
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
   findWorkspaceByRootPath: vi.fn(async () => null),
-  setSessionExternalTask: vi.fn(async () => undefined),
+  upsertSessionExternalTask: vi.fn(async () => undefined),
+  deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listContextSlotsForSession: vi.fn(async () => []),
   insertContextSlotHistory: vi.fn(async () => undefined),
@@ -572,6 +573,20 @@ describe('store contract', () => {
         'context',
       );
       expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('degrades an unknown persisted lens to Overview', async () => {
+      globalThis.localStorage.setItem(
+        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
+        'removed-integration',
+      );
+      expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('restores a persisted integration lens', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'linear');
+      expect(readPersistedLens(SESSION_ID)).toBe('linear');
     });
 
     it('lensGo walks back and forward through visited lenses', async () => {

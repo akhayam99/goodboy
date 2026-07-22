@@ -153,7 +153,7 @@ export type AppState = UpdaterState & {
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
-  readonly sessionExternalTasks: Readonly<Record<SessionId, SessionExternalTask>>;
+  readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
   readonly sessions: ReadonlyArray<Session>;

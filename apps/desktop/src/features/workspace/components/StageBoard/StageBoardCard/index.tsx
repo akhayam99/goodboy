@@ -3,6 +3,7 @@ import { Archive, Code, RotateCcw, SquareTerminal, Trash2, type LucideIcon } fro
 import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
+  EMPTY_ARRAY,
   useAppStore,
   useNonResolverStandaloneAgents,
   useSessionCost,
@@ -40,7 +41,7 @@ export const StageBoardCard = memo(function StageBoardCard({
 
   const prState = useAppStore((s) => s.sessionGithub[id]?.pr?.state ?? null);
   const prNumber = useAppStore((s) => s.sessionGithub[id]?.pr?.number);
-  const externalTask = useAppStore((s) => s.sessionExternalTasks?.[id] ?? null);
+  const externalTasks = useAppStore((s) => s.sessionExternalTasks[id] ?? EMPTY_ARRAY);
   const agentCount = useNonResolverStandaloneAgents(id).length;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const dynamicActions = useDynamicActions(session, nav, stage, reason);
@@ -81,7 +82,11 @@ export const StageBoardCard = memo(function StageBoardCard({
 
         {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
 
-        {(sessionCost > 0 || prState || externalTask || agentCount > 0 || isAutoMode) && (
+        {(sessionCost > 0 ||
+          prState != null ||
+          externalTasks.length > 0 ||
+          agentCount > 0 ||
+          isAutoMode) && (
           <span className="flex flex-wrap items-center gap-1.5">
             {sessionCost > 0 && (
               <CostBadge
@@ -93,7 +98,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             {prState && (
               <PullRequestChip state={prState} variant="icon" number={prNumber} iconSize={12} />
             )}
-            {externalTask && <ExternalTaskChip task={externalTask} variant="badge" />}
+            {externalTasks.map((task) => (
+              <ExternalTaskChip
+                key={`${task.provider}:${task.externalId}`}
+                task={task}
+                variant="badge"
+              />
+            ))}
             {agentCount > 0 && (
               <Chip tone="neutral" size="sm" shape="pill" label={pluralize(agentCount, 'agent')} />
             )}

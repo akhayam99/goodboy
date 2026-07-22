@@ -11,14 +11,16 @@ import { sentryFetchIssues } from '../client';
 import type { SentryIssue, SentryIssuesPage } from '../client';
 
 const hoisted = vi.hoisted(() => ({
-  externalTasks: {} as Record<string, SessionExternalTask>,
+  externalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
 }));
 
 vi.mock('../client', () => ({ sentryFetchIssues: vi.fn() }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: (
-    selector: (s: { sessionExternalTasks: Record<string, SessionExternalTask> }) => unknown,
+    selector: (s: {
+      sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
+    }) => unknown,
   ) => selector({ sessionExternalTasks: hoisted.externalTasks }),
 }));
 
@@ -62,9 +64,9 @@ describe('dedupById', () => {
 
 describe('resolveSentrySessions', () => {
   it('links sentry external tasks by external id, ignoring other providers', () => {
-    const tasks: Record<string, SessionExternalTask> = {
-      s1: { provider: 'sentry', externalId: 'sentry-1' } as SessionExternalTask,
-      s2: { provider: 'linear', externalId: 'lin-1' } as SessionExternalTask,
+    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
+      s1: [{ provider: 'sentry', externalId: 'sentry-1' } as SessionExternalTask],
+      s2: [{ provider: 'linear', externalId: 'lin-1' } as SessionExternalTask],
     };
     const map = resolveSentrySessions(tasks);
     expect(map.get('sentry-1')).toBe('s1');
@@ -164,7 +166,7 @@ describe('useSentryIssues', () => {
 
   it('cross-links rows to sessions from the store', async () => {
     hoisted.externalTasks = {
-      s9: { provider: 'sentry', externalId: 'a' } as SessionExternalTask,
+      s9: [{ provider: 'sentry', externalId: 'a' } as SessionExternalTask],
     };
     fetchIssues.mockResolvedValueOnce(page([makeIssue({ id: 'a' }), makeIssue({ id: 'b' })]));
     const { result } = renderHook(() => useSentryIssues(WS));

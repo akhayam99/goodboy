@@ -80,12 +80,12 @@ describe('buildIssueGroups', () => {
 
 describe('resolveIssueSessions', () => {
   const NO_BRANCHES: Record<string, string> = {};
-  const NO_TASKS: Record<string, SessionExternalTask> = {};
+  const NO_TASKS: Record<string, ReadonlyArray<SessionExternalTask>> = {};
 
   it('links by gitlab external task', () => {
     const issue = makeIssue({ id: 101 });
-    const tasks: Record<string, SessionExternalTask> = {
-      s1: { externalId: '101', provider: 'gitlab' } as SessionExternalTask,
+    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
+      s1: [{ externalId: '101', provider: 'gitlab' } as SessionExternalTask],
     };
     const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, tasks);
     expect(map.get('101')).toBe('s1');
@@ -93,8 +93,8 @@ describe('resolveIssueSessions', () => {
 
   it('ignores tasks from other providers', () => {
     const issue = makeIssue({ id: 101 });
-    const tasks: Record<string, SessionExternalTask> = {
-      s1: { externalId: '101', provider: 'linear' } as SessionExternalTask,
+    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
+      s1: [{ externalId: '101', provider: 'linear' } as SessionExternalTask],
     };
     const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, tasks);
     expect(map.get('101')).toBeUndefined();
@@ -116,8 +116,8 @@ describe('resolveIssueSessions', () => {
 
   it('prefers the external-task link over a branch match', () => {
     const issue = makeIssue({ id: 101, iid: 42, title: 'Fix login' });
-    const tasks: Record<string, SessionExternalTask> = {
-      s2: { externalId: '101', provider: 'gitlab' } as SessionExternalTask,
+    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
+      s2: [{ externalId: '101', provider: 'gitlab' } as SessionExternalTask],
     };
     const branches = { s1: 'kay/42-fix-login' };
     const map = resolveIssueSessions([issue], [session('s1'), session('s2')], branches, tasks);
