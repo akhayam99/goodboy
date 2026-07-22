@@ -109,15 +109,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
   const overlayHome = agentHome ?? 'agents';
-  const showWorkflowStrip = showAgentOverlay && overlayHome === 'workflows';
-
-  const selectedAgentName = useMemo(
-    () =>
-      selectedAgentId != null
-        ? (phaseRuns.find((r) => r.id === selectedAgentId)?.name ?? 'Agent')
-        : null,
+  const selectedAgent = useMemo(
+    () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
     [phaseRuns, selectedAgentId],
   );
+  const selectedAgentName = selectedAgent?.name ?? (selectedAgentId != null ? 'Agent' : null);
+  const showWorkflowStrip = showAgentOverlay && selectedAgent?.workflowRunId != null;
   const stripWorkflowName = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
