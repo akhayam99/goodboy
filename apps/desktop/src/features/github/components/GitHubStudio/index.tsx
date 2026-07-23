@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { cn, Divider, ScrollFade } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
-import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
+import type { GithubIssue, ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
 import { IssueInbox } from './IssueInbox';
 import { PrDetailPanel } from './PrDetailPanel';
@@ -10,6 +10,12 @@ import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
+import {
+  SegmentedControl,
+  type SegmentedOption,
+} from '../../../../shared/components/SegmentedControl';
+import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
+import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { resolveIntegrationConnection } from '../../../integrations/connection';
 import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
@@ -17,9 +23,17 @@ import { MissingGithubRemoteEmptyState } from '../MissingGithubRemoteEmptyState'
 
 type Tab = 'pull-requests' | 'issues';
 
+type ReviewScope = 'mine' | 'others' | 'all';
+
 const TABS: ReadonlyArray<StudioTab<Tab>> = [
   { value: 'pull-requests', label: 'Pull requests' },
   { value: 'issues', label: 'Issues' },
+];
+
+const REVIEW_SCOPES: ReadonlyArray<SegmentedOption<ReviewScope>> = [
+  { value: 'mine', label: 'Mine' },
+  { value: 'others', label: 'Others' },
+  { value: 'all', label: 'All' },
 ];
 
 type Props = {
@@ -55,6 +69,8 @@ export const GitHubStudio = ({
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
   const [focusedIssue, setFocusedIssue] = useState<GithubIssue | null>(null);
   const [tab, setTab] = useState<Tab>(initialIssueExternalId == null ? 'pull-requests' : 'issues');
+  const [reviewScope, setReviewScope] = useState<ReviewScope>('mine');
+  const [focusedReviewPr, setFocusedReviewPr] = useState<ReviewablePr | null>(null);
 
   useEffect(() => {
     if (initialIssueExternalId == null) {
@@ -146,17 +162,45 @@ export const GitHubStudio = ({
           </div>
         ) : tab === 'pull-requests' ? (
           <>
-            <ScrollFade className="w-72 shrink-0" fadeSize={24}>
-              <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
-            </ScrollFade>
+            <div className="flex w-72 shrink-0 flex-col">
+              <div className="shrink-0 px-3 pt-3">
+                <SegmentedControl
+                  ariaLabel="Review inbox filter"
+                  options={REVIEW_SCOPES}
+                  value={reviewScope}
+                  onChange={setReviewScope}
+                />
+              </div>
+              {reviewScope === 'mine' ? (
+                <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+                  <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
+                </ScrollFade>
+              ) : (
+                <ReviewInboxList
+                  workspaceId={workspaceId}
+                  provider="github"
+                  scope={reviewScope}
+                  focusedPrId={focusedReviewPr?.id ?? null}
+                  onSelect={setFocusedReviewPr}
+                />
+              )}
+            </div>
             <Divider orientation="vertical" />
             <div className="min-h-0 flex-1">
-              <PrDetailPanel
-                sessionId={focused}
-                initialPrNumber={onInitialSession ? initialPrNumber : null}
-                initialThreadId={onInitialSession ? initialThreadId : null}
-                onClose={requestClose}
-              />
+              {reviewScope === 'mine' ? (
+                <PrDetailPanel
+                  sessionId={focused}
+                  initialPrNumber={onInitialSession ? initialPrNumber : null}
+                  initialThreadId={onInitialSession ? initialThreadId : null}
+                  onClose={requestClose}
+                />
+              ) : (
+                <ReviewPrDetailPanel
+                  pr={focusedReviewPr}
+                  workspaceId={workspaceId}
+                  onClose={requestClose}
+                />
+              )}
             </div>
           </>
         ) : (

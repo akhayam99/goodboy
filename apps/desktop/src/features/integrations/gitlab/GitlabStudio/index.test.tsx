@@ -34,6 +34,16 @@ vi.mock('./useGitlabMrs', () => ({
 vi.mock('./IssueInbox', () => ({ IssueInbox: () => <div>Issue inbox</div> }));
 vi.mock('./IssueDetailPanel', () => ({ IssueDetailPanel: () => <div>Issue detail</div> }));
 vi.mock('./MrDetailPanel', () => ({ MrDetailPanel: () => <div>Merge request detail</div> }));
+vi.mock('../../../review/components/ReviewInboxList', () => ({
+  ReviewInboxList: ({ provider, scope }: { provider: string; scope: string }) => (
+    <div>
+      Review inbox {provider} {scope}
+    </div>
+  ),
+}));
+vi.mock('../../../review/components/ReviewPrDetailPanel', () => ({
+  ReviewPrDetailPanel: () => <div>Review merge request detail</div>,
+}));
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(
@@ -108,9 +118,26 @@ describe('GitlabStudio', () => {
     );
     fireEvent.click(screen.getByRole('tab', { name: 'Merge requests' }));
 
+    expect(screen.getByRole('radio', { name: 'Mine' }).getAttribute('aria-checked')).toBe('true');
     expect(screen.getByText('acme/web')).toBeDefined();
     expect(screen.getByText('Add merge request dashboard')).toBeDefined();
     expect(screen.getByText('Merge request detail')).toBeDefined();
+  });
+
+  it('switches the merge requests tab to the shared review inbox for others', () => {
+    render(
+      <GitlabStudio
+        workspaceId={'workspace-1' as WorkspaceId}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'Merge requests' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Others' }));
+
+    expect(screen.getByText('Review inbox gitlab others')).toBeDefined();
+    expect(screen.getByText('Review merge request detail')).toBeDefined();
+    expect(screen.queryByText('Merge request detail')).toBeNull();
   });
 
   it('renders the disconnected state and disables both data hooks', () => {

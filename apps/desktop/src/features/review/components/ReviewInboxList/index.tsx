@@ -1,0 +1,167 @@
+import { useEffect, useMemo } from 'react';
+import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { Inbox, RefreshCw } from 'lucide-react';
+import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { PullRequestChip } from '../../../github/components/PullRequestChip';
+import { AuthorAvatar } from '../AuthorAvatar';
+import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
+
+type Props = {
+  readonly workspaceId: WorkspaceId;
+  readonly provider: ReviewablePrProvider;
+  readonly scope: ReviewInboxScope;
+  readonly focusedPrId: string | null;
+  readonly onSelect: (pr: ReviewablePr) => void;
+};
+
+export const ReviewInboxList = ({
+  workspaceId,
+  provider,
+  scope,
+  focusedPrId,
+  onSelect,
+}: Props) => {
+  const reviewPrs = useAppStore((s) => s.reviewPrs[workspaceId]);
+  const refreshReviewPrs = useAppStore((s) => s.refreshReviewPrs);
+  const items = reviewPrs?.items;
+  const isLoading = reviewPrs?.loading === true;
+  const error = reviewPrs?.error ?? null;
+
+  useEffect(() => {
+    void refreshReviewPrs(workspaceId);
+  }, [refreshReviewPrs, workspaceId]);
+
+  const rows = useMemo(
+    () => buildReviewInboxRows({ items: items ?? [], provider, scope }),
+    [items, provider, scope],
+  );
+
+  const isInitialLoading = isLoading && (items == null || items.length === 0);
+  const identifierPrefix = provider === 'gitlab' ? '!' : '#';
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center gap-1.5 px-3 pb-1 pt-3">
+        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          {scope === 'others' ? 'From teammates' : 'All open'}
+        </span>
+        <span className="text-2xs tabular-nums text-muted-foreground/50">{rows.length}</span>
+        <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
+        <button
+          type="button"
+          onClick={() => void refreshReviewPrs(workspaceId)}
+          disabled={isLoading}
+          title="Refresh pull requests"
+          aria-label="Refresh pull requests"
+          className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw size={12} aria-hidden className={cn(isLoading && 'animate-spin')} />
+        </button>
+      </div>
+      {isInitialLoading ? (
+        <div
+          className="flex flex-col gap-1 px-3 pb-3"
+          role="status"
+          aria-label="Loading pull requests"
+        >
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="flex flex-col gap-1.5 px-2 py-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-3 w-8 shrink-0 rounded" />
+                <Skeleton className="h-3 flex-1 rounded" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-4 shrink-0 rounded-full" />
+                <Skeleton className="h-2.5 w-20 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error != null && rows.length === 0 ? (
+        <div className="flex flex-col gap-2 px-3 pb-3">
+          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+            {error}
+          </div>
+          <button
+            type="button"
+            onClick={() => void refreshReviewPrs(workspaceId)}
+            className="self-start rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            Retry
+          </button>
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center px-3">
+          <EmptyState
+            icon={Inbox}
+            title={scope === 'others' ? 'No open PRs from teammates' : 'No open pull requests'}
+            description={
+              scope === 'others'
+                ? 'Pull requests by other authors will show up here.'
+                : 'Open pull requests on this repository will show up here.'
+            }
+          />
+        </div>
+      ) : (
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+          <ul className="flex flex-col gap-0.5 px-3 pb-3 pt-1">
+            {rows.map((pr) => {
+              const isActive = pr.id === focusedPrId;
+              return (
+                <li key={pr.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(pr)}
+                    title={pr.title}
+                    aria-current={isActive}
+                    className={cn(
+                      'flex w-full flex-col gap-1 rounded-md px-2 py-1.5 text-left transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                    )}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <PullRequestChip
+                        state={pr.isDraft ? 'draft' : pr.state}
+                        variant="icon"
+                        iconSize={12}
+                      />
+                      <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
+                        {identifierPrefix}
+                        {pr.number}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs">{pr.title}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <AuthorAvatar author={pr.author} avatarUrl={pr.authorAvatarUrl} />
+                      <span className="min-w-0 truncate text-2xs text-muted-foreground/70">
+                        {pr.author}
+                      </span>
+                      <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
+                        {formatRelativeDuration(pr.updatedAt)}
+                      </span>
+                      <span className="flex-1" />
+                      {scope === 'all' && pr.mine ? (
+                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          Mine
+                        </span>
+                      ) : null}
+                      {pr.reviewRequested ? (
+                        <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 ring-1 ring-indigo-400/30">
+                          Review requested
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </ScrollFade>
+      )}
+    </div>
+  );
+};
