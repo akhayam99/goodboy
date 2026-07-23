@@ -5,8 +5,19 @@ import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
+import { MrDetailPanel } from './MrDetailPanel';
+import { MrInbox } from './MrInbox';
 import { useGitlabIssues } from './useGitlabIssues';
-import type { GitlabIssue } from '../client';
+import { useGitlabMrs } from './useGitlabMrs';
+import type { GitlabIssue, GitlabMergeRequest } from '../client';
+import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
+
+type Tab = 'issues' | 'merge-requests';
+
+const TABS: ReadonlyArray<StudioTab<Tab>> = [
+  { value: 'issues', label: 'Issues' },
+  { value: 'merge-requests', label: 'Merge requests' },
+];
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -17,7 +28,10 @@ type Props = {
 
 export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
   const { groups, loading, error, refetch } = useGitlabIssues(workspaceId);
+  const mergeRequests = useGitlabMrs({ workspaceId });
   const [focused, setFocused] = useState<GitlabIssue | null>(null);
+  const [focusedMr, setFocusedMr] = useState<GitlabMergeRequest | null>(null);
+  const [tab, setTab] = useState<Tab>('issues');
 
   useEffect(() => {
     if (focused !== null) {
@@ -37,6 +51,16 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       setFocused(first);
     }
   }, [focused, groups, initialIssueId]);
+
+  useEffect(() => {
+    if (focusedMr != null) {
+      return;
+    }
+    const first = mergeRequests.groups[0]?.rows[0] ?? null;
+    if (first != null) {
+      setFocusedMr(first);
+    }
+  }, [focusedMr, mergeRequests.groups]);
 
   const focusedRow = useMemo(() => {
     if (!focused) {
@@ -64,45 +88,72 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       workspaceName={workspaceName}
       closeLabel="close gitlab studio"
       headerAccessory={
-        <button
-          type="button"
-          onClick={refetch}
-          disabled={loading}
-          title="Refresh issues"
-          aria-label="Refresh issues"
-          className={cn(
-            'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-            'text-muted-foreground transition-colors',
-            'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-          )}
-        >
-          <RefreshCw size={13} aria-hidden />
-        </button>
+        <div className="flex items-center gap-2">
+          <StudioTabs ariaLabel="GitLab work" tabs={TABS} value={tab} onChange={setTab} />
+          <button
+            type="button"
+            onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
+            disabled={tab === 'issues' ? loading : mergeRequests.loading}
+            title={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
+            aria-label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
+            className={cn(
+              'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
+              'text-muted-foreground transition-colors',
+              'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
+            )}
+          >
+            <RefreshCw size={13} aria-hidden />
+          </button>
+        </div>
       }
       onClose={onClose}
     >
-      {(requestClose) => (
-        <>
-          <div className="w-72 shrink-0">
-            <IssueInbox
-              groups={groups}
-              focusedIssueId={focused?.id ?? null}
-              onSelect={setFocused}
-              loading={loading}
-              error={error}
-            />
-          </div>
-          <Divider orientation="vertical" />
-          <div className="min-h-0 flex-1">
-            <IssueDetailPanel
-              issue={focused}
-              sessionId={focusedRow?.sessionId ?? null}
-              workspaceId={workspaceId}
-              onClose={requestClose}
-            />
-          </div>
-        </>
-      )}
+      {(requestClose) =>
+        tab === 'issues' ? (
+          <>
+            <div className="w-72 shrink-0">
+              <IssueInbox
+                groups={groups}
+                focusedIssueId={focused?.id ?? null}
+                onSelect={setFocused}
+                loading={loading}
+                error={error}
+              />
+            </div>
+            <Divider orientation="vertical" />
+            <div className="min-h-0 flex-1">
+              <IssueDetailPanel
+                issue={focused}
+                sessionId={focusedRow?.sessionId ?? null}
+                workspaceId={workspaceId}
+                onClose={requestClose}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-72 shrink-0">
+              <MrInbox
+                groups={mergeRequests.groups}
+                focusedMrId={focusedMr?.id ?? null}
+                onSelect={setFocusedMr}
+                loading={mergeRequests.loading}
+                error={mergeRequests.error}
+              />
+            </div>
+            <Divider orientation="vertical" />
+            <div className="min-h-0 flex-1">
+              <MrDetailPanel
+                mr={focusedMr}
+                workspaceId={workspaceId}
+                host={mergeRequests.host}
+                onRefresh={mergeRequests.refetch}
+                onClose={requestClose}
+              />
+            </div>
+          </>
+        )
+      }
     </StudioShell>
   );
 };

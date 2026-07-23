@@ -241,6 +241,23 @@ pub struct GitlabMergeRequest {
     pub has_conflicts: bool,
     #[serde(rename = "mergeStatus", alias = "merge_status", default)]
     pub merge_status: Option<String>,
+    #[serde(rename = "updatedAt", alias = "updated_at", default)]
+    pub updated_at: String,
+}
+
+#[tauri::command]
+pub async fn gitlab_fetch_assigned_mrs(
+    workspace_id: String,
+    host: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabMergeRequest>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    get_json(
+        &host,
+        &token,
+        "/merge_requests?scope=assigned_to_me&state=opened&order_by=updated_at&per_page=50",
+    )
+    .await
 }
 
 #[tauri::command]
@@ -375,13 +392,15 @@ mod tests {
             "target_branch": "main",
             "draft": true,
             "has_conflicts": false,
-            "merge_status": "can_be_merged"
+            "merge_status": "can_be_merged",
+            "updated_at": "2026-07-22T10:00:00Z"
         }"#;
         let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
         assert_eq!(mr.iid, 2);
         assert_eq!(mr.source_branch, "ak/feat-x");
         assert!(mr.draft);
         assert_eq!(mr.merge_status.as_deref(), Some("can_be_merged"));
+        assert_eq!(mr.updated_at, "2026-07-22T10:00:00Z");
     }
 
     #[test]
