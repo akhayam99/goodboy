@@ -197,3 +197,4 @@ export type {
   PullRequestState,
   PullRequestStateKind,
 } from './github';
+export type { ReviewablePr, ReviewablePrProvider } from './review-pr';

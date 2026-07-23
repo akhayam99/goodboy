@@ -72,6 +72,7 @@ import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import { createGitlabMrSlice } from './slices/gitlab-mr';
+import { createReviewPrsSlice } from './slices/review-prs';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
@@ -410,6 +411,7 @@ export type AppActions = {
     sessionId: SessionId,
     opts?: { force?: boolean; silent?: boolean },
   ): Promise<void>;
+  refreshReviewPrs(workspaceId: WorkspaceId): Promise<void>;
   createMrForSession(
     sessionId: SessionId,
     opts?: { title?: string; description?: string; targetBranch?: string; draft?: boolean },
@@ -581,6 +583,7 @@ export const initialState: AppState = {
   githubStatus: null,
   sessionGithub: {},
   sessionGitlabMr: {},
+  reviewPrs: {},
   sessionPendingResolutions: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
@@ -625,6 +628,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAttachmentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),
+  ...createReviewPrsSlice(set, get),
   ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),

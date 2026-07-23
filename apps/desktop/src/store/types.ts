@@ -57,6 +57,7 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { ProviderLifecycleMap } from './slices/providers';
+import type { ReviewPrsState } from './slices/review-prs/types';
 import type { LensHistory, LensKind, SessionStudio } from './slices/session-view';
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
@@ -216,6 +217,7 @@ export type AppState = UpdaterState & {
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
+  readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
   readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;

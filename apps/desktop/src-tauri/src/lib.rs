@@ -236,6 +236,7 @@ pub fn run() {
       gitlab::gitlab_disconnect,
       gitlab::gitlab_fetch_assigned_issues,
       gitlab::gitlab_fetch_assigned_mrs,
+      gitlab::gitlab_fetch_project_mrs,
       gitlab::gitlab_mr_for_branch,
       gitlab::gitlab_create_mr,
       gitlab::gitlab_merge_mr,

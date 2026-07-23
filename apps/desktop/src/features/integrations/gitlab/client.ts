@@ -51,6 +51,12 @@ export type GitlabMergeStatus =
   | 'cannot_be_merged_recheck'
   | null;
 
+export type GitlabMrAuthor = {
+  username: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
 export type GitlabMergeRequest = {
   id: number;
   iid: number;
@@ -65,6 +71,8 @@ export type GitlabMergeRequest = {
   hasConflicts: boolean;
   mergeStatus: GitlabMergeStatus;
   updatedAt: string;
+  author?: GitlabMrAuthor | null;
+  reviewers?: ReadonlyArray<GitlabMrAuthor> | null;
 };
 
 export const gitlabFetchAssignedMrs = async (
@@ -72,6 +80,18 @@ export const gitlabFetchAssignedMrs = async (
   host: string,
 ): Promise<GitlabMergeRequest[]> => {
   return invoke<GitlabMergeRequest[]>('gitlab_fetch_assigned_mrs', { workspaceId, host });
+};
+
+export const gitlabFetchProjectMrs = async (
+  workspaceId: WorkspaceId,
+  host: string,
+  projectPath: string,
+): Promise<GitlabMergeRequest[]> => {
+  return invoke<GitlabMergeRequest[]>('gitlab_fetch_project_mrs', {
+    workspaceId,
+    host,
+    projectPath,
+  });
 };
 
 export type GitlabMergeStatusTone = 'success' | 'danger' | 'muted';

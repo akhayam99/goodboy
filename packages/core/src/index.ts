@@ -255,6 +255,7 @@ export {
   getPrForBranch,
   invalidatePrCache,
   listAssignedIssues,
+  listOpenPrsForRepo,
   listPrsForBranch,
   addReviewThreadReply,
   parseLinkedIssuesFromBody,
@@ -270,6 +271,7 @@ export {
   type PostedThreadReply,
   type PrCacheDeps,
   type PrCacheStore,
+  type RepoPullRequest,
   type ResolvedThread,
 } from './github';
 
