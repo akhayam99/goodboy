@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow, Select } from '@goodboy/ui';
@@ -26,11 +27,17 @@ export const TaskModelRow = ({
   onChange,
 }: Props) => {
   const automatic = resolveTaskModel(task, null, defaultProviderId);
-  const providerId = preference?.providerId ?? automatic.providerId;
+  const preferredProviderId = preference?.providerId ?? automatic.providerId;
+  const [providerId, setProviderId] = useState(preferredProviderId);
   const model = preference?.model ?? '';
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
+  const recommendedModel = resolveTaskModel(task, null, providerId).model;
+
+  useEffect(() => {
+    setProviderId(preferredProviderId);
+  }, [preferredProviderId]);
 
   return (
     <FieldRow label={label} help={help}>
@@ -43,6 +50,10 @@ export const TaskModelRow = ({
           disabled={disabled || availableProviderIds.length === 0}
           onChange={(event) => {
             const nextProviderId = event.target.value as ProviderId;
+            setProviderId(nextProviderId);
+            if (preference == null) {
+              return;
+            }
             onChange(resolveTaskModel(task, null, nextProviderId));
           }}
         >
@@ -60,7 +71,7 @@ export const TaskModelRow = ({
           }
           disabled={disabled}
           allowAuto
-          recommendedModel={automatic.model}
+          recommendedModel={recommendedModel}
         />
       </div>
     </FieldRow>

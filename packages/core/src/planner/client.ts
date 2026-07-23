@@ -1,5 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { computeCostUsd } from '../providers/claude/cost';
+import { getDefaultBinary } from '../providers/cli-defaults';
 import { parsePlannerOutput } from './parser';
 import { PLANNER_SYSTEM_PROMPT, buildPlannerUserPrompt } from './prompt';
 import type { PlannerInput, PlannerOutput } from './types';
@@ -59,7 +60,7 @@ export class PlannerClient {
 
   constructor(deps: PlannerClientDeps) {
     this.providerId = deps.providerId;
-    this.binary = deps.binary ?? defaultBinary(deps.providerId);
+    this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
     this.model = deps.model;
     this.invokeFn = deps.invokeFn;
   }
@@ -90,23 +91,6 @@ export class PlannerClient {
       return extractClaudeJsonOutput(stdout, this.model);
     }
     return { text: stdout.trim(), usage: zeroUsage() };
-  }
-}
-
-function defaultBinary(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'anthropic':
-      return 'claude';
-    case 'cursor':
-      return 'cursor-agent';
-    case 'codex':
-      return 'codex';
-    case 'gemini':
-      return 'agy';
-    default: {
-      const _exhaustive: never = providerId;
-      throw new Error(`unknown provider: ${_exhaustive}`);
-    }
   }
 }
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, TaskModelPreferences } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 
 type SpawnAgent = (
@@ -9,7 +9,12 @@ type SpawnAgent = (
 ) => Promise<string>;
 
 type Store = {
-  readonly sessions: ReadonlyArray<{ id: SessionId; goal: string }>;
+  readonly sessions: ReadonlyArray<{
+    id: SessionId;
+    goal: string;
+    workspaceId: string;
+    providerPreference: { defaultProvider: 'anthropic'; allowTurnOverride: false };
+  }>;
   readonly sessionGitlabMr: Record<string, unknown>;
   readonly sessionBranches: Record<string, string>;
   readonly refreshSessionMr: ReturnType<typeof vi.fn>;
@@ -18,6 +23,7 @@ type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
   readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly setCurrentSession: ReturnType<typeof vi.fn>;
+  workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
 
 type ConfigProps = {
@@ -34,7 +40,14 @@ const h = vi.hoisted(() => ({
   } satisfies AgentSpawnConfigValue,
   showToast: vi.fn(),
   store: {
-    sessions: [{ id: 'session-3' as SessionId, goal: 'Prepare the GitLab release' }],
+    sessions: [
+      {
+        id: 'session-3' as SessionId,
+        goal: 'Prepare the GitLab release',
+        workspaceId: 'workspace-1',
+        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+      },
+    ],
     sessionGitlabMr: {},
     sessionBranches: { 'session-3': 'ak/gitlab-release' },
     refreshSessionMr: vi.fn(async () => undefined),
@@ -43,6 +56,7 @@ const h = vi.hoisted(() => ({
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-3'),
     selectAgent: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
+    workspaceOverrides: {},
   } satisfies Store,
 }));
 
@@ -72,6 +86,7 @@ beforeEach(() => {
   h.store.selectAgent.mockClear();
   h.store.setCurrentSession.mockClear();
   h.showToast.mockClear();
+  h.store.workspaceOverrides = {};
 });
 
 afterEach(cleanup);
@@ -94,5 +109,22 @@ describe('MrDetailPanel', () => {
       '\n\nOperator notes:\n---\nMention the rollout order.\n---',
     );
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  });
+
+  it('uses a workspace task model loaded after mount', async () => {
+    const { rerender } = render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+    h.store.workspaceOverrides = {
+      'workspace-1': {
+        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.4-mini' } },
+      },
+    };
+    rerender(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+
+    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
+    expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
+      provider: 'codex',
+      model: 'gpt-5.4-mini',
+    });
   });
 });

@@ -25,19 +25,27 @@ type Harness = {
   readonly read: () => AppStore;
 };
 
-const createHarness = (): Harness => {
+type HarnessParams = {
+  readonly agentName?: string;
+  readonly titleUserEdited?: boolean;
+};
+
+const createHarness = ({
+  agentName = 'agent 1',
+  titleUserEdited = false,
+}: HarnessParams = {}): Harness => {
   const session = {
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
     goal: 'original goal',
-    titleUserEdited: false,
+    titleUserEdited,
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
   } as unknown as Session;
   const agent = {
     id: AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 0,
-    name: 'agent 1',
+    name: agentName,
     status: 'pending',
   } satisfies Agent;
   let state = {
@@ -141,5 +149,50 @@ describe('applyHeuristicTitle', () => {
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe(
       'implement secure authentication',
     );
+  });
+
+  it('skips rename when the agent name is not a placeholder', async () => {
+    const harness = createHarness({
+      agentName: 'Existing agent title',
+      titleUserEdited: true,
+    });
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Implement a secure authentication flow',
+    });
+
+    expect(harness.read().sessions[0]?.goal).toBe('original goal');
+    expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('Existing agent title');
+    expect(invokeMock).not.toHaveBeenCalled();
+    expect(renameSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps heuristic titles when generation times out', async () => {
+    vi.useFakeTimers();
+    invokeMock.mockReturnValue(new Promise(() => undefined));
+    const harness = createHarness();
+
+    try {
+      const pending = applyHeuristicTitle({
+        ...harness,
+        sessionId: SESSION_ID,
+        agentId: AGENT_ID,
+        prompt: 'Implement a secure authentication flow',
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(invokeMock).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(15_000);
+      await expect(pending).resolves.toBeUndefined();
+
+      expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+      expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe(
+        'implement secure authentication',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

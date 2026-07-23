@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { OverrideSettings } from '@goodboy/types';
+import { DefaultsPanel } from './index';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -37,15 +38,21 @@ vi.mock('../../ProviderChip', () => ({
 
 vi.mock('../../../../session/components/ModelSelect', () => ({
   ModelSelect: ({
+    provider,
     value,
     recommendedModel,
     onChange,
   }: {
+    provider: string;
     value: string;
     recommendedModel: string;
     onChange: (model: string) => void;
   }) => (
-    <button type="button" onClick={() => onChange('claude-sonnet-4-6')}>
+    <button
+      type="button"
+      aria-label={`${provider} model`}
+      onClick={() => onChange('claude-sonnet-4-6')}
+    >
       {value === '' ? `${recommendedModel} recommended` : value}
     </button>
   ),
@@ -68,8 +75,6 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
-
-import { DefaultsPanel } from './index';
 
 describe('DefaultsPanel', () => {
   it('renders every task model row', () => {
@@ -97,6 +102,28 @@ describe('DefaultsPanel', () => {
       expect.objectContaining({
         taskModels: {
           summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
+        },
+      }),
+    );
+  });
+
+  it('keeps provider changes local while automatic is selected', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Summaries provider' }), {
+      target: { value: 'cursor' },
+    });
+
+    expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+    const modelPicker = screen.getByRole('button', { name: 'cursor model' });
+
+    fireEvent.click(modelPicker);
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        taskModels: {
+          summarizer: { providerId: 'cursor', model: 'claude-sonnet-4-6' },
         },
       }),
     );

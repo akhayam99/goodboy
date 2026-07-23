@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
 import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
-import { resolveTaskModel } from '@goodboy/core';
+import { getDefaultBinary, resolveTaskModel } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
@@ -80,24 +80,6 @@ type SummarizeTaskResult = {
   readonly stderr: string;
   readonly exitCode: number | null;
 };
-
-function getDefaultBinary(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'anthropic':
-      return 'claude';
-    case 'cursor':
-      return 'cursor-agent';
-    case 'codex':
-      return 'codex';
-    case 'gemini':
-      return 'agy';
-    default: {
-      const _exhaustive: never = providerId;
-      void _exhaustive;
-      return 'claude';
-    }
-  }
-}
 
 const SLUG_MAX_LEN = 48;
 

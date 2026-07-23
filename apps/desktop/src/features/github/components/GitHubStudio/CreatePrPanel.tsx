@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
 import { ArrowRight, GitBranch, Sparkles } from 'lucide-react';
@@ -41,6 +41,14 @@ export const CreatePrPanel = ({
   const workspaceOverrides = useAppStore((s) =>
     workspaceId == null ? null : (s.workspaceOverrides?.[workspaceId] ?? null),
   );
+  const resolvedAgentConfig = useMemo(
+    () =>
+      taskModelAgentSpawnConfig({
+        preferences: workspaceOverrides?.taskModels,
+        defaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
+      }),
+    [workspaceOverrides?.taskModels, session?.providerPreference?.defaultProvider],
+  );
 
   const [title, setTitle] = useState(defaultTitle);
   const [body, setBody] = useState('');
@@ -49,12 +57,15 @@ export const CreatePrPanel = ({
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(() =>
-    taskModelAgentSpawnConfig({
-      preferences: workspaceOverrides?.taskModels,
-      defaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
-    }),
-  );
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
+  const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
+
+  useEffect(() => {
+    if (agentConfigUserTouched) {
+      return;
+    }
+    setAgentConfig(resolvedAgentConfig);
+  }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   useEffect(() => {
     if (!workspaceRoot) {
@@ -187,7 +198,10 @@ export const CreatePrPanel = ({
             </div>
             <AgentSpawnConfig
               value={agentConfig}
-              onChange={setAgentConfig}
+              onChange={(value) => {
+                setAgentConfigUserTouched(true);
+                setAgentConfig(value);
+              }}
               disabled={busy !== null}
             />
             <div className="flex items-center gap-3 pt-1">

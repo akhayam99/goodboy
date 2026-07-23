@@ -1,18 +1,17 @@
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import type { AuxTaskId, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
+import type { AuxTaskId, OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { Divider, FieldRow, ScrollFade, SectionHeader } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { PROVIDER_LABEL } from '../../../../chat/utils/chat-constants';
 import { useAppStore } from '../../../../../store';
+import { PROVIDER_ORDER } from '../providerOrder';
 import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
 };
-
-const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
 
 const TASKS: ReadonlyArray<{
   readonly id: AuxTaskId;
@@ -91,7 +90,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           <section className="flex flex-col">
             <FieldRow label="Default provider" help="New sessions start on it and can override it.">
               <div className="flex flex-wrap justify-end gap-1">
-                {PROVIDER_OPTIONS.map((providerId) => (
+                {PROVIDER_ORDER.map((providerId) => (
                   <ProviderChip
                     key={providerId}
                     id={providerId}
