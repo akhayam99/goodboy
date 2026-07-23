@@ -53,7 +53,7 @@ export type UseSentryIssues = {
   readonly refetch: () => void;
 };
 
-export const useSentryIssues = (workspaceId: WorkspaceId): UseSentryIssues => {
+export const useSentryIssues = (workspaceId: WorkspaceId, isEnabled = true): UseSentryIssues => {
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
   const [issues, setIssues] = useState<ReadonlyArray<SentryIssue>>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -63,6 +63,14 @@ export const useSentryIssues = (workspaceId: WorkspaceId): UseSentryIssues => {
 
   const load = useCallback(
     async (nextCursor: string | null, reset: boolean) => {
+      if (!isEnabled) {
+        setIssues([]);
+        setCursor(null);
+        setHasMore(false);
+        setLoading(false);
+        setError(null);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
@@ -76,7 +84,7 @@ export const useSentryIssues = (workspaceId: WorkspaceId): UseSentryIssues => {
         setLoading(false);
       }
     },
-    [workspaceId],
+    [isEnabled, workspaceId],
   );
 
   useEffect(() => {

@@ -62,7 +62,13 @@ describe('sentryFetchIssues', () => {
 
 describe('sentryFetchIssueDetail', () => {
   it('invokes sentry_fetch_issue_detail with issue id', async () => {
-    mockInvoke.mockResolvedValue({ title: null, culprit: null, frames: [] });
+    mockInvoke.mockResolvedValue({
+      title: null,
+      culprit: null,
+      frames: [],
+      tags: [],
+      breadcrumbs: [],
+    });
     await sentryFetchIssueDetail(WS, 'issue-9');
     expect(mockInvoke).toHaveBeenCalledWith('sentry_fetch_issue_detail', {
       workspaceId: WS,

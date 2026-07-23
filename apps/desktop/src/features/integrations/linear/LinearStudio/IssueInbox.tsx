@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
 import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
+import { priorityTone } from '../priorityTone';
 import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues';
 
 type Props = {
@@ -10,14 +11,6 @@ type Props = {
   readonly onSelect: (issue: LinearIssue) => void;
   readonly loading: boolean;
   readonly error: string | null;
-};
-
-const STATE_DOT: Record<LinearGroupKey, string> = {
-  started: 'bg-primary',
-  unstarted: 'bg-info',
-  backlog: 'bg-muted-foreground/50',
-  triage: 'bg-warning',
-  other: 'bg-muted-foreground/40',
 };
 
 export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }: Props) => {
@@ -114,8 +107,11 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                           )}
                         >
                           <span
-                            aria-hidden
-                            className={cn('size-1.5 shrink-0 rounded-full', STATE_DOT[group.key])}
+                            aria-label={`Priority: ${row.issue.priorityLabel ?? 'No priority'}`}
+                            className={cn(
+                              'size-1.5 shrink-0 rounded-full',
+                              priorityTone({ priority: row.issue.priority }),
+                            )}
                           />
                           <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
                             {row.issue.identifier}

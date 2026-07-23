@@ -16,6 +16,11 @@ type LinearIssueState = {
   type: string;
 };
 
+export type LinearIssueLabel = {
+  name: string;
+  color: string;
+};
+
 export type LinearAttachment = {
   id: string;
   title: string | null;
@@ -32,9 +37,26 @@ export type LinearIssue = {
   url: string;
   state: LinearIssueState;
   team: { key: string };
+  priority?: number | null;
+  priorityLabel?: string | null;
+  assignee?: { name: string } | null;
+  project?: { name: string } | null;
+  labels?: { nodes: ReadonlyArray<LinearIssueLabel> };
   updatedAt: string;
   branchName?: string;
   attachments?: { nodes: ReadonlyArray<LinearAttachment> };
+};
+
+export type LinearIssueComment = {
+  id: string;
+  body: string;
+  createdAt: string;
+  user: { name: string } | null;
+};
+
+type Params = {
+  readonly workspaceId: WorkspaceId;
+  readonly issueId: string;
 };
 
 export type LinearLinkedPr = {
@@ -94,4 +116,15 @@ export const linearFetchAssignedIssues = async (
     workspaceId,
     teamId: teamId ?? null,
   });
+};
+
+export const linearFetchIssue = async ({ workspaceId, issueId }: Params): Promise<LinearIssue> => {
+  return invoke<LinearIssue>('linear_fetch_issue', { workspaceId, issueId });
+};
+
+export const linearFetchIssueComments = async ({
+  workspaceId,
+  issueId,
+}: Params): Promise<LinearIssueComment[]> => {
+  return invoke<LinearIssueComment[]>('linear_fetch_issue_comments', { workspaceId, issueId });
 };

@@ -1,23 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  Divider,
-  EmptyState,
-  Input,
-  SectionHeader,
-  Skeleton,
-  Textarea,
-  cn,
-} from '@goodboy/ui';
-import {
-  ArrowRight,
-  ExternalLink,
-  GitBranch,
-  Layers,
-  MessagesSquare,
-  MousePointerClick,
-  Target,
-} from 'lucide-react';
+import { Button, EmptyState, Input, SectionHeader, Textarea } from '@goodboy/ui';
+import { ArrowRight, GitBranch, MessagesSquare, MousePointerClick, Target } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade } from '@goodboy/ui';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
@@ -31,7 +14,9 @@ import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug'
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { goalFromSentry } from '../goal-from-sentry';
-import { sentryFetchIssueDetail, type SentryIssue, type SentryIssueDetail } from '../client';
+import type { SentryIssue } from '../client';
+import { SentryIssueDetail } from '../SentryIssueDetail';
+import { useSentryIssueDetail } from '../useSentryIssueDetail';
 
 type Props = {
   readonly issue: SentryIssue | null;
@@ -51,17 +36,6 @@ const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input }
 
 const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
-const LEVEL_TONE: Record<string, string> = {
-  fatal: 'border-danger/40 bg-danger/10 text-danger',
-  error: 'border-danger/40 bg-danger/10 text-danger',
-  warning: 'border-warning/40 bg-warning/10 text-warning',
-  info: 'border-info/40 bg-info/10 text-info',
-  debug: 'border-border-soft bg-muted/40 text-muted-foreground',
-};
-
-const levelTone = (level: string | null): string =>
-  LEVEL_TONE[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground';
-
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
@@ -70,9 +44,14 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   const [goal, setGoal] = useState('');
   const [branchSlug, setBranchSlug] = useState('');
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [detail, setDetail] = useState<SentryIssueDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState<string | null>(null);
+  const {
+    detail,
+    isLoading: detailLoading,
+    error: detailError,
+  } = useSentryIssueDetail({
+    workspaceId,
+    issueId: issue?.id ?? null,
+  });
   const [setupWorkflow, setSetupWorkflow] = useState(() => {
     try {
       return localStorage.getItem('goodboy:new-session-setup-workflow') !== '0';
@@ -92,44 +71,19 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     lastGenRef.current = initial;
     setGoal(initial);
     setBranchSlug(slugify(issue.title));
-    setDetail(null);
-    setDetailError(null);
     setError(null);
     setBusy(false);
   }, [issue]);
 
   useEffect(() => {
-    if (!issue) {
+    if (issue == null || detail == null) {
       return;
     }
-    let cancelled = false;
-    setDetailLoading(true);
-    setDetailError(null);
-    sentryFetchIssueDetail(workspaceId, issue.id)
-      .then((d) => {
-        if (cancelled) {
-          return;
-        }
-        setDetail(d);
-        const regenerated = goalFromSentry(issue, d);
-        const prevGen = lastGenRef.current;
-        lastGenRef.current = regenerated;
-        setGoal((cur) => (cur === prevGen ? regenerated : cur));
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setDetailError(formatError(err));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setDetailLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [issue, workspaceId]);
+    const regenerated = goalFromSentry(issue, detail);
+    const previousGenerated = lastGenRef.current;
+    lastGenRef.current = regenerated;
+    setGoal((current) => (current === previousGenerated ? regenerated : current));
+  }, [detail, issue]);
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((value) => {
@@ -196,44 +150,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     }
   };
 
-  const frames = detail?.frames ?? [];
-
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 flex-col gap-2 px-8 py-4">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'shrink-0 rounded border px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide',
-              levelTone(issue.level),
-            )}
-          >
-            {issue.level ?? 'error'}
-          </span>
-          {issue.shortId ? (
-            <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-              {issue.shortId}
-            </span>
-          ) : null}
-          <span className="flex-1" />
-          {issue.permalink ? (
-            <a
-              href={issue.permalink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Open in Sentry <ExternalLink size={11} aria-hidden />
-            </a>
-          ) : null}
-        </div>
-        <h2 className="text-lg font-semibold leading-snug text-foreground">{issue.title}</h2>
-        {issue.culprit ? (
-          <span className="truncate font-mono text-2xs text-muted-foreground">{issue.culprit}</span>
-        ) : null}
-      </div>
-      <Divider />
-
       <div className="min-h-0 flex-1">
         <ScrollFade
           className="mx-auto h-full max-w-3xl"
@@ -241,38 +159,16 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           fadeSize={24}
         >
           <div className="flex flex-col gap-8">
-            <section className="flex flex-col gap-3">
-              <SectionHeader
-                label="stack trace"
-                icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
-              />
-              {detailLoading ? (
-                <div
-                  role="status"
-                  aria-label="Loading latest event"
-                  className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3"
-                >
-                  {['w-3/4', 'w-1/2', 'w-2/3', 'w-5/6', 'w-2/5', 'w-3/5'].map((w, i) => (
-                    <Skeleton key={i} className={cn('h-2.5 rounded', w)} />
-                  ))}
-                </div>
-              ) : detailError ? (
-                <p className="text-sm text-danger">{detailError}</p>
-              ) : frames.length > 0 ? (
-                <pre className="overflow-x-auto rounded-lg border border-border-soft bg-subtle/40 p-3 font-mono text-2xs leading-relaxed text-muted-foreground">
-                  {frames
-                    .map(
-                      (f) =>
-                        `${f.in_app ? '› ' : '  '}${f.function ?? '?'} (${f.filename ?? '?'}${
-                          f.line_no != null ? `:${f.line_no}` : ''
-                        })`,
-                    )
-                    .join('\n')}
-                </pre>
-              ) : (
-                <p className="text-sm italic text-muted-foreground/60">No stack trace available.</p>
-              )}
-            </section>
+            <SentryIssueDetail
+              identifier={issue.shortId ?? issue.id}
+              title={issue.title}
+              culprit={issue.culprit}
+              level={issue.level}
+              permalink={issue.permalink}
+              detail={detail}
+              isLoading={detailLoading}
+              error={detailError}
+            />
 
             <section className="flex flex-col gap-3">
               <SectionHeader label="launch session" />
