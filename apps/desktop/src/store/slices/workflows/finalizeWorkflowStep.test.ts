@@ -37,7 +37,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
 }));
 
-import { finalizeWorkflowStep } from './finalizeWorkflowStep';
+import { finalizeWorkflowStep, degradedNotifiedAgents } from './finalizeWorkflowStep';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -102,6 +102,7 @@ describe('finalizeWorkflowStep output summary', () => {
   beforeEach(() => {
     invokeAgentListSpy.mockResolvedValue([{ ...agent, status: 'completed' }]);
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent, status: 'completed' });
+    degradedNotifiedAgents.clear();
   });
 
   afterEach(() => {
@@ -141,7 +142,19 @@ describe('finalizeWorkflowStep output summary', () => {
     const expectedSummary = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockRejectedValue(new Error('provider unavailable'));
-    const finalize = buildHarness();
+    const state = {
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      sessions: [session],
+      refreshUnreadWorkspaces: vi.fn(),
+      emitNotification: vi.fn(),
+      sendTurn: vi.fn(),
+    };
+    const set = vi.fn();
+    const get = (() => state) as unknown as Parameters<typeof finalizeWorkflowStep>[1];
+    const finalize = finalizeWorkflowStep(
+      set as unknown as Parameters<typeof finalizeWorkflowStep>[0],
+      get,
+    );
 
     await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
 
@@ -152,6 +165,37 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       '[step-output] summarization failed, using deterministic fallback: provider unavailable',
     );
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      'summarizer-degraded',
+      'warning',
+      expect.stringContaining('Implement'),
+      expect.stringContaining('provider unavailable'),
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
+  });
+
+  it('emits degraded notification only once per agent (dedup)', async () => {
+    const assistantText = 'short output';
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    summarizeStepOutputSpy.mockRejectedValue(new Error('timeout'));
+    const state = {
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      sessions: [session],
+      refreshUnreadWorkspaces: vi.fn(),
+      emitNotification: vi.fn(),
+      sendTurn: vi.fn(),
+    };
+    const set = vi.fn();
+    const get = (() => state) as unknown as Parameters<typeof finalizeWorkflowStep>[1];
+    const finalize = finalizeWorkflowStep(
+      set as unknown as Parameters<typeof finalizeWorkflowStep>[0],
+      get,
+    );
+
+    await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
+    await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
+
+    expect(state.emitNotification).toHaveBeenCalledTimes(1);
   });
 
   it('uses the fallback when summarization exceeds 15 seconds', async () => {

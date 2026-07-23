@@ -37,6 +37,7 @@ type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
+  readonly model?: string;
   readonly invokeFn: InvokeFn;
 };
 
@@ -75,7 +76,7 @@ export class Summarizer {
   constructor(deps: SummarizerDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = getCheapModel(deps.providerId);
+    this.model = deps.model ?? getCheapModel(deps.providerId);
     this.invokeFn = deps.invokeFn;
   }
 

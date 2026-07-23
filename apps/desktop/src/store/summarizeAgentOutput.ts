@@ -10,7 +10,16 @@ type Params = {
   readonly taskModel: TaskModelPreference;
 };
 
-export const summarizeAgentOutput = async ({ output, taskModel }: Params): Promise<string> => {
+export type SummarizeAgentOutputResult = {
+  readonly summary: string;
+  readonly degraded: boolean;
+  readonly error?: string;
+};
+
+export const summarizeAgentOutput = async ({
+  output,
+  taskModel,
+}: Params): Promise<SummarizeAgentOutputResult> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
     timeoutId = setTimeout(
@@ -20,15 +29,15 @@ export const summarizeAgentOutput = async ({ output, taskModel }: Params): Promi
   });
 
   try {
-    return await Promise.race([
+    const summary = await Promise.race([
       summarizeStepOutput({ ...taskModel, invokeFn: invoke, output }),
       timeout,
     ]);
+    return { summary, degraded: false };
   } catch (error) {
-    console.warn(
-      `[step-output] summarization failed, using deterministic fallback: ${formatError(error)}`,
-    );
-    return fallbackStepOutputSummary({ output });
+    const message = formatError(error);
+    console.warn(`[step-output] summarization failed, using deterministic fallback: ${message}`);
+    return { summary: fallbackStepOutputSummary({ output }), degraded: true, error: message };
   } finally {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);

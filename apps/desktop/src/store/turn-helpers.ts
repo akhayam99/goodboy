@@ -9,6 +9,7 @@ import {
   type ExtractedHandoff,
   type SlotKey,
 } from '@goodboy/core';
+import { shortModel } from '../features/session/agent-row-format';
 import {
   insertNudgeEvent,
   insertProviderRun,
@@ -34,6 +35,7 @@ import type {
   PlanWithCount,
   ProviderRunId,
   SessionId,
+  TaskModelPreference,
   TelemetryRecord,
   TelemetryRecordId,
   WorkflowRunId,
@@ -95,6 +97,7 @@ type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
   readonly oversizeRetried: boolean;
+  readonly taskModelOverride?: TaskModelPreference;
 };
 
 type SummarizerTaskQueue = {
@@ -170,18 +173,31 @@ export const enqueueSummarizer = (
   sessionId: SessionId,
   turnInput: string,
   turnOutput: string,
+  taskModelOverride?: TaskModelPreference,
 ): void => {
   enqueueSummarizerEntry({
     set,
     get,
     sessionId,
-    entry: { turnInput, turnOutput, oversizeRetried: false },
+    entry: {
+      turnInput,
+      turnOutput,
+      oversizeRetried: false,
+      ...(taskModelOverride && { taskModelOverride }),
+    },
   });
 };
 
 const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<void> => {
   const { turnInput, turnOutput } = entry;
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+  const session = get().sessions.find((s) => s.id === sessionId);
+  if (!session) {
+    return;
+  }
+  const providerId =
+    entry.taskModelOverride?.providerId ?? session.providerPreference.defaultProvider;
 
   set((state) => {
     const prev = state.summarizerStatus[sessionId];
@@ -200,13 +216,11 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   });
 
   try {
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) {
-      return;
-    }
-
-    const providerId = session.providerPreference.defaultProvider;
-    const summarizer = new Summarizer({ providerId, invokeFn: invoke });
+    const summarizer = new Summarizer({
+      providerId,
+      invokeFn: invoke,
+      ...(entry.taskModelOverride && { model: entry.taskModelOverride.model }),
+    });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
     const ghPr = get().sessionGithub[sessionId]?.pr ?? null;
@@ -365,9 +379,16 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
-    void get().emitNotification('summarizer-success', 'info', 'context summarized', undefined, {
-      sessionId,
-    });
+    const successModel = `${providerId}/${shortModel(result.model)}`;
+    void get().emitNotification(
+      'summarizer-success',
+      'info',
+      'context summarized',
+      `via ${successModel}`,
+      {
+        sessionId,
+      },
+    );
   } catch (err) {
     const message = formatError(err);
     if (import.meta.env.DEV) {
@@ -388,9 +409,16 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         },
       };
     });
-    void get().emitNotification('error', 'error', 'summarizer failed', message, {
-      sessionId,
-    });
+    void get().emitNotification(
+      'error',
+      'error',
+      'summarizer failed',
+      `${providerId}: ${message}`,
+      {
+        sessionId,
+        action: { kind: 'retry-summarizer', sessionId },
+      },
+    );
   }
 };
 
