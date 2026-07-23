@@ -146,6 +146,7 @@ describe('review-prs slice', () => {
     const mine = result.items.find((p) => p.number === 1);
     const other = result.items.find((p) => p.number === 2);
     expect(mine?.mine).toBe(true);
+    expect(mine?.repo).toBe('org/repo');
     expect(other?.mine).toBe(false);
     expect(other?.reviewRequested).toBe(true);
     expect(other?.authorAvatarUrl).toBe('https://github.com/other.png');
@@ -172,6 +173,7 @@ describe('review-prs slice', () => {
       ['closed', 'draft', 'merged', 'open'].sort(),
     );
     expect(byIid.get(2)?.mine).toBe(true);
+    expect(byIid.get(2)?.repo).toBe('acme/web');
     expect(byIid.get(2)?.authorAvatarUrl).toBe('https://gitlab.com/n.png');
     expect(byIid.get(1)?.mine).toBe(false);
     expect(byIid.get(4)?.reviewRequested).toBe(true);

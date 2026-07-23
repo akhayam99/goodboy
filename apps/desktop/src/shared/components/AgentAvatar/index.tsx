@@ -18,6 +18,7 @@ const KIND_IMAGE: Record<AgentKind, string | null> = {
   debugger: agentDebugger,
   tester: agentTester,
   reviewer: agentReviewer,
+  'pr-reviewer': agentReviewer,
   docs: agentDocs,
   resolver: null,
 };
@@ -32,6 +33,7 @@ const KIND_COLOR: Record<AgentKind, string> = {
   debugger: 'oklch(0.81 0.14 84)',
   tester: 'oklch(0.78 0.12 188)',
   reviewer: 'oklch(0.78 0.12 213)',
+  'pr-reviewer': 'oklch(0.68 0.16 275)',
   docs: 'oklch(0.77 0.15 62)',
   resolver: 'oklch(0.82 0.18 130)',
 };

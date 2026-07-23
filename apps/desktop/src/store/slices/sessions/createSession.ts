@@ -54,11 +54,13 @@ type Input = {
   branchPrefix?: string;
   branchSlug?: string;
   existingBranch?: string;
+  fallbackRef?: string;
   providerPreference?: SessionProviderPreference;
   workflowId?: WorkflowId;
   autoRun?: boolean;
   firstAgentKind?: AgentKind;
   firstAgentModel?: string;
+  kickoffPrompt?: string;
   externalTask?: {
     provider: SessionExternalTaskProvider;
     externalId: string;
@@ -80,11 +82,13 @@ export const createSession = (set: SetFn, get: GetFn) => {
     branchPrefix,
     branchSlug,
     existingBranch,
+    fallbackRef,
     providerPreference,
     workflowId,
     autoRun,
     firstAgentKind,
     firstAgentModel: requestedModel,
+    kickoffPrompt,
     externalTask,
     attachmentInputs,
     mobileShared = false,
@@ -98,6 +102,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const slugSeed =
       branchSlug?.trim() || (goal.trim().length > 0 ? goal : `session-${Date.now()}`);
     const trimmedExisting = existingBranch?.trim();
+    const trimmedFallbackRef = fallbackRef?.trim();
     const sessionId = crypto.randomUUID() as SessionId;
     if (mobileShared) {
       markSessionMobileShared(sessionId);
@@ -121,6 +126,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           parentDir: compositeDir,
           dirName: member.mountName,
           ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
+          ...(trimmedExisting && trimmedFallbackRef ? { fallbackRef: trimmedFallbackRef } : {}),
         });
         memberWorktrees.push({ member, worktree: wt });
       }
@@ -132,6 +138,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
         branchPrefix: prefix,
         slug: slugSeed,
         ...(trimmedExisting ? { existingBranch: trimmedExisting } : {}),
+        ...(trimmedExisting && trimmedFallbackRef ? { fallbackRef: trimmedFallbackRef } : {}),
       });
     }
 
@@ -353,8 +360,11 @@ export const createSession = (set: SetFn, get: GetFn) => {
       void get().reprocessGoalForWorkflow(session.id);
     }
 
+    const trimmedKickoffPrompt = kickoffPrompt?.trim();
     if (firstStepPromptPrefix.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: firstStepPromptPrefix });
+    } else if (firstAgent != null && trimmedKickoffPrompt != null && trimmedKickoffPrompt !== '') {
+      void get().sendTurn({ sessionId: session.id, content: trimmedKickoffPrompt });
     } else if (firstAgentKind && firstAgentKind !== 'generic' && goalText.length > 0) {
       void get().sendTurn({ sessionId: session.id, content: goalText });
     }

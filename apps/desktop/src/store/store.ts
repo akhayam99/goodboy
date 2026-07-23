@@ -50,6 +50,7 @@ import type {
   SessionSortKey,
   SessionGroupKey,
   TaskModelPreference,
+  ReviewablePr,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { resolveSettings } from '@goodboy/core';
@@ -168,11 +169,13 @@ export type AppActions = {
     branchPrefix?: string;
     branchSlug?: string;
     existingBranch?: string;
+    fallbackRef?: string;
     providerPreference?: SessionProviderPreference;
     workflowId?: WorkflowId;
     autoRun?: boolean;
     firstAgentKind?: AgentKind;
     firstAgentModel?: string;
+    kickoffPrompt?: string;
     externalTask?: {
       provider: SessionExternalTaskProvider;
       externalId: string;
@@ -412,6 +415,7 @@ export type AppActions = {
     opts?: { force?: boolean; silent?: boolean },
   ): Promise<void>;
   refreshReviewPrs(workspaceId: WorkspaceId): Promise<void>;
+  startPrReviewSession(workspaceId: WorkspaceId, pr: ReviewablePr): Promise<SessionId>;
   createMrForSession(
     sessionId: SessionId,
     opts?: { title?: string; description?: string; targetBranch?: string; draft?: boolean },

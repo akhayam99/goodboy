@@ -37,6 +37,7 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'debugger',
   'tester',
   'reviewer',
+  'pr-reviewer',
   'docs',
   'resolver',
   'generic',
@@ -267,11 +268,12 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('implementer / debugger / reviewer / tester / resolver → sonnet, medium effort', () => {
+  it('implementer / debugger / reviewer / pr-reviewer / tester / resolver → sonnet, medium effort', () => {
     for (const kind of [
       'implementer',
       'debugger',
       'reviewer',
+      'pr-reviewer',
       'tester',
       'resolver',
     ] as AgentKind[]) {
@@ -292,6 +294,7 @@ describe('AGENT_KIND_DEFAULTS', () => {
       'debugger',
       'tester',
       'reviewer',
+      'pr-reviewer',
       'docs',
       'generic',
     ];
@@ -397,6 +400,8 @@ describe('inferAgentKindFromName', () => {
     ['Reproduce', 'debugger'],
     ['Review diff', 'reviewer'],
     ['Verify', 'reviewer'],
+    ['pr reviewer', 'pr-reviewer'],
+    ['PR review #42', 'pr-reviewer'],
     ['Test', 'tester'],
     ['Write docs', 'docs'],
     ['resolve: alice on foo.ts:42', 'resolver'],
@@ -415,7 +420,15 @@ describe('kindConsumesPlan', () => {
   });
 
   it('keeps read/test/doc roles as passthrough', () => {
-    for (const kind of ['scout', 'reviewer', 'tester', 'docs', 'planner', 'resolver'] as const) {
+    for (const kind of [
+      'scout',
+      'reviewer',
+      'pr-reviewer',
+      'tester',
+      'docs',
+      'planner',
+      'resolver',
+    ] as const) {
       expect(kindConsumesPlan(kind)).toBe(false);
     }
   });

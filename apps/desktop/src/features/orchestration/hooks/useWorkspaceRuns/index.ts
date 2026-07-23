@@ -11,7 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentHasUnread } from '../../../../store';
-import { deriveSessionStage } from '../../../../store/slices/session-view';
+import { deriveSessionStage, isPrReviewSession } from '../../../../store/slices/session-view';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
 import {
   statusToNodeStatus,
@@ -222,6 +222,7 @@ export const useWorkspaceRuns = (
           hasUnread,
           openQuestionCount,
           hasRunningAgent,
+          isPrReview: isPrReviewSession({ agents: runs ?? [] }),
         }).stage;
       }
       return out;

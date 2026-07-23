@@ -65,6 +65,8 @@ pub struct CreateArgs {
     /// to derive the worktree directory name.
     #[serde(rename = "existingBranch", default)]
     pub existing_branch: Option<String>,
+    #[serde(rename = "fallbackRef", default)]
+    pub fallback_ref: Option<String>,
     /// Base branch to cut a new branch from. Defaults to `main`. The branch is
     /// always cut from `origin/<base>` (not the local copy) so a stale local
     /// `main` cannot leak unrelated commits into the new branch. Ignored when
@@ -192,19 +194,54 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
                 ],
             )?;
         } else {
-            let _ = git(&repo_path, &["fetch", "origin", name]);
-            git(
-                &repo_path,
-                &[
-                    "worktree",
-                    "add",
-                    "--track",
-                    "-b",
-                    name,
-                    worktree_path.to_string_lossy().as_ref(),
-                    &format!("origin/{name}"),
-                ],
-            )?;
+            let fallback_ref = args
+                .fallback_ref
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty());
+            let fetched = git(&repo_path, &["fetch", "origin", name]).is_ok();
+            let remote_exists = fetched
+                && git(
+                    &repo_path,
+                    &[
+                        "rev-parse",
+                        "--verify",
+                        "--quiet",
+                        &format!("refs/remotes/origin/{name}"),
+                    ],
+                )
+                .is_ok();
+            match fallback_ref {
+                Some(fallback) if !remote_exists => {
+                    git(
+                        &repo_path,
+                        &["fetch", "origin", &format!("{fallback}:{name}")],
+                    )?;
+                    git(
+                        &repo_path,
+                        &[
+                            "worktree",
+                            "add",
+                            worktree_path.to_string_lossy().as_ref(),
+                            name,
+                        ],
+                    )?;
+                }
+                _ => {
+                    git(
+                        &repo_path,
+                        &[
+                            "worktree",
+                            "add",
+                            "--track",
+                            "-b",
+                            name,
+                            worktree_path.to_string_lossy().as_ref(),
+                            &format!("origin/{name}"),
+                        ],
+                    )?;
+                }
+            }
         }
     } else {
         // Cut from `origin/<base>`, not the local checkout, so a stale or

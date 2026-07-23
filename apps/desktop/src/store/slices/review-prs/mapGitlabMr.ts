@@ -4,6 +4,7 @@ import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/c
 type Params = {
   mr: GitlabMergeRequest;
   currentUserName: string;
+  projectPath: string;
 };
 
 const deriveState = ({ mr }: { mr: GitlabMergeRequest }): PullRequestStateKind => {
@@ -19,11 +20,12 @@ const deriveState = ({ mr }: { mr: GitlabMergeRequest }): PullRequestStateKind =
   return 'open';
 };
 
-export const mapGitlabMr = ({ mr, currentUserName }: Params): ReviewablePr => {
+export const mapGitlabMr = ({ mr, currentUserName, projectPath }: Params): ReviewablePr => {
   const author = mr.author?.username ?? '';
   return {
     id: `gitlab:${mr.iid}`,
     provider: 'gitlab',
+    repo: projectPath,
     number: mr.iid,
     title: mr.title,
     url: mr.webUrl,
