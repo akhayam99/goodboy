@@ -56,35 +56,27 @@ afterEach(() => vi.clearAllMocks());
 
 describe('useDynamicActions', () => {
   it('yields no actions for an idle building session', () => {
-    const { result } = renderHook(() =>
-      useDynamicActions(sessionWith(), nav, 'building', 'no PR yet'),
-    );
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'building'));
     expect(result.current).toHaveLength(0);
   });
 
   it('surfaces an open-questions action that routes to the questions lens', () => {
     state.sessionOpenQuestions = { 'sess-1': [{ status: 'open' }, { status: 'answered' }] };
-    const { result } = renderHook(() =>
-      useDynamicActions(sessionWith(), nav, 'attention', '1 open question'),
-    );
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
     const action = result.current.find((a) => a.key === 'questions');
     expect(action?.label).toBe('1 open question');
     action?.onClick();
     expect(nav.openQuestions).toHaveBeenCalledWith(sessionWith());
   });
 
-  it('surfaces a github action only for PR attention', () => {
-    const { result } = renderHook(() =>
-      useDynamicActions(sessionWith(), nav, 'attention', 'PR #9 approved, ready to merge'),
-    );
-    expect(result.current.some((a) => a.key === 'github')).toBe(true);
+  it('does not produce a github action for PR attention', () => {
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
+    expect(result.current.some((a) => a.key === 'github')).toBe(false);
   });
 
   it('surfaces an unread action when the session has unread replies', () => {
     state.hasUnread = true;
-    const { result } = renderHook(() =>
-      useDynamicActions(sessionWith(), nav, 'attention', 'unread agent reply'),
-    );
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
     expect(result.current.some((a) => a.key === 'unread')).toBe(true);
   });
 
@@ -92,7 +84,7 @@ describe('useDynamicActions', () => {
     pickNextMock.mockReturnValue({ id: 'step-1' });
     state.sessionWorkflows = { 'sess-1': [{ id: 'wf-1' }] };
     const session = sessionWith([{ id: 'run-1', workflowId: 'wf-1' }]);
-    const { result } = renderHook(() => useDynamicActions(session, nav, 'building', 'no PR yet'));
+    const { result } = renderHook(() => useDynamicActions(session, nav, 'building'));
     expect(result.current.some((a) => a.key === 'run')).toBe(true);
   });
 
@@ -100,9 +92,7 @@ describe('useDynamicActions', () => {
     pickNextMock.mockReturnValue({ id: 'step-1' });
     state.sessionWorkflows = { 'sess-1': [{ id: 'wf-1' }] };
     const session = sessionWith([{ id: 'run-1', workflowId: 'wf-1' }]);
-    const { result } = renderHook(() =>
-      useDynamicActions(session, nav, 'running', 'agent running'),
-    );
+    const { result } = renderHook(() => useDynamicActions(session, nav, 'running'));
     expect(result.current.some((a) => a.key === 'run')).toBe(false);
   });
 });
