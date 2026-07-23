@@ -3,16 +3,12 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
   Bot,
-  Bug,
   CheckCheck,
   CircleHelp,
   FileDiff,
   FileText,
-  GitBranch,
-  GitFork,
   LayoutDashboard,
   Layers,
-  ListTodo,
   MessageSquareReply,
   SquareTerminal,
   Target,
@@ -34,6 +30,10 @@ import {
 import type { LensKind } from '../../../../../store';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
+import {
+  IntegrationGlyph,
+  type IntegrationGlyphProvider,
+} from '../../../../integrations/components/IntegrationGlyph';
 import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverviewPane/lib';
 
 type LensColumnProps = {
@@ -47,7 +47,8 @@ type LensColumnProps = {
 type LensRow = {
   readonly kind: LensKind;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon?: LucideIcon;
+  readonly glyph?: IntegrationGlyphProvider;
   readonly tone: Tone;
   readonly count?: number;
   readonly isCountLoading?: boolean;
@@ -187,7 +188,7 @@ export const LensColumn = ({
           {
             kind: 'pr',
             label: isGitlabRemote ? 'GitLab' : 'GitHub',
-            icon: isGitlabRemote ? GitFork : GitBranch,
+            glyph: isGitlabRemote ? 'gitlab' : 'github',
             tone: 'accent',
             dot: hasPr ? 'running' : undefined,
           } satisfies LensRow,
@@ -198,7 +199,7 @@ export const LensColumn = ({
           {
             kind: 'linear',
             label: 'Linear',
-            icon: ListTodo,
+            glyph: 'linear',
             tone: 'primary',
             count: linearCount,
           } satisfies LensRow,
@@ -209,7 +210,7 @@ export const LensColumn = ({
           {
             kind: 'sentry',
             label: 'Sentry',
-            icon: Bug,
+            glyph: 'sentry',
             tone: 'warning',
             count: sentryCount,
           } satisfies LensRow,
@@ -220,7 +221,7 @@ export const LensColumn = ({
           {
             kind: 'gitlab_issues',
             label: 'GitLab issues',
-            icon: GitFork,
+            glyph: 'gitlab',
             tone: 'accent',
             count: gitlabCount,
           } satisfies LensRow,
@@ -383,16 +384,22 @@ export const LensColumn = ({
                       : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
                   )}
                 >
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
-                      tintClasses(row.tone).bg,
-                      tintClasses(row.tone).ring,
-                    )}
-                  >
-                    <row.icon size={12} aria-hidden className={tintClasses(row.tone).icon} />
-                  </span>
+                  {row.glyph ? (
+                    <span aria-hidden className="flex size-5 shrink-0 items-center justify-center">
+                      <IntegrationGlyph provider={row.glyph} />
+                    </span>
+                  ) : row.icon ? (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
+                        tintClasses(row.tone).bg,
+                        tintClasses(row.tone).ring,
+                      )}
+                    >
+                      <row.icon size={12} aria-hidden className={tintClasses(row.tone).icon} />
+                    </span>
+                  ) : null}
                   <span
                     className={cn(
                       'min-w-0 flex-1 truncate text-[13px]',

@@ -28,6 +28,14 @@ describe('PullRequestChip', () => {
     expect(screen.getByText('#7')).toBeDefined();
     expect(screen.queryByText('Draft')).toBeNull();
   });
+
+  it('renders the none state as a muted dashed icon', () => {
+    render(<PullRequestChip state="none" />);
+    const icon = screen.getByLabelText('No pull request');
+    expect(icon.getAttribute('title')).toBe('No pull request');
+    expect(icon.className).toContain('text-muted-foreground/50');
+    expect(icon.querySelector('.lucide-circle-dashed')).not.toBeNull();
+  });
 });
 
 describe('pullRequestMeta', () => {
@@ -35,5 +43,6 @@ describe('pullRequestMeta', () => {
     expect(pullRequestMeta('open').label).toBe('In review');
     expect(pullRequestMeta('queued').label).toBe('Queued');
     expect(pullRequestMeta('closed').label).toBe('Closed');
+    expect(pullRequestMeta('none').label).toBe('No pull request');
   });
 });

@@ -3,6 +3,7 @@ import { cn, Divider } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../connection';
@@ -65,13 +66,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
 
   return (
     <StudioShell
-      glyph={
-        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-linear/10">
-          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
-            L
-          </span>
-        </span>
-      }
+      glyph={<IntegrationGlyph provider="linear" framed />}
       title="Linear"
       workspaceName={workspaceName}
       closeLabel="close linear studio"

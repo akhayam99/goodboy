@@ -1,5 +1,6 @@
 import {
   Check,
+  CircleDashed,
   GitMerge,
   GitPullRequest,
   GitPullRequestClosed,
@@ -16,7 +17,15 @@ type PrStateMeta = {
   readonly bgClass: string;
 };
 
-const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
+type PullRequestChipState = PullRequestStateKind | 'none';
+
+const PR_META: Record<PullRequestChipState, PrStateMeta> = {
+  none: {
+    icon: CircleDashed,
+    label: 'No pull request',
+    textClass: 'text-muted-foreground/50',
+    bgClass: 'bg-muted/20',
+  },
   draft: {
     icon: GitPullRequestDraft,
     label: 'Draft',
@@ -55,18 +64,19 @@ const PR_META: Record<PullRequestStateKind, PrStateMeta> = {
   },
 };
 
-export const pullRequestMeta = (state: PullRequestStateKind): PrStateMeta => {
+export const pullRequestMeta = (state: PullRequestChipState): PrStateMeta => {
   return PR_META[state];
 };
 
 type Variant = 'icon' | 'compact' | 'badge';
 
 type Props = {
-  readonly state: PullRequestStateKind;
+  readonly state: PullRequestChipState;
   readonly variant?: Variant;
   readonly number?: number;
   readonly iconSize?: number;
   readonly className?: string;
+  readonly title?: string;
 };
 
 export const PullRequestChip = ({
@@ -75,15 +85,17 @@ export const PullRequestChip = ({
   number,
   iconSize,
   className,
+  title,
 }: Props) => {
   const meta = PR_META[state];
   const Icon = meta.icon;
+  const description = title ?? meta.label + (number !== undefined ? ` · #${number}` : '');
 
   if (variant === 'icon') {
     return (
       <span
-        title={meta.label + (number !== undefined ? ` · #${number}` : '')}
-        aria-label={meta.label + (number !== undefined ? ` (#${number})` : '')}
+        title={description}
+        aria-label={description}
         className={cn('inline-flex shrink-0', meta.textClass, className)}
       >
         <Icon size={iconSize ?? 10} aria-hidden />

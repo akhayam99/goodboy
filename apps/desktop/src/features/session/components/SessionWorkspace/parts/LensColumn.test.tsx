@@ -123,8 +123,10 @@ describe('LensColumn', () => {
     ).toEqual(['Work', 'Artifacts', 'Context', 'Integrations', 'Infra']);
     expect(
       screen.getAllByRole('button').map((button) => {
-        const shortcut = button.querySelector('kbd')?.textContent ?? '';
-        return button.textContent?.replace(shortcut, '').trim();
+        const clone = button.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+        const shortcut = clone.querySelector('kbd')?.textContent ?? '';
+        return clone.textContent?.replace(shortcut, '').trim();
       }),
     ).toEqual([
       'Overview',
