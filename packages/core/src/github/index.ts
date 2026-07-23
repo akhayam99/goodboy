@@ -34,6 +34,14 @@ export {
 } from './mutations';
 
 export {
+  addPullRequestReview,
+  fetchPrNodeId,
+  type PostedPullRequestReview,
+  type ReviewEvent,
+  type ReviewThreadDraft,
+} from './reviews';
+
+export {
   DEFAULT_PR_CACHE_TTL_MS,
   getPrForBranch,
   invalidatePrCache,
