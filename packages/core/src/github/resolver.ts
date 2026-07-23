@@ -2,7 +2,7 @@ import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@goodb
 import type { GhRunner } from './gh';
 import { GhCliError, runJson } from './gh';
 
-const PR_FIELDS = [
+export const PR_FIELDS = [
   'number',
   'title',
   'url',
@@ -18,7 +18,7 @@ const PR_FIELDS = [
   'autoMergeRequest',
 ] as const;
 
-type RawPullRequest = {
+export type RawPullRequest = {
   number: number;
   title: string;
   url: string;
@@ -95,7 +95,7 @@ function deriveMergeable(raw: RawPullRequest): boolean | null {
   return null;
 }
 
-function toPullRequestState(raw: RawPullRequest): PullRequestState {
+export const toPullRequestState = (raw: RawPullRequest): PullRequestState => {
   const reviewMap: Record<string, PullRequestState['reviewDecision']> = {
     APPROVED: 'approved',
     CHANGES_REQUESTED: 'changes_requested',
@@ -116,7 +116,7 @@ function toPullRequestState(raw: RawPullRequest): PullRequestState {
     updatedAt: raw.updatedAt,
     mergeQueue: raw.autoMergeRequest != null ? { position: null } : null,
   };
-}
+};
 
 export const resolvePrForBranch = async (
   runner: GhRunner,
