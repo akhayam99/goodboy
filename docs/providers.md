@@ -34,9 +34,9 @@ claude /logout
 
 Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap — not an API token. API-key-only accounts are not supported for orchestration turns.
 
-### Summarizer model
+### Cheap tier model
 
-`claude-haiku-4-5` — the cheapest available Claude tier. Used for automatic context summarization between turns to keep context windows lean.
+`claude-haiku-4-5` — the cheapest available Claude tier. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider; see Defaults and task models below to pin a different model.
 
 ---
 
