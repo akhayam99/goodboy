@@ -4,17 +4,13 @@ import type {
   GhTokenStatus,
   GitlabIntegrationConfig,
   LinearIntegrationConfig,
-  ProviderId,
   SentryIntegrationConfig,
   VerbosityLevel,
   WorkspaceId,
   WorkspaceIntegration,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
-import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
-import { ProviderChip } from '../../../../features/providers/components/ProviderChip';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
@@ -36,22 +32,12 @@ type Props = {
   readonly requestClose: () => void;
 };
 
-const WORKSPACE_PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-];
-
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
-  const connectedProviderIds = useAppStore(
-    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
   const { showToast } = useToast();
 
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
@@ -64,8 +50,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({});
 
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
-  const defaultProvider =
-    wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
   const scoutFanout = wsOverrides?.scoutFanout ?? false;
 
   useEffect(() => {
@@ -85,7 +69,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
   const persistOverrides = async (
     partial: Partial<{
-      defaultProviderId: ProviderId | null;
       defaultVerbosity: VerbosityLevel;
       scoutFanout: boolean;
     }>,
@@ -101,6 +84,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         parallelEnabled: wsOverrides?.parallelEnabled ?? null,
         defaultVerbosity: verbosity,
         providerBindings: wsOverrides?.providerBindings ?? null,
+        taskModels: wsOverrides?.taskModels ?? null,
         scoutFanout,
         ...partial,
       });
@@ -185,30 +169,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                 )}
               />
               <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
-            </div>
-          </FieldRow>
-
-          <FieldRow label="Default provider" help="New sessions start on it and can override it.">
-            <div className="flex flex-wrap justify-end gap-1">
-              {WORKSPACE_PROVIDER_OPTIONS.map((id) => (
-                <ProviderChip
-                  key={id}
-                  id={id}
-                  selected={defaultProvider === id}
-                  disabled={busy || !connectedProviderIds.includes(id)}
-                  onClick={() =>
-                    void persistOverrides(
-                      { defaultProviderId: id },
-                      `default provider set to ${PROVIDER_LABEL[id] ?? id}`,
-                    )
-                  }
-                  trailing={
-                    connectedProviderIds.includes(id) ? null : (
-                      <span className="text-2xs uppercase tracking-wide text-warning">offline</span>
-                    )
-                  }
-                />
-              ))}
             </div>
           </FieldRow>
 

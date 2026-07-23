@@ -1,0 +1,142 @@
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
+import type { AuxTaskId, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
+import { Divider, FieldRow, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { useShallow } from 'zustand/react/shallow';
+import { ProviderChip } from '../../ProviderChip';
+import { PROVIDER_LABEL } from '../../../../chat/utils/chat-constants';
+import { useAppStore } from '../../../../../store';
+import { TaskModelRow } from './TaskModelRow';
+import { useDefaultsPersistence } from './useDefaultsPersistence';
+
+type Props = {
+  readonly workspaceId: WorkspaceId;
+};
+
+const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+
+const TASKS: ReadonlyArray<{
+  readonly id: AuxTaskId;
+  readonly label: string;
+  readonly help: string;
+}> = [
+  {
+    id: 'summarizer',
+    label: 'Summaries',
+    help: 'Condenses step output into short summaries',
+  },
+  {
+    id: 'branch_naming',
+    label: 'Branch names',
+    help: 'Generates branch slugs for new sessions',
+  },
+  {
+    id: 'plan_generation',
+    label: 'Planning',
+    help: 'Drafts plans and custom workflows',
+  },
+  {
+    id: 'agent_naming',
+    label: 'Agent titles',
+    help: 'Names agents from your first request',
+  },
+  {
+    id: 'pr_draft',
+    label: 'PR and MR drafts',
+    help: 'Default agent config when drafting pull requests',
+  },
+];
+
+const EMPTY_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  scoutFanout: null,
+};
+
+export const DefaultsPanel = ({ workspaceId }: Props) => {
+  const workspaceOverrides = useAppStore(
+    (state) => state.workspaceOverrides?.[workspaceId] ?? null,
+  );
+  const connectedProviderIds = useAppStore(
+    useShallow((state) =>
+      state.providers
+        .filter((provider) => provider.connection === 'connected')
+        .map((provider) => provider.id),
+    ),
+  );
+  const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
+  const defaultProviderId =
+    overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
+
+  const { busy, error, persistOverrides, persistTaskModel } = useDefaultsPersistence({
+    workspaceId,
+    overrides,
+  });
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex flex-col gap-0.5 px-8 py-4">
+        <h2 className="text-base font-semibold text-foreground">Defaults</h2>
+        <p className="text-2xs text-muted-foreground">
+          Choose provider defaults for this workspace and its auxiliary tasks.
+        </p>
+      </div>
+      <Divider />
+      <ScrollFade className="flex-1" fadeFrom="background">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-8 py-6">
+          <section className="flex flex-col">
+            <FieldRow label="Default provider" help="New sessions start on it and can override it.">
+              <div className="flex flex-wrap justify-end gap-1">
+                {PROVIDER_OPTIONS.map((providerId) => (
+                  <ProviderChip
+                    key={providerId}
+                    id={providerId}
+                    selected={defaultProviderId === providerId}
+                    disabled={busy || !connectedProviderIds.includes(providerId)}
+                    onClick={() =>
+                      void persistOverrides({ partial: { defaultProviderId: providerId } })
+                    }
+                    trailing={
+                      connectedProviderIds.includes(providerId) ? null : (
+                        <span className="text-2xs uppercase tracking-wide text-warning">
+                          offline
+                        </span>
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            </FieldRow>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Task models" />
+            <div className="flex flex-col">
+              {TASKS.map((task, index) => (
+                <div key={task.id} className="flex flex-col">
+                  {index > 0 ? <Divider /> : null}
+                  <TaskModelRow
+                    task={task.id}
+                    label={task.label}
+                    help={task.help}
+                    preference={overrides.taskModels?.[task.id] ?? null}
+                    defaultProviderId={defaultProviderId}
+                    connectedProviderIds={connectedProviderIds}
+                    disabled={busy}
+                    onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+        </div>
+      </ScrollFade>
+    </div>
+  );
+};
