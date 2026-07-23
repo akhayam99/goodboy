@@ -21,7 +21,6 @@ import {
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
-import { IntegrationGlyph } from '../../../../integrations/components/IntegrationGlyph';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -111,41 +110,30 @@ export const StageBoardCard = memo(function StageBoardCard({
       )}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-2">
-        <span className="flex min-h-10 items-start gap-2">
+        <span className="flex min-h-10 items-start gap-1.5">
+          {hasLinkedRequest && (
+            <Tooltip content={prTooltip} side="top">
+              <button
+                type="button"
+                aria-label={prTooltip}
+                onClick={handlePrClick}
+                className="-ml-0.5 mt-px inline-flex size-5 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-muted"
+              >
+                <PullRequestChip
+                  state={linkedRequest.state}
+                  variant="icon"
+                  number={linkedRequest.number}
+                  iconSize={14}
+                  title={linkedRequest.title}
+                />
+              </button>
+            </Tooltip>
+          )}
           <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
             <span className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-snug">
               {session.goal}
             </span>
           </Tooltip>
-          <span className="inline-flex h-5 shrink-0 items-center">
-            {hasLinkedRequest ? (
-              <Tooltip content={prTooltip} side="top">
-                <button
-                  type="button"
-                  aria-label={prTooltip}
-                  onClick={handlePrClick}
-                  className="inline-flex shrink-0 items-center gap-0.5 rounded-sm transition-colors hover:bg-muted"
-                >
-                  <IntegrationGlyph provider={isGitlab ? 'gitlab' : 'github'} size="xs" />
-                  <PullRequestChip
-                    state={linkedRequest.state}
-                    variant="icon"
-                    number={linkedRequest.number}
-                    iconSize={12}
-                    title={linkedRequest.title}
-                  />
-                </button>
-              </Tooltip>
-            ) : (
-              <PullRequestChip
-                state={linkedRequest.state}
-                variant="icon"
-                number={linkedRequest.number}
-                iconSize={12}
-                title={linkedRequest.title}
-              />
-            )}
-          </span>
         </span>
 
         <span className="mt-auto flex min-h-5 flex-nowrap items-center gap-1.5 overflow-hidden">
