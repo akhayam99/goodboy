@@ -65,6 +65,15 @@ const parseGitlab = ({ segments }: ProviderParams): ProviderResult => {
   return { externalId: identifier, identifier };
 };
 
+const parseGithub = ({ segments }: ProviderParams): ProviderResult => {
+  const issueIndex = segments.findIndex((segment) => segment.toLowerCase() === 'issues');
+  const issueNumber = segments[issueIndex + 1];
+  if (issueIndex < 2 || issueNumber == null || issueNumber === '') {
+    return null;
+  }
+  return { externalId: issueNumber, identifier: `#${issueNumber}` };
+};
+
 const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderResult => {
   switch (provider) {
     case 'linear':
@@ -73,6 +82,8 @@ const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderRes
       return parseSentry({ segments });
     case 'gitlab':
       return parseGitlab({ segments });
+    case 'github':
+      return parseGithub({ segments });
     default: {
       const exhaustiveProvider: never = provider;
       return exhaustiveProvider;

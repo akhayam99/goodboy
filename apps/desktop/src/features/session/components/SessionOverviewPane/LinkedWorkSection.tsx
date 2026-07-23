@@ -18,12 +18,14 @@ const PROVIDER_LENS: Record<SessionExternalTaskProvider, LensKind> = {
   linear: 'linear',
   sentry: 'sentry',
   gitlab: 'gitlab_issues',
+  github: 'pr',
 };
 
 const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
   linear: 0,
   sentry: 1,
   gitlab: 2,
+  github: 3,
 };
 
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {

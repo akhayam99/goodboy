@@ -1,7 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
-import { detectRepoSlug, fetchPrDetail, listPrsForBranch } from '@goodboy/core';
+import { detectRepoSlug, fetchPrDetail, listAssignedIssues, listPrsForBranch } from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/core';
-import type { GhTokenStatus, GithubPrCacheEntry, PrDetail, PullRequestState } from '@goodboy/types';
+import type {
+  GhTokenStatus,
+  GithubIssue,
+  GithubPrCacheEntry,
+  PrDetail,
+  PullRequestState,
+} from '@goodboy/types';
 import {
   getGithubPrCache,
   upsertGithubPrCache,
@@ -106,6 +112,11 @@ export const ghPrsForBranch = async (
   }
   return listPrsForBranch(tauriGhRunner, slug, branch, { cwd, workspaceId });
 };
+
+export const ghAssignedIssues = async (
+  slug: string,
+  opts: GhRunOptions = {},
+): Promise<ReadonlyArray<GithubIssue>> => listAssignedIssues(tauriGhRunner, slug, opts);
 
 export const ghPrDetailByNumber = async (
   cwd: string,

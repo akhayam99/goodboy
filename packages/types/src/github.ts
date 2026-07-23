@@ -11,6 +11,16 @@ export type GhTokenStatus = {
   scoped?: boolean;
 };
 
+export type GithubIssue = {
+  number: number;
+  title: string;
+  body: string;
+  url: string;
+  state: string;
+  labels: ReadonlyArray<string>;
+  updatedAt: string;
+};
+
 export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
 
 export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;

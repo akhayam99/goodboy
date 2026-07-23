@@ -65,6 +65,7 @@ describe('ExternalTaskChip, provider mapping', () => {
     { provider: 'linear', glyph: 'L', label: /Linear/i, event: 'goodboy:open-linear-studio' },
     { provider: 'sentry', glyph: 'S', label: /Sentry/i, event: 'goodboy:open-sentry-studio' },
     { provider: 'gitlab', glyph: 'G', label: /GitLab/i, event: 'goodboy:open-gitlab-studio' },
+    { provider: 'github', glyph: 'GH', label: /GitHub/i, event: 'goodboy:open-github-studio' },
   ];
 
   for (const { provider, glyph, label, event } of cases) {

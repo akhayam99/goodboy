@@ -10,7 +10,7 @@ import {
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade } from '@goodboy/ui';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
@@ -19,10 +19,20 @@ import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpaw
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
-import { humanizeMergeStatus, type GitlabMergeStatusTone } from '../client';
+import {
+  gitlabMergeMr,
+  humanizeMergeStatus,
+  type GitlabMergeRequest,
+  type GitlabMergeStatusTone,
+} from '../client';
+import { projectPathFromMrUrl } from './useGitlabMrs';
 
 type Props = {
-  readonly sessionId: SessionId;
+  readonly sessionId?: SessionId | null;
+  readonly mr?: GitlabMergeRequest | null;
+  readonly workspaceId?: WorkspaceId;
+  readonly host?: string | null;
+  readonly onRefresh?: () => void;
   readonly onClose: () => void;
 };
 
@@ -39,10 +49,23 @@ const MERGE_STATUS_STYLE: Record<GitlabMergeStatusTone, string> = {
   muted: 'bg-muted text-muted-foreground',
 };
 
-export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
-  const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId]);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+export const MrDetailPanel = ({
+  sessionId = null,
+  mr: selectedMr = null,
+  workspaceId,
+  host,
+  onRefresh,
+  onClose,
+}: Props) => {
+  const session = useAppStore((s) =>
+    sessionId == null ? null : (s.sessions.find((x) => x.id === sessionId) ?? null),
+  );
+  const mrState = useAppStore((s) =>
+    sessionId == null ? undefined : s.sessionGitlabMr[sessionId],
+  );
+  const sessionBranch = useAppStore((s) =>
+    sessionId == null ? null : (s.sessionBranches[sessionId] ?? null),
+  );
   const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
   const createMrForSession = useAppStore((s) => s.createMrForSession);
   const mergeMrForSession = useAppStore((s) => s.mergeMrForSession);
@@ -62,7 +85,9 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   );
   const { showToast } = useToast();
 
-  const mr = mrState?.mr ?? null;
+  const mr = selectedMr ?? mrState?.mr ?? null;
+  const mergeProjectPath = mr == null ? null : projectPathFromMrUrl({ webUrl: mr.webUrl });
+  const branch = selectedMr?.sourceBranch ?? sessionBranch;
   const loading = mrState?.loading ?? false;
   const error = mrState?.error ?? null;
 
@@ -82,6 +107,9 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   useEffect(() => {
+    if (sessionId == null) {
+      return;
+    }
     void refreshSessionMr(sessionId, { silent: true });
   }, [sessionId, refreshSessionMr]);
 
@@ -89,7 +117,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
     setTitle(session?.goal ?? '');
   }, [session?.goal]);
 
-  if (!session) {
+  if (sessionId != null && session == null) {
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
@@ -101,8 +129,20 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
     );
   }
 
+  if (sessionId == null && mr == null) {
+    return (
+      <div className="flex h-full items-center justify-center px-8">
+        <EmptyState
+          icon={MousePointerClick}
+          title="No merge request selected"
+          description="Pick a merge request to see its details."
+        />
+      </div>
+    );
+  }
+
   const onCreate = async () => {
-    if (busy !== null || title.trim().length === 0) {
+    if (sessionId == null || busy !== null || title.trim().length === 0) {
       return;
     }
     setBusy('create');
@@ -122,7 +162,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   };
 
   const onCreateWithAi = async () => {
-    if (busy !== null) {
+    if (sessionId == null || session == null || busy !== null) {
       return;
     }
     setBusy('ai');
@@ -158,7 +198,12 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
     }
     setBusy('merge');
     try {
-      await mergeMrForSession(sessionId);
+      if (sessionId != null) {
+        await mergeMrForSession(sessionId);
+      } else if (mr != null && workspaceId != null && host != null && mergeProjectPath != null) {
+        await gitlabMergeMr(workspaceId, host, mergeProjectPath, mr.iid);
+        onRefresh?.();
+      }
       showToast('success', 'Merge request merged');
       onClose();
     } catch (err) {
@@ -188,7 +233,13 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
         <span className="flex-1" />
         <button
           type="button"
-          onClick={() => void refreshSessionMr(sessionId, { force: true })}
+          onClick={() => {
+            if (sessionId != null) {
+              void refreshSessionMr(sessionId, { force: true });
+              return;
+            }
+            onRefresh?.();
+          }}
           disabled={loading}
           title={error ? `refresh failed: ${error}` : 'refresh merge request'}
           aria-label="refresh merge request"
@@ -258,7 +309,12 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                   <span className="flex-1" />
                   <Button
                     onClick={() => void onMerge()}
-                    disabled={busy !== null || mr.hasConflicts}
+                    disabled={
+                      busy !== null ||
+                      mr.hasConflicts ||
+                      mr.mergeStatus === 'cannot_be_merged' ||
+                      (sessionId == null && mergeProjectPath == null)
+                    }
                     className={busy === 'merge' ? 'animate-border-pulse' : undefined}
                   >
                     {busy === 'merge' ? (
@@ -273,7 +329,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                 </div>
               ) : null}
             </div>
-          ) : (
+          ) : session != null && sessionId != null ? (
             <section className="flex flex-col gap-4">
               <SectionHeader label="create merge request" />
               <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
@@ -361,7 +417,7 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                 {error ? <span className="text-xs text-danger">{error}</span> : null}
               </div>
             </section>
-          )}
+          ) : null}
         </ScrollFade>
       </div>
     </div>

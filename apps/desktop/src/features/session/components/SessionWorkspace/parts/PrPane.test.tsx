@@ -4,6 +4,7 @@ import type {
   IsoDateTime,
   PullRequestState,
   Session,
+  SessionExternalTask,
   SessionId,
   TaskModelPreferences,
   WorkspaceId,
@@ -18,6 +19,7 @@ type SpawnAgent = (
 type Store = {
   sessionGithub: Record<string, unknown>;
   sessionGitlabMr: Record<string, unknown>;
+  sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly createPrForSession: ReturnType<typeof vi.fn>;
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
@@ -43,6 +45,7 @@ const h = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
     sessionGitlabMr: {},
+    sessionExternalTasks: {},
     refreshSessionPr: vi.fn(),
     createPrForSession: vi.fn(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-1'),
@@ -54,6 +57,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
 
@@ -105,6 +109,7 @@ const session: Session = {
 beforeEach(() => {
   h.store.sessionGithub = {};
   h.store.sessionGitlabMr = {};
+  h.store.sessionExternalTasks = {};
   h.store.createPrForSession.mockClear();
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
@@ -133,6 +138,60 @@ describe('PrPane', () => {
     expect(listRow.getAttribute('aria-current')).toBe('true');
     expect(screen.getAllByText('Refactor authentication')).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
+  });
+
+  it('shows PR status, linked issues, and code-host external tasks from stored state', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        linkedIssues: [
+          {
+            number: 7,
+            title: 'Track auth rollout',
+            url: 'https://github.com/acme/goodboy/issues/7',
+            closes: true,
+          },
+        ],
+        detail: {
+          checks: [{ name: 'test', conclusion: 'success', detailsUrl: null, durationMs: 1200 }],
+          comments: [
+            {
+              id: 'comment-1',
+              author: 'reviewer',
+              authorAvatarUrl: null,
+              body: 'Please add a regression test.',
+              createdAt: DATE,
+              url: 'https://github.com/acme/goodboy/pull/42#discussion_r1',
+              source: 'review',
+              resolved: false,
+            },
+          ],
+        },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          provider: 'github',
+          externalId: '7',
+          identifier: '#7',
+          url: 'https://github.com/acme/goodboy/issues/7',
+          title: 'Track auth rollout',
+          createdAt: DATE,
+        },
+      ],
+    };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByText('CI passing')).toBeDefined();
+    expect(screen.getByText('Review required')).toBeDefined();
+    expect(screen.getByText('1')).toBeDefined();
+    expect(screen.getByRole('link', { name: /#7 Track auth rollout/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open #7 in GitHub studio/i })).toBeDefined();
   });
 
   it('spawns a draft agent with the chosen config and operator notes', async () => {

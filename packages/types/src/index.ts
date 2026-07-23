@@ -181,6 +181,7 @@ export type {
   GhTokenMode,
   GhTokenStatus,
   GithubPrCacheEntry,
+  GithubIssue,
   LinkedIssue,
   PendingResolution,
   PrCheckConclusion,

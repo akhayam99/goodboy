@@ -254,6 +254,7 @@ export {
   fetchPrDiff,
   getPrForBranch,
   invalidatePrCache,
+  listAssignedIssues,
   listPrsForBranch,
   addReviewThreadReply,
   parseLinkedIssuesFromBody,

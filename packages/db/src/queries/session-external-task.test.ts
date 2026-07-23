@@ -164,4 +164,36 @@ describe('session_external_tasks queries', () => {
 
     expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
   });
+
+  it('preserves existing rows while allowing GitHub links', async () => {
+    const db = await seed({ throughVersion: 72 });
+    const gitlab = makeTask({
+      overrides: {
+        provider: 'gitlab',
+        externalId: 'gitlab-12',
+        identifier: '#12',
+        url: 'https://gitlab.com/goodboy/goodboy/-/issues/12',
+        title: 'Keep this link',
+      },
+    });
+    await upsertSessionExternalTask({ db, task: gitlab });
+    const migration = migrations.find((candidate) => candidate.version === 73);
+    if (migration == null) {
+      throw new Error('Migration 73 should exist');
+    }
+
+    await migrate(db, [migration]);
+    const github = makeTask({
+      overrides: {
+        provider: 'github',
+        externalId: '34',
+        identifier: '#34',
+        url: 'https://github.com/goodboy/goodboy/issues/34',
+        title: 'Add GitHub issues',
+      },
+    });
+    await upsertSessionExternalTask({ db, task: github });
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([github, gitlab]);
+  });
 });

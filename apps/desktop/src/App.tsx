@@ -125,6 +125,7 @@ export const App = () => {
   const [githubStudioSession, setGithubStudioSession] = useState<SessionId | null>(null);
   const [githubStudioPrNumber, setGithubStudioPrNumber] = useState<number | null>(null);
   const [githubStudioThreadId, setGithubStudioThreadId] = useState<string | null>(null);
+  const [githubStudioIssueId, setGithubStudioIssueId] = useState<string | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
@@ -187,7 +188,12 @@ export const App = () => {
     };
     const onOpenGithubStudio = (event: Event) => {
       const detail = (
-        event as CustomEvent<{ sessionId?: SessionId; prNumber?: number; threadId?: string }>
+        event as CustomEvent<{
+          sessionId?: SessionId;
+          prNumber?: number;
+          threadId?: string;
+          issueExternalId?: string;
+        }>
       ).detail;
       setWorkflowStudioOpen(false);
       setProviderStudioOpen(false);
@@ -202,6 +208,7 @@ export const App = () => {
       setGithubStudioSession(detail?.sessionId ?? null);
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
+      setGithubStudioIssueId(detail?.issueExternalId ?? null);
       setGithubStudioOpen(true);
     };
     const onOpenPlanStudio = (event: Event) => {
@@ -796,6 +803,7 @@ export const App = () => {
               onOpenGithub={() => {
                 closeAllStudios();
                 setGithubStudioSession(currentSession?.id ?? null);
+                setGithubStudioIssueId(null);
                 setGithubStudioOpen(true);
               }}
               onOpenLinear={() => {
@@ -913,10 +921,13 @@ export const App = () => {
       ) : null}
       {githubStudioOpen && currentWorkspace ? (
         <GitHubStudio
+          workspaceId={currentWorkspace.id}
+          rootPath={currentWorkspace.rootPath}
           workspaceName={currentWorkspace.name}
           initialSessionId={githubStudioSession}
           initialPrNumber={githubStudioPrNumber}
           initialThreadId={githubStudioThreadId}
+          initialIssueExternalId={githubStudioIssueId}
           onClose={() => setGithubStudioOpen(false)}
         />
       ) : null}

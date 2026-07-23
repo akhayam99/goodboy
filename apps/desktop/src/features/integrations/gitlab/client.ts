@@ -64,6 +64,14 @@ export type GitlabMergeRequest = {
   draft: boolean;
   hasConflicts: boolean;
   mergeStatus: GitlabMergeStatus;
+  updatedAt: string;
+};
+
+export const gitlabFetchAssignedMrs = async (
+  workspaceId: WorkspaceId,
+  host: string,
+): Promise<GitlabMergeRequest[]> => {
+  return invoke<GitlabMergeRequest[]>('gitlab_fetch_assigned_mrs', { workspaceId, host });
 };
 
 export type GitlabMergeStatusTone = 'success' | 'danger' | 'muted';

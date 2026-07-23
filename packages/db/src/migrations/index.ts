@@ -70,6 +70,7 @@ import { m069RefactorExampleOnly } from './m069-refactor-example-only';
 import { m070StepLibraryExampleOnly } from './m070-step-library-example-only';
 import { m071SessionExternalTaskMultipleLinks } from './m071-session-external-task-multiple-links';
 import { m072TaskModels } from './m072-task-models';
+import { m073SessionExternalTaskGithubProvider } from './m073-session-external-task-github-provider';
 
 export type Migration = {
   readonly version: number;
@@ -149,4 +150,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 70, sql: m070StepLibraryExampleOnly },
   { version: 71, sql: m071SessionExternalTaskMultipleLinks },
   { version: 72, sql: m072TaskModels },
+  { version: 73, sql: m073SessionExternalTaskGithubProvider },
 ];

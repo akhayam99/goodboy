@@ -22,6 +22,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   linear: { label: 'Linear', studioEvent: 'goodboy:open-linear-studio' },
   sentry: { label: 'Sentry', studioEvent: 'goodboy:open-sentry-studio' },
   gitlab: { label: 'GitLab', studioEvent: 'goodboy:open-gitlab-studio' },
+  github: { label: 'GitHub', studioEvent: 'goodboy:open-github-studio' },
 };
 
 export const IntegrationPane = ({ sessionId, provider }: Props) => {
