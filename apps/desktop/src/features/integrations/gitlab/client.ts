@@ -154,6 +154,70 @@ export const gitlabMrDiff = async (
   });
 };
 
+export type GitlabDiffRefs = {
+  baseSha: string;
+  headSha: string;
+  startSha: string;
+};
+
+export const gitlabMrDiffRefs = async (
+  workspaceId: WorkspaceId,
+  host: string,
+  projectPath: string,
+  mrIid: number,
+): Promise<GitlabDiffRefs> => {
+  return invoke<GitlabDiffRefs>('gitlab_mr_diff_refs', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+export type GitlabDiscussionPosition = {
+  baseSha: string;
+  headSha: string;
+  startSha: string;
+  newPath: string;
+  newLine?: number;
+  oldPath?: string;
+  oldLine?: number;
+};
+
+export const gitlabCreateMrDiscussion = async (
+  workspaceId: WorkspaceId,
+  host: string,
+  projectPath: string,
+  mrIid: number,
+  body: string,
+  position: GitlabDiscussionPosition,
+): Promise<string> => {
+  return invoke<string>('gitlab_create_mr_discussion', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+    body,
+    position,
+  });
+};
+
+export const gitlabCreateMrNote = async (
+  workspaceId: WorkspaceId,
+  host: string,
+  projectPath: string,
+  mrIid: number,
+  body: string,
+): Promise<number> => {
+  return invoke<number>('gitlab_create_mr_note', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+    body,
+  });
+};
+
 export const gitlabMergeMr = async (
   workspaceId: WorkspaceId,
   host: string,

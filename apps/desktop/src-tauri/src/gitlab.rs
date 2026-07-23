@@ -405,6 +405,134 @@ pub async fn gitlab_mr_diff(
     Ok(assemble_mr_diff(&payload.changes))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabDiffRefs {
+    #[serde(rename = "baseSha", alias = "base_sha")]
+    pub base_sha: String,
+    #[serde(rename = "headSha", alias = "head_sha")]
+    pub head_sha: String,
+    #[serde(rename = "startSha", alias = "start_sha")]
+    pub start_sha: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GitlabMrRefsPayload {
+    #[serde(default)]
+    pub diff_refs: Option<GitlabDiffRefs>,
+}
+
+#[tauri::command]
+pub async fn gitlab_mr_diff_refs(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabDiffRefs, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let payload: GitlabMrRefsPayload = get_json(
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}"),
+    )
+    .await?;
+    payload.diff_refs.ok_or_else(|| {
+        GitlabError::InvalidShape(format!("merge request !{mr_iid} has no diff_refs"))
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitlabDiscussionPosition {
+    pub base_sha: String,
+    pub head_sha: String,
+    pub start_sha: String,
+    pub new_path: String,
+    #[serde(default)]
+    pub new_line: Option<i64>,
+    #[serde(default)]
+    pub old_path: Option<String>,
+    #[serde(default)]
+    pub old_line: Option<i64>,
+}
+
+fn discussion_payload(body: &str, position: &GitlabDiscussionPosition) -> serde_json::Value {
+    let mut pos = serde_json::json!({
+        "position_type": "text",
+        "base_sha": position.base_sha,
+        "head_sha": position.head_sha,
+        "start_sha": position.start_sha,
+        "new_path": position.new_path,
+    });
+    if let Some(new_line) = position.new_line {
+        pos["new_line"] = serde_json::json!(new_line);
+    }
+    if let Some(old_path) = &position.old_path {
+        pos["old_path"] = serde_json::json!(old_path);
+    }
+    if let Some(old_line) = position.old_line {
+        pos["old_line"] = serde_json::json!(old_line);
+    }
+    serde_json::json!({ "body": body, "position": pos })
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GitlabDiscussion {
+    pub id: String,
+}
+
+#[tauri::command]
+pub async fn gitlab_create_mr_discussion(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    body: String,
+    position: GitlabDiscussionPosition,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<String, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let payload = discussion_payload(&body, &position);
+    let discussion: GitlabDiscussion = send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/discussions"),
+        &payload,
+    )
+    .await?;
+    Ok(discussion.id)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GitlabNote {
+    pub id: i64,
+}
+
+#[tauri::command]
+pub async fn gitlab_create_mr_note(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    body: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<i64, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let note: GitlabNote = send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/notes"),
+        &serde_json::json!({ "body": body }),
+    )
+    .await?;
+    Ok(note.id)
+}
+
 #[tauri::command]
 pub async fn gitlab_merge_mr(
     workspace_id: String,
@@ -570,6 +698,82 @@ mod tests {
     #[test]
     fn assemble_mr_diff_returns_empty_for_no_changes() {
         assert_eq!(assemble_mr_diff(&[]), "");
+    }
+
+    #[test]
+    fn diff_refs_deserialize_from_snake_case_mr_payload() {
+        let raw = r#"{
+            "id": 9,
+            "iid": 2,
+            "diff_refs": {
+                "base_sha": "aaa",
+                "head_sha": "bbb",
+                "start_sha": "ccc"
+            }
+        }"#;
+        let payload: GitlabMrRefsPayload = serde_json::from_str(raw).unwrap();
+        let refs = payload.diff_refs.unwrap();
+        assert_eq!(refs.base_sha, "aaa");
+        assert_eq!(refs.head_sha, "bbb");
+        assert_eq!(refs.start_sha, "ccc");
+    }
+
+    #[test]
+    fn diff_refs_default_to_none_when_missing() {
+        let payload: GitlabMrRefsPayload = serde_json::from_str(r#"{ "id": 9 }"#).unwrap();
+        assert!(payload.diff_refs.is_none());
+    }
+
+    #[test]
+    fn discussion_payload_anchors_text_position_on_the_new_line() {
+        let position = GitlabDiscussionPosition {
+            base_sha: "aaa".into(),
+            head_sha: "bbb".into(),
+            start_sha: "ccc".into(),
+            new_path: "src/a.ts".into(),
+            new_line: Some(12),
+            old_path: None,
+            old_line: None,
+        };
+        let payload = discussion_payload("tighten this", &position);
+        assert_eq!(payload["body"], "tighten this");
+        assert_eq!(payload["position"]["position_type"], "text");
+        assert_eq!(payload["position"]["new_path"], "src/a.ts");
+        assert_eq!(payload["position"]["new_line"], 12);
+        assert!(payload["position"].get("old_path").is_none());
+        assert!(payload["position"].get("old_line").is_none());
+    }
+
+    #[test]
+    fn discussion_payload_carries_old_side_fields_when_present() {
+        let position = GitlabDiscussionPosition {
+            base_sha: "aaa".into(),
+            head_sha: "bbb".into(),
+            start_sha: "ccc".into(),
+            new_path: "src/a.ts".into(),
+            new_line: None,
+            old_path: Some("src/a.ts".into()),
+            old_line: Some(4),
+        };
+        let payload = discussion_payload("dead branch", &position);
+        assert_eq!(payload["position"]["old_path"], "src/a.ts");
+        assert_eq!(payload["position"]["old_line"], 4);
+        assert!(payload["position"].get("new_line").is_none());
+    }
+
+    #[test]
+    fn discussion_position_deserializes_camel_case_invoke_args() {
+        let raw = r#"{
+            "baseSha": "aaa",
+            "headSha": "bbb",
+            "startSha": "ccc",
+            "newPath": "src/a.ts",
+            "newLine": 12
+        }"#;
+        let position: GitlabDiscussionPosition = serde_json::from_str(raw).unwrap();
+        assert_eq!(position.base_sha, "aaa");
+        assert_eq!(position.new_line, Some(12));
+        assert!(position.old_path.is_none());
     }
 
     #[test]
