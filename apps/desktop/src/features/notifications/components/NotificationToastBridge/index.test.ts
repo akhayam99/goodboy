@@ -24,6 +24,7 @@ function notif(over: NotifOverride): Notification {
     sessionId: over.sessionId ?? null,
     workspaceId: over.workspaceId ?? null,
     read: false,
+    action: null,
   };
 }
 

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import type { Notification } from '@goodboy/db';
+import type { Notification, NotificationAction } from '@goodboy/db';
 import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast, type ToastAction } from '../../../../app/components/Toast';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -43,6 +43,36 @@ export const notificationContext = (
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };
 
+export const mapNotificationAction = (
+  action: NotificationAction,
+  store: ReturnType<typeof useAppStore.getState>,
+): ToastAction | undefined => {
+  if (action.kind === 'retry-summarizer') {
+    const { sessionId } = action;
+    const lastAttempt = store.summarizerStatus[sessionId]?.lastAttempt;
+    if (lastAttempt == null) {
+      return undefined;
+    }
+    return {
+      label: 'Retry',
+      onClick: () => {
+        store.retrySummarizer(sessionId);
+      },
+    };
+  }
+  if (action.kind === 'retry-step-summary') {
+    const { sessionId, agentId } = action;
+    return {
+      label: 'Retry',
+      onClick: () => {
+        void store.retryStepSummary({ sessionId, agentId });
+      },
+    };
+  }
+  const _exhaustive: never = action;
+  return undefined;
+};
+
 export const NotificationToastBridge = () => {
   const notifications = useAppStore((s) => s.notifications);
   const sessions = useAppStore((s) => s.sessions);
@@ -54,10 +84,13 @@ export const NotificationToastBridge = () => {
 
   useEffect(() => {
     for (const n of pickFreshFailures(notifications, seen.current, mountedAt.current)) {
+      const store = useAppStore.getState();
+      const toastAction = n.action != null ? mapNotificationAction(n.action, store) : undefined;
       showToast(n.severity === 'error' ? 'error' : 'warning', n.body ?? '', {
         title: n.title,
         context: notificationContext(n, sessions, workspaces),
         persist: n.severity === 'error',
+        action: toastAction,
       });
     }
   }, [notifications, sessions, workspaces, showToast]);

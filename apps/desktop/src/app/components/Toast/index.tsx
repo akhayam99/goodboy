@@ -4,6 +4,11 @@ import { cn } from '@goodboy/ui';
 
 export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
+export type ToastAction = {
+  readonly label: string;
+  readonly onClick: () => void;
+};
+
 export type ToastItem = {
   readonly id: string;
   readonly kind: ToastKind;
@@ -11,12 +16,14 @@ export type ToastItem = {
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
+  readonly action?: ToastAction;
 };
 
 export type ShowToastOptions = {
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
+  readonly action?: ToastAction;
 };
 
 type ToastContextValue = {
@@ -48,6 +55,7 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
         title: opts?.title,
         context: opts?.context,
         persist: opts?.persist,
+        action: opts?.action,
       },
     ]);
   }, []);
@@ -215,6 +223,18 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
           ) : null}
           {toast.context ? (
             <p className="mt-1.5 line-clamp-2 text-2xs text-muted-foreground/70">{toast.context}</p>
+          ) : null}
+          {toast.action != null ? (
+            <button
+              type="button"
+              className="mt-1.5 rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+              onClick={() => {
+                toast.action!.onClick();
+                onDismiss(toast.id);
+              }}
+            >
+              {toast.action.label}
+            </button>
           ) : null}
         </div>
         <button

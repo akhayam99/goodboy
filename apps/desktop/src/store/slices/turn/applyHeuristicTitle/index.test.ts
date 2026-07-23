@@ -151,6 +151,31 @@ describe('applyHeuristicTitle', () => {
     );
   });
 
+  it('emits info notification when AI title generation fails', async () => {
+    invokeMock.mockRejectedValue(new Error('model offline'));
+    const emitNotification = vi.fn(async () => undefined);
+    const harness = createHarness();
+    const baseGet = harness.get;
+    const get = () => ({ ...baseGet(), emitNotification }) as ReturnType<typeof harness.get>;
+
+    await applyHeuristicTitle({
+      set: harness.set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Implement a secure authentication flow',
+    });
+
+    expect(emitNotification).toHaveBeenCalledWith(
+      'title-generation',
+      'info',
+      'agent title generation failed',
+      expect.stringContaining('model offline'),
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
+    expect(emitNotification).toHaveBeenCalledTimes(1);
+  });
+
   it('skips rename when the agent name is not a placeholder', async () => {
     const harness = createHarness({
       agentName: 'Existing agent title',

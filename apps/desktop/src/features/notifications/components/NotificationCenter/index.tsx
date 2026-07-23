@@ -1,10 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
-import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui';
+import { Divider, Popover, ScrollFade, Select, Tooltip, cn } from '@goodboy/ui';
 import { Fragment } from 'react';
-import type { Notification, NotificationSeverity } from '@goodboy/db';
+import { useShallow } from 'zustand/react/shallow';
+import type { Notification, NotificationAction, NotificationSeverity } from '@goodboy/db';
+import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
+import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { mapNotificationAction } from '../NotificationToastBridge';
+import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { ModelSelect } from '../../../session/components/ModelSelect';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
   switch (severity) {
@@ -210,6 +216,9 @@ type NotificationItemProps = {
 };
 
 function NotificationItem({ notification: n }: NotificationItemProps) {
+  const store = useAppStore.getState();
+  const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <li className={cn('flex items-start gap-2 px-3 py-2.5', !n.read && 'bg-muted/40')}>
       <span className={cn('mt-0.5 shrink-0', severityClass(n.severity))}>
@@ -223,7 +232,107 @@ function NotificationItem({ notification: n }: NotificationItemProps) {
           </p>
         )}
         <p className="mt-0.5 text-2xs text-muted-foreground/70">{relativeTime(n.ts)}</p>
+        {action != null ? (
+          <div className="mt-1 flex items-center gap-1.5">
+            <button
+              type="button"
+              className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+              onClick={action.onClick}
+            >
+              {action.label}
+            </button>
+            <button
+              type="button"
+              className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={() => setPickerOpen((v) => !v)}
+            >
+              Retry with…
+            </button>
+          </div>
+        ) : null}
+        {action != null && pickerOpen && n.action != null ? (
+          <RetryWithPicker action={n.action} onDone={() => setPickerOpen(false)} />
+        ) : null}
       </div>
     </li>
+  );
+}
+
+type RetryWithPickerProps = {
+  readonly action: NotificationAction;
+  readonly onDone: () => void;
+};
+
+function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
+  const connectedProviderIds = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
+  );
+  const sessionProvider = useAppStore(
+    (s) => s.sessions.find((x) => x.id === action.sessionId)?.providerPreference.defaultProvider,
+  );
+  const availableProviderIds = connectedProviderIds.filter(
+    (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
+  );
+  const initialProvider =
+    sessionProvider != null && availableProviderIds.includes(sessionProvider)
+      ? sessionProvider
+      : availableProviderIds[0];
+  const [providerId, setProviderId] = useState<ProviderId | undefined>(initialProvider);
+  const [model, setModel] = useState('');
+  if (providerId == null) {
+    return null;
+  }
+  const recommendedModel = resolveTaskModel('summarizer', null, providerId).model;
+  const dispatch = () => {
+    const override: TaskModelPreference =
+      model === '' ? resolveTaskModel('summarizer', null, providerId) : { providerId, model };
+    const store = useAppStore.getState();
+    if (action.kind === 'retry-summarizer') {
+      store.retrySummarizer(action.sessionId, override);
+    } else {
+      void store.retryStepSummary({
+        sessionId: action.sessionId,
+        agentId: action.agentId,
+        taskModelOverride: override,
+      });
+    }
+    onDone();
+  };
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5">
+      <Select
+        size="sm"
+        aria-label="retry provider"
+        value={providerId}
+        onChange={(event) => {
+          setProviderId(event.target.value as ProviderId);
+          setModel('');
+        }}
+      >
+        {availableProviderIds.map((candidate) => (
+          <option key={candidate} value={candidate}>
+            {PROVIDER_LABEL[candidate]}
+          </option>
+        ))}
+      </Select>
+      <div className="min-w-0 flex-1">
+        <ModelSelect
+          provider={providerId}
+          value={model}
+          onChange={setModel}
+          disabled={false}
+          allowAuto
+          recommendedModel={recommendedModel}
+        />
+      </div>
+      <button
+        type="button"
+        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+        onClick={dispatch}
+        aria-label="confirm retry with selected model"
+      >
+        Retry
+      </button>
+    </div>
   );
 }

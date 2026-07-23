@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { getDefaultBinary, resolveTaskModel } from '@goodboy/core';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
+import { shortModel } from '../../../../features/session/agent-row-format';
+import { formatError } from '../../../../shared/lib/errors';
 import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristic';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
@@ -126,7 +128,22 @@ export const applyHeuristicTitle = async ({
       get().workspaceOverrides?.[session.workspaceId]?.taskModels,
       session.providerPreference.defaultProvider,
     );
-    const generatedTitle = await generateAgentTitle({ prompt, ...taskModel });
+
+    let generatedTitle: string;
+    try {
+      generatedTitle = await generateAgentTitle({ prompt, ...taskModel });
+    } catch (titleErr) {
+      const modelLabel = `${taskModel.providerId}/${shortModel(taskModel.model)}`;
+      void get().emitNotification(
+        'title-generation',
+        'info',
+        'agent title generation failed',
+        `${modelLabel}: ${formatError(titleErr)}`,
+        { sessionId },
+      );
+      return;
+    }
+
     if (generatedTitle.length === 0) {
       return;
     }
