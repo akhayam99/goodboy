@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { GitPullRequest, HelpCircle, MessageSquare, Play, type LucideIcon } from 'lucide-react';
+import { HelpCircle, MessageSquare, Play, type LucideIcon } from 'lucide-react';
 import type {
   Agent,
   OpenQuestion,
@@ -29,7 +29,6 @@ export const useDynamicActions = (
   session: Session,
   nav: BoardNavigation,
   stage: SessionStageInfo['stage'],
-  reason: string,
 ): ReadonlyArray<DynamicAction> => {
   const id = session.id as SessionId;
   const openQuestions = useAppStore((s) => s.sessionOpenQuestions[id] ?? EMPTY_QUESTIONS);
@@ -76,15 +75,6 @@ export const useDynamicActions = (
         onClick: () => nav.openQuestions(session),
       });
     }
-    if (stage === 'attention' && reason.startsWith('PR')) {
-      actions.push({
-        key: 'github',
-        icon: GitPullRequest,
-        color: 'text-info',
-        label: 'Open PR',
-        onClick: () => nav.openGithub(session),
-      });
-    }
     if (hasUnread) {
       actions.push({
         key: 'unread',
@@ -95,5 +85,5 @@ export const useDynamicActions = (
       });
     }
     return actions;
-  }, [session, nav, stage, reason, openQuestions, workflows, runs, hasUnread]);
+  }, [session, nav, stage, openQuestions, workflows, runs, hasUnread]);
 };

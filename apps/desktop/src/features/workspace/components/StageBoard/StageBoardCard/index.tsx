@@ -18,7 +18,8 @@ import {
   useSessionStageInfo,
 } from '../../../../../store';
 import { CostBadge } from '../../../../providers/components/CostBadge';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import { IntegrationGlyph } from '../../../../integrations/components/IntegrationGlyph';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -51,10 +52,32 @@ export const StageBoardCard = memo(function StageBoardCard({
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[id] ?? EMPTY_ARRAY);
   const agentCount = useNonResolverStandaloneAgents(id).length;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
-  const dynamicActions = useDynamicActions(session, nav, stage, reason);
+  const dynamicActions = useDynamicActions(session, nav, stage);
   const sessionCost = useSessionCost(id);
 
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
+  const isGitlab = mergeRequest != null && pullRequest == null;
+  const hasLinkedRequest = linkedRequest.state !== 'none';
+
+  const prMeta = pullRequestMeta(linkedRequest.state);
+  const prLabel =
+    linkedRequest.title ??
+    prMeta.label +
+      (linkedRequest.number !== undefined
+        ? isGitlab
+          ? ` · !${linkedRequest.number}`
+          : ` · #${linkedRequest.number}`
+        : '');
+  const prTooltip = prLabel + (isGitlab ? ', open in GitLab' : ', open in GitHub');
+
+  const handlePrClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isGitlab) {
+      window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-studio'));
+    } else {
+      nav.openGithub(session);
+    }
+  };
 
   return (
     <button
@@ -78,13 +101,33 @@ export const StageBoardCard = memo(function StageBoardCard({
             </span>
           </Tooltip>
           <span className="inline-flex h-5 shrink-0 items-center">
-            <PullRequestChip
-              state={linkedRequest.state}
-              variant="icon"
-              number={linkedRequest.number}
-              iconSize={12}
-              title={linkedRequest.title}
-            />
+            {hasLinkedRequest ? (
+              <Tooltip content={prTooltip} side="top">
+                <button
+                  type="button"
+                  aria-label={prTooltip}
+                  onClick={handlePrClick}
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-sm transition-colors hover:bg-muted"
+                >
+                  <IntegrationGlyph provider={isGitlab ? 'gitlab' : 'github'} size="xs" />
+                  <PullRequestChip
+                    state={linkedRequest.state}
+                    variant="icon"
+                    number={linkedRequest.number}
+                    iconSize={12}
+                    title={linkedRequest.title}
+                  />
+                </button>
+              </Tooltip>
+            ) : (
+              <PullRequestChip
+                state={linkedRequest.state}
+                variant="icon"
+                number={linkedRequest.number}
+                iconSize={12}
+                title={linkedRequest.title}
+              />
+            )}
           </span>
         </span>
 
@@ -125,25 +168,25 @@ export const StageBoardCard = memo(function StageBoardCard({
               <CardAction
                 key={action.key}
                 icon={action.icon}
-                color={action.color}
+                hoverColor={action.color}
                 label={action.label}
                 onClick={action.onClick}
               />
             ))}
           </span>
         )}
-        <span className="mt-auto flex flex-col items-end gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:opacity-100">
+        <span className="mt-auto flex flex-col items-end gap-0.5">
           {archived ? (
             <span className="flex gap-0.5">
               <CardAction
                 icon={RotateCcw}
-                color="text-primary"
+                hoverColor="text-primary"
                 label="restore"
                 onClick={() => onRestore?.(session)}
               />
               <CardAction
                 icon={Trash2}
-                color="text-danger"
+                hoverColor="text-danger"
                 label="delete"
                 onClick={() => onDelete?.(session)}
               />
@@ -153,14 +196,14 @@ export const StageBoardCard = memo(function StageBoardCard({
               <span className="flex gap-0.5">
                 <CardAction
                   icon={Code}
-                  color="text-muted-foreground"
+                  hoverColor="text-muted-foreground"
                   label="open in editor"
                   onClick={() => nav.openIDE(session)}
                   disabled={!worktreePath}
                 />
                 <CardAction
                   icon={SquareTerminal}
-                  color="text-muted-foreground"
+                  hoverColor="text-muted-foreground"
                   label="open terminal"
                   onClick={() => nav.openTerminal(session)}
                 />
@@ -168,13 +211,13 @@ export const StageBoardCard = memo(function StageBoardCard({
               <span className="flex gap-0.5">
                 <CardAction
                   icon={Archive}
-                  color="text-muted-foreground"
+                  hoverColor="text-muted-foreground"
                   label="archive"
                   onClick={() => onArchive?.(session)}
                 />
                 <CardAction
                   icon={Trash2}
-                  color="text-danger"
+                  hoverColor="text-danger"
                   label="delete"
                   onClick={() => onDelete?.(session)}
                 />
@@ -187,15 +230,24 @@ export const StageBoardCard = memo(function StageBoardCard({
   );
 });
 
+const ACTION_HOVER: Record<string, string> = {
+  'text-primary': 'hover:text-primary',
+  'text-danger': 'hover:text-danger',
+  'text-warning': 'hover:text-warning',
+  'text-info': 'hover:text-info',
+  'text-success': 'hover:text-success',
+  'text-muted-foreground': 'hover:text-muted-foreground',
+};
+
 type CardActionProps = {
   readonly icon: LucideIcon;
-  readonly color: string;
+  readonly hoverColor: string;
   readonly label: string;
   readonly onClick: () => void;
   readonly disabled?: boolean;
 };
 
-const CardAction = ({ icon: Icon, color, label, onClick, disabled }: CardActionProps) => {
+const CardAction = ({ icon: Icon, hoverColor, label, onClick, disabled }: CardActionProps) => {
   return (
     <Tooltip content={label} side="top">
       <button
@@ -206,9 +258,12 @@ const CardAction = ({ icon: Icon, color, label, onClick, disabled }: CardActionP
           e.stopPropagation();
           onClick();
         }}
-        className="inline-flex size-7 items-center justify-center rounded-md transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+        className={cn(
+          'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40',
+          ACTION_HOVER[hoverColor] ?? hoverColor,
+        )}
       >
-        <Icon size={14} className={color} aria-hidden />
+        <Icon size={14} aria-hidden />
       </button>
     </Tooltip>
   );

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   PullRequestState,
   Session,
@@ -133,7 +133,7 @@ describe('StageBoardCard layout', () => {
 });
 
 describe('StageBoardCard linked request', () => {
-  it('always renders a no pull request icon in the title row', () => {
+  it('always renders a no pull request icon in the title row when no PR exists', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const icon = screen.getByLabelText('No pull request');
     const titleRow = screen.getByText(session.goal).closest('[data-tooltip]')?.parentElement;
@@ -141,12 +141,33 @@ describe('StageBoardCard linked request', () => {
     expect(titleRow?.contains(icon)).toBe(true);
   });
 
-  it('renders the GitHub pull request state and number', () => {
+  it('renders a clickable GitHub PR button that calls nav.openGithub', () => {
     state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
     render(<StageBoardCard session={session} nav={nav} />);
-    const icon = screen.getByLabelText('Draft · #9484');
-    expect(icon.getAttribute('title')).toBe('Draft · #9484');
+    const btn = screen.getByLabelText('Draft · #9484, open in GitHub');
+    expect(btn.tagName).toBe('BUTTON');
+    fireEvent.click(btn);
+    expect(nav.openGithub).toHaveBeenCalledWith(session);
     expect(screen.queryByLabelText('No pull request')).toBeNull();
+  });
+
+  it('renders a clickable GitLab MR button that dispatches the studio event', () => {
+    state.sessionGitlabMr = {
+      [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) },
+    };
+    const dispatched: Event[] = [];
+    window.addEventListener('goodboy:open-gitlab-studio', (e) => dispatched.push(e));
+    render(<StageBoardCard session={session} nav={nav} />);
+    const btn = screen.getByLabelText('Merge request !12 · open, open in GitLab');
+    fireEvent.click(btn);
+    expect(dispatched).toHaveLength(1);
+    window.removeEventListener('goodboy:open-gitlab-studio', (e) => dispatched.push(e));
+  });
+
+  it('does not render a clickable button when state is none', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByLabelText(/open in GitHub/)).toBeNull();
+    expect(screen.queryByLabelText(/open in GitLab/)).toBeNull();
   });
 
   it.each([
@@ -160,9 +181,24 @@ describe('StageBoardCard linked request', () => {
       [SESSION_ID]: { mr: mergeRequest({ state: mrState, draft }) },
     };
     render(<StageBoardCard session={session} nav={nav} />);
-    const title = `Merge request !12 · ${expected}`;
-    const icon = screen.getByLabelText(title);
-    expect(icon.getAttribute('title')).toBe(title);
+    const title = `Merge request !12 · ${expected}, open in GitLab`;
+    const btn = screen.getByLabelText(title);
+    expect(btn.tagName).toBe('BUTTON');
+  });
+});
+
+describe('StageBoardCard actions visibility', () => {
+  it('renders static actions without opacity-0 class', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    const archiveBtn = screen.getByLabelText('archive');
+    const actionsContainer = archiveBtn.closest('span.mt-auto');
+    expect(actionsContainer?.className).not.toContain('opacity-0');
+  });
+
+  it('renders action buttons with hover color classes', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    const deleteBtn = screen.getByLabelText('delete');
+    expect(deleteBtn.className).toContain('hover:text-danger');
   });
 });
 
