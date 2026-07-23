@@ -21,6 +21,7 @@ import {
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import {
+  DetailSection,
   HeaderBand,
   MetaItem,
   StudioDetailLayout,
@@ -342,13 +343,12 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </div>
       ) : null}
 
-      <section className="flex flex-col gap-3">
-        <SectionHeader
-          label="stack trace"
-          icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
-        />
+      <DetailSection
+        label="stack trace"
+        icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
+      >
         <SentryStackTrace frames={frames} isLoading={detailLoading} error={detailError} />
-      </section>
+      </DetailSection>
 
       <SentryBreadcrumbs breadcrumbs={breadcrumbs} isLoading={detailLoading} error={detailError} />
     </StudioDetailLayout>
