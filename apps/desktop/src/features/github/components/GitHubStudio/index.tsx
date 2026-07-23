@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { cn, Divider, ScrollFade } from '@goodboy/ui';
-import { GitPullRequest, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
 import { IssueInbox } from './IssueInbox';
@@ -10,6 +10,7 @@ import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
+import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { resolveIntegrationConnection } from '../../../integrations/connection';
 import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
 import { MissingGithubRemoteEmptyState } from '../MissingGithubRemoteEmptyState';
@@ -111,7 +112,7 @@ export const GitHubStudio = ({
 
   return (
     <StudioShell
-      icon={GitPullRequest}
+      glyph={<IntegrationGlyph provider="github" framed />}
       title="GitHub"
       workspaceName={workspaceName}
       closeLabel="close github studio"

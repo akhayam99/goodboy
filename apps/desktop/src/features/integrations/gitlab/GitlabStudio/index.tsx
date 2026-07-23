@@ -3,6 +3,7 @@ import { cn, Divider } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../connection';
@@ -92,13 +93,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
 
   return (
     <StudioShell
-      glyph={
-        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-gitlab/10">
-          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-gitlab text-[9px] font-bold text-white">
-            G
-          </span>
-        </span>
-      }
+      glyph={<IntegrationGlyph provider="gitlab" framed />}
       title="GitLab"
       workspaceName={workspaceName}
       closeLabel="close gitlab studio"

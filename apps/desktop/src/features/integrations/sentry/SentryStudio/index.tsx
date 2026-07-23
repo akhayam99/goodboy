@@ -3,6 +3,7 @@ import { cn, Divider } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../connection';
@@ -58,13 +59,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
 
   return (
     <StudioShell
-      glyph={
-        <span className="flex size-8 items-center justify-center rounded-lg bg-provider-sentry/10">
-          <span className="flex size-4 items-center justify-center rounded-sm bg-provider-sentry text-[9px] font-bold text-white">
-            S
-          </span>
-        </span>
-      }
+      glyph={<IntegrationGlyph provider="sentry" framed />}
       title="Sentry"
       workspaceName={workspaceName}
       closeLabel="close sentry studio"

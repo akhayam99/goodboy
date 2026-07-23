@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { DollarSign, GitPullRequest, Layers, Plug } from 'lucide-react';
+import { DollarSign, Layers, Plug } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
+import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
 
 type FooterButtonProps = {
   icon: ReactNode;
@@ -68,7 +69,7 @@ export const AppFooter = ({
       <div className="flex items-center gap-0.5">
         {!gitlabEnabled ? (
           <FooterButton
-            icon={<GitPullRequest size={12} aria-hidden />}
+            icon={<IntegrationGlyph provider="github" size="xs" />}
             label="GitHub"
             title="review and act on pull requests across this workspace"
             onClick={onOpenGithub}
@@ -77,11 +78,7 @@ export const AppFooter = ({
         ) : null}
         {gitlabEnabled ? (
           <FooterButton
-            icon={
-              <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-gitlab text-[7px] font-bold text-white">
-                G
-              </span>
-            }
+            icon={<IntegrationGlyph provider="gitlab" size="xs" />}
             label="GitLab"
             title="launch a session from a GitLab issue"
             onClick={onOpenGitlab}
@@ -90,11 +87,7 @@ export const AppFooter = ({
         ) : null}
         {linearEnabled ? (
           <FooterButton
-            icon={
-              <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-linear text-[7px] font-bold text-white">
-                L
-              </span>
-            }
+            icon={<IntegrationGlyph provider="linear" size="xs" />}
             label="Linear"
             title="launch a session from a Linear issue"
             onClick={onOpenLinear}
@@ -103,11 +96,7 @@ export const AppFooter = ({
         ) : null}
         {sentryEnabled ? (
           <FooterButton
-            icon={
-              <span className="flex size-3 items-center justify-center rounded-[3px] bg-provider-sentry text-[7px] font-bold text-white">
-                S
-              </span>
-            }
+            icon={<IntegrationGlyph provider="sentry" size="xs" />}
             label="Sentry"
             title="launch a session from a Sentry issue"
             onClick={onOpenSentry}

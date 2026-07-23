@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
+import { IntegrationGlyph } from '../IntegrationGlyph';
 
 type Props = {
   task: SessionExternalTask;
@@ -12,8 +13,6 @@ type Props = {
 
 type ProviderMeta = {
   label: string;
-  glyph: string;
-  glyphClasses: string;
   colorClasses: string;
   studioEvent: string;
 };
@@ -21,32 +20,24 @@ type ProviderMeta = {
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   linear: {
     label: 'Linear',
-    glyph: 'L',
-    glyphClasses: 'bg-provider-linear text-white',
     colorClasses:
       'border-provider-linear/30 bg-provider-linear/5 text-provider-linear hover:border-provider-linear/60 hover:bg-provider-linear/10',
     studioEvent: 'goodboy:open-linear-studio',
   },
   sentry: {
     label: 'Sentry',
-    glyph: 'S',
-    glyphClasses: 'bg-provider-sentry text-white',
     colorClasses:
       'border-provider-sentry/30 bg-provider-sentry/5 text-provider-sentry hover:border-provider-sentry/60 hover:bg-provider-sentry/10',
     studioEvent: 'goodboy:open-sentry-studio',
   },
   gitlab: {
     label: 'GitLab',
-    glyph: 'G',
-    glyphClasses: 'bg-provider-gitlab text-white',
     colorClasses:
       'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10',
     studioEvent: 'goodboy:open-gitlab-studio',
   },
   github: {
     label: 'GitHub',
-    glyph: 'GH',
-    glyphClasses: 'bg-provider-github text-white',
     colorClasses:
       'border-provider-github/30 bg-provider-github/5 text-provider-github hover:border-provider-github/60 hover:bg-provider-github/10',
     studioEvent: 'goodboy:open-github-studio',
@@ -64,16 +55,7 @@ export const ExternalTaskChip = ({
   const tooltip = `${task.identifier}: ${task.title}`;
   const isRow = appearance === 'row';
 
-  const glyph = (
-    <span
-      className={cn(
-        'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-bold',
-        meta.glyphClasses,
-      )}
-    >
-      {meta.glyph}
-    </span>
-  );
+  const glyph = <IntegrationGlyph provider={task.provider} />;
 
   if (variant === 'icon') {
     return (
