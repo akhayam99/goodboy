@@ -43,6 +43,14 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
       'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10',
     studioEvent: 'goodboy:open-gitlab-studio',
   },
+  github: {
+    label: 'GitHub',
+    glyph: 'GH',
+    glyphClasses: 'bg-provider-github text-white',
+    colorClasses:
+      'border-provider-github/30 bg-provider-github/5 text-provider-github hover:border-provider-github/60 hover:bg-provider-github/10',
+    studioEvent: 'goodboy:open-github-studio',
+  },
 };
 
 export const ExternalTaskChip = ({

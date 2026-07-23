@@ -158,7 +158,7 @@ export type WorkspaceIntegration =
   | SentryWorkspaceIntegration
   | GitlabWorkspaceIntegration;
 
-export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab';
+export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'github';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
