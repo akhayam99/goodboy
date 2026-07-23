@@ -139,12 +139,11 @@ describe('StageBoardCard layout', () => {
 });
 
 describe('StageBoardCard linked request', () => {
-  it('always renders a no pull request icon in the title row when no PR exists', () => {
+  it('renders no pull request indicator when no PR exists', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const icon = screen.getByLabelText('No pull request');
-    const titleRow = screen.getByText(session.goal).closest('[data-tooltip]')?.parentElement;
-    expect(icon.getAttribute('title')).toBe('No pull request');
-    expect(titleRow?.contains(icon)).toBe(true);
+    expect(screen.queryByLabelText('No pull request')).toBeNull();
+    expect(screen.queryByLabelText(/open in GitHub/)).toBeNull();
+    expect(screen.getByText(session.goal)).toBeTruthy();
   });
 
   it('renders a clickable GitHub PR button that calls nav.openGithub', () => {
