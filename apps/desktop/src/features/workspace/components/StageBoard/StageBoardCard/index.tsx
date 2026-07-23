@@ -1,6 +1,14 @@
 import { memo } from 'react';
-import { Archive, Code, RotateCcw, SquareTerminal, Trash2, type LucideIcon } from 'lucide-react';
-import { Chip, cn, StatusDot, Tooltip } from '@goodboy/ui';
+import {
+  Archive,
+  Bot,
+  Code,
+  RotateCcw,
+  SquareTerminal,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
+import { Chip, cn, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -9,12 +17,11 @@ import {
   useSessionCost,
   useSessionStageInfo,
 } from '../../../../../store';
-import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
-import { pluralize } from '../../WorkspacesSidebar/lib';
 import type { BoardNavigation } from '../useBoardNavigation';
+import { getLinkedRequest } from './getLinkedRequest';
 import { useDynamicActions } from './useDynamicActions';
 
 type StageBoardCardProps = {
@@ -39,15 +46,15 @@ export const StageBoardCard = memo(function StageBoardCard({
   const isAutoMode =
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
 
-  const prState = useAppStore((s) => s.sessionGithub[id]?.pr?.state ?? null);
-  const prNumber = useAppStore((s) => s.sessionGithub[id]?.pr?.number);
+  const pullRequest = useAppStore((s) => s.sessionGithub[id]?.pr ?? null);
+  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[id] ?? EMPTY_ARRAY);
   const agentCount = useNonResolverStandaloneAgents(id).length;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const dynamicActions = useDynamicActions(session, nav, stage, reason);
   const sessionCost = useSessionCost(id);
 
-  const stageMeta = SESSION_STAGE_META[stage];
+  const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
 
   return (
     <button
@@ -55,7 +62,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       data-archived={archived || undefined}
       onClick={() => nav.selectCard(session)}
       className={cn(
-        'group flex min-h-[7.25rem] shrink-0 gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
+        'group flex h-[7.25rem] min-h-[7.25rem] shrink-0 gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
           ? 'border-info/50'
           : stage === 'attention'
@@ -64,53 +71,51 @@ export const StageBoardCard = memo(function StageBoardCard({
       )}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-2">
-        <span className="flex items-start gap-2">
-          <span className="inline-flex h-5 shrink-0 items-center">
-            <StatusDot
-              tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
-              size="sm"
-              pulsing={stage === 'running'}
-              ariaLabel={stageMeta.label}
-            />
-          </span>
+        <span className="flex min-h-10 items-start gap-2">
           <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
-            <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
+            <span className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-snug">
               {session.goal}
             </span>
           </Tooltip>
+          <span className="inline-flex h-5 shrink-0 items-center">
+            <PullRequestChip
+              state={linkedRequest.state}
+              variant="icon"
+              number={linkedRequest.number}
+              iconSize={12}
+              title={linkedRequest.title}
+            />
+          </span>
         </span>
 
-        {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
-
-        {(sessionCost > 0 ||
-          prState != null ||
-          externalTasks.length > 0 ||
-          agentCount > 0 ||
-          isAutoMode) && (
-          <span className="flex flex-wrap items-center gap-1.5">
-            {sessionCost > 0 && (
-              <CostBadge
-                value={sessionCost}
-                title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
-                className="text-2xs font-medium tabular-nums text-muted-foreground"
-              />
-            )}
-            {prState && (
-              <PullRequestChip state={prState} variant="icon" number={prNumber} iconSize={12} />
-            )}
-            {externalTasks.map((task) => (
-              <ExternalTaskChip
-                key={`${task.provider}:${task.externalId}`}
-                task={task}
-                variant="badge"
-              />
-            ))}
-            {agentCount > 0 && (
-              <Chip tone="neutral" size="sm" shape="pill" label={pluralize(agentCount, 'agent')} />
-            )}
-            {isAutoMode && <Chip tone="danger" size="sm" label="auto" />}
-          </span>
-        )}
+        <span className="mt-auto flex min-h-5 flex-nowrap items-center gap-1.5 overflow-hidden">
+          {agentCount > 0 && (
+            <Tooltip content={`${agentCount} agents`} side="top">
+              <span
+                aria-label={`${agentCount} agents`}
+                className="inline-flex shrink-0 items-center gap-1 text-2xs text-muted-foreground"
+              >
+                <Bot size={12} aria-hidden />
+                <span className="tabular-nums">{agentCount}</span>
+              </span>
+            </Tooltip>
+          )}
+          {externalTasks.map((task) => (
+            <ExternalTaskChip
+              key={`${task.provider}:${task.externalId}`}
+              task={task}
+              variant="icon"
+            />
+          ))}
+          {sessionCost > 0 && (
+            <CostBadge
+              value={sessionCost}
+              title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
+              className="shrink-0 text-2xs font-medium tabular-nums text-muted-foreground"
+            />
+          )}
+          {isAutoMode && <Chip tone="danger" size="sm" label="auto" className="shrink-0" />}
+        </span>
       </span>
 
       <span className="-mr-1 flex shrink-0 flex-col items-end gap-1">
