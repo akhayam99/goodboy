@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SessionId, TaskModelPreferences } from '@goodboy/types';
+import type { SessionId, TaskModelPreferences, WorkspaceId } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import type { GitlabMergeRequest } from '../client';
 
 type SpawnAgent = (
   sessionId: SessionId,
@@ -31,6 +32,11 @@ type ConfigProps = {
   readonly disabled: boolean;
 };
 
+type MrParams = {
+  readonly mergeStatus?: GitlabMergeRequest['mergeStatus'];
+  readonly webUrl?: string;
+};
+
 const h = vi.hoisted(() => ({
   config: {
     provider: 'gemini',
@@ -38,6 +44,7 @@ const h = vi.hoisted(() => ({
     effort: 'low',
     hint: 'Mention the rollout order.',
   } satisfies AgentSpawnConfigValue,
+  gitlabMergeMr: vi.fn(async () => undefined),
   showToast: vi.fn(),
   store: {
     sessions: [
@@ -68,6 +75,11 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
+vi.mock('../client', async () => {
+  const actual = await vi.importActual<typeof import('../client')>('../client');
+  return { ...actual, gitlabMergeMr: h.gitlabMergeMr };
+});
+
 vi.mock('../../../session/components/AgentSpawnConfig', () => ({
   AgentSpawnConfig: ({ onChange, disabled }: ConfigProps) => (
     <button type="button" disabled={disabled} onClick={() => onChange(h.config)}>
@@ -79,8 +91,29 @@ vi.mock('../../../session/components/AgentSpawnConfig', () => ({
 import { MrDetailPanel } from './MrDetailPanel';
 
 const SESSION_ID = 'session-3' as SessionId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+
+const makeMr = ({
+  mergeStatus = 'can_be_merged',
+  webUrl = 'https://gitlab.com/acme/web/-/merge_requests/4',
+}: MrParams = {}): GitlabMergeRequest => ({
+  id: 12,
+  iid: 4,
+  projectId: 3,
+  title: 'Add merge request dashboard',
+  description: null,
+  state: 'opened',
+  webUrl,
+  sourceBranch: 'ak/mr-dashboard',
+  targetBranch: 'main',
+  draft: false,
+  hasConflicts: false,
+  mergeStatus,
+  updatedAt: '2026-07-22T10:00:00Z',
+});
 
 beforeEach(() => {
+  h.gitlabMergeMr.mockClear();
   h.store.refreshSessionMr.mockClear();
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
@@ -126,5 +159,62 @@ describe('MrDetailPanel', () => {
       provider: 'codex',
       model: 'gpt-5.4-mini',
     });
+  });
+
+  it('merges a selected MR through the GitLab client', async () => {
+    const onClose = vi.fn();
+    const onRefresh = vi.fn();
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onRefresh={onRefresh}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Merge request' }));
+
+    await waitFor(() =>
+      expect(h.gitlabMergeMr).toHaveBeenCalledWith(
+        WORKSPACE_ID,
+        'https://gitlab.com',
+        'acme/web',
+        4,
+      ),
+    );
+    expect(onRefresh).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('disables merge when GitLab reports cannot_be_merged', () => {
+    render(
+      <MrDetailPanel
+        mr={makeMr({ mergeStatus: 'cannot_be_merged' })}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      (screen.getByRole('button', { name: 'Merge request' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('disables merge when the MR project path cannot be parsed', () => {
+    render(
+      <MrDetailPanel
+        mr={makeMr({ webUrl: 'not a URL' })}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      (screen.getByRole('button', { name: 'Merge request' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 });

@@ -49,4 +49,13 @@ describe('useGitlabMrs helpers', () => {
       }),
     ).toBe('group/subgroup/repo');
   });
+
+  it('returns no project path for an unparseable MR URL', () => {
+    expect(projectPathFromMrUrl({ webUrl: 'not a URL' })).toBeNull();
+    expect(
+      buildGitlabMrGroups({
+        mrs: [makeMr({ overrides: { webUrl: 'not a URL' } })],
+      })[0]?.label,
+    ).toBe('Merge requests');
+  });
 });

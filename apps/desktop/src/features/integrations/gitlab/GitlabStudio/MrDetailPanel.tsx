@@ -86,6 +86,7 @@ export const MrDetailPanel = ({
   const { showToast } = useToast();
 
   const mr = selectedMr ?? mrState?.mr ?? null;
+  const mergeProjectPath = mr == null ? null : projectPathFromMrUrl({ webUrl: mr.webUrl });
   const branch = selectedMr?.sourceBranch ?? sessionBranch;
   const loading = mrState?.loading ?? false;
   const error = mrState?.error ?? null;
@@ -199,8 +200,8 @@ export const MrDetailPanel = ({
     try {
       if (sessionId != null) {
         await mergeMrForSession(sessionId);
-      } else if (mr != null && workspaceId != null && host != null) {
-        await gitlabMergeMr(workspaceId, host, projectPathFromMrUrl({ webUrl: mr.webUrl }), mr.iid);
+      } else if (mr != null && workspaceId != null && host != null && mergeProjectPath != null) {
+        await gitlabMergeMr(workspaceId, host, mergeProjectPath, mr.iid);
         onRefresh?.();
       }
       showToast('success', 'Merge request merged');
@@ -309,7 +310,10 @@ export const MrDetailPanel = ({
                   <Button
                     onClick={() => void onMerge()}
                     disabled={
-                      busy !== null || mr.hasConflicts || mr.mergeStatus === 'cannot_be_merged'
+                      busy !== null ||
+                      mr.hasConflicts ||
+                      mr.mergeStatus === 'cannot_be_merged' ||
+                      (sessionId == null && mergeProjectPath == null)
                     }
                     className={busy === 'merge' ? 'animate-border-pulse' : undefined}
                   >

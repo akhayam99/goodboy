@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
-import { GitPullRequest } from 'lucide-react';
+import { cn, Divider, ScrollFade } from '@goodboy/ui';
+import { GitPullRequest, RefreshCw } from 'lucide-react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
 import { IssueInbox } from './IssueInbox';
@@ -106,7 +106,23 @@ export const GitHubStudio = ({
       workspaceName={workspaceName}
       closeLabel="close github studio"
       headerAccessory={
-        <StudioTabs ariaLabel="GitHub work" tabs={TABS} value={tab} onChange={setTab} />
+        <div className="flex items-center gap-2">
+          <StudioTabs ariaLabel="GitHub work" tabs={TABS} value={tab} onChange={setTab} />
+          <button
+            type="button"
+            onClick={issues.refetch}
+            disabled={issues.loading}
+            title="Refresh issues"
+            aria-label="Refresh issues"
+            className={cn(
+              'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
+              'text-muted-foreground transition-colors',
+              'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
+            )}
+          >
+            <RefreshCw size={13} aria-hidden />
+          </button>
+        </div>
       }
       onClose={onClose}
     >

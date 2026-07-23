@@ -76,7 +76,7 @@ export const useGithubIssues = ({ workspaceId, rootPath }: HookParams): Result =
         setIssues([]);
         return;
       }
-      setIssues(await ghAssignedIssues(slug));
+      setIssues(await ghAssignedIssues(slug, { cwd: rootPath, workspaceId }));
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : String(fetchError));
     } finally {

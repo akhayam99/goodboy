@@ -22,7 +22,10 @@ describe('listAssignedIssues', () => {
     });
     const runner: GhRunner = { run };
 
-    const result = await listAssignedIssues(runner, 'goodboy/goodboy');
+    const result = await listAssignedIssues(runner, 'goodboy/goodboy', {
+      cwd: '/repos/goodboy',
+      workspaceId: 'workspace-1',
+    });
 
     expect(run).toHaveBeenCalledWith(
       [
@@ -39,7 +42,10 @@ describe('listAssignedIssues', () => {
         '--json',
         'number,title,body,url,state,labels,assignees,updatedAt',
       ],
-      undefined,
+      {
+        cwd: '/repos/goodboy',
+        workspaceId: 'workspace-1',
+      },
     );
     expect(result).toEqual([
       {

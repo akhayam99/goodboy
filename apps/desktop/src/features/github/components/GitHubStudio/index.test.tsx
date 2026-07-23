@@ -17,13 +17,17 @@ type IssueDetailProps = {
   readonly issue: GithubIssue | null;
 };
 
+const h = vi.hoisted(() => ({
+  refetch: vi.fn(),
+}));
+
 vi.mock('./useGithubInbox', () => ({ useGithubInbox: () => [] }));
 vi.mock('./useGithubIssues', () => ({
   useGithubIssues: () => ({
     groups: [{ key: 'open', label: 'Open', rows: [{ issue: ISSUE, sessionId: null }] }],
     loading: false,
     error: null,
-    refetch: vi.fn(),
+    refetch: h.refetch,
   }),
 }));
 vi.mock('./InboxList', () => ({ InboxList: () => <div>Pull request inbox</div> }));
@@ -61,7 +65,10 @@ const renderStudio = () =>
     />,
   );
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  h.refetch.mockClear();
+});
 
 describe('GitHubStudio', () => {
   it('keeps pull requests selected by default', () => {
@@ -80,5 +87,13 @@ describe('GitHubStudio', () => {
 
     expect(screen.getByText('Open')).toBeDefined();
     expect(screen.getAllByText('Add issue dashboard').length).toBeGreaterThan(0);
+  });
+
+  it('renders an issues refresh button in the header', () => {
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh issues' }));
+
+    expect(h.refetch).toHaveBeenCalledOnce();
   });
 });

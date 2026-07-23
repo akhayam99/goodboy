@@ -113,8 +113,10 @@ export const ghPrsForBranch = async (
   return listPrsForBranch(tauriGhRunner, slug, branch, { cwd, workspaceId });
 };
 
-export const ghAssignedIssues = async (slug: string): Promise<ReadonlyArray<GithubIssue>> =>
-  listAssignedIssues(tauriGhRunner, slug);
+export const ghAssignedIssues = async (
+  slug: string,
+  opts: GhRunOptions = {},
+): Promise<ReadonlyArray<GithubIssue>> => listAssignedIssues(tauriGhRunner, slug, opts);
 
 export const ghPrDetailByNumber = async (
   cwd: string,

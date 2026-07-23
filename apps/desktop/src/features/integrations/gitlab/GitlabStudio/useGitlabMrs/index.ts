@@ -29,21 +29,21 @@ type Result = Readonly<{
   refetch: () => void;
 }>;
 
-export const projectPathFromMrUrl = ({ webUrl }: Params): string => {
+export const projectPathFromMrUrl = ({ webUrl }: Params): string | null => {
   try {
     const marker = '/-/merge_requests/';
     const path = new URL(webUrl).pathname;
     const markerIndex = path.indexOf(marker);
     return markerIndex < 0 ? path.replace(/^\//, '') : path.slice(1, markerIndex);
   } catch {
-    return 'Merge requests';
+    return null;
   }
 };
 
 export const buildGitlabMrGroups = ({ mrs }: GroupsParams): ReadonlyArray<GitlabMrGroup> => {
   const buckets = new Map<string, GitlabMergeRequest[]>();
   for (const mr of mrs) {
-    const key = projectPathFromMrUrl({ webUrl: mr.webUrl });
+    const key = projectPathFromMrUrl({ webUrl: mr.webUrl }) ?? 'Merge requests';
     buckets.set(key, [...(buckets.get(key) ?? []), mr]);
   }
   return [...buckets.keys()]

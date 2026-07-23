@@ -1,5 +1,5 @@
 import type { GithubIssue } from '@goodboy/types';
-import type { GhRunner } from './gh';
+import type { GhRunner, GhRunOptions } from './gh';
 import { runJson } from './gh';
 
 const ISSUE_FIELDS = [
@@ -27,21 +27,26 @@ type RawGithubIssue = {
 export const listAssignedIssues = async (
   runner: GhRunner,
   repoSlug: string,
+  opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubIssue>> => {
-  const issues = await runJson<ReadonlyArray<RawGithubIssue>>(runner, [
-    'issue',
-    'list',
-    '--repo',
-    repoSlug,
-    '--assignee',
-    '@me',
-    '--state',
-    'open',
-    '--limit',
-    '50',
-    '--json',
-    ISSUE_FIELDS.join(','),
-  ]);
+  const issues = await runJson<ReadonlyArray<RawGithubIssue>>(
+    runner,
+    [
+      'issue',
+      'list',
+      '--repo',
+      repoSlug,
+      '--assignee',
+      '@me',
+      '--state',
+      'open',
+      '--limit',
+      '50',
+      '--json',
+      ISSUE_FIELDS.join(','),
+    ],
+    opts,
+  );
 
   return issues.map((issue) => ({
     number: issue.number,
