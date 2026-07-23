@@ -34,9 +34,9 @@ claude /logout
 
 Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap — not an API token. API-key-only accounts are not supported for orchestration turns.
 
-### Summarizer model
+### Cheap tier model
 
-`claude-haiku-4-5` — the cheapest available Claude tier. Used for automatic context summarization between turns to keep context windows lean.
+`claude-haiku-4-5` — the cheapest available Claude tier. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider; see Defaults and task models below to pin a different model.
 
 ---
 
@@ -211,15 +211,24 @@ agy -p <PROMPT> --model <MODEL> --sandbox
 
 ---
 
+## Defaults and task models
+
+Provider Studio has a **Defaults** entry (Configuration section of the rail) that owns workspace-level provider configuration:
+
+- **Default provider**: the provider new sessions start on. Only connected providers are selectable.
+- **Task models**: which provider and model run each auxiliary operation — summaries, branch names, planning, agent titles, PR and MR drafts. Each row defaults to **Auto** (the cheapest model of the default provider, shown with a recommended tag); picking a concrete provider + model pins that operation to it. Preferences persist per workspace (`workspaces.task_models`) and resolve through `resolveTaskModel` in `@goodboy/core`.
+
+Chat turns are not affected: per-agent model overrides and the session default keep governing conversation turns.
+
 ## Multi-account
 
 A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@example.com`. Each session in Goodboy targets one active identity per provider.
 
-The **providers panel** (Settings → Providers) shows the currently authenticated identity (email or username) for each connected CLI. Verify this before starting a session — the displayed identity is the account that will be billed for every turn.
+**Provider Studio** (footer → Providers) shows the currently authenticated identity (email or username) for each connected CLI. Verify this before starting a session — the displayed identity is the account that will be billed for every turn.
 
 ### How to switch accounts
 
-1. Open **Settings → Providers**.
+1. Open **Provider Studio** from the footer.
 2. Click **disconnect** next to the provider you want to switch.
 3. Complete the logout in the terminal that opens.
 4. Click **connect** for the same provider.
