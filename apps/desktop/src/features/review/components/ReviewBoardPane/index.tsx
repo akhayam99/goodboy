@@ -1,0 +1,200 @@
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { Divider, EmptyState, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
+import { useToast } from '../../../../app/components/Toast';
+import { formatError } from '../../../../shared/lib/errors';
+import { classifyAgent } from '../../../session/agent-kind';
+import { DraftsPanel } from './DraftsPanel';
+import { PublishBar } from './PublishBar';
+import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
+import { useReviewDiff } from './useReviewDiff';
+
+type Props = {
+  readonly session: Session;
+};
+
+export const ReviewBoardPane = ({ session }: Props) => {
+  const sessionId = session.id as SessionId;
+  const drafts = useAppStore(
+    (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
+  );
+  const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
+  const addReviewDraft = useAppStore((s) => s.addReviewDraft);
+  const updateReviewDraft = useAppStore((s) => s.updateReviewDraft);
+  const discardReviewDraft = useAppStore((s) => s.discardReviewDraft);
+  const publishPrReview = useAppStore((s) => s.publishPrReview);
+  const setAgentDraft = useAppStore((s) => s.setAgentDraft);
+  const selectAgent = useAppStore((s) => s.selectAgent);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const { files, loading, error, target, refresh } = useReviewDiff({ session });
+  const { showToast } = useToast();
+  const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    void loadReviewDrafts(sessionId);
+  }, [loadReviewDrafts, sessionId]);
+
+  const openDrafts = useMemo(
+    () => drafts.filter((draft) => draft.status === 'draft'),
+    [drafts],
+  );
+  const draftsByPath = useMemo(() => {
+    const byPath = new Map<string, PrReviewDraft[]>();
+    for (const draft of openDrafts) {
+      const list = byPath.get(draft.path);
+      if (list != null) {
+        list.push(draft);
+        continue;
+      }
+      byPath.set(draft.path, [draft]);
+    }
+    return byPath;
+  }, [openDrafts]);
+
+  const addDraftFromLine = async (lineTarget: ReviewLineTarget, body: string) => {
+    try {
+      await addReviewDraft({
+        sessionId,
+        path: lineTarget.path,
+        line: lineTarget.line,
+        side: lineTarget.side,
+        body,
+      });
+    } catch (err) {
+      showToast('error', formatError(err));
+    }
+  };
+
+  const askAgent = (lineTarget: ReviewLineTarget) => {
+    const reviewer =
+      phaseRuns.find((agent) => classifyAgent(agent, null) === 'pr-reviewer') ?? phaseRuns[0];
+    if (reviewer == null) {
+      showToast('error', 'No agent in this session to ask.');
+      return;
+    }
+    const prompt = `About \`${lineTarget.path}:${lineTarget.line}\`:\n> ${lineTarget.text}\n`;
+    const existing = useAppStore.getState().agentDraft[reviewer.id] ?? '';
+    setAgentDraft(reviewer.id, existing === '' ? prompt : `${existing}\n${prompt}`);
+    void selectAgent(sessionId, reviewer.id);
+  };
+
+  const publish = async (opts: { verdict: PublishPrReviewVerdict; body: string }) => {
+    if (publishing) {
+      return;
+    }
+    setPublishing(true);
+    try {
+      const result = await publishPrReview(sessionId, opts);
+      const staleNote =
+        result.stale.length > 0 ? `, ${result.stale.length} stale skipped` : '';
+      if (result.failed.length > 0) {
+        showToast('error', `${result.failed.length} comments failed to publish${staleNote}`);
+      } else {
+        const publishedNote =
+          result.published > 0
+            ? `${result.published} ${result.published === 1 ? 'comment' : 'comments'} published`
+            : 'summary posted';
+        showToast('success', `Review published: ${publishedNote}${staleNote}`);
+      }
+      await loadReviewDrafts(sessionId);
+      refresh();
+    } catch (err) {
+      showToast('error', formatError(err));
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center gap-2 px-3 py-1.5">
+            <span className="min-w-0 truncate text-xs font-medium text-foreground">
+              {target == null
+                ? 'Review board'
+                : `${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
+            </span>
+            <span className="text-2xs tabular-nums text-muted-foreground/60">
+              {loading ? '' : `${files.length} files`}
+            </span>
+            <span className="flex-1" />
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={loading}
+              title="Refresh diff"
+              aria-label="Refresh diff"
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+            >
+              <RefreshCw size={12} aria-hidden className={cn(loading && 'animate-spin')} />
+            </button>
+          </div>
+          <Divider className="shrink-0" />
+          {loading ? (
+            <div
+              className="flex min-h-0 flex-1 flex-col gap-4 p-4"
+              role="status"
+              aria-label="Loading diff"
+            >
+              {Array.from({ length: 2 }).map((_, cardIndex) => (
+                <div
+                  key={cardIndex}
+                  className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3"
+                >
+                  <Skeleton className="h-3 w-40 rounded" />
+                  <Skeleton className="h-3 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : error != null ? (
+            <div className="flex flex-1 items-center justify-center px-6 text-center text-xs text-danger">
+              {error}
+            </div>
+          ) : files.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center px-6">
+              <EmptyState
+                bordered
+                tone="success"
+                icon={CheckCircle2}
+                title="No changes in this pull request"
+                description="The diff is empty, nothing to review."
+              />
+            </div>
+          ) : (
+            <ScrollFade className="min-h-0 flex-1">
+              {files.map((file) => (
+                <ReviewFileDiff
+                  key={file.path}
+                  file={file}
+                  drafts={draftsByPath.get(file.path) ?? EMPTY_ARRAY}
+                  onAddDraft={(lineTarget, body) => void addDraftFromLine(lineTarget, body)}
+                  onAskAgent={askAgent}
+                />
+              ))}
+            </ScrollFade>
+          )}
+        </div>
+        <Divider orientation="vertical" />
+        <div className="flex w-80 shrink-0 flex-col">
+          <DraftsPanel
+            drafts={openDrafts}
+            onEdit={(id, body) => void updateReviewDraft(id, body)}
+            onDiscard={(id) => void discardReviewDraft(id)}
+          />
+        </div>
+      </div>
+      <Divider />
+      <PublishBar
+        provider={target?.provider ?? 'github'}
+        draftCount={openDrafts.length}
+        publishing={publishing}
+        onPublish={(opts) => void publish(opts)}
+      />
+    </div>
+  );
+};

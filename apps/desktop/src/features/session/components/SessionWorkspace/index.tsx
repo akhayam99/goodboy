@@ -39,12 +39,14 @@ import { canForceResolve } from '../ForceResolveAction/canForceResolve';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
 import { ChatWorkflowContext } from './parts/ChatWorkflowContext';
+import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
   agents: 'Agents',
   workflows: 'Workflows',
   resolve: 'Resolve',
+  review: 'Review board',
   plans: 'Plans',
   scripts: 'Scripts',
   terminal: 'Terminal',
@@ -315,6 +317,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <SlotPane session={session} slotKey={lens} />
                 ) : null}
                 {lens === 'pr' ? <PrPane session={session} /> : null}
+                {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
                 {lens === 'linear' ? (
                   <IntegrationPane
                     sessionId={sessionId}
