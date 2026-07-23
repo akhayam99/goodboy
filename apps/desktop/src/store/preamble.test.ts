@@ -65,7 +65,7 @@ describe('buildContextPreamble', () => {
       slot('files_touched', 'f'.repeat(1_600)),
       slot('decisions', 'd'.repeat(1_200)),
       slot('open_questions', 'q'.repeat(800)),
-      slot('last_output_summary', 's'.repeat(900)),
+      slot('last_output_summary', 's'.repeat(2_000)),
     ];
     buildContextPreamble(slots);
     expect(debug).toHaveBeenCalledWith(

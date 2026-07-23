@@ -200,6 +200,93 @@ describe('synthetic context engine round-trip', () => {
     expect(slot?.value.length).toBe(50_000);
   });
 
+  it('preserves the four-section structure of last_output_summary across a rewrite', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'sess_structured' as SessionId;
+    await seedSession(db, sessionId);
+    const engine = new ContextEngine({ db });
+
+    const prev = [
+      '**Problem:** auth middleware rejects valid tokens.',
+      '',
+      '**Learned:** clock skew between issuer and verifier.',
+      '',
+      '**State:** patch drafted.',
+      '',
+      '**Next:** add regression test.',
+    ].join('\n');
+    await engine.upsert(sessionId, 'last_output_summary', prev);
+
+    const merged = [
+      '**Problem:** auth middleware rejects valid tokens.',
+      '',
+      '**Learned:** clock skew between issuer and verifier; tolerance now configurable.',
+      '',
+      '**State:** patch merged, regression test green.',
+      '',
+      '**Next:** monitor staging for false rejects.',
+    ].join('\n');
+    const invokeFn = makeInvokeFnWithOutput(
+      JSON.stringify({ upserts: [{ key: 'last_output_summary', value: merged }] }),
+    );
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
+
+    const before = await engine.load(sessionId);
+    const result = await summarizer.summarize({
+      prevSlots: before,
+      turnInput: 'ship it',
+      turnOutput: 'merged and tested',
+    });
+    await applyDelta(engine, sessionId, result.delta.upserts);
+
+    const after = await engine.load(sessionId);
+    const value = after.find((s) => s.key === 'last_output_summary')?.value ?? '';
+    expect(value).toContain('**Problem:** auth middleware rejects valid tokens.');
+    expect(value).toContain('**Learned:**');
+    expect(value).toContain('**State:** patch merged, regression test green.');
+    expect(value).toContain('**Next:** monitor staging for false rejects.');
+    expect(value.indexOf('**Problem:**')).toBeLessThan(value.indexOf('**Learned:**'));
+    expect(value.indexOf('**Learned:**')).toBeLessThan(value.indexOf('**State:**'));
+    expect(value.indexOf('**State:**')).toBeLessThan(value.indexOf('**Next:**'));
+  });
+
+  it('replaces decisions with the consolidated full set', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'sess_decisions' as SessionId;
+    await seedSession(db, sessionId);
+    const engine = new ContextEngine({ db });
+
+    const raw = [
+      '- use jwt for auth',
+      '- use jwt tokens for authentication',
+      '- store refresh token in sqlite',
+      '- do not store refresh token in sqlite',
+    ].join('\n');
+    await engine.upsert(sessionId, 'decisions', raw);
+
+    const consolidated = ['- use jwt for auth', '- keep refresh token in memory only'].join('\n');
+    const invokeFn = makeInvokeFnWithOutput(
+      JSON.stringify({ upserts: [{ key: 'decisions', value: consolidated }] }),
+    );
+    const summarizer = new Summarizer({ providerId: 'cursor', invokeFn });
+
+    const before = await engine.load(sessionId);
+    const result = await summarizer.summarize({
+      prevSlots: before,
+      turnInput: 'consolidate decisions',
+      turnOutput: 'done',
+    });
+    await applyDelta(engine, sessionId, result.delta.upserts);
+
+    const after = await engine.load(sessionId);
+    const value = after.find((s) => s.key === 'decisions')?.value ?? '';
+    expect(value).toBe(consolidated);
+    expect(value).not.toContain('use jwt tokens for authentication');
+    expect(value).not.toContain('store refresh token in sqlite');
+  });
+
   it('drops summarizer-suggested keys outside the known set', async () => {
     const db = makeDb();
     await migrate(db);

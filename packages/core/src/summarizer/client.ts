@@ -196,6 +196,7 @@ function buildUserPrompt(input: SummarizeInput): string {
     'Assistant turn:',
     input.turnOutput,
     '',
+    'When decisions is included in upserts it must be the full rewritten set. Omitting a slot means it is unchanged.',
     'Return the JSON object now.',
   ].join('\n');
 }

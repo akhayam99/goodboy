@@ -5,7 +5,7 @@ export const SLOT_BUDGETS = {
   decisions: 1_200,
   open_questions: 800,
   files_touched: 1_600,
-  last_output_summary: 900,
+  last_output_summary: 2_000,
 } satisfies Record<SlotKey, number>;
 
-export const PREAMBLE_SLOT_TOTAL_BUDGET = 5_600;
+export const PREAMBLE_SLOT_TOTAL_BUDGET = 6_100;
