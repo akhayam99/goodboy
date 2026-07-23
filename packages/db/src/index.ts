@@ -183,6 +183,7 @@ export {
   markAllNotificationsRead,
   clearAllNotifications,
   type Notification,
+  type NotificationAction,
   type NotificationKind,
   type NotificationSeverity,
 } from './queries/notification';

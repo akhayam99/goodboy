@@ -1,9 +1,9 @@
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, TaskModelPreference } from '@goodboy/types';
 import { enqueueSummarizer } from '../../turn-helpers';
 import type { GetFn, SetFn } from './types';
 
 export const retrySummarizer = (set: SetFn, get: GetFn) => {
-  return (sessionId: SessionId) => {
+  return (sessionId: SessionId, taskModelOverride?: TaskModelPreference) => {
     const status = get().summarizerStatus[sessionId];
     if (!status || status.status === 'running') {
       return;
@@ -17,6 +17,7 @@ export const retrySummarizer = (set: SetFn, get: GetFn) => {
       sessionId,
       status.lastAttempt.turnInput,
       status.lastAttempt.turnOutput,
+      taskModelOverride,
     );
   };
 };

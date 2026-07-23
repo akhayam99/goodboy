@@ -529,6 +529,22 @@ describe('store contract', () => {
       expect(insertNotificationSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('emitNotification persists action payload to DB', async () => {
+      const store = await getStore();
+      await store
+        .getState()
+        .emitNotification('error', 'error', 'summarizer failed', 'anthropic: timeout', {
+          sessionId: SESSION_ID,
+          action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
+        });
+      const ns = store.getState().notifications;
+      expect(ns[0]?.action).toEqual({ kind: 'retry-summarizer', sessionId: SESSION_ID });
+      expect(insertNotificationSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: { kind: 'retry-summarizer', sessionId: SESSION_ID } }),
+      );
+    });
+
     it('markNotificationsRead flips read=true on all entries', async () => {
       const store = await getStore();
       store.setState({

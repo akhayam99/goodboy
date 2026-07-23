@@ -1,6 +1,7 @@
 import {
   insertNotification,
   type Notification,
+  type NotificationAction,
   type NotificationKind,
   type NotificationSeverity,
 } from '@goodboy/db';
@@ -11,6 +12,7 @@ import type { SetFn } from './types';
 type Params = {
   sessionId?: SessionId;
   workspaceId?: WorkspaceId;
+  action?: NotificationAction;
 };
 
 export const emitNotification = (set: SetFn) => {
@@ -31,6 +33,7 @@ export const emitNotification = (set: SetFn) => {
       sessionId: opts?.sessionId ?? null,
       workspaceId: opts?.workspaceId ?? null,
       read: false,
+      action: opts?.action ?? null,
     };
     await insertNotification(tauriDatabase, n);
     set((state) => ({ notifications: [n, ...state.notifications] }));

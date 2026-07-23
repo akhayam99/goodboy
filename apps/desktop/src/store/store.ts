@@ -3,6 +3,7 @@ import { type FileConflict, type SlotKey } from '@goodboy/core';
 import {
   type SessionConfigUpdate,
   type AgentConfigUpdate,
+  type NotificationAction,
   type NotificationKind,
   type NotificationSeverity,
 } from '@goodboy/db';
@@ -48,6 +49,7 @@ import type {
   SessionViewPrefs,
   SessionSortKey,
   SessionGroupKey,
+  TaskModelPreference,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { resolveSettings } from '@goodboy/core';
@@ -252,7 +254,7 @@ export type AppActions = {
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
   cancelCurrentTurn(sessionId: SessionId): Promise<void>;
-  retrySummarizer(sessionId: SessionId): void;
+  retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
@@ -461,8 +463,13 @@ export type AppActions = {
     severity: NotificationSeverity,
     title: string,
     body?: string,
-    opts?: { sessionId?: SessionId; workspaceId?: WorkspaceId },
+    opts?: { sessionId?: SessionId; workspaceId?: WorkspaceId; action?: NotificationAction },
   ): Promise<void>;
+  retryStepSummary(params: {
+    sessionId: SessionId;
+    agentId: AgentId;
+    taskModelOverride?: TaskModelPreference;
+  }): Promise<void>;
   markNotificationsRead(): Promise<void>;
   clearNotifications(): Promise<void>;
   loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
