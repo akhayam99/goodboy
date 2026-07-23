@@ -178,6 +178,13 @@ export {
   deletePendingResolution,
 } from './queries/pending-resolution';
 export {
+  insertPrReviewDraft,
+  listPrReviewDraftsForSession,
+  updatePrReviewDraftBody,
+  deletePrReviewDraft,
+  markPrReviewDraftsPublished,
+} from './queries/pr-review-draft';
+export {
   insertNotification,
   listNotifications,
   markAllNotificationsRead,
