@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -21,7 +21,7 @@ import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { appendOperatorNotes } from '../../../utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../AgentSpawnConfig/defaultAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../../store';
 import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
@@ -112,6 +112,17 @@ const GithubPrCard = ({ session }: { session: Session }) => {
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const workspaceOverrides = useAppStore(
+    (s) => s.workspaceOverrides?.[session.workspaceId] ?? null,
+  );
+  const resolvedAgentConfig = useMemo(
+    () =>
+      taskModelAgentSpawnConfig({
+        preferences: workspaceOverrides?.taskModels,
+        defaultProviderId: session.providerPreference.defaultProvider,
+      }),
+    [workspaceOverrides?.taskModels, session.providerPreference.defaultProvider],
+  );
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
   const loading = github?.loading ?? false;
@@ -119,7 +130,15 @@ const GithubPrCard = ({ session }: { session: Session }) => {
 
   const [busy, setBusy] = useState<'draft' | 'ai' | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
+  const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
+
+  useEffect(() => {
+    if (agentConfigUserTouched) {
+      return;
+    }
+    setAgentConfig(resolvedAgentConfig);
+  }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   const openStudio = () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
@@ -192,7 +211,10 @@ const GithubPrCard = ({ session }: { session: Session }) => {
         </div>
         <AgentSpawnConfig
           value={agentConfig}
-          onChange={setAgentConfig}
+          onChange={(value) => {
+            setAgentConfigUserTouched(true);
+            setAgentConfig(value);
+          }}
           disabled={busy !== null}
           className="w-full max-w-sm"
         />

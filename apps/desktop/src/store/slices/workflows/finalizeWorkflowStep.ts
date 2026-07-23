@@ -1,5 +1,10 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractMarkers, extractStepDone, fallbackStepOutputSummary } from '@goodboy/core';
+import {
+  extractMarkers,
+  extractStepDone,
+  fallbackStepOutputSummary,
+  resolveTaskModel,
+} from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -90,7 +95,11 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         ? fallbackStepOutputSummary({ output: assistantText })
         : await summarizeAgentOutput({
             output: assistantText,
-            providerId: session.providerPreference.defaultProvider,
+            taskModel: resolveTaskModel(
+              'summarizer',
+              get().workspaceOverrides?.[session.workspaceId]?.taskModels,
+              session.providerPreference.defaultProvider,
+            ),
           });
     await invokeAgentUpdateStatus(agentId, {
       status: 'completed',

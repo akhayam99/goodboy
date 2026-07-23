@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, TaskModelPreferences } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 
 type SpawnAgent = (
@@ -16,6 +16,7 @@ type Store = {
   readonly sessionBranches: Record<string, string>;
   readonly sessions: ReadonlyArray<{ id: SessionId; workspaceId: string }>;
   readonly workspaces: ReadonlyArray<{ id: string; rootPath: string }>;
+  workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
 
 type ConfigProps = {
@@ -39,6 +40,7 @@ const h = vi.hoisted(() => ({
     sessionBranches: { 'session-2': 'ak/card-config' },
     sessions: [{ id: 'session-2' as SessionId, workspaceId: 'workspace-1' }],
     workspaces: [{ id: 'workspace-1', rootPath: '/repo' }],
+    workspaceOverrides: {},
   } satisfies Store,
 }));
 
@@ -75,6 +77,7 @@ beforeEach(() => {
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
   h.store.setCurrentSession.mockClear();
+  h.store.workspaceOverrides = {};
 });
 
 afterEach(cleanup);
@@ -106,7 +109,7 @@ describe('CreatePrPanel', () => {
     await waitFor(() => expect(onStudioClose).toHaveBeenCalledOnce());
   });
 
-  it('preserves the legacy prompt and routing for a whitespace-only hint', async () => {
+  it('preserves the prompt for a whitespace-only hint', async () => {
     render(
       <CreatePrPanel
         sessionId={SESSION_ID}
@@ -120,8 +123,11 @@ describe('CreatePrPanel', () => {
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     const args = h.store.spawnAgent.mock.calls[0]![1];
-    expect(args).not.toHaveProperty('provider');
-    expect(args).toMatchObject({ model: 'claude-haiku-4-5', effort: 'low' });
+    expect(args).toMatchObject({
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      effort: 'low',
+    });
     expect(args.initialPrompt).toBe(
       [
         `Open a GitHub pull request for this session's branch.`,
@@ -132,5 +138,36 @@ describe('CreatePrPanel', () => {
         `Then run \`gh pr create\` to open it and report the PR URL.`,
       ].join('\n'),
     );
+  });
+
+  it('uses a workspace task model loaded after mount', async () => {
+    const { rerender } = render(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={vi.fn()}
+        onStudioClose={vi.fn()}
+      />,
+    );
+    h.store.workspaceOverrides = {
+      'workspace-1': {
+        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.4-mini' } },
+      },
+    };
+    rerender(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={vi.fn()}
+        onStudioClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+
+    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
+    expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
+      provider: 'codex',
+      model: 'gpt-5.4-mini',
+    });
   });
 });

@@ -8,7 +8,7 @@ import type { GetFn, SetFn } from './types';
 export const createOverridesSlice = (set: SetFn, get: GetFn) => {
   return {
     loadWorkspaceOverrides: loadWorkspaceOverrides(set),
-    setWorkspaceOverrides: setWorkspaceOverrides(set),
+    setWorkspaceOverrides: setWorkspaceOverrides(set, get),
     setWorkspaceProviderBinding: setWorkspaceProviderBinding(set, get),
     loadSessionOverrides: loadSessionOverrides(set),
     setTaskOverrides: setTaskOverrides(set),

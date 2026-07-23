@@ -62,13 +62,13 @@ import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import {
-  applyHeuristicTitle,
   buildGoalAttachmentsBlock,
   capturePlanFromTurn,
   emitTurnNudges,
   enqueueSummarizer,
   toRelPath,
 } from '../../turn-helpers';
+import { applyHeuristicTitle } from './applyHeuristicTitle';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
@@ -665,7 +665,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     if (isFirstTurn && !agentRowEarly?.parentAgentId) {
-      void applyHeuristicTitle(set, get, sessionId, activeAgentId, content);
+      void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
     }
 
     const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;

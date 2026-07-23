@@ -5,6 +5,7 @@ import type {
   PullRequestState,
   Session,
   SessionId,
+  TaskModelPreferences,
   WorkspaceId,
 } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
@@ -23,6 +24,7 @@ type Store = {
   readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly setActiveLens: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
+  workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
 
 type ConfigProps = {
@@ -47,6 +49,7 @@ const h = vi.hoisted(() => ({
     selectAgent: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
+    workspaceOverrides: {},
   } satisfies Store,
 }));
 
@@ -106,6 +109,7 @@ beforeEach(() => {
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
   h.store.setActiveLens.mockClear();
+  h.store.workspaceOverrides = {};
 });
 
 afterEach(cleanup);
@@ -153,5 +157,22 @@ describe('PrPane', () => {
       expect(h.store.createPrForSession).toHaveBeenCalledWith(SESSION_ID, { draft: true }),
     );
     expect(h.store.spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('uses a workspace task model loaded after mount', async () => {
+    const { rerender } = render(<PrPane session={session} />);
+    h.store.workspaceOverrides = {
+      'workspace-1': {
+        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.4-mini' } },
+      },
+    };
+    rerender(<PrPane session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+
+    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
+    expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
+      provider: 'codex',
+      model: 'gpt-5.4-mini',
+    });
   });
 });

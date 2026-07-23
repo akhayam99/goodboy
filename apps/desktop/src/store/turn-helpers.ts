@@ -16,7 +16,6 @@ import {
   listContextSlotHistory,
   listContextSlotsForSession,
   listTelemetryForSession,
-  renameSession as renameSessionInDb,
   summarizeSessionTelemetry,
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkspaceTelemetry,
@@ -47,7 +46,6 @@ import {
   listPlansForSession as invokeListPlansForSession,
   upsertPlan as invokeUpsertPlan,
 } from '../features/plans/plans';
-import { heuristicAgentTitle } from '../shared/lib/agent-title-heuristic';
 import { formatError } from '../shared/lib/errors';
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
@@ -515,42 +513,5 @@ export const emitTurnNudges = async (
     set((state) => ({
       sessionNudges: { ...state.sessionNudges, [sessionId]: nextNudge },
     }));
-  }
-};
-
-export const applyHeuristicTitle = async (
-  set: SetFn,
-  get: GetFn,
-  sessionId: SessionId,
-  agentId: AgentId,
-  prompt: string,
-): Promise<void> => {
-  try {
-    const title = heuristicAgentTitle(prompt);
-    if (!title) {
-      return;
-    }
-
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) {
-      return;
-    }
-
-    const agentRecord = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === agentId);
-    const agentNameEditable = agentRecord ? /^(agent|puppy) \d+$/i.test(agentRecord.name) : false;
-    const isFoundingAgent = agentRecord?.ordinal === 0;
-
-    const titleNow = new Date().toISOString() as IsoDateTime;
-    if (isFoundingAgent && !session.titleUserEdited) {
-      set((state) => ({
-        sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, goal: title } : s)),
-      }));
-      await renameSessionInDb(tauriDatabase, sessionId, title, titleNow, false);
-    }
-    if (agentNameEditable) {
-      await get().renameAgent(sessionId, agentId, title);
-    }
-  } catch {
-    // best-effort
   }
 };

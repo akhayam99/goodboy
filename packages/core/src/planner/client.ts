@@ -1,6 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { computeCostUsd } from '../providers/claude/cost';
-import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { getDefaultBinary } from '../providers/cli-defaults';
 import { parsePlannerOutput } from './parser';
 import { PLANNER_SYSTEM_PROMPT, buildPlannerUserPrompt } from './prompt';
 import type { PlannerInput, PlannerOutput } from './types';
@@ -22,6 +22,7 @@ type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 
 export type PlannerClientDeps = {
   readonly providerId: ProviderId;
+  readonly model: string;
   readonly binary?: string;
   readonly invokeFn: InvokeFn;
 };
@@ -59,8 +60,8 @@ export class PlannerClient {
 
   constructor(deps: PlannerClientDeps) {
     this.providerId = deps.providerId;
-    this.binary = deps.binary ?? defaultBinary(deps.providerId);
-    this.model = cheapModel(deps.providerId);
+    this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
+    this.model = deps.model;
     this.invokeFn = deps.invokeFn;
   }
 
@@ -90,28 +91,6 @@ export class PlannerClient {
       return extractClaudeJsonOutput(stdout, this.model);
     }
     return { text: stdout.trim(), usage: zeroUsage() };
-  }
-}
-
-function cheapModel(providerId: ProviderId): string {
-  const caps = PROVIDER_CAPABILITIES[providerId];
-  return caps.models.find((m) => m.tier === 'cheap')?.id ?? caps.models[0]!.id;
-}
-
-function defaultBinary(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'anthropic':
-      return 'claude';
-    case 'cursor':
-      return 'cursor-agent';
-    case 'codex':
-      return 'codex';
-    case 'gemini':
-      return 'agy';
-    default: {
-      const _exhaustive: never = providerId;
-      throw new Error(`unknown provider: ${_exhaustive}`);
-    }
   }
 }
 

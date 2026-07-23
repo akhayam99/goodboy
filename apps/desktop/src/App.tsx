@@ -922,6 +922,7 @@ export const App = () => {
       ) : null}
       {providerStudioOpen && currentWorkspace ? (
         <ProviderStudio
+          workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
           initialFocus={providerStudioFocus}
           initialAction={providerStudioAction}

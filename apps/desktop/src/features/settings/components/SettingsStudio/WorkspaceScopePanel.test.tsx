@@ -80,30 +80,11 @@ describe('WorkspaceScopePanel', () => {
   it('renders the one-page fields without a nav rail', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     expect(screen.getByLabelText(/branch prefix/i)).toBeDefined();
-    expect(screen.getByText(/default provider/i)).toBeDefined();
+    expect(screen.queryByText(/default provider/i)).toBeNull();
     expect(screen.getByText(/parallel scouts/i)).toBeDefined();
     expect(screen.getByText('Linear')).toBeDefined();
     expect(screen.getByText('GitHub')).toBeDefined();
     expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();
-  });
-
-  it('falls back to the global default provider when no override is set', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /claude/i }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.queryByRole('button', { name: /inherit global/i })).toBeNull();
-  });
-
-  it('persists a provider pick from a brand chip', () => {
-    state.providers = [{ id: 'cursor', connection: 'connected' }];
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /cursor/i }));
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledOnce();
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({ defaultProviderId: 'cursor' }),
-    );
   });
 
   it('shows the disconnect action with inline confirm', () => {

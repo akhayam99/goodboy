@@ -1,16 +1,16 @@
 import { invoke } from '@tauri-apps/api/core';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
+import type { TaskModelPreference } from '@goodboy/types';
 import { formatError } from '../shared/lib/errors';
 
 const SUMMARY_TIMEOUT_MS = 15_000;
 
 type Params = {
   readonly output: string;
-  readonly providerId: ProviderId;
+  readonly taskModel: TaskModelPreference;
 };
 
-export const summarizeAgentOutput = async ({ output, providerId }: Params): Promise<string> => {
+export const summarizeAgentOutput = async ({ output, taskModel }: Params): Promise<string> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
     timeoutId = setTimeout(
@@ -21,7 +21,7 @@ export const summarizeAgentOutput = async ({ output, providerId }: Params): Prom
 
   try {
     return await Promise.race([
-      summarizeStepOutput({ providerId, invokeFn: invoke, output }),
+      summarizeStepOutput({ ...taskModel, invokeFn: invoke, output }),
       timeout,
     ]);
   } catch (error) {

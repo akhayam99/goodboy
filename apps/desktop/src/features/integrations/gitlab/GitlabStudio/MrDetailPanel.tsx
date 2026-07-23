@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Divider, EmptyState, Input, SectionHeader, Textarea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
@@ -15,7 +15,7 @@ import { ScrollFade } from '@goodboy/ui';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
@@ -49,6 +49,17 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const workspaceOverrides = useAppStore((s) =>
+    session == null ? null : (s.workspaceOverrides?.[session.workspaceId] ?? null),
+  );
+  const resolvedAgentConfig = useMemo(
+    () =>
+      taskModelAgentSpawnConfig({
+        preferences: workspaceOverrides?.taskModels,
+        defaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
+      }),
+    [workspaceOverrides?.taskModels, session?.providerPreference?.defaultProvider],
+  );
   const { showToast } = useToast();
 
   const mr = mrState?.mr ?? null;
@@ -60,7 +71,15 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   const [targetBranch, setTargetBranch] = useState('main');
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | 'merge' | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
+  const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
+
+  useEffect(() => {
+    if (agentConfigUserTouched) {
+      return;
+    }
+    setAgentConfig(resolvedAgentConfig);
+  }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   useEffect(() => {
     void refreshSessionMr(sessionId, { silent: true });
@@ -296,7 +315,10 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
                 </div>
                 <AgentSpawnConfig
                   value={agentConfig}
-                  onChange={setAgentConfig}
+                  onChange={(value) => {
+                    setAgentConfigUserTouched(true);
+                    setAgentConfig(value);
+                  }}
                   disabled={busy !== null}
                 />
                 <div className="flex items-center gap-3 pt-1">

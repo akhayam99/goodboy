@@ -122,6 +122,7 @@ describe('finalizeWorkflowStep output summary', () => {
 
     expect(summarizeStepOutputSpy).toHaveBeenCalledWith({
       providerId: 'anthropic',
+      model: 'claude-haiku-4-5',
       invokeFn: expect.any(Function),
       output: 'raw assistant output',
     });

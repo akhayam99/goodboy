@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
 import { ArrowRight, GitBranch, Sparkles } from 'lucide-react';
@@ -6,7 +6,7 @@ import { ghBaseBranches } from '../../github';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -36,7 +36,19 @@ export const CreatePrPanel = ({
     const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
     return ws?.rootPath ?? null;
   });
-  const workspaceId = useAppStore((s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId);
+  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const workspaceId = session?.workspaceId;
+  const workspaceOverrides = useAppStore((s) =>
+    workspaceId == null ? null : (s.workspaceOverrides?.[workspaceId] ?? null),
+  );
+  const resolvedAgentConfig = useMemo(
+    () =>
+      taskModelAgentSpawnConfig({
+        preferences: workspaceOverrides?.taskModels,
+        defaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
+      }),
+    [workspaceOverrides?.taskModels, session?.providerPreference?.defaultProvider],
+  );
 
   const [title, setTitle] = useState(defaultTitle);
   const [body, setBody] = useState('');
@@ -45,7 +57,15 @@ export const CreatePrPanel = ({
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
+  const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
+
+  useEffect(() => {
+    if (agentConfigUserTouched) {
+      return;
+    }
+    setAgentConfig(resolvedAgentConfig);
+  }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   useEffect(() => {
     if (!workspaceRoot) {
@@ -178,7 +198,10 @@ export const CreatePrPanel = ({
             </div>
             <AgentSpawnConfig
               value={agentConfig}
-              onChange={setAgentConfig}
+              onChange={(value) => {
+                setAgentConfigUserTouched(true);
+                setAgentConfig(value);
+              }}
               disabled={busy !== null}
             />
             <div className="flex items-center gap-3 pt-1">

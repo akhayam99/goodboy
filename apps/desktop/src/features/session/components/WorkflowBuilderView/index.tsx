@@ -29,6 +29,7 @@ import {
   polishStepInstruction,
   polishWorkflowGoal,
   recommendedModelForRole,
+  resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import type {
@@ -165,6 +166,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const providers = useAppStore(
     (s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   ) as ReadonlyArray<ProviderEntry>;
+  const workspaceOverrides = useAppStore(
+    (s) => s.workspaceOverrides?.[session.workspaceId] ?? null,
+  );
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
@@ -489,7 +493,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setBasePresetId(null);
     setPlanning(true);
     try {
-      const client = new PlannerClient({ providerId, invokeFn: invoke });
+      const taskModel = resolveTaskModel(
+        'plan_generation',
+        workspaceOverrides?.taskModels,
+        providerId,
+      );
+      const client = new PlannerClient({ ...taskModel, invokeFn: invoke });
       const result = await client.plan({ process });
       setPlan(result.output);
       setSteps(stepsFromPlan(result.output));
