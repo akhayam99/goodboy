@@ -1,19 +1,8 @@
 import { useEffect, useState } from 'react';
-import {
-  Button,
-  Divider,
-  EmptyState,
-  Input,
-  Markdown,
-  SectionHeader,
-  StatusDot,
-  Textarea,
-  cn,
-} from '@goodboy/ui';
+import { Button, EmptyState, Input, SectionHeader, StatusDot, Textarea, cn } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
-  ExternalLink,
   GitBranch,
   GitPullRequest,
   MessagesSquare,
@@ -37,6 +26,7 @@ import { useBranchConflict } from '../../../worktree/useBranchConflict';
 import { ghPrHeadBranch } from '../../../github/github';
 import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
+import { LinearIssueDetail } from '../LinearIssueDetail';
 
 type BranchMode = 'pr' | 'fresh';
 
@@ -69,21 +59,6 @@ function branchSlugFor(issue: LinearIssue): string {
     }
   }
   return slugify(issue.title);
-}
-
-function prStatusTone(status: string | null): string {
-  switch (status?.toLowerCase()) {
-    case 'merged':
-      return 'border-primary/40 bg-primary/10 text-primary';
-    case 'open':
-      return 'border-success/40 bg-success/10 text-success';
-    case 'draft':
-      return 'border-border-soft bg-muted/50 text-muted-foreground';
-    case 'closed':
-      return 'border-danger/40 bg-danger/10 text-danger';
-    default:
-      return 'border-border-soft bg-muted/40 text-muted-foreground';
-  }
 }
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
@@ -234,52 +209,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     }
   };
 
-  const linkedPrs = issuePullRequests(issue);
-
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 flex-col gap-2 px-8 py-4">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-            {issue.identifier}
-          </span>
-          <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
-            {issue.state.name}
-          </span>
-          <span className="flex-1" />
-          <a
-            href={issue.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Open in Linear <ExternalLink size={11} aria-hidden />
-          </a>
-        </div>
-        <h2 className="text-lg font-semibold leading-snug text-foreground">{issue.title}</h2>
-        {linkedPrs.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {linkedPrs.map((pr) => (
-              <a
-                key={pr.number}
-                href={pr.url}
-                target="_blank"
-                rel="noreferrer"
-                title={pr.url}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-opacity hover:opacity-80',
-                  prStatusTone(pr.status),
-                )}
-              >
-                <GitPullRequest size={11} aria-hidden />#{pr.number}
-                {pr.status ? <span className="opacity-70">· {pr.status}</span> : null}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-      <Divider />
-
       <div className="min-h-0 flex-1">
         <ScrollFade
           className="mx-auto h-full max-w-3xl"
@@ -287,14 +218,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           fadeSize={24}
         >
           <div className="flex flex-col gap-8">
-            <section className="flex flex-col gap-3">
-              <SectionHeader label="description" />
-              {issue.description ? (
-                <Markdown text={issue.description} className="text-sm leading-relaxed" />
-              ) : (
-                <p className="text-sm italic text-muted-foreground/60">No description.</p>
-              )}
-            </section>
+            <LinearIssueDetail issue={issue} workspaceId={workspaceId} />
 
             <section className="flex flex-col gap-3">
               <SectionHeader label="launch session" />

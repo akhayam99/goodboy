@@ -1,15 +1,27 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { ExternalLink, Link2, Unlink } from 'lucide-react';
-import type { IsoDateTime, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
+import type {
+  IsoDateTime,
+  SessionExternalTaskProvider,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { Button, Divider, Input } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { openUrl } from '../../../../../../shared/lib/editor';
+import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
+import { resolveIntegrationConnection } from '../../../../../integrations/connection';
+import { MissingGithubRemoteEmptyState } from '../../../../../github/components/MissingGithubRemoteEmptyState';
+import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { PaneShell } from '../PaneShell';
+import { LinearTaskDetail } from './LinearTaskDetail';
 import { parseIntegrationTaskUrl } from './parseIntegrationTaskUrl';
+import { SentryTaskDetail } from './SentryTaskDetail';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
   readonly provider: SessionExternalTaskProvider;
 };
 
@@ -25,7 +37,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   github: { label: 'GitHub', studioEvent: 'goodboy:open-github-studio' },
 };
 
-export const IntegrationPane = ({ sessionId, provider }: Props) => {
+export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
@@ -35,11 +47,21 @@ export const IntegrationPane = ({ sessionId, provider }: Props) => {
   );
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
   const unlinkSessionExternalTask = useAppStore((state) => state.unlinkSessionExternalTask);
+  const integrations = useAppStore(
+    (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
+  );
+  const remoteKind = useRemoteHostKind(workspaceId);
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
     [externalTasks, provider],
   );
   const meta = PROVIDER_META[provider];
+  const connection = resolveIntegrationConnection({
+    provider,
+    integrations,
+    remoteKind,
+    externalTasks,
+  });
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,15 +93,48 @@ export const IntegrationPane = ({ sessionId, provider }: Props) => {
       width="3xl"
     >
       <div className="flex flex-col gap-3">
-        {tasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No {meta.label} issues linked yet.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {tasks.map((task) => (
-              <div
-                key={task.externalId}
-                className="flex items-center gap-3 rounded-lg bg-muted/35 p-3"
+        {connection.isConnected ? (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
+            <label
+              htmlFor={`${provider}-issue-url`}
+              className="text-xs font-medium text-foreground"
+            >
+              Issue URL
+            </label>
+            <div className="flex items-center gap-2">
+              <Input
+                id={`${provider}-issue-url`}
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder={`Paste a ${meta.label} issue URL`}
+                aria-label={`${meta.label} issue URL`}
+              />
+              <Button type="submit" size="sm" disabled={isLinking}>
+                <Link2 size={13} aria-hidden />
+                Link
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.dispatchEvent(new CustomEvent(meta.studioEvent))}
               >
+                Open {meta.label} studio
+              </Button>
+            </div>
+            {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+          </form>
+        ) : provider === 'github' ? (
+          <MissingGithubRemoteEmptyState compact />
+        ) : (
+          <ConnectIntegrationEmptyState provider={provider} compact />
+        )}
+
+        {tasks.length > 0 ? <Divider /> : null}
+        <div className="flex flex-col gap-5">
+          {tasks.map((task, index) => (
+            <div key={task.externalId} className="flex flex-col gap-5">
+              {index > 0 ? <Divider /> : null}
+              <div className="flex items-center gap-3 rounded-lg bg-muted/35 p-3">
                 <button
                   type="button"
                   onClick={() => void openUrl(task.url)}
@@ -111,36 +166,15 @@ export const IntegrationPane = ({ sessionId, provider }: Props) => {
                   Unlink
                 </Button>
               </div>
-            ))}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-          <label htmlFor={`${provider}-issue-url`} className="text-xs font-medium text-foreground">
-            Issue URL
-          </label>
-          <div className="flex items-center gap-2">
-            <Input
-              id={`${provider}-issue-url`}
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              placeholder={`Paste a ${meta.label} issue URL`}
-              aria-label={`${meta.label} issue URL`}
-            />
-            <Button type="submit" size="sm" disabled={isLinking}>
-              <Link2 size={13} aria-hidden />
-              Link
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => window.dispatchEvent(new CustomEvent(meta.studioEvent))}
-            >
-              Open {meta.label} studio
-            </Button>
-          </div>
-          {error != null ? <p className="text-xs text-danger">{error}</p> : null}
-        </form>
+              {connection.isConnected && provider === 'linear' ? (
+                <LinearTaskDetail workspaceId={workspaceId} issueId={task.externalId} />
+              ) : null}
+              {connection.isConnected && provider === 'sentry' ? (
+                <SentryTaskDetail workspaceId={workspaceId} task={task} />
+              ) : null}
+            </div>
+          ))}
+        </div>
       </div>
     </PaneShell>
   );

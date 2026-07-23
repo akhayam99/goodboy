@@ -1,5 +1,18 @@
-import { describe, expect, it } from 'vitest';
-import { issuePullRequests, type LinearAttachment, type LinearIssue } from './client';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
+import type { WorkspaceId } from '@goodboy/types';
+import {
+  issuePullRequests,
+  linearFetchIssue,
+  linearFetchIssueComments,
+  type LinearAttachment,
+  type LinearIssue,
+} from './client';
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const mockInvoke = vi.mocked(invoke);
 
 function makeIssue(attachments: LinearAttachment[] | undefined): LinearIssue {
   return {
@@ -10,10 +23,19 @@ function makeIssue(attachments: LinearAttachment[] | undefined): LinearIssue {
     url: 'https://linear.app/serenis/issue/SER-1',
     state: { name: 'In Progress', type: 'started' },
     team: { key: 'SER' },
+    priority: 2,
+    priorityLabel: 'High',
+    assignee: { name: 'Ada' },
+    project: { name: 'Desktop' },
+    labels: { nodes: [{ name: 'Bug', color: '#ff0000' }] },
     updatedAt: '2026-05-21T10:00:00Z',
     ...(attachments ? { attachments: { nodes: attachments } } : {}),
   };
 }
+
+afterEach(() => {
+  mockInvoke.mockReset();
+});
 
 function attachment(overrides: Partial<LinearAttachment>): LinearAttachment {
   return {
@@ -77,5 +99,19 @@ describe('issuePullRequests', () => {
       makeIssue([attachment({ url: 'https://github.com/acme/web/pull/2', metadata: { foo: 1 } })]),
     );
     expect(noStatus?.status).toBeNull();
+  });
+});
+
+describe('Linear issue requests', () => {
+  it('forwards issue ids to detail and comments commands', async () => {
+    mockInvoke.mockResolvedValueOnce(makeIssue([])).mockResolvedValueOnce([]);
+
+    await linearFetchIssue({ workspaceId: WORKSPACE_ID, issueId: 'issue-42' });
+    await linearFetchIssueComments({ workspaceId: WORKSPACE_ID, issueId: 'issue-42' });
+
+    expect(mockInvoke.mock.calls).toEqual([
+      ['linear_fetch_issue', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
+      ['linear_fetch_issue_comments', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
+    ]);
   });
 });

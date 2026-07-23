@@ -3,10 +3,11 @@
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { IsoDateTime, SessionExternalTask, SessionId } from '@goodboy/types';
+import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
+  readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly unlinkSessionExternalTask: ReturnType<typeof vi.fn>;
 };
@@ -18,6 +19,7 @@ type Props = {
 const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
+    workspaceIntegrations: {},
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
   },
@@ -33,6 +35,20 @@ vi.mock('../../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,
 }));
 
+vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
+  useRemoteHostKind: () => 'github',
+}));
+
+vi.mock('./LinearTaskDetail', () => ({
+  LinearTaskDetail: ({ issueId }: { issueId: string }) => <div>Linear detail {issueId}</div>,
+}));
+
+vi.mock('./SentryTaskDetail', () => ({
+  SentryTaskDetail: ({ task }: { task: SessionExternalTask }) => (
+    <div>Sentry detail {task.externalId}</div>
+  ),
+}));
+
 vi.mock('../PaneShell', () => ({
   PaneShell: ({ children }: Props) => <div>{children}</div>,
 }));
@@ -41,6 +57,7 @@ import { IntegrationPane } from '.';
 import { parseIntegrationTaskUrl } from './parseIntegrationTaskUrl';
 
 const SESSION_ID = 'session-1' as SessionId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const CREATED_AT = '2026-07-22T12:00:00.000Z' as IsoDateTime;
 const TASK: SessionExternalTask = {
   sessionId: SESSION_ID,
@@ -51,9 +68,21 @@ const TASK: SessionExternalTask = {
   url: 'https://linear.app/goodboy/issue/GB-42/refactor-integration-storage',
   createdAt: CREATED_AT,
 };
+const SENTRY_TASK: SessionExternalTask = {
+  sessionId: SESSION_ID,
+  provider: 'sentry',
+  externalId: '12345',
+  identifier: 'GOODBOY-5',
+  title: 'Request failed',
+  url: 'https://sentry.io/organizations/goodboy/issues/12345/',
+  createdAt: CREATED_AT,
+};
 
 beforeEach(() => {
   h.store.sessionExternalTasks = { [SESSION_ID]: [TASK] };
+  h.store.workspaceIntegrations = {
+    [WORKSPACE_ID]: [{ provider: 'linear' }, { provider: 'sentry' }],
+  };
   h.store.linkSessionExternalTask.mockClear();
   h.store.unlinkSessionExternalTask.mockClear();
   h.openUrl.mockClear();
@@ -96,9 +125,10 @@ describe('parseIntegrationTaskUrl', () => {
 
 describe('IntegrationPane', () => {
   it('opens and unlinks every provider task shown for the session', async () => {
-    render(<IntegrationPane sessionId={SESSION_ID} provider="linear" />);
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Refactor integration storage')).toBeDefined();
+    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'open GB-42' }));
     expect(h.openUrl).toHaveBeenCalledWith(TASK.url);
     fireEvent.click(screen.getByRole('button', { name: 'unlink GB-42' }));
@@ -108,7 +138,7 @@ describe('IntegrationPane', () => {
   });
 
   it('links a pasted provider URL', async () => {
-    render(<IntegrationPane sessionId={SESSION_ID} provider="linear" />);
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Linear issue URL' }), {
       target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
@@ -126,15 +156,51 @@ describe('IntegrationPane', () => {
     });
   });
 
-  it('shows the empty state and opens the provider studio', () => {
+  it('keeps the link form as the connected empty state and opens the provider studio', () => {
     h.store.sessionExternalTasks = {};
     const listener = vi.fn();
     window.addEventListener('goodboy:open-sentry-studio', listener);
-    render(<IntegrationPane sessionId={SESSION_ID} provider="sentry" />);
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="sentry" />);
 
-    expect(screen.getByText('No Sentry issues linked yet.')).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Sentry issue URL' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open Sentry studio' }));
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-sentry-studio', listener);
   });
+
+  it('shows a connect action instead of the link form when disconnected', () => {
+    h.store.sessionExternalTasks = {};
+    h.store.workspaceIntegrations = {};
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', listener);
+
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.getByText('Connect Linear')).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Linear issue URL' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    expect(listener).toHaveBeenCalledOnce();
+    expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
+      section: 'integrations',
+    });
+    window.removeEventListener('goodboy:open-workspace-settings', listener);
+  });
+
+  it.each([
+    ['linear', TASK, 'Linear detail GB-42'],
+    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
+  ] as const)(
+    'keeps linked %s rows without rendering live detail while disconnected',
+    (provider, task, detailText) => {
+      h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
+      h.store.workspaceIntegrations = {};
+
+      render(
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
+      );
+
+      expect(screen.getByText(task.title)).toBeDefined();
+      expect(screen.queryByText(detailText)).toBeNull();
+    },
+  );
 });

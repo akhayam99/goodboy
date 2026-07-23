@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
@@ -19,21 +19,30 @@ const MR = {
   updatedAt: '2026-07-22T10:00:00Z',
 };
 
+const h = vi.hoisted(() => ({
+  isConnected: true,
+  useGitlabIssues: vi.fn(),
+  useGitlabMrs: vi.fn(),
+}));
+
 vi.mock('./useGitlabIssues', () => ({
-  useGitlabIssues: () => ({ groups: [], loading: false, error: null, refetch: vi.fn() }),
+  useGitlabIssues: h.useGitlabIssues,
 }));
 vi.mock('./useGitlabMrs', () => ({
-  useGitlabMrs: () => ({
-    groups: [{ key: 'acme/web', label: 'acme/web', rows: [MR] }],
-    host: 'https://gitlab.com',
-    loading: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
+  useGitlabMrs: h.useGitlabMrs,
 }));
 vi.mock('./IssueInbox', () => ({ IssueInbox: () => <div>Issue inbox</div> }));
 vi.mock('./IssueDetailPanel', () => ({ IssueDetailPanel: () => <div>Issue detail</div> }));
 vi.mock('./MrDetailPanel', () => ({ MrDetailPanel: () => <div>Merge request detail</div> }));
+vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
+  useAppStore: <T,>(
+    selector: (state: { workspaceIntegrations: Record<string, Array<{ provider: string }>> }) => T,
+  ) =>
+    selector({
+      workspaceIntegrations: h.isConnected ? { 'workspace-1': [{ provider: 'gitlab' }] } : {},
+    }),
+}));
 vi.mock('../../../../shared/components/StudioShell', () => ({
   StudioShell: ({
     headerAccessory,
@@ -51,7 +60,28 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
 
 import { GitlabStudio } from './index';
 
-afterEach(cleanup);
+beforeEach(() => {
+  h.isConnected = true;
+  h.useGitlabIssues.mockReturnValue({
+    groups: [],
+    loading: false,
+    error: null,
+    refetch: vi.fn(),
+  });
+  h.useGitlabMrs.mockReturnValue({
+    groups: [{ key: 'acme/web', label: 'acme/web', rows: [MR] }],
+    host: 'https://gitlab.com',
+    loading: false,
+    error: null,
+    refetch: vi.fn(),
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  h.useGitlabIssues.mockReset();
+  h.useGitlabMrs.mockReset();
+});
 
 describe('GitlabStudio', () => {
   it('keeps issues selected by default', () => {
@@ -81,5 +111,16 @@ describe('GitlabStudio', () => {
     expect(screen.getByText('acme/web')).toBeDefined();
     expect(screen.getByText('Add merge request dashboard')).toBeDefined();
     expect(screen.getByText('Merge request detail')).toBeDefined();
+  });
+
+  it('renders the disconnected state and disables both data hooks', () => {
+    h.isConnected = false;
+    const workspaceId = 'workspace-1' as WorkspaceId;
+    render(<GitlabStudio workspaceId={workspaceId} workspaceName="Goodboy" onClose={vi.fn()} />);
+
+    expect(screen.getByText('Connect GitLab')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
+    expect(h.useGitlabIssues).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
+    expect(h.useGitlabMrs).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
   });
 });

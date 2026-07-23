@@ -153,6 +153,22 @@ pub struct LinearIssueTeam {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct LinearIssuePerson {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearIssueProject {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearIssueLabel {
+    pub name: String,
+    pub color: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LinearAttachment {
     pub id: String,
     pub title: Option<String>,
@@ -168,6 +184,11 @@ pub struct LinearAttachmentNodes {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct LinearIssueLabelNodes {
+    pub nodes: Vec<LinearIssueLabel>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LinearIssue {
     pub id: String,
     pub identifier: String,
@@ -176,6 +197,12 @@ pub struct LinearIssue {
     pub url: String,
     pub state: LinearIssueState,
     pub team: LinearIssueTeam,
+    pub priority: Option<i64>,
+    #[serde(rename = "priorityLabel")]
+    pub priority_label: Option<String>,
+    pub assignee: Option<LinearIssuePerson>,
+    pub project: Option<LinearIssueProject>,
+    pub labels: LinearIssueLabelNodes,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
     #[serde(rename = "branchName")]
@@ -194,10 +221,68 @@ query AssignedIssues($filter: IssueFilter!) {
       url
       state { name type }
       team { key }
+      priority
+      priorityLabel
+      assignee { name }
+      project { name }
+      labels { nodes { name color } }
       updatedAt
       branchName
       attachments(first: 10) {
         nodes { id title url sourceType metadata }
+      }
+    }
+  }
+}
+"#;
+
+const ISSUE_QUERY: &str = r#"
+query Issue($issueId: String!) {
+  issue(id: $issueId) {
+    id
+    identifier
+    title
+    description
+    url
+    state { name type }
+    team { key }
+    priority
+    priorityLabel
+    assignee { name }
+    project { name }
+    labels { nodes { name color } }
+    updatedAt
+    branchName
+    attachments(first: 10) {
+      nodes { id title url sourceType metadata }
+    }
+  }
+}
+"#;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearCommentUser {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearIssueComment {
+    pub id: String,
+    pub body: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    pub user: Option<LinearCommentUser>,
+}
+
+const ISSUE_COMMENTS_QUERY: &str = r#"
+query IssueComments($issueId: String!) {
+  issue(id: $issueId) {
+    comments {
+      nodes {
+        id
+        body
+        createdAt
+        user { name }
       }
     }
   }
@@ -246,6 +331,45 @@ pub async fn linear_fetch_assigned_issues(
     Ok(resp.issues.nodes)
 }
 
+#[tauri::command]
+pub async fn linear_fetch_issue(
+    workspace_id: String,
+    issue_id: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<LinearIssue, LinearError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let resp: IssueResponse = graphql(
+        &token,
+        ISSUE_QUERY,
+        Some(serde_json::json!({ "issueId": issue_id })),
+    )
+    .await?;
+    resp.issue
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))
+}
+
+#[tauri::command]
+pub async fn linear_fetch_issue_comments(
+    workspace_id: String,
+    issue_id: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<Vec<LinearIssueComment>, LinearError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let resp: IssueCommentsResponse = graphql(
+        &token,
+        ISSUE_COMMENTS_QUERY,
+        Some(serde_json::json!({ "issueId": issue_id })),
+    )
+    .await?;
+    let mut comments = resp
+        .issue
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))?
+        .comments
+        .nodes;
+    comments.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Ok(comments)
+}
+
 #[derive(Deserialize)]
 struct ViewerResponse {
     viewer: LinearViewer,
@@ -259,4 +383,19 @@ struct Nodes<T> {
 #[derive(Deserialize)]
 struct IssuesResponse {
     issues: Nodes<LinearIssue>,
+}
+
+#[derive(Deserialize)]
+struct IssueResponse {
+    issue: Option<LinearIssue>,
+}
+
+#[derive(Deserialize)]
+struct IssueComments {
+    comments: Nodes<LinearIssueComment>,
+}
+
+#[derive(Deserialize)]
+struct IssueCommentsResponse {
+    issue: Option<IssueComments>,
 }

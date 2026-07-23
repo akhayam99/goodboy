@@ -33,6 +33,7 @@ import {
 } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
+import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverviewPane/lib';
 
 type LensColumnProps = {
@@ -96,10 +97,8 @@ export const LensColumn = ({
   const unreadLens = useSessionUnreadLens(sessionId);
   const remoteKind = useRemoteHostKind(session.workspaceId);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const hasGitlabIntegration = useAppStore((s) =>
-    (s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY).some(
-      (integration) => integration.provider === 'gitlab',
-    ),
+  const workspaceIntegrations = useAppStore(
+    (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
 
   const isResolver = useMemo(
@@ -158,7 +157,76 @@ export const LensColumn = ({
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
   const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
   const isGitlabRemote = remoteKind === 'gitlab';
-  const shouldShowGitlabIssues = remoteKind != null && !isGitlabRemote && hasGitlabIntegration;
+  const prConnection = resolveIntegrationConnection({
+    provider: 'pr',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+  });
+  const linearConnection = resolveIntegrationConnection({
+    provider: 'linear',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+  });
+  const sentryConnection = resolveIntegrationConnection({
+    provider: 'sentry',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+  });
+  const gitlabConnection = resolveIntegrationConnection({
+    provider: 'gitlab',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+  });
+  const integrationRows: ReadonlyArray<LensRow> = [
+    ...(prConnection.isAvailable
+      ? [
+          {
+            kind: 'pr',
+            label: isGitlabRemote ? 'GitLab' : 'GitHub',
+            icon: isGitlabRemote ? GitFork : GitBranch,
+            tone: 'accent',
+            dot: hasPr ? 'running' : undefined,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(linearConnection.isAvailable
+      ? [
+          {
+            kind: 'linear',
+            label: 'Linear',
+            icon: ListTodo,
+            tone: 'primary',
+            count: linearCount,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(sentryConnection.isAvailable
+      ? [
+          {
+            kind: 'sentry',
+            label: 'Sentry',
+            icon: Bug,
+            tone: 'warning',
+            count: sentryCount,
+          } satisfies LensRow,
+        ]
+      : []),
+    ...(gitlabConnection.isAvailable
+      ? [
+          {
+            kind: 'gitlab_issues',
+            label: 'GitLab issues',
+            icon: GitFork,
+            tone: 'accent',
+            count: gitlabCount,
+          } satisfies LensRow,
+        ]
+      : []),
+  ];
 
   const groups: ReadonlyArray<LensGroup> = [
     {
@@ -232,28 +300,7 @@ export const LensColumn = ({
     },
     {
       label: 'Integrations',
-      rows: [
-        {
-          kind: 'pr',
-          label: isGitlabRemote ? 'GitLab' : 'GitHub',
-          icon: isGitlabRemote ? GitFork : GitBranch,
-          tone: 'accent',
-          dot: hasPr ? 'running' : undefined,
-        },
-        { kind: 'linear', label: 'Linear', icon: ListTodo, tone: 'primary', count: linearCount },
-        { kind: 'sentry', label: 'Sentry', icon: Bug, tone: 'warning', count: sentryCount },
-        ...(shouldShowGitlabIssues
-          ? [
-              {
-                kind: 'gitlab_issues',
-                label: 'GitLab issues',
-                icon: GitFork,
-                tone: 'accent',
-                count: gitlabCount,
-              } satisfies LensRow,
-            ]
-          : []),
-      ],
+      rows: integrationRows,
     },
     {
       label: 'Infra',

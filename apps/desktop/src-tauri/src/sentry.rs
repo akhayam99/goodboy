@@ -134,10 +134,26 @@ pub struct SentryStackFrame {
 }
 
 #[derive(Serialize)]
+pub struct SentryTag {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Serialize)]
+pub struct SentryBreadcrumb {
+    pub category: Option<String>,
+    pub message: Option<String>,
+    pub level: Option<String>,
+    pub timestamp: Option<String>,
+}
+
+#[derive(Serialize)]
 pub struct SentryIssueDetail {
     pub title: Option<String>,
     pub culprit: Option<String>,
     pub frames: Vec<SentryStackFrame>,
+    pub tags: Vec<SentryTag>,
+    pub breadcrumbs: Vec<SentryBreadcrumb>,
 }
 
 fn read_config(workspace_id: &str, cache: &SentryTokenCache) -> Result<SentryConfig, SentryError> {
@@ -209,6 +225,63 @@ fn extract_frames(event: &serde_json::Value) -> Vec<SentryStackFrame> {
         }
     }
     Vec::new()
+}
+
+fn extract_tags(event: &serde_json::Value) -> Vec<SentryTag> {
+    event
+        .get("tags")
+        .and_then(|value| value.as_array())
+        .map(|tags| {
+            tags.iter()
+                .filter_map(|tag| {
+                    let key = tag.get("key").and_then(|value| value.as_str())?;
+                    let value = tag.get("value").and_then(|value| value.as_str())?;
+                    Some(SentryTag {
+                        key: key.to_string(),
+                        value: value.to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn extract_breadcrumbs(event: &serde_json::Value) -> Vec<SentryBreadcrumb> {
+    event
+        .get("entries")
+        .and_then(|value| value.as_array())
+        .and_then(|entries| {
+            entries.iter().find(|entry| {
+                entry.get("type").and_then(|value| value.as_str()) == Some("breadcrumbs")
+            })
+        })
+        .and_then(|entry| entry.get("data"))
+        .and_then(|data| data.get("values"))
+        .and_then(|values| values.as_array())
+        .map(|breadcrumbs| {
+            breadcrumbs
+                .iter()
+                .map(|breadcrumb| SentryBreadcrumb {
+                    category: breadcrumb
+                        .get("category")
+                        .and_then(|value| value.as_str())
+                        .map(String::from),
+                    message: breadcrumb
+                        .get("message")
+                        .and_then(|value| value.as_str())
+                        .map(String::from),
+                    level: breadcrumb
+                        .get("level")
+                        .and_then(|value| value.as_str())
+                        .map(String::from),
+                    timestamp: breadcrumb
+                        .get("timestamp")
+                        .and_then(|value| value.as_str())
+                        .map(String::from),
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -313,6 +386,8 @@ pub async fn sentry_fetch_issue_detail(
         title,
         culprit,
         frames: extract_frames(&event),
+        tags: extract_tags(&event),
+        breadcrumbs: extract_breadcrumbs(&event),
     })
 }
 
@@ -365,5 +440,32 @@ mod tests {
     fn extract_frames_empty_without_entries() {
         let event = serde_json::json!({ "title": "x" });
         assert!(extract_frames(&event).is_empty());
+    }
+
+    #[test]
+    fn extracts_tags_and_breadcrumbs() {
+        let event = serde_json::json!({
+            "tags": [
+                { "key": "release", "value": "web@1.2.3" },
+                { "key": "environment", "value": "production" }
+            ],
+            "entries": [{
+                "type": "breadcrumbs",
+                "data": {
+                    "values": [{
+                        "category": "http",
+                        "message": "GET /api/items",
+                        "level": "info",
+                        "timestamp": "2026-07-23T10:00:00Z"
+                    }]
+                }
+            }]
+        });
+        let tags = extract_tags(&event);
+        let breadcrumbs = extract_breadcrumbs(&event);
+        assert_eq!(tags.len(), 2);
+        assert_eq!(tags[0].key, "release");
+        assert_eq!(breadcrumbs.len(), 1);
+        assert_eq!(breadcrumbs[0].message.as_deref(), Some("GET /api/items"));
     }
 }

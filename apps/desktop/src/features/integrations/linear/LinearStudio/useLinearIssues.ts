@@ -146,7 +146,7 @@ export type UseLinearIssues = {
   readonly refetch: () => void;
 };
 
-export const useLinearIssues = (workspaceId: WorkspaceId): UseLinearIssues => {
+export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): UseLinearIssues => {
   const sessions = useSessions();
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -156,6 +156,12 @@ export const useLinearIssues = (workspaceId: WorkspaceId): UseLinearIssues => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchIssues = useCallback(async () => {
+    if (!isEnabled) {
+      setIssues([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -166,7 +172,7 @@ export const useLinearIssues = (workspaceId: WorkspaceId): UseLinearIssues => {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId]);
+  }, [isEnabled, workspaceId]);
 
   useEffect(() => {
     void fetchIssues();

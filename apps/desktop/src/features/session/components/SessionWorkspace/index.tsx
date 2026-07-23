@@ -316,13 +316,25 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 ) : null}
                 {lens === 'pr' ? <PrPane session={session} /> : null}
                 {lens === 'linear' ? (
-                  <IntegrationPane sessionId={sessionId} provider="linear" />
+                  <IntegrationPane
+                    sessionId={sessionId}
+                    workspaceId={session.workspaceId}
+                    provider="linear"
+                  />
                 ) : null}
                 {lens === 'sentry' ? (
-                  <IntegrationPane sessionId={sessionId} provider="sentry" />
+                  <IntegrationPane
+                    sessionId={sessionId}
+                    workspaceId={session.workspaceId}
+                    provider="sentry"
+                  />
                 ) : null}
                 {lens === 'gitlab_issues' ? (
-                  <IntegrationPane sessionId={sessionId} provider="gitlab" />
+                  <IntegrationPane
+                    sessionId={sessionId}
+                    workspaceId={session.workspaceId}
+                    provider="gitlab"
+                  />
                 ) : null}
                 {lens === 'files' ? (
                   <FilesPane

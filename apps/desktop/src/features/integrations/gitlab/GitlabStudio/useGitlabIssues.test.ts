@@ -1,12 +1,39 @@
-import { describe, expect, it } from 'vitest';
-import type { Session, SessionExternalTask, SessionId } from '@goodboy/types';
+import { cleanup, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Session, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   buildIssueGroups,
   gitlabBranchSlug,
   projectPathFromIssue,
   resolveIssueSessions,
+  useGitlabIssues,
 } from './useGitlabIssues';
-import type { GitlabIssue } from '../client';
+import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
+
+const h = vi.hoisted(() => ({
+  sessionExternalTasks: {},
+  sessionBranches: {},
+  workspaceIntegrations: {
+    'workspace-1': [{ provider: 'gitlab', config: { host: 'https://gitlab.com' } }],
+  },
+}));
+
+vi.mock('../client', () => ({
+  gitlabFetchAssignedIssues: vi.fn(),
+}));
+
+vi.mock('../../../../store', () => ({
+  useSessions: () => [],
+  useAppStore: <T>(
+    selector: (state: {
+      sessionExternalTasks: typeof h.sessionExternalTasks;
+      sessionBranches: typeof h.sessionBranches;
+      workspaceIntegrations: typeof h.workspaceIntegrations;
+    }) => T,
+  ) => selector(h),
+}));
+
+const fetchAssignedIssues = vi.mocked(gitlabFetchAssignedIssues);
 
 function makeIssue(overrides: Partial<GitlabIssue> = {}): GitlabIssue {
   return {
@@ -28,6 +55,12 @@ function makeIssue(overrides: Partial<GitlabIssue> = {}): GitlabIssue {
 function session(id: string): Session {
   return { id: id as SessionId } as Session;
 }
+
+beforeEach(() => {
+  fetchAssignedIssues.mockReset();
+});
+
+afterEach(cleanup);
 
 describe('projectPathFromIssue', () => {
   it('returns the namespace before the #iid', () => {
@@ -122,5 +155,17 @@ describe('resolveIssueSessions', () => {
     const branches = { s1: 'kay/42-fix-login' };
     const map = resolveIssueSessions([issue], [session('s1'), session('s2')], branches, tasks);
     expect(map.get('101')).toBe('s2');
+  });
+});
+
+describe('useGitlabIssues', () => {
+  it('does not fetch assigned issues when disabled', () => {
+    const { result } = renderHook(() =>
+      useGitlabIssues({ workspaceId: 'workspace-1' as WorkspaceId, isEnabled: false }),
+    );
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.groups).toEqual([]);
+    expect(fetchAssignedIssues).not.toHaveBeenCalled();
   });
 });

@@ -44,10 +44,24 @@ export type SentryStackFrame = {
   in_app: boolean;
 };
 
+export type SentryTag = {
+  key: string;
+  value: string;
+};
+
+export type SentryBreadcrumb = {
+  category: string | null;
+  message: string | null;
+  level: string | null;
+  timestamp: string | null;
+};
+
 export type SentryIssueDetail = {
   title: string | null;
   culprit: string | null;
   frames: SentryStackFrame[];
+  tags?: SentryTag[];
+  breadcrumbs?: SentryBreadcrumb[];
 };
 
 export const sentryConnect = async (
