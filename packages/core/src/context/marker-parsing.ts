@@ -35,6 +35,7 @@ const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
+const REVIEW_COMMENT_OPEN = '<<review-comment';
 
 const extractSelfClosingInner = (text: string, open: string): ReadonlyArray<string> => {
   const out: string[] = [];
@@ -304,7 +305,10 @@ type CommentAnalysisAttrs = {
   readonly summary?: string;
 };
 
-const parseCommentAnalysisAttrs = (inner: string): CommentAnalysisAttrs | null => {
+const parseStrictQuotedAttrs = (
+  inner: string,
+  allowedKeys: ReadonlySet<string>,
+): Record<string, string> | null => {
   const attrs: Record<string, string> = {};
   let index = 0;
   while (index < inner.length) {
@@ -319,7 +323,7 @@ const parseCommentAnalysisAttrs = (inner: string): CommentAnalysisAttrs | null =
       index += 1;
     }
     const key = inner.slice(keyStart, index).toLowerCase();
-    if (key !== 'threadid' && key !== 'verdict' && key !== 'summary') {
+    if (!allowedKeys.has(key)) {
       return null;
     }
     if (attrs[key] != null) {
@@ -351,6 +355,11 @@ const parseCommentAnalysisAttrs = (inner: string): CommentAnalysisAttrs | null =
   }
   return attrs;
 };
+
+const COMMENT_ANALYSIS_KEYS: ReadonlySet<string> = new Set(['threadid', 'verdict', 'summary']);
+
+const parseCommentAnalysisAttrs = (inner: string): CommentAnalysisAttrs | null =>
+  parseStrictQuotedAttrs(inner, COMMENT_ANALYSIS_KEYS);
 
 export const extractCommentAnalysis = (assistantText: string): ExtractedCommentAnalysis | null => {
   let last: ExtractedCommentAnalysis | null = null;
@@ -387,6 +396,61 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
     last = { threadId, reason };
   }
   return last;
+};
+
+export type ExtractedReviewComment = {
+  readonly path: string;
+  readonly line: number;
+  readonly startLine: number | null;
+  readonly side: 'new' | 'old';
+  readonly body: string;
+};
+
+const REVIEW_COMMENT_KEYS: ReadonlySet<string> = new Set([
+  'path',
+  'line',
+  'body',
+  'start_line',
+  'side',
+]);
+
+const POSITIVE_INT_RE = /^\d+$/;
+
+const parsePositiveInt = (raw: string | undefined): number | null => {
+  const trimmed = (raw ?? '').trim();
+  if (!POSITIVE_INT_RE.test(trimmed)) {
+    return null;
+  }
+  const value = Number.parseInt(trimmed, 10);
+  return value > 0 ? value : null;
+};
+
+export const extractReviewComments = (
+  assistantText: string,
+): ReadonlyArray<ExtractedReviewComment> => {
+  const out: ExtractedReviewComment[] = [];
+  for (const inner of extractSelfClosingInner(assistantText, REVIEW_COMMENT_OPEN)) {
+    const attrs = parseStrictQuotedAttrs(inner, REVIEW_COMMENT_KEYS);
+    if (attrs === null) {
+      continue;
+    }
+    const path = (attrs.path ?? '').trim();
+    const body = (attrs.body ?? '').trim();
+    const line = parsePositiveInt(attrs.line);
+    if (path.length === 0 || body.length === 0 || line === null) {
+      continue;
+    }
+    const startLine = attrs.start_line != null ? parsePositiveInt(attrs.start_line) : null;
+    if (attrs.start_line != null && startLine === null) {
+      continue;
+    }
+    const side = (attrs.side ?? 'new').trim();
+    if (side !== 'new' && side !== 'old') {
+      continue;
+    }
+    out.push({ path, line, startLine, side, body });
+  }
+  return out;
 };
 
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
@@ -571,7 +635,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 const BLOCK_MARKER_ALT =
   'plan|clusters|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|cluster-done|step-done';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,

@@ -21,6 +21,7 @@ export {
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
+  extractReviewComments,
   extractScoutSplit,
   extractStepDone,
   isOpenQuestionAnswerText,
@@ -37,6 +38,7 @@ export {
   type ExtractedHandoff,
   type ExtractedPlan,
   type ExtractedQuestion,
+  type ExtractedReviewComment,
   type PlanReadinessInput,
   type PlanReadinessResult,
 } from './extractors';
