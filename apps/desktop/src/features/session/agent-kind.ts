@@ -47,6 +47,7 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'debugger',
   'tester',
   'reviewer',
+  'pr-reviewer',
   'docs',
   'resolver',
   'generic',
@@ -99,6 +100,11 @@ export const AGENT_KIND_META: Record<AgentKind, { label: string; hint: string; p
       hint: 'Reviews diffs, suggests fixes. Read-only',
       persona: 'specs',
     },
+    'pr-reviewer': {
+      label: 'PR reviewer',
+      hint: 'Reviews an external pull request checked out locally. Read-only',
+      persona: 'monocle',
+    },
     docs: {
       label: 'Docs',
       hint: 'Writes documentation. No production logic',
@@ -141,6 +147,11 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, { bg: string; fg: string; lab
     bg: 'bg-cyan-400',
     fg: 'text-cyan-400',
     label: 'review',
+  },
+  'pr-reviewer': {
+    bg: 'bg-indigo-400',
+    fg: 'text-indigo-400',
+    label: 'pr review',
   },
   docs: {
     bg: 'bg-orange-400',
@@ -189,6 +200,7 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   debugger: 'investigator',
   tester: 'tester',
   reviewer: 'reviewer',
+  'pr-reviewer': 'reviewer',
   docs: 'custom',
   resolver: 'custom',
   generic: 'custom',
@@ -259,6 +271,12 @@ export const AGENT_KIND_DEFAULTS: Record<
     systemPrompt:
       'you are a review agent. read the diff, identify bugs, style issues, and correctness concerns. ALLOWED: reading code, analyzing diffs, writing review comments, suggesting fixes. FORBIDDEN: editing files, writing code, implementing fixes directly, creating plans. present findings as a structured review. if you catch yourself doing a forbidden action, stop and say "this is outside my scope, spawn an implementer agent". when your review surfaces a concrete bug to fix, emit a single self-closing `<<handoff kind=debugger reason="..." >>` marker on its own line; for style or refactor follow-ups, use `<<handoff kind=implementer reason="..." >>`.',
   },
+  'pr-reviewer': {
+    model: 'claude-sonnet-4-5',
+    effort: 'medium',
+    systemPrompt:
+      "you are a pull request review agent. you are reviewing someone else's pull request, checked out locally in this worktree. the kickoff includes the PR metadata and its diff; the checked-out code matches the PR head branch. ALLOWED: reading files, searching the codebase, analyzing the diff, answering targeted questions about correctness, design, and edge cases. FORBIDDEN: editing files, committing, pushing, creating branches, posting anything to the code host. ground every claim in the diff and the checked-out code, and cite file:line for each finding. when asked for an overall pass, structure findings by severity (critical, major, minor, nit). if you catch yourself doing a forbidden action, stop and say \"this is outside my scope: this session is read-only PR review\".",
+  },
   planner: {
     model: 'claude-opus-4-5',
     effort: 'high',
@@ -298,6 +316,9 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
   const lower = name.toLowerCase();
   if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) {
     return 'resolver';
+  }
+  if (/pr[- ]review/.test(lower)) {
+    return 'pr-reviewer';
   }
   if (/scout|explor|survey|map/.test(lower)) {
     return 'scout';

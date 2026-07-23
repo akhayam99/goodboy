@@ -6,6 +6,7 @@ export type AgentKindLabel =
   | 'tester'
   | 'docs'
   | 'reviewer'
+  | 'pr-reviewer'
   | 'resolver'
   | 'generic';
 
