@@ -112,4 +112,27 @@ describe('IssueDetailPanel', () => {
     expect(goal.value).toBe('[GB-2] Second issue');
     expect(goal.value).not.toContain('firstFrame');
   });
+
+  it('surfaces event and user counts in the stats strip', async () => {
+    const issue = {
+      ...makeIssue({ id: 'issue-3', title: 'Third issue', shortId: 'GB-3' }),
+      count: '128',
+      userCount: 12,
+    };
+    fetchIssueDetail.mockResolvedValueOnce({ title: null, culprit: null, frames: [] });
+
+    render(
+      <IssueDetailPanel
+        issue={issue}
+        sessionId={null}
+        workspaceId={WORKSPACE_ID}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Events')).toBeDefined());
+    expect(screen.getByText('128')).toBeDefined();
+    expect(screen.getByText('Users')).toBeDefined();
+    expect(screen.getByText('12')).toBeDefined();
+  });
 });

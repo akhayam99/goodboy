@@ -1,11 +1,10 @@
-import { EmptyState, Markdown, SectionHeader, Skeleton, cn } from '@goodboy/ui';
-import { ExternalLink, GitPullRequest, MessageSquare } from 'lucide-react';
+import { Markdown, SectionHeader, cn } from '@goodboy/ui';
+import { ExternalLink, GitPullRequest } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { issuePullRequests, type LinearIssue } from '../client';
+import { LinearIssueComments } from '../LinearIssueComments';
 import { priorityTone } from '../priorityTone';
 import { prStatusTone } from '../prStatusTone';
-import { useLinearIssueComments } from '../useLinearIssueComments';
 
 type Props = {
   readonly issue: LinearIssue;
@@ -13,10 +12,6 @@ type Props = {
 };
 
 export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
-  const { comments, isLoading, error } = useLinearIssueComments({
-    workspaceId,
-    issueId: issue.id,
-  });
   const linkedPrs = issuePullRequests(issue);
   const priorityLabel = issue.priorityLabel ?? 'No priority';
 
@@ -105,43 +100,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
 
       <section className="flex flex-col gap-3">
         <SectionHeader label="comments" />
-        {isLoading ? (
-          <div role="status" aria-label="Loading comments" className="flex flex-col gap-4">
-            {[0, 1, 2].map((row) => (
-              <div key={row} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-                <Skeleton className="h-3 w-28 rounded" />
-                <Skeleton className="h-3 w-full rounded" />
-                <Skeleton className="h-3 w-2/3 rounded" />
-              </div>
-            ))}
-          </div>
-        ) : error != null ? (
-          <p className="text-sm text-danger">{error}</p>
-        ) : comments.length === 0 ? (
-          <EmptyState
-            icon={MessageSquare}
-            title="No comments"
-            description="This issue has no comments yet."
-            className="py-5"
-          />
-        ) : (
-          <div className="flex flex-col gap-3">
-            {comments.map((comment) => {
-              const relativeDate = formatRelativeDuration(comment.createdAt);
-              return (
-                <div key={comment.id} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-                  <div className="flex items-center gap-2 text-2xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {comment.user?.name ?? 'Unknown author'}
-                    </span>
-                    {relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
-                  </div>
-                  <Markdown text={comment.body} className="text-sm leading-relaxed" />
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <LinearIssueComments workspaceId={workspaceId} issueId={issue.id} />
       </section>
     </article>
   );
