@@ -24,6 +24,7 @@ import { AgentSpawnConfig } from '../../AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
 
@@ -38,6 +39,8 @@ export const PrPane = ({ session }: Props) => {
   const remoteKind = useRemoteHostKind(session.workspaceId);
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
+  const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const [selectedProvider, setSelectedProvider] = useState<PullRequestProvider | null>(null);
   const defaultProvider: PullRequestProvider =
     remoteKind === 'gitlab' && mergeRequest != null
@@ -97,14 +100,14 @@ export const PrPane = ({ session }: Props) => {
         {activeProvider === 'gitlab' ? (
           <GitlabMrStrip sessionId={sessionId} />
         ) : (
-          <GithubPrCard session={session} />
+          <GithubPrCard session={session} isPrReview={isPrReview} />
         )}
       </div>
     </PaneShell>
   );
 };
 
-const GithubPrCard = ({ session }: { session: Session }) => {
+const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: boolean }) => {
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
@@ -189,6 +192,26 @@ const GithubPrCard = ({ session }: { session: Session }) => {
       setBusy(null);
     }
   };
+
+  if (!pr && isPrReview) {
+    return (
+      <div className="animate-fade-in flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-8 py-8 text-center">
+        <span
+          aria-hidden
+          className="flex size-12 items-center justify-center rounded-full bg-indigo-400/15"
+        >
+          <GitPullRequest size={24} className="text-indigo-500" />
+        </span>
+        <div className="flex flex-col items-center gap-1.5">
+          <h2 className="text-base font-semibold text-foreground">External review session</h2>
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+            This session reviews someone else&rsquo;s pull request, so there is no PR to open from
+            here. Draft and publish comments from the review board.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!pr) {
     return (

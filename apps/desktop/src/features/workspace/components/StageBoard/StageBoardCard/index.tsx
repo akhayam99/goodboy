@@ -1,8 +1,9 @@
-import { memo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import {
   Archive,
   Bot,
   Code,
+  MessageSquareDiff,
   RotateCcw,
   SquareTerminal,
   Trash2,
@@ -17,6 +18,7 @@ import {
   useSessionCost,
   useSessionStageInfo,
 } from '../../../../../store';
+import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { IntegrationGlyph } from '../../../../integrations/components/IntegrationGlyph';
@@ -54,6 +56,21 @@ export const StageBoardCard = memo(function StageBoardCard({
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const dynamicActions = useDynamicActions(session, nav, stage);
   const sessionCost = useSessionCost(id);
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[id] ?? EMPTY_ARRAY);
+  const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
+  const reviewDrafts = useAppStore((s) => s.reviewDrafts[id]);
+  const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
+
+  useEffect(() => {
+    if (!isPrReview || reviewDrafts != null) {
+      return;
+    }
+    void loadReviewDrafts(id);
+  }, [isPrReview, reviewDrafts, loadReviewDrafts, id]);
+
+  const reviewDraftCount = isPrReview
+    ? (reviewDrafts ?? []).filter((draft) => draft.status === 'draft').length
+    : 0;
 
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
@@ -142,6 +159,13 @@ export const StageBoardCard = memo(function StageBoardCard({
                 <span className="tabular-nums">{agentCount}</span>
               </span>
             </Tooltip>
+          )}
+          {reviewDraftCount > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
+              <MessageSquareDiff size={10} aria-hidden />
+              <span className="tabular-nums">{reviewDraftCount}</span>
+              <span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>
+            </span>
           )}
           {externalTasks.map((task) => (
             <ExternalTaskChip

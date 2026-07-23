@@ -6,6 +6,7 @@ import {
   CheckCheck,
   CircleHelp,
   FileDiff,
+  MessageSquareDiff,
   FileText,
   LayoutDashboard,
   Layers,
@@ -18,6 +19,7 @@ import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@good
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
+import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -66,6 +68,7 @@ const LENS_SHORTCUTS = {
   agents: '⌘⇧B',
   workflows: '⌘⇧W',
   resolve: '⌘⇧R',
+  review: null,
   plans: '⌘⇧L',
   scripts: '⌘⇧S',
   terminal: '⌘J',
@@ -154,6 +157,12 @@ export const LensColumn = ({
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );
+  const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
+  const reviewDraftCount = useAppStore(
+    (s) =>
+      (s.reviewDrafts[sessionId] ?? EMPTY_ARRAY).filter((draft) => draft.status === 'draft')
+        .length,
+  );
   const linearCount = externalTasks.filter((task) => task.provider === 'linear').length;
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
   const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
@@ -233,6 +242,17 @@ export const LensColumn = ({
     {
       label: 'Work',
       rows: [
+        ...(isPrReview
+          ? [
+              {
+                kind: 'review',
+                label: 'Review board',
+                icon: MessageSquareDiff,
+                tone: 'primary',
+                count: reviewDraftCount,
+              } satisfies LensRow,
+            ]
+          : []),
         {
           kind: 'workflows',
           label: 'Workflows',

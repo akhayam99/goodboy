@@ -13,7 +13,8 @@ const { hooks, remote, store } = vi.hoisted(() => {
     remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
     store: {
       agentKindOverride: {},
-      sessionPhaseRuns: {},
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
       scriptRuns: {},
       terminalSessions: {},
       sessionGithub: {},
@@ -76,6 +77,8 @@ beforeEach(() => {
   hooks.agentCount = 0;
   hooks.planCount = 0;
   hooks.questionCount = 0;
+  store.sessionPhaseRuns = {};
+  store.reviewDrafts = {};
   store.sessionExternalTasks = {};
   store.workspaceIntegrations = {
     'workspace-1': [{ provider: 'linear' }, { provider: 'sentry' }],
@@ -271,6 +274,40 @@ describe('LensColumn', () => {
 
     expect(screen.getByRole('button', { name: 'GitLab' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'GitLab issues 1' })).toBeDefined();
+  });
+
+  it('shows the review board lens only for PR review sessions', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Review board/ })).toBeNull();
+
+    cleanup();
+    store.sessionPhaseRuns = {
+      'session-1': [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
+    };
+    store.reviewDrafts = { 'session-1': [{ id: 'draft-1', status: 'draft' }] };
+    const onSelect = vi.fn();
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={onSelect}
+        filesCount={0}
+      />,
+    );
+
+    const row = screen.getByRole('button', { name: 'Review board 1' });
+    fireEvent.click(row);
+    expect(onSelect).toHaveBeenCalledWith('review');
   });
 
   it('hides disconnected integration rows without linked tasks', () => {

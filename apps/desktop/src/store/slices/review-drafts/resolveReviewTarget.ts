@@ -29,13 +29,11 @@ const repoFromTask = ({ task }: RepoFromTaskParams): string | null => {
   }
 };
 
-type Params = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
+type FromTasksParams = {
+  readonly tasks: ReadonlyArray<SessionExternalTask>;
 };
 
-export const resolveReviewTarget = ({ get, sessionId }: Params): ReviewTarget | null => {
-  const tasks = get().sessionExternalTasks[sessionId] ?? [];
+export const reviewTargetFromTasks = ({ tasks }: FromTasksParams): ReviewTarget | null => {
   const task =
     tasks.find((candidate) => candidate.provider === 'github' || candidate.provider === 'gitlab') ??
     null;
@@ -52,3 +50,11 @@ export const resolveReviewTarget = ({ get, sessionId }: Params): ReviewTarget | 
   }
   return { provider: task.provider as ReviewablePrProvider, repo, prNumber };
 };
+
+type Params = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+};
+
+export const resolveReviewTarget = ({ get, sessionId }: Params): ReviewTarget | null =>
+  reviewTargetFromTasks({ tasks: get().sessionExternalTasks[sessionId] ?? [] });

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { cn, Divider } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -15,12 +15,26 @@ import { useGitlabIssues } from './useGitlabIssues';
 import { useGitlabMrs } from './useGitlabMrs';
 import type { GitlabIssue, GitlabMergeRequest } from '../client';
 import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
+import {
+  SegmentedControl,
+  type SegmentedOption,
+} from '../../../../shared/components/SegmentedControl';
+import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
+import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
 
 type Tab = 'issues' | 'merge-requests';
+
+type ReviewScope = 'mine' | 'others' | 'all';
 
 const TABS: ReadonlyArray<StudioTab<Tab>> = [
   { value: 'issues', label: 'Issues' },
   { value: 'merge-requests', label: 'Merge requests' },
+];
+
+const REVIEW_SCOPES: ReadonlyArray<SegmentedOption<ReviewScope>> = [
+  { value: 'mine', label: 'Mine' },
+  { value: 'others', label: 'Others' },
+  { value: 'all', label: 'All' },
 ];
 
 type Props = {
@@ -48,6 +62,8 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
   const [focused, setFocused] = useState<GitlabIssue | null>(null);
   const [focusedMr, setFocusedMr] = useState<GitlabMergeRequest | null>(null);
   const [tab, setTab] = useState<Tab>('issues');
+  const [reviewScope, setReviewScope] = useState<ReviewScope>('mine');
+  const [focusedReviewPr, setFocusedReviewPr] = useState<ReviewablePr | null>(null);
 
   useEffect(() => {
     if (focused !== null) {
@@ -148,24 +164,52 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
           </>
         ) : (
           <>
-            <div className="w-72 shrink-0">
-              <MrInbox
-                groups={mergeRequests.groups}
-                focusedMrId={focusedMr?.id ?? null}
-                onSelect={setFocusedMr}
-                loading={mergeRequests.loading}
-                error={mergeRequests.error}
-              />
+            <div className="flex w-72 shrink-0 flex-col">
+              <div className="shrink-0 px-3 pt-3">
+                <SegmentedControl
+                  ariaLabel="Review inbox filter"
+                  options={REVIEW_SCOPES}
+                  value={reviewScope}
+                  onChange={setReviewScope}
+                />
+              </div>
+              {reviewScope === 'mine' ? (
+                <div className="min-h-0 flex-1">
+                  <MrInbox
+                    groups={mergeRequests.groups}
+                    focusedMrId={focusedMr?.id ?? null}
+                    onSelect={setFocusedMr}
+                    loading={mergeRequests.loading}
+                    error={mergeRequests.error}
+                  />
+                </div>
+              ) : (
+                <ReviewInboxList
+                  workspaceId={workspaceId}
+                  provider="gitlab"
+                  scope={reviewScope}
+                  focusedPrId={focusedReviewPr?.id ?? null}
+                  onSelect={setFocusedReviewPr}
+                />
+              )}
             </div>
             <Divider orientation="vertical" />
             <div className="min-h-0 flex-1">
-              <MrDetailPanel
-                mr={focusedMr}
-                workspaceId={workspaceId}
-                host={mergeRequests.host}
-                onRefresh={mergeRequests.refetch}
-                onClose={requestClose}
-              />
+              {reviewScope === 'mine' ? (
+                <MrDetailPanel
+                  mr={focusedMr}
+                  workspaceId={workspaceId}
+                  host={mergeRequests.host}
+                  onRefresh={mergeRequests.refetch}
+                  onClose={requestClose}
+                />
+              ) : (
+                <ReviewPrDetailPanel
+                  pr={focusedReviewPr}
+                  workspaceId={workspaceId}
+                  onClose={requestClose}
+                />
+              )}
             </div>
           </>
         )

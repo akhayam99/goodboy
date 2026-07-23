@@ -37,6 +37,16 @@ vi.mock('./GithubIssueDetailPanel', () => ({
     <div>{issue?.title ?? 'No issue detail'}</div>
   ),
 }));
+vi.mock('../../../review/components/ReviewInboxList', () => ({
+  ReviewInboxList: ({ provider, scope }: { provider: string; scope: string }) => (
+    <div>
+      Review inbox {provider} {scope}
+    </div>
+  ),
+}));
+vi.mock('../../../review/components/ReviewPrDetailPanel', () => ({
+  ReviewPrDetailPanel: () => <div>Review pull request detail</div>,
+}));
 vi.mock('../../../../shared/components/StudioShell', () => ({
   StudioShell: ({
     headerAccessory,
@@ -88,8 +98,24 @@ describe('GitHubStudio', () => {
     expect(screen.getByRole('tab', { name: 'Pull requests' }).getAttribute('aria-selected')).toBe(
       'true',
     );
+    expect(screen.getByRole('radio', { name: 'Mine' }).getAttribute('aria-checked')).toBe('true');
     expect(screen.getByText('Pull request inbox')).toBeDefined();
     expect(screen.getByText('Pull request detail')).toBeDefined();
+  });
+
+  it('switches to the review inbox for the others and all scopes', () => {
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Others' }));
+    expect(screen.getByText('Review inbox github others')).toBeDefined();
+    expect(screen.getByText('Review pull request detail')).toBeDefined();
+    expect(screen.queryByText('Pull request inbox')).toBeNull();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'All' }));
+    expect(screen.getByText('Review inbox github all')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Mine' }));
+    expect(screen.getByText('Pull request inbox')).toBeDefined();
   });
 
   it('renders grouped assigned issues in the issues tab', () => {

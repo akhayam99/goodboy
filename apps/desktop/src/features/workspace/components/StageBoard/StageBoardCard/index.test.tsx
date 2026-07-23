@@ -17,6 +17,9 @@ const { state, hooks } = vi.hoisted(() => ({
     sessionGitlabMr: {} as Record<string, { mr: GitlabMergeRequest | null }>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
+    loadReviewDrafts: vi.fn(async () => undefined),
   },
   hooks: {
     stage: 'building' as SessionStage,
@@ -103,6 +106,9 @@ beforeEach(() => {
   state.sessionGitlabMr = {};
   state.sessionExternalTasks = {};
   state.sessionWorktrees = {};
+  state.sessionPhaseRuns = {};
+  state.reviewDrafts = {};
+  state.loadReviewDrafts.mockClear();
   hooks.reason = 'no PR yet';
   hooks.agents = [];
   hooks.cost = 0;
@@ -199,6 +205,41 @@ describe('StageBoardCard actions visibility', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const deleteBtn = screen.getByLabelText('delete');
     expect(deleteBtn.className).toContain('hover:text-danger');
+  });
+});
+
+describe('StageBoardCard review drafts', () => {
+  it('shows a draft comments chip for review sessions with pending drafts', () => {
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
+    };
+    state.reviewDrafts = {
+      [SESSION_ID]: [
+        { id: 'draft-1', status: 'draft' },
+        { id: 'draft-2', status: 'draft' },
+        { id: 'draft-3', status: 'published' },
+      ],
+    };
+    render(<StageBoardCard session={session} nav={nav} />);
+
+    expect(screen.getByText('draft comments').previousElementSibling?.textContent).toBe('2');
+  });
+
+  it('loads drafts once for review sessions and hides the chip elsewhere', () => {
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
+    };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(state.loadReviewDrafts).toHaveBeenCalledWith(SESSION_ID);
+    expect(screen.queryByText(/draft comment/)).toBeNull();
+
+    cleanup();
+    state.sessionPhaseRuns = {};
+    state.reviewDrafts = { [SESSION_ID]: [{ id: 'draft-1', status: 'draft' }] };
+    state.loadReviewDrafts.mockClear();
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(state.loadReviewDrafts).not.toHaveBeenCalled();
+    expect(screen.queryByText(/draft comment/)).toBeNull();
   });
 });
 

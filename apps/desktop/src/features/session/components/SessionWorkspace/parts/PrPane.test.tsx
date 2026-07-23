@@ -20,6 +20,7 @@ type Store = {
   sessionGithub: Record<string, unknown>;
   sessionGitlabMr: Record<string, unknown>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
+  sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly createPrForSession: ReturnType<typeof vi.fn>;
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
@@ -46,6 +47,7 @@ const h = vi.hoisted(() => ({
     sessionGithub: {},
     sessionGitlabMr: {},
     sessionExternalTasks: {},
+    sessionPhaseRuns: {},
     refreshSessionPr: vi.fn(),
     createPrForSession: vi.fn(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-1'),
@@ -110,6 +112,7 @@ beforeEach(() => {
   h.store.sessionGithub = {};
   h.store.sessionGitlabMr = {};
   h.store.sessionExternalTasks = {};
+  h.store.sessionPhaseRuns = {};
   h.store.createPrForSession.mockClear();
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
@@ -120,6 +123,18 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
+  it('never offers create-PR actions inside a PR review session', () => {
+    h.store.sessionPhaseRuns = {
+      [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
+    };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByText('External review session')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Draft with an agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
+  });
+
   it('renders the stored pull request as a selected list row above its detail', () => {
     h.store.sessionGithub = {
       [SESSION_ID]: {
