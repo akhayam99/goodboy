@@ -106,7 +106,7 @@ describe('CreatePrPanel', () => {
     await waitFor(() => expect(onStudioClose).toHaveBeenCalledOnce());
   });
 
-  it('preserves the legacy prompt and routing for a whitespace-only hint', async () => {
+  it('preserves the prompt for a whitespace-only hint', async () => {
     render(
       <CreatePrPanel
         sessionId={SESSION_ID}
@@ -120,8 +120,11 @@ describe('CreatePrPanel', () => {
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     const args = h.store.spawnAgent.mock.calls[0]![1];
-    expect(args).not.toHaveProperty('provider');
-    expect(args).toMatchObject({ model: 'claude-haiku-4-5', effort: 'low' });
+    expect(args).toMatchObject({
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      effort: 'low',
+    });
     expect(args.initialPrompt).toBe(
       [
         `Open a GitHub pull request for this session's branch.`,

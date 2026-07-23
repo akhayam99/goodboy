@@ -9,6 +9,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
+  taskModels: null,
   scoutFanout: null,
 };
 

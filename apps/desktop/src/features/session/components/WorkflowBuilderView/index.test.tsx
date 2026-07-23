@@ -23,6 +23,7 @@ const {
   storeState: {
     phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    workspaceOverrides: {},
     workflowDrafts: {} as Record<string, WorkflowBuilderDraft | undefined>,
   },
 }));
@@ -43,6 +44,7 @@ vi.mock('../../../../store', () => {
     attachWorkflowToSession: mockAttach,
     phaseTemplates: storeState.phaseTemplates,
     sessionPhaseRuns: storeState.sessionPhaseRuns,
+    workspaceOverrides: storeState.workspaceOverrides,
     workflowDrafts: storeState.workflowDrafts,
     setWorkflowDraft,
     clearWorkflowDraft,

@@ -2,8 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
 import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
-import { CURSOR_AUTO_MODEL } from '@goodboy/core';
+import type { ProviderId, SessionId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
+import { resolveTaskModel } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
@@ -81,24 +81,6 @@ type SummarizeTaskResult = {
   readonly exitCode: number | null;
 };
 
-function getCheapModel(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'anthropic':
-      return 'claude-haiku-4-5';
-    case 'cursor':
-      return CURSOR_AUTO_MODEL;
-    case 'codex':
-      return 'gpt-5.4-mini';
-    case 'gemini':
-      return 'gemini-3.5-flash';
-    default: {
-      const _exhaustive: never = providerId;
-      void _exhaustive;
-      return 'claude-haiku-4-5';
-    }
-  }
-}
-
 function getDefaultBinary(providerId: ProviderId): string {
   switch (providerId) {
     case 'anthropic':
@@ -130,14 +112,17 @@ const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
 const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
-async function generateBranchSlug(goal: string, providerId: ProviderId): Promise<string> {
+async function generateBranchSlug(
+  goal: string,
+  { providerId, model }: TaskModelPreference,
+): Promise<string> {
   const systemPrompt =
     'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.';
   const userMessage = `Goal: ${goal}`;
   const result = await invoke<SummarizeTaskResult>('summarize_session', {
     args: {
       providerId,
-      model: getCheapModel(providerId),
+      model,
       binary: getDefaultBinary(providerId),
       userMessage,
       systemPrompt,
@@ -174,6 +159,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const { showToast } = useToast();
   const settingKey = settingBranchPrefix(workspaceId);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
+  const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
 
   const [goal, setGoal] = useState('');
   const [branchSlug, setBranchSlug] = useState('');
@@ -204,7 +190,12 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   const connectedProviders = providers.filter((p) => p.connection === 'connected');
   const noProviderConnected = providers.length > 0 && connectedProviders.length === 0;
-  const defaultProvider = pickDefaultProvider(new Set(connectedProviders.map((p) => p.id)));
+  const connectedProviderIds = new Set(connectedProviders.map((provider) => provider.id));
+  const workspaceDefaultProvider = workspaceOverrides?.defaultProviderId;
+  const defaultProvider =
+    workspaceDefaultProvider != null && connectedProviderIds.has(workspaceDefaultProvider)
+      ? workspaceDefaultProvider
+      : pickDefaultProvider(connectedProviderIds);
 
   useEffect(() => {
     void loadSetting(settingKey).then((value) => {
@@ -261,7 +252,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       return;
     }
     setSlugGenerating(true);
-    generateBranchSlug(trimmed, defaultProvider)
+    generateBranchSlug(
+      trimmed,
+      resolveTaskModel('branch_naming', workspaceOverrides?.taskModels, defaultProvider),
+    )
       .then((slug) => {
         setBranchSlug(slug);
         setSlugTouched(true);

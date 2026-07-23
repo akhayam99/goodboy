@@ -15,7 +15,7 @@ import { ScrollFade } from '@goodboy/ui';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
@@ -49,6 +49,9 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const workspaceOverrides = useAppStore((s) =>
+    session == null ? null : (s.workspaceOverrides?.[session.workspaceId] ?? null),
+  );
   const { showToast } = useToast();
 
   const mr = mrState?.mr ?? null;
@@ -60,7 +63,12 @@ export const MrDetailPanel = ({ sessionId, onClose }: Props) => {
   const [targetBranch, setTargetBranch] = useState('main');
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | 'merge' | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
+  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(() =>
+    taskModelAgentSpawnConfig({
+      preferences: workspaceOverrides?.taskModels,
+      defaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
+    }),
+  );
 
   useEffect(() => {
     void refreshSessionMr(sessionId, { silent: true });

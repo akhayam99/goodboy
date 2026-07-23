@@ -104,6 +104,7 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
         parallelEnabled: wsOverrides?.parallelEnabled ?? null,
         defaultVerbosity: verbosity,
         providerBindings: wsOverrides?.providerBindings ?? null,
+        taskModels: wsOverrides?.taskModels ?? null,
         scoutFanout,
         ...partial,
       });
