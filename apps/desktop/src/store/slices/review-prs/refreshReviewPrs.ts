@@ -39,7 +39,7 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
           workspaceId,
         });
         const currentUser = get().githubStatus?.user ?? null;
-        items.push(...prs.map((pr) => mapGithubPr({ pr, currentUser })));
+        items.push(...prs.map((pr) => mapGithubPr({ pr, currentUser, repo: slug })));
       }
     } catch (err) {
       errors.push(formatError(err));
@@ -58,7 +58,9 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
             projectPath,
           );
           items.push(
-            ...mrs.map((mr) => mapGitlabMr({ mr, currentUserName: integration.config.userName })),
+            ...mrs.map((mr) =>
+              mapGitlabMr({ mr, currentUserName: integration.config.userName, projectPath }),
+            ),
           );
         }
       } catch (err) {

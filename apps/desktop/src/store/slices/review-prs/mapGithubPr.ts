@@ -4,13 +4,15 @@ import type { ReviewablePr } from '@goodboy/types';
 type Params = {
   pr: RepoPullRequest;
   currentUser: string | null;
+  repo: string;
 };
 
-export const mapGithubPr = ({ pr, currentUser }: Params): ReviewablePr => {
+export const mapGithubPr = ({ pr, currentUser, repo }: Params): ReviewablePr => {
   const login = currentUser != null && currentUser !== '' ? currentUser.toLowerCase() : null;
   return {
     id: `github:${pr.number}`,
     provider: 'github',
+    repo,
     number: pr.number,
     title: pr.title,
     url: pr.url,

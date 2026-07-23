@@ -5,6 +5,7 @@ export type ReviewablePrProvider = 'github' | 'gitlab';
 export type ReviewablePr = {
   id: string;
   provider: ReviewablePrProvider;
+  repo: string;
   number: number;
   title: string;
   url: string;
