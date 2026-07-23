@@ -120,7 +120,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
           </>
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            <ConnectIntegrationEmptyState name="Linear" />
+            <ConnectIntegrationEmptyState provider="linear" />
           </div>
         )
       }

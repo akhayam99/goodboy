@@ -39,8 +39,11 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     remoteKind: null,
     externalTasks: EMPTY_ARRAY,
   }).isConnected;
-  const { groups, loading, error, refetch } = useGitlabIssues(workspaceId);
-  const mergeRequests = useGitlabMrs({ workspaceId });
+  const { groups, loading, error, refetch } = useGitlabIssues({
+    workspaceId,
+    isEnabled: isConnected,
+  });
+  const mergeRequests = useGitlabMrs({ workspaceId, isEnabled: isConnected });
   const [focused, setFocused] = useState<GitlabIssue | null>(null);
   const [focusedMr, setFocusedMr] = useState<GitlabMergeRequest | null>(null);
   const [tab, setTab] = useState<Tab>('issues');
@@ -125,7 +128,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       {(requestClose) =>
         !isConnected ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            <ConnectIntegrationEmptyState name="GitLab" />
+            <ConnectIntegrationEmptyState provider="gitlab" />
           </div>
         ) : tab === 'issues' ? (
           <>

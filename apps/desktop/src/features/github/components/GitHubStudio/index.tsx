@@ -10,9 +10,9 @@ import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
-import { ConnectIntegrationEmptyState } from '../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../integrations/connection';
 import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
+import { MissingGithubRemoteEmptyState } from '../MissingGithubRemoteEmptyState';
 
 type Tab = 'pull-requests' | 'issues';
 
@@ -141,7 +141,7 @@ export const GitHubStudio = ({
       {(requestClose) =>
         !isConnected ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            <ConnectIntegrationEmptyState name="GitHub" />
+            <MissingGithubRemoteEmptyState />
           </div>
         ) : tab === 'pull-requests' ? (
           <>

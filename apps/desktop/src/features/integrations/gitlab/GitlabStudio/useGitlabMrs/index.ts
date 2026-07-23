@@ -15,6 +15,7 @@ type Params = {
 
 type HookParams = {
   readonly workspaceId: WorkspaceId;
+  readonly isEnabled?: boolean;
 };
 
 type GroupsParams = {
@@ -57,7 +58,7 @@ export const buildGitlabMrGroups = ({ mrs }: GroupsParams): ReadonlyArray<Gitlab
     }));
 };
 
-export const useGitlabMrs = ({ workspaceId }: HookParams): Result => {
+export const useGitlabMrs = ({ workspaceId, isEnabled = true }: HookParams): Result => {
   const host = useAppStore((state) => {
     const integration = state.workspaceIntegrations[workspaceId]?.find(
       (candidate): candidate is GitlabWorkspaceIntegration => candidate.provider === 'gitlab',
@@ -69,6 +70,12 @@ export const useGitlabMrs = ({ workspaceId }: HookParams): Result => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchMrs = useCallback(async () => {
+    if (!isEnabled) {
+      setMrs([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     if (host == null) {
       setMrs([]);
       return;
@@ -82,7 +89,7 @@ export const useGitlabMrs = ({ workspaceId }: HookParams): Result => {
     } finally {
       setLoading(false);
     }
-  }, [host, workspaceId]);
+  }, [host, isEnabled, workspaceId]);
 
   useEffect(() => {
     void fetchMrs();

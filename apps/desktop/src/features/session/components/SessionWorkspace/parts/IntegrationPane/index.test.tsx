@@ -68,6 +68,15 @@ const TASK: SessionExternalTask = {
   url: 'https://linear.app/goodboy/issue/GB-42/refactor-integration-storage',
   createdAt: CREATED_AT,
 };
+const SENTRY_TASK: SessionExternalTask = {
+  sessionId: SESSION_ID,
+  provider: 'sentry',
+  externalId: '12345',
+  identifier: 'GOODBOY-5',
+  title: 'Request failed',
+  url: 'https://sentry.io/organizations/goodboy/issues/12345/',
+  createdAt: CREATED_AT,
+};
 
 beforeEach(() => {
   h.store.sessionExternalTasks = { [SESSION_ID]: [TASK] };
@@ -163,7 +172,7 @@ describe('IntegrationPane', () => {
     h.store.sessionExternalTasks = {};
     h.store.workspaceIntegrations = {};
     const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
+    window.addEventListener('goodboy:open-workspace-settings', listener);
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
@@ -171,6 +180,27 @@ describe('IntegrationPane', () => {
     expect(screen.queryByRole('textbox', { name: 'Linear issue URL' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-settings', listener);
+    expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
+      section: 'integrations',
+    });
+    window.removeEventListener('goodboy:open-workspace-settings', listener);
   });
+
+  it.each([
+    ['linear', TASK, 'Linear detail GB-42'],
+    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
+  ] as const)(
+    'keeps linked %s rows without rendering live detail while disconnected',
+    (provider, task, detailText) => {
+      h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
+      h.store.workspaceIntegrations = {};
+
+      render(
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
+      );
+
+      expect(screen.getByText(task.title)).toBeDefined();
+      expect(screen.queryByText(detailText)).toBeNull();
+    },
+  );
 });

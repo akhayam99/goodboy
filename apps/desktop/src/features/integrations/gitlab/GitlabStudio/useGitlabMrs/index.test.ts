@@ -1,6 +1,26 @@
-import { describe, expect, it } from 'vitest';
-import type { GitlabMergeRequest } from '../../client';
-import { buildGitlabMrGroups, projectPathFromMrUrl } from './index';
+import { cleanup, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { WorkspaceId } from '@goodboy/types';
+import { gitlabFetchAssignedMrs, type GitlabMergeRequest } from '../../client';
+import { buildGitlabMrGroups, projectPathFromMrUrl, useGitlabMrs } from './index';
+
+const h = vi.hoisted(() => ({
+  workspaceIntegrations: {
+    'workspace-1': [{ provider: 'gitlab', config: { host: 'https://gitlab.com' } }],
+  },
+}));
+
+vi.mock('../../client', () => ({
+  gitlabFetchAssignedMrs: vi.fn(),
+}));
+
+vi.mock('../../../../../store', () => ({
+  useAppStore: <T>(
+    selector: (state: { workspaceIntegrations: typeof h.workspaceIntegrations }) => T,
+  ) => selector(h),
+}));
+
+const fetchAssignedMrs = vi.mocked(gitlabFetchAssignedMrs);
 
 type Params = {
   readonly overrides?: Partial<GitlabMergeRequest>;
@@ -22,6 +42,12 @@ const makeMr = ({ overrides = {} }: Params = {}): GitlabMergeRequest => ({
   updatedAt: '2026-07-22T10:00:00Z',
   ...overrides,
 });
+
+beforeEach(() => {
+  fetchAssignedMrs.mockReset();
+});
+
+afterEach(cleanup);
 
 describe('useGitlabMrs helpers', () => {
   it('groups merge requests by project and sorts each group newest first', () => {
@@ -57,5 +83,17 @@ describe('useGitlabMrs helpers', () => {
         mrs: [makeMr({ overrides: { webUrl: 'not a URL' } })],
       })[0]?.label,
     ).toBe('Merge requests');
+  });
+});
+
+describe('useGitlabMrs', () => {
+  it('does not fetch assigned merge requests when disabled', () => {
+    const { result } = renderHook(() =>
+      useGitlabMrs({ workspaceId: 'workspace-1' as WorkspaceId, isEnabled: false }),
+    );
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.groups).toEqual([]);
+    expect(fetchAssignedMrs).not.toHaveBeenCalled();
   });
 });

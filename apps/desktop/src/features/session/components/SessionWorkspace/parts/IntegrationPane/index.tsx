@@ -12,6 +12,7 @@ import { formatError } from '../../../../../../shared/lib/errors';
 import { openUrl } from '../../../../../../shared/lib/editor';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
+import { MissingGithubRemoteEmptyState } from '../../../../../github/components/MissingGithubRemoteEmptyState';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { PaneShell } from '../PaneShell';
 import { LinearTaskDetail } from './LinearTaskDetail';
@@ -122,8 +123,10 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
             </div>
             {error != null ? <p className="text-xs text-danger">{error}</p> : null}
           </form>
+        ) : provider === 'github' ? (
+          <MissingGithubRemoteEmptyState compact />
         ) : (
-          <ConnectIntegrationEmptyState name={meta.label} compact />
+          <ConnectIntegrationEmptyState provider={provider} compact />
         )}
 
         {tasks.length > 0 ? <Divider /> : null}
@@ -163,10 +166,10 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                   Unlink
                 </Button>
               </div>
-              {provider === 'linear' ? (
+              {connection.isConnected && provider === 'linear' ? (
                 <LinearTaskDetail workspaceId={workspaceId} issueId={task.externalId} />
               ) : null}
-              {provider === 'sentry' ? (
+              {connection.isConnected && provider === 'sentry' ? (
                 <SentryTaskDetail workspaceId={workspaceId} task={task} />
               ) : null}
             </div>

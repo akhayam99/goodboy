@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 
@@ -19,21 +19,18 @@ type IssueDetailProps = {
 
 const h = vi.hoisted(() => ({
   refetch: vi.fn(),
+  remoteKind: 'github' as 'github' | null,
+  useGithubIssues: vi.fn(),
 }));
 
 vi.mock('./useGithubInbox', () => ({ useGithubInbox: () => [] }));
 vi.mock('./useGithubIssues', () => ({
-  useGithubIssues: () => ({
-    groups: [{ key: 'open', label: 'Open', rows: [{ issue: ISSUE, sessionId: null }] }],
-    loading: false,
-    error: null,
-    refetch: h.refetch,
-  }),
+  useGithubIssues: h.useGithubIssues,
 }));
 vi.mock('./InboxList', () => ({ InboxList: () => <div>Pull request inbox</div> }));
 vi.mock('./PrDetailPanel', () => ({ PrDetailPanel: () => <div>Pull request detail</div> }));
 vi.mock('../../../worktree/useRemoteHostKind', () => ({
-  useRemoteHostKind: () => 'github',
+  useRemoteHostKind: () => h.remoteKind,
 }));
 vi.mock('./GithubIssueDetailPanel', () => ({
   GithubIssueDetailPanel: ({ issue }: IssueDetailProps) => (
@@ -70,10 +67,21 @@ const renderStudio = () =>
 
 afterEach(() => {
   cleanup();
+  h.remoteKind = 'github';
   h.refetch.mockClear();
+  h.useGithubIssues.mockReset();
 });
 
 describe('GitHubStudio', () => {
+  beforeEach(() => {
+    h.useGithubIssues.mockReturnValue({
+      groups: [{ key: 'open', label: 'Open', rows: [{ issue: ISSUE, sessionId: null }] }],
+      loading: false,
+      error: null,
+      refetch: h.refetch,
+    });
+  });
+
   it('keeps pull requests selected by default', () => {
     renderStudio();
 
@@ -98,5 +106,19 @@ describe('GitHubStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh issues' }));
 
     expect(h.refetch).toHaveBeenCalledOnce();
+  });
+
+  it('renders a neutral disconnected state without a connect action', () => {
+    h.remoteKind = null;
+    renderStudio();
+
+    expect(screen.getByText('No GitHub remote')).toBeDefined();
+    expect(screen.getByText('This workspace does not have a GitHub remote.')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
+    expect(h.useGithubIssues).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      rootPath: '/repo',
+      isEnabled: false,
+    });
   });
 });

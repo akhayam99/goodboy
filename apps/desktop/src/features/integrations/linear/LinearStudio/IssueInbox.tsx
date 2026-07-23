@@ -3,7 +3,7 @@ import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui
 import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { priorityTone } from '../priorityTone';
-import type { LinearGroupKey, LinearIssueGroup } from './useLinearIssues';
+import type { LinearIssueGroup } from './useLinearIssues';
 
 type Props = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;

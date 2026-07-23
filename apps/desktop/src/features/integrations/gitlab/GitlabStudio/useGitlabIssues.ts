@@ -116,7 +116,12 @@ export type UseGitlabIssues = {
   readonly refetch: () => void;
 };
 
-export const useGitlabIssues = (workspaceId: WorkspaceId): UseGitlabIssues => {
+type HookParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly isEnabled?: boolean;
+};
+
+export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): UseGitlabIssues => {
   const sessions = useSessions();
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -131,6 +136,12 @@ export const useGitlabIssues = (workspaceId: WorkspaceId): UseGitlabIssues => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchIssues = useCallback(async () => {
+    if (!isEnabled) {
+      setIssues([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     if (!host) {
       setIssues([]);
       return;
@@ -145,7 +156,7 @@ export const useGitlabIssues = (workspaceId: WorkspaceId): UseGitlabIssues => {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, host]);
+  }, [workspaceId, host, isEnabled]);
 
   useEffect(() => {
     void fetchIssues();

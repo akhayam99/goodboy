@@ -76,7 +76,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   }, [issue]);
 
   useEffect(() => {
-    if (issue == null || detail == null) {
+    if (issue == null || detail == null || detail.issueId !== issue.id) {
       return;
     }
     const regenerated = goalFromSentry(issue, detail);

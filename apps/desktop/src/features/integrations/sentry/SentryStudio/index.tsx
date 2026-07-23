@@ -115,7 +115,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
           </>
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            <ConnectIntegrationEmptyState name="Sentry" />
+            <ConnectIntegrationEmptyState provider="sentry" />
           </div>
         )
       }

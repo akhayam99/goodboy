@@ -8,14 +8,18 @@ type Params = {
   readonly issueId: string | null;
 };
 
+type Detail = SentryIssueDetail & {
+  readonly issueId: string;
+};
+
 type Result = {
-  readonly detail: SentryIssueDetail | null;
+  readonly detail: Detail | null;
   readonly isLoading: boolean;
   readonly error: string | null;
 };
 
 export const useSentryIssueDetail = ({ workspaceId, issueId }: Params): Result => {
-  const [detail, setDetail] = useState<SentryIssueDetail | null>(null);
+  const [detail, setDetail] = useState<Detail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +38,7 @@ export const useSentryIssueDetail = ({ workspaceId, issueId }: Params): Result =
         if (isCancelled) {
           return;
         }
-        setDetail(nextDetail);
+        setDetail({ ...nextDetail, issueId });
       })
       .catch((fetchError: unknown) => {
         if (isCancelled) {
