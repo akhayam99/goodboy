@@ -221,6 +221,14 @@ pub async fn gitlab_fetch_assigned_issues(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMrAuthor {
+    pub username: String,
+    pub name: String,
+    #[serde(rename = "avatarUrl", alias = "avatar_url", default)]
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabMergeRequest {
     pub id: i64,
     pub iid: i64,
@@ -243,6 +251,10 @@ pub struct GitlabMergeRequest {
     pub merge_status: Option<String>,
     #[serde(rename = "updatedAt", alias = "updated_at", default)]
     pub updated_at: String,
+    #[serde(default)]
+    pub author: Option<GitlabMrAuthor>,
+    #[serde(default)]
+    pub reviewers: Option<Vec<GitlabMrAuthor>>,
 }
 
 #[tauri::command]
@@ -256,6 +268,23 @@ pub async fn gitlab_fetch_assigned_mrs(
         &host,
         &token,
         "/merge_requests?scope=assigned_to_me&state=opened&order_by=updated_at&per_page=50",
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_fetch_project_mrs(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabMergeRequest>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    get_json(
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests?state=opened&per_page=100"),
     )
     .await
 }
@@ -401,6 +430,48 @@ mod tests {
         assert!(mr.draft);
         assert_eq!(mr.merge_status.as_deref(), Some("can_be_merged"));
         assert_eq!(mr.updated_at, "2026-07-22T10:00:00Z");
+    }
+
+    #[test]
+    fn merge_request_deserializes_author_and_reviewers() {
+        let raw = r#"{
+            "id": 9,
+            "iid": 2,
+            "project_id": 3,
+            "title": "wip",
+            "description": null,
+            "state": "opened",
+            "web_url": "https://gitlab.com/acme/web/-/merge_requests/2",
+            "source_branch": "ak/feat-x",
+            "target_branch": "main",
+            "author": { "username": "alice", "name": "Alice", "avatar_url": "https://gitlab.com/a.png" },
+            "reviewers": [{ "username": "bob", "name": "Bob" }]
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        let author = mr.author.unwrap();
+        assert_eq!(author.username, "alice");
+        assert_eq!(author.avatar_url.as_deref(), Some("https://gitlab.com/a.png"));
+        let reviewers = mr.reviewers.unwrap();
+        assert_eq!(reviewers[0].username, "bob");
+        assert!(reviewers[0].avatar_url.is_none());
+    }
+
+    #[test]
+    fn merge_request_defaults_missing_author_and_reviewers_to_none() {
+        let raw = r#"{
+            "id": 9,
+            "iid": 2,
+            "project_id": 3,
+            "title": "wip",
+            "description": null,
+            "state": "opened",
+            "web_url": "https://gitlab.com/acme/web/-/merge_requests/2",
+            "source_branch": "ak/feat-x",
+            "target_branch": "main"
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        assert!(mr.author.is_none());
+        assert!(mr.reviewers.is_none());
     }
 
     #[test]
