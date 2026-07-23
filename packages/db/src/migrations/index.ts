@@ -72,6 +72,7 @@ import { m071SessionExternalTaskMultipleLinks } from './m071-session-external-ta
 import { m072TaskModels } from './m072-task-models';
 import { m073SessionExternalTaskGithubProvider } from './m073-session-external-task-github-provider';
 import { m074NotificationAction } from './m074-notification-action';
+import { m075PrReviewDrafts } from './m075-pr-review-drafts';
 
 export type Migration = {
   readonly version: number;
@@ -153,4 +154,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 72, sql: m072TaskModels },
   { version: 73, sql: m073SessionExternalTaskGithubProvider },
   { version: 74, sql: m074NotificationAction },
+  { version: 75, sql: m075PrReviewDrafts },
 ];

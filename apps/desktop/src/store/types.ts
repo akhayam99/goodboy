@@ -21,6 +21,7 @@ import type {
   PlanId,
   PlanWithCount,
   PrDetail,
+  PrReviewDraft,
   ProviderCredential,
   ProviderId,
   ProviderRunId,
@@ -218,6 +219,7 @@ export type AppState = UpdaterState & {
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
   readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
+  readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
   readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;

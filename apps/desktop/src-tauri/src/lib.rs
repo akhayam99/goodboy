@@ -241,6 +241,9 @@ pub fn run() {
       gitlab::gitlab_create_mr,
       gitlab::gitlab_merge_mr,
       gitlab::gitlab_mr_diff,
+      gitlab::gitlab_mr_diff_refs,
+      gitlab::gitlab_create_mr_discussion,
+      gitlab::gitlab_create_mr_note,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

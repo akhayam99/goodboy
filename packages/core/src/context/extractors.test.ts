@@ -11,6 +11,7 @@ import {
   extractHandoff,
   extractMarkers,
   extractPlanFromMarker,
+  extractReviewComments,
   extractScoutSplit,
   extractStepDone,
   isOpenQuestionAnswerText,
@@ -425,6 +426,55 @@ describe('assessPlanReadiness', () => {
   it('does not count open-question phrases that appear inside the plan body', () => {
     const text = `<<plan>>${body}\n\nshould i clarify before step 2?<</plan>>`;
     expect(assessPlanReadiness({ planBody: body, assistantText: text }).ready).toBe(true);
+  });
+});
+
+describe('extractReviewComments', () => {
+  it('parses multiple markers in order', () => {
+    const text =
+      'first finding\n<<review-comment path="src/a.ts" line="10" body="guard the null case">>\nsecond\n<<review-comment path="src/b.ts" line="3" start_line="1" side="old" body="dead branch">>';
+    expect(extractReviewComments(text)).toEqual([
+      { path: 'src/a.ts', line: 10, startLine: null, side: 'new', body: 'guard the null case' },
+      { path: 'src/b.ts', line: 3, startLine: 1, side: 'old', body: 'dead branch' },
+    ]);
+  });
+
+  it('defaults the side to new', () => {
+    const [comment] = extractReviewComments(
+      '<<review-comment path="a.ts" line="1" body="rename this">>',
+    );
+    expect(comment?.side).toBe('new');
+  });
+
+  it('skips markers with missing or invalid attributes', () => {
+    expect(
+      extractReviewComments('<<review-comment path="a.ts" body="no line attribute">>'),
+    ).toEqual([]);
+    expect(extractReviewComments('<<review-comment path="a.ts" line="0" body="zero">>')).toEqual(
+      [],
+    );
+    expect(
+      extractReviewComments('<<review-comment path="a.ts" line="ten" body="not a number">>'),
+    ).toEqual([]);
+    expect(
+      extractReviewComments('<<review-comment path="a.ts" line="2" side="left" body="bad side">>'),
+    ).toEqual([]);
+    expect(
+      extractReviewComments('<<review-comment path="a.ts" line="2" reviewer="x" body="extra">>'),
+    ).toEqual([]);
+  });
+
+  it('skips markers whose body contains double quotes but keeps the rest', () => {
+    const text =
+      '<<review-comment path="a.ts" line="2" body="replace the "unsafe" cast">>\n<<review-comment path="b.ts" line="4" body="valid finding">>';
+    expect(extractReviewComments(text)).toEqual([
+      { path: 'b.ts', line: 4, startLine: null, side: 'new', body: 'valid finding' },
+    ]);
+  });
+
+  it('is stripped from visible text', () => {
+    const text = 'done\n<<review-comment path="a.ts" line="2" body="tighten this">>\nnext';
+    expect(stripControlMarkers(text)).toBe('done\n\nnext');
   });
 });
 

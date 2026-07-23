@@ -3,6 +3,7 @@ import {
   extractCommentResolved,
   extractCommentWontfix,
   extractPlanFromMarker,
+  extractReviewComments,
   extractScoutSplit,
   fallbackStepOutputSummary,
 } from '@goodboy/core';
@@ -70,6 +71,14 @@ export const completeResolvedAgent = async ({
     sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
   }));
   void get().refreshUnreadWorkspaces();
+
+  if (ranKind === 'pr-reviewer') {
+    const reviewComments = extractReviewComments(assistantText);
+    if (reviewComments.length > 0) {
+      await get().queueAgentReviewComments(sessionId, resolvedAgentId, reviewComments);
+    }
+    return null;
+  }
 
   if (ranKind !== 'resolver') {
     return null;
