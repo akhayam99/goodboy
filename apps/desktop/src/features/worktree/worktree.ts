@@ -14,6 +14,7 @@ export type CreateWorktreeArgs = {
   readonly slug: string;
   readonly parentDir?: string;
   readonly existingBranch?: string;
+  readonly fallbackRef?: string;
   readonly baseBranch?: string;
   readonly dirName?: string;
 };

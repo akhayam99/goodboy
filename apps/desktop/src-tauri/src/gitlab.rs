@@ -343,6 +343,68 @@ pub async fn gitlab_create_mr(
     .await
 }
 
+#[derive(Debug, Deserialize)]
+pub struct GitlabMrChange {
+    pub old_path: String,
+    pub new_path: String,
+    #[serde(default)]
+    pub diff: String,
+    #[serde(default)]
+    pub new_file: bool,
+    #[serde(default)]
+    pub deleted_file: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GitlabMrChanges {
+    #[serde(default)]
+    pub changes: Vec<GitlabMrChange>,
+}
+
+fn assemble_mr_diff(changes: &[GitlabMrChange]) -> String {
+    let mut out = String::new();
+    for change in changes {
+        out.push_str(&format!(
+            "diff --git a/{} b/{}\n",
+            change.old_path, change.new_path
+        ));
+        if change.new_file {
+            out.push_str("--- /dev/null\n");
+        } else {
+            out.push_str(&format!("--- a/{}\n", change.old_path));
+        }
+        if change.deleted_file {
+            out.push_str("+++ /dev/null\n");
+        } else {
+            out.push_str(&format!("+++ b/{}\n", change.new_path));
+        }
+        out.push_str(&change.diff);
+        if !change.diff.is_empty() && !change.diff.ends_with('\n') {
+            out.push('\n');
+        }
+    }
+    out
+}
+
+#[tauri::command]
+pub async fn gitlab_mr_diff(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<String, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let payload: GitlabMrChanges = get_json(
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/changes"),
+    )
+    .await?;
+    Ok(assemble_mr_diff(&payload.changes))
+}
+
 #[tauri::command]
 pub async fn gitlab_merge_mr(
     workspace_id: String,
@@ -472,6 +534,42 @@ mod tests {
         let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
         assert!(mr.author.is_none());
         assert!(mr.reviewers.is_none());
+    }
+
+    #[test]
+    fn assemble_mr_diff_emits_git_headers_per_change() {
+        let changes = vec![
+            GitlabMrChange {
+                old_path: "src/a.ts".into(),
+                new_path: "src/a.ts".into(),
+                diff: "@@ -1 +1 @@\n-old\n+new\n".into(),
+                new_file: false,
+                deleted_file: false,
+            },
+            GitlabMrChange {
+                old_path: "src/b.ts".into(),
+                new_path: "src/b.ts".into(),
+                diff: "@@ -0,0 +1 @@\n+created".into(),
+                new_file: true,
+                deleted_file: false,
+            },
+            GitlabMrChange {
+                old_path: "src/c.ts".into(),
+                new_path: "src/c.ts".into(),
+                diff: "@@ -1 +0,0 @@\n-gone\n".into(),
+                new_file: false,
+                deleted_file: true,
+            },
+        ];
+        let out = assemble_mr_diff(&changes);
+        assert!(out.contains("diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new\n"));
+        assert!(out.contains("diff --git a/src/b.ts b/src/b.ts\n--- /dev/null\n+++ b/src/b.ts\n@@ -0,0 +1 @@\n+created\n"));
+        assert!(out.contains("diff --git a/src/c.ts b/src/c.ts\n--- a/src/c.ts\n+++ /dev/null\n@@ -1 +0,0 @@\n-gone\n"));
+    }
+
+    #[test]
+    fn assemble_mr_diff_returns_empty_for_no_changes() {
+        assert_eq!(assemble_mr_diff(&[]), "");
     }
 
     #[test]

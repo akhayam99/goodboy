@@ -140,6 +140,20 @@ export const gitlabCreateMr = async (args: {
   return invoke<GitlabMergeRequest>('gitlab_create_mr', args);
 };
 
+export const gitlabMrDiff = async (
+  workspaceId: WorkspaceId,
+  host: string,
+  projectPath: string,
+  mrIid: number,
+): Promise<string> => {
+  return invoke<string>('gitlab_mr_diff', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
 export const gitlabMergeMr = async (
   workspaceId: WorkspaceId,
   host: string,

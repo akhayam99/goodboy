@@ -240,6 +240,7 @@ pub fn run() {
       gitlab::gitlab_mr_for_branch,
       gitlab::gitlab_create_mr,
       gitlab::gitlab_merge_mr,
+      gitlab::gitlab_mr_diff,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
