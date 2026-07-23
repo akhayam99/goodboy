@@ -144,6 +144,75 @@ function parseAlign(divider: string): ReadonlyArray<CellAlign> {
   });
 }
 
+const isTagNameStart = (ch: string | undefined): boolean =>
+  ch !== undefined && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'));
+
+const stripHtml = (input: string): string => {
+  let out = '';
+  let i = 0;
+  let inFence = false;
+  const n = input.length;
+
+  while (i < n) {
+    const atLineStart = i === 0 || input[i - 1] === '\n';
+    if (atLineStart && input.startsWith('```', i)) {
+      const lineEnd = input.indexOf('\n', i);
+      const end = lineEnd === -1 ? n : lineEnd;
+      out += input.slice(i, end);
+      i = end;
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      out += input[i];
+      i++;
+      continue;
+    }
+
+    const ch = input[i];
+
+    if (ch === '`') {
+      const end = input.indexOf('`', i + 1);
+      if (end !== -1) {
+        out += input.slice(i, end + 1);
+        i = end + 1;
+        continue;
+      }
+    }
+
+    if (ch === '<' && input.startsWith('<!--', i)) {
+      const end = input.indexOf('-->', i + 4);
+      if (end !== -1) {
+        i = end + 3;
+        continue;
+      }
+    }
+
+    if (ch === '<' && input[i + 1] === '<') {
+      out += '<<';
+      i += 2;
+      continue;
+    }
+
+    if (ch === '<') {
+      const slashed = input[i + 1] === '/';
+      const nameStart = slashed ? input[i + 2] : input[i + 1];
+      if (isTagNameStart(nameStart)) {
+        const end = input.indexOf('>', i + 1);
+        if (end !== -1) {
+          i = end + 1;
+          continue;
+        }
+      }
+    }
+
+    out += ch;
+    i++;
+  }
+
+  return out.replace(/&nbsp;/g, ' ');
+};
+
 function parseBlocks(input: string): ReadonlyArray<Block> {
   const lines = input.replace(/\r\n/g, '\n').split('\n');
   const blocks: Block[] = [];
@@ -633,7 +702,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
 }
 
 export const Markdown = ({ text, className }: MarkdownProps) => {
-  const blocks = parseBlocks(text);
+  const blocks = parseBlocks(stripHtml(text));
   return (
     <div className={cn('flex flex-col gap-2 text-sm text-foreground/85', className)}>
       {blocks.map(renderBlock)}
