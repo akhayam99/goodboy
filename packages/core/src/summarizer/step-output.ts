@@ -1,4 +1,4 @@
-import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
+import { getDefaultBinary } from '../providers/cli-defaults';
 import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
 
 const MAX_SUMMARY_LENGTH = 1200;
@@ -24,6 +24,10 @@ type Params = {
   readonly output: string;
 };
 
+type SummarizeParams = Params & {
+  readonly model: string;
+};
+
 type FallbackDetection = {
   readonly summary: string;
 };
@@ -39,11 +43,12 @@ export const summarizeStepOutput = async ({
   binary,
   invokeFn,
   output,
-}: Params & SummarizerDeps): Promise<string> => {
+  model,
+}: SummarizeParams & SummarizerDeps): Promise<string> => {
   const result = await invokeFn<OneShotResult>('summarize_session', {
     args: {
       providerId,
-      model: getCheapModel(providerId),
+      model,
       binary: binary ?? getDefaultBinary(providerId),
       userMessage: output,
       systemPrompt: STEP_OUTPUT_SYSTEM_PROMPT,

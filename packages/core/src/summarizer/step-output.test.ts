@@ -20,7 +20,12 @@ describe('summarizeStepOutput', () => {
       return { stdout: 'Implemented auth flow.\n- `src/auth.ts`', stderr: '', exitCode: 0 } as T;
     };
 
-    const result = await summarizeStepOutput({ providerId: 'cursor', invokeFn, output: 'raw' });
+    const result = await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'composer-2-fast',
+      invokeFn,
+      output: 'raw',
+    });
     const args = request?.['args'];
     const systemPrompt =
       typeof args === 'object' && args !== null && 'systemPrompt' in args
@@ -43,7 +48,12 @@ describe('summarizeStepOutput', () => {
     };
 
     await expect(
-      summarizeStepOutput({ providerId: 'anthropic', invokeFn, output: 'raw review' }),
+      summarizeStepOutput({
+        providerId: 'anthropic',
+        model: 'claude-haiku-4-5',
+        invokeFn,
+        output: 'raw review',
+      }),
     ).resolves.toBe('Review passed.\n- No blockers');
   });
 
@@ -53,7 +63,12 @@ describe('summarizeStepOutput', () => {
     };
 
     await expect(
-      summarizeStepOutput({ providerId: 'cursor', invokeFn, output: 'raw' }),
+      summarizeStepOutput({
+        providerId: 'cursor',
+        model: 'composer-2-fast',
+        invokeFn,
+        output: 'raw',
+      }),
     ).rejects.toBeInstanceOf(SummarizerParseError);
   });
 });

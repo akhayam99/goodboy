@@ -112,11 +112,14 @@ export type {
   Workflow,
 } from './workflow';
 export type {
+  AuxTaskId,
   GlobalSettings,
   OverrideSettings,
   ProviderBindings,
   ResolvedSettings,
   SettingsScope,
+  TaskModelPreference,
+  TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
 export type { BranchCommit, DiffView, WorktreeDiffScope, WorktreeStatus } from './worktree';

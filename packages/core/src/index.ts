@@ -94,6 +94,10 @@ export {
 
 export { resolveModelForProvider } from './providers/model-map';
 
+export { resolveTaskModel } from './providers/task-models';
+
+export { getDefaultBinary } from './providers/cli-defaults';
+
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
