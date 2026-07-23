@@ -103,6 +103,7 @@ vi.mock('../ModelSelect', () => ({
   ),
 }));
 
+import { PlannerClient } from '@goodboy/core';
 import { WorkflowBuilderView } from './index';
 
 const session: Session = {
@@ -673,5 +674,69 @@ describe('WorkflowBuilderView (no-presets empty state)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^preset$/i }));
     fireEvent.click(screen.getByRole('button', { name: /describe your own/i }));
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
+  });
+});
+
+describe('WorkflowBuilderView (planner model picker)', () => {
+  it('default shows the resolved model name as recommended (not cheap-tier string)', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    const modelBtn = screen.getByRole('button', { name: /^model:auto$/i });
+    expect(modelBtn.dataset['recommendedModel']).toBe('claude-haiku-4-5');
+    expect(screen.queryByText(/cheap-tier/i)).toBeNull();
+  });
+
+  it('PlannerClient receives resolved model when Auto is selected', async () => {
+    mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'do something' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByText('Ready'));
+
+    expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
+      expect.objectContaining({ providerId: 'anthropic', model: 'claude-haiku-4-5' }),
+    );
+  });
+
+  it('picking a concrete provider+model makes PlannerClient receive it', async () => {
+    mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+
+    const plannerProviderBtn = screen.getByRole('button', { name: /^provider:default$/i });
+    fireEvent.click(plannerProviderBtn);
+
+    const plannerModelBtn = screen.getByRole('button', { name: /^model:auto$/i });
+    fireEvent.click(plannerModelBtn);
+
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'do something' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByText('Ready'));
+
+    expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
+      expect.objectContaining({ providerId: 'cursor', model: 'claude-opus-4-6' }),
+    );
+  });
+
+  it('planner model picker does not write workspace overrides', async () => {
+    mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+
+    const plannerProviderBtn = screen.getByRole('button', { name: /^provider:default$/i });
+    fireEvent.click(plannerProviderBtn);
+
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'do something' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByText('Ready'));
+
+    expect(storeState.workspaceOverrides).toEqual({});
   });
 });

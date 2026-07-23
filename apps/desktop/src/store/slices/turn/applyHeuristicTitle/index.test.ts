@@ -33,7 +33,8 @@ type HarnessParams = {
 const createHarness = ({
   agentName = 'agent 1',
   titleUserEdited = false,
-}: HarnessParams = {}): Harness => {
+  agentOrdinal = 0,
+}: HarnessParams & { agentOrdinal?: number } = {}): Harness => {
   const session = {
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
@@ -44,7 +45,7 @@ const createHarness = ({
   const agent = {
     id: AGENT_ID,
     sessionId: SESSION_ID,
-    ordinal: 0,
+    ordinal: agentOrdinal,
     name: agentName,
     status: 'pending',
   } satisfies Agent;
@@ -174,6 +175,75 @@ describe('applyHeuristicTitle', () => {
       expect.objectContaining({ sessionId: SESSION_ID }),
     );
     expect(emitNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('null-heuristic prompt: AI title replaces placeholder agent name', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: JSON.stringify({ result: 'Fix login crash' }),
+      stderr: '',
+      exitCode: 0,
+    });
+    const harness = createHarness({ agentName: 'agent 2', agentOrdinal: 1 });
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'fix it',
+    });
+
+    expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('Fix login crash');
+    expect(harness.read().sessions[0]?.goal).toBe('original goal');
+    expect(invokeMock).toHaveBeenCalledOnce();
+  });
+
+  it('null-heuristic prompt + AI failure: leaves agent N and emits info notification', async () => {
+    invokeMock.mockRejectedValue(new Error('model offline'));
+    const emitNotification = vi.fn(async () => undefined);
+    const harness = createHarness({ agentName: 'agent 2', agentOrdinal: 1 });
+    const baseGet = harness.get;
+    const get = () => ({ ...baseGet(), emitNotification }) as ReturnType<typeof harness.get>;
+
+    await applyHeuristicTitle({
+      set: harness.set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'fix it',
+    });
+
+    expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('agent 2');
+    expect(emitNotification).toHaveBeenCalledWith(
+      'title-generation',
+      'info',
+      'agent title generation failed',
+      expect.stringContaining('model offline'),
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
+  });
+
+  it('non-founding agent gets AI name but session goal is untouched', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: JSON.stringify({ result: 'Refactor auth module' }),
+      stderr: '',
+      exitCode: 0,
+    });
+    const harness = createHarness({
+      agentName: 'agent 3',
+      agentOrdinal: 2,
+      titleUserEdited: false,
+    });
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Refactor the auth module to use tokens',
+    });
+
+    expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('Refactor auth module');
+    expect(harness.read().sessions[0]?.goal).toBe('original goal');
+    expect(renameSessionMock).not.toHaveBeenCalled();
   });
 
   it('skips rename when the agent name is not a placeholder', async () => {

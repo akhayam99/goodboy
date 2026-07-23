@@ -91,9 +91,6 @@ export const applyHeuristicTitle = async ({
 }: Params): Promise<void> => {
   try {
     const heuristicTitle = heuristicAgentTitle(prompt);
-    if (heuristicTitle == null) {
-      return;
-    }
 
     const session = get().sessions.find((candidate) => candidate.id === sessionId);
     if (session == null) {
@@ -108,17 +105,20 @@ export const applyHeuristicTitle = async ({
     const canRenameSession = isFoundingAgent && !session.titleUserEdited;
     const titleNow = new Date().toISOString() as IsoDateTime;
 
-    if (canRenameSession) {
-      set((state) => ({
-        sessions: state.sessions.map((candidate) =>
-          candidate.id === sessionId ? { ...candidate, goal: heuristicTitle } : candidate,
-        ),
-      }));
-      await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+    if (heuristicTitle != null) {
+      if (canRenameSession) {
+        set((state) => ({
+          sessions: state.sessions.map((candidate) =>
+            candidate.id === sessionId ? { ...candidate, goal: heuristicTitle } : candidate,
+          ),
+        }));
+        await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+      }
+      if (canRenameAgent) {
+        await get().renameAgent(sessionId, agentId, heuristicTitle);
+      }
     }
-    if (canRenameAgent) {
-      await get().renameAgent(sessionId, agentId, heuristicTitle);
-    }
+
     if (!canRenameSession && !canRenameAgent) {
       return;
     }
@@ -152,14 +152,22 @@ export const applyHeuristicTitle = async ({
     const currentAgent = (get().sessionPhaseRuns[sessionId] ?? []).find(
       (candidate) => candidate.id === agentId,
     );
-    const shouldRenameSession =
+    const placeholderOrHeuristic = heuristicTitle ?? /^(agent|puppy) \d+$/i;
+    const sessionMatchesPlaceholder =
       canRenameSession &&
       currentSession?.titleUserEdited === false &&
-      currentSession.goal === heuristicTitle;
-    const shouldRenameAgent = canRenameAgent && currentAgent?.name === heuristicTitle;
+      (heuristicTitle != null
+        ? currentSession.goal === heuristicTitle
+        : placeholderOrHeuristic instanceof RegExp &&
+          placeholderOrHeuristic.test(currentSession?.goal ?? ''));
+    const agentMatchesPlaceholder =
+      canRenameAgent &&
+      (heuristicTitle != null
+        ? currentAgent?.name === heuristicTitle
+        : currentAgent?.name != null && /^(agent|puppy) \d+$/i.test(currentAgent.name));
     const generatedAt = new Date().toISOString() as IsoDateTime;
 
-    if (shouldRenameSession) {
+    if (sessionMatchesPlaceholder) {
       set((state) => ({
         sessions: state.sessions.map((candidate) =>
           candidate.id === sessionId ? { ...candidate, goal: generatedTitle } : candidate,
@@ -167,7 +175,7 @@ export const applyHeuristicTitle = async ({
       }));
       await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
     }
-    if (shouldRenameAgent) {
+    if (agentMatchesPlaceholder) {
       await get().renameAgent(sessionId, agentId, generatedTitle);
     }
   } catch {}

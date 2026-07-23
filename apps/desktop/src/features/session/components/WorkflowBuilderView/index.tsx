@@ -53,6 +53,8 @@ import type {
 import { ROLE_LABEL, ROLE_TO_KIND, inferAgentKindFromName, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
+import { ProviderSelect } from '../ProviderSelect';
+import { ModelSelect } from '../ModelSelect';
 import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
@@ -214,6 +216,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>(() => initialStage(initialDraft));
+  const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
+  const [plannerModelOverride, setPlannerModelOverride] = useState('');
 
   const providerId =
     providers.find((p) => p.id === session.providerOverride)?.id ??
@@ -223,6 +227,22 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     const connected = providers.filter((p) => p.connection === 'connected').map((p) => p.id);
     return connected.length > 0 ? connected : [providerId];
   }, [providers, providerId]);
+
+  const resolvedPlanTaskModel = useMemo(
+    () => resolveTaskModel('plan_generation', workspaceOverrides?.taskModels, providerId),
+    [workspaceOverrides, providerId],
+  );
+
+  const plannerEffectiveProviderId: ProviderId =
+    plannerProviderOverride !== '' ? plannerProviderOverride : resolvedPlanTaskModel.providerId;
+
+  const plannerRecommendedModel = useMemo(
+    () =>
+      plannerProviderOverride !== ''
+        ? resolveTaskModel('plan_generation', null, plannerProviderOverride).model
+        : resolvedPlanTaskModel.model,
+    [plannerProviderOverride, resolvedPlanTaskModel],
+  );
 
   const basePreset = useMemo(
     () => (basePresetId ? (presets.find((t) => t.id === basePresetId) ?? null) : null),
@@ -493,11 +513,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setBasePresetId(null);
     setPlanning(true);
     try {
-      const taskModel = resolveTaskModel(
-        'plan_generation',
-        workspaceOverrides?.taskModels,
-        providerId,
-      );
+      const effectiveModel =
+        plannerModelOverride !== '' ? plannerModelOverride : plannerRecommendedModel;
+      const taskModel = { providerId: plannerEffectiveProviderId, model: effectiveModel };
       const client = new PlannerClient({ ...taskModel, invokeFn: invoke });
       const result = await client.plan({ process });
       setPlan(result.output);
@@ -923,10 +941,29 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-end px-1">
-                          <span className="text-2xs text-muted-foreground/60">
-                            cheap-tier · {providerId}
-                          </span>
+                        <div className="flex justify-end gap-2 px-1">
+                          <div className="w-28">
+                            <ProviderSelect
+                              value={plannerProviderOverride}
+                              providers={candidateProviders}
+                              onChange={(v) => {
+                                setPlannerProviderOverride(v as ProviderId | '');
+                                setPlannerModelOverride('');
+                              }}
+                              disabled={blocked}
+                              recommended={resolvedPlanTaskModel.providerId}
+                            />
+                          </div>
+                          <div className="w-36">
+                            <ModelSelect
+                              provider={plannerEffectiveProviderId}
+                              value={plannerModelOverride}
+                              onChange={setPlannerModelOverride}
+                              disabled={blocked}
+                              allowAuto
+                              recommendedModel={plannerRecommendedModel}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
