@@ -77,7 +77,9 @@ beforeEach(() => {
   hooks.planCount = 0;
   hooks.questionCount = 0;
   store.sessionExternalTasks = {};
-  store.workspaceIntegrations = {};
+  store.workspaceIntegrations = {
+    'workspace-1': [{ provider: 'linear' }, { provider: 'sentry' }],
+  };
   store.sessionLoading['session-1'] = { agents: false, plans: false };
   store.sessionOpenQuestions = { 'session-1': [] };
 });
@@ -227,7 +229,7 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'Questions' }).textContent).not.toContain('2');
   });
 
-  it('shows provider counts and hides GitLab issues on a GitLab remote', () => {
+  it('shows provider counts and keeps connected GitLab issues reachable', () => {
     store.workspaceIntegrations = {
       'workspace-1': [{ provider: 'gitlab' }],
     };
@@ -266,6 +268,26 @@ describe('LensColumn', () => {
     );
 
     expect(screen.getByRole('button', { name: 'GitLab' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'GitLab issues 1' })).toBeDefined();
+  });
+
+  it('hides disconnected integration rows without linked tasks', () => {
+    remote.kind = 'other';
+    store.workspaceIntegrations = {};
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Linear' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sentry' })).toBeNull();
     expect(screen.queryByRole('button', { name: /GitLab issues/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'GitHub' })).toBeNull();
   });
 });

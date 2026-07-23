@@ -3,6 +3,9 @@ import { cn, Divider } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
+import { resolveIntegrationConnection } from '../../connection';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
 import { MrDetailPanel } from './MrDetailPanel';
@@ -27,6 +30,15 @@ type Props = {
 };
 
 export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClose }: Props) => {
+  const integrations = useAppStore(
+    (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
+  );
+  const isConnected = resolveIntegrationConnection({
+    provider: 'gitlab',
+    integrations,
+    remoteKind: null,
+    externalTasks: EMPTY_ARRAY,
+  }).isConnected;
   const { groups, loading, error, refetch } = useGitlabIssues(workspaceId);
   const mergeRequests = useGitlabMrs({ workspaceId });
   const [focused, setFocused] = useState<GitlabIssue | null>(null);
@@ -88,28 +100,34 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       workspaceName={workspaceName}
       closeLabel="close gitlab studio"
       headerAccessory={
-        <div className="flex items-center gap-2">
-          <StudioTabs ariaLabel="GitLab work" tabs={TABS} value={tab} onChange={setTab} />
-          <button
-            type="button"
-            onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
-            disabled={tab === 'issues' ? loading : mergeRequests.loading}
-            title={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-            aria-label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-            className={cn(
-              'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-              'text-muted-foreground transition-colors',
-              'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-            )}
-          >
-            <RefreshCw size={13} aria-hidden />
-          </button>
-        </div>
+        isConnected ? (
+          <div className="flex items-center gap-2">
+            <StudioTabs ariaLabel="GitLab work" tabs={TABS} value={tab} onChange={setTab} />
+            <button
+              type="button"
+              onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
+              disabled={tab === 'issues' ? loading : mergeRequests.loading}
+              title={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
+              aria-label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
+              className={cn(
+                'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
+                'text-muted-foreground transition-colors',
+                'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
+              )}
+            >
+              <RefreshCw size={13} aria-hidden />
+            </button>
+          </div>
+        ) : null
       }
       onClose={onClose}
     >
       {(requestClose) =>
-        tab === 'issues' ? (
+        !isConnected ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <ConnectIntegrationEmptyState name="GitLab" />
+          </div>
+        ) : tab === 'issues' ? (
           <>
             <div className="w-72 shrink-0">
               <IssueInbox

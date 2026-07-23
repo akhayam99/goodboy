@@ -28,6 +28,7 @@ type BranchParams = {
 type HookParams = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
+  readonly isEnabled?: boolean;
 };
 
 type Result = Readonly<{
@@ -61,13 +62,23 @@ export const buildGithubIssueGroups = ({
   return rows.length === 0 ? [] : [{ key: 'open', label: 'Open', rows }];
 };
 
-export const useGithubIssues = ({ workspaceId, rootPath }: HookParams): Result => {
+export const useGithubIssues = ({
+  workspaceId,
+  rootPath,
+  isEnabled = true,
+}: HookParams): Result => {
   const externalTasks = useAppStore((state) => state.sessionExternalTasks);
   const [issues, setIssues] = useState<ReadonlyArray<GithubIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchIssues = useCallback(async () => {
+    if (!isEnabled) {
+      setIssues([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -82,7 +93,7 @@ export const useGithubIssues = ({ workspaceId, rootPath }: HookParams): Result =
     } finally {
       setLoading(false);
     }
-  }, [rootPath, workspaceId]);
+  }, [isEnabled, rootPath, workspaceId]);
 
   useEffect(() => {
     void fetchIssues();

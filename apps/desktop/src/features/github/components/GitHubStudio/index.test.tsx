@@ -32,6 +32,9 @@ vi.mock('./useGithubIssues', () => ({
 }));
 vi.mock('./InboxList', () => ({ InboxList: () => <div>Pull request inbox</div> }));
 vi.mock('./PrDetailPanel', () => ({ PrDetailPanel: () => <div>Pull request detail</div> }));
+vi.mock('../../../worktree/useRemoteHostKind', () => ({
+  useRemoteHostKind: () => 'github',
+}));
 vi.mock('./GithubIssueDetailPanel', () => ({
   GithubIssueDetailPanel: ({ issue }: IssueDetailProps) => (
     <div>{issue?.title ?? 'No issue detail'}</div>

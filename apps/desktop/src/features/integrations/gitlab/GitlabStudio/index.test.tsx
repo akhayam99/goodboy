@@ -34,6 +34,15 @@ vi.mock('./useGitlabMrs', () => ({
 vi.mock('./IssueInbox', () => ({ IssueInbox: () => <div>Issue inbox</div> }));
 vi.mock('./IssueDetailPanel', () => ({ IssueDetailPanel: () => <div>Issue detail</div> }));
 vi.mock('./MrDetailPanel', () => ({ MrDetailPanel: () => <div>Merge request detail</div> }));
+vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
+  useAppStore: <T,>(
+    selector: (state: { workspaceIntegrations: Record<string, Array<{ provider: string }>> }) => T,
+  ) =>
+    selector({
+      workspaceIntegrations: { 'workspace-1': [{ provider: 'gitlab' }] },
+    }),
+}));
 vi.mock('../../../../shared/components/StudioShell', () => ({
   StudioShell: ({
     headerAccessory,
