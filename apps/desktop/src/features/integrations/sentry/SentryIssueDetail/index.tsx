@@ -1,8 +1,10 @@
-import { SectionHeader, Skeleton, cn } from '@goodboy/ui';
+import { SectionHeader, cn } from '@goodboy/ui';
 import { ExternalLink, Layers } from 'lucide-react';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssueDetail as Detail } from '../client';
 import { levelTone } from '../levelTone';
+import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
+import { SentryStackTrace } from '../SentryStackTrace';
+import { visibleSentryTags } from '../visibleSentryTags';
 
 type Props = {
   readonly identifier: string;
@@ -15,8 +17,6 @@ type Props = {
   readonly error: string | null;
 };
 
-const VISIBLE_TAGS = new Set(['release', 'environment']);
-
 export const SentryIssueDetail = ({
   identifier,
   title,
@@ -27,7 +27,7 @@ export const SentryIssueDetail = ({
   isLoading,
   error,
 }: Props) => {
-  const visibleTags = detail?.tags?.filter((tag) => VISIBLE_TAGS.has(tag.key)) ?? [];
+  const visibleTags = visibleSentryTags({ detail });
   const frames = detail?.frames ?? [];
   const breadcrumbs = detail?.breadcrumbs ?? [];
 
@@ -85,64 +85,10 @@ export const SentryIssueDetail = ({
           label="stack trace"
           icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
         />
-        {isLoading ? (
-          <div
-            role="status"
-            aria-label="Loading latest event"
-            className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3"
-          >
-            {['w-3/4', 'w-1/2', 'w-2/3', 'w-5/6', 'w-2/5', 'w-3/5'].map((width) => (
-              <Skeleton key={width} className={cn('h-2.5 rounded', width)} />
-            ))}
-          </div>
-        ) : error != null ? (
-          <p className="text-sm text-danger">{error}</p>
-        ) : frames.length > 0 ? (
-          <pre className="overflow-x-auto rounded-lg border border-border-soft bg-subtle/40 p-3 font-mono text-2xs leading-relaxed text-muted-foreground">
-            {frames
-              .map(
-                (frame) =>
-                  `${frame.in_app ? '› ' : '  '}${frame.function ?? '?'} (${frame.filename ?? '?'}${
-                    frame.line_no != null ? `:${frame.line_no}` : ''
-                  })`,
-              )
-              .join('\n')}
-          </pre>
-        ) : (
-          <p className="text-sm italic text-muted-foreground/60">No stack trace available.</p>
-        )}
+        <SentryStackTrace frames={frames} isLoading={isLoading} error={error} />
       </section>
 
-      {!isLoading && error == null && breadcrumbs.length > 0 ? (
-        <details className="rounded-lg border border-border-soft bg-muted/10">
-          <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-foreground">
-            Breadcrumbs ({breadcrumbs.length})
-          </summary>
-          <div className="flex flex-col gap-2 px-3 pb-3">
-            {breadcrumbs.map((breadcrumb, index) => {
-              const relativeDate =
-                breadcrumb.timestamp == null ? '' : formatRelativeDuration(breadcrumb.timestamp);
-              return (
-                <div
-                  key={`${breadcrumb.timestamp ?? 'breadcrumb'}-${index}`}
-                  className="flex flex-col gap-1 rounded-md bg-muted/30 p-2"
-                >
-                  <div className="flex items-center gap-2 text-2xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {breadcrumb.category ?? 'event'}
-                    </span>
-                    {breadcrumb.level != null ? <span>{breadcrumb.level}</span> : null}
-                    {relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
-                  </div>
-                  {breadcrumb.message != null ? (
-                    <span className="text-xs text-muted-foreground">{breadcrumb.message}</span>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </details>
-      ) : null}
+      <SentryBreadcrumbs breadcrumbs={breadcrumbs} isLoading={isLoading} error={error} />
     </article>
   );
 };

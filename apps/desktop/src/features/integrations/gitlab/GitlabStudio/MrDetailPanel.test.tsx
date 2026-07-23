@@ -188,6 +188,22 @@ describe('MrDetailPanel', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('surfaces branches and the last update in the metadata rail', () => {
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Source branch')).toBeDefined();
+    expect(screen.getByText('Target branch')).toBeDefined();
+    expect(screen.getByText('Updated')).toBeDefined();
+    expect(screen.getByText('No description.')).toBeDefined();
+  });
+
   it('disables merge when GitLab reports cannot_be_merged', () => {
     render(
       <MrDetailPanel

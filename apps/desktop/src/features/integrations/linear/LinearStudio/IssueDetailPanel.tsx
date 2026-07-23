@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Button, EmptyState, Input, SectionHeader, StatusDot, Textarea, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  EmptyState,
+  Input,
+  Markdown,
+  SectionHeader,
+  StatusDot,
+  Textarea,
+  cn,
+} from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
+  ExternalLink,
   GitBranch,
   GitPullRequest,
   MessagesSquare,
@@ -10,7 +21,6 @@ import {
   Target,
 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -24,9 +34,18 @@ import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/se
 import { removeWorktree } from '../../../worktree/worktree';
 import { useBranchConflict } from '../../../worktree/useBranchConflict';
 import { ghPrHeadBranch } from '../../../github/github';
+import {
+  DetailSection,
+  HeaderBand,
+  MetaItem,
+  StudioDetailLayout,
+} from '../../../../shared/components/StudioDetail';
+import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
-import { LinearIssueDetail } from '../LinearIssueDetail';
+import { LinearIssueComments } from '../LinearIssueComments';
+import { priorityTone } from '../priorityTone';
+import { prStatusTone } from '../prStatusTone';
 
 type BranchMode = 'pr' | 'fresh';
 
@@ -209,195 +228,276 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     }
   };
 
-  return (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1">
-        <ScrollFade
-          className="mx-auto h-full max-w-3xl"
-          viewportClassName="px-10 py-8"
-          fadeSize={24}
-        >
-          <div className="flex flex-col gap-8">
-            <LinearIssueDetail issue={issue} workspaceId={workspaceId} />
-
-            <section className="flex flex-col gap-3">
-              <SectionHeader label="launch session" />
-              {openableSessionId ? (
-                <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3.5">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/15">
-                    <MessagesSquare size={15} className="text-success" aria-hidden />
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-sm font-medium text-foreground">
-                      Session already launched
-                    </span>
-                    <span className="truncate text-2xs text-muted-foreground">
-                      {sessionId
-                        ? 'A session is linked to this issue.'
-                        : 'A session is already on this PR branch.'}
-                    </span>
-                  </div>
-                  <OpenSessionButton sessionId={openableSessionId} onOpened={onClose} />
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
-                  <LaunchField
-                    icon={<Target size={13} aria-hidden className="text-primary" />}
-                    label="Goal"
-                  >
-                    <Textarea
-                      value={goal}
-                      onChange={(e) => setGoal(e.target.value)}
-                      autoGrow
-                      minRows={3}
-                      maxRows={10}
-                      disabled={busy}
-                      aria-label="Session goal"
-                    />
-                  </LaunchField>
-
-                  <LaunchField
-                    icon={<GitBranch size={13} aria-hidden className="text-success" />}
-                    label="Branch"
-                  >
-                    {adoptablePr ? (
-                      <div
-                        role="tablist"
-                        aria-label="branch source"
-                        className="mb-2 inline-flex rounded-md border border-border bg-background p-0.5 text-2xs"
-                      >
-                        <BranchModeButton
-                          active={mode === 'pr'}
-                          disabled={busy}
-                          onClick={() => setMode('pr')}
-                          label={`Continue on PR #${adoptablePr.number}`}
-                        />
-                        <BranchModeButton
-                          active={mode === 'fresh'}
-                          disabled={busy}
-                          onClick={() => setMode('fresh')}
-                          label="Start fresh"
-                        />
-                      </div>
-                    ) : null}
-
-                    {mode === 'pr' && adoptablePr ? (
-                      <div className="flex flex-col gap-1">
-                        <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-subtle/40 px-2.5 font-mono text-sm">
-                          <GitPullRequest
-                            size={13}
-                            aria-hidden
-                            className="shrink-0 text-muted-foreground"
-                          />
-                          {prResolving ? (
-                            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                              <StatusDot tone="info" size="sm" pulsing /> resolving…
-                            </span>
-                          ) : prBranch ? (
-                            <span className="truncate text-foreground">{prBranch}</span>
-                          ) : (
-                            <span className="truncate text-danger">
-                              {prError ?? 'No branch found'}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-2xs leading-relaxed text-muted-foreground/70">
-                          Adopts the branch of PR #{adoptablePr.number}: the existing PR links to
-                          this session instead of starting a duplicate.
-                        </span>
-                        {conflictPath ? (
-                          <div className="mt-1 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-2xs leading-relaxed text-foreground">
-                            <AlertTriangle
-                              size={12}
-                              aria-hidden
-                              className="mt-0.5 shrink-0 text-warning"
-                            />
-                            <span>
-                              This branch is already checked out in another worktree (
-                              <span className="break-all font-mono">{conflictPath}</span>).
-                              Launching erases that worktree and recreates it here. Pick Start fresh
-                              to keep it and branch off main instead.
-                            </span>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                          {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
-                        </span>
-                        <Input
-                          value={branchSlug}
-                          onChange={(e) => setBranchSlug(sanitizeSlug(e.target.value))}
-                          placeholder="branch-slug"
-                          className="h-8 flex-1 font-mono text-sm"
-                          disabled={busy}
-                          autoCapitalize="off"
-                          autoCorrect="off"
-                          spellCheck={false}
-                          aria-label="Branch slug"
-                        />
-                      </div>
-                    )}
-                  </LaunchField>
-
-                  {missingBase ? <BaseBranchGuide /> : null}
-
-                  <div className="flex items-center gap-3 pt-1">
-                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={setupWorkflow}
-                        onChange={(e) => onToggleSetupWorkflow(e.target.checked)}
-                        className="accent-primary"
-                        disabled={busy}
-                      />
-                      Set up workflow next
-                    </label>
-                    <span className="flex-1" />
-                    {error && !missingBase ? (
-                      <span className="text-xs text-danger">{error}</span>
-                    ) : null}
-                    {blockedByConflict ? (
-                      <Button
-                        variant="danger"
-                        onClick={() => void onLaunch(conflictPath ?? undefined)}
-                        disabled={busy || goal.trim().length === 0}
-                        className={busy ? 'animate-border-pulse' : undefined}
-                      >
-                        {busy ? (
-                          'Working…'
-                        ) : (
-                          <>
-                            Erase worktree &amp; launch
-                            <ArrowRight size={13} className="ml-1.5" aria-hidden />
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => void onLaunch()}
-                        disabled={!canLaunch}
-                        className={busy ? 'animate-border-pulse' : undefined}
-                      >
-                        {busy ? (
-                          'Launching…'
-                        ) : (
-                          <>
-                            Launch session
-                            <ArrowRight size={13} className="ml-1.5" aria-hidden />
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </section>
+  const launch = (
+    <section className="flex flex-col gap-3">
+      <SectionHeader label="launch session" />
+      {openableSessionId ? (
+        <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3.5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/15">
+            <MessagesSquare size={15} className="text-success" aria-hidden />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="text-sm font-medium text-foreground">Session already launched</span>
+            <span className="truncate text-2xs text-muted-foreground">
+              {sessionId
+                ? 'A session is linked to this issue.'
+                : 'A session is already on this PR branch.'}
+            </span>
           </div>
-        </ScrollFade>
-      </div>
-    </div>
+          <OpenSessionButton sessionId={openableSessionId} onOpened={onClose} />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
+          <LaunchField
+            icon={<Target size={13} aria-hidden className="text-primary" />}
+            label="Goal"
+          >
+            <Textarea
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              autoGrow
+              minRows={3}
+              maxRows={10}
+              disabled={busy}
+              aria-label="Session goal"
+            />
+          </LaunchField>
+
+          <LaunchField
+            icon={<GitBranch size={13} aria-hidden className="text-success" />}
+            label="Branch"
+          >
+            {adoptablePr ? (
+              <div
+                role="tablist"
+                aria-label="branch source"
+                className="inline-flex rounded-md border border-border bg-background p-0.5 text-2xs"
+              >
+                <BranchModeButton
+                  active={mode === 'pr'}
+                  disabled={busy}
+                  onClick={() => setMode('pr')}
+                  label={`Continue on PR #${adoptablePr.number}`}
+                />
+                <BranchModeButton
+                  active={mode === 'fresh'}
+                  disabled={busy}
+                  onClick={() => setMode('fresh')}
+                  label="Start fresh"
+                />
+              </div>
+            ) : null}
+
+            {mode === 'pr' && adoptablePr ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-subtle/40 px-2.5 font-mono text-sm">
+                  <GitPullRequest
+                    size={13}
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground"
+                  />
+                  {prResolving ? (
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                      <StatusDot tone="info" size="sm" pulsing /> resolving…
+                    </span>
+                  ) : prBranch ? (
+                    <span className="truncate text-foreground">{prBranch}</span>
+                  ) : (
+                    <span className="truncate text-danger">{prError ?? 'No branch found'}</span>
+                  )}
+                </div>
+                <span className="text-2xs leading-relaxed text-muted-foreground/70">
+                  Adopts the branch of PR #{adoptablePr.number}: the existing PR links to this
+                  session instead of starting a duplicate.
+                </span>
+                {conflictPath ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-2xs leading-relaxed text-foreground">
+                    <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                    <span>
+                      This branch is already checked out in another worktree (
+                      <span className="break-all font-mono">{conflictPath}</span>). Launching erases
+                      that worktree and recreates it here. Pick Start fresh to keep it and branch
+                      off main instead.
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                  {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
+                </span>
+                <Input
+                  value={branchSlug}
+                  onChange={(e) => setBranchSlug(sanitizeSlug(e.target.value))}
+                  placeholder="branch-slug"
+                  className="h-8 flex-1 font-mono text-sm"
+                  disabled={busy}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="Branch slug"
+                />
+              </div>
+            )}
+          </LaunchField>
+
+          {missingBase ? <BaseBranchGuide /> : null}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={setupWorkflow}
+                onChange={(e) => onToggleSetupWorkflow(e.target.checked)}
+                className="accent-primary"
+                disabled={busy}
+              />
+              Set up workflow next
+            </label>
+            <span className="flex-1" />
+            {error && !missingBase ? <span className="text-xs text-danger">{error}</span> : null}
+            {blockedByConflict ? (
+              <Button
+                variant="danger"
+                onClick={() => void onLaunch(conflictPath ?? undefined)}
+                disabled={busy || goal.trim().length === 0}
+                className={busy ? 'animate-border-pulse' : undefined}
+              >
+                {busy ? (
+                  'Working…'
+                ) : (
+                  <>
+                    Erase worktree &amp; launch
+                    <ArrowRight size={13} className="ml-1.5" aria-hidden />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => void onLaunch()}
+                disabled={!canLaunch}
+                className={busy ? 'animate-border-pulse' : undefined}
+              >
+                {busy ? (
+                  'Launching…'
+                ) : (
+                  <>
+                    Launch session
+                    <ArrowRight size={13} className="ml-1.5" aria-hidden />
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const linkedPrs = issuePullRequests(issue);
+  const labels = issue.labels?.nodes ?? [];
+  const priorityLabel = issue.priorityLabel ?? 'No priority';
+  const updated = formatRelativeDuration(issue.updatedAt);
+
+  return (
+    <StudioDetailLayout
+      header={
+        <HeaderBand
+          meta={
+            <>
+              <span
+                aria-label={`Priority: ${priorityLabel}`}
+                className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground"
+              >
+                <span
+                  aria-hidden
+                  className={cn('size-2 rounded-full', priorityTone({ priority: issue.priority }))}
+                />
+                {priorityLabel}
+              </span>
+              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
+                {issue.identifier}
+              </span>
+              <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
+                {issue.state.name}
+              </span>
+            </>
+          }
+          title={issue.title}
+          actions={
+            <a
+              href={issue.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Open in Linear <ExternalLink size={11} aria-hidden />
+            </a>
+          }
+        />
+      }
+      rail={
+        <>
+          {launch}
+          <Divider />
+          {issue.assignee != null ? (
+            <MetaItem label="Assignee">{issue.assignee.name}</MetaItem>
+          ) : null}
+          {issue.project != null ? <MetaItem label="Project">{issue.project.name}</MetaItem> : null}
+          {labels.length > 0 ? (
+            <MetaItem label="Labels">
+              {labels.map((label) => (
+                <span
+                  key={`${label.name}-${label.color}`}
+                  className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground"
+                >
+                  <span
+                    aria-hidden
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: label.color }}
+                  />
+                  {label.name}
+                </span>
+              ))}
+            </MetaItem>
+          ) : null}
+          {linkedPrs.length > 0 ? (
+            <MetaItem label="Linked PRs">
+              {linkedPrs.map((pr) => (
+                <a
+                  key={pr.number}
+                  href={pr.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={pr.url}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-opacity hover:opacity-80',
+                    prStatusTone({ status: pr.status }),
+                  )}
+                >
+                  <GitPullRequest size={11} aria-hidden />#{pr.number}
+                  {pr.status != null ? <span className="opacity-70">· {pr.status}</span> : null}
+                </a>
+              ))}
+            </MetaItem>
+          ) : null}
+          {updated !== '' ? <MetaItem label="Updated">{updated} ago</MetaItem> : null}
+        </>
+      }
+    >
+      <DetailSection label="description">
+        {issue.description != null && issue.description !== '' ? (
+          <Markdown text={issue.description} className="text-sm leading-relaxed" />
+        ) : (
+          <p className="text-sm italic text-muted-foreground/60">No description.</p>
+        )}
+      </DetailSection>
+
+      <DetailSection label="comments">
+        <LinearIssueComments workspaceId={workspaceId} issueId={issue.id} />
+      </DetailSection>
+    </StudioDetailLayout>
   );
 };
 

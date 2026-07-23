@@ -82,4 +82,18 @@ describe('GithubIssueDetailPanel', () => {
       }),
     );
   });
+
+  it('surfaces the last-updated timestamp in the metadata rail', () => {
+    render(
+      <GithubIssueDetailPanel
+        issue={ISSUE}
+        sessionId={null}
+        workspaceId={'workspace-1' as WorkspaceId}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Updated')).toBeDefined();
+    expect(screen.getByText(/\dd ago/)).toBeDefined();
+  });
 });
