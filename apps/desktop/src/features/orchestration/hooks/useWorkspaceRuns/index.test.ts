@@ -23,6 +23,7 @@ vi.mock('zustand/react/shallow', () => ({
 
 vi.mock('../../../../store/slices/session-view', () => ({
   deriveSessionStage: () => ({ stage: 'running', reason: 'agent running' }),
+  isPrReviewSession: () => false,
 }));
 
 import { useWorkspaceRuns } from './index';

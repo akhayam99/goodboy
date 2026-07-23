@@ -15,6 +15,7 @@ import type { GetFn, SessionViewSlice, SetFn } from './types';
 
 export { sortAndGroupSessions } from './sortAndGroupSessions';
 export { deriveSessionStage } from './deriveSessionStage';
+export { isPrReviewSession } from './isPrReviewSession';
 export { readPersistedLens } from './workSurfaceStorage';
 export { LENS_KINDS } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';

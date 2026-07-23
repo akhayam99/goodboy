@@ -28,6 +28,7 @@ import { useAppStore } from './store';
 import type { AppState, SessionLoadingFlags, SummarizerSessionStatus } from './types';
 import {
   deriveSessionStage,
+  isPrReviewSession,
   sortAndGroupSessions,
   type GroupedSessions,
 } from './slices/session-view';
@@ -99,6 +100,7 @@ function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
+    isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
   });
 }
 
