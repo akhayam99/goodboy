@@ -51,9 +51,11 @@ import type {
   SessionGroupKey,
   TaskModelPreference,
   ReviewablePr,
+  PrReviewDraft,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { resolveSettings } from '@goodboy/core';
+import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
 import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
@@ -74,6 +76,12 @@ import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import { createGitlabMrSlice } from './slices/gitlab-mr';
 import { createReviewPrsSlice } from './slices/review-prs';
+import { createReviewDraftsSlice } from './slices/review-drafts';
+import type {
+  AddReviewDraftInput,
+  PublishPrReviewResult,
+  PublishPrReviewVerdict,
+} from './slices/review-drafts';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
@@ -416,6 +424,19 @@ export type AppActions = {
   ): Promise<void>;
   refreshReviewPrs(workspaceId: WorkspaceId): Promise<void>;
   startPrReviewSession(workspaceId: WorkspaceId, pr: ReviewablePr): Promise<SessionId>;
+  loadReviewDrafts(sessionId: SessionId): Promise<void>;
+  addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
+  updateReviewDraft(id: string, body: string): Promise<void>;
+  discardReviewDraft(id: string): Promise<void>;
+  queueAgentReviewComments(
+    sessionId: SessionId,
+    agentId: AgentId,
+    markers: ReadonlyArray<ExtractedReviewComment>,
+  ): Promise<void>;
+  publishPrReview(
+    sessionId: SessionId,
+    opts: { verdict: PublishPrReviewVerdict; body: string },
+  ): Promise<PublishPrReviewResult>;
   createMrForSession(
     sessionId: SessionId,
     opts?: { title?: string; description?: string; targetBranch?: string; draft?: boolean },
@@ -588,6 +609,7 @@ export const initialState: AppState = {
   sessionGithub: {},
   sessionGitlabMr: {},
   reviewPrs: {},
+  reviewDrafts: {},
   sessionPendingResolutions: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
@@ -633,6 +655,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),
   ...createReviewPrsSlice(set, get),
+  ...createReviewDraftsSlice(set, get),
   ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),
   ...createSessionViewSlice(set, get),
