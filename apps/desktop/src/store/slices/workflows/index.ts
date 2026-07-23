@@ -1,5 +1,6 @@
 import { activateWorkflowAgent } from './activateWorkflowAgent';
 import { advanceClusterImplementation } from './clusterImplementation';
+import { retryStepSummary } from './retryStepSummary';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
@@ -46,5 +47,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     skipStuckStepAndAdvance: skipStuckStepAndAdvance(set, get),
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
+    retryStepSummary: retryStepSummary(set, get),
   };
 };

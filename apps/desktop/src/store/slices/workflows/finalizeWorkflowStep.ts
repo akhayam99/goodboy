@@ -6,6 +6,7 @@ import {
   resolveTaskModel,
 } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
+import { shortModel } from '../../../features/session/agent-row-format';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../../kickoff';
@@ -16,6 +17,7 @@ import type { GetFn, SetFn } from './types';
 const MAX_CONTINUE = 1;
 
 const continueAttempts = new Map<string, number>();
+export const degradedNotifiedAgents = new Set<AgentId>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -90,17 +92,32 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
 
     continueAttempts.delete(agentId);
     const session = get().sessions.find((candidate) => candidate.id === sessionId);
-    const outputSummary =
-      session == null
-        ? fallbackStepOutputSummary({ output: assistantText })
-        : await summarizeAgentOutput({
-            output: assistantText,
-            taskModel: resolveTaskModel(
-              'summarizer',
-              get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-              session.providerPreference.defaultProvider,
-            ),
-          });
+    let outputSummary: string;
+    if (session == null) {
+      outputSummary = fallbackStepOutputSummary({ output: assistantText });
+    } else {
+      const taskModel = resolveTaskModel(
+        'summarizer',
+        get().workspaceOverrides?.[session.workspaceId]?.taskModels,
+        session.providerPreference.defaultProvider,
+      );
+      const result = await summarizeAgentOutput({ output: assistantText, taskModel });
+      outputSummary = result.summary;
+      if (result.degraded && !degradedNotifiedAgents.has(agentId)) {
+        degradedNotifiedAgents.add(agentId);
+        const modelLabel = `${taskModel.providerId}/${shortModel(taskModel.model)}`;
+        void get().emitNotification(
+          'summarizer-degraded',
+          'warning',
+          `step summary degraded: ${agent.name}`,
+          `${modelLabel}: ${result.error ?? 'summarization failed'}`,
+          {
+            sessionId,
+            action: { kind: 'retry-step-summary', sessionId, agentId },
+          },
+        );
+      }
+    }
     await invokeAgentUpdateStatus(agentId, {
       status: 'completed',
       outputSummary,
