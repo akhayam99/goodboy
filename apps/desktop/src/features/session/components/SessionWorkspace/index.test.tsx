@@ -26,6 +26,12 @@ type Store = {
   reconcileSessionBranch: ReturnType<typeof vi.fn>;
 };
 
+type PaneShellMockProps = {
+  readonly title: string;
+  readonly meta?: React.ReactNode;
+  readonly children: React.ReactNode;
+};
+
 const { store, hooks } = vi.hoisted(() => ({
   store: {
     activeLens: {},
@@ -107,7 +113,13 @@ vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/PaneShell', () => ({
-  PaneShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
+    <div>
+      <h1>{title}</h1>
+      {meta ? <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span> : null}
+      {children}
+    </div>
+  ),
 }));
 vi.mock('./hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
@@ -199,6 +211,47 @@ describe('SessionWorkspace agent overlay', () => {
     );
   });
 
+  it('shows linked workflow context outside the workflows lens and focuses its run', () => {
+    const linkedAgent = {
+      ...selectedAgent,
+      stepId: undefined,
+      workflowRunId: 'run-1',
+    } as Agent;
+    store.selectedAgentId = { [SESSION_ID]: linkedAgent.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [linkedAgent] };
+    store.phaseTemplates = {
+      'workspace-1': [
+        {
+          id: 'workflow-1',
+          name: 'Release flow',
+          steps: [],
+        },
+      ],
+    };
+    hooks.agentHome = 'agents';
+    const workflowSession = {
+      ...session,
+      workflowRuns: [
+        {
+          id: 'run-1',
+          workflowId: 'workflow-1',
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: true,
+          triggerMode: 'immediate',
+        },
+      ],
+    } as unknown as Session;
+
+    render(<SessionWorkspace session={workflowSession} isActive />);
+
+    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.getByText('Part of').textContent).toBe('Part of Release flow');
+    fireEvent.click(screen.getByRole('button', { name: 'Release flow' }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
+    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
+  });
+
   it('shows the force resolve action in a markerless resolver header', () => {
     const standaloneResolver = {
       ...selectedAgent,
@@ -237,6 +290,88 @@ describe('SessionWorkspace agent overlay', () => {
         .getAllByTestId('divider')
         .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
     ).toHaveLength(2);
+  });
+});
+
+describe('SessionWorkspace pane metadata', () => {
+  it('summarizes standalone agent statuses', () => {
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        { ...selectedAgent, stepId: undefined, workflowRunId: undefined },
+        {
+          ...selectedAgent,
+          id: 'agent-2',
+          name: 'Done agent',
+          status: 'completed',
+          stepId: undefined,
+          workflowRunId: undefined,
+        } as Agent,
+        {
+          ...selectedAgent,
+          id: 'agent-3',
+          name: 'Failed agent',
+          status: 'failed',
+          stepId: undefined,
+          workflowRunId: undefined,
+        } as Agent,
+      ],
+    };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('pane-meta-agents').textContent).toBe('1 running, 1 done, 1 failed');
+  });
+
+  it('summarizes queued and resolved resolver statuses', () => {
+    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          ...selectedAgent,
+          id: 'resolver-queued',
+          name: 'Queued resolver',
+          kind: 'resolver',
+          status: 'pending',
+          stepId: undefined,
+          workflowRunId: undefined,
+          sourceThreadId: 'thread-queued',
+        } as Agent,
+        {
+          ...selectedAgent,
+          id: 'resolver-resolved',
+          name: 'Resolved resolver',
+          kind: 'resolver',
+          status: 'completed',
+          stepId: undefined,
+          workflowRunId: undefined,
+          sourceThreadId: 'thread-resolved',
+        } as Agent,
+      ],
+    };
+    store.sessionGithub = {
+      [SESSION_ID]: {
+        detail: {
+          comments: [{ threadId: 'thread-resolved', resolved: true }],
+        },
+      },
+    };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('pane-meta-resolve').textContent).toBe('1 queued, 1 resolved');
+  });
+
+  it('hides metadata when all displayed counts are zero', () => {
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByTestId('pane-meta-agents')).toBeNull();
   });
 });
 

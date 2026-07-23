@@ -33,11 +33,12 @@ import { ChatWorkflowHeader } from './parts/ChatWorkflowHeader';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
-import { resolveRootAgent } from '../../agent-kind';
+import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { ForceResolveAction } from '../ForceResolveAction';
 import { canForceResolve } from '../ForceResolveAction/canForceResolve';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
+import { ChatWorkflowContext } from './parts/ChatWorkflowContext';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -124,10 +125,53 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
     [phaseRuns, selectedAgentId],
   );
+  const selectedRootAgent = useMemo(() => {
+    if (selectedAgentId == null) {
+      return null;
+    }
+    return resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
+  }, [phaseRuns, selectedAgentId]);
   const selectedAgentName = selectedAgent?.name ?? (selectedAgentId != null ? 'Agent' : null);
-  const showWorkflowStrip = showAgentOverlay && selectedAgent?.workflowRunId != null;
+  const selectedWorkflowRunId = selectedRootAgent?.workflowRunId ?? null;
+  const showWorkflowStrip =
+    showAgentOverlay && overlayHome === 'workflows' && selectedWorkflowRunId != null;
   const selectedThreadId = selectedAgent?.sourceThreadId ?? null;
   const resolverIndex = useResolverIndex(sessionId);
+  const resolverAgentIds = useMemo(
+    () => new Set(resolverIndex.links.map(({ agent }) => agent.id)),
+    [resolverIndex],
+  );
+  const standaloneAgents = useMemo(
+    () => phaseRuns.filter((agent) => isStandaloneAgent(agent) && !resolverAgentIds.has(agent.id)),
+    [phaseRuns, resolverAgentIds],
+  );
+  const agentCounts = useMemo(
+    () => ({
+      running: standaloneAgents.filter((agent) => agent.status === 'running').length,
+      done: standaloneAgents.filter(
+        (agent) => agent.status === 'completed' || agent.status === 'skipped',
+      ).length,
+      failed: standaloneAgents.filter((agent) => agent.status === 'failed').length,
+    }),
+    [standaloneAgents],
+  );
+  const resolverCounts = useMemo(
+    () => ({
+      queued: resolverIndex.links.filter(({ status }) => status === 'pending').length,
+      resolved: resolverIndex.links.filter(({ status }) => status === 'resolved').length,
+    }),
+    [resolverIndex],
+  );
+  const agentsMeta =
+    agentCounts.running === 0 && agentCounts.done === 0 && agentCounts.failed === 0
+      ? undefined
+      : `${agentCounts.running} running, ${agentCounts.done} done${
+          agentCounts.failed > 0 ? `, ${agentCounts.failed} failed` : ''
+        }`;
+  const resolveMeta =
+    resolverCounts.queued === 0 && resolverCounts.resolved === 0
+      ? undefined
+      : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
   const selectedResolverLink =
     selectedThreadId == null ? undefined : resolverIndex.byThreadId.get(selectedThreadId);
   const selectedResolverStatus =
@@ -146,16 +190,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       turnState: selectedTurnState,
     });
   const stripWorkflowName = useMemo(() => {
-    if (selectedAgentId == null) {
+    if (selectedWorkflowRunId == null) {
       return null;
     }
-    const rootAgent = resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
-    if (rootAgent?.workflowRunId == null) {
-      return null;
-    }
-    const attachedRun = attachedWorkflowRuns.find(({ run }) => run.id === rootAgent.workflowRunId);
+    const attachedRun = attachedWorkflowRuns.find(({ run }) => run.id === selectedWorkflowRunId);
     return attachedRun == null ? null : workflowKindName(attachedRun.workflow);
-  }, [attachedWorkflowRuns, phaseRuns, selectedAgentId]);
+  }, [attachedWorkflowRuns, selectedWorkflowRunId]);
   const focusedWorkflowName = useMemo(() => {
     const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
     const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
@@ -256,6 +296,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <PaneShell
                     title="Resolve"
                     description="Resolver agents spawned from pull request comments and diff selections."
+                    meta={resolveMeta}
                     width="3xl"
                   >
                     <AgentsSection task={session} only="resolve" />
@@ -294,6 +335,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <PaneShell
                     title="Agents"
                     description="Agents you spawn by hand to work this session."
+                    meta={agentsMeta}
                     width="3xl"
                   >
                     <AgentsSection task={session} only="agents" />
@@ -335,6 +377,17 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                           sessionId={sessionId}
                           session={session}
                           selectedAgentId={selectedAgentId}
+                        />
+                      ) : showAgentOverlay &&
+                        overlayHome !== 'workflows' &&
+                        selectedWorkflowRunId != null &&
+                        stripWorkflowName != null ? (
+                        <ChatWorkflowContext
+                          workflowName={stripWorkflowName}
+                          onOpenWorkflow={() => {
+                            setFocusedWorkflowRun(sessionId, selectedWorkflowRunId);
+                            setActiveLens(sessionId, 'workflows');
+                          }}
                         />
                       ) : showForceResolveHeader &&
                         selectedAgent != null &&

@@ -10,6 +10,7 @@ export type ResolverLink = {
 };
 
 export type ResolverIndex = {
+  readonly links: ReadonlyArray<ResolverLink>;
   readonly byThreadId: Map<string, ResolverLink>;
   readonly byCommentUrl: Map<string, ResolverLink>;
   readonly byDiffAgentId: Map<AgentId, ResolverLink>;
@@ -23,11 +24,12 @@ export const buildResolverIndex = (
     statusOf: (agent: Agent) => ResolverStatus;
   },
 ): ResolverIndex => {
+  const links = resolvers.map((agent) => ({ agent, status: args.statusOf(agent) }));
   const byThreadId = new Map<string, ResolverLink>();
   const byCommentUrl = new Map<string, ResolverLink>();
   const byDiffAgentId = new Map<AgentId, ResolverLink>();
-  for (const agent of resolvers) {
-    const link: ResolverLink = { agent, status: args.statusOf(agent) };
+  for (const link of links) {
+    const { agent } = link;
     if (agent.sourceThreadId != null) {
       if (!byThreadId.has(agent.sourceThreadId)) {
         byThreadId.set(agent.sourceThreadId, link);
@@ -42,7 +44,7 @@ export const buildResolverIndex = (
     }
     byDiffAgentId.set(agent.id, link);
   }
-  return { byThreadId, byCommentUrl, byDiffAgentId };
+  return { links, byThreadId, byCommentUrl, byDiffAgentId };
 };
 
 export const resolverForComment = (

@@ -108,7 +108,9 @@ export const ResolveClusterRow = ({
         <span className="tabular-nums text-muted-foreground/50">
           {index + 1}/{total}
         </span>
-        <span className="min-w-0 flex-1 truncate text-left">{agent.name}</span>
+        <span className="min-w-0 flex-1 truncate text-left" title={agent.name}>
+          {agent.name}
+        </span>
         <ResolverStateBadge state={resolverBadgeState(status)} />
         {canJump ? (
           <button

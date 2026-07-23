@@ -33,7 +33,7 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-export function AgentRow({
+export const AgentRow = ({
   run,
   kind,
   index,
@@ -50,7 +50,7 @@ export function AgentRow({
   onRenameCommit,
   onRenameCancel,
   onDelete,
-}: Props) {
+}: Props) => {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
     `agent ${run.ordinal + 1}`,
@@ -140,9 +140,10 @@ export function AgentRow({
         ) : (
           <span
             className={cn(
-              'line-clamp-1 flex-1 text-left text-2xs font-medium',
+              'min-w-0 flex-1 truncate text-left text-2xs font-medium',
               isSelected ? 'text-foreground' : 'text-muted-foreground',
             )}
+            title={run.name}
           >
             {run.name}
           </span>
@@ -213,4 +214,4 @@ export function AgentRow({
       </div>
     </li>
   );
-}
+};
