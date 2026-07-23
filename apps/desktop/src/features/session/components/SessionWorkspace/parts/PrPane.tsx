@@ -16,13 +16,14 @@ import {
 import { Eyebrow, cn } from '@goodboy/ui';
 import type { PrCheckRun, PullRequestStateKind, Session, SessionId } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { appendOperatorNotes } from '../../../utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../AgentSpawnConfig/taskModelAgentSpawnConfig';
-import { useAppStore } from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
 
@@ -112,6 +113,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceOverrides = useAppStore(
     (s) => s.workspaceOverrides?.[session.workspaceId] ?? null,
   );
@@ -125,6 +127,10 @@ const GithubPrCard = ({ session }: { session: Session }) => {
   );
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
+  const linkedIssues = github?.linkedIssues ?? [];
+  const codeHostTasks = externalTasks.filter(
+    (task) => task.provider === 'github' || task.provider === 'gitlab',
+  );
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
 
@@ -272,7 +278,7 @@ const GithubPrCard = ({ session }: { session: Session }) => {
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-2">
             <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
-            {ciState !== 'none' ? <CiBadge state={ciState} /> : null}
+            <CiBadge state={ciState} />
           </div>
           <h2 className="text-balance text-sm font-semibold leading-snug text-foreground">
             {pr.title}
@@ -288,15 +294,53 @@ const GithubPrCard = ({ session }: { session: Session }) => {
           <span className="text-muted-foreground/50">→</span>
           <span className="truncate">{pr.baseBranch}</span>
         </span>
-        {pr.reviewDecision ? <ReviewBadge decision={pr.reviewDecision} /> : null}
-        {unresolved > 0 ? (
-          <span className="inline-flex items-center gap-1">
-            <MessageSquare size={11} aria-hidden />
-            <span className="tabular-nums">{unresolved}</span>
-            <span>unresolved</span>
-          </span>
-        ) : null}
+        {pr.reviewDecision != null ? (
+          <ReviewBadge decision={pr.reviewDecision} />
+        ) : (
+          <span>No review decision</span>
+        )}
+        <span className="inline-flex items-center gap-1">
+          <MessageSquare size={11} aria-hidden />
+          <span className="tabular-nums">{unresolved}</span>
+          <span>unresolved</span>
+        </span>
       </div>
+
+      {linkedIssues.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
+          <div className="flex flex-col gap-1">
+            {linkedIssues.map((issue) => (
+              <a
+                key={issue.url}
+                href={issue.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 rounded-lg bg-muted/25 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+              >
+                <span className="shrink-0 font-mono">#{issue.number}</span>
+                <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
+                <ArrowUpRight size={12} aria-hidden className="shrink-0" />
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {codeHostTasks.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <Eyebrow label="External tasks" muted className="px-0.5 font-medium" />
+          <div className="flex flex-col gap-1">
+            {codeHostTasks.map((task) => (
+              <ExternalTaskChip
+                key={`${task.provider}:${task.externalId}`}
+                task={task}
+                appearance="row"
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <button
         type="button"
