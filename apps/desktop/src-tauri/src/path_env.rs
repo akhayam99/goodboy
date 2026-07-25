@@ -44,6 +44,21 @@ pub fn command_with_login_env(binary: &str) -> Command {
     cmd
 }
 
+pub fn login_shell() -> String {
+    if let Ok(shell) = std::env::var("SHELL") {
+        let shell = shell.trim();
+        if !shell.is_empty() && std::path::Path::new(shell).exists() {
+            return shell.to_string();
+        }
+    }
+    for candidate in shell_candidates() {
+        if std::path::Path::new(candidate).exists() {
+            return (*candidate).to_string();
+        }
+    }
+    "/bin/sh".to_string()
+}
+
 fn compute_path() -> String {
     let inherited = std::env::var("PATH").unwrap_or_default();
     let (shell, npm_bin) = probe_login_shell();
