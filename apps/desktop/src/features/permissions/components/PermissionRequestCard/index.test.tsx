@@ -16,13 +16,16 @@ import { PermissionRequestCard } from './index';
 
 afterEach(cleanup);
 
-function makeItem(): Extract<TranscriptItem, { kind: 'permission_request' }> {
+function makeItem(
+  over: Partial<Extract<TranscriptItem, { kind: 'permission_request' }>> = {},
+): Extract<TranscriptItem, { kind: 'permission_request' }> {
   return {
     kind: 'permission_request',
     at: '2026-05-28T03:00:00Z',
     toolUseId: 'tu-1',
     toolName: 'bash',
     runId: 'run-1',
+    ...over,
   } as Extract<TranscriptItem, { kind: 'permission_request' }>;
 }
 
@@ -42,5 +45,16 @@ describe('PermissionRequestCard', () => {
   it('does not render a scope picker when sessionId is missing', () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={null} agentId={null} />);
     expect(screen.queryByTestId('scope-picker-mock')).toBeNull();
+  });
+
+  it('previews the requested tool input when present', () => {
+    render(
+      <PermissionRequestCard
+        item={makeItem({ input: { command: 'rm -rf build' } })}
+        sessionId={null}
+        agentId={null}
+      />,
+    );
+    expect(screen.getByText(/rm -rf build/)).toBeDefined();
   });
 });

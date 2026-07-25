@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { cn } from '@goodboy/ui';
-import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+import type { AgentId, PermissionScope, ProviderRunId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-
-export type PermissionScope = 'global' | 'workspace' | 'session' | 'once' | 'deny';
 
 const SCOPE_LABELS: Record<PermissionScope, string> = {
   global: 'approve global',
@@ -80,7 +78,7 @@ export const PermissionScopePicker = ({
   };
 
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1">
       {scopes.map((scope) => (
         <button
           key={scope}

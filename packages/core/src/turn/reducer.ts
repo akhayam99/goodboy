@@ -52,7 +52,7 @@ export const turnReducer = (state: TurnState, event: TurnLifecycleEvent): TurnSt
       return { kind: 'error', message: event.message, failedAt: event.at };
 
     case 'retry':
-      if (state.kind !== 'error') {
+      if (state.kind !== 'error' && state.kind !== 'blocked') {
         throw new IllegalTurnTransitionError(state, event);
       }
       return { kind: 'idle', lastActivityAt: event.at };
@@ -70,6 +70,8 @@ function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
       return { kind: 'idle', lastActivityAt: turn.at };
     case 'error':
       return { kind: 'error', message: turn.message, failedAt: turn.at };
+    case 'permission_request':
+      return { kind: 'blocked', runId: turn.runId, blockedAt: turn.at };
     case 'user_text':
     case 'assistant_text':
     case 'tool_call_start':
@@ -78,7 +80,6 @@ function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
     case 'usage':
     case 'skill_invocation':
     case 'step_transition':
-    case 'permission_request':
     case 'permission_decision':
     case 'unknown_payload':
     case 'provider_session_init':

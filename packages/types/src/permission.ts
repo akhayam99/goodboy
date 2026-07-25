@@ -24,6 +24,8 @@ export const CLAUDE_PERMISSION_MODES = [
 
 export type PermissionRuleScope = 'workspace' | 'session' | 'global';
 
+export type PermissionScope = PermissionRuleScope | 'once' | 'deny';
+
 export type PermissionDecisionKind = 'allow' | 'deny' | 'ask';
 
 export type PermissionRulePattern = {

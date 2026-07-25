@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { createPermissionRequestEvent } from '../../permissions/events';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
@@ -72,6 +73,51 @@ function fileEditFromInput(
   return { path, editType };
 }
 
+type PermissionDenial = {
+  readonly tool_name: string;
+  readonly tool_use_id: string;
+  readonly tool_input?: unknown;
+};
+
+const isPermissionDenial = (value: unknown): value is PermissionDenial => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.tool_name === 'string' &&
+    record.tool_name !== '' &&
+    typeof record.tool_use_id === 'string' &&
+    record.tool_use_id !== ''
+  );
+};
+
+type Params = {
+  readonly denials: unknown;
+  readonly runId: ProviderRunId;
+  readonly at: IsoDateTime;
+};
+
+const permissionRequestsFromDenials = ({
+  denials,
+  runId,
+  at,
+}: Params): ReadonlyArray<TurnEvent> => {
+  if (!Array.isArray(denials)) {
+    return [];
+  }
+  const entries: ReadonlyArray<unknown> = denials;
+  return entries.filter(isPermissionDenial).map((denial) =>
+    createPermissionRequestEvent({
+      runId,
+      toolUseId: denial.tool_use_id,
+      toolName: denial.tool_name,
+      input: denial.tool_input ?? null,
+      at,
+    }),
+  );
+};
+
 function isToolResultBlock(block: unknown): block is ToolResultBlock {
   return (
     typeof block === 'object' &&
@@ -126,6 +172,13 @@ export const parseAnthropicEnvelopeLine = (
           at,
         });
       }
+      events.push(
+        ...permissionRequestsFromDenials({
+          denials: payload.permission_denials,
+          runId: ctx.runId,
+          at,
+        }),
+      );
       const subtype = payload.subtype as string | undefined;
       if (subtype === 'success') {
         events.push({ kind: 'done', runId: ctx.runId, at });

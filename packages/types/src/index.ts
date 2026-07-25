@@ -147,6 +147,7 @@ export type {
   PermissionRule,
   PermissionRulePattern,
   PermissionRuleScope,
+  PermissionScope,
 } from './permission';
 export { CLAUDE_PERMISSION_MODES } from './permission';
 export type {

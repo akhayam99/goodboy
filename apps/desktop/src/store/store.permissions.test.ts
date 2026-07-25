@@ -148,6 +148,7 @@ vi.mock('../shared/lib/repo', () => ({
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const AGENT_ID = 'agent-1' as AgentId;
 
 function buildSession(): Session {
   const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
@@ -215,7 +216,7 @@ describe('sendTurn, permission proxy integration', () => {
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
     const defaultAgent: Agent = {
-      id: 'agent-1' as AgentId,
+      id: AGENT_ID,
       sessionId: SESSION_ID,
       ordinal: 0,
       name: 'agent 1',
@@ -325,5 +326,67 @@ describe('sendTurn, permission proxy integration', () => {
     expect(args.disallowedTools).toBeUndefined();
     expect(args.permissionMode).toBeUndefined();
     expect(permissionRuleListSpy).not.toHaveBeenCalled();
+  });
+
+  it('marks the agent turn blocked when the stream reports a permission request', async () => {
+    const runId = 'run-blocked' as ProviderRunId;
+    runTurnSpy.mockImplementation(async function* (): AsyncIterable<TurnEvent> {
+      yield {
+        kind: 'permission_request',
+        runId,
+        toolUseId: 'toolu_1',
+        toolName: 'Write',
+        input: { file_path: '/tmp/wt/out.txt' },
+        at: '2026-05-07T00:00:00.000Z' as IsoDateTime,
+      };
+    });
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+
+    expect(useAppStore.getState().agentTurnState[AGENT_ID]?.kind).toBe('blocked');
+  });
+
+  it('retryBlockedTool re-sends the turn with a prompt naming the approved tool', async () => {
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    useAppStore.setState({
+      agentTurnState: {
+        [AGENT_ID]: {
+          kind: 'blocked',
+          runId: 'run-blocked' as ProviderRunId,
+          blockedAt: '2026-05-07T00:00:00.000Z' as IsoDateTime,
+        },
+      },
+    });
+
+    await useAppStore
+      .getState()
+      .retryBlockedTool({ sessionId: SESSION_ID, agentId: AGENT_ID, toolName: 'Bash' });
+
+    expect(runTurnSpy).toHaveBeenCalledTimes(1);
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(String(args.prompt)).toContain('Permission for Bash is now granted.');
+  });
+
+  it('retryBlockedTool does nothing while that agent is still running', async () => {
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+    useAppStore.setState({
+      agentTurnState: {
+        [AGENT_ID]: {
+          kind: 'running',
+          runId: 'run-live' as ProviderRunId,
+          startedAt: '2026-05-07T00:00:00.000Z' as IsoDateTime,
+        },
+      },
+    });
+
+    await useAppStore
+      .getState()
+      .retryBlockedTool({ sessionId: SESSION_ID, agentId: AGENT_ID, toolName: 'Bash' });
+
+    expect(runTurnSpy).not.toHaveBeenCalled();
   });
 });
