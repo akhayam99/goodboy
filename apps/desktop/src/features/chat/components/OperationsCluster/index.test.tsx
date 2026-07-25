@@ -94,6 +94,38 @@ describe('OperationsCluster', () => {
     expect(screen.getByText('1')).toBeTruthy();
   });
 
+  it('carries state on the icon and never on a left border', () => {
+    const { container } = render(<OperationsCluster items={[tool('a'), tool('b')]} />);
+    expect(screen.getByTestId('operations-state-icon').getAttribute('class')).toContain(
+      'text-success',
+    );
+    expect(container.querySelectorAll('[class*="border-l"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[class*="border-danger"]')).toHaveLength(0);
+  });
+
+  it('pulses the state icon while a tool runs', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
+    const icon = screen.getByTestId('operations-state-icon');
+    expect(icon.getAttribute('class')).toContain('text-warning');
+    expect(icon.getAttribute('class')).toContain('animate-pulse');
+  });
+
+  it('turns the state icon red when a child errored', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b', true, true)]} />);
+    expect(screen.getByTestId('operations-state-icon').getAttribute('class')).toContain(
+      'text-danger',
+    );
+  });
+
+  it('exposes a leading chevron that rotates when expanded', () => {
+    render(<OperationsCluster items={[tool('a')]} />);
+    expect(screen.getByTestId('transcript-chevron').getAttribute('class')).not.toContain(
+      'rotate-90',
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByTestId('transcript-chevron').getAttribute('class')).toContain('rotate-90');
+  });
+
   it('collapses back when clicked twice', () => {
     render(<OperationsCluster items={[tool('a')]} />);
     fireEvent.click(screen.getByRole('button'));

@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { CollapsibleString } from './CollapsibleString';
+import { RawJson } from './RawJson';
 
 type Props = {
   readonly data: unknown;
@@ -83,41 +82,3 @@ export const StructuredData = ({ data, depth = 0, label }: Props) => {
 
   return <RawJson data={data} />;
 };
-
-function CollapsibleString({ value, label }: { value: string; label?: string }) {
-  const [open, setOpen] = useState(false);
-  const preview = value.slice(0, 120) + '...';
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-left text-muted-foreground/70 hover:text-foreground/80"
-      >
-        <ChevronRight
-          size={10}
-          aria-hidden
-          className={cn('shrink-0 motion-safe:transition-transform', open && 'rotate-90')}
-        />
-        <span className="text-2xs">
-          {label ?? 'string'} ({value.length} chars)
-        </span>
-      </button>
-      {open ? (
-        <pre className="mt-0.5 max-h-60 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/30 p-1.5 text-foreground/80">
-          {value}
-        </pre>
-      ) : (
-        <span className="text-foreground/60">{preview}</span>
-      )}
-    </div>
-  );
-}
-
-function RawJson({ data }: { data: unknown }) {
-  return (
-    <pre className="whitespace-pre-wrap break-words text-muted-foreground">
-      {JSON.stringify(data, null, 2)}
-    </pre>
-  );
-}

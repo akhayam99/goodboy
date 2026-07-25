@@ -5,6 +5,8 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptCard } from '../TranscriptCards';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptChevron } from '../TranscriptChevron';
+import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
 import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
@@ -31,6 +33,7 @@ function runningTool(
 const accent = MARKER_ACCENT.operations;
 const dangerAccent = MARKER_ACCENT.danger;
 const successAccent = MARKER_ACCENT.success;
+const runningAccent = MARKER_ACCENT.warning;
 
 export const OperationsCluster = ({
   items,
@@ -44,7 +47,13 @@ export const OperationsCluster = ({
   const running = runningTool(items);
   const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
   const successCount = items.length - errorCount;
-  const showError = !running && errorCount > 0;
+  const showError = running == null && errorCount > 0;
+  const stateIcon =
+    running != null
+      ? cn(runningAccent.icon, 'motion-safe:animate-pulse')
+      : showError
+        ? dangerAccent.icon
+        : successAccent.icon;
 
   const summary = useMemo(() => {
     const counts = new Map<string, number>();
@@ -57,7 +66,7 @@ export const OperationsCluster = ({
   }, [items]);
 
   const ariaLabel = `operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
-    running
+    running != null
       ? `, running ${running.toolName}`
       : showError
         ? `, ${successCount} succeeded, ${errorCount} failed`
@@ -65,21 +74,24 @@ export const OperationsCluster = ({
   }`;
 
   return (
-    <div className="group">
-      <TranscriptShell
-        as="button"
+    <div className="flex flex-col gap-0.5">
+      <button
         type="button"
         aria-expanded={open}
         aria-label={ariaLabel}
         onClick={() => setOpen((v) => !v)}
-        tone={showError ? 'danger' : 'operations'}
-        variant="leftBorder"
         className={cn(
-          'relative flex w-full items-center gap-2 text-left text-xs motion-safe:transition-opacity group-hover:opacity-80',
-          running != null && 'animate-border-pulse',
+          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs',
+          TRANSCRIPT_ROW_HOVER,
         )}
       >
-        <Layers size={11} aria-hidden className={cn('shrink-0', accent.icon)} />
+        <TranscriptChevron open={open} />
+        <Layers
+          size={11}
+          aria-hidden
+          data-testid="operations-state-icon"
+          className={cn('shrink-0', stateIcon)}
+        />
         <span className={cn('font-medium', accent.text)}>operations</span>
         <span
           className={cn(
@@ -90,7 +102,7 @@ export const OperationsCluster = ({
         >
           {items.length}
         </span>
-        {running ? (
+        {running != null ? (
           <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground/80">
             <span aria-hidden className="text-muted-foreground/40">
               ·
@@ -111,13 +123,13 @@ export const OperationsCluster = ({
         ) : summary.length > 0 ? (
           <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
         ) : null}
-      </TranscriptShell>
+      </button>
       {open ? (
         <TranscriptShell
           tone="operations"
           variant="leftBorder"
           nested
-          className="ml-2 mt-0.5 flex min-w-0 flex-col gap-0.5"
+          className="ml-2 flex min-w-0 flex-col gap-0.5"
         >
           {items.map((item) => (
             <TranscriptCard

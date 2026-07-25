@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ChevronRight, Wrench } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptChevron } from '../TranscriptChevron';
+import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
 import { TranscriptShell } from '../TranscriptShell';
 import { StructuredData } from './StructuredData';
 
@@ -15,40 +17,38 @@ export const ToolCallCard = ({ item }: Props) => {
   const [rawMode, setRawMode] = useState(false);
   const running = !item.ended;
 
-  const iconColor = item.isError
+  const stateIcon = item.isError
     ? MARKER_ACCENT.danger.icon
     : running
-      ? 'text-muted-foreground/60'
-      : MARKER_ACCENT.operations.icon;
+      ? cn(MARKER_ACCENT.warning.icon, 'motion-safe:animate-pulse')
+      : MARKER_ACCENT.success.icon;
 
   return (
-    <div className="group">
+    <div className="flex flex-col gap-0.5">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'relative flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs motion-safe:transition-colors hover:bg-muted/60',
+          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs',
+          TRANSCRIPT_ROW_HOVER,
           item.isError && 'text-danger',
-          running && 'animate-border-pulse',
         )}
       >
-        <ChevronRight
+        <TranscriptChevron open={open} />
+        <Wrench
           size={11}
           aria-hidden
-          className={cn(
-            'shrink-0 text-muted-foreground/60 motion-safe:transition-transform',
-            open && 'rotate-90',
-          )}
+          data-testid="tool-state-icon"
+          className={cn('shrink-0', stateIcon)}
         />
-        <Wrench size={11} aria-hidden className={cn('shrink-0', iconColor)} />
         <span className="font-mono text-muted-foreground">{item.toolName}</span>
         {running ? null : item.isError ? (
           <span className="text-2xs uppercase tracking-wide text-danger">error</span>
         ) : null}
       </button>
       {open ? (
-        <div className="ml-[1.125rem] mt-0.5 flex min-w-0 flex-col gap-1">
+        <div className="ml-[1.125rem] flex min-w-0 flex-col gap-1">
           <div className="flex items-center justify-end">
             <button
               type="button"
