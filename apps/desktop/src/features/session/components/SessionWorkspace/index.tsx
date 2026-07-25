@@ -1,8 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { Divider, ScrollFade, cn } from '@goodboy/ui';
-import { ChatView } from '../../../chat/components/ChatView';
+import { Divider, cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ScriptsPanel } from '../../../scripts';
@@ -19,6 +17,8 @@ import { AgentsSection } from '../../../workspace/components/WorkspacesSidebar/p
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { SessionOverviewPane } from '../SessionOverviewPane';
+import { AgentOverlay } from './parts/AgentOverlay';
+import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { SessionTopBar } from './parts/SessionTopBar';
 import { LensColumn } from './parts/LensColumn';
@@ -29,16 +29,14 @@ import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
-import { ChatWorkflowHeader } from './parts/ChatWorkflowHeader';
+import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
-import { ForceResolveAction } from '../ForceResolveAction';
 import { canForceResolve } from '../ForceResolveAction/canForceResolve';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
-import { ChatWorkflowContext } from './parts/ChatWorkflowContext';
 import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 
 const LENS_LABEL: Record<LensKind, string> = {
@@ -122,7 +120,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showStudio = studio != null;
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
-  const overlayHome = agentHome ?? 'agents';
+  const overlayHome = resolveOverlayHome({ lens, agentHome });
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
     [phaseRuns, selectedAgentId],
@@ -360,68 +358,27 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             ) : null}
 
             {showAgentOverlay ? (
-              <div className="absolute inset-0 z-20 flex bg-background motion-safe:animate-studio-in">
-                {overlayHome === 'workflows' ? null : (
-                  <>
-                    <div className="flex w-72 shrink-0 flex-col bg-background">
-                      <button
-                        type="button"
-                        onClick={() => setActiveLens(sessionId, overlayHome)}
-                        className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                      >
-                        <ArrowLeft size={14} aria-hidden className="shrink-0" />
-                        <span className="truncate">{LENS_LABEL[overlayHome]}</span>
-                      </button>
-                      <Divider />
-                      <ScrollFade className="min-h-0 flex-1">
-                        <div className="px-2 py-2">
-                          <AgentsSection task={session} only={overlayHome} />
-                        </div>
-                      </ScrollFade>
-                    </div>
-                    <Divider orientation="vertical" />
-                  </>
-                )}
-                <div className="min-h-0 min-w-0 flex-1">
-                  <ChatView
-                    session={session}
-                    isActive={isActive && selectedAgentId != null}
-                    header={
-                      showWorkflowStrip && selectedAgentId != null ? (
-                        <ChatWorkflowHeader
-                          sessionId={sessionId}
-                          session={session}
-                          selectedAgentId={selectedAgentId}
-                        />
-                      ) : showAgentOverlay &&
-                        overlayHome !== 'workflows' &&
-                        selectedWorkflowRunId != null &&
-                        stripWorkflowName != null ? (
-                        <ChatWorkflowContext
-                          workflowName={stripWorkflowName}
-                          onOpenWorkflow={() => {
-                            setFocusedWorkflowRun(sessionId, selectedWorkflowRunId);
-                            setActiveLens(sessionId, 'workflows');
-                          }}
-                        />
-                      ) : showForceResolveHeader &&
-                        selectedAgent != null &&
-                        selectedResolverStatus != null ? (
-                        <>
-                          <div className="flex h-[var(--chat-header-h)] shrink-0 items-center justify-end px-3">
-                            <ForceResolveAction
-                              agent={selectedAgent}
-                              sessionId={sessionId}
-                              status={selectedResolverStatus}
-                            />
-                          </div>
-                          <Divider className="shrink-0" />
-                        </>
-                      ) : undefined
-                    }
-                  />
-                </div>
-              </div>
+              <AgentOverlay
+                session={session}
+                sessionId={sessionId}
+                isChatActive={isActive && selectedAgentId != null}
+                selectedAgentId={selectedAgentId}
+                selectedAgent={selectedAgent}
+                overlayHome={overlayHome}
+                overlayHomeLabel={LENS_LABEL[overlayHome]}
+                showWorkflowStrip={showWorkflowStrip}
+                workflowName={selectedWorkflowRunId == null ? null : stripWorkflowName}
+                showForceResolve={showForceResolveHeader}
+                resolverStatus={selectedResolverStatus}
+                onBack={() => setActiveLens(sessionId, overlayHome)}
+                onOpenWorkflow={() => {
+                  if (selectedWorkflowRunId == null) {
+                    return;
+                  }
+                  setFocusedWorkflowRun(sessionId, selectedWorkflowRunId);
+                  setActiveLens(sessionId, 'workflows');
+                }}
+              />
             ) : null}
 
             <div
@@ -452,14 +409,3 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     </div>
   );
 };
-
-type PaneProps = {
-  readonly visible: boolean;
-  readonly children: React.ReactNode;
-};
-
-const Pane = ({ visible, children }: PaneProps) => (
-  <div hidden={!visible} className={cn('absolute inset-0', !visible && 'pointer-events-none')}>
-    {children}
-  </div>
-);

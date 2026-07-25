@@ -175,6 +175,7 @@ afterEach(cleanup);
 
 describe('SessionWorkspace agent overlay', () => {
   it('uses the full overlay width and workflow stepper for workflow agents', () => {
+    store.activeLens = { [SESSION_ID]: 'workflows' };
     const { container } = render(<SessionWorkspace session={session} isActive />);
     expect(screen.getByTestId('workflow-stepper')).toBeDefined();
     expect(screen.getByTestId('chat-view')).toBeDefined();
@@ -199,6 +200,7 @@ describe('SessionWorkspace agent overlay', () => {
       stepId: undefined,
       workflowRunId: undefined,
     } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
     hooks.agentHome = 'resolve';
@@ -263,6 +265,7 @@ describe('SessionWorkspace agent overlay', () => {
       workflowRunId: undefined,
       sourceThreadId: 'thread-1',
     } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
     hooks.agentHome = 'resolve';
@@ -382,6 +385,7 @@ describe('SessionWorkspace workflow breadcrumb', () => {
       stepId: 'step-1',
       workflowRunId: 'run-1',
     } as Agent;
+    store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
     store.phaseTemplates = {
@@ -412,6 +416,41 @@ describe('SessionWorkspace workflow breadcrumb', () => {
     expect(screen.getByTestId('breadcrumb').textContent).toBe(
       'Overview / Workflows / Release flow',
     );
+  });
+
+  it('keeps the resolve lens in the breadcrumb when a workflow step agent auto-advances', () => {
+    const workflowAgent = {
+      ...selectedAgent,
+      stepId: 'step-1',
+      workflowRunId: 'run-1',
+    } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
+    store.phaseTemplates = {
+      'workspace-1': [{ id: 'workflow-1', name: 'Release flow', steps: [] }],
+    };
+    const workflowSession = {
+      ...session,
+      workflowRuns: [
+        {
+          id: 'run-1',
+          workflowId: 'workflow-1',
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: true,
+          triggerMode: 'immediate',
+        },
+      ],
+    } as unknown as Session;
+
+    render(<SessionWorkspace session={workflowSession} isActive />);
+
+    expect(screen.getByTestId('breadcrumb').textContent).toBe(
+      'Overview / Resolve / Selected agent',
+    );
+    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.getByText('Part of').textContent).toBe('Part of Release flow');
   });
 
   it('uses the visible workflow name when the only run is not explicitly focused', () => {

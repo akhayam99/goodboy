@@ -1,5 +1,7 @@
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import type { LensKind, SessionStudio } from '../../../../store';
+import type { AgentHomeLens } from '../../agent-kind';
+import { resolveOverlayHome } from './resolveOverlayHome';
 
 export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
@@ -12,7 +14,7 @@ export type SessionBreadcrumbInput = {
   lens: LensKind | null;
   studio: SessionStudio | null;
   selectedAgentName: string | null;
-  overlayHomeLens: LensKind | null;
+  overlayHomeLens: AgentHomeLens;
   suppressAgentTail: boolean;
   stripWorkflowName: string | null;
   focusedWorkflowName: string | null;
@@ -79,15 +81,16 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     ]);
   }
 
-  if (suppressAgentTail) {
+  const home = resolveOverlayHome({ lens, agentHome: overlayHomeLens });
+
+  if (suppressAgentTail && home === 'workflows') {
     if (stripWorkflowName != null) {
       return [overview, workflowsList, { id: 'workflow-run', label: stripWorkflowName }];
     }
     return [overview, workflowsList];
   }
 
-  if (selectedAgentName != null && overlayHomeLens != null) {
-    const home = overlayHomeLens;
+  if (selectedAgentName != null) {
     return sealLast([
       overview,
       {
