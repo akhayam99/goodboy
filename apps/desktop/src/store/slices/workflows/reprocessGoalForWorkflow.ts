@@ -35,8 +35,13 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
         return;
       }
 
+      const worktreePath = state.sessionWorktrees?.[sessionId]?.[0] ?? null;
       const rewritten = await rewriteWorkflowGoal(
-        { providerId: session.providerPreference.defaultProvider, invokeFn: invoke },
+        {
+          providerId: session.providerPreference.defaultProvider,
+          invokeFn: invoke,
+          ...(worktreePath != null && { workingDir: worktreePath }),
+        },
         { goal, stepNames },
       );
       const cleaned = rewritten?.trim() ?? '';

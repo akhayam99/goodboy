@@ -2,8 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
 import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, SessionId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
-import { getDefaultBinary, resolveTaskModel } from '@goodboy/core';
+import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
+import { resolveTaskModel } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
@@ -29,6 +29,7 @@ import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPre
 import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { BranchModeToggle } from './BranchModeToggle';
+import { generateBranchSlug } from './generateBranchSlug';
 import { Section } from './Section';
 
 type Props = {
@@ -76,12 +77,6 @@ function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId 
   return 'anthropic';
 }
 
-type SummarizeTaskResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 const SLUG_MAX_LEN = 48;
 
 const slugifyLive = (input: string): string => slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
@@ -94,45 +89,6 @@ const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input }
 const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
 const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
-
-async function generateBranchSlug(
-  goal: string,
-  { providerId, model }: TaskModelPreference,
-): Promise<string> {
-  const systemPrompt =
-    'You are a branch-name generator. Given a goal, output a kebab-case branch slug in English, max 5 words, descriptive (not first words of goal). Respond with ONLY the slug, nothing else.';
-  const userMessage = `Goal: ${goal}`;
-  const result = await invoke<SummarizeTaskResult>('summarize_session', {
-    args: {
-      providerId,
-      model,
-      binary: getDefaultBinary(providerId),
-      userMessage,
-      systemPrompt,
-    },
-  });
-  if ((result.exitCode ?? 0) !== 0) {
-    throw new Error(`branch generation failed: ${result.stderr}`);
-  }
-  const raw = result.stdout.trim();
-  let text = raw;
-  try {
-    const parsed = JSON.parse(raw) as { result?: string };
-    if (typeof parsed.result === 'string') {
-      text = parsed.result;
-    }
-  } catch {
-    text = raw;
-  }
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .split('-')
-    .filter(Boolean)
-    .slice(0, 5)
-    .join('-');
-}
 
 export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
@@ -231,19 +187,35 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
-    if (!trimmed || slugGenerating) {
+    if (trimmed === '' || slugGenerating) {
       return;
     }
     setSlugGenerating(true);
-    generateBranchSlug(
-      trimmed,
-      resolveTaskModel('branch_naming', workspaceOverrides?.taskModels, defaultProvider),
-    )
-      .then((slug) => {
-        setBranchSlug(slug);
-        setSlugTouched(true);
+    const taskModel = resolveTaskModel(
+      'branch_naming',
+      workspaceOverrides?.taskModels,
+      defaultProvider,
+    );
+    generateBranchSlug({
+      goal: trimmed,
+      ...taskModel,
+      fallbackSlug: slugifyLive(trimmed),
+      invokeFn: invoke,
+      ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
+    })
+      .then((result) => {
+        if (result.accepted) {
+          setBranchSlug(result.slug);
+          setSlugTouched(true);
+          return;
+        }
+        if (!slugTouched) {
+          setBranchSlug(result.slug);
+        }
+        showToast('warning', 'Branch name generation failed, kept the name derived from the goal', {
+          context: result.error ?? 'unknown error',
+        });
       })
-      .catch(() => undefined)
       .finally(() => {
         setSlugGenerating(false);
       });

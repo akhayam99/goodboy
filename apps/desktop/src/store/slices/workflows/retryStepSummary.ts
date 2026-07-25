@@ -38,7 +38,12 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider,
       );
 
-    const result = await summarizeAgentOutput({ output: assistantText, taskModel });
+    const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+    const result = await summarizeAgentOutput({
+      output: assistantText,
+      taskModel,
+      ...(worktreePath != null && { workingDir: worktreePath }),
+    });
     await invokeAgentUpdateStatus(agentId, { status: 'completed', outputSummary: result.summary });
 
     set((state) => ({

@@ -39,6 +39,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const deleteStepDef = useAppStore((s) => s.deleteStepDef);
   const resetWorkflows = useAppStore((s) => s.resetWorkflows);
   const providers = useAppStore((s) => s.providers);
+  const workspaceRoot = useAppStore(
+    (s) => s.workspaces?.find((w) => w.id === workspaceId)?.rootPath ?? null,
+  );
   const { showToast } = useToast();
   const connectedProviders = useMemo(
     () => providers.filter((p) => p.connection === 'connected').map((p) => p.id),
@@ -161,7 +164,11 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setFormError(null);
     try {
       const result = await formatWorkflowFromNL(
-        { providerId, invokeFn: invoke },
+        {
+          providerId,
+          invokeFn: invoke,
+          ...(workspaceRoot != null && { workingDir: workspaceRoot }),
+        },
         {
           description: text,
           currentName: form.name,

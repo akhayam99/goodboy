@@ -213,7 +213,6 @@ describe('summarizer notifications', () => {
       delta: { upserts: [] },
       usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'claude-haiku-4-5',
-      nextActions: [],
     });
 
     const { useAppStore } = await import('./store');
@@ -312,5 +311,51 @@ describe('summarizer notifications', () => {
     expect(n.body as string).toContain('anthropic');
     expect(n.body as string).toContain('model overloaded');
     expect(n.action).toEqual({ kind: 'retry-summarizer', sessionId: SESSION_ID });
+  });
+
+  it('retries a parse failure exactly once before surfacing it', async () => {
+    const { SummarizerParseError } = await import('@goodboy/core');
+    summarizeSpy.mockRejectedValue(new SummarizerParseError('not valid JSON', 'Sistema bloccato'));
+
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
+
+    summarizerQueues.delete(SESSION_ID);
+    useAppStore.setState({
+      sessions: [
+        {
+          id: SESSION_ID,
+          workspaceId: WORKSPACE_ID,
+          goal: 'test',
+          state: { kind: 'idle', lastActivityAt: NOW },
+          contextSlots: [],
+          providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+          permissionMode: 'bypassPermissions' as const,
+          autoRun: false,
+          titleUserEdited: false,
+          workflowRuns: [],
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+      sessionSlots: {},
+      summarizerStatus: {},
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'user input',
+      'agent output',
+    );
+
+    await vi.waitFor(() => expect(insertNotificationSpy).toHaveBeenCalled(), { timeout: 5000 });
+
+    expect(summarizeSpy).toHaveBeenCalledTimes(2);
+    expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('error');
   });
 });

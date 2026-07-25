@@ -1,4 +1,5 @@
 import type { AgentRole, ProviderId } from '@goodboy/types';
+import { extractAuxOutput } from '../providers/aux-output';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const VALID_ROLES: ReadonlySet<AgentRole> = new Set<AgentRole>([
@@ -61,6 +62,7 @@ export type WorkflowFormatInput = {
 export type WorkflowFormatDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
+  readonly workingDir?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
@@ -111,13 +113,14 @@ export const formatWorkflowFromNL = async (
       binary: deps.binary ?? getDefaultBinary(deps.providerId),
       userMessage: buildWorkflowFormatUserPrompt(input),
       systemPrompt: WORKFLOW_FORMAT_SYSTEM_PROMPT,
+      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
     },
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;
   }
 
-  const text = extractText(deps.providerId, result.stdout);
+  const text = extractAuxOutput({ providerId: deps.providerId, stdout: result.stdout }).text;
   return parseFormattedWorkflow(text);
 };
 
@@ -227,17 +230,4 @@ function extractJsonObject(text: string): string | null {
     return null;
   }
   return text.slice(start, end + 1);
-}
-
-function extractText(providerId: ProviderId, stdout: string): string {
-  const trimmed = stdout.trim();
-  if (providerId === 'anthropic') {
-    try {
-      const parsed = JSON.parse(trimmed) as { result?: string };
-      return (parsed.result ?? '').trim();
-    } catch {
-      return trimmed;
-    }
-  }
-  return trimmed;
 }

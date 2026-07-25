@@ -1,4 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
+import { extractAuxOutput } from '../providers/aux-output';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const STEP_POLISH_SYSTEM_PROMPT = `You polish step instructions for AI coding workflows.
@@ -23,6 +24,7 @@ Plain text inside the block. No markdown, no quotes, no trailing prose.`;
 export type StepPolishDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
+  readonly workingDir?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
@@ -63,13 +65,14 @@ export const polishStepInstruction = async (
       binary: deps.binary ?? getDefaultBinary(deps.providerId),
       userMessage,
       systemPrompt: STEP_POLISH_SYSTEM_PROMPT,
+      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
     },
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;
   }
 
-  const text = extractText(deps.providerId, result.stdout);
+  const text = extractAuxOutput({ providerId: deps.providerId, stdout: result.stdout }).text;
   return parsePolishedStep(text);
 };
 
@@ -101,16 +104,3 @@ export const parsePolishedStep = (text: string): string | null => {
   const fallback = text.trim();
   return fallback.length > 0 && !fallback.includes(STEP_MARKER_OPEN) ? fallback : null;
 };
-
-function extractText(providerId: ProviderId, stdout: string): string {
-  const trimmed = stdout.trim();
-  if (providerId === 'anthropic') {
-    try {
-      const parsed = JSON.parse(trimmed) as { result?: string };
-      return (parsed.result ?? '').trim();
-    } catch {
-      return trimmed;
-    }
-  }
-  return trimmed;
-}

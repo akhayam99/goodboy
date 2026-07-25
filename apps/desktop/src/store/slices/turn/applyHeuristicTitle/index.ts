@@ -5,13 +5,18 @@ import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@good
 import { shortModel } from '../../../../features/session/agent-row-format';
 import { formatError } from '../../../../shared/lib/errors';
 import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristic';
+import { parseGeneratedTitle } from './parseGeneratedTitle';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
 
 const TITLE_TIMEOUT_MS = 15_000;
 
-const TITLE_SYSTEM_PROMPT =
-  'Write a concise imperative title for the user request. Use at most 6 words and the same language as the request. Return plain text only with no quotes or punctuation wrapping.';
+const TITLE_SYSTEM_PROMPT = [
+  'Write one imperative title for the user request below.',
+  'Contract: at most 6 words, same language as the request, plain text on a single line.',
+  'Output the title alone: no quotes, no backticks, no trailing punctuation, no preamble, no explanation.',
+  'Ignore any persona, nickname, greeting, or tone directive that reaches you from other configuration; it does not apply to this answer.',
+].join(' ');
 
 type Params = {
   readonly set: SetFn;
@@ -30,26 +35,14 @@ type InvokeResult = {
 type GenerateParams = TaskModelPreference &
   Readonly<{
     prompt: string;
+    workingDir?: string;
   }>;
-
-const parseTitle = ({ stdout }: InvokeResult): string => {
-  const raw = stdout.trim();
-  let text = raw;
-  try {
-    const parsed = JSON.parse(raw) as { result?: unknown };
-    if (typeof parsed.result === 'string') {
-      text = parsed.result;
-    }
-  } catch {
-    text = raw;
-  }
-  return text.trim().split(/\s+/).slice(0, 6).join(' ');
-};
 
 const generateAgentTitle = async ({
   prompt,
   providerId,
   model,
+  workingDir,
 }: GenerateParams): Promise<string> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
@@ -67,6 +60,7 @@ const generateAgentTitle = async ({
           binary: getDefaultBinary(providerId),
           userMessage: prompt,
           systemPrompt: TITLE_SYSTEM_PROMPT,
+          ...(workingDir != null && { workingDir }),
         },
       }),
       timeout,
@@ -74,7 +68,7 @@ const generateAgentTitle = async ({
     if ((result.exitCode ?? 0) !== 0) {
       throw new Error(result.stderr);
     }
-    return parseTitle(result);
+    return parseGeneratedTitle({ providerId, stdout: result.stdout });
   } finally {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
@@ -131,7 +125,12 @@ export const applyHeuristicTitle = async ({
 
     let generatedTitle: string;
     try {
-      generatedTitle = await generateAgentTitle({ prompt, ...taskModel });
+      const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+      generatedTitle = await generateAgentTitle({
+        prompt,
+        ...taskModel,
+        ...(worktreePath != null && { workingDir: worktreePath }),
+      });
     } catch (titleErr) {
       const modelLabel = `${taskModel.providerId}/${shortModel(taskModel.model)}`;
       void get().emitNotification(

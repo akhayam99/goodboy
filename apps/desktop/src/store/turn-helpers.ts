@@ -6,6 +6,7 @@ import {
   extractPlanFromMarker,
   SLOT_BUDGETS,
   Summarizer,
+  SummarizerParseError,
   type ExtractedHandoff,
   type SlotKey,
 } from '@goodboy/core';
@@ -97,6 +98,7 @@ type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
   readonly oversizeRetried: boolean;
+  readonly parseRetried?: boolean;
   readonly taskModelOverride?: TaskModelPreference;
 };
 
@@ -216,21 +218,16 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   });
 
   try {
+    const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
     const summarizer = new Summarizer({
       providerId,
       invokeFn: invoke,
+      ...(worktreePath != null && { workingDir: worktreePath }),
       ...(entry.taskModelOverride && { model: entry.taskModelOverride.model }),
     });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
-    const ghPr = get().sessionGithub[sessionId]?.pr ?? null;
-    const prState = ghPr
-      ? {
-          hasOpenPr: ghPr.state === 'open' || ghPr.state === 'draft' || ghPr.state === 'approved',
-          checksGreen: ghPr.checks === 'success',
-        }
-      : null;
-    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput, prState });
+    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
 
     const upsertResults = await Promise.all(
       result.delta.upserts.map(async (upsert) => {
@@ -394,21 +391,26 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     if (import.meta.env.DEV) {
       console.warn(`[summarizer] failed for session ${sessionId}: ${message}`);
     }
+    const willRetryParse = err instanceof SummarizerParseError && entry.parseRetried !== true;
     set((state) => {
       const prev = state.summarizerStatus[sessionId];
       return {
         summarizerStatus: {
           ...state.summarizerStatus,
           [sessionId]: {
-            status: 'error',
+            status: willRetryParse ? 'running' : 'error',
             lastUpdate: now(),
-            error: message,
+            error: willRetryParse ? null : message,
             lastUsage: prev?.lastUsage ?? null,
             lastAttempt: prev?.lastAttempt ?? { turnInput, turnOutput },
           },
         },
       };
     });
+    if (willRetryParse) {
+      reenqueueSummarizer({ set, get, sessionId, entry: { ...entry, parseRetried: true } });
+      return;
+    }
     void get().emitNotification(
       'error',
       'error',
