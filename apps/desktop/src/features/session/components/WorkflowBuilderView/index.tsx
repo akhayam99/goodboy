@@ -174,6 +174,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
+  const sessionWorktree = useAppStore((s) => s.sessionWorktrees?.[session.id]?.[0] ?? null);
   const { showToast } = useToast();
 
   const {
@@ -420,7 +421,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setPolishingKey(key);
     try {
       const polished = await polishStepInstruction(
-        { providerId, invokeFn: invoke },
+        {
+          providerId,
+          invokeFn: invoke,
+          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+        },
         { role: step.role, name: step.name, instruction: step.promptPrefix },
       );
       if (polished && polished !== step.promptPrefix) {
@@ -470,7 +475,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
     setPolishing(true);
     try {
-      const polished = await polishWorkflowGoal({ providerId, invokeFn: invoke }, goalText);
+      const polished = await polishWorkflowGoal(
+        {
+          providerId,
+          invokeFn: invoke,
+          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+        },
+        goalText,
+      );
       if (polished && polished !== goalText) {
         replaceGoal(polished);
       } else if (!polished) {
@@ -516,7 +528,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       const effectiveModel =
         plannerModelOverride !== '' ? plannerModelOverride : plannerRecommendedModel;
       const taskModel = { providerId: plannerEffectiveProviderId, model: effectiveModel };
-      const client = new PlannerClient({ ...taskModel, invokeFn: invoke });
+      const client = new PlannerClient({
+        ...taskModel,
+        invokeFn: invoke,
+        ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+      });
       const result = await client.plan({ process });
       setPlan(result.output);
       setSteps(stepsFromPlan(result.output));

@@ -101,7 +101,12 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         get().workspaceOverrides?.[session.workspaceId]?.taskModels,
         session.providerPreference.defaultProvider,
       );
-      const result = await summarizeAgentOutput({ output: assistantText, taskModel });
+      const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+      const result = await summarizeAgentOutput({
+        output: assistantText,
+        taskModel,
+        ...(worktreePath != null && { workingDir: worktreePath }),
+      });
       outputSummary = result.summary;
       if (result.degraded && !degradedNotifiedAgents.has(agentId)) {
         degradedNotifiedAgents.add(agentId);

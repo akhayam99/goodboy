@@ -8,6 +8,7 @@ const SUMMARY_TIMEOUT_MS = 15_000;
 type Params = {
   readonly output: string;
   readonly taskModel: TaskModelPreference;
+  readonly workingDir?: string;
 };
 
 export type SummarizeAgentOutputResult = {
@@ -19,6 +20,7 @@ export type SummarizeAgentOutputResult = {
 export const summarizeAgentOutput = async ({
   output,
   taskModel,
+  workingDir,
 }: Params): Promise<SummarizeAgentOutputResult> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
@@ -30,7 +32,12 @@ export const summarizeAgentOutput = async ({
 
   try {
     const summary = await Promise.race([
-      summarizeStepOutput({ ...taskModel, invokeFn: invoke, output }),
+      summarizeStepOutput({
+        ...taskModel,
+        invokeFn: invoke,
+        output,
+        ...(workingDir != null && { workingDir }),
+      }),
       timeout,
     ]);
     return { summary, degraded: false };
