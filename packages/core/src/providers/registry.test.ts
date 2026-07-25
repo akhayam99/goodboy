@@ -97,6 +97,10 @@ describe('getCapabilities', () => {
     expect(getDefaultTurnModel('gemini')).toBe('gemini-3.5-flash');
   });
 
+  it('getDefaultTurnModel for anthropic returns the newest opus', () => {
+    expect(getDefaultTurnModel('anthropic')).toBe('claude-opus-5');
+  });
+
   it('getDefaultTurnModel for cursor returns the composer turn model', () => {
     expect(getDefaultTurnModel('cursor')).toBe('composer-2');
   });

@@ -94,6 +94,7 @@ const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
   'claude-opus-4-6': { weight: 60, tier: 'expensive' },
   'claude-opus-4-7': { weight: 75, tier: 'expensive' },
   'claude-opus-4-8': { weight: 80, tier: 'expensive' },
+  'claude-opus-5': { weight: 85, tier: 'expensive' },
   'claude-fable-5': { weight: 90, tier: 'expensive' },
 };
 

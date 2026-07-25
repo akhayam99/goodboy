@@ -3,6 +3,7 @@ import { getModelPrice } from './model-price';
 
 describe('getModelPrice', () => {
   it('returns claude opus pricing for a known opus id', () => {
+    expect(getModelPrice('claude-opus-5')).toEqual({ inputPerMtok: 5, outputPerMtok: 25 });
     expect(getModelPrice('claude-opus-4-8')).toEqual({ inputPerMtok: 5, outputPerMtok: 25 });
   });
 

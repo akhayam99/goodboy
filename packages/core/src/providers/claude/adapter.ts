@@ -17,8 +17,9 @@ const CAPABILITIES: ProviderCapabilities = {
   toolUse: true,
   fileEdits: true,
   contextWindow: 1_000_000,
-  defaultModel: 'claude-opus-4-8',
+  defaultModel: 'claude-opus-5',
   availableModels: [
+    'claude-opus-5',
     'claude-opus-4-8',
     'claude-fable-5',
     'claude-opus-4-7',

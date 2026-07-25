@@ -10,6 +10,18 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
   anthropic: {
     models: [
       {
+        id: 'claude-opus-5',
+        tier: 'turn',
+        contextWindow: 1_000_000,
+        family: 'claude',
+        subfamily: 'opus',
+        label: 'Opus 5',
+        variantLabel: '5',
+        costTier: 'expensive',
+        weight: 85,
+        effort: OPUS_EFFORT,
+      },
+      {
         id: 'claude-opus-4-8',
         tier: 'turn',
         contextWindow: 1_000_000,

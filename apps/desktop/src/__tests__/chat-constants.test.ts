@@ -12,6 +12,7 @@ const ANTHROPIC = [
   'claude-opus-4-6',
   'claude-opus-4-7',
   'claude-opus-4-8',
+  'claude-opus-5',
   'claude-fable-5',
 ];
 
@@ -22,6 +23,14 @@ const GEMINI = ['gemini-3.5-flash', 'gemini-3.1-pro'];
 describe('suggestLighterModel', () => {
   it('Opus 4.8 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
     expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)).toEqual({
+      id: 'claude-sonnet-4-6',
+      kind: 'strong',
+      costMultiplier: 1.7,
+    });
+  });
+
+  it('Opus 5 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
+    expect(suggestLighterModel('claude-opus-5', ANTHROPIC)).toEqual({
       id: 'claude-sonnet-4-6',
       kind: 'strong',
       costMultiplier: 1.7,
@@ -130,6 +139,14 @@ describe('suggestHeavierModel', () => {
 });
 
 describe('parseModelId', () => {
+  it('single-segment opus version keeps the opus subfamily', () => {
+    expect(parseModelId('claude-opus-5')).toEqual({
+      family: 'claude',
+      subfamily: 'opus',
+      variantLabel: '5',
+    });
+  });
+
   it('canonical anthropic ids: family/subfamily/variant', () => {
     expect(parseModelId('claude-haiku-4-5')).toEqual({
       family: 'claude',
