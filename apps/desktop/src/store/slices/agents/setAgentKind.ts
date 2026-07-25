@@ -1,15 +1,21 @@
 import type { AgentId } from '@goodboy/types';
 import { kindRouting, type AgentKind } from '../../../features/session/agent-kind';
 import { invokeAgentSetKind } from '../../../features/workflows/workflows';
-import type { SetFn } from './types';
+import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import type { GetFn, SetFn } from './types';
 
-export const setAgentKind = (set: SetFn) => {
+export const setAgentKind = (set: SetFn, get: GetFn) => {
   return (agentId: AgentId, kind: AgentKind) => {
+    const state = get();
+    const owner = Object.values(state.sessionPhaseRuns ?? {})
+      .flat()
+      .find((agent) => agent.id === agentId);
+    const roleModels = roleModelsForSession({ state, sessionId: owner?.sessionId ?? null });
     set((s) => {
       const nextModelOverride = { ...s.agentModelOverride };
       const nextProviderOverride = { ...s.agentProviderOverride };
       const nextEffortOverride = { ...s.agentEffortOverride };
-      const defaults = kindRouting({ kind });
+      const defaults = kindRouting({ kind, roleModels });
       if (defaults?.model) {
         nextModelOverride[agentId] = defaults.model;
         delete nextProviderOverride[agentId];

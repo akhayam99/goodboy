@@ -17,18 +17,22 @@ pub struct SettingsOverrides {
     pub default_verbosity: Option<String>,
     #[serde(rename = "providerBindings")]
     pub provider_bindings: Option<serde_json::Value>,
+    #[serde(rename = "taskModels")]
+    pub task_models: Option<serde_json::Value>,
+    #[serde(rename = "roleModels")]
+    pub role_models: Option<serde_json::Value>,
     #[serde(rename = "scoutFanout")]
     pub scout_fanout: Option<bool>,
 }
 
-fn bindings_to_text(value: &Option<serde_json::Value>) -> Option<String> {
+fn json_to_text(value: &Option<serde_json::Value>) -> Option<String> {
     match value {
         Some(serde_json::Value::Null) | None => None,
         Some(v) => Some(v.to_string()),
     }
 }
 
-fn bindings_from_text(raw: Option<String>) -> Option<serde_json::Value> {
+fn json_from_text(raw: Option<String>) -> Option<serde_json::Value> {
     raw.and_then(|s| serde_json::from_str(&s).ok())
 }
 
@@ -39,19 +43,21 @@ pub fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, scout_fanout
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
-        let scout_raw: Option<i64> = row.get(6)?;
+        let scout_raw: Option<i64> = row.get(8)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
             default_workflow_id: row.get(1)?,
             default_branch_prefix: row.get(2)?,
             parallel_enabled: parallel_raw.map(|v| v != 0),
             default_verbosity: row.get(4)?,
-            provider_bindings: bindings_from_text(row.get(5)?),
+            provider_bindings: json_from_text(row.get(5)?),
+            task_models: json_from_text(row.get(6)?),
+            role_models: json_from_text(row.get(7)?),
             scout_fanout: scout_raw.map(|v| v != 0),
         })
     })?;
@@ -79,16 +85,20 @@ pub fn set_workspace_overrides(
              parallel_enabled = ?4,
              default_verbosity = ?5,
              provider_bindings = ?6,
-             scout_fanout = ?7,
-             updated_at = ?8
-         WHERE id = ?9",
+             task_models = ?7,
+             role_models = ?8,
+             scout_fanout = ?9,
+             updated_at = ?10
+         WHERE id = ?11",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_workflow_id,
             overrides.default_branch_prefix,
             parallel_val,
             overrides.default_verbosity,
-            bindings_to_text(&overrides.provider_bindings),
+            json_to_text(&overrides.provider_bindings),
+            json_to_text(&overrides.task_models),
+            json_to_text(&overrides.role_models),
             scout_val,
             now,
             workspace_id,
@@ -115,7 +125,9 @@ pub fn get_session_overrides(
             default_branch_prefix: row.get(2)?,
             parallel_enabled: parallel_raw.map(|v| v != 0),
             default_verbosity: None,
-            provider_bindings: bindings_from_text(row.get(4)?),
+            provider_bindings: json_from_text(row.get(4)?),
+            task_models: None,
+            role_models: None,
             scout_fanout: None,
         })
     })?;
@@ -148,7 +160,7 @@ pub fn set_session_overrides(
             overrides.default_workflow_id,
             overrides.default_branch_prefix,
             parallel_val,
-            bindings_to_text(&overrides.provider_bindings),
+            json_to_text(&overrides.provider_bindings),
             now,
             session_id,
         ],

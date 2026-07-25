@@ -85,6 +85,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         defaultVerbosity: verbosity,
         providerBindings: wsOverrides?.providerBindings ?? null,
         taskModels: wsOverrides?.taskModels ?? null,
+        roleModels: wsOverrides?.roleModels ?? null,
         scoutFanout,
         ...partial,
       });

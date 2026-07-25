@@ -15,6 +15,7 @@ import {
 } from '../../../../../../features/session/agent-kind';
 import { clampEffort } from '../../../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionRoleModels';
 
 type SpawnAgentMenuProps = {
   readonly sessionId: SessionId;
@@ -48,7 +49,8 @@ export function SpawnAgentMenu({ sessionId, trigger, onSpawned }: SpawnAgentMenu
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
-  const baseline = kindRouting({ kind: 'generic' });
+  const roleModels = useSessionRoleModels({ sessionId });
+  const baseline = kindRouting({ kind: 'generic', roleModels });
   const onProvider = (next: ProviderId | '') => {
     if (next === '') {
       setRouting(null);

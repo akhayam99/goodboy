@@ -10,6 +10,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
+  roleModels: null,
   scoutFanout: null,
 };
 

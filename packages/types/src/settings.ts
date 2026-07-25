@@ -1,5 +1,6 @@
 import type { SessionId, WorkflowId, WorkspaceId } from './ids';
-import type { ProviderId } from './provider-registry';
+import type { ModelEffort, ProviderId } from './provider-registry';
+import type { AgentRole } from './workflow';
 
 export type VerbosityLevel = 'brief' | 'normal' | 'verbose';
 
@@ -19,6 +20,14 @@ export type TaskModelPreference = Readonly<{
 
 export type TaskModelPreferences = Readonly<Partial<Record<AuxTaskId, TaskModelPreference>>>;
 
+export type RoleModelPreference = Readonly<{
+  providerId: ProviderId;
+  model: string;
+  effort: ModelEffort;
+}>;
+
+export type RoleModelPreferences = Readonly<Partial<Record<AgentRole, RoleModelPreference>>>;
+
 export type OverrideSettings = Readonly<{
   defaultProviderId: ProviderId | null;
   defaultWorkflowId: WorkflowId | null;
@@ -27,6 +36,7 @@ export type OverrideSettings = Readonly<{
   defaultVerbosity: VerbosityLevel | null;
   providerBindings: ProviderBindings | null;
   taskModels: TaskModelPreferences | null;
+  roleModels: RoleModelPreferences | null;
   scoutFanout: boolean | null;
 }>;
 

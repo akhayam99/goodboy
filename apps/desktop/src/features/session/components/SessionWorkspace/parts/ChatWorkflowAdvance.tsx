@@ -5,6 +5,7 @@ import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../.
 import { workflowRunHasOpenQuestions } from '../../../../context/openQuestionsGate';
 import { resolveWorkflowAdvance } from '../../../../workflows/advanceGate';
 import { WorkflowNextStepCta } from '../../../../workflows/components/WorkflowNextStepCta';
+import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -21,6 +22,7 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
   );
   const openQuestions = useSessionOpenQuestions(sessionId);
+  const roleModels = useSessionRoleModels({ sessionId });
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
 
@@ -62,6 +64,7 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
       <WorkflowNextStepCta
         workflow={workflow}
         runs={stepAgents}
+        roleModels={roleModels}
         blockReason={state.kind === 'blocked' ? state.reason : null}
         onAdvance={(step) => void onAdvance(step)}
         onForceAdvance={() => void skipStuckStepAndAdvance(sessionId, workflowRunId)}

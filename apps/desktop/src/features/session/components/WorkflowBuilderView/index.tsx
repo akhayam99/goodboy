@@ -29,6 +29,7 @@ import {
   polishStepInstruction,
   polishWorkflowGoal,
   recommendedModelForRole,
+  resolveRoleRouting,
   resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
@@ -36,6 +37,7 @@ import type {
   AgentEffort,
   AgentRole,
   ProviderId,
+  RoleModelPreferences,
   Session,
   Step,
   StepId,
@@ -99,7 +101,12 @@ const stepsFromTemplate = (template: Workflow): ReadonlyArray<EditableStep> =>
     ...(s.effort && { effort: s.effort as EffortLevel }),
   }));
 
-const stepsFromPlan = (plan: PlannerOutput): ReadonlyArray<EditableStep> =>
+type StepsFromPlanParams = {
+  readonly plan: PlannerOutput;
+  readonly roleModels: RoleModelPreferences | null;
+};
+
+const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray<EditableStep> =>
   plan.steps.map((s) => {
     const role = s.role as AgentRole;
     return {
@@ -108,7 +115,7 @@ const stepsFromPlan = (plan: PlannerOutput): ReadonlyArray<EditableStep> =>
       name: s.name,
       promptPrefix: s.promptPrefix ?? '',
       expectedOutput: s.expectedOutput ?? '',
-      effort: defaultsForRole(role).effort as EffortLevel,
+      effort: resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel,
     };
   });
 
@@ -175,6 +182,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const workspaceOverrides = useAppStore(
     (s) => s.workspaceOverrides?.[session.workspaceId] ?? null,
   );
+  const roleModels = workspaceOverrides?.roleModels ?? null;
+  const roleEffort = (role: AgentRole): EffortLevel =>
+    resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel;
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
@@ -394,7 +404,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         name: '',
         promptPrefix: '',
         expectedOutput: '',
-        effort: defaultsForRole('custom').effort as EffortLevel,
+        effort: roleEffort('custom'),
       },
     ]);
   };
@@ -411,7 +421,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const resolvedProvider = (step: EditableStep): ProviderId =>
     step.providerOverride ?? recommendedProvider(step);
   const recommendedModel = (step: EditableStep): string =>
-    recommendedModelForRole({ role: step.role ?? 'custom', provider: resolvedProvider(step) });
+    recommendedModelForRole({
+      role: step.role ?? 'custom',
+      provider: resolvedProvider(step),
+      prefs: roleModels,
+    });
   const resolvedModel = (step: EditableStep): string =>
     step.modelOverride !== undefined && step.modelOverride !== ''
       ? step.modelOverride
@@ -540,7 +554,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       });
       const result = await client.plan({ process });
       setPlan(result.output);
-      setSteps(stepsFromPlan(result.output));
+      setSteps(stepsFromPlan({ plan: result.output, roleModels }));
       setStage(2);
     } catch (err) {
       setError(formatError(err));
@@ -558,7 +572,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const buildSteps = (workflowId: WorkflowId): ReadonlyArray<Step> =>
     steps.map((st, ordinal) => {
-      const effort = (st.effort ?? defaultsForRole(st.role).effort) as EffortLevel;
+      const effort = (st.effort ?? roleEffort(st.role)) as EffortLevel;
       const base: Step = {
         id: `step_builder_${crypto.randomUUID()}` as StepId,
         workflowId,
@@ -1063,9 +1077,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 model={st.modelOverride ?? ''}
                                 resolvedModel={resolvedModel(st)}
                                 recommendedModel={recommendedModel(st)}
-                                effort={
-                                  (st.effort ?? defaultsForRole(st.role).effort) as EffortLevel
-                                }
+                                effort={(st.effort ?? roleEffort(st.role)) as EffortLevel}
                                 expanded={expandedKey === st.key}
                                 dragging={draggingKey === st.key}
                                 disabled={busy}

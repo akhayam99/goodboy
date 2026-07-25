@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
-import type { Agent, Step, Workflow } from '@goodboy/types';
+import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import {
   kindRouting,
@@ -25,6 +25,7 @@ export type Props = {
   readonly blockReason?: WorkflowBlockReason | null;
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
+  readonly roleModels?: RoleModelPreferences | null;
 };
 
 export type PickNextWorkflowStepGate = {
@@ -66,6 +67,7 @@ export const WorkflowNextStepCta = ({
   blockReason = null,
   consumesActivePlan = false,
   className,
+  roleModels = null,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -73,7 +75,7 @@ export const WorkflowNextStepCta = ({
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
-  const defaults = kindRouting({ kind });
+  const defaults = kindRouting({ kind, roleModels });
   const palette = AGENT_KIND_PALETTE[kind];
   const doForce = async () => {
     if (busy) {

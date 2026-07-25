@@ -353,7 +353,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const turnOverrideActive = turnOverride !== undefined && effectiveOverride === turnOverride;
     const autoStepModel =
       phaseDefinition != null && !phaseDefinition.modelOverride
-        ? (autoModelForRole(phaseDefinition.role ?? 'custom', [provider])?.model ?? null)
+        ? (autoModelForRole({
+            role: phaseDefinition.role ?? 'custom',
+            providers: [provider],
+            prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+          })?.model ?? null)
         : null;
     const model = resolveModelForProvider({
       provider,

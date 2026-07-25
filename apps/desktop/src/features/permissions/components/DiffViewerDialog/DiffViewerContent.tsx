@@ -23,6 +23,7 @@ import {
 } from '../../../../features/settings/settings';
 import { useAppStore, useDiffComments, useSummarizerStatus } from '../../../../store';
 import { kindRouting, type AgentKindRouting } from '../../../../features/session/agent-kind';
+import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
@@ -311,8 +312,9 @@ export const DiffViewerContent = ({
   const sendTurn = useAppStore((s) => s.sendTurn);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
+  const resolverRoleModels = useSessionRoleModels({ sessionId: sessionId ?? null });
   const [resolverRouting, setResolverRouting] = useState<AgentKindRouting>(() =>
-    kindRouting({ kind: 'resolver' }),
+    kindRouting({ kind: 'resolver', roleModels: resolverRoleModels }),
   );
 
   useEffect(() => {

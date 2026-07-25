@@ -10,6 +10,7 @@ import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCar
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { EmptyGuide } from '../EmptyGuide';
+import { useAppStore } from '../../../../../store';
 
 type Props = {
   readonly open: boolean;
@@ -78,6 +79,7 @@ export const WorkflowComposer = ({
   onDeleteDef,
   onClose,
 }: Props) => {
+  const roleModels = useAppStore((s) => s.workspaceOverrides?.[workspaceId]?.roleModels ?? null);
   if (!open) {
     return (
       <section className="flex min-w-0 flex-1 flex-col">
@@ -104,7 +106,7 @@ export const WorkflowComposer = ({
       : recommendedProvider(def);
 
   const recommendedModel = (def: DefinitionForm): string =>
-    recommendedModelForRole({ role: def.role, provider: resolvedProvider(def) });
+    recommendedModelForRole({ role: def.role, provider: resolvedProvider(def), prefs: roleModels });
 
   const resolvedModel = (def: DefinitionForm): string =>
     def.modelOverride !== undefined && def.modelOverride !== ''

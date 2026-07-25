@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, sameConfig } from './config';
+import { aggregateConfig, clampEffort, configFor, defaultConfig, sameConfig } from './config';
+
+const DEFAULT_CONFIG = defaultConfig({ roleModels: null });
 
 describe('ResolveBoard config', () => {
   it('clampEffort keeps supported levels and falls back to the top for unsupported ones', () => {
@@ -12,11 +14,11 @@ describe('ResolveBoard config', () => {
   });
 
   it('configFor seeds the resolver default model for anthropic', () => {
-    expect(configFor('anthropic')).toEqual(DEFAULT_CONFIG);
+    expect(configFor({ provider: 'anthropic', base: DEFAULT_CONFIG })).toEqual(DEFAULT_CONFIG);
   });
 
   it('configFor uses the provider default model for non-anthropic', () => {
-    const cfg = configFor('codex');
+    const cfg = configFor({ provider: 'codex', base: DEFAULT_CONFIG });
     expect(cfg.provider).toBe('codex');
     expect(cfg.model).not.toBe(DEFAULT_CONFIG.model);
   });
@@ -27,10 +29,18 @@ describe('ResolveBoard config', () => {
   });
 
   it('aggregateConfig returns the shared config when uniform, else mixed', () => {
-    expect(aggregateConfig([DEFAULT_CONFIG, { ...DEFAULT_CONFIG }])).toEqual(DEFAULT_CONFIG);
-    expect(aggregateConfig([DEFAULT_CONFIG, { ...DEFAULT_CONFIG, model: 'claude-opus-4-5' }])).toBe(
-      'mixed',
-    );
-    expect(aggregateConfig([])).toEqual(DEFAULT_CONFIG);
+    expect(
+      aggregateConfig({
+        configs: [DEFAULT_CONFIG, { ...DEFAULT_CONFIG }],
+        fallback: DEFAULT_CONFIG,
+      }),
+    ).toEqual(DEFAULT_CONFIG);
+    expect(
+      aggregateConfig({
+        configs: [DEFAULT_CONFIG, { ...DEFAULT_CONFIG, model: 'claude-opus-4-5' }],
+        fallback: DEFAULT_CONFIG,
+      }),
+    ).toBe('mixed');
+    expect(aggregateConfig({ configs: [], fallback: DEFAULT_CONFIG })).toEqual(DEFAULT_CONFIG);
   });
 });

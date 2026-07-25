@@ -16,6 +16,7 @@ import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly def: StepDef | null;
@@ -37,6 +38,7 @@ export const LibraryStepForm = ({
   onCommit,
   onClose,
 }: Props) => {
+  const roleModels = useAppStore((s) => s.workspaceOverrides?.[workspaceId]?.roleModels ?? null);
   const isGlobal = def?.workspaceId === null;
   const [name, setName] = useState(def?.name ?? '');
   const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom');
@@ -54,7 +56,11 @@ export const LibraryStepForm = ({
 
   const recommendedProv: ProviderId = connectedProviders[0] ?? 'anthropic';
   const effProvider: ProviderId = providerOverride !== '' ? providerOverride : recommendedProv;
-  const recommendedMod: string = recommendedModelForRole({ role, provider: effProvider });
+  const recommendedMod: string = recommendedModelForRole({
+    role,
+    provider: effProvider,
+    prefs: roleModels,
+  });
 
   type FormState = {
     name: string;

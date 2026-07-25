@@ -76,6 +76,7 @@ import { m075PrReviewDrafts } from './m075-pr-review-drafts';
 import { m076AgentSourceKind } from './m076-agent-source-kind';
 import { m077StepExpectedOutput } from './m077-step-expected-output';
 import { m078WorkflowProcessText } from './m078-workflow-process-text';
+import { m079RoleModels } from './m079-role-models';
 
 export type Migration = {
   readonly version: number;
@@ -161,4 +162,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 76, sql: m076AgentSourceKind },
   { version: 77, sql: m077StepExpectedOutput },
   { version: 78, sql: m078WorkflowProcessText },
+  { version: 79, sql: m079RoleModels },
 ];

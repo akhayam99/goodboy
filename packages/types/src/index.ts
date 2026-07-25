@@ -118,6 +118,8 @@ export type {
   OverrideSettings,
   ProviderBindings,
   ResolvedSettings,
+  RoleModelPreference,
+  RoleModelPreferences,
   SettingsScope,
   TaskModelPreference,
   TaskModelPreferences,

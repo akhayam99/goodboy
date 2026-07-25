@@ -54,6 +54,7 @@ describe('ResolveBoard', () => {
     const onSpawnBatch = vi.fn();
     render(
       <ResolveBoard
+        roleModels={null}
         threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={onSpawnBatch}
@@ -80,6 +81,7 @@ describe('ResolveBoard', () => {
     const onSpawnOne = vi.fn<(thread: CommentThread, choice: ResolveModelChoice) => void>();
     render(
       <ResolveBoard
+        roleModels={null}
         threads={[thread({ id: 'c1' })]}
         onSpawnOne={onSpawnOne}
         onSpawnBatch={vi.fn()}
@@ -100,6 +102,7 @@ describe('ResolveBoard', () => {
     const onSpawnOne = vi.fn<(thread: CommentThread, choice: ResolveModelChoice) => void>();
     render(
       <ResolveBoard
+        roleModels={null}
         threads={[thread({ id: 'c1' })]}
         onSpawnOne={onSpawnOne}
         onSpawnBatch={vi.fn()}
@@ -133,6 +136,7 @@ describe('ResolveBoard', () => {
       >();
     render(
       <ResolveBoard
+        roleModels={null}
         threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={onSpawnBatch}
@@ -163,6 +167,7 @@ describe('ResolveBoard', () => {
   it('renders the head comment plus its replies as context', () => {
     render(
       <ResolveBoard
+        roleModels={null}
         threads={[
           thread({ id: 'c1', body: 'main request' }, [
             comment({ id: 'r1', author: 'bob', body: 'agree, ship it' }),
@@ -181,6 +186,7 @@ describe('ResolveBoard', () => {
   it('renders an empty state when there are no open comments', () => {
     render(
       <ResolveBoard
+        roleModels={null}
         threads={[]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={vi.fn()}

@@ -14,6 +14,7 @@ import {
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../features/session/agent-kind';
+import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DEPTH_CAP = 2;
@@ -28,7 +29,8 @@ function resolveContainerModel(get: GetFn, container: Agent): string {
     return container.modelOverride;
   }
   const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name);
-  return kindRouting({ kind }).model;
+  const roleModels = roleModelsForSession({ state: get(), sessionId: container.sessionId });
+  return kindRouting({ kind, roleModels }).model;
 }
 
 const synthesisStarted = new Set<string>();

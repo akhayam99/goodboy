@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { AgentId, ProviderId } from '@goodboy/types';
+import type { AgentId, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { cn, EmptyState } from '@goodboy/ui';
 import {
   ArrowUpRight,
@@ -30,7 +30,7 @@ import {
 } from '../../../../session/components/ResolverStateBadge';
 import type { ResolverLink } from '../../../../session/resolver-linkage';
 import { useAppStore } from '../../../../../store';
-import { DEFAULT_CONFIG, aggregateConfig, clampEffort, configFor, type CardConfig } from './config';
+import { aggregateConfig, clampEffort, configFor, defaultConfig, type CardConfig } from './config';
 
 type Props = {
   readonly threads: ReadonlyArray<CommentThread>;
@@ -42,6 +42,7 @@ type Props = {
   ) => void;
   readonly onOpenResolver?: (agentId: AgentId) => void;
   readonly onOpenThread: (threadId: string) => void;
+  readonly roleModels: RoleModelPreferences | null;
 };
 
 const isClaimed = (link: ResolverLink | undefined): boolean =>
@@ -59,6 +60,7 @@ export const ResolveBoard = ({
   onSpawnBatch,
   onOpenResolver,
   onOpenThread,
+  roleModels,
 }: Props) => {
   const connectedProviders = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
@@ -69,7 +71,8 @@ export const ResolveBoard = ({
   const [mode, setMode] = useState<ResolveMode>('fix');
   const [hint, setHint] = useState('');
 
-  const getConfig = (id: string): CardConfig => configById[id] ?? DEFAULT_CONFIG;
+  const base = useMemo(() => defaultConfig({ roleModels }), [roleModels]);
+  const getConfig = (id: string): CardConfig => configById[id] ?? base;
   const patchConfig = (id: string, next: CardConfig) =>
     setConfigById((prev) => ({ ...prev, [id]: next }));
   const applyToAll = (next: CardConfig) =>
@@ -84,7 +87,10 @@ export const ResolveBoard = ({
     [selectable, deselected],
   );
   const allSelected = selectable.length > 0 && selected.length === selectable.length;
-  const aggregate = aggregateConfig(threads.map((t) => getConfig(t.head.id)));
+  const aggregate = aggregateConfig({
+    configs: threads.map((t) => getConfig(t.head.id)),
+    fallback: base,
+  });
 
   if (threads.length === 0) {
     return (
@@ -151,7 +157,8 @@ export const ResolveBoard = ({
             <ConfigPanel
               className="absolute right-0 top-8 z-20 w-64"
               title="Apply to all comments"
-              config={aggregate === 'mixed' ? DEFAULT_CONFIG : aggregate}
+              config={aggregate === 'mixed' ? base : aggregate}
+              base={base}
               mode={mode}
               hint={hint}
               connectedProviders={connectedProviders}
@@ -188,6 +195,7 @@ export const ResolveBoard = ({
             <ResolveCard
               thread={t}
               config={getConfig(t.head.id)}
+              base={base}
               checked={!deselected.has(t.head.id)}
               link={resolverFor?.(t)}
               connectedProviders={connectedProviders}
@@ -213,6 +221,7 @@ export const ResolveBoard = ({
 function ResolveCard({
   thread,
   config,
+  base,
   checked,
   link,
   connectedProviders,
@@ -228,6 +237,7 @@ function ResolveCard({
 }: {
   thread: CommentThread;
   config: CardConfig;
+  base: CardConfig;
   checked: boolean;
   link?: ResolverLink;
   connectedProviders: ReadonlyArray<ProviderId>;
@@ -334,6 +344,7 @@ function ResolveCard({
                       className="absolute left-0 top-8 z-20 w-60"
                       title="Resolve with"
                       config={config}
+                      base={base}
                       mode={mode}
                       hint={hint}
                       connectedProviders={connectedProviders}
@@ -387,6 +398,7 @@ function ConfigPanel({
   className,
   title,
   config,
+  base,
   mode,
   hint,
   connectedProviders,
@@ -398,6 +410,7 @@ function ConfigPanel({
   className?: string;
   title: string;
   config: CardConfig;
+  base: CardConfig;
   mode: ResolveMode;
   hint: string;
   connectedProviders: ReadonlyArray<ProviderId>;
@@ -410,7 +423,7 @@ function ConfigPanel({
     if (next === '') {
       return;
     }
-    onChange(configFor(next));
+    onChange(configFor({ provider: next, base }));
   };
   const onModel = (model: string) =>
     onChange({ ...config, model, effort: clampEffort(model, config.effort) });

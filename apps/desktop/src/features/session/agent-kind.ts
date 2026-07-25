@@ -1,11 +1,18 @@
 import {
   classifyFirstTurn,
-  defaultsForRole,
   getCheapModel,
+  resolveRoleRouting,
   type AgentKindLabel,
   type WorkflowLibraryStep,
 } from '@goodboy/core';
-import type { Agent, AgentEffort, AgentId, AgentRole, ProviderId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentEffort,
+  AgentId,
+  AgentRole,
+  ProviderId,
+  RoleModelPreferences,
+} from '@goodboy/types';
 
 export type AgentKind = AgentKindLabel;
 
@@ -235,11 +242,12 @@ const CHEAP_TIER_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>(['scout', 'd
 
 type KindRoutingParams = {
   readonly kind: AgentKind;
+  readonly roleModels?: RoleModelPreferences | null;
 };
 
-export const kindRouting = ({ kind }: KindRoutingParams): AgentKindRouting => {
-  const role = defaultsForRole(KIND_TO_ROLE[kind]);
-  if (!CHEAP_TIER_KINDS.has(kind)) {
+export const kindRouting = ({ kind, roleModels }: KindRoutingParams): AgentKindRouting => {
+  const role = resolveRoleRouting({ role: KIND_TO_ROLE[kind], prefs: roleModels });
+  if (role.isOverride || !CHEAP_TIER_KINDS.has(kind)) {
     return { provider: role.provider, model: role.model, effort: role.effort };
   }
   return { provider: role.provider, model: getCheapModel(role.provider), effort: 'low' };
