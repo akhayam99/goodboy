@@ -373,9 +373,9 @@ describe('ChatInput, input wiring', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /Codex/ }));
+    await user.click(screen.getByRole('button', { name: 'model routing' }));
     await user.click(
-      within(screen.getByRole('dialog', { name: 'model picker' })).getByRole('button', {
+      within(screen.getByRole('dialog', { name: 'model routing' })).getByRole('button', {
         name: 'Claude',
       }),
     );

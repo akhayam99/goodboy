@@ -1,5 +1,5 @@
 import type { AgentId } from '@goodboy/types';
-import { AGENT_KIND_DEFAULTS, type AgentKind } from '../../../features/session/agent-kind';
+import { kindRouting, type AgentKind } from '../../../features/session/agent-kind';
 import { invokeAgentSetKind } from '../../../features/workflows/workflows';
 import type { SetFn } from './types';
 
@@ -9,7 +9,7 @@ export const setAgentKind = (set: SetFn) => {
       const nextModelOverride = { ...s.agentModelOverride };
       const nextProviderOverride = { ...s.agentProviderOverride };
       const nextEffortOverride = { ...s.agentEffortOverride };
-      const defaults = AGENT_KIND_DEFAULTS[kind];
+      const defaults = kindRouting({ kind });
       if (defaults?.model) {
         nextModelOverride[agentId] = defaults.model;
         delete nextProviderOverride[agentId];

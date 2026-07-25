@@ -19,8 +19,3 @@ export const modelCostTier = (modelId: string): 'cheap' | 'mid' | 'premium' => {
   }
   return 'mid';
 };
-
-export const POPUP_BASE =
-  'absolute left-0 z-50 w-full rounded-md border border-border bg-subtle py-0.5 shadow-lg';
-export const POPUP_DOWN = 'top-full mt-1';
-export const POPUP_UP = 'bottom-full mb-1';

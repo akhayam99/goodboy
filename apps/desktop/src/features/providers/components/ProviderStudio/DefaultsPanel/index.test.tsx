@@ -36,25 +36,38 @@ vi.mock('../../ProviderChip', () => ({
   ),
 }));
 
-vi.mock('../../../../session/components/ModelSelect', () => ({
-  ModelSelect: ({
+vi.mock('../../../../../shared/components/RoutingPicker', () => ({
+  RoutingPicker: ({
+    ariaLabel,
     provider,
-    value,
+    model,
     recommendedModel,
-    onChange,
+    onProvider,
+    onModel,
   }: {
+    ariaLabel: string;
     provider: string;
-    value: string;
+    model: string;
     recommendedModel: string;
-    onChange: (model: string) => void;
+    onProvider: (provider: string) => void;
+    onModel: (model: string) => void;
   }) => (
-    <button
-      type="button"
-      aria-label={`${provider} model`}
-      onClick={() => onChange('claude-sonnet-4-6')}
-    >
-      {value === '' ? `${recommendedModel} recommended` : value}
-    </button>
+    <>
+      <button
+        type="button"
+        aria-label={`${ariaLabel} provider`}
+        onClick={() => onProvider('cursor')}
+      >
+        {provider}
+      </button>
+      <button
+        type="button"
+        aria-label={`${ariaLabel} model`}
+        onClick={() => onModel('claude-sonnet-4-6')}
+      >
+        {model === '' ? `${recommendedModel} recommended` : model}
+      </button>
+    </>
   ),
 }));
 
@@ -110,12 +123,10 @@ describe('DefaultsPanel', () => {
   it('keeps provider changes local while automatic is selected', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Summaries provider' }), {
-      target: { value: 'cursor' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Summaries routing provider' }));
 
     expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
-    const modelPicker = screen.getByRole('button', { name: 'cursor model' });
+    const modelPicker = screen.getByRole('button', { name: 'Summaries routing model' });
 
     fireEvent.click(modelPicker);
 

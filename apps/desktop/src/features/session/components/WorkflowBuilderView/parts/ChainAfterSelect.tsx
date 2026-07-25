@@ -1,10 +1,7 @@
-import { useRef, useState } from 'react';
 import { Check, ChevronDown, Link2 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Popover, cn } from '@goodboy/ui';
 import type { Workflow, WorkflowRunId } from '@goodboy/types';
-import { useClickOutside } from '../../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../../shared/hooks/useDropdownDirection';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../../dropdown-utils';
+import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 
 type ChainRun = { readonly run: { readonly id: WorkflowRunId }; readonly template: Workflow };
 
@@ -16,10 +13,10 @@ type Props = {
 };
 
 export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
+  const { open, close, toggle, containerRef, popupClassName } = useDropdown({
+    disabled,
+    width: 'w-max min-w-[12rem]',
+  });
   const selected = runs.find((r) => r.run.id === value) ?? null;
 
   return (
@@ -27,7 +24,7 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-label="run after which workflow"
         className={cn(
           'flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
@@ -50,9 +47,11 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
           aria-hidden
         />
       </button>
-      {open ? (
-        <div
-          className={cn(POPUP_BASE, 'min-w-[12rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}
+      {open && (
+        <Popover
+          role="listbox"
+          ariaLabel="workflow to run after"
+          className={cn(popupClassName, 'py-0.5')}
         >
           {runs.map(({ run, template }) => {
             const active = run.id === value;
@@ -62,7 +61,7 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
                 type="button"
                 onClick={() => {
                   onChange(run.id);
-                  setOpen(false);
+                  close();
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
@@ -76,8 +75,8 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
               </button>
             );
           })}
-        </div>
-      ) : null}
+        </Popover>
+      )}
     </div>
   );
 };

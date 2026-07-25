@@ -21,7 +21,7 @@ import type {
 import { EMPTY_ARRAY } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import {
-  AGENT_KIND_DEFAULTS,
+  kindRouting,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../../../features/session/agent-kind';
@@ -293,7 +293,7 @@ export const WorkflowRow = ({
                 stepModel ??
                 agentModelOverride[run.id] ??
                 run.modelOverride ??
-                AGENT_KIND_DEFAULTS[kind].model;
+                kindRouting({ kind }).model;
               const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
               const clustersExpanded = clusterExpand.get(run.id) ?? false;
               const clusterUnread = countUnread(clusterChildren);

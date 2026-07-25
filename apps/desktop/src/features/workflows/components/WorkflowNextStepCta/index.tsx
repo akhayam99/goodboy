@@ -5,7 +5,7 @@ import { classifyWorkflowChain } from '@goodboy/core';
 import type { Agent, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import {
-  AGENT_KIND_DEFAULTS,
+  kindRouting,
   AGENT_KIND_PALETTE,
   inferAgentKindFromName,
 } from '../../../../features/session/agent-kind';
@@ -71,7 +71,7 @@ export const WorkflowNextStepCta = ({
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
-  const defaults = AGENT_KIND_DEFAULTS[kind];
+  const defaults = kindRouting({ kind });
   const palette = AGENT_KIND_PALETTE[kind];
   const doForce = async () => {
     if (busy) {

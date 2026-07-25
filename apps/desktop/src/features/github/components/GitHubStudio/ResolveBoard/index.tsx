@@ -17,9 +17,11 @@ import {
   type EffortLevel,
 } from '../../../../chat/utils/chat-constants';
 import { shortModelWithVersion } from '../../../../session/agent-row-format';
-import { ProviderSelect } from '../../../../session/components/ProviderSelect';
-import { ModelSelect } from '../../../../session/components/ModelSelect';
-import { EffortSelect } from '../../../../session/components/EffortSelect';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import {
+  SegmentedControl,
+  type SegmentedOption,
+} from '../../../../../shared/components/SegmentedControl';
 import type { ResolveMode, ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
 import {
@@ -44,6 +46,11 @@ type Props = {
 
 const isClaimed = (link: ResolverLink | undefined): boolean =>
   link != null && link.status !== 'failed';
+
+const MODE_OPTIONS: ReadonlyArray<SegmentedOption<ResolveMode>> = [
+  { label: 'Fix', value: 'fix' },
+  { label: 'Analyze', value: 'analyze' },
+];
 
 export const ResolveBoard = ({
   threads,
@@ -418,46 +425,23 @@ function ConfigPanel({
       <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
         {title}
       </span>
-      <ProviderSelect
-        value={config.provider}
+      <RoutingPicker
+        ariaLabel={`${title} routing`}
         providers={connectedProviders}
-        onChange={onProvider}
-        disabled={connectedProviders.length === 0}
-      />
-      <ModelSelect
         provider={config.provider}
-        value={config.model}
-        onChange={onModel}
-        disabled={false}
-      />
-      <EffortSelect
         model={config.model}
-        value={config.effort}
-        onChange={onEffort}
+        effort={config.effort}
         disabled={false}
+        onProvider={onProvider}
+        onModel={onModel}
+        onEffort={onEffort}
       />
-      <div className="relative">
-        <select
-          aria-label="Resolver mode"
-          value={mode}
-          onChange={(event) => {
-            const nextMode = event.target.value;
-            if (nextMode !== 'fix' && nextMode !== 'analyze') {
-              return;
-            }
-            onMode(nextMode);
-          }}
-          className="w-full appearance-none rounded-md border border-border-soft bg-subtle px-2 py-1.5 pr-7 text-xs text-foreground transition-colors hover:border-border hover:bg-muted/50"
-        >
-          <option value="fix">Fix</option>
-          <option value="analyze">Analyze</option>
-        </select>
-        <ChevronDown
-          size={11}
-          aria-hidden
-          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-        />
-      </div>
+      <SegmentedControl
+        ariaLabel="Resolver mode"
+        value={mode}
+        options={MODE_OPTIONS}
+        onChange={onMode}
+      />
       <textarea
         aria-label="Resolver hint"
         value={hint}

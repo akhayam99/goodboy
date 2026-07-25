@@ -1,7 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import { getDefaultTurnModel } from '@goodboy/core';
 import { clampEffort, type EffortLevel } from '../../../../chat/utils/chat-constants';
-import { AGENT_KIND_DEFAULTS } from '../../../../session/agent-kind';
+import { kindRouting } from '../../../../session/agent-kind';
 
 export { clampEffort };
 
@@ -11,10 +11,12 @@ export type CardConfig = {
   readonly effort: EffortLevel;
 };
 
+const RESOLVER_ROUTING = kindRouting({ kind: 'resolver' });
+
 export const DEFAULT_CONFIG: CardConfig = {
-  provider: 'anthropic',
-  model: AGENT_KIND_DEFAULTS.resolver.model,
-  effort: AGENT_KIND_DEFAULTS.resolver.effort,
+  provider: RESOLVER_ROUTING.provider,
+  model: RESOLVER_ROUTING.model,
+  effort: RESOLVER_ROUTING.effort,
 };
 
 export const configFor = (provider: ProviderId): CardConfig => {

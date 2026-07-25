@@ -110,9 +110,7 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /Resolve with/i }));
     });
     act(() => {
-      fireEvent.change(screen.getByRole('combobox', { name: /Resolver mode/i }), {
-        target: { value: 'analyze' },
-      });
+      fireEvent.click(screen.getByRole('radio', { name: 'Analyze' }));
       fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
         target: { value: 'Avoid schema changes.' },
       });
@@ -145,9 +143,7 @@ describe('ResolveBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
     });
     act(() => {
-      fireEvent.change(screen.getByRole('combobox', { name: /Resolver mode/i }), {
-        target: { value: 'analyze' },
-      });
+      fireEvent.click(screen.getByRole('radio', { name: 'Analyze' }));
       fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
         target: { value: 'Keep the public API stable.' },
       });

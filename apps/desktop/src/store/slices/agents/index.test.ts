@@ -537,7 +537,10 @@ describe('store contract', () => {
       const store = await getStore();
       store.getState().setAgentKind(AGENT_ID, 'implementer');
       expect(store.getState().agentKindOverride[AGENT_ID]).toBe('implementer');
-      expect(store.getState().agentModelOverride[AGENT_ID]).toBe('claude-sonnet-4-5');
+      const { kindRouting } = await import('../../../features/session/agent-kind');
+      expect(store.getState().agentModelOverride[AGENT_ID]).toBe(
+        kindRouting({ kind: 'implementer' }).model,
+      );
       expect(invokeAgentSetKindSpy).toHaveBeenCalledWith(AGENT_ID, 'implementer');
     });
 

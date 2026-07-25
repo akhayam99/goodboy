@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreference } from '@goodboy/types';
-import { FieldRow, Select } from '@goodboy/ui';
-import { PROVIDER_LABEL } from '../../../../chat/utils/chat-constants';
-import { ModelSelect } from '../../../../session/components/ModelSelect';
+import { FieldRow } from '@goodboy/ui';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 
 type Props = {
   readonly task: AuxTaskId;
@@ -41,37 +40,27 @@ export const TaskModelRow = ({
 
   return (
     <FieldRow label={label} help={help}>
-      <div className="grid w-80 grid-cols-2 gap-2">
-        <Select
-          size="sm"
-          block
-          aria-label={`${label} provider`}
-          value={providerId}
-          disabled={disabled || availableProviderIds.length === 0}
-          onChange={(event) => {
-            const nextProviderId = event.target.value as ProviderId;
-            setProviderId(nextProviderId);
+      <div className="w-80">
+        <RoutingPicker
+          ariaLabel={`${label} routing`}
+          providers={availableProviderIds}
+          provider={providerId}
+          model={model}
+          recommendedModel={recommendedModel}
+          disabled={disabled}
+          onProvider={(next) => {
+            if (next === '') {
+              return;
+            }
+            setProviderId(next);
             if (preference == null) {
               return;
             }
-            onChange(resolveTaskModel(task, null, nextProviderId));
+            onChange(resolveTaskModel(task, null, next));
           }}
-        >
-          {availableProviderIds.map((candidate) => (
-            <option key={candidate} value={candidate}>
-              {PROVIDER_LABEL[candidate]}
-            </option>
-          ))}
-        </Select>
-        <ModelSelect
-          provider={providerId}
-          value={model}
-          onChange={(nextModel) =>
+          onModel={(nextModel) =>
             onChange(nextModel === '' ? null : { providerId, model: nextModel })
           }
-          disabled={disabled}
-          allowAuto
-          recommendedModel={recommendedModel}
         />
       </div>
     </FieldRow>

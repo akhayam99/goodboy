@@ -18,11 +18,7 @@ import {
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
-import {
-  AGENT_KIND_DEFAULTS,
-  ROLE_TO_KIND,
-  inferAgentKindFromName,
-} from '../../../features/session/agent-kind';
+import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 
 type Options = {

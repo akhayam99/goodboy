@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkflowLibraryStep } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, ROLE_DEFAULTS, type WorkflowLibraryStep } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
@@ -12,6 +13,7 @@ import {
   inferAgentKindFromStep,
   isStandaloneAgent,
   kindConsumesPlan,
+  kindRouting,
   resolveAgentKind,
   resolveRootAgent,
   selectNonResolverStandaloneAgents,
@@ -263,8 +265,8 @@ describe('AGENT_KIND_DEFAULTS', () => {
 
   it('scout / docs / generic → haiku, low effort', () => {
     for (const kind of ['scout', 'docs', 'generic'] as AgentKind[]) {
-      expect(AGENT_KIND_DEFAULTS[kind].effort).toBe('low');
-      expect(AGENT_KIND_DEFAULTS[kind].model).toMatch(/haiku/i);
+      expect(kindRouting({ kind }).effort).toBe('low');
+      expect(kindRouting({ kind }).model).toMatch(/haiku/i);
     }
   });
 
@@ -277,8 +279,8 @@ describe('AGENT_KIND_DEFAULTS', () => {
       'tester',
       'resolver',
     ] as AgentKind[]) {
-      expect(AGENT_KIND_DEFAULTS[kind].effort).toBe('medium');
-      expect(AGENT_KIND_DEFAULTS[kind].model).toMatch(/sonnet/i);
+      expect(kindRouting({ kind }).effort).toBe('medium');
+      expect(kindRouting({ kind }).model).toMatch(/sonnet/i);
     }
   });
 
@@ -304,8 +306,35 @@ describe('AGENT_KIND_DEFAULTS', () => {
   });
 
   it('planner → opus, high effort', () => {
-    expect(AGENT_KIND_DEFAULTS['planner'].effort).toBe('high');
-    expect(AGENT_KIND_DEFAULTS['planner'].model).toMatch(/opus/i);
+    expect(kindRouting({ kind: 'planner' }).effort).toBe('high');
+    expect(kindRouting({ kind: 'planner' }).model).toMatch(/opus/i);
+  });
+
+  it('every kind names a model its provider actually ships', () => {
+    for (const kind of ALL_KINDS) {
+      const { provider, model } = kindRouting({ kind });
+      const known = PROVIDER_CAPABILITIES[provider].models.some((entry) => entry.id === model);
+      expect(known, `${kind} → ${provider}/${model}`).toBe(true);
+    }
+  });
+
+  it('every kind names an effort its model supports', () => {
+    for (const kind of ALL_KINDS) {
+      const { provider, model, effort } = kindRouting({ kind });
+      expect(EFFORT_LEVELS, `${kind} → ${effort}`).toContain(effort);
+      const levels = PROVIDER_CAPABILITIES[provider].models.find(
+        (entry) => entry.id === model,
+      )?.effort;
+      if (levels != null) {
+        expect(levels, `${kind} → ${model}/${effort}`).toContain(effort);
+      }
+    }
+  });
+
+  it('tracks ROLE_DEFAULTS as the single source of truth for routing', () => {
+    expect(kindRouting({ kind: 'planner' }).model).toBe(ROLE_DEFAULTS.planner.model);
+    expect(kindRouting({ kind: 'implementer' }).model).toBe(ROLE_DEFAULTS.implementer.model);
+    expect(kindRouting({ kind: 'debugger' }).model).toBe(ROLE_DEFAULTS.investigator.model);
   });
 });
 

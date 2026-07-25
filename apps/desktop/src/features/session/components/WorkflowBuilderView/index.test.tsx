@@ -72,34 +72,33 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   };
 });
 
-vi.mock('../ProviderSelect', () => ({
-  ProviderSelect: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <button type="button" onClick={() => onChange(value === '' ? 'cursor' : '')}>
-      provider:{value === '' ? 'default' : value}
-    </button>
-  ),
-}));
-
-vi.mock('../ModelSelect', () => ({
-  ModelSelect: ({
-    value,
-    onChange,
+vi.mock('../../../../shared/components/RoutingPicker', () => ({
+  RoutingPicker: ({
     provider,
+    model,
     recommendedModel,
+    onProvider,
+    onModel,
   }: {
-    value: string;
-    onChange: (model: string) => void;
     provider: string;
-    recommendedModel: string;
+    model: string;
+    recommendedModel?: string;
+    onProvider: (v: string) => void;
+    onModel: (v: string) => void;
   }) => (
-    <button
-      type="button"
-      data-provider={provider}
-      data-recommended-model={recommendedModel}
-      onClick={() => onChange('claude-opus-4-6')}
-    >
-      model:{value === '' ? 'auto' : value}
-    </button>
+    <>
+      <button type="button" onClick={() => onProvider(provider === '' ? 'cursor' : '')}>
+        provider:{provider === '' ? 'default' : provider}
+      </button>
+      <button
+        type="button"
+        data-provider={provider === '' ? 'default' : provider}
+        data-recommended-model={recommendedModel}
+        onClick={() => onModel('claude-opus-4-6')}
+      >
+        model:{model === '' ? 'auto' : model}
+      </button>
+    </>
   ),
 }));
 
