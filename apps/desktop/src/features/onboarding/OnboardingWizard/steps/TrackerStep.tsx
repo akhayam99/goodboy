@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FolderGit2, Layers, ListChecks } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
+import { LinearIcon } from '../../../../shared/components/brand-icons';
 import { LinearFormBody } from '../../../integrations/linear/LinearFormBody';
 import { Segmented, type SegmentedOption } from '../Segmented';
 
@@ -19,7 +20,7 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
     {
       value: 'linear',
       label: 'Linear',
-      icon: ListChecks,
+      icon: LinearIcon,
       color: 'var(--color-provider-linear)',
       connected: linearConnected,
     },

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
-import { ProviderStudioIcon } from '../brand-icons';
+import { ProviderStudioIcon } from '../ProviderStudioIcon';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { StudioShell } from '../../../../shared/components/StudioShell';

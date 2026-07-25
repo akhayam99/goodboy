@@ -1,6 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { ClaudeIcon, CursorIcon, GeminiIcon, OpenAIIcon } from './brand-icons';
+import {
+  ClaudeIcon,
+  CursorIcon,
+  GeminiIcon,
+  OpenAIIcon,
+} from '../../../shared/components/brand-icons';
 
 export type ProviderBrand = {
   readonly icon: LucideIcon;

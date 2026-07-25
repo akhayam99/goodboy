@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { GitFork as GithubIcon, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button, Input, cn } from '@goodboy/ui';
+import { GithubIcon } from '../../../../shared/components/brand-icons';
 import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';

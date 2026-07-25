@@ -1,6 +1,7 @@
-import { Bug, FolderGit2 } from 'lucide-react';
+import { FolderGit2 } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
+import { SentryIcon } from '../../../../shared/components/brand-icons';
 import { SentryFormBody } from '../../../integrations/sentry/SentryFormBody';
 
 type Props = {
@@ -14,7 +15,7 @@ export const SentryStep = ({ workspaceId }: Props) => {
         className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40"
         style={{ color: 'var(--color-provider-sentry)' }}
       >
-        <Bug size={26} aria-hidden />
+        <SentryIcon size={26} aria-hidden />
       </span>
 
       <div className="flex flex-col gap-2">
