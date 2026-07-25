@@ -40,9 +40,9 @@ describe('ExternalTaskChip, full variant', () => {
 });
 
 describe('ExternalTaskChip, icon variant', () => {
-  it('renders the provider glyph but omits identifier and title text', () => {
+  it('renders the provider mark but omits identifier and title text', () => {
     render(<ExternalTaskChip task={makeTask()} variant="icon" />);
-    expect(screen.getByText('L')).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Linear' })).toBeDefined();
     expect(screen.queryByText('GB-123')).toBeNull();
     expect(screen.queryByText('Improve preview metadata')).toBeNull();
   });
@@ -58,20 +58,20 @@ describe('ExternalTaskChip, icon variant', () => {
 describe('ExternalTaskChip, provider mapping', () => {
   const cases: ReadonlyArray<{
     provider: SessionExternalTaskProvider;
-    glyph: string;
+    mark: string;
     label: RegExp;
     event: string;
   }> = [
-    { provider: 'linear', glyph: 'L', label: /Linear/i, event: 'goodboy:open-linear-studio' },
-    { provider: 'sentry', glyph: 'S', label: /Sentry/i, event: 'goodboy:open-sentry-studio' },
-    { provider: 'gitlab', glyph: 'G', label: /GitLab/i, event: 'goodboy:open-gitlab-studio' },
-    { provider: 'github', glyph: 'GH', label: /GitHub/i, event: 'goodboy:open-github-studio' },
+    { provider: 'linear', mark: 'Linear', label: /Linear/i, event: 'goodboy:open-linear-studio' },
+    { provider: 'sentry', mark: 'Sentry', label: /Sentry/i, event: 'goodboy:open-sentry-studio' },
+    { provider: 'gitlab', mark: 'GitLab', label: /GitLab/i, event: 'goodboy:open-gitlab-studio' },
+    { provider: 'github', mark: 'GitHub', label: /GitHub/i, event: 'goodboy:open-github-studio' },
   ];
 
-  for (const { provider, glyph, label, event } of cases) {
-    it(`renders the ${provider} glyph and label`, () => {
+  for (const { provider, mark, label, event } of cases) {
+    it(`renders the ${provider} mark and label`, () => {
       render(<ExternalTaskChip task={makeTask({ provider, identifier: 'X-1' })} />);
-      expect(screen.getByText(glyph)).toBeDefined();
+      expect(screen.getByRole('img', { name: mark })).toBeDefined();
       expect(screen.getByRole('button', { name: label })).toBeDefined();
     });
 

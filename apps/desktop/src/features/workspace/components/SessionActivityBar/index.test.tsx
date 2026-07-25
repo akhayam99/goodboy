@@ -272,7 +272,7 @@ describe('SessionActivityBar, external task chip', () => {
     };
     renderBar([], [makeSession('a-1', 'active one')]);
     expect(screen.getByLabelText(/GB-7 from Linear/i)).toBeDefined();
-    expect(screen.getByText('L')).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Linear' })).toBeDefined();
     expect(screen.getByTitle(/active one · idle · GB-7/)).toBeDefined();
   });
 
@@ -291,7 +291,7 @@ describe('SessionActivityBar, external task chip', () => {
       ],
     };
     renderBar([], [makeSession('a-1', 'crashy')]);
-    expect(screen.getByText('S')).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Sentry' })).toBeDefined();
     expect(screen.getByLabelText(/SENTRY-9 from Sentry/i)).toBeDefined();
   });
 });

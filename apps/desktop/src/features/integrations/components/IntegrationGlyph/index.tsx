@@ -1,19 +1,25 @@
 import { cn } from '@goodboy/ui';
+import type { LucideIcon } from 'lucide-react';
+import {
+  GithubIcon,
+  GitlabIcon,
+  LinearIcon,
+  SentryIcon,
+} from '../../../../shared/components/brand-icons';
 
 export type IntegrationGlyphProvider = 'github' | 'gitlab' | 'linear' | 'sentry';
 
-const GLYPH: Record<IntegrationGlyphProvider, string> = {
-  github: 'GH',
-  gitlab: 'G',
-  linear: 'L',
-  sentry: 'S',
+type IntegrationBrand = {
+  readonly icon: LucideIcon;
+  readonly label: string;
+  readonly cssVar: string;
 };
 
-const BADGE_STYLE: Record<IntegrationGlyphProvider, string> = {
-  github: 'bg-provider-github',
-  gitlab: 'bg-provider-gitlab',
-  linear: 'bg-provider-linear',
-  sentry: 'bg-provider-sentry',
+const INTEGRATION_BRAND: Record<IntegrationGlyphProvider, IntegrationBrand> = {
+  github: { icon: GithubIcon, label: 'GitHub', cssVar: '--color-provider-github' },
+  gitlab: { icon: GitlabIcon, label: 'GitLab', cssVar: '--color-provider-gitlab' },
+  linear: { icon: LinearIcon, label: 'Linear', cssVar: '--color-provider-linear' },
+  sentry: { icon: SentryIcon, label: 'Sentry', cssVar: '--color-provider-sentry' },
 };
 
 const FRAME_STYLE: Record<IntegrationGlyphProvider, string> = {
@@ -23,10 +29,12 @@ const FRAME_STYLE: Record<IntegrationGlyphProvider, string> = {
   sentry: 'bg-provider-sentry/10',
 };
 
-const SIZE: Record<'xs' | 'sm', string> = {
-  xs: 'size-3 text-[7px]',
-  sm: 'size-4 text-[9px]',
+const MARK_SIZE: Record<'xs' | 'sm', number> = {
+  xs: 12,
+  sm: 14,
 };
+
+const FRAMED_MARK_SIZE = 16;
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
@@ -36,21 +44,19 @@ type Props = {
 };
 
 export const IntegrationGlyph = ({ provider, size = 'sm', framed = false, className }: Props) => {
-  const badge = (
-    <span
-      className={cn(
-        'flex shrink-0 items-center justify-center rounded-sm font-bold text-white',
-        SIZE[size],
-        BADGE_STYLE[provider],
-        !framed && className,
-      )}
-    >
-      {GLYPH[provider]}
-    </span>
-  );
+  const { icon: Icon, label, cssVar } = INTEGRATION_BRAND[provider];
+  const color = `var(${cssVar})`;
 
   if (!framed) {
-    return badge;
+    return (
+      <Icon
+        size={MARK_SIZE[size]}
+        role="img"
+        aria-label={label}
+        className={cn('shrink-0', className)}
+        style={{ color }}
+      />
+    );
   }
 
   return (
@@ -61,7 +67,7 @@ export const IntegrationGlyph = ({ provider, size = 'sm', framed = false, classN
         className,
       )}
     >
-      {badge}
+      <Icon size={FRAMED_MARK_SIZE} role="img" aria-label={label} style={{ color }} />
     </span>
   );
 };

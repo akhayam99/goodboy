@@ -18,6 +18,7 @@ import {
 } from '../../../../features/worktree/worktree';
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
+import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
 import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
 import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
@@ -343,11 +344,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             ) : null}
             {hasLinear ? (
               <Section
-                icon={
-                  <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-provider-linear text-[9px] font-bold text-white">
-                    L
-                  </span>
-                }
+                icon={<IntegrationGlyph provider="linear" />}
                 tone="primary"
                 title="Linear issue"
                 subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."

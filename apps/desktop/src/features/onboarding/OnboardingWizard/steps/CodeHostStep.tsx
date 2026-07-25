@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FolderGit2, GitBranch, GitFork } from 'lucide-react';
+import { FolderGit2, GitBranch } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
+import { GithubIcon, GitlabIcon } from '../../../../shared/components/brand-icons';
 import { GithubFormBody } from '../../../integrations/github/GithubFormBody';
 import { GitlabFormBody } from '../../../integrations/gitlab/GitlabFormBody';
 import { Segmented, type SegmentedOption } from '../Segmented';
@@ -24,11 +25,17 @@ export const CodeHostStep = ({
   const [host, setHost] = useState<Host>(gitlabConnected && !githubConnected ? 'gitlab' : 'github');
 
   const options: ReadonlyArray<SegmentedOption<Host>> = [
-    { value: 'github', label: 'GitHub', icon: GitBranch, connected: githubConnected },
+    {
+      value: 'github',
+      label: 'GitHub',
+      icon: GithubIcon,
+      color: 'var(--color-provider-github)',
+      connected: githubConnected,
+    },
     {
       value: 'gitlab',
       label: 'GitLab',
-      icon: GitFork,
+      icon: GitlabIcon,
       color: 'var(--color-provider-gitlab)',
       connected: gitlabConnected,
     },
