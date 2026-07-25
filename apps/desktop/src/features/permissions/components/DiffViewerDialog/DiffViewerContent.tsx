@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { CheckCircle2, X } from 'lucide-react';
 import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
   DiffComment,
@@ -21,7 +22,9 @@ import {
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { useAppStore, useDiffComments, useSummarizerStatus } from '../../../../store';
-import { AGENT_KIND_DEFAULTS } from '../../../../features/session/agent-kind';
+import { kindRouting, type AgentKindRouting } from '../../../../features/session/agent-kind';
+import { clampEffort } from '../../../../features/chat/utils/chat-constants';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import {
   listBranchCommits,
@@ -290,6 +293,9 @@ export const DiffViewerContent = ({
   const resolveDiffComment = useAppStore((s) => s.resolveDiffComment);
   const consumeDiffComments = useAppStore((s) => s.consumeDiffComments);
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
+  const connectedProviderIds = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
+  );
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
   const summarizer = useSummarizerStatus(sessionId ?? null);
   const prevSummarizerStatus = useRef(summarizer.status);
@@ -305,6 +311,9 @@ export const DiffViewerContent = ({
   const sendTurn = useAppStore((s) => s.sendTurn);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
+  const [resolverRouting, setResolverRouting] = useState<AgentKindRouting>(() =>
+    kindRouting({ kind: 'resolver' }),
+  );
 
   useEffect(() => {
     if (
@@ -570,14 +579,14 @@ export const DiffViewerContent = ({
     setSpawning(true);
     try {
       const prompt = buildNotesPrompt(openComments);
-      const defaults = AGENT_KIND_DEFAULTS.resolver;
       const fileCount = new Set(openComments.map((c) => c.filePath)).size;
       const name = `resolve notes (${fileCount}F/${openComments.length}N)`;
       const idsToConsume = openComments.map((c) => c.id);
       const agentId = await spawnAgent(sessionId, {
         name,
-        model: defaults.model,
-        effort: defaults.effort,
+        provider: resolverRouting.provider,
+        model: resolverRouting.model,
+        effort: resolverRouting.effort,
         kindOverride: 'resolver',
       });
       try {
@@ -810,6 +819,35 @@ export const DiffViewerContent = ({
           openCount={openComments.length}
           spawning={spawning}
           onPropose={() => void handleProposeFixes()}
+          routing={
+            <RoutingPicker
+              ariaLabel="resolver routing"
+              providers={connectedProviderIds}
+              provider={resolverRouting.provider}
+              model={resolverRouting.model}
+              effort={resolverRouting.effort}
+              disabled={spawning}
+              onProvider={(next) => {
+                if (next === '') {
+                  return;
+                }
+                const model = getDefaultTurnModel(next);
+                setResolverRouting({
+                  provider: next,
+                  model,
+                  effort: clampEffort(model, resolverRouting.effort),
+                });
+              }}
+              onModel={(model) =>
+                setResolverRouting({
+                  ...resolverRouting,
+                  model,
+                  effort: clampEffort(model, resolverRouting.effort),
+                })
+              }
+              onEffort={(effort) => setResolverRouting({ ...resolverRouting, effort })}
+            />
+          }
         />
       ) : null}
     </div>

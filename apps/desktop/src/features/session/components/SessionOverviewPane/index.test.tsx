@@ -31,6 +31,7 @@ type Store = {
   sessionPendingResolutions: Record<string, ReadonlyArray<unknown>>;
   agentKindOverride: Record<string, unknown>;
   messages: Record<string, ReadonlyArray<unknown>>;
+  providers: ReadonlyArray<{ id: string; connection: string }>;
 };
 
 type Runs = {
@@ -61,6 +62,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     sessionPendingResolutions: {} as Record<string, ReadonlyArray<unknown>>,
     agentKindOverride: {} as Record<string, unknown>,
     messages: {} as Record<string, ReadonlyArray<unknown>>,
+    providers: [{ id: 'anthropic', connection: 'connected' }],
   } as Store,
   hooks: {
     workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,

@@ -53,8 +53,7 @@ import type {
 import { ROLE_LABEL, ROLE_TO_KIND, inferAgentKindFromName, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
-import { ProviderSelect } from '../ProviderSelect';
-import { ModelSelect } from '../ModelSelect';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
@@ -140,6 +139,8 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.steps.length === 0 &&
   !d.saveAsPreset &&
   !d.autoRun;
+
+const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
 
 type Stage = 0 | 1 | 2;
 
@@ -957,27 +958,22 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-end gap-2 px-1">
-                          <div className="w-28">
-                            <ProviderSelect
-                              value={plannerProviderOverride}
+                        <div className="flex justify-end px-1">
+                          <div className="w-64">
+                            <RoutingPicker
+                              ariaLabel="planner routing"
                               providers={candidateProviders}
-                              onChange={(v) => {
-                                setPlannerProviderOverride(v as ProviderId | '');
+                              provider={plannerProviderOverride}
+                              model={plannerModelOverride}
+                              effort={PLANNER_EFFORT}
+                              recommendedProvider={resolvedPlanTaskModel.providerId}
+                              recommendedModel={plannerRecommendedModel}
+                              disabled={blocked}
+                              onProvider={(next) => {
+                                setPlannerProviderOverride(next);
                                 setPlannerModelOverride('');
                               }}
-                              disabled={blocked}
-                              recommended={resolvedPlanTaskModel.providerId}
-                            />
-                          </div>
-                          <div className="w-36">
-                            <ModelSelect
-                              provider={plannerEffectiveProviderId}
-                              value={plannerModelOverride}
-                              onChange={setPlannerModelOverride}
-                              disabled={blocked}
-                              allowAuto
-                              recommendedModel={plannerRecommendedModel}
+                              onModel={setPlannerModelOverride}
                             />
                           </div>
                         </div>

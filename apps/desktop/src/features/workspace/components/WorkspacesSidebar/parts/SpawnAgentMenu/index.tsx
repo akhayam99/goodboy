@@ -1,14 +1,20 @@
 import { type ReactNode, type Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Popover, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { useShallow } from 'zustand/react/shallow';
+import { getDefaultTurnModel } from '@goodboy/core';
+import { Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
+import type { ProviderId, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../../../store';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   AGENT_KIND_ORDER,
   AGENT_KIND_PALETTE,
-} from '../../../../../features/session/agent-kind';
+  kindRouting,
+  type AgentKindRouting,
+} from '../../../../../../features/session/agent-kind';
+import { clampEffort } from '../../../../../../features/chat/utils/chat-constants';
+import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 
 type SpawnAgentMenuProps = {
   readonly sessionId: SessionId;
@@ -35,9 +41,22 @@ type PopoverAnchor = {
 export function SpawnAgentMenu({ sessionId, trigger, onSpawned }: SpawnAgentMenuProps) {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
+  const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const connectedProviders = useAppStore(
+    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
+  );
+  const baseline = kindRouting({ kind: 'generic' });
+  const onProvider = (next: ProviderId | '') => {
+    if (next === '') {
+      setRouting(null);
+      return;
+    }
+    const model = getDefaultTurnModel(next);
+    setRouting({ provider: next, model, effort: clampEffort(model, baseline.effort) });
+  };
 
   const computeAnchor = useCallback((): PopoverAnchor | null => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -120,46 +139,90 @@ export function SpawnAgentMenu({ sessionId, trigger, onSpawned }: SpawnAgentMenu
               ...(anchor.top !== null ? { top: anchor.top } : {}),
               ...(anchor.bottom !== null ? { bottom: anchor.bottom } : {}),
             }}
-            className="z-50 max-h-72 overflow-y-auto py-1"
+            className="z-50 flex max-h-[22rem] flex-col overflow-visible bg-subtle py-1"
           >
             <div className="px-3 pb-1 pt-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
               by role
             </div>
-            {[...AGENT_KIND_ORDER]
-              .filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false)
-              .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
-              .map((kind) => {
-                const meta = AGENT_KIND_META[kind];
-                const palette = AGENT_KIND_PALETTE[kind];
-                return (
-                  <button
-                    key={kind}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setOpen(false);
-                      void spawnAgent(sessionId, { kindOverride: kind });
-                      if (onSpawned) {
-                        onSpawned();
-                      } else {
-                        window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-                      }
-                    }}
-                    className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted"
-                  >
-                    <span
-                      className={cn('mt-1 size-2 shrink-0 rounded-full', palette.bg)}
-                      aria-hidden
-                    />
-                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="text-xs font-medium text-foreground">{meta.label}</span>
-                      <span className="text-2xs leading-snug text-muted-foreground">
-                        {meta.hint}
+            <ScrollFade fadeFrom="subtle" className="min-h-0 flex-1">
+              {[...AGENT_KIND_ORDER]
+                .filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false)
+                .sort((a, b) => AGENT_KIND_META[a].label.localeCompare(AGENT_KIND_META[b].label))
+                .map((kind) => {
+                  const meta = AGENT_KIND_META[kind];
+                  const palette = AGENT_KIND_PALETTE[kind];
+                  return (
+                    <button
+                      key={kind}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setOpen(false);
+                        void spawnAgent(sessionId, {
+                          kindOverride: kind,
+                          ...(routing != null && {
+                            provider: routing.provider,
+                            model: routing.model,
+                            effort: routing.effort,
+                          }),
+                        });
+                        if (onSpawned) {
+                          onSpawned();
+                        } else {
+                          window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+                        }
+                      }}
+                      className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted"
+                    >
+                      <span
+                        className={cn('mt-1 size-2 shrink-0 rounded-full', palette.bg)}
+                        aria-hidden
+                      />
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="text-xs font-medium text-foreground">{meta.label}</span>
+                        <span className="text-2xs leading-snug text-muted-foreground">
+                          {meta.hint}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
+            </ScrollFade>
+            <Divider />
+            <div className="flex flex-col gap-1 px-3 pb-1 pt-2">
+              <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground/70">
+                routing
+              </span>
+              <RoutingPicker
+                ariaLabel="new agent routing"
+                providers={connectedProviders}
+                provider={routing?.provider ?? ''}
+                model={routing?.model ?? ''}
+                effort={routing?.effort ?? baseline.effort}
+                recommendedProvider={baseline.provider}
+                recommendedModel={baseline.model}
+                disabled={false}
+                onProvider={onProvider}
+                onModel={(model) => {
+                  if (model === '') {
+                    setRouting(null);
+                    return;
+                  }
+                  setRouting({
+                    provider: routing?.provider ?? baseline.provider,
+                    model,
+                    effort: clampEffort(model, routing?.effort ?? baseline.effort),
+                  });
+                }}
+                onEffort={(effort) =>
+                  setRouting({
+                    provider: routing?.provider ?? baseline.provider,
+                    model: routing?.model ?? baseline.model,
+                    effort,
+                  })
+                }
+              />
+            </div>
           </Popover>,
           document.body,
         )

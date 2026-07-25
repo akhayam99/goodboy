@@ -116,7 +116,7 @@ vi.mock('../../../../../features/session/agent-row-format', () => ({
   computeLatestTelemetryByAgentId: () => new Map(),
 }));
 vi.mock('../../../../../features/session/agent-kind', () => ({
-  AGENT_KIND_DEFAULTS: new Proxy({}, { get: () => ({ model: 'm' }) }),
+  kindRouting: () => ({ provider: 'anthropic', model: 'm', effort: 'medium' }),
   classifyAgent: () => 'implementer',
   inferAgentKindFromName: () => 'implementer',
   resolveAgentKind: () => 'implementer',

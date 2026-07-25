@@ -11,7 +11,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { AGENT_KIND_DEFAULTS, ROLE_TO_KIND } from '../features/session/agent-kind';
+import { ROLE_TO_KIND, kindRouting } from '../features/session/agent-kind';
 
 const runTurnSpy = vi.fn();
 
@@ -618,7 +618,7 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
     const agentId = state.selectedAgentId[session.id];
     expect(agentId).toBeDefined();
     expect(state.agentModelOverride[agentId!]).toBe(
-      AGENT_KIND_DEFAULTS[ROLE_TO_KIND['implementer']].model,
+      kindRouting({ kind: ROLE_TO_KIND['implementer'] }).model,
     );
   });
 

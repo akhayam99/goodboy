@@ -7,7 +7,8 @@ import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast } from '../../../../app/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
-import { ModelPicker } from '../ModelPicker';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
@@ -442,9 +443,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             </div>
             <div className="flex items-center gap-2">
               <ProviderUsagePill provider={routing.effectiveProvider} />
-              <ModelPicker
+              <RoutingPicker
+                variant="pill"
+                align="end"
+                ariaLabel="model routing"
+                openEvent="goodboy:open-model-picker"
                 providers={routing.providerCandidates}
-                models={routing.modelCandidates}
                 provider={routing.effectiveProvider}
                 model={routing.effectiveModel}
                 effort={routing.effectiveEffort}
@@ -452,13 +456,23 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 connectedProviders={routing.connectedProviderIds}
                 disabled={!routing.allowOverride || isRunning}
                 disabledTitle={overrideDisabledTitle}
-                defaultProvider={routing.defaultProvider}
-                defaultModel={routing.defaultModel}
-                onSelectProvider={routing.onSelectProvider}
-                onSelectModel={routing.onSelectModel}
-                onSelectEffort={routing.setEffort}
-                onSelectVerbosity={routing.setVerbosity}
-                onResetToDefault={routing.onResetTurnOverride}
+                overridden={
+                  routing.effectiveProvider !== routing.defaultProvider ||
+                  routing.effectiveModel !== routing.defaultModel
+                }
+                defaultSummary={`${PROVIDER_LABEL[routing.defaultProvider]} · ${modelLabel(
+                  routing.defaultModel,
+                )}`}
+                onProvider={(next) => {
+                  if (next === '') {
+                    return;
+                  }
+                  routing.onSelectProvider(next);
+                }}
+                onModel={routing.onSelectModel}
+                onEffort={routing.setEffort}
+                onVerbosity={routing.setVerbosity}
+                onReset={routing.onResetTurnOverride}
               />
             </div>
           </div>

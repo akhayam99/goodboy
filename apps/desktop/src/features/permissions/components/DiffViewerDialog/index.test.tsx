@@ -7,6 +7,7 @@ const { state, fixtures } = vi.hoisted(() => ({
   state: {
     settings: {} as Record<string, string>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    providers: [{ id: 'anthropic', connection: 'connected' }],
     loadDiffComments: vi.fn(async () => undefined),
     addDiffComment: vi.fn(async () => undefined),
     resolveDiffComment: vi.fn(async () => undefined),
@@ -59,7 +60,8 @@ vi.mock('../DiffViewSelector', () => ({
   DiffViewSelector: () => null,
 }));
 
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core')>()),
   parseUnifiedDiff: () => fixtures.files,
 }));
 
@@ -235,6 +237,32 @@ describe('line comment add (single + multi-line drag)', () => {
     );
     expect(await screen.findByText('lines 2–3')).toBeDefined();
     expect(screen.getByText('spans a range')).toBeDefined();
+  });
+
+  it('offers a routing picker for the resolver spawned from open notes', async () => {
+    fixtures.files = fileFixture();
+    fixtures.comments = [
+      {
+        id: 'c1',
+        sessionId: SID,
+        filePath: 'src/a.ts',
+        body: 'please fix',
+        status: 'open',
+        createdAt: '2026-06-13T00:00:00.000Z',
+        anchor: { side: 'new', lineNumber: 2 },
+      },
+    ];
+    render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        loader={async () => 'raw'}
+        onClose={vi.fn()}
+      />,
+    );
+    const picker = await screen.findByRole('button', { name: 'resolver routing' });
+    expect(picker.textContent).toContain('Claude');
+    expect(picker.textContent).toContain('Medium');
   });
 });
 

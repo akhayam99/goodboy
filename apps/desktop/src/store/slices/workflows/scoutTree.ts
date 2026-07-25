@@ -10,7 +10,7 @@ import {
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
 import {
-  AGENT_KIND_DEFAULTS,
+  kindRouting,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../features/session/agent-kind';
@@ -28,7 +28,7 @@ function resolveContainerModel(get: GetFn, container: Agent): string {
     return container.modelOverride;
   }
   const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name);
-  return AGENT_KIND_DEFAULTS[kind]?.model ?? AGENT_KIND_DEFAULTS.scout.model;
+  return kindRouting({ kind }).model;
 }
 
 const synthesisStarted = new Set<string>();

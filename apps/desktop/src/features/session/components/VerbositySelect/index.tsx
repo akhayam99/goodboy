@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { Popover, cn } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import {
   VERBOSITY_LABEL,
@@ -7,9 +6,7 @@ import {
   VERBOSITY_DOT,
   type VerbosityLevel,
 } from '../../../settings/verbosity';
-import { POPUP_BASE, POPUP_DOWN, POPUP_UP } from '../dropdown-utils';
-import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
-import { useDropdownDirection } from '../../../../shared/hooks/useDropdownDirection';
+import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 type Props = {
   value: VerbosityLevel;
@@ -18,17 +15,14 @@ type Props = {
 };
 
 export const VerbositySelect = ({ value, onChange, disabled }: Props) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useClickOutside(containerRef, () => setOpen(false));
-  const direction = useDropdownDirection(containerRef, open);
+  const { open, close, toggle, containerRef, popupClassName } = useDropdown({ disabled });
 
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
         className={cn(
           'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
           open
@@ -50,8 +44,12 @@ export const VerbositySelect = ({ value, onChange, disabled }: Props) => {
           aria-hidden
         />
       </button>
-      {open ? (
-        <div className={cn(POPUP_BASE, 'min-w-[7rem]', direction === 'up' ? POPUP_UP : POPUP_DOWN)}>
+      {open && (
+        <Popover
+          role="listbox"
+          ariaLabel="reply verbosity"
+          className={cn(popupClassName, 'py-0.5')}
+        >
           {VERBOSITY_LEVELS.map((level) => {
             const active = value === level;
             return (
@@ -60,7 +58,7 @@ export const VerbositySelect = ({ value, onChange, disabled }: Props) => {
                 type="button"
                 onClick={() => {
                   onChange(level);
-                  setOpen(false);
+                  close();
                 }}
                 className={cn(
                   'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
@@ -78,8 +76,8 @@ export const VerbositySelect = ({ value, onChange, disabled }: Props) => {
               </button>
             );
           })}
-        </div>
-      ) : null}
+        </Popover>
+      )}
     </div>
   );
 };

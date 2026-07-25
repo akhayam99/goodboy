@@ -14,9 +14,7 @@ import {
 } from '../../../chat/utils/chat-constants';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { MODEL_COST_DOT, modelCostTier } from '../dropdown-utils';
-import { ProviderSelect } from '../ProviderSelect';
-import { ModelSelect } from '../ModelSelect';
-import { EffortSelect } from '../EffortSelect';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { RoleSelect } from '../RoleSelect';
 import { VerbositySelect } from '../VerbositySelect';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
@@ -212,8 +210,6 @@ export const WorkflowStepCard = ({
     </button>
   );
 
-  const gridColsCls = 'grid-cols-2 sm:grid-cols-3';
-
   return (
     <li
       ref={liRef}
@@ -290,49 +286,35 @@ export const WorkflowStepCard = ({
                 </button>
               ) : null}
             </div>
-            <div className={cn('grid gap-2.5', gridColsCls)}>
-              {onRole != null ? (
+            <div className="grid grid-cols-2 gap-2.5">
+              {onRole != null && (
                 <div className="flex flex-col gap-1">
                   <FieldLabel>Role</FieldLabel>
                   <RoleSelect value={role} onChange={onRole} disabled={disabled} />
                 </div>
-              ) : null}
-              <div className="flex flex-col gap-1">
-                <FieldLabel>Provider</FieldLabel>
-                <ProviderSelect
-                  value={providerValue}
-                  providers={candidateProviders}
-                  recommended={recommendedProvider}
-                  onChange={onProvider}
-                  disabled={disabled}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <FieldLabel>Model</FieldLabel>
-                <ModelSelect
-                  provider={provider}
-                  value={model}
-                  recommendedModel={recommendedModel}
-                  onChange={onModel}
-                  disabled={disabled}
-                  allowAuto
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <FieldLabel>Effort</FieldLabel>
-                <EffortSelect
-                  model={resolvedModel}
-                  value={effort}
-                  onChange={onEffort}
-                  disabled={disabled}
-                />
-              </div>
-              {verbosity != null && onVerbosity != null ? (
+              )}
+              {verbosity != null && onVerbosity != null && (
                 <div className="flex flex-col gap-1">
                   <FieldLabel>Verbosity</FieldLabel>
                   <VerbositySelect value={verbosity} onChange={onVerbosity} disabled={disabled} />
                 </div>
-              ) : null}
+              )}
+              <div className="col-span-2 flex flex-col gap-1">
+                <FieldLabel>Provider, model, effort</FieldLabel>
+                <RoutingPicker
+                  ariaLabel={`routing for step ${ordinal + 1}`}
+                  providers={candidateProviders}
+                  provider={providerValue}
+                  model={model}
+                  effort={effort}
+                  recommendedProvider={recommendedProvider}
+                  recommendedModel={recommendedModel}
+                  disabled={disabled}
+                  onProvider={onProvider}
+                  onModel={onModel}
+                  onEffort={onEffort}
+                />
+              </div>
             </div>
           </div>
         </div>

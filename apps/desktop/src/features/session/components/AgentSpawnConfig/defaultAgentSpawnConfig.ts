@@ -1,9 +1,11 @@
-import { AGENT_KIND_DEFAULTS } from '../../agent-kind';
+import { kindRouting } from '../../agent-kind';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
+
+const GENERIC_ROUTING = kindRouting({ kind: 'generic' });
 
 export const DEFAULT_AGENT_SPAWN_CONFIG = {
   provider: '',
-  model: AGENT_KIND_DEFAULTS.generic.model,
-  effort: AGENT_KIND_DEFAULTS.generic.effort,
+  model: GENERIC_ROUTING.model,
+  effort: GENERIC_ROUTING.effort,
   hint: '',
 } satisfies AgentSpawnConfigValue;

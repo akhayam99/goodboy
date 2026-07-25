@@ -26,7 +26,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, type CreatedWorktree } from '../../../features/worktree/worktree';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
-  AGENT_KIND_DEFAULTS,
+  kindRouting,
   AGENT_KIND_META,
   ROLE_TO_KIND,
   inferAgentKindFromName,
@@ -262,7 +262,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
             kind,
             ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
           });
-          agentModelOverrides[agent.id] = step.modelOverride ?? AGENT_KIND_DEFAULTS[kind].model;
+          agentModelOverrides[agent.id] = step.modelOverride ?? kindRouting({ kind }).model;
           agentKindOverrides[agent.id] = kind;
           allAgents.push(agent);
         }
@@ -281,7 +281,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       }
     } else if (firstAgentKind !== undefined) {
       const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
-      const model = requestedModel ?? AGENT_KIND_DEFAULTS[firstAgentKind].model;
+      const model = requestedModel ?? kindRouting({ kind: firstAgentKind }).model;
       const singleAgent = await invokeAgentInsert({
         sessionId: session.id,
         ordinal: 0,

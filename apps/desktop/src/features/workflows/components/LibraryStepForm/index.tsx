@@ -14,10 +14,8 @@ import type { StepDefUpsertArgs } from '../../workflows';
 import { modelEffortLevels, type EffortLevel } from '../../../chat/utils/chat-constants';
 import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
-import { ModelSelect } from '../../../session/components/ModelSelect';
-import { EffortSelect } from '../../../session/components/EffortSelect';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
-import { ProviderSelect } from '../../../session/components/ProviderSelect';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 
 type Props = {
   readonly def: StepDef | null;
@@ -57,7 +55,6 @@ export const LibraryStepForm = ({
   const recommendedProv: ProviderId = connectedProviders[0] ?? 'anthropic';
   const effProvider: ProviderId = providerOverride !== '' ? providerOverride : recommendedProv;
   const recommendedMod: string = recommendedModelForRole({ role, provider: effProvider });
-  const modelValue = modelOverride !== '' ? modelOverride : recommendedMod;
 
   type FormState = {
     name: string;
@@ -155,48 +152,38 @@ export const LibraryStepForm = ({
       />
 
       <div className="grid grid-cols-2 gap-2.5">
-        <InlineField label="Provider">
-          <ProviderSelect
-            value={providerOverride}
-            providers={connectedProviders}
-            recommended={recommendedProv}
-            onChange={(p) => {
-              setProviderOverride(p);
-              commit({ providerOverride: p });
-            }}
-            disabled={false}
-          />
-        </InlineField>
-        <InlineField label="Model">
-          <ModelSelect
-            provider={effProvider}
-            value={modelValue}
-            recommendedModel={recommendedMod}
-            allowAuto
-            onChange={(m) => {
-              const levels = modelEffortLevels(m);
-              setModelOverride(m);
-              const over: Partial<FormState> = { modelOverride: m };
-              if (levels && !levels.includes(effort)) {
-                setEffort(levels[0]!);
-                over.effort = levels[0]!;
-              }
-              commit(over);
-            }}
-            disabled={false}
-          />
-        </InlineField>
-        <InlineField label="Effort">
-          <EffortSelect
-            model={modelValue}
-            value={effort}
-            onChange={(eff) => {
-              setEffort(eff);
-              commit({ effort: eff });
-            }}
-            disabled={false}
-          />
-        </InlineField>
+        <div className="col-span-2">
+          <InlineField label="Provider, model, effort">
+            <RoutingPicker
+              ariaLabel="step routing"
+              providers={connectedProviders}
+              provider={providerOverride}
+              model={modelOverride}
+              effort={effort}
+              recommendedProvider={recommendedProv}
+              recommendedModel={recommendedMod}
+              disabled={false}
+              onProvider={(p) => {
+                setProviderOverride(p);
+                commit({ providerOverride: p });
+              }}
+              onModel={(m) => {
+                const levels = modelEffortLevels(m === '' ? recommendedMod : m);
+                setModelOverride(m);
+                const over: Partial<FormState> = { modelOverride: m };
+                if (levels && !levels.includes(effort)) {
+                  setEffort(levels[0]!);
+                  over.effort = levels[0]!;
+                }
+                commit(over);
+              }}
+              onEffort={(eff) => {
+                setEffort(eff);
+                commit({ effort: eff });
+              }}
+            />
+          </InlineField>
+        </div>
         <InlineField label="Verbosity">
           <VerbositySelect
             value={verbosity}

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
-import { Divider, Popover, ScrollFade, Select, Tooltip, cn } from '@goodboy/ui';
+import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui';
 import { Fragment } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction, NotificationSeverity } from '@goodboy/db';
@@ -9,8 +9,7 @@ import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
-import { ModelSelect } from '../../../session/components/ModelSelect';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
   switch (severity) {
@@ -302,30 +301,23 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
     onDone();
   };
   return (
-    <div className="mt-1.5 flex items-center gap-1.5">
-      <Select
-        size="sm"
-        aria-label="retry provider"
-        value={providerId}
-        onChange={(event) => {
-          setProviderId(event.target.value as ProviderId);
-          setModel('');
-        }}
-      >
-        {availableProviderIds.map((candidate) => (
-          <option key={candidate} value={candidate}>
-            {PROVIDER_LABEL[candidate]}
-          </option>
-        ))}
-      </Select>
+    <div className="flex items-center gap-1.5 pt-1.5">
       <div className="min-w-0 flex-1">
-        <ModelSelect
+        <RoutingPicker
+          ariaLabel="retry routing"
+          providers={availableProviderIds}
           provider={providerId}
-          value={model}
-          onChange={setModel}
-          disabled={false}
-          allowAuto
+          model={model}
           recommendedModel={recommendedModel}
+          disabled={false}
+          onProvider={(next) => {
+            if (next === '') {
+              return;
+            }
+            setProviderId(next);
+            setModel('');
+          }}
+          onModel={setModel}
         />
       </div>
       <button

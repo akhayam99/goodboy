@@ -1,6 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
+import {
+  PROVIDER_IDS,
+  type ProviderId,
+  type Session,
+  type TurnProviderOverride,
+} from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
@@ -101,7 +106,13 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
-  const providerCandidates: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+  const routableProviders = PROVIDER_IDS.filter(
+    (id) => (PROVIDER_CAPABILITIES[id]?.models.length ?? 0) > 0,
+  );
+  const providerCandidates: ReadonlyArray<ProviderId> = [
+    ...routableProviders.filter((id) => connectedProviderIds.includes(id)),
+    ...routableProviders.filter((id) => !connectedProviderIds.includes(id)),
+  ];
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
     if (effectiveModel) ids.add(effectiveModel);

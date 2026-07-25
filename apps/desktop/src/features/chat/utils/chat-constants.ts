@@ -84,19 +84,7 @@ export const EFFORT_TEXT: Record<EffortLevel, string> = {
 
 export type CostTier = ModelCostTier;
 
-const MODEL_COST: Record<string, { weight: number; tier: CostTier }> = {
-  'cursor-small': { weight: 4, tier: 'cheap' },
-  'claude-haiku-4-5': { weight: 5, tier: 'cheap' },
-  'codex-mini-latest': { weight: 6, tier: 'cheap' },
-  'claude-sonnet-4-5': { weight: 14, tier: 'mid' },
-  'claude-sonnet-4-6': { weight: 15, tier: 'mid' },
-  'codex-latest': { weight: 20, tier: 'mid' },
-  'claude-opus-4-6': { weight: 60, tier: 'expensive' },
-  'claude-opus-4-7': { weight: 75, tier: 'expensive' },
-  'claude-opus-4-8': { weight: 80, tier: 'expensive' },
-  'claude-opus-5': { weight: 85, tier: 'expensive' },
-  'claude-fable-5': { weight: 90, tier: 'expensive' },
-};
+const FALLBACK_WEIGHT = 10;
 
 export const TIER_TEXT: Record<CostTier, string> = {
   cheap: 'text-success',
@@ -212,10 +200,6 @@ export const modelTier = (model: string): CostTier => {
   if (descriptor) {
     return descriptor.costTier;
   }
-  const known = MODEL_COST[model];
-  if (known) {
-    return known.tier;
-  }
   if (/haiku|small|mini|flash|nano|fast/i.test(model)) {
     return 'cheap';
   }
@@ -226,11 +210,7 @@ export const modelTier = (model: string): CostTier => {
 };
 
 export const modelWeight = (model: string): number => {
-  const descriptor = getModelDescriptor(model);
-  if (descriptor) {
-    return descriptor.weight;
-  }
-  return MODEL_COST[model]?.weight ?? 10;
+  return getModelDescriptor(model)?.weight ?? FALLBACK_WEIGHT;
 };
 
 const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
@@ -326,18 +306,6 @@ const SUBFAMILY_LABEL: Record<string, string> = {
   flash: 'Flash',
 };
 
-const SUBFAMILY_TIER: Record<string, CostTier> = {
-  haiku: 'cheap',
-  sonnet: 'mid',
-  opus: 'expensive',
-  fable: 'expensive',
-  'gpt-5': 'mid',
-  codex: 'mid',
-  mini: 'cheap',
-  pro: 'expensive',
-  flash: 'cheap',
-};
-
 export const subfamilyLabel = (family: ModelFamily, subfamily: string): string => {
   if (SUBFAMILY_LABEL[subfamily]) {
     return SUBFAMILY_LABEL[subfamily];
@@ -346,8 +314,4 @@ export const subfamilyLabel = (family: ModelFamily, subfamily: string): string =
     return subfamily.replace('-codex', '-Codex');
   }
   return subfamily;
-};
-
-export const subfamilyTier = (_family: ModelFamily, subfamily: string): CostTier => {
-  return SUBFAMILY_TIER[subfamily] ?? 'mid';
 };

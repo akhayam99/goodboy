@@ -1,6 +1,6 @@
 import type { PrComment, ProviderId, PullRequestState } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
-import { AGENT_KIND_DEFAULTS } from '../session/agent-kind';
+import { kindRouting } from '../session/agent-kind';
 import type { EffortLevel } from './utils/chat-constants';
 
 const TITLE_MAX = 60;
@@ -111,7 +111,7 @@ export const buildCommentAgentArgs = (
   choice: ResolveModelChoice = {},
   replies: ReadonlyArray<PrComment> = [],
 ): CommentAgentArgs => {
-  const defaults = AGENT_KIND_DEFAULTS.resolver;
+  const defaults = kindRouting({ kind: 'resolver' });
   const mode = choice.mode ?? 'fix';
   return {
     name: buildCommentAgentTitle(c),

@@ -6,30 +6,6 @@ import type { AgentRole, ProviderId } from '@goodboy/types';
 import type { AgentKind } from '../../agent-kind';
 import type { EffortLevel } from '../../../chat/utils/chat-constants';
 
-vi.mock('../ProviderSelect', () => ({
-  ProviderSelect: ({ onChange }: { onChange: (v: string) => void }) => (
-    <button type="button" onClick={() => onChange('anthropic')}>
-      provider-select
-    </button>
-  ),
-}));
-
-vi.mock('../ModelSelect', () => ({
-  ModelSelect: ({ onChange }: { onChange: (v: string) => void }) => (
-    <button type="button" onClick={() => onChange('claude-opus-4-6')}>
-      model-select
-    </button>
-  ),
-}));
-
-vi.mock('../EffortSelect', () => ({
-  EffortSelect: ({ onChange }: { onChange: (v: string) => void }) => (
-    <button type="button" onClick={() => onChange('high')}>
-      effort-select
-    </button>
-  ),
-}));
-
 vi.mock('../RoleSelect', () => ({
   RoleSelect: ({ onChange }: { onChange: (v: string) => void }) => (
     <button type="button" onClick={() => onChange('engineer')}>
