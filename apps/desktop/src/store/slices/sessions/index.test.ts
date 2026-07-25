@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
@@ -419,7 +419,13 @@ async function getStore() {
 
 let resetState: Record<string, unknown> | null = null;
 
+const STORE_IMPORT_TIMEOUT_MS = 60_000;
+
 describe('store contract', () => {
+  beforeAll(async () => {
+    await getStore();
+  }, STORE_IMPORT_TIMEOUT_MS);
+
   beforeEach(async () => {
     vi.clearAllMocks();
     invokeBudgetRuleListSpy.mockResolvedValue([]);
