@@ -9,6 +9,7 @@ type Params = {
   readonly output: string;
   readonly taskModel: TaskModelPreference;
   readonly workingDir?: string;
+  readonly expectedOutput?: string;
 };
 
 export type SummarizeAgentOutputResult = {
@@ -21,6 +22,7 @@ export const summarizeAgentOutput = async ({
   output,
   taskModel,
   workingDir,
+  expectedOutput,
 }: Params): Promise<SummarizeAgentOutputResult> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
@@ -37,6 +39,7 @@ export const summarizeAgentOutput = async ({
         invokeFn: invoke,
         output,
         ...(workingDir != null && { workingDir }),
+        ...(expectedOutput != null && expectedOutput !== '' && { expectedOutput }),
       }),
       timeout,
     ]);

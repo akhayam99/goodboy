@@ -29,6 +29,7 @@ type Props = {
   readonly candidateProviders: ReadonlyArray<ProviderId>;
   readonly name: string;
   readonly promptPrefix: string;
+  readonly expectedOutput?: string;
   readonly model: string;
   readonly resolvedModel: string;
   readonly recommendedModel: string;
@@ -42,6 +43,7 @@ type Props = {
   readonly onStartDrag: (e: React.PointerEvent) => void;
   readonly onName: (v: string) => void;
   readonly onPrompt: (v: string) => void;
+  readonly onExpectedOutput?: (v: string) => void;
   readonly onModel: (v: string) => void;
   readonly onProvider: (v: ProviderId | '') => void;
   readonly onEffort: (v: EffortLevel) => void;
@@ -112,6 +114,7 @@ export const WorkflowStepCard = ({
   candidateProviders,
   name,
   promptPrefix,
+  expectedOutput,
   model,
   resolvedModel,
   recommendedModel,
@@ -125,6 +128,7 @@ export const WorkflowStepCard = ({
   onStartDrag,
   onName,
   onPrompt,
+  onExpectedOutput,
   onModel,
   onProvider,
   onEffort,
@@ -286,6 +290,22 @@ export const WorkflowStepCard = ({
                 </button>
               ) : null}
             </div>
+            {expectedOutput !== undefined && onExpectedOutput !== undefined ? (
+              <div className="flex flex-col gap-1">
+                <FieldLabel>Expected output</FieldLabel>
+                <Textarea
+                  value={expectedOutput}
+                  onChange={(e) => onExpectedOutput(e.target.value)}
+                  placeholder="what this step hands to the next one…"
+                  autoGrow
+                  minRows={1}
+                  maxRows={4}
+                  disabled={disabled}
+                  aria-label="expected output"
+                  className="text-[11px] leading-relaxed"
+                />
+              </div>
+            ) : null}
             <div className="grid grid-cols-2 gap-2.5">
               {onRole != null && (
                 <div className="flex flex-col gap-1">

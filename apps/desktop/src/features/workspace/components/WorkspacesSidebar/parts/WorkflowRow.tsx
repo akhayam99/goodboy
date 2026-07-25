@@ -28,8 +28,11 @@ import {
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
-import { workflowKindName, type WorkflowBlockReason } from '../lib';
+import { CostBadge } from '../../../../providers/components/CostBadge';
+import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
+import { workflowKindName } from '../lib';
 import type { ProviderContextUsage } from './ContextWindowBar';
+import { WorkflowRunAsk } from './WorkflowRunAsk';
 import { WorkflowStepRow } from './WorkflowStepRow';
 import { ScoutSubtree } from './ScoutSubtree';
 import { ClusterChildRow } from './ClusterChildRow';
@@ -140,6 +143,14 @@ export const WorkflowRow = ({
   const predecessorName = run.chainAfterId
     ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
     : 'previous';
+  const runCostUsd = wfAgents.reduce(
+    (total, agent) => total + (aggregatesByAgentId.get(agent.id)?.estimatedCostUsd ?? 0),
+    0,
+  );
+  const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
+  const currentStepName =
+    wfAgents.find((agent) => agent.status === 'running')?.name ??
+    workflow.steps.find((step) => step.id === actionableStepId)?.name;
   return (
     <div
       className={cn(
@@ -166,9 +177,27 @@ export const WorkflowRow = ({
                   predecessorName={predecessorName}
                 />
               </div>
-              <span className="text-xs text-muted-foreground">
-                {done}/{total} steps
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                {total > 0 ? (
+                  <>
+                    <span className="tabular-nums">
+                      Step {Math.min(done + 1, total)} of {total}
+                    </span>
+                    <span aria-hidden className="text-muted-foreground/40">
+                      ·
+                    </span>
+                  </>
+                ) : null}
+                {currentStepName != null && !isCompleted ? (
+                  <>
+                    <span className="min-w-0 truncate">{currentStepName}</span>
+                    <span aria-hidden className="text-muted-foreground/40">
+                      ·
+                    </span>
+                  </>
+                ) : null}
+                <CostBadge value={runCostUsd} title={`$${runCostUsd.toFixed(4)} for this run`} />
+              </div>
             </div>
           </div>
         ) : (
@@ -274,6 +303,12 @@ export const WorkflowRow = ({
           </div>
         )}
       </div>
+      {isDetail && expanded ? (
+        <WorkflowRunAsk
+          goal={(run.goal ?? workflow.goal ?? '').trim()}
+          processText={(workflow.processText ?? '').trim()}
+        />
+      ) : null}
       {expanded ? (
         wfAgents.length > 0 ? (
           <div
@@ -285,10 +320,8 @@ export const WorkflowRow = ({
             {wfAgents.map((run, index) => {
               const isActionable = run.stepId === actionableStepId && run.status === 'pending';
               const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
-              const stepModel =
-                run.stepId != null
-                  ? workflow.steps.find((s) => s.id === run.stepId)?.modelOverride
-                  : undefined;
+              const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
+              const stepModel = step?.modelOverride;
               const resolvedModel =
                 stepModel ??
                 agentModelOverride[run.id] ??
@@ -303,6 +336,8 @@ export const WorkflowRow = ({
                     run={run}
                     kind={kind}
                     index={index}
+                    step={step}
+                    showBrief={isDetail}
                     resolvedModel={resolvedModel}
                     isActionable={isActionable}
                     blockReason={isActionable ? wfBlockReason : null}
@@ -387,12 +422,21 @@ export const WorkflowRow = ({
           </p>
         )
       ) : null}
-      {expanded && !isDiscarded && wfBlockReason === 'failed-step' ? (
+      {expanded && !isDiscarded && (isDetail || wfBlockReason === 'failed-step') ? (
         <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
           <WorkflowNextStepCta
             workflow={workflow}
             runs={wfAgents}
-            onAdvance={() => {}}
+            blockReason={wfBlockReason}
+            onAdvance={(step) => {
+              const pending = wfAgents.find(
+                (agent) => agent.stepId === step.id && agent.status === 'pending',
+              );
+              if (pending == null) {
+                return;
+              }
+              void onStartStepAgent(pending);
+            }}
             onForceAdvance={() => void forceAdvanceWorkflowStep(task.id, run.id)}
           />
         </div>

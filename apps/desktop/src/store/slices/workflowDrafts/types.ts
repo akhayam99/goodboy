@@ -12,6 +12,7 @@ export type EditableStep = {
   readonly role: AgentRole;
   readonly name: string;
   readonly promptPrefix: string;
+  readonly expectedOutput: string;
   readonly providerOverride?: ProviderId;
   readonly modelOverride?: string;
   readonly effort?: EffortLevel;

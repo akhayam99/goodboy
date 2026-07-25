@@ -16,6 +16,7 @@ export type DefinitionForm = {
   role: AgentRole;
   name: string;
   promptPrefix: string;
+  expectedOutput: string;
   providerOverride: string;
   modelOverride: string;
   effort: EffortLevel;
@@ -43,6 +44,7 @@ export const emptyDefinition = (): DefinitionForm => ({
   role: 'custom',
   name: '',
   promptPrefix: '',
+  expectedOutput: '',
   providerOverride: '',
   modelOverride: '',
   effort: DEFAULT_EFFORT,
@@ -71,6 +73,7 @@ export const templateToForm = (t: Workflow): TemplateForm => {
         role: d.role ?? KIND_TO_ROLE[inferAgentKindFromName(d.name)],
         name: d.name,
         promptPrefix: d.promptPrefix,
+        expectedOutput: d.expectedOutput ?? '',
         providerOverride: d.providerOverride ?? '',
         modelOverride: d.modelOverride ?? '',
         effort: (d.effort as EffortLevel | undefined) ?? DEFAULT_EFFORT,
@@ -86,6 +89,7 @@ export const defFromLibraryStep = (s: StepDef): DefinitionForm => {
     role: s.role,
     name: s.name,
     promptPrefix: s.promptPrefix,
+    expectedOutput: '',
     providerOverride: s.providerDefault ?? '',
     modelOverride: s.modelDefault ?? '',
     effort: (s.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,

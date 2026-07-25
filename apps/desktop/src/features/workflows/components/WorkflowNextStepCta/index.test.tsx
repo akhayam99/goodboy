@@ -118,15 +118,38 @@ describe('WorkflowNextStepCta', () => {
     expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({ id: 's1' });
   });
 
-  it('asks for confirmation when there are open questions', () => {
+  it('names what blocks it and asks for confirmation when questions are open', () => {
     const onAdvance = vi.fn();
     render(
-      <WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={onAdvance} hasOpenQuestions />,
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={ctaRuns}
+        onAdvance={onAdvance}
+        blockReason="questions"
+      />,
+    );
+    expect(screen.getByTestId('workflow-next-step-blocked').textContent).toMatch(
+      /open questions are waiting/i,
     );
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
-    expect(
-      screen.getByText(/answer the open questions before you start the next agent/i),
-    ).toBeDefined();
+    expect(screen.getByText(/start the next agent anyway/i)).toBeDefined();
+    expect(onAdvance).not.toHaveBeenCalled();
+  });
+
+  it('keeps the CTA visible but inert while the step is still working', () => {
+    const onAdvance = vi.fn();
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={ctaRuns}
+        onAdvance={onAdvance}
+        blockReason="turn-running"
+      />,
+    );
+    const cta = screen.getByTestId('workflow-next-step-cta') as HTMLButtonElement;
+    expect(screen.getByTestId('workflow-next-step-blocked').textContent).toMatch(/still working/i);
+    expect(cta.disabled).toBe(true);
+    fireEvent.click(cta);
     expect(onAdvance).not.toHaveBeenCalled();
   });
 

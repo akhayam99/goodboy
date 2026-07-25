@@ -64,6 +64,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
   useFilesTouched: () => ({ count: 0 }),
   useSessionPlans: () => [],
+  useSessionOpenQuestions: () => [],
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
