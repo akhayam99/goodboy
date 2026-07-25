@@ -58,6 +58,7 @@ export type Step = Readonly<{
   ordinal: number;
   name: string;
   promptPrefix: string;
+  expectedOutput?: string;
   providerOverride?: ProviderId;
   modelOverride?: string;
   effort?: AgentEffort;
@@ -72,6 +73,7 @@ export type Workflow = Readonly<{
   name: string;
   description: string;
   goal?: string;
+  processText?: string;
   steps: ReadonlyArray<Step>;
   isPreset?: boolean;
   deletedAt?: IsoDateTime;

@@ -74,6 +74,8 @@ import { m073SessionExternalTaskGithubProvider } from './m073-session-external-t
 import { m074NotificationAction } from './m074-notification-action';
 import { m075PrReviewDrafts } from './m075-pr-review-drafts';
 import { m076AgentSourceKind } from './m076-agent-source-kind';
+import { m077StepExpectedOutput } from './m077-step-expected-output';
+import { m078WorkflowProcessText } from './m078-workflow-process-text';
 
 export type Migration = {
   readonly version: number;
@@ -157,4 +159,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 74, sql: m074NotificationAction },
   { version: 75, sql: m075PrReviewDrafts },
   { version: 76, sql: m076AgentSourceKind },
+  { version: 77, sql: m077StepExpectedOutput },
+  { version: 78, sql: m078WorkflowProcessText },
 ];
