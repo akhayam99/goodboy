@@ -98,7 +98,7 @@ export { resolveModelForProvider } from './providers/model-map';
 
 export { resolveTaskModel } from './providers/task-models';
 
-export { getDefaultBinary } from './providers/cli-defaults';
+export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';

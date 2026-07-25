@@ -18,9 +18,9 @@ export const ROLE_DEFAULTS = {
   },
   investigator: {
     provider: 'anthropic',
-    model: 'claude-haiku-4-5',
-    effort: 'low',
-    description: 'reproduce, diagnose, root-cause; no fixes',
+    model: 'claude-sonnet-4-6',
+    effort: 'medium',
+    description: 'reproduce, diagnose, root-cause, patch the failure',
   },
   planner: {
     provider: 'anthropic',

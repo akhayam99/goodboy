@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ROLE_DEFAULTS, defaultsForRole, isAgentRole } from './roles';
+import { PROVIDER_CAPABILITIES } from './providers/capabilities';
 
 describe('ROLE_DEFAULTS', () => {
   it('covers every defined AgentRole', () => {
@@ -21,9 +22,26 @@ describe('ROLE_DEFAULTS', () => {
     expect(Object.keys(ROLE_DEFAULTS).sort()).toEqual([...expected].sort());
   });
 
-  it('routes read-heavy roles to the cheap model', () => {
+  it('routes the read-only survey role to the cheap model', () => {
     expect(ROLE_DEFAULTS.scout.model).toMatch(/haiku/);
-    expect(ROLE_DEFAULTS.investigator.model).toMatch(/haiku/);
+  });
+
+  it('routes the debugging role to sonnet, since it reads deeply and patches', () => {
+    expect(ROLE_DEFAULTS.investigator.model).toMatch(/sonnet/);
+  });
+
+  it('names a model its provider ships, at an effort that model supports', () => {
+    for (const [role, defaults] of Object.entries(ROLE_DEFAULTS)) {
+      const model = PROVIDER_CAPABILITIES[defaults.provider].models.find(
+        (entry) => entry.id === defaults.model,
+      );
+      expect(model, `${role} → ${defaults.provider}/${defaults.model}`).toBeDefined();
+      if (model?.effort != null) {
+        expect(model.effort, `${role} → ${defaults.model}/${defaults.effort}`).toContain(
+          defaults.effort,
+        );
+      }
+    }
   });
 
   it('routes design-heavy roles to the strong model', () => {
