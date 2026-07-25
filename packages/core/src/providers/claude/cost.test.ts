@@ -18,6 +18,10 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd(usage, 'claude-opus-4-7')).toBeCloseTo(5 + 25);
   });
 
+  it('opus-5 is priced as opus', () => {
+    expect(computeCostUsd(usage, 'claude-opus-5')).toBeCloseTo(5 + 25);
+  });
+
   it('opus-4-8 is priced as opus', () => {
     expect(computeCostUsd(usage, 'claude-opus-4-8')).toBeCloseTo(5 + 25);
   });

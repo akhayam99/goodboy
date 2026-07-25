@@ -24,6 +24,7 @@ const SONNET_PRICE: ModelPrice = {
 
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5': FABLE_PRICE,
+  'claude-opus-5': OPUS_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,
   'claude-opus-4-6': OPUS_PRICE,

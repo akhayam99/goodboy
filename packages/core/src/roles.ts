@@ -24,13 +24,13 @@ export const ROLE_DEFAULTS = {
   },
   planner: {
     provider: 'anthropic',
-    model: 'claude-opus-4-8',
+    model: 'claude-opus-5',
     effort: 'high',
     description: 'design the change; produce an ordered plan',
   },
   architect: {
     provider: 'anthropic',
-    model: 'claude-opus-4-8',
+    model: 'claude-opus-5',
     effort: 'high',
     description: 'propose technical approach, modules, data flow, migrations',
   },

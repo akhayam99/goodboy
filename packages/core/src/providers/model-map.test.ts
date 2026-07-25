@@ -47,12 +47,12 @@ describe('resolveModelForProvider', () => {
     );
     expect(
       resolveModelForProvider({ provider: 'anthropic', modelId: 'totally-unknown-model' }),
-    ).toBe('claude-opus-4-8');
+    ).toBe('claude-opus-5');
   });
 
   it('falls back to the default turn model when the family has no counterpart', () => {
     expect(resolveModelForProvider({ provider: 'anthropic', modelId: 'auto' })).toBe(
-      'claude-opus-4-8',
+      'claude-opus-5',
     );
   });
 });

@@ -11,7 +11,7 @@ describe('autoModelForRole', () => {
     it('keeps the curated default for a high-tier role', () => {
       expect(autoModelForRole('planner', ['anthropic'])).toEqual({
         provider: 'anthropic',
-        model: 'claude-opus-4-8',
+        model: 'claude-opus-5',
       });
     });
 
@@ -25,7 +25,7 @@ describe('autoModelForRole', () => {
     it('prefers the default provider even when other providers are enabled', () => {
       expect(autoModelForRole('planner', ['gemini', 'anthropic'])).toEqual({
         provider: 'anthropic',
-        model: 'claude-opus-4-8',
+        model: 'claude-opus-5',
       });
     });
   });
