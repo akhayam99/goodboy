@@ -237,6 +237,7 @@ export const WorkflowComposer = ({
                     candidateProviders={connectedProviders}
                     name={def.name}
                     promptPrefix={def.promptPrefix}
+                    expectedOutput={def.expectedOutput}
                     model={def.modelOverride}
                     resolvedModel={resolvedModel(def)}
                     recommendedModel={recommendedModel(def)}
@@ -251,6 +252,7 @@ export const WorkflowComposer = ({
                     onStartDrag={(e) => onStartStepDrag(idx, def.name || 'untitled step', e)}
                     onName={(v) => onUpdateStep(idx, { name: v })}
                     onPrompt={(v) => onUpdateStep(idx, { promptPrefix: v })}
+                    onExpectedOutput={(v) => onUpdateStep(idx, { expectedOutput: v })}
                     onProvider={(v) => onUpdateStep(idx, { providerOverride: v })}
                     onModel={(v) => onUpdateStep(idx, { modelOverride: v })}
                     onEffort={(v) => onUpdateStep(idx, { effort: v })}

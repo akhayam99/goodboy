@@ -38,6 +38,33 @@ describe('summarizeStepOutput', () => {
     expect(result).toBe('Implemented auth flow.\n- `src/auth.ts`');
   });
 
+  it('tells the summarizer what the next step expects when the step declares it', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return { stdout: 'Mapped the area.', stderr: '', exitCode: 0 } as T;
+    };
+
+    await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'composer-2-fast',
+      invokeFn,
+      output: 'raw',
+      expectedOutput: 'An ordered per-file refactor plan.',
+    });
+    const args = request?.['args'];
+    const systemPrompt =
+      typeof args === 'object' && args !== null && 'systemPrompt' in args
+        ? String(args.systemPrompt)
+        : '';
+
+    expect(systemPrompt).toContain('An ordered per-file refactor plan.');
+    expect(systemPrompt).toContain('File paths touched');
+  });
+
   it('parses the anthropic result envelope', async () => {
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
       return {

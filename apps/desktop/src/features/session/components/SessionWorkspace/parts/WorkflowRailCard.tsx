@@ -1,5 +1,6 @@
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
+import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
 
@@ -20,9 +21,13 @@ export const WorkflowRailCard = ({
   isSelected,
   onSelect,
 }: Props) => {
-  const completedSteps = agents.filter(
-    (agent) => agent.status === 'completed' || agent.status === 'skipped',
-  ).length;
+  const chain = classifyWorkflowChain(workflow, agents);
+  const stepLine =
+    chain.kind === 'complete'
+      ? null
+      : chain.kind === 'blocked'
+        ? `Blocked at ${chain.failedStep.name}`
+        : `Next: ${chain.step.name}`;
 
   return (
     <button
@@ -37,17 +42,15 @@ export const WorkflowRailCard = ({
       <span className="line-clamp-2 text-xs font-medium text-foreground">
         {workflowKindName(workflow)}
       </span>
-      <div className="flex w-full items-center justify-between gap-2">
-        <WorkflowRunStatus
-          run={run}
-          workflow={workflow}
-          agents={agents}
-          predecessorName={predecessorName}
-        />
-        <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
-          {completedSteps}/{workflow.steps.length} steps
-        </span>
-      </div>
+      <WorkflowRunStatus
+        run={run}
+        workflow={workflow}
+        agents={agents}
+        predecessorName={predecessorName}
+      />
+      {stepLine != null ? (
+        <span className="line-clamp-1 w-full text-2xs text-muted-foreground">{stepLine}</span>
+      ) : null}
     </button>
   );
 };

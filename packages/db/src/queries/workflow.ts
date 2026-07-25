@@ -19,6 +19,7 @@ type WorkflowRow = {
   name: string;
   description: string;
   goal: string | null;
+  process_text: string | null;
   created_at: string;
   updated_at: string;
   is_preset: number | null;
@@ -33,6 +34,7 @@ type StepRow = {
   ordinal: number;
   name: string;
   prompt_prefix: string;
+  expected_output: string | null;
   provider_override: string | null;
   model_override: string | null;
   effort: string | null;
@@ -47,6 +49,8 @@ function toStep(row: StepRow): Step {
     ordinal: row.ordinal,
     name: row.name,
     promptPrefix: row.prompt_prefix,
+    ...(row.expected_output != null &&
+      row.expected_output !== '' && { expectedOutput: row.expected_output }),
     ...(row.library_step_id && { libraryStepId: row.library_step_id as StepDefId }),
     ...(row.role && { role: row.role as AgentRole }),
     ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
@@ -64,6 +68,7 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
     name: row.name,
     description: row.description,
     ...(row.goal != null && { goal: row.goal }),
+    ...(row.process_text != null && row.process_text !== '' && { processText: row.process_text }),
     steps,
     isPreset: row.is_preset == null ? true : row.is_preset !== 0,
     ...(row.deleted_at != null && {
@@ -113,12 +118,13 @@ export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflo
 export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
   await db.execute(
     `INSERT INTO workflows
-      (id, workspace_id, name, description, goal, created_at, updated_at, is_preset)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        description = excluded.description,
        goal = excluded.goal,
+       process_text = excluded.process_text,
        updated_at = excluded.updated_at,
        is_preset = excluded.is_preset`,
     [
@@ -127,6 +133,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       workflow.name,
       workflow.description,
       workflow.goal ?? null,
+      workflow.processText ?? null,
       workflow.createdAt,
       workflow.updatedAt,
       workflow.isPreset === false ? 0 : 1,
@@ -136,9 +143,9 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
   for (const step of workflow.steps) {
     await db.execute(
       `INSERT INTO steps
-        (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
+        (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix, expected_output,
          provider_override, model_override, effort, verbosity, parallel_group, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
        ON CONFLICT(id) DO UPDATE SET
          workflow_id      = excluded.workflow_id,
          library_step_id  = excluded.library_step_id,
@@ -146,6 +153,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
          ordinal          = excluded.ordinal,
          name             = excluded.name,
          prompt_prefix    = excluded.prompt_prefix,
+         expected_output  = excluded.expected_output,
          provider_override = excluded.provider_override,
          model_override   = excluded.model_override,
          effort           = excluded.effort,
@@ -160,6 +168,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
         step.ordinal,
         step.name,
         step.promptPrefix,
+        step.expectedOutput ?? null,
         step.providerOverride ?? null,
         step.modelOverride ?? null,
         step.effort ?? null,

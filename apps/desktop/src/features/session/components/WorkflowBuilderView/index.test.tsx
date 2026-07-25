@@ -250,6 +250,31 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     );
   });
 
+  it('persists the planner expected output for every step', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.steps.map((s) => s.expectedOutput)).toEqual(['scout output', 'eng output']);
+  });
+
+  it('persists an edited expected output and the process the user described', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    expandStep(0);
+
+    fireEvent.change(screen.getByLabelText('expected output'), {
+      target: { value: 'a ranked risk list' },
+    });
+
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.steps[0]!.expectedOutput).toBe('a ranked risk list');
+    expect(saved.processText).toBe('do something');
+  });
+
   it('lands an explicit model pick in modelOverride for that step only', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();

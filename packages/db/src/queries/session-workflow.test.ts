@@ -198,6 +198,64 @@ describe('session_workflows trigger-mode queries', () => {
     });
   });
 
+  describe('per-run goal', () => {
+    it('round-trips the goal typed in the builder', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        false,
+        NOW,
+        'just the auth module',
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.goal).toBe('just the auth module');
+    });
+
+    it('omits the goal when none was typed', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        false,
+        NOW,
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.goal).toBeUndefined();
+    });
+
+    it('keeps the goal when runs are reordered', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        false,
+        NOW,
+        'first goal',
+      );
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-2' as WorkflowRunId,
+        workflowId2,
+        false,
+        NOW,
+        'second goal',
+      );
+      await updateWorkflowOrder(
+        db,
+        sessionId,
+        ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
+        NOW,
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs.map((r) => r.goal)).toEqual(['second goal', 'first goal']);
+    });
+  });
+
   describe('discardWorkflowInSession', () => {
     it('sets discarded_at and maps it through', async () => {
       await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);

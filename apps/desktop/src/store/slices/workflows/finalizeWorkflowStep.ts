@@ -9,6 +9,7 @@ import { updateSessionWorkflowStep } from '@goodboy/db';
 import { shortModel } from '../../../features/session/agent-row-format';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { composeStepBoundary } from '../../kickoff';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import { isHandsFree } from './handsFree';
@@ -102,10 +103,20 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider,
       );
       const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+      const expectedOutput =
+        stepForAgent({
+          agent,
+          workflowRuns: session.workflowRuns,
+          workflows: [
+            ...(get().phaseTemplates?.[session.workspaceId] ?? []),
+            ...(get().sessionWorkflows?.[sessionId] ?? []),
+          ],
+        })?.expectedOutput ?? '';
       const result = await summarizeAgentOutput({
         output: assistantText,
         taskModel,
         ...(worktreePath != null && { workingDir: worktreePath }),
+        ...(expectedOutput !== '' && { expectedOutput }),
       });
       outputSummary = result.summary;
       if (result.degraded && !degradedNotifiedAgents.has(agentId)) {

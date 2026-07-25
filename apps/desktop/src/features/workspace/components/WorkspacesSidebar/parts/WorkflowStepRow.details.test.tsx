@@ -1,0 +1,105 @@
+// @vitest-environment happy-dom
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { Agent, AgentId, SessionId, Step, StepId, WorkflowId } from '@goodboy/types';
+
+vi.mock('../../../../../store', () => ({
+  agentHasUnread: () => false,
+}));
+
+vi.mock('../../../../session/components/AgentMetricsBlock', () => ({
+  AgentMetricsBlock: () => <div data-testid="metrics" />,
+}));
+
+vi.mock('./ContextWindowBar', () => ({ ContextWindowBar: () => null }));
+
+import { WorkflowStepRow } from './WorkflowStepRow';
+
+const step: Step = {
+  id: 'step-1' as StepId,
+  workflowId: 'wf-1' as WorkflowId,
+  ordinal: 0,
+  name: 'Scout',
+  promptPrefix: 'map the area first',
+  expectedOutput: 'a file map with references',
+};
+
+const agent: Agent = {
+  id: 'agent-1' as AgentId,
+  sessionId: 'session-1' as SessionId,
+  stepId: step.id,
+  ordinal: 0,
+  name: 'Scout',
+  status: 'completed',
+  outputSummary: 'mapped 12 files',
+};
+
+type RenderParams = {
+  readonly showBrief: boolean;
+  readonly stepDef?: Step;
+  readonly runDef?: Agent;
+};
+
+const renderRow = ({ showBrief, stepDef = step, runDef = agent }: RenderParams) =>
+  render(
+    <WorkflowStepRow
+      run={runDef}
+      kind="scout"
+      index={0}
+      step={stepDef}
+      showBrief={showBrief}
+      resolvedModel="claude-haiku-4-5"
+      isActionable={false}
+      blockReason={null}
+      isSelected={false}
+      isTaskActive
+      isEditing={false}
+      telemetry={null}
+      aggregate={null}
+      contextUsage={[]}
+      turns={0}
+      turnsLoading={false}
+      onStart={vi.fn()}
+      onSelect={vi.fn()}
+      onRenameStart={vi.fn()}
+      onRenameCommit={vi.fn()}
+      onRenameCancel={vi.fn()}
+    />,
+  );
+
+afterEach(cleanup);
+
+describe('WorkflowStepRow details', () => {
+  it('reveals what the step does, should produce, and produced', () => {
+    renderRow({ showBrief: true });
+
+    fireEvent.click(screen.getByRole('button', { name: /show details for scout/i }));
+
+    expect(screen.getByText('map the area first')).toBeDefined();
+    expect(screen.getByText('a file map with references')).toBeDefined();
+    expect(screen.getByText('mapped 12 files')).toBeDefined();
+  });
+
+  it('keeps the details collapsed until asked', () => {
+    renderRow({ showBrief: true });
+
+    expect(screen.queryByText('map the area first')).toBeNull();
+  });
+
+  it('offers no details toggle in the sidebar variant', () => {
+    renderRow({ showBrief: false });
+
+    expect(screen.queryByRole('button', { name: /details for scout/i })).toBeNull();
+  });
+
+  it('offers no details toggle when the step carries nothing to show', () => {
+    renderRow({
+      showBrief: true,
+      stepDef: { ...step, promptPrefix: '', expectedOutput: '' },
+      runDef: { ...agent, outputSummary: undefined },
+    });
+
+    expect(screen.queryByRole('button', { name: /details for scout/i })).toBeNull();
+  });
+});

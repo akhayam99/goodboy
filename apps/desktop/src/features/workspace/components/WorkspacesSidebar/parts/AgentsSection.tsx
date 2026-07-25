@@ -20,8 +20,11 @@ import {
   useSessionLoading,
   useSessionOpenQuestions,
 } from '../../../../../store';
-import { classifyWorkflowChain } from '@goodboy/core';
 import { pickNextWorkflowStep } from '../../../../../features/workflows/components/WorkflowNextStepCta';
+import {
+  resolveWorkflowAdvance,
+  type WorkflowBlockReason,
+} from '../../../../../features/workflows/advanceGate';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
@@ -32,11 +35,12 @@ import { SectionToggle } from './SectionToggle';
 import { PlanReadySuggestion } from './PlanReadySuggestion';
 import { ResolveCluster } from './ResolveCluster';
 import { SpawnAgentControl } from './SpawnAgentControl';
+import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
 import { WorkflowStartButton } from './WorkflowStartButton';
 import { CollapsedSummary } from './CollapsedSummary';
 import { AdHocRow } from './AdHocRow';
 import { WorkflowRow } from './WorkflowRow';
-import { pluralize, workflowKindName, type ResolverState, type WorkflowBlockReason } from '../lib';
+import { pluralize, workflowKindName, type ResolverState } from '../lib';
 
 type Props = {
   task: Session;
@@ -276,15 +280,14 @@ export const AgentsSection = ({
   const blockReasonByRunId = useMemo(() => {
     const map = new Map<string, WorkflowBlockReason | null>();
     for (const { run, workflow } of attachedRuns) {
-      const runAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
-      const reason: WorkflowBlockReason | null = workflowRunHasOpenQuestions(openQuestions, run.id)
-        ? 'questions'
-        : summarizerBusy
-          ? 'summarizer'
-          : classifyWorkflowChain(workflow, runAgents).kind === 'blocked'
-            ? 'failed-step'
-            : null;
-      map.set(run.id, reason);
+      const state = resolveWorkflowAdvance({
+        workflow,
+        agents: agentsByRunId.get(run.id) ?? EMPTY_ARRAY,
+        hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+        isSummarizerRunning: summarizerBusy,
+        isTurnRunning: false,
+      });
+      map.set(run.id, state.kind === 'blocked' ? state.reason : null);
     }
     return map;
   }, [attachedRuns, agentsByRunId, openQuestions, summarizerBusy]);
@@ -471,9 +474,9 @@ export const AgentsSection = ({
           )}
           {wfExpanded ? (
             !hasAnyWorkflow ? (
-              <WorkflowStartButton sessionId={task.id} variant="empty" />
+              <WorkflowStartButton sessionId={task.id} />
             ) : (
-              <>
+              <div className="flex flex-col gap-1.5">
                 <div className={cn('flex flex-col', forceExpanded ? 'gap-3' : 'gap-0.5')}>
                   {visibleWorkflowRuns.map(({ run, workflow }) => (
                     <WorkflowRow
@@ -522,9 +525,9 @@ export const AgentsSection = ({
                   ))}
                 </div>
                 {showWorkflowAttach ? (
-                  <WorkflowStartButton sessionId={task.id} variant="attach" />
+                  <WorkflowAttachButton sessionId={task.id} placement="inline" />
                 ) : null}
-              </>
+              </div>
             )
           ) : (
             <CollapsedSummary

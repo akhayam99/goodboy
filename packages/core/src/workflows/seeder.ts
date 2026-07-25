@@ -56,6 +56,7 @@ export const seedWorkflowLibrary = async (
         ordinal,
         name: s.name,
         promptPrefix: s.promptPrefix,
+        expectedOutput: s.expectedOutput,
       };
     });
 

@@ -201,6 +201,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         role: s.role,
         name: s.name,
         promptPrefix: s.promptPrefix,
+        expectedOutput: s.expectedOutput,
       })),
     }));
     setExpandedIdx(null);
@@ -239,6 +240,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       ordinal: i,
       name: d.name.trim(),
       promptPrefix: d.promptPrefix,
+      ...(d.expectedOutput.trim() ? { expectedOutput: d.expectedOutput.trim() } : {}),
       ...(d.providerOverride ? { providerOverride: d.providerOverride as ProviderId } : {}),
       ...(d.modelOverride.trim() ? { modelOverride: d.modelOverride.trim() } : {}),
       effort: d.effort as AgentEffort,

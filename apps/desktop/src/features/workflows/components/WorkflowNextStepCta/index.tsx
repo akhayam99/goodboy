@@ -10,6 +10,8 @@ import {
   inferAgentKindFromName,
 } from '../../../../features/session/agent-kind';
 import { shortModel } from '../../../../features/session/agent-row-format';
+import type { WorkflowBlockReason } from '../../advanceGate';
+import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 
 export type Props = {
   readonly workflow: Workflow;
@@ -20,7 +22,7 @@ export type Props = {
     verbosity: VerbosityLevel | undefined,
   ) => void | Promise<void>;
   readonly onForceAdvance?: () => void | Promise<void>;
-  readonly hasOpenQuestions?: boolean;
+  readonly blockReason?: WorkflowBlockReason | null;
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
 };
@@ -61,7 +63,7 @@ export const WorkflowNextStepCta = ({
   runs,
   onAdvance,
   onForceAdvance,
-  hasOpenQuestions = false,
+  blockReason = null,
   consumesActivePlan = false,
   className,
 }: Props) => {
@@ -91,6 +93,9 @@ export const WorkflowNextStepCta = ({
   if (chain.kind === 'blocked') {
     return (
       <div className={cn('flex flex-col gap-1.5', className)}>
+        {blockReason != null && blockReason !== 'failed-step' ? (
+          <p className="text-2xs text-muted-foreground">{WORKFLOW_BLOCK_COPY[blockReason]}</p>
+        ) : null}
         {pendingForce ? (
           <div className="flex flex-col gap-2 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-2xs">
             <p className="font-medium text-foreground">
@@ -148,19 +153,25 @@ export const WorkflowNextStepCta = ({
       setBusy(false);
     }
   };
+  const isWaiting = blockReason === 'turn-running';
   const onClick = () => {
-    if (hasOpenQuestions) {
+    if (blockReason != null) {
       setPendingConfirm(true);
-    } else {
-      void doAdvance();
+      return;
     }
+    void doAdvance();
   };
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
+      {blockReason != null ? (
+        <p className="text-2xs text-muted-foreground" data-testid="workflow-next-step-blocked">
+          {WORKFLOW_BLOCK_COPY[blockReason]}
+        </p>
+      ) : null}
       <button
         type="button"
         onClick={onClick}
-        disabled={busy}
+        disabled={busy || isWaiting}
         data-testid="workflow-next-step-cta"
         title={`model: ${defaults.model} · effort: ${defaults.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`}
         className="group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
@@ -196,10 +207,10 @@ export const WorkflowNextStepCta = ({
           {shortModel(defaults.model)}
         </span>
       </button>
-      {pendingConfirm ? (
+      {pendingConfirm && blockReason != null ? (
         <div className="flex flex-col gap-2 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-2xs">
           <p className="font-medium text-foreground">
-            Answer the open questions before you start the next agent.
+            {WORKFLOW_BLOCK_COPY[blockReason]} Start the next agent anyway?
           </p>
           <div className="flex gap-2">
             <button
@@ -207,7 +218,7 @@ export const WorkflowNextStepCta = ({
               onClick={() => setPendingConfirm(false)}
               className="rounded bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground motion-safe:transition-opacity hover:opacity-90"
             >
-              answer first
+              wait
             </button>
             <button
               type="button"

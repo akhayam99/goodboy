@@ -19,6 +19,8 @@ pub struct StepRow {
     pub name: String,
     #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
+    #[serde(rename = "expectedOutput")]
+    pub expected_output: Option<String>,
     #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
     #[serde(rename = "modelOverride")]
@@ -83,6 +85,8 @@ pub struct WorkflowRow {
     pub name: String,
     pub description: String,
     pub goal: Option<String>,
+    #[serde(rename = "processText")]
+    pub process_text: Option<String>,
     pub steps: Vec<StepRow>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -109,6 +113,8 @@ pub struct StepInput {
     pub name: String,
     #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
+    #[serde(rename = "expectedOutput")]
+    pub expected_output: Option<String>,
     #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
     #[serde(rename = "modelOverride")]
@@ -127,6 +133,8 @@ pub struct PhaseTemplateUpsertInput {
     pub name: String,
     pub description: String,
     pub goal: Option<String>,
+    #[serde(rename = "processText")]
+    pub process_text: Option<String>,
     pub steps: Vec<StepInput>,
     // Defaults to true when omitted so existing callers keep producing presets.
     #[serde(rename = "isPreset", default = "default_true")]
@@ -270,7 +278,8 @@ fn load_steps(
 ) -> Result<Vec<StepRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
         "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
-                provider_override, model_override, effort, verbosity, parallel_group
+                expected_output, provider_override, model_override, effort, verbosity,
+                parallel_group
          FROM steps
          WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
@@ -284,11 +293,12 @@ fn load_steps(
             ordinal: row.get(4)?,
             name: row.get(5)?,
             prompt_prefix: row.get(6)?,
-            provider_override: row.get(7)?,
-            model_override: row.get(8)?,
-            effort: row.get(9)?,
-            verbosity: row.get(10)?,
-            parallel_group: row.get(11)?,
+            expected_output: row.get(7)?,
+            provider_override: row.get(8)?,
+            model_override: row.get(9)?,
+            effort: row.get(10)?,
+            verbosity: row.get(11)?,
+            parallel_group: row.get(12)?,
         })
     })?;
     rows.collect()
@@ -302,6 +312,7 @@ fn row_to_template(
     name: String,
     description: String,
     goal: Option<String>,
+    process_text: Option<String>,
     created_at: String,
     updated_at: String,
     deleted_at: Option<i64>,
@@ -314,6 +325,7 @@ fn row_to_template(
         name,
         description,
         goal,
+        process_text,
         steps,
         created_at,
         updated_at,
@@ -333,7 +345,8 @@ pub fn workflow_list(
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, goal, created_at, updated_at, deleted_at, is_preset
+        "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
+                deleted_at, is_preset
          FROM workflows
          WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
          ORDER BY created_at ASC",
@@ -343,6 +356,7 @@ pub fn workflow_list(
         String,
         String,
         String,
+        Option<String>,
         Option<String>,
         String,
         String,
@@ -360,15 +374,16 @@ pub fn workflow_list(
                 row.get(6)?,
                 row.get(7)?,
                 row.get(8)?,
+                row.get(9)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(template_ids.len());
-    for (id, ws, name, desc, goal, created, updated, deleted, is_preset) in template_ids {
+    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset) in template_ids {
         let template = row_to_template(
-            &conn, id, ws, name, desc, goal, created, updated, deleted, is_preset != 0,
+            &conn, id, ws, name, desc, goal, process, created, updated, deleted, is_preset != 0,
         )
         .map_err(PhaseError::Db)?;
         result.push(template);
@@ -383,7 +398,8 @@ pub fn workflow_get(
 ) -> Result<Option<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, goal, created_at, updated_at, deleted_at, is_preset
+        "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
+                deleted_at, is_preset
          FROM workflows
          WHERE id = ?1
          LIMIT 1",
@@ -395,18 +411,20 @@ pub fn workflow_get(
             row.get::<_, String>(2)?,
             row.get::<_, String>(3)?,
             row.get::<_, Option<String>>(4)?,
-            row.get::<_, String>(5)?,
+            row.get::<_, Option<String>>(5)?,
             row.get::<_, String>(6)?,
-            row.get::<_, Option<i64>>(7)?,
-            row.get::<_, i64>(8)?,
+            row.get::<_, String>(7)?,
+            row.get::<_, Option<i64>>(8)?,
+            row.get::<_, i64>(9)?,
         ))
     })?;
     match rows.next() {
         Some(r) => {
-            let (rid, ws, name, desc, goal, created, updated, deleted, is_preset) =
+            let (rid, ws, name, desc, goal, process, created, updated, deleted, is_preset) =
                 r.map_err(PhaseError::Db)?;
             let template = row_to_template(
-                &conn, rid, ws, name, desc, goal, created, updated, deleted, is_preset != 0,
+                &conn, rid, ws, name, desc, goal, process, created, updated, deleted,
+                is_preset != 0,
             )
             .map_err(PhaseError::Db)?;
             Ok(Some(template))
@@ -454,21 +472,23 @@ pub fn workflow_upsert(
     };
 
     conn.execute(
-        "INSERT INTO workflows (id, workspace_id, name, description, goal, created_at, updated_at, is_preset)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        "INSERT INTO workflows (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
          ON CONFLICT(id) DO UPDATE SET
-           name        = excluded.name,
-           description = excluded.description,
-           goal        = excluded.goal,
-           updated_at  = excluded.updated_at,
-           is_preset   = excluded.is_preset,
-           deleted_at  = NULL",
+           name         = excluded.name,
+           description  = excluded.description,
+           goal         = excluded.goal,
+           process_text = excluded.process_text,
+           updated_at   = excluded.updated_at,
+           is_preset    = excluded.is_preset,
+           deleted_at   = NULL",
         rusqlite::params![
             id,
             input.workspace_id,
             input.name,
             input.description,
             input.goal,
+            input.process_text,
             created_at,
             now,
             input.is_preset as i32,
@@ -487,8 +507,9 @@ pub fn workflow_upsert(
         conn.execute(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
-                provider_override, model_override, effort, verbosity, parallel_group, deleted_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL)
+                expected_output, provider_override, model_override, effort, verbosity,
+                parallel_group, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, NULL)
              ON CONFLICT(id) DO UPDATE SET
                workflow_id      = excluded.workflow_id,
                library_step_id  = excluded.library_step_id,
@@ -496,6 +517,7 @@ pub fn workflow_upsert(
                ordinal          = excluded.ordinal,
                name             = excluded.name,
                prompt_prefix    = excluded.prompt_prefix,
+               expected_output  = excluded.expected_output,
                provider_override = excluded.provider_override,
                model_override   = excluded.model_override,
                effort           = excluded.effort,
@@ -510,6 +532,7 @@ pub fn workflow_upsert(
                 def.ordinal,
                 def.name,
                 def.prompt_prefix,
+                def.expected_output,
                 def.provider_override,
                 def.model_override,
                 def.effort,
@@ -526,6 +549,7 @@ pub fn workflow_upsert(
             ordinal: def.ordinal,
             name: def.name.clone(),
             prompt_prefix: def.prompt_prefix.clone(),
+            expected_output: def.expected_output.clone(),
             provider_override: def.provider_override.clone(),
             model_override: def.model_override.clone(),
             effort: def.effort.clone(),
@@ -563,6 +587,7 @@ pub fn workflow_upsert(
         name: input.name,
         description: input.description,
         goal: input.goal,
+        process_text: input.process_text,
         steps,
         created_at,
         updated_at: now,
@@ -633,8 +658,8 @@ pub fn workflows_for_session(
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT w.id, w.workspace_id, w.name, w.description, w.goal, w.created_at, w.updated_at,
-                w.deleted_at, w.is_preset
+        "SELECT w.id, w.workspace_id, w.name, w.description, w.goal, w.process_text, w.created_at,
+                w.updated_at, w.deleted_at, w.is_preset
          FROM workflows w
          JOIN session_workflows sw ON sw.workflow_id = w.id
          WHERE sw.session_id = ?1
@@ -645,6 +670,7 @@ pub fn workflows_for_session(
         String,
         String,
         String,
+        Option<String>,
         Option<String>,
         String,
         String,
@@ -662,15 +688,16 @@ pub fn workflows_for_session(
                 row.get(6)?,
                 row.get(7)?,
                 row.get(8)?,
+                row.get(9)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(rows.len());
-    for (id, ws, name, desc, goal, created, updated, deleted, is_preset) in rows {
+    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset) in rows {
         let template = row_to_template(
-            &conn, id, ws, name, desc, goal, created, updated, deleted, is_preset != 0,
+            &conn, id, ws, name, desc, goal, process, created, updated, deleted, is_preset != 0,
         )
         .map_err(PhaseError::Db)?;
         result.push(template);

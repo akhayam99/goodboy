@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
-import type { Agent, TelemetryRecord } from '@goodboy/types';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Clock, Play } from 'lucide-react';
+import type { Agent, Step, TelemetryRecord } from '@goodboy/types';
+import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
@@ -11,12 +12,16 @@ import {
 } from '../../../../../features/session/components/AgentMetricsBlock';
 import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import type { WorkflowBlockReason } from '../lib';
+import { WorkflowStepBrief } from './WorkflowStepBrief';
+import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
+import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
 
 type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
+  readonly step?: Step;
+  readonly showBrief?: boolean;
   readonly resolvedModel: string;
   readonly isActionable: boolean;
   readonly blockReason: WorkflowBlockReason | null;
@@ -40,6 +45,8 @@ export const WorkflowStepRow = ({
   run,
   kind,
   index,
+  step,
+  showBrief = false,
   resolvedModel,
   isActionable,
   blockReason,
@@ -63,8 +70,14 @@ export const WorkflowStepRow = ({
   const isStartable = isActionable && !isBlocked;
   const isRunning = run.status === 'running';
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
+  const promptPrefix = step?.promptPrefix.trim() ?? '';
+  const expectedOutput = step?.expectedOutput?.trim() ?? '';
+  const outputSummary = run.outputSummary?.trim() ?? '';
+  const hasBrief =
+    showBrief && (promptPrefix !== '' || expectedOutput !== '' || outputSummary !== '');
 
   const [draft, setDraft] = useState(run.name);
+  const [briefOpen, setBriefOpen] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   useEffect(() => {
     if (isEditing) {
@@ -145,10 +158,8 @@ export const WorkflowStepRow = ({
   };
 
   const stableTitle =
-    isActionable && isBlocked
-      ? blockReason === 'summarizer'
-        ? 'next workflow step. waiting for the summarizer to finish (click to force)'
-        : 'next workflow step. gated by open questions (click to force)'
+    isActionable && isBlocked && blockReason !== null
+      ? `next workflow step. ${WORKFLOW_BLOCK_COPY[blockReason]} click to force`
       : isPendingFuture
         ? 'waiting for previous steps'
         : `agent ${run.ordinal + 1}: ${run.status}`;
@@ -237,24 +248,49 @@ export const WorkflowStepRow = ({
           <ContextWindowBar usage={contextUsage} />
         </div>
       </div>
-      {pendingConfirm ? (
+      {hasBrief ? (
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => setBriefOpen((open) => !open)}
+            aria-expanded={briefOpen}
+            aria-label={`${briefOpen ? 'hide' : 'show'} details for ${run.name}`}
+            className="flex items-center gap-1 self-start rounded text-2xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {briefOpen ? (
+              <ChevronDown size={11} aria-hidden className="shrink-0" />
+            ) : (
+              <ChevronRight size={11} aria-hidden className="shrink-0" />
+            )}
+            Details
+          </button>
+          {briefOpen ? (
+            <WorkflowStepBrief
+              promptPrefix={promptPrefix}
+              expectedOutput={expectedOutput}
+              outputSummary={outputSummary}
+            />
+          ) : null}
+        </div>
+      ) : null}
+      {pendingConfirm && blockReason !== null ? (
         <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-[11px]">
           <AlertTriangle size={12} aria-hidden className="shrink-0 text-warning" />
           <span className="min-w-0 flex-1 truncate text-foreground">
-            {blockReason === 'summarizer' ? 'Summarizer still running.' : 'Open questions first.'}
+            {WORKFLOW_BLOCK_COPY[blockReason]}
           </span>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               setPendingConfirm(false);
-              if (blockReason !== 'summarizer') {
+              if (blockReason === 'questions') {
                 onResolveFirst?.();
               }
             }}
             className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            {blockReason === 'summarizer' ? 'Wait' : 'Resolve first'}
+            {blockReason === 'questions' ? 'Resolve first' : 'Wait'}
           </button>
           <button
             type="button"

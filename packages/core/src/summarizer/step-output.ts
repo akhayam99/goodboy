@@ -27,6 +27,23 @@ type Params = {
 
 type SummarizeParams = Params & {
   readonly model: string;
+  readonly expectedOutput?: string;
+};
+
+const stepOutputSystemPrompt = ({
+  expectedOutput,
+}: {
+  readonly expectedOutput: string;
+}): string => {
+  if (expectedOutput.trim().length === 0) {
+    return STEP_OUTPUT_SYSTEM_PROMPT;
+  }
+  return [
+    STEP_OUTPUT_SYSTEM_PROMPT,
+    '',
+    `The next step expects this step to hand over: ${expectedOutput.trim()}`,
+    'Extract exactly that first, then the remaining facts in the priority order above.',
+  ].join('\n');
 };
 
 type FallbackDetection = {
@@ -46,6 +63,7 @@ export const summarizeStepOutput = async ({
   invokeFn,
   output,
   model,
+  expectedOutput,
 }: SummarizeParams & SummarizerDeps): Promise<string> => {
   const result = await invokeFn<OneShotResult>('summarize_session', {
     args: {
@@ -53,7 +71,7 @@ export const summarizeStepOutput = async ({
       model,
       binary: binary ?? getDefaultBinary(providerId),
       userMessage: output,
-      systemPrompt: STEP_OUTPUT_SYSTEM_PROMPT,
+      systemPrompt: stepOutputSystemPrompt({ expectedOutput: expectedOutput ?? '' }),
       ...(workingDir != null && { workingDir }),
     },
   });

@@ -2,6 +2,7 @@ import { resolveTaskModel } from '@goodboy/core';
 import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import type { GetFn, SetFn } from './types';
 
@@ -39,10 +40,20 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       );
 
     const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+    const expectedOutput =
+      stepForAgent({
+        agent,
+        workflowRuns: session.workflowRuns,
+        workflows: [
+          ...(get().phaseTemplates?.[session.workspaceId] ?? []),
+          ...(get().sessionWorkflows?.[sessionId] ?? []),
+        ],
+      })?.expectedOutput ?? '';
     const result = await summarizeAgentOutput({
       output: assistantText,
       taskModel,
       ...(worktreePath != null && { workingDir: worktreePath }),
+      ...(expectedOutput !== '' && { expectedOutput }),
     });
     await invokeAgentUpdateStatus(agentId, { status: 'completed', outputSummary: result.summary });
 

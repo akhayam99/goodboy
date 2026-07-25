@@ -69,6 +69,7 @@ describe('seedWorkflowLibrary', () => {
         expect(wf!.steps[i]!.name).toBe(s.name);
         expect(wf!.steps[i]!.ordinal).toBe(i);
         expect(wf!.steps[i]!.promptPrefix).toBe(s.promptPrefix);
+        expect(wf!.steps[i]!.expectedOutput).toBe(s.expectedOutput);
       });
     }
   });

@@ -93,6 +93,7 @@ const stepsFromTemplate = (template: Workflow): ReadonlyArray<EditableStep> =>
     role: (s.role ?? 'custom') as AgentRole,
     name: s.name,
     promptPrefix: s.promptPrefix ?? '',
+    expectedOutput: s.expectedOutput ?? '',
     ...(s.providerOverride && { providerOverride: s.providerOverride }),
     ...(s.modelOverride && { modelOverride: s.modelOverride }),
     ...(s.effort && { effort: s.effort as EffortLevel }),
@@ -106,6 +107,7 @@ const stepsFromPlan = (plan: PlannerOutput): ReadonlyArray<EditableStep> =>
       role,
       name: s.name,
       promptPrefix: s.promptPrefix ?? '',
+      expectedOutput: s.expectedOutput ?? '',
       effort: defaultsForRole(role).effort as EffortLevel,
     };
   });
@@ -121,6 +123,7 @@ const stepsMatchTemplate = (steps: ReadonlyArray<EditableStep>, template: Workfl
       s.sourceStepId === b.id &&
       s.name === b.name &&
       s.promptPrefix === (b.promptPrefix ?? '') &&
+      s.expectedOutput === (b.expectedOutput ?? '') &&
       s.role === ((b.role ?? 'custom') as AgentRole) &&
       (s.providerOverride ?? undefined) === (b.providerOverride ?? undefined) &&
       (s.modelOverride ?? undefined) === (b.modelOverride ?? undefined) &&
@@ -390,6 +393,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         role: 'custom',
         name: '',
         promptPrefix: '',
+        expectedOutput: '',
         effort: defaultsForRole('custom').effort as EffortLevel,
       },
     ]);
@@ -561,6 +565,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         ordinal,
         name: st.name.trim() || ROLE_LABEL[st.role],
         promptPrefix: st.promptPrefix,
+        ...(st.expectedOutput.trim().length > 0 && {
+          expectedOutput: st.expectedOutput.trim(),
+        }),
         role: st.role,
         effort: effort as AgentEffort,
         verbosity: 'normal',
@@ -607,12 +614,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           ? (plan?.reasoning ?? '')
           : (selectedPreset?.description ?? basePreset?.description ?? '');
       const goal = goalText.trim();
+      const process = mode === 'custom' ? processText.trim() : '';
       const workflow: Workflow = {
         id: workflowId,
         workspaceId: session.workspaceId,
         name,
         description,
         ...(goal.length > 0 && { goal }),
+        ...(process.length > 0 && { processText: process }),
         steps: buildSteps(workflowId),
         isPreset: saveAsPreset,
         createdAt: now,
@@ -1050,6 +1059,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 candidateProviders={candidateProviders}
                                 name={st.name}
                                 promptPrefix={st.promptPrefix}
+                                expectedOutput={st.expectedOutput}
                                 model={st.modelOverride ?? ''}
                                 resolvedModel={resolvedModel(st)}
                                 recommendedModel={recommendedModel(st)}
@@ -1069,6 +1079,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 }
                                 onName={(v) => patchStep(st.key, { name: v })}
                                 onPrompt={(v) => patchStep(st.key, { promptPrefix: v })}
+                                onExpectedOutput={(v) => patchStep(st.key, { expectedOutput: v })}
                                 onModel={(v) =>
                                   patchStep(st.key, { modelOverride: v || undefined })
                                 }

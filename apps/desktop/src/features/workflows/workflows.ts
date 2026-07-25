@@ -32,6 +32,7 @@ type RawWorkflowStepRow = {
   readonly ordinal: number;
   readonly name: string;
   readonly promptPrefix: string;
+  readonly expectedOutput: string | null;
   readonly providerOverride: string | null;
   readonly modelOverride: string | null;
   readonly effort: string | null;
@@ -60,6 +61,7 @@ type RawWorkflowRow = {
   readonly name: string;
   readonly description: string;
   readonly goal: string | null;
+  readonly processText: string | null;
   readonly steps: ReadonlyArray<RawWorkflowStepRow>;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -97,6 +99,8 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ordinal: row.ordinal,
     name: row.name,
     promptPrefix: row.promptPrefix,
+    ...(row.expectedOutput != null &&
+      row.expectedOutput !== '' && { expectedOutput: row.expectedOutput }),
     ...(row.libraryStepId != null && { libraryStepId: row.libraryStepId as StepDefId }),
     ...(row.role != null && { role: row.role as AgentRole }),
     ...(row.providerOverride != null && { providerOverride: row.providerOverride as ProviderId }),
@@ -133,6 +137,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     name: row.name,
     description: row.description,
     ...(row.goal != null && { goal: row.goal }),
+    ...(row.processText != null && row.processText !== '' && { processText: row.processText }),
     steps: row.steps.map(rowToStep),
     isPreset: row.isPreset,
     createdAt: row.createdAt as IsoDateTime,
@@ -185,6 +190,7 @@ export type WorkflowStepUpsertArgs = {
   readonly ordinal: number;
   readonly name: string;
   readonly promptPrefix: string;
+  readonly expectedOutput?: string;
   readonly providerOverride?: ProviderId;
   readonly modelOverride?: string;
   readonly effort?: AgentEffort;
@@ -198,6 +204,7 @@ export type WorkflowUpsertArgs = {
   readonly name: string;
   readonly description: string;
   readonly goal?: string;
+  readonly processText?: string;
   readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
   readonly isPreset?: boolean;
 };
@@ -210,6 +217,7 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
       name: args.name,
       description: args.description,
       goal: args.goal ?? null,
+      processText: args.processText ?? null,
       isPreset: args.isPreset ?? true,
       steps: args.steps.map((d) => ({
         id: d.id ?? null,
@@ -218,6 +226,7 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
         ordinal: d.ordinal,
         name: d.name,
         promptPrefix: d.promptPrefix,
+        expectedOutput: d.expectedOutput ?? null,
         providerOverride: d.providerOverride ?? null,
         modelOverride: d.modelOverride ?? null,
         effort: d.effort ?? null,
