@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, GitBranch, Inbox, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { resolveTaskModel } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -18,18 +19,20 @@ import {
 } from '../../../../features/worktree/worktree';
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
 import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
-import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
-import { IssuePicker } from '../../../../features/integrations/linear/IssuePicker';
-import { goalFromIssue } from '../../../../features/integrations/linear/goal-from-issue';
-import type { LinearIssue } from '../../../../features/integrations/linear/client';
+import { useRemoteHostKind } from '../../../../features/worktree/useRemoteHostKind';
+import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
+import { resolveIssueSources } from '../../../../features/integrations/issueSources';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
 import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
+import { SetupWorkflowToggle } from '../SetupWorkflowToggle';
+import { useSetupWorkflowPreference } from '../../hooks/useSetupWorkflowPreference';
 import { BranchModeToggle } from './BranchModeToggle';
 import { generateBranchSlug } from './generateBranchSlug';
+import { IssueSourceField } from './IssueSourceField';
 import { Section } from './Section';
 
 type Props = {
@@ -88,6 +91,8 @@ const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input }
 
 const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
+const EMPTY_INTEGRATIONS: ReadonlyArray<WorkspaceIntegration> = [];
+
 const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
 export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) => {
@@ -112,7 +117,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [linearIssue, setLinearIssue] = useState<LinearIssue | null>(null);
+  const [issue, setIssue] = useState<IssueCandidate | null>(null);
+  const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
 
   const {
     attachments,
@@ -123,9 +129,14 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     removeAttachment,
   } = usePendingAttachments({ showToast });
 
-  const hasLinear = useAppStore((s) =>
-    (s.workspaceIntegrations?.[workspaceId] ?? []).some((i) => i.provider === 'linear'),
+  const workspaceIntegrations = useAppStore(
+    useShallow((s) => s.workspaceIntegrations?.[workspaceId] ?? EMPTY_INTEGRATIONS),
   );
+  const remoteKind = useRemoteHostKind(workspaceId);
+  const issueSources = resolveIssueSources({
+    integrations: workspaceIntegrations,
+    remoteKind,
+  });
 
   const connectedProviders = providers.filter((p) => p.connection === 'connected');
   const noProviderConnected = providers.length > 0 && connectedProviders.length === 0;
@@ -153,10 +164,11 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [busy, onClose]);
 
-  const onPickLinearIssue = (issue: LinearIssue) => {
-    setLinearIssue(issue);
-    setGoal(goalFromIssue(issue));
-    setSlugTouched(false);
+  const onPickIssue = (candidate: IssueCandidate) => {
+    setIssue(candidate);
+    setGoal(candidate.goal);
+    setBranchSlug(candidate.branchSlug);
+    setSlugTouched(true);
   };
 
   useEffect(() => {
@@ -258,18 +270,19 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
         branchSlug: branchSlug.trim() || undefined,
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
-        ...(linearIssue
+        ...(issue
           ? {
               externalTask: {
-                provider: 'linear' as const,
-                externalId: linearIssue.id,
-                identifier: linearIssue.identifier,
-                url: linearIssue.url,
-                title: linearIssue.title,
+                provider: issue.provider,
+                externalId: issue.externalId,
+                identifier: issue.identifier,
+                url: issue.url,
+                title: issue.title,
               },
             }
           : {}),
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
+        openWorkflowBuilder: setupWorkflow,
       });
       onClose();
     } catch (err) {
@@ -314,19 +327,20 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                 </div>
               </div>
             ) : null}
-            {hasLinear ? (
+            {issueSources.length > 0 ? (
               <Section
-                icon={<IntegrationGlyph provider="linear" />}
+                icon={<Inbox size={14} aria-hidden className="text-primary" />}
                 tone="primary"
-                title="Linear issue"
-                subtitle="Pick an issue assigned to you. The goal below auto-fills from its title and description."
+                title="Start from an issue"
+                subtitle="Pick an issue assigned to you in any connected tracker. The goal and branch below auto-fill from it."
               >
-                <IssuePicker
+                <IssueSourceField
                   workspaceId={workspaceId}
-                  value={linearIssue}
-                  onPick={onPickLinearIssue}
-                  onClear={() => setLinearIssue(null)}
+                  sources={issueSources}
+                  value={issue}
                   disabled={busy}
+                  onPick={onPickIssue}
+                  onClear={() => setIssue(null)}
                 />
               </Section>
             ) : null}
@@ -484,7 +498,12 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         <Divider />
 
         <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
-          <div className="flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <SetupWorkflowToggle
+              checked={setupWorkflow}
+              disabled={busy}
+              onChange={setSetupWorkflow}
+            />
             {error && !isMissingBaseRefError(error) ? (
               <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
                 <AlertTriangle size={12} aria-hidden />

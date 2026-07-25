@@ -9,20 +9,28 @@ const h = vi.hoisted(() => ({
   createSession: vi.fn(),
   loadSetting: vi.fn(async () => null),
   showToast: vi.fn(),
+  store: {
+    workspaces: [{ id: 'workspace-1', rootPath: '/repo' }],
+  },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
-    selector: (state: {
-      createSession: typeof h.createSession;
-      loadSetting: typeof h.loadSetting;
-    }) => T,
-  ) => selector({ createSession: h.createSession, loadSetting: h.loadSetting }),
+    selector: (
+      state: typeof h.store & {
+        createSession: typeof h.createSession;
+        loadSetting: typeof h.loadSetting;
+      },
+    ) => T,
+  ) => selector({ ...h.store, createSession: h.createSession, loadSetting: h.loadSetting }),
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
+
+vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
+vi.mock('../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
 
 vi.mock('../client', () => ({
   sentryFetchIssueDetail: vi.fn(),

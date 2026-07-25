@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -9,20 +9,15 @@ import {
   GitPullRequest,
   MessageSquare,
   RefreshCw,
-  Sparkles,
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { Eyebrow, cn } from '@goodboy/ui';
+import { Button, Eyebrow, cn } from '@goodboy/ui';
 import type { PrCheckRun, PullRequestStateKind, Session, SessionId } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
-import { appendOperatorNotes } from '../../../utils/appendOperatorNotes';
-import { AgentSpawnConfig } from '../../AgentSpawnConfig';
-import type { AgentSpawnConfigValue } from '../../AgentSpawnConfig/AgentSpawnConfigValue';
-import { taskModelAgentSpawnConfig } from '../../AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
@@ -111,23 +106,8 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-  const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const workspaceOverrides = useAppStore(
-    (s) => s.workspaceOverrides?.[session.workspaceId] ?? null,
-  );
-  const resolvedAgentConfig = useMemo(
-    () =>
-      taskModelAgentSpawnConfig({
-        preferences: workspaceOverrides?.taskModels,
-        defaultProviderId: session.providerPreference.defaultProvider,
-      }),
-    [workspaceOverrides?.taskModels, session.providerPreference.defaultProvider],
-  );
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
   const linkedIssues = github?.linkedIssues ?? [];
@@ -137,61 +117,9 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
 
-  const [busy, setBusy] = useState<'draft' | 'ai' | null>(null);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
-  const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
-
-  useEffect(() => {
-    if (agentConfigUserTouched) {
-      return;
-    }
-    setAgentConfig(resolvedAgentConfig);
-  }, [agentConfigUserTouched, resolvedAgentConfig]);
-
   const openStudio = () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
-
-  const createQuickDraft = async () => {
-    if (busy) return;
-    setBusy('draft');
-    setCreateError(null);
-    try {
-      await createPrForSession(sessionId, { draft: true });
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const draftWithAgent = async () => {
-    if (busy) return;
-    setBusy('ai');
-    setCreateError(null);
-    try {
-      const prompt = [
-        `Open a draft GitHub pull request for this session's branch.`,
-        `- Write a clear, conventional title and a concise, well-structured description from the committed changes.`,
-        `- Session goal: "${session.goal}".`,
-        `- If this project defines a PR-creation skill, command, or template (look under .claude/), follow it.`,
-        `Then run \`gh pr create --draft\` to open it and report the PR URL.`,
-      ].join('\n');
-      const agentId = await spawnAgent(sessionId, {
-        name: 'open pull request',
-        initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
-        model: agentConfig.model,
-        ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
-        effort: agentConfig.effort,
-      });
-      setActiveLens(sessionId, 'agents');
-      await selectAgent(sessionId, agentId);
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : String(err));
-      setBusy(null);
-    }
-  };
 
   if (!pr && isPrReview) {
     return (
@@ -228,64 +156,20 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         <div className="flex flex-col items-center gap-1.5">
           <h2 className="text-base font-semibold text-foreground">Open a pull request</h2>
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Turn this session&rsquo;s work into a draft PR. Let an agent write the title and
-            description from your commits, or open one instantly.
+            Turn this session&rsquo;s work into a PR. Fill in the title and description, or hand it
+            to an agent that writes them from your commits.
           </p>
-          {branch ? (
-            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
+          {branch != null && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
               <GitBranch size={11} aria-hidden className="shrink-0" />
               <span className="truncate text-foreground/80">{branch}</span>
             </span>
-          ) : null}
+          )}
         </div>
-        <AgentSpawnConfig
-          value={agentConfig}
-          onChange={(value) => {
-            setAgentConfigUserTouched(true);
-            setAgentConfig(value);
-          }}
-          disabled={busy !== null}
-          className="w-full max-w-sm"
-        />
-        <div className="flex flex-col items-stretch gap-2 pt-1 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={() => void draftWithAgent()}
-            disabled={busy !== null}
-            className={cn(
-              'inline-flex items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
-              busy === 'ai' && 'animate-border-pulse',
-            )}
-          >
-            <Sparkles size={14} aria-hidden className="shrink-0" />
-            Draft with an agent
-          </button>
-          <button
-            type="button"
-            onClick={() => void createQuickDraft()}
-            disabled={busy !== null}
-            className={cn(
-              'inline-flex items-center justify-center gap-1.5 rounded-lg border border-transparent bg-foreground/[0.04] px-4 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08] disabled:opacity-50',
-              busy === 'draft' && 'animate-border-pulse',
-            )}
-          >
-            <GitPullRequest size={14} aria-hidden className="shrink-0 opacity-70" />
-            Quick draft
-          </button>
-          <button
-            type="button"
-            onClick={openStudio}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Open PR studio
-            <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
-          </button>
-        </div>
-        {createError ? (
-          <span className="text-2xs text-danger" title={createError}>
-            {createError}
-          </span>
-        ) : null}
+        <Button onClick={openStudio}>
+          Open a pull request
+          <ArrowUpRight size={13} aria-hidden className="ml-1.5 shrink-0 opacity-70" />
+        </Button>
       </div>
     );
   }
