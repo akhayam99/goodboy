@@ -2,7 +2,13 @@
 
 Shared React 19 components for Goodboy. Presentational primitives styled with Tailwind CSS v4.
 
-No business logic, no Tauri APIs, no data fetching. Light mode only for now.
+No business logic, no Tauri APIs, no data fetching.
+
+Dark is the default theme, light is fully supported. Components carry no `dark:`
+variants: both themes resolve through the semantic tokens in
+`apps/desktop/src/styles.css`, which the light palette overrides under
+`html[data-theme='light']`. Style against the tokens and a component themes
+itself.
 
 ## Conventions
 
@@ -10,88 +16,22 @@ See [CONVENTIONS.md](./CONVENTIONS.md).
 
 ## Primitives
 
-### Button
+`src/index.ts` is the catalogue: every primitive and its props type is exported
+there, one component per file under `src/components/`. Read the barrel instead of
+a list here, which rots on the next addition.
 
-```tsx
-import { Button } from '@goodboy/ui';
+Three exports are not a choice:
 
-<Button onClick={handleClick}>save</Button>
-<Button variant="secondary">cancel</Button>
-<Button variant="ghost" size="sm">…</Button>
-<Button variant="danger" disabled>delete</Button>
-```
+- `ScrollFade` wraps every scroll region. A bare `overflow-y-auto` is a bug. The
+  header sits outside the fade ([docs/styling.md](../../docs/styling.md)).
+- `Divider` separates regions, rendered as a sibling. A `border-t/-r/-b/-l` on a
+  container to divide regions is a bug ([docs/styling.md](../../docs/styling.md)).
+- `tintClasses(tone)` resolves every semantic tone. A per-file tone map is a bug
+  ([DESIGN.md](../../DESIGN.md)).
 
-Variants: `primary` (default), `secondary`, `ghost`, `danger`. Sizes: `sm`, `md`.
-
-### Input
-
-```tsx
-import { Input } from '@goodboy/ui';
-
-<Input placeholder="search" value={q} onChange={(e) => setQ(e.target.value)} />;
-```
-
-### Textarea
-
-```tsx
-import { Textarea } from '@goodboy/ui';
-
-<Textarea rows={4} placeholder="goal" />;
-```
-
-### ScrollArea
-
-```tsx
-import { ScrollArea } from '@goodboy/ui';
-
-<ScrollArea className="h-64">{longList}</ScrollArea>;
-```
-
-### Collapsible
-
-```tsx
-import { Collapsible } from '@goodboy/ui';
-
-<Collapsible open={open} onOpenChange={setOpen} trigger="files touched">
-  <ul>{...}</ul>
-</Collapsible>
-```
-
-### Dialog
-
-Wraps native `<dialog>`. Esc closes; backdrop click does not.
-
-```tsx
-import { Dialog } from '@goodboy/ui';
-
-<Dialog open={open} onClose={close} title="confirm">
-  <p>are you sure?</p>
-  <Button onClick={confirm}>yes</Button>
-</Dialog>;
-```
-
-### KbdPill
-
-```tsx
-import { KbdPill } from '@goodboy/ui';
-
-press <KbdPill>⌘K</KbdPill> to open
-```
-
-### AppShell
-
-Three-pane layout: header on top, left sidebar, main, right sidebar. Each pane scrolls independently.
-
-```tsx
-import { AppShell } from '@goodboy/ui';
-
-<AppShell
-  header={<TopBar />}
-  leftSidebar={<Sessions />}
-  main={<Chat />}
-  rightSidebar={<Context />}
-/>;
-```
+`AppShell` is the app skeleton and the exception to "presentational only": it
+owns the resizable sidebar widths, the collapse rails, and the single overlay
+slot. What each pane is for lives in [DESIGN.md](../../DESIGN.md).
 
 ## Helper
 
@@ -119,7 +59,7 @@ All tokens live in `apps/desktop/src/styles.css` under `@theme`. Reference them 
 | `--text-base` | 14px  | `text-base` |
 | `--text-lg`   | 16px  | `text-lg`   |
 
-`text-2xs` and `text-xs` replace ad-hoc `text-[10px]` / `text-[11px]` usage. `text-xs` was already 11px in this project (not Tailwind's default 13px) — no regression.
+`text-2xs` and `text-xs` replace ad-hoc `text-[10px]` / `text-[11px]` usage. `text-xs` was already 11px in this project (not Tailwind's default 13px), so there is no regression.
 
 ### Motion durations
 
@@ -144,12 +84,12 @@ All animation and transition classes **must** be gated with the `motion-safe:` T
 // correct
 <div className="motion-safe:transition-opacity motion-safe:duration-[--motion-normal]" />
 
-// wrong — plays regardless of OS accessibility setting
+// wrong: plays regardless of OS accessibility setting
 <div className="transition-opacity duration-200" />
 ```
 
-Rule: no bare `transition-*`, `animate-*`, or `duration-*` class without `motion-safe:` prefix. A lint rule will enforce this post-P2.
+Rule: no bare `transition-*`, `animate-*`, or `duration-*` class without `motion-safe:` prefix. Nothing enforces it: the repo has no eslint config, and the pre-commit hook runs prettier only. Review catches this or it ships.
 
 ### Focus ring
 
-`--color-focus-ring` is `oklch(0.55 0.18 265 / 0.55)` — primary hue at 55% opacity. Sufficient contrast on both white and muted backgrounds. Used automatically by the global `:focus-visible` rule.
+`--color-focus-ring` is `oklch(0.55 0.18 265 / 0.55)`: primary hue at 55% opacity. Sufficient contrast on both white and muted backgrounds. Used automatically by the global `:focus-visible` rule.

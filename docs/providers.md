@@ -32,11 +32,22 @@ claude /logout
 
 ### Subscription tier
 
-Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap — not an API token. API-key-only accounts are not supported for orchestration turns.
+Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap, not an API token. API-key-only accounts are not supported for orchestration turns.
 
-### Cheap tier model
+### Default models
 
-`claude-haiku-4-5` — the cheapest available Claude tier. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider; see Defaults and task models below to pin a different model.
+Per the compiled registry in `packages/core/src/providers/capabilities.ts`:
+
+- **Turn**: `claude-opus-5` (default), `claude-opus-4-8`, `claude-fable-5`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-sonnet-4-5`.
+- **Cheap**: `claude-haiku-4-5`.
+
+Opus 5, Opus 4.8, Fable 5 and Opus 4.7 carry a 1M-token context window; the rest are 200k. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider. See Defaults and task models below to pin a different model.
+
+### Setting sources
+
+Every claude spawn passes `--setting-sources project,local`: turns (`apps/desktop/src-tauri/src/turn.rs`), the planner (`planner.rs`), and the summarizer (`summarize.rs`). Your user-level claude config does not load inside a Goodboy session. That means `~/.claude/CLAUDE.md` and the user `settings.json`, which is where globally configured MCP servers, hooks and permission allowlists live. The repo's own `CLAUDE.md` and `.claude/` still load, so project skills, agents and settings behave as they do in a terminal.
+
+`--bare` is not an alternative here. It forces `ANTHROPIC_API_KEY` auth, which breaks subscription and keychain users, so the arg builders assert it is never emitted.
 
 ---
 
@@ -76,8 +87,10 @@ Requires **Cursor Pro**. Goodboy routes turns through Cursor's subscription-base
 
 Cursor surfaces 50+ aliases via `cursor-agent models`. Goodboy exposes a curated subset:
 
-- **Turn**: `composer-2`, `gpt-5.5-high`, `gpt-5.5-medium`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-medium`, `gpt-5.3-codex`.
-- **Cheap**: `composer-2-fast` (default), `auto`.
+- **Turn**: `composer-2`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-high`, `claude-4.6-sonnet-medium`, `gpt-5.5-high`, `gpt-5.5-medium`, `gpt-5.3-codex`.
+- **Cheap**: `auto` (default), `composer-2-fast`.
+
+Cursor is the one provider whose cheap pick is special-cased: `getCheapModel` returns `auto` rather than the first cheap-tier entry (`packages/core/src/providers/cli-defaults.ts`).
 
 ---
 
@@ -115,7 +128,7 @@ Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_
 
 Per <https://developers.openai.com/codex/models> (May 2026):
 
-- **Turn**: `gpt-5.5` (default), `gpt-5.4`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.2`.
+- **Turn**: `gpt-5.6` (default), `gpt-5.5`, `gpt-5.4`, `gpt-5.2`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`.
 - **Cheap**: `gpt-5.4-mini`.
 
 ### Turn spawn args
@@ -126,11 +139,11 @@ Goodboy spawns codex non-interactively:
 codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s workspace-write -- <PROMPT>
 ```
 
-In `bypassPermissions` mode `-s workspace-write` is replaced with `--dangerously-bypass-approvals-and-sandbox`. The TUI you see when running `codex "..."` from a shell is a different mode — Goodboy uses `exec` for headless JSONL streaming.
+In `bypassPermissions` mode `-s workspace-write` is replaced with `--dangerously-bypass-approvals-and-sandbox`. The TUI you see when running `codex "..."` from a shell is a different mode. Goodboy uses `exec` for headless JSONL streaming.
 
 ### Non-TTY auth quirk
 
-codex CLI v0.130 writes `codex login status` output to **stderr** when no TTY is attached. Tauri-spawned children never have a TTY, so Goodboy explicitly reads both streams in the auth check (`AuthCommandOutput::primary_text()` in `apps/desktop/src-tauri/src/providers.rs`). If you see "installed, not logged in" in the providers panel even though terminal `codex login status` returns `Logged in using ChatGPT`, your build predates this fix — rebuild from `feat/providers-overhaul`.
+codex CLI v0.130 writes `codex login status` output to **stderr** when no TTY is attached. Tauri-spawned children never have a TTY, so Goodboy explicitly reads both streams in the auth check (`AuthCommandOutput::primary_text()` in `apps/desktop/src-tauri/src/providers.rs`). If you see "installed, not logged in" in the providers panel even though terminal `codex login status` returns `Logged in using ChatGPT`, your build predates this fix: rebuild from `feat/providers-overhaul`.
 
 ### Debugging
 
@@ -211,20 +224,38 @@ agy -p <PROMPT> --model <MODEL> --sandbox
 
 ---
 
+## Effort
+
+Effort is the third axis of every model picker, next to provider and model. Only Claude and Codex models carry a ladder, declared per model in `packages/core/src/providers/capabilities.ts`:
+
+- **Claude Opus and Fable**: `low`, `medium`, `high`, `extra-high`, `max`.
+- **Claude Sonnet**: `low`, `medium`, `high`.
+- **Codex turn models**: `minimal`, `low`, `medium`, `high`.
+- **`gpt-5.4-mini`**: `minimal`, `low`, `medium`.
+
+Everything else has no ladder and ignores effort: `claude-haiku-4-5`, every Cursor model, every Gemini model. No effort arg is emitted for them at all. Picking a level a model does not support clamps to the top of that model's ladder (`clampEffort` in `apps/desktop/src/features/chat/utils/chat-constants.ts`).
+
+The UI label and the emitted value diverge in exactly one place: `extra-high` reads **Very high** in the picker and goes out as `xhigh` on the wire. Every other level is emitted verbatim. claude takes `--effort <level>`, codex takes `-c model_reasoning_effort="<level>"`, both built in `apps/desktop/src-tauri/src/turn.rs`.
+
+There is no `ultracode` level. `claude --help` lists exactly `low, medium, high, xhigh, max` for `--effort` and the registry matches it. Run that check before extending the union.
+
+---
+
 ## Defaults and task models
 
 Provider Studio has a **Defaults** entry (Configuration section of the rail) that owns workspace-level provider configuration:
 
 - **Default provider**: the provider new sessions start on. Only connected providers are selectable.
-- **Task models**: which provider and model run each auxiliary operation — summaries, branch names, planning, agent titles, PR and MR drafts. Each row defaults to **Auto** (the cheapest model of the default provider, shown with a recommended tag); picking a concrete provider + model pins that operation to it. Preferences persist per workspace (`workspaces.task_models`) and resolve through `resolveTaskModel` in `@goodboy/core`.
+- **Task models**: which provider and model run each auxiliary operation (summaries, branch names, planning, agent titles, PR and MR drafts). Each row defaults to **Auto** (the cheapest model of the default provider, shown with a recommended tag); picking a concrete provider + model pins that operation to it. Preferences persist per workspace (`workspaces.task_models`) and resolve through `resolveTaskModel` in `@goodboy/core`. A task-model pin carries no effort.
+- **Agent roles**: which provider, model and effort every agent spawned in a given role starts on (scout, investigator, planner, architect, product, implementer, reviewer, tester, explorer, custom). A pin on the agent itself or on a workflow step still wins over the role. Overrides persist per workspace (`workspaces.role_models`) and resolve through `resolveRoleRouting` in `@goodboy/core`. Validation is lenient: an unknown provider or a model absent from the registry drops the whole override and the compiled role default applies, while an effort outside the chosen model's ladder is normalized (to the role's default effort when that is on the ladder, otherwise to the top of it) rather than rejected.
 
-Chat turns are not affected: per-agent model overrides and the session default keep governing conversation turns.
+Task models never touch chat turns: per-agent model overrides and the session default keep governing conversation turns.
 
 ## Multi-account
 
 A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@example.com`. Each session in Goodboy targets one active identity per provider.
 
-**Provider Studio** (footer → Providers) shows the currently authenticated identity (email or username) for each connected CLI. Verify this before starting a session — the displayed identity is the account that will be billed for every turn.
+**Provider Studio** (footer → Providers) shows the currently authenticated identity (email or username) for each connected CLI. Verify this before starting a session: the displayed identity is the account that will be billed for every turn.
 
 ### How to switch accounts
 
@@ -233,7 +264,7 @@ A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@ex
 3. Complete the logout in the terminal that opens.
 4. Click **connect** for the same provider.
 5. Log in with the desired account in the terminal / browser.
-6. Click **refresh** in the providers panel — the identity display updates to the new account.
+6. Click **refresh** in the providers panel. The identity display updates to the new account.
 
 ---
 
@@ -243,7 +274,7 @@ A common setup: Claude Pro on `personal@example.com` and Claude Team on `work@ex
 
 Goodboy detects provider binaries via `$PATH`. If a CLI is installed but the providers panel shows it as missing:
 
-1. Find the install path — e.g. `which claude` or `npm root -g`.
+1. Find the install path, e.g. `which claude` or `npm root -g`.
 2. Add the directory to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.):
    ```bash
    export PATH="/path/to/bin:$PATH"
@@ -256,11 +287,11 @@ The login flow opens a system terminal and a browser. If the browser does not op
 
 1. Run the login command manually in a terminal (e.g. `claude /login`).
 2. Complete the flow there.
-3. Return to Goodboy and click **refresh** — the identity should populate.
+3. Return to Goodboy and click **refresh**. The identity should populate.
 
 ### Subscription rate-limit errors
 
-Goodboy uses the subscription cap of your CLI. When the cap is hit, the CLI returns an error and the session stalls. Wait for the cap to reset — typically 5 hours for Claude Max. Note: the summarizer runs once per session compaction, so each compaction counts against your cap alongside the primary turn.
+Goodboy uses the subscription cap of your CLI. When the cap is hit, the CLI returns an error and the session stalls. Wait for the cap to reset, typically 5 hours for Claude Max. Note: the summarizer runs once per session compaction, so each compaction counts against your cap alongside the primary turn.
 
 ### Wrong account connected
 

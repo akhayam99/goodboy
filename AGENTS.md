@@ -16,6 +16,7 @@ For canonical term definitions (workspace, session, agent, shared context, plan)
 - App shell (routing, layout, boot) → `app/components/<Name>/`.
 - Used by 2+ features, no domain owner → `shared/{hooks|utils}/<name>.ts`.
 - Zustand state → `store/slices/<domain>/`.
+- DB migration → `packages/db/src/migrations/mNNN-kebab-name.ts`, registered in `index.ts` at the version in its filename (see [docs/architecture.md](./docs/architecture.md) → Database migrations).
 
 Full file system layout, component/hook/slice folder rules, and test placement in [docs/file-system.md](./docs/file-system.md).
 
@@ -87,7 +88,7 @@ Full rules in [docs/styling.md](./docs/styling.md). The hard ones:
 - Edge insets belong to the host wrapper, not the child.
 - Radius family is `rounded-lg` (8px); `rounded-md` for small controls, `rounded-full` for pills. No `rounded-xl` or larger.
 - Separators between regions (panes, sidebar sections, toolbar groups, dialog blocks) use the `<Divider>` component from `@goodboy/ui`, rendered as a sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that define a control's own shape (buttons, inputs, popovers, chips) are fine.
-- Scroll regions use the `<ScrollFade>` primitive (`apps/desktop/src/shared/components/ScrollFade`), never a bare `overflow-y-auto`. The header sits outside the fade.
+- Scroll regions use the `<ScrollFade>` primitive from `@goodboy/ui`, never a bare `overflow-y-auto`. The header sits outside the fade, and the fade needs a bounded height (`min-h-0 flex-1` or a `max-h-*` on its root).
 
 ---
 
@@ -110,14 +111,14 @@ Full details (commit format, PR rules, examples) in [CONVENTIONS.md](./CONVENTIO
 - **Branch protection**: `main` is protected. All changes via PR.
 - **Conventional commits**: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `style:`, `perf:`.
 - **Allowed commit scopes**: `desktop`, `ui`, `core`, `db`, `types`, `repo`, `ci`. Website changes use `repo`.
-- **Branch naming**: `feat/short-description`, `fix/short-description`, `chore/short-description`, etc.
+- **Branch naming**: `<user>/<type>-<kebab-description>`, e.g. `ak/feat-session-detail-skeleton`, `ak/chore-release-v0.1.31`. Never the worktree codename.
 - **Language**: English only (code, commits, issues, docs, comments).
 
 ### Pre-commit hooks (lefthook)
 
 Full details in [CONVENTIONS.md](./CONVENTIONS.md) → Pre-commit hooks.
 
-- `pre-commit`: eslint --fix + prettier --write on staged files.
+- `pre-commit`: prettier --write on staged files, then re-stage them. No eslint: the repo has no eslint config.
 - `commit-msg`: commitlint against conventional commits + allowed scopes.
 - Never bypass hooks (`--no-verify`, `--no-gpg-sign`, etc.).
 
@@ -150,6 +151,7 @@ Repo layout, subprocess environment, provider system, and VS Code integration in
 - **Margins, `space-y/x-*`, or padding-as-spacer for separation**. Use `gap` on the parent.
 - **Comments** of any kind. Tooling directives (`/// <reference />`) excepted.
 - **Dead code as comments**. Delete it.
+- **Reusing a migration version number** across concurrent branches. The runner keeps a set of applied versions, not a high-water mark, so the branch merging second finds its version already recorded and skips its migration permanently, with no error. Renumber before merging; `packages/db/src/migrations/registry.test.ts` fails CI on a duplicate version, a gap, or a filename/version mismatch. Details in [docs/architecture.md](./docs/architecture.md) → Database migrations.
 - **Modifying `main` locally** (no checkout-and-pull on main; advance via PR merge).
 - **Direct push to `main`**.
 - **Hook bypass** (`--no-verify`, `--no-gpg-sign`).

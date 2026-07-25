@@ -1,4 +1,4 @@
-# Conventions — @goodboy/ui
+# Conventions: @goodboy/ui
 
 Shared React 19 component library. **Presentational only.** No business logic, no Tauri APIs, no data fetching, no global state.
 
@@ -21,7 +21,7 @@ Shared React 19 component library. **Presentational only.** No business logic, n
 
 ## Stack
 
-- React 19. No `React.FC`. No `forwardRef` — `ref` is a regular prop in 19.
+- React 19. No `React.FC`. No `forwardRef`: `ref` is a regular prop in 19.
 - Tailwind CSS v4. Utility-first, never `@apply`.
 - `clsx` + `tailwind-merge` via `cn()` for conditional classes.
 - No CVA. No Radix yet (add later if accessibility needs justify it).

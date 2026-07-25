@@ -8,14 +8,18 @@ architecture see [architecture.md](architecture.md).
 ## Top-level (`apps/desktop/src/`)
 
 ```
-app/        # App shell only: routing, layout, boot, global error handling
+app/        # App shell components only: top bar, footer, boot splash, error boundary
 features/   # One directory per product domain
 shared/     # Code used by 2+ features, no domain owner
 store/      # Zustand store + slice packages
+assets/     # App-level images (mascot, agent avatars)
+__tests__/  # Cross-feature integration and regression suites
+App.tsx
 main.tsx
+styles.css
 ```
 
-Nothing else at `src/` root. No `src/types/`, `src/constants/`, `src/models/`: each becomes a magnet for undisciplined global state. Domain code lives in its feature; cross-feature code earns its way into `shared/`.
+Nothing else at `src/` root. No `src/types/`, `src/constants/`, `src/models/`, no new root folder: each becomes a magnet for undisciplined global state. Domain code lives in its feature; cross-feature code earns its way into `shared/`.
 
 ## Feature modules (`features/<domain>/`)
 
@@ -28,7 +32,7 @@ A feature is self-contained:
 
 ## App shell (`app/`)
 
-Only code that is global by definition: `App.tsx`, `main.tsx`, `styles.css`, and shell components (boot splash, error boundary, status bar, toast, `AppTopBar`, `AppBreadcrumb`, `AppShell`). A component rendered in a single feature's view belongs in that feature, not here. For the breadcrumb IA and `AppTopBar` control layout see [navigation.md](navigation.md).
+Only shell components that are global by definition, all under `app/components/<Name>/`: boot splash, error boundary, status bar, toast, `AppTopBar`, `AppBreadcrumb`, `AppFooter`. `App.tsx`, `main.tsx`, and `styles.css` sit at `src/` root, not here; `AppShell` is a layout primitive in `@goodboy/ui`. A component rendered in a single feature's view belongs in that feature, not here. For the breadcrumb IA and `AppTopBar` control layout see [navigation.md](navigation.md).
 
 ## Components (`apps/desktop/src/features/**/components/`, `apps/desktop/src/shared/components/`)
 
@@ -93,7 +97,9 @@ used only inside one feature?
 used by the app shell (routing, layout, boot)?
   → app/components/<Name>/index.tsx
 used by 2+ features, no domain owner?
-  → shared/{lib|hooks|utils}/<name>.ts
+  → React component  → shared/components/<Name>/index.tsx
+  → shared type      → shared/types/<name>.ts
+  → otherwise        → shared/{lib|hooks|utils}/<name>.ts
 Zustand state?
   → store/slices/<domain>/
 ```
