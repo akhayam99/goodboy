@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -118,6 +118,90 @@ describe('PlanStudio subpage', () => {
     ];
     render(<PlanStudio sessionId={'sess-1' as never} initialPlanId={'plan-2' as never} />);
     expect(screen.getByText('body two')).toBeDefined();
+  });
+
+  it('renders no plan list and no CTA for a single plan', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Only plan',
+        bodyMd: 'only body',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
+    expect(screen.queryByRole('button', { name: /other plans/i })).toBeNull();
+    expect(container.querySelectorAll('li')).toHaveLength(0);
+    expect(screen.getByText('Only plan')).toBeDefined();
+  });
+
+  it('opens the other plans in a right panel and switches to the picked one', () => {
+    state.plans = [
+      {
+        id: 'plan-a',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Alpha plan',
+        bodyMd: 'alpha body',
+        status: 'consumed',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 1,
+      },
+      {
+        id: 'plan-b',
+        agentId: 'agent-2',
+        sessionId: 'sess-1',
+        title: 'Beta plan',
+        bodyMd: 'beta body',
+        status: 'active',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(container.querySelectorAll('li')).toHaveLength(0);
+    expect(screen.getByText('beta body')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Other plans (1)' }));
+    expect(container.querySelectorAll('li')).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('button', { name: /plan 1 consumed Alpha plan/i }));
+    expect(screen.getByText('alpha body')).toBeDefined();
+    expect(container.querySelectorAll('li')).toHaveLength(0);
+  });
+
+  it('closes the plan list panel from its own close control', () => {
+    state.plans = [
+      {
+        id: 'plan-a',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Alpha plan',
+        bodyMd: 'alpha body',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+      {
+        id: 'plan-b',
+        agentId: 'agent-2',
+        sessionId: 'sess-1',
+        title: 'Beta plan',
+        bodyMd: 'beta body',
+        status: 'active',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Other plans (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'close plan list' }));
+    expect(container.querySelectorAll('li')).toHaveLength(0);
   });
 
   it('auto-selects the last plan when no initialPlanId is given', () => {
