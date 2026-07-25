@@ -30,6 +30,8 @@ export type AgentRole =
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
+export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment';
+
 export type ParallelMergeStrategy = 'last_write_wins' | 'manual' | 'synthesizer_driven';
 
 export type StepDef = Readonly<{
@@ -101,6 +103,7 @@ export type Agent = Readonly<{
   kind?: string;
   sourceThreadId?: string;
   sourceCommentUrl?: string;
+  sourceKind?: AgentSourceKind;
 }>;
 
 export type ParallelGroup = {
