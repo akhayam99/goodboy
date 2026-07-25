@@ -1,4 +1,4 @@
-# Conventions — @goodboy/core
+# Conventions: @goodboy/core
 
 Pure TypeScript business logic. **No React. No Tauri APIs. No DOM.** This package must be runnable in Node, browsers, and tests without changes.
 
@@ -37,7 +37,7 @@ export interface ProviderAdapter {
 
 - Adapters are stateless. Configuration is injected.
 - Adapters never read environment variables or files. The host provides credentials.
-- Errors are typed (`Result<T, ProviderError>` pattern) — no thrown exceptions for expected failures.
+- Errors are typed (`Result<T, ProviderError>` pattern), no thrown exceptions for expected failures.
 
 ### Routing
 
@@ -58,9 +58,9 @@ Macro sessions and tasks are immutable data structures with state transition fun
 - Pure functions wherever possible. Side effects pushed to the boundary.
 - No singletons. Pass dependencies explicitly.
 - No `console.*` for production code paths. Use a logger interface injected by the host.
-- No `Date.now()` or `Math.random()` in business logic — inject clock and RNG.
+- No `Date.now()` or `Math.random()` in business logic. Inject clock and RNG.
 - Async functions return `Promise<Result<T, E>>` for fallible operations.
-- No null returns for "not found" — use discriminated unions or `Option<T>`-style wrappers.
+- No null returns for "not found". Use discriminated unions or `Option<T>`-style wrappers.
 
 ## Testing
 

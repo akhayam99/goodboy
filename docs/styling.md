@@ -124,21 +124,26 @@ every view's header through the same mask.
 
 ## Scroll edges fade, never hard-cut
 
-Every scroll region is wrapped in `ScrollFade`
-(`apps/desktop/src/shared/components/ScrollFade`), which masks the top and bottom
-edges with a gradient. Raw `overflow-y-auto` is forbidden. The fade is scroll-aware:
-no top fade at the top, no bottom fade at the bottom, no fade at all when the region
-does not overflow. The scrollbar stays visible (a persistent thin track), since
-macOS overlay scrollbars auto-hide and leave no affordance that a region scrolls.
+Every scroll region is wrapped in `ScrollFade` (`packages/ui/src/components/ScrollFade.tsx`,
+imported from `@goodboy/ui`), which fades the top and bottom edges with a gradient. Raw
+`overflow-y-auto` is forbidden. The fade is scroll-aware: no top fade at the top, no bottom
+fade at the bottom, no fade at all when the region does not overflow. The viewport hides its
+native scrollbar, so the gradient is the only affordance that a region scrolls.
+
+### Give it a bounded height
+
+The viewport carries `max-h-[inherit]` (`max-w-[inherit]` when horizontal) so a `max-h-*` on
+the `ScrollFade` root actually caps the scroller. Callers must bound the height one of two
+ways: `min-h-0 flex-1` inside a flex column, or a `max-h-*` on the root. A root with no height
+constraint does not error, it renders as an unbounded list, which is why this regresses
+silently.
 
 ## The header must sit outside the fade
 
-`ScrollFade` works with `mask-image`, which dims the entire composited layer, text
-and opaque backgrounds alike. A `sticky` header placed inside the scroller fades
-along with everything else as content slides under it; an opaque `bg-*` does not save
-it, because the mask is applied above the paint. `mask-image` also does not establish
-a containing block for `sticky`, so the sticky offset resolves against the scroller
-anyway.
+The two gradients are absolutely positioned overlays on the `ScrollFade` root, painted above
+the scrolling viewport with scroll-driven opacity. A `sticky` header inside the scroller pins
+right under the top overlay and gets veiled as soon as the region scrolls; an opaque `bg-*`
+does not save it, because the overlay paints over the header, not under it.
 
 The fix is structural, not cosmetic: keep anything that must stay crisp and fixed
 (titles, breadcrumb, toolbars, error banners) in a `shrink-0` zone outside the

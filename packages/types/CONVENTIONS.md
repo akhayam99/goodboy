@@ -1,4 +1,4 @@
-# Conventions — @goodboy/types
+# Conventions: @goodboy/types
 
 Pure TypeScript types. **Zero runtime code.** This package exists only to be imported via `import type`.
 
@@ -49,6 +49,6 @@ One file per domain. Don't mix unrelated types.
 
 ## What does NOT belong here
 
-- Validation schemas (zod, valibot) — those go in `@goodboy/core`.
-- Constants and enums — those go in their owning package.
-- Type guards / refinement functions — those go in `@goodboy/core`.
+- Validation schemas (zod, valibot): those go in `@goodboy/core`.
+- Constants and enums: those go in their owning package.
+- Type guards / refinement functions: those go in `@goodboy/core`.

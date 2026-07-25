@@ -13,7 +13,8 @@ goodboy/
 │   ├── core/           # Business logic (provider routing, sessions, balance)
 │   ├── db/             # SQLite schema + queries
 │   └── types/          # Shared TypeScript types
-├── scripts/            # Local automations
+├── website/            # Landing page, standalone (outside the pnpm workspace)
+├── packaging/          # Homebrew cask formula
 ├── .github/
 │   └── workflows/      # CI pipelines
 └── .claude/            # Claude Code config (settings, agents, skills)
@@ -29,6 +30,7 @@ goodboy/
 - `pnpm install --frozen-lockfile` in CI. Never auto-update lockfile in CI.
 - Every import must be declared in that package's `package.json`. No phantom deps.
 - Use `pnpm --filter <pkg>` for scoped scripts. Use `pnpm --filter "...<pkg>"` to include dependents.
+- `website/` is outside the workspace and keeps its own `website/pnpm-lock.yaml`. Any change to `website/package.json` must regenerate it with `pnpm install --ignore-workspace` from `website/`: a plain root `pnpm install` never touches that lockfile, and Vercel installs with `--frozen-lockfile`, so a stale lockfile fails every website build.
 
 ## TypeScript (project references)
 
@@ -53,7 +55,7 @@ goodboy/
 ### Branches
 
 - `main` is protected. No direct push. PR required.
-- Branch naming: `feat/<short>`, `fix/<short>`, `chore/<short>`, `docs/<short>`, `refactor/<short>`.
+- Branch naming: `<user>/<type>-<kebab-description>`, e.g. `ak/feat-integrations-lens`, `ak/fix-cursor-model-mapping`, `ak/chore-release-v0.1.31`. Never the worktree codename.
 - One concern per branch. Split if mixed.
 
 ### Conventional commits
@@ -79,7 +81,7 @@ chore(repo): bump pnpm to 10.33.4
 - Title follows conventional commits format.
 - Description: what + why + test plan.
 - Link issue: `Closes #N`.
-- Require: lint, typecheck, test, build all green.
+- Require: typecheck, test, build all green. Lint is wired but unimplemented (see [CI pipeline](#ci-pipeline)).
 - No squash-merge for multi-commit PRs unless commits are all chore-level. Prefer rebase or merge.
 - Self-review before requesting review.
 
@@ -104,7 +106,7 @@ Code rules and the forbidden-patterns checklist live in the code hub [AGENTS.md]
 
 ## Pre-commit hooks (Lefthook)
 
-- `pre-commit`: `eslint --fix` + `prettier --write` on staged files.
+- `pre-commit`: `prettier --write` on staged files, then re-stage. No eslint step: the repo has no eslint config.
 - `commit-msg`: `commitlint`.
 - No tests in pre-commit (slow). Tests run in CI.
 
@@ -113,7 +115,7 @@ Code rules and the forbidden-patterns checklist live in the code hub [AGENTS.md]
 GitHub Actions on every PR + push to main:
 
 1. Install: `pnpm install --frozen-lockfile` (cached by lockfile hash).
-2. Lint: `turbo run lint --affected`.
+2. Lint: `turbo run lint --affected`. The task is declared in `turbo.json` but no package implements a `lint` script and the repo has no eslint config, so this step currently passes without checking anything.
 3. Typecheck: `turbo run typecheck --affected`.
 4. Test: `turbo run test --affected`.
 5. Build: `turbo run build --affected`.

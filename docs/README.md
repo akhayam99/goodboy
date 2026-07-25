@@ -24,8 +24,7 @@ once, so pull the deep-dive only when the task touches it.
 | [providers.md](providers.md)                            |   ✓   |    ✓    |      ✓      |          |            |     ✓      |
 | [release.md](release.md)                                |       |         |             |          |     ✓      |            |
 | [release-command.md](release-command.md)                |       |         |             |          |     ✓      |            |
-| [parallel-agents.md](parallel-agents.md)                |   ✓   |    ✓    |             |          |            |            |
-| [phase-templates.md](phase-templates.md)                |       |    ✓    |             |          |            |            |
+| [workflows.md](workflows.md)                            |       |    ✓    |      ✓      |    ✓     |            |            |
 | [file-system.md](file-system.md)                        |   ✓   |    ✓    |      ✓      |    ✓     |            |     ✓      |
 | [architecture.md](architecture.md)                      |   ✓   |    ✓    |      ✓      |    ✓     |            |     ✓      |
 | [testing.md](testing.md)                                |       |    ✓    |      ✓      |    ✓     |            |            |
@@ -98,8 +97,7 @@ Every doc, its one-line purpose, and the roles that load it.
 | [providers.md](providers.md)                                | Provider integration guide: install, connect, manage each CLI.                                    | scout, planner, implementer, onboarding |
 | [release.md](release.md)                                    | Technical release runbook: signing, notarization, updater, homebrew.                              | pr-release                              |
 | [release-command.md](release-command.md)                    | Agent release playbook: step order and gotchas. Points to release.md for mechanics.               | pr-release                              |
-| [parallel-agents.md](parallel-agents.md)                    | Experimental fan-out/fan-in across throwaway worktrees.                                           | scout, planner                          |
-| [phase-templates.md](phase-templates.md)                    | Multi-step goals: chained phases, shared context, parallel groups.                                | planner                                 |
+| [workflows.md](workflows.md)                                | Workflow tables, run advance gate, post-step summarizer, parallel status.                         | planner, implementer, reviewer          |
 | [file-system.md](file-system.md)                            | File layout and where new code goes.                                                              | all code roles, onboarding              |
 | [architecture.md](architecture.md)                          | Repo architecture, subprocess env, provider system, vscode integration.                           | all code roles, onboarding              |
 | [testing.md](testing.md)                                    | Test rules and the golden rule.                                                                   | planner, implementer, reviewer          |
