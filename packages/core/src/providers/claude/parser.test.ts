@@ -157,6 +157,57 @@ describe('parseStreamJsonLine', () => {
     expect(events[1]).toMatchObject({ kind: 'done' });
   });
 
+  it('emits a permission_request per permission_denials entry, before done', () => {
+    const events = parse(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        permission_denials: [
+          {
+            tool_name: 'Write',
+            tool_use_id: 'toolu_1',
+            tool_input: { file_path: '/tmp/x/out.txt', content: 'hi' },
+          },
+        ],
+      }),
+    );
+    expect(events).toEqual([
+      {
+        kind: 'permission_request',
+        runId: ctx.runId,
+        toolUseId: 'toolu_1',
+        toolName: 'Write',
+        input: { file_path: '/tmp/x/out.txt', content: 'hi' },
+        at,
+      },
+      { kind: 'done', runId: ctx.runId, at },
+    ]);
+  });
+
+  it('emits no permission_request when the result carries no denials', () => {
+    const events = parse(JSON.stringify({ type: 'result', subtype: 'success' }));
+    expect(events.some((e) => e.kind === 'permission_request')).toBe(false);
+  });
+
+  it('skips malformed permission_denials entries', () => {
+    const events = parse(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        permission_denials: [
+          { tool_use_id: 'toolu_2' },
+          { tool_name: 'Bash' },
+          'nope',
+          null,
+          { tool_name: 'Bash', tool_use_id: 'toolu_3' },
+        ],
+      }),
+    );
+    const requests = events.filter((e) => e.kind === 'permission_request');
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({ toolUseId: 'toolu_3', toolName: 'Bash', input: null });
+  });
+
   it('emits error from result with error message', () => {
     const events = parse(JSON.stringify({ type: 'result', subtype: 'error', error: 'rate limit' }));
     const error = events.find((e) => e.kind === 'error');

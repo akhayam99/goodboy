@@ -53,6 +53,7 @@ export type TurnState =
   | { kind: 'starting'; startedAt: IsoDateTime }
   | { kind: 'idle'; lastActivityAt: IsoDateTime }
   | { kind: 'running'; runId: ProviderRunId; startedAt: IsoDateTime }
+  | { kind: 'blocked'; runId: ProviderRunId; blockedAt: IsoDateTime }
   | { kind: 'error'; message: string; failedAt: IsoDateTime }
   | { kind: 'ended'; endedAt: IsoDateTime };
 

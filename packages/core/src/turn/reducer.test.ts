@@ -10,6 +10,7 @@ const draft: TurnState = { kind: 'draft' };
 const starting: TurnState = { kind: 'starting', startedAt: at };
 const idle: TurnState = { kind: 'idle', lastActivityAt: at };
 const running: TurnState = { kind: 'running', runId, startedAt: at };
+const blocked: TurnState = { kind: 'blocked', runId, blockedAt: at };
 const errored: TurnState = { kind: 'error', message: 'boom', failedAt: at };
 const ended: TurnState = { kind: 'ended', endedAt: at };
 
@@ -73,6 +74,22 @@ describe('turnReducer, receive_event', () => {
     });
   });
 
+  it('permission_request → blocked', () => {
+    const event: TurnEvent = {
+      kind: 'permission_request',
+      runId,
+      toolUseId: 'toolu_1',
+      toolName: 'Write',
+      input: { file_path: '/tmp/x' },
+      at: later,
+    };
+    expect(turnReducer(running, { kind: 'receive_event', event })).toEqual({
+      kind: 'blocked',
+      runId,
+      blockedAt: later,
+    });
+  });
+
   it.each<TurnEvent>([
     { kind: 'assistant_text', runId, delta: 'hi', at: later },
     {
@@ -127,6 +144,13 @@ describe('turnReducer, error', () => {
 describe('turnReducer, retry', () => {
   it('error → idle', () => {
     expect(turnReducer(errored, { kind: 'retry', at: later })).toEqual({
+      kind: 'idle',
+      lastActivityAt: later,
+    });
+  });
+
+  it('blocked → idle, so an approved tool can be retried', () => {
+    expect(turnReducer(blocked, { kind: 'retry', at: later })).toEqual({
       kind: 'idle',
       lastActivityAt: later,
     });

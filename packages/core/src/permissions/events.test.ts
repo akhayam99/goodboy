@@ -76,4 +76,26 @@ describe('createPermissionDecisionEvent', () => {
     });
     expect(event.decidedBy).toBe('user');
   });
+
+  it('carries the chosen scope, and omits it when none was chosen', () => {
+    const scoped = createPermissionDecisionEvent({
+      runId: RUN_ID,
+      toolUseId: 'tu-4',
+      decision: 'allow',
+      scope: 'workspace',
+      ruleId: null,
+      decidedBy: 'user',
+      at: AT,
+    });
+    const unscoped = createPermissionDecisionEvent({
+      runId: RUN_ID,
+      toolUseId: 'tu-5',
+      decision: 'allow',
+      ruleId: null,
+      decidedBy: 'engine',
+      at: AT,
+    });
+    expect(scoped.scope).toBe('workspace');
+    expect('scope' in unscoped).toBe(false);
+  });
 });

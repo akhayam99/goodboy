@@ -2,6 +2,7 @@ import type {
   IsoDateTime,
   MessageAttachment,
   PermissionRuleId,
+  PermissionScope,
   ProviderId,
   ProviderRunId,
   ProviderUsage,
@@ -75,6 +76,7 @@ export type TranscriptItem =
       toolName: string;
       runId: ProviderRunId;
       decision: 'allow' | 'deny';
+      scope?: PermissionScope;
       ruleId: PermissionRuleId | null;
       decidedBy: 'engine' | 'user' | 'default';
       at: IsoDateTime;
@@ -257,6 +259,7 @@ export const reduceTranscript = (
           toolName: permToolNames.get(event.toolUseId) ?? event.toolUseId,
           runId: event.runId,
           decision: event.decision,
+          ...(event.scope !== undefined && { scope: event.scope }),
           ruleId: event.ruleId,
           decidedBy: event.decidedBy,
           at: event.at,

@@ -1,6 +1,6 @@
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { MessageAttachment } from './message';
-import type { ClaudePermissionMode } from './permission';
+import type { ClaudePermissionMode, PermissionScope } from './permission';
 import type { ProviderName } from './provider';
 import type { ProviderId } from './provider-registry';
 
@@ -115,6 +115,7 @@ export type TurnEvent =
       runId: ProviderRunId;
       toolUseId: string;
       decision: 'allow' | 'deny';
+      scope?: PermissionScope;
       ruleId: PermissionRuleId | null;
       decidedBy: 'engine' | 'user' | 'default';
       at: IsoDateTime;
