@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { Button, cn, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
-import { ArrowRight, GitBranch, Sparkles } from 'lucide-react';
+import { Button, cn, Divider, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
+import { AlertTriangle, ArrowRight, GitBranch, Sparkles } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
@@ -139,115 +139,128 @@ export const CreatePrPanel = ({
   };
 
   return (
-    <div className="min-h-0 flex-1">
-      <ScrollFade className="mx-auto h-full max-w-3xl" viewportClassName="px-10 py-8" fadeSize={24}>
-        <section className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <SectionHeader label="open a pull request" />
-            <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground">
-              <GitBranch size={11} aria-hidden />
-              {branch ?? 'no branch'}
-            </span>
-          </div>
-          <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader label="title" />
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="pull request title"
-                disabled={busy !== null}
-                aria-label="Pull request title"
-                className="h-8 text-sm"
-                autoFocus
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader label="description" />
-              <Textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="what changed and why (markdown supported)"
-                className="text-sm"
-                autoGrow
-                minRows={3}
-                maxRows={12}
-                disabled={busy !== null}
-                aria-label="Pull request description"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader label="base branch" icon={<GitBranch size={13} aria-hidden />} />
-              <Input
-                value={base}
-                onChange={(e) => setBase(e.target.value)}
-                placeholder="default branch"
-                list="pr-base-branches"
-                className="h-8 font-mono text-sm"
-                disabled={busy !== null}
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Base branch"
-              />
-              <datalist id="pr-base-branches">
-                {branches.map((b) => (
-                  <option key={b} value={b} />
-                ))}
-              </datalist>
-            </div>
-            <AgentSpawnConfig
-              value={agentConfig}
-              onChange={(value) => {
-                setAgentConfigUserTouched(true);
-                setAgentConfig(value);
-              }}
-              disabled={busy !== null}
-            />
-            <div className="flex items-center gap-3 pt-1">
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={draft}
-                  onChange={(e) => setDraft(e.target.checked)}
-                  className="accent-primary"
-                  disabled={busy !== null}
-                />
-                Mark as draft
-              </label>
-              <span className="flex-1" />
-              {onCancel ? (
-                <Button variant="secondary" onClick={onCancel} disabled={busy !== null}>
-                  Cancel
-                </Button>
-              ) : null}
-              <Button
-                variant="secondary"
-                onClick={() => void onCreateWithAi()}
-                disabled={busy !== null}
-                title="hand it to an agent: it drafts the title and description, then opens the PR"
-                className={cn(busy === 'ai' && 'animate-border-pulse')}
-              >
-                <Sparkles size={13} className="mr-1.5" aria-hidden />
-                Draft with an agent
-              </Button>
-              <Button
-                onClick={() => void onCreate()}
-                disabled={busy !== null || title.trim().length === 0}
-                className={cn(busy === 'create' && 'animate-border-pulse')}
-              >
-                Create PR
-                <ArrowRight size={13} className="ml-1.5" aria-hidden />
-              </Button>
-            </div>
-            {error ? (
-              <span className="text-xs text-danger" title={error}>
-                {error}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-10 py-8" fadeSize={24}>
+        <section className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+          <SectionHeader
+            label="open a pull request"
+            action={
+              <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground">
+                <GitBranch size={11} aria-hidden />
+                {branch ?? 'no branch'}
               </span>
-            ) : null}
+            }
+          />
+          <div className="flex flex-col gap-1.5">
+            <SectionHeader label="title" />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="pull request title"
+              disabled={busy !== null}
+              aria-label="Pull request title"
+              className="h-8 text-sm"
+              autoFocus
+            />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <SectionHeader label="description" />
+            <Textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="what changed and why (markdown supported)"
+              className="text-sm"
+              autoGrow
+              minRows={3}
+              maxRows={12}
+              disabled={busy !== null}
+              aria-label="Pull request description"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <SectionHeader label="base branch" icon={<GitBranch size={13} aria-hidden />} />
+            <Input
+              value={base}
+              onChange={(e) => setBase(e.target.value)}
+              placeholder="default branch"
+              list="pr-base-branches"
+              className="h-8 font-mono text-sm"
+              disabled={busy !== null}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label="Base branch"
+            />
+            <datalist id="pr-base-branches">
+              {branches.map((b) => (
+                <option key={b} value={b} />
+              ))}
+            </datalist>
+          </div>
+          <AgentSpawnConfig
+            value={agentConfig}
+            onChange={(value) => {
+              setAgentConfigUserTouched(true);
+              setAgentConfig(value);
+            }}
+            disabled={busy !== null}
+          />
         </section>
       </ScrollFade>
+
+      <Divider />
+
+      <footer className="shrink-0">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-10 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={draft}
+                onChange={(e) => setDraft(e.target.checked)}
+                className="accent-primary"
+                disabled={busy !== null}
+              />
+              Mark as draft
+            </label>
+            {error != null && (
+              <span
+                role="alert"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+                title={error}
+              >
+                <AlertTriangle size={12} aria-hidden className="shrink-0" />
+                {error}
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {onCancel != null && (
+              <Button variant="ghost" onClick={onCancel} disabled={busy !== null}>
+                Cancel
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              onClick={() => void onCreateWithAi()}
+              disabled={busy !== null}
+              title="hand it to an agent: it drafts the title and description, then opens the PR"
+              className={cn(busy === 'ai' && 'animate-border-pulse')}
+            >
+              <Sparkles size={13} className="mr-1.5" aria-hidden />
+              Draft with an agent
+            </Button>
+            <Button
+              onClick={() => void onCreate()}
+              disabled={busy !== null || title.trim().length === 0}
+              className={cn(busy === 'create' && 'animate-border-pulse')}
+            >
+              Create PR
+              <ArrowRight size={13} className="ml-1.5" aria-hidden />
+            </Button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import type { PlanId, SessionId } from '@goodboy/types';
 import type { GetFn, LensKind, SessionStudio, SetFn } from './types';
+import { workSurfaceFocus } from './workSurfaceFocus';
 import { writePersistedLens } from './workSurfaceStorage';
 
 export const setActiveLens = (set: SetFn) => {
@@ -11,9 +12,13 @@ export const setActiveLens = (set: SetFn) => {
       const sameTop = trimmed.length > 0 && trimmed[trimmed.length - 1] === lens;
       const entries = sameTop ? trimmed : [...trimmed, lens];
       return {
-        activeLens: { ...s.activeLens, [sessionId]: lens },
-        sessionStudio: { ...s.sessionStudio, [sessionId]: null },
-        selectedAgentId: { ...s.selectedAgentId, [sessionId]: null },
+        ...workSurfaceFocus({
+          sessionId,
+          focus: { kind: 'lens', lens },
+          activeLens: s.activeLens,
+          sessionStudio: s.sessionStudio,
+          selectedAgentId: s.selectedAgentId,
+        }),
         focusedWorkflowRunId:
           lens === 'workflows'
             ? s.focusedWorkflowRunId
@@ -35,10 +40,14 @@ export const lensGo = (set: SetFn, get: GetFn) => {
     if (nextIndex === hist.index) return;
     const lens = hist.entries[nextIndex] ?? null;
     writePersistedLens(sessionId, lens);
-    get().deselectAgent(sessionId);
     set((s) => ({
-      activeLens: { ...s.activeLens, [sessionId]: lens },
-      sessionStudio: { ...s.sessionStudio, [sessionId]: null },
+      ...workSurfaceFocus({
+        sessionId,
+        focus: { kind: 'lens', lens },
+        activeLens: s.activeLens,
+        sessionStudio: s.sessionStudio,
+        selectedAgentId: s.selectedAgentId,
+      }),
       lensHistory: {
         ...s.lensHistory,
         [sessionId]: { entries: hist.entries, index: nextIndex },
@@ -80,12 +89,13 @@ export const setFocusedPlanId = (set: SetFn) => {
 export const setSessionStudio = (set: SetFn) => {
   return (sessionId: SessionId, studio: SessionStudio | null): void => {
     set((s) =>
-      studio != null
-        ? {
-            sessionStudio: { ...s.sessionStudio, [sessionId]: studio },
-            selectedAgentId: { ...s.selectedAgentId, [sessionId]: null },
-          }
-        : { sessionStudio: { ...s.sessionStudio, [sessionId]: studio } },
+      workSurfaceFocus({
+        sessionId,
+        focus: { kind: 'studio', studio },
+        activeLens: s.activeLens,
+        sessionStudio: s.sessionStudio,
+        selectedAgentId: s.selectedAgentId,
+      }),
     );
   };
 };

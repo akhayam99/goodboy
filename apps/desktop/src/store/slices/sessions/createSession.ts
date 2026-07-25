@@ -37,6 +37,7 @@ import {
   DEFAULT_BRANCH_PREFIX,
 } from '../../../features/settings/settings';
 import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
+import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
 
@@ -69,6 +70,7 @@ type Input = {
     title: string;
   };
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
+  openWorkflowBuilder?: boolean;
   // TODO (@ak): origin marker for the pending sandbox-exec confinement. Marked
   // synchronously before any async kickoff so a turn fired during creation is
   // already tagged mobile-origin. No longer affects permission mode.
@@ -91,6 +93,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     kickoffPrompt,
     externalTask,
     attachmentInputs,
+    openWorkflowBuilder = false,
     mobileShared = false,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
@@ -341,9 +344,17 @@ export const createSession = (set: SetFn, get: GetFn) => {
             })(),
           }
         : state.sessionWorkflows,
-      selectedAgentId: firstAgent
-        ? { ...state.selectedAgentId, [session.id]: firstAgent.id }
-        : state.selectedAgentId,
+      ...workSurfaceFocus({
+        sessionId: session.id,
+        focus: {
+          kind: 'session-created',
+          studio: openWorkflowBuilder ? { kind: 'workflow' } : null,
+          agentId: firstAgent?.id ?? null,
+        },
+        activeLens: state.activeLens,
+        sessionStudio: state.sessionStudio,
+        selectedAgentId: state.selectedAgentId,
+      }),
       transcripts: { ...state.transcripts, ...transcriptEntries },
       messages: { ...state.messages, [session.id]: [] },
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
