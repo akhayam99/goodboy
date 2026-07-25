@@ -67,6 +67,13 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
       >
         {model === '' ? `${recommendedModel} recommended` : model}
       </button>
+      <button
+        type="button"
+        aria-label={`${ariaLabel} cheap model`}
+        onClick={() => onModel('claude-haiku-4-5')}
+      >
+        pick haiku
+      </button>
     </>
   ),
 }));
@@ -79,6 +86,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
+  roleModels: null,
   scoutFanout: null,
 };
 
@@ -88,6 +96,8 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+const TASK_LABELS = ['Summaries', 'Branch names', 'Planning', 'Agent titles', 'PR and MR drafts'];
 
 describe('DefaultsPanel', () => {
   it('renders every task model row', () => {
@@ -100,10 +110,14 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('PR and MR drafts')).toBeDefined();
   });
 
-  it('shows the resolved model for automatic preferences', () => {
+  it('shows the resolved model for automatic task preferences', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getAllByText('claude-haiku-4-5 recommended')).toHaveLength(5);
+    for (const label of TASK_LABELS) {
+      expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
+        'claude-haiku-4-5 recommended',
+      );
+    }
   });
 
   it('persists a selected task model immediately', () => {
@@ -117,6 +131,70 @@ describe('DefaultsPanel', () => {
           summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
         },
       }),
+    );
+  });
+
+  it('renders a row per agent role', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByText('Scout')).toBeDefined();
+    expect(screen.getByText('Debugger')).toBeDefined();
+    expect(screen.getByText('Planner')).toBeDefined();
+    expect(screen.getByText('Reviewer')).toBeDefined();
+    expect(screen.getByText('Custom')).toBeDefined();
+  });
+
+  it('reads a role with no override as its compiled default', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
+      'claude-opus-5 recommended',
+    );
+  });
+
+  it('persists a role model with an effort the model supports', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scout routing model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          scout: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'low' },
+        },
+      }),
+    );
+  });
+
+  it('pins a role to a cheap model with no effort ladder instead of clearing it', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Debugger routing cheap model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          investigator: { providerId: 'anthropic', model: 'claude-haiku-4-5', effort: 'medium' },
+        },
+      }),
+    );
+  });
+
+  it('shows a stored role override instead of the compiled default', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('button', { name: 'Reviewer routing model' }).textContent).toBe(
+      'claude-opus-5',
     );
   });
 

@@ -19,6 +19,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -81,6 +82,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
     const sessionDefaultProvider = (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId;
+    const roleModels = roleModelsForSession({ state: get(), sessionId });
     const newAgents: Agent[] = [];
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
@@ -104,7 +106,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         provider: resolvedProvider,
         modelId:
           step.modelOverride ??
-          recommendedModelForRole({ role: step.role ?? 'custom', provider: resolvedProvider }),
+          recommendedModelForRole({
+            role: step.role ?? 'custom',
+            provider: resolvedProvider,
+            prefs: roleModels,
+          }),
       });
       agentKindOverrides[agent.id] = kind;
       if (step.effort) {

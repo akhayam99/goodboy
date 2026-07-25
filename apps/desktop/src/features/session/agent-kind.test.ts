@@ -338,6 +338,79 @@ describe('AGENT_KIND_DEFAULTS', () => {
   });
 });
 
+describe('kindRouting role overrides', () => {
+  it('lets a stored role preference win over the compiled default', () => {
+    const routing = kindRouting({
+      kind: 'debugger',
+      roleModels: {
+        investigator: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
+      },
+    });
+
+    expect(routing).toEqual({ provider: 'anthropic', model: 'claude-opus-5', effort: 'max' });
+  });
+
+  it('lets an override beat the cheap-tier downgrade', () => {
+    const routing = kindRouting({
+      kind: 'scout',
+      roleModels: {
+        scout: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+      },
+    });
+
+    expect(routing.model).toBe('claude-sonnet-4-6');
+    expect(routing.effort).toBe('high');
+  });
+
+  it('keeps the cheap-tier downgrade when no override is stored for the role', () => {
+    const routing = kindRouting({
+      kind: 'scout',
+      roleModels: {
+        planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'low' },
+      },
+    });
+
+    expect(routing.model).toMatch(/haiku/i);
+    expect(routing.effort).toBe('low');
+  });
+
+  it('keeps a pinned model and defaults the effort the model cannot honor', () => {
+    const routing = kindRouting({
+      kind: 'reviewer',
+      roleModels: {
+        reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'minimal' },
+      },
+    });
+
+    expect(routing.model).toBe('claude-opus-5');
+    expect(routing.effort).toBe(ROLE_DEFAULTS.reviewer.effort);
+  });
+
+  it('pins a role to a cheap model that has no effort ladder', () => {
+    const routing = kindRouting({
+      kind: 'debugger',
+      roleModels: {
+        investigator: { providerId: 'anthropic', model: 'claude-haiku-4-5', effort: 'low' },
+      },
+    });
+
+    expect(routing.provider).toBe('anthropic');
+    expect(routing.model).toBe('claude-haiku-4-5');
+  });
+
+  it('drops an override whose model the registry no longer ships', () => {
+    const routing = kindRouting({
+      kind: 'reviewer',
+      roleModels: {
+        reviewer: { providerId: 'anthropic', model: 'claude-opus-99', effort: 'high' },
+      },
+    });
+
+    expect(routing.model).toBe(ROLE_DEFAULTS.reviewer.model);
+    expect(routing.effort).toBe(ROLE_DEFAULTS.reviewer.effort);
+  });
+});
+
 describe('inferAgentKindFromStep', () => {
   it.each([
     ['scout', 'scout'],

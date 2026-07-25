@@ -1,11 +1,13 @@
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import type { AuxTaskId, OverrideSettings, WorkspaceId } from '@goodboy/types';
+import type { AgentRole, AuxTaskId, OverrideSettings, WorkspaceId } from '@goodboy/types';
+import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
 import { Divider, FieldRow, ScrollFade, SectionHeader } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
-import { PROVIDER_LABEL } from '../../../../chat/utils/chat-constants';
+import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { PROVIDER_ORDER } from '../providerOrder';
+import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 
@@ -45,6 +47,8 @@ const TASKS: ReadonlyArray<{
   },
 ];
 
+const ROLES: ReadonlyArray<AgentRole> = Object.keys(ROLE_DEFAULTS).filter(isAgentRole);
+
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
   defaultWorkflowId: null,
@@ -53,6 +57,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
+  roleModels: null,
   scoutFanout: null,
 };
 
@@ -71,17 +76,18 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const defaultProviderId =
     overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
 
-  const { busy, error, persistOverrides, persistTaskModel } = useDefaultsPersistence({
-    workspaceId,
-    overrides,
-  });
+  const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
+    useDefaultsPersistence({
+      workspaceId,
+      overrides,
+    });
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-0.5 px-8 py-4">
         <h2 className="text-base font-semibold text-foreground">Defaults</h2>
         <p className="text-2xs text-muted-foreground">
-          Choose provider defaults for this workspace and its auxiliary tasks.
+          Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks.
         </p>
       </div>
       <Divider />
@@ -127,6 +133,29 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                     connectedProviderIds={connectedProviderIds}
                     disabled={busy}
                     onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <SectionHeader
+              label="Agent roles"
+              hint="Applies to every agent spawned in this role unless pinned per agent or per step"
+            />
+            <div className="flex flex-col">
+              {ROLES.map((role, index) => (
+                <div key={role} className="flex flex-col">
+                  {index > 0 ? <Divider /> : null}
+                  <RoleModelRow
+                    role={role}
+                    label={ROLE_LABEL[role]}
+                    help={ROLE_DEFAULTS[role].description}
+                    preference={overrides.roleModels?.[role] ?? null}
+                    connectedProviderIds={connectedProviderIds}
+                    disabled={busy}
+                    onChange={(preference) => persistRoleModel({ role, preference })}
                   />
                 </div>
               ))}

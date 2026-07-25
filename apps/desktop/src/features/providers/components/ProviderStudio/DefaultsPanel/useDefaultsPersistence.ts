@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import type { AuxTaskId, OverrideSettings, TaskModelPreference, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentRole,
+  AuxTaskId,
+  OverrideSettings,
+  RoleModelPreference,
+  TaskModelPreference,
+  WorkspaceId,
+} from '@goodboy/types';
 import { formatError } from '../../../../../shared/lib/errors';
 import { useAppStore } from '../../../../../store';
 
@@ -15,6 +22,11 @@ type PersistParams = {
 type PersistTaskModelParams = {
   readonly task: AuxTaskId;
   readonly preference: TaskModelPreference | null;
+};
+
+type PersistRoleModelParams = {
+  readonly role: AgentRole;
+  readonly preference: RoleModelPreference | null;
 };
 
 export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
@@ -49,5 +61,20 @@ export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
     });
   };
 
-  return { busy, error, persistOverrides, persistTaskModel };
+  const persistRoleModel = ({ role, preference }: PersistRoleModelParams) => {
+    const roleModels = { ...(overrides.roleModels ?? {}) };
+    if (preference == null) {
+      delete roleModels[role];
+    }
+    if (preference != null) {
+      roleModels[role] = preference;
+    }
+    void persistOverrides({
+      partial: {
+        roleModels: Object.keys(roleModels).length > 0 ? roleModels : null,
+      },
+    });
+  };
+
+  return { busy, error, persistOverrides, persistTaskModel, persistRoleModel };
 };

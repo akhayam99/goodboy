@@ -16,7 +16,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-vi.mock('../../../../../store', () => ({ EMPTY_ARRAY: Object.freeze([]) }));
+vi.mock('../../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
+  useAppStore: <T,>(selector: (state: unknown) => T) => selector({}),
+}));
 
 vi.mock(
   '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip',

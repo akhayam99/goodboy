@@ -9,6 +9,7 @@ import {
 } from '../../../chat/spawn-from-comment';
 import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
 import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
+import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
@@ -45,6 +46,7 @@ export const PrDetailPanel = ({
     return ws?.rootPath ?? null;
   });
   const workspaceId = session?.workspaceId;
+  const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const markPrReady = useAppStore((s) => s.markPrReady);
@@ -429,6 +431,7 @@ export const PrDetailPanel = ({
                     onSpawnOne={onSpawnOne}
                     onSpawnBatch={onSpawnBatch}
                     onOpenResolver={openResolver}
+                    roleModels={roleModels}
                     onOpenThread={(threadId) => {
                       setJumpThreadId(threadId);
                       setSection('comments');

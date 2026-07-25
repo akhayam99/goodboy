@@ -245,6 +245,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
 
     const workspaceVerbositySeed =
       get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
+    const roleModels = get().workspaceOverrides[workspaceId]?.roleModels ?? null;
 
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];
@@ -265,7 +266,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
             kind,
             ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
           });
-          agentModelOverrides[agent.id] = step.modelOverride ?? kindRouting({ kind }).model;
+          agentModelOverrides[agent.id] =
+            step.modelOverride ?? kindRouting({ kind, roleModels }).model;
           agentKindOverrides[agent.id] = kind;
           allAgents.push(agent);
         }
@@ -284,7 +286,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       }
     } else if (firstAgentKind !== undefined) {
       const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
-      const model = requestedModel ?? kindRouting({ kind: firstAgentKind }).model;
+      const model = requestedModel ?? kindRouting({ kind: firstAgentKind, roleModels }).model;
       const singleAgent = await invokeAgentInsert({
         sessionId: session.id,
         ordinal: 0,

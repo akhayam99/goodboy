@@ -18,7 +18,7 @@ import type { GetFn, SetFn } from './types';
 
 export const createAgentsSlice = (set: SetFn, get: GetFn) => {
   return {
-    setAgentKind: setAgentKind(set),
+    setAgentKind: setAgentKind(set, get),
     setAgentEffortOverride: setAgentEffortOverride(set),
     setAgentDraft: setAgentDraft(set),
     clearAgentDraft: clearAgentDraft(set),

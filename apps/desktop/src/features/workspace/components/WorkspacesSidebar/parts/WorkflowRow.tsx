@@ -25,6 +25,7 @@ import {
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../../../features/session/agent-kind';
+import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
@@ -120,6 +121,7 @@ export const WorkflowRow = ({
   toggleClusterExpand,
   forceAdvanceWorkflowStep,
 }: Props) => {
+  const roleModels = useSessionRoleModels({ sessionId: task.id });
   const workflowRun = run;
   const isDiscarded = run.discardedAt != null;
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -326,7 +328,7 @@ export const WorkflowRow = ({
                 stepModel ??
                 agentModelOverride[run.id] ??
                 run.modelOverride ??
-                kindRouting({ kind }).model;
+                kindRouting({ kind, roleModels }).model;
               const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
               const clustersExpanded = clusterExpand.get(run.id) ?? false;
               const clusterUnread = countUnread(clusterChildren);
@@ -427,6 +429,7 @@ export const WorkflowRow = ({
           <WorkflowNextStepCta
             workflow={workflow}
             runs={wfAgents}
+            roleModels={roleModels}
             blockReason={wfBlockReason}
             onAdvance={(step) => {
               const pending = wfAgents.find(
