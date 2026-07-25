@@ -1,4 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
+import { extractAuxOutput } from '../providers/aux-output';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const GOAL_REWRITE_SYSTEM_PROMPT = `You clean the "goal" note for an AI coding session that is driven by a multi-step agent workflow. Each workflow step runs as its own dedicated agent, so the goal note must describe ONLY the desired end result, never the process used to reach it.
@@ -23,6 +24,7 @@ export type GoalRewriteInput = {
 export type GoalRewriteDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
+  readonly workingDir?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
@@ -61,25 +63,16 @@ export const rewriteWorkflowGoal = async (
       binary: deps.binary ?? getDefaultBinary(deps.providerId),
       userMessage: buildGoalRewriteUserPrompt(input),
       systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,
+      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
     },
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;
   }
 
-  const cleaned = extractText(deps.providerId, result.stdout).trim();
+  const cleaned = extractAuxOutput({
+    providerId: deps.providerId,
+    stdout: result.stdout,
+  }).text.trim();
   return cleaned.length > 0 ? cleaned : null;
 };
-
-function extractText(providerId: ProviderId, stdout: string): string {
-  const trimmed = stdout.trim();
-  if (providerId === 'anthropic') {
-    try {
-      const parsed = JSON.parse(trimmed) as { result?: string };
-      return parsed.result ?? '';
-    } catch {
-      return trimmed;
-    }
-  }
-  return trimmed;
-}

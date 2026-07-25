@@ -1,3 +1,4 @@
+import { extractAuxOutput } from '../providers/aux-output';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
 
@@ -41,6 +42,7 @@ type OneShotResult = {
 export const summarizeStepOutput = async ({
   providerId,
   binary,
+  workingDir,
   invokeFn,
   output,
   model,
@@ -52,35 +54,27 @@ export const summarizeStepOutput = async ({
       binary: binary ?? getDefaultBinary(providerId),
       userMessage: output,
       systemPrompt: STEP_OUTPUT_SYSTEM_PROMPT,
+      ...(workingDir != null && { workingDir }),
     },
   });
   if ((result.exitCode ?? 0) !== 0) {
     throw new SummarizerSpawnError(result.exitCode, result.stderr);
   }
 
-  const stdout = result.stdout.trim();
-  let summary = stdout;
-  if (providerId === 'anthropic') {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(stdout);
-    } catch {
-      throw new SummarizerParseError(
-        'step output summary response was not valid JSON',
-        result.stdout,
-      );
-    }
-    if (typeof parsed !== 'object' || parsed === null || !('result' in parsed)) {
-      throw new SummarizerParseError(
-        'step output summary response was missing result',
-        result.stdout,
-      );
-    }
-    if (typeof parsed.result !== 'string') {
-      throw new SummarizerParseError('step output summary result was not text', result.stdout);
-    }
-    summary = parsed.result.trim();
+  const extracted = extractAuxOutput({ providerId, stdout: result.stdout });
+  if (extracted.isError) {
+    throw new SummarizerParseError(
+      `step output summary provider error: ${extracted.errorMessage ?? 'unknown error'}`,
+      result.stdout,
+    );
   }
+  if (providerId === 'anthropic' && !extracted.envelopeDecoded) {
+    throw new SummarizerParseError(
+      'step output summary response was not valid JSON',
+      result.stdout,
+    );
+  }
+  const summary = extracted.text.trim();
   const firstLine = summary.split(/\r?\n/, 1)[0] ?? '';
   if (
     summary.length === 0 ||

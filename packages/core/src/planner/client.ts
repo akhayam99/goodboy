@@ -1,4 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
+import { extractAuxOutput } from '../providers/aux-output';
 import { computeCostUsd } from '../providers/claude/cost';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { parsePlannerOutput } from './parser';
@@ -24,6 +25,7 @@ export type PlannerClientDeps = {
   readonly providerId: ProviderId;
   readonly model: string;
   readonly binary?: string;
+  readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
 };
 
@@ -37,15 +39,6 @@ export class PlannerClientSpawnError extends Error {
   }
 }
 
-type ClaudeJsonResult = {
-  readonly result?: string;
-  readonly usage?: {
-    readonly input_tokens?: number;
-    readonly output_tokens?: number;
-    readonly cache_read_input_tokens?: number;
-  };
-};
-
 type InvokeResult = {
   readonly stdout: string;
   readonly stderr: string;
@@ -56,12 +49,14 @@ export class PlannerClient {
   private readonly providerId: ProviderId;
   private readonly binary: string;
   private readonly model: string;
+  private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
 
   constructor(deps: PlannerClientDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
     this.model = deps.model;
+    this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
   }
 
@@ -74,6 +69,7 @@ export class PlannerClient {
         binary: this.binary,
         userMessage,
         systemPrompt: PLANNER_SYSTEM_PROMPT,
+        ...(this.workingDir != null && { workingDir: this.workingDir }),
       },
     });
 
@@ -81,43 +77,12 @@ export class PlannerClient {
       throw new PlannerClientSpawnError(result.exitCode, result.stderr);
     }
 
-    const { text, usage } = this.extractTextAndUsage(result.stdout);
-    const output = parsePlannerOutput(text);
+    const extracted = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });
+    const usage: PlannerUsage = {
+      ...extracted.usage,
+      estimatedCostUsd: computeCostUsd({ ...extracted.usage, estimatedCostUsd: 0 }, this.model),
+    };
+    const output = parsePlannerOutput(extracted.text);
     return { output, usage, model: this.model };
   }
-
-  private extractTextAndUsage(stdout: string): { text: string; usage: PlannerUsage } {
-    if (this.providerId === 'anthropic') {
-      return extractClaudeJsonOutput(stdout, this.model);
-    }
-    return { text: stdout.trim(), usage: zeroUsage() };
-  }
-}
-
-function extractClaudeJsonOutput(
-  stdout: string,
-  model: string,
-): { text: string; usage: PlannerUsage } {
-  const trimmed = stdout.trim();
-  let parsed: ClaudeJsonResult;
-  try {
-    parsed = JSON.parse(trimmed) as ClaudeJsonResult;
-  } catch {
-    return { text: trimmed, usage: zeroUsage() };
-  }
-
-  const text = parsed.result ?? '';
-  const rawUsage = parsed.usage ?? {};
-  const inputTokens = rawUsage.input_tokens ?? 0;
-  const outputTokens = rawUsage.output_tokens ?? 0;
-  const cachedInputTokens = rawUsage.cache_read_input_tokens ?? 0;
-  const estimatedCostUsd = computeCostUsd(
-    { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd: 0 },
-    model,
-  );
-  return { text, usage: { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd } };
-}
-
-function zeroUsage(): PlannerUsage {
-  return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 };
 }

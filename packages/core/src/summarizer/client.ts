@@ -1,8 +1,9 @@
 import type { ContextSlot, ProviderId } from '@goodboy/types';
+import { extractAuxOutput } from '../providers/aux-output';
 import { computeCostUsd } from '../providers/claude/cost';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 import { isSlotKey, SLOT_KEYS, type SlotKey } from '../context/slots';
-import { inferNextActions, type NextAction, type NextActionsPrState } from './next-actions';
+import { extractJson } from './extract-json';
 import { SUMMARIZER_SYSTEM_PROMPT } from './prompt';
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
@@ -22,14 +23,12 @@ export type SummarizeInput = {
   readonly prevSlots: ReadonlyArray<ContextSlot>;
   readonly turnInput: string;
   readonly turnOutput: string;
-  readonly prState?: NextActionsPrState | null;
 };
 
 export type SummarizerResult = {
   readonly delta: ContextSlotDelta;
   readonly usage: SummarizerUsage;
   readonly model: string;
-  readonly nextActions: ReadonlyArray<NextAction>;
 };
 
 type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -38,6 +37,7 @@ export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly model?: string;
+  readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
 };
 
@@ -61,6 +61,16 @@ export class SummarizerParseError extends Error {
   }
 }
 
+export class SummarizerCliError extends Error {
+  constructor(
+    message: string,
+    public readonly raw: string,
+  ) {
+    super(`summarizer cli reported an error: ${message}`);
+    this.name = 'SummarizerCliError';
+  }
+}
+
 type SummarizeCommandResult = {
   readonly stdout: string;
   readonly stderr: string;
@@ -71,12 +81,14 @@ export class Summarizer {
   private readonly providerId: ProviderId;
   private readonly binary: string;
   private readonly model: string;
+  private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
 
   constructor(deps: SummarizerDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
     this.model = deps.model ?? getCheapModel(deps.providerId);
+    this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
   }
 
@@ -90,6 +102,7 @@ export class Summarizer {
         binary: this.binary,
         userMessage,
         systemPrompt: SUMMARIZER_SYSTEM_PROMPT,
+        ...(this.workingDir != null && { workingDir: this.workingDir }),
       },
     });
 
@@ -97,86 +110,17 @@ export class Summarizer {
       throw new SummarizerSpawnError(result.exitCode, result.stderr);
     }
 
-    const { text, usage } = extractTextAndUsage(this.providerId, result.stdout, this.model);
-    const delta = parseDelta(text);
-    const slotsAfter = applyDelta(input.prevSlots, delta);
-    const nextActions = inferNextActions({
-      input,
-      delta,
-      slotsAfter,
-      prState: input.prState ?? null,
-    });
-    return { delta, usage, model: this.model, nextActions };
+    const output = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });
+    if (output.isError) {
+      throw new SummarizerCliError(output.errorMessage ?? 'unknown error', result.stdout);
+    }
+    const usage: SummarizerUsage = {
+      ...output.usage,
+      estimatedCostUsd: computeCostUsd({ ...output.usage, estimatedCostUsd: 0 }, this.model),
+    };
+    const delta = parseDelta(output.text);
+    return { delta, usage, model: this.model };
   }
-}
-
-function applyDelta(
-  prev: ReadonlyArray<ContextSlot>,
-  delta: ContextSlotDelta,
-): ReadonlyArray<ContextSlot> {
-  if (delta.upserts.length === 0) {
-    return prev;
-  }
-  const byKey = new Map<string, ContextSlot>(prev.map((s) => [s.key, s]));
-  for (const upsert of delta.upserts) {
-    const existing = byKey.get(upsert.key);
-    byKey.set(upsert.key, {
-      key: upsert.key,
-      value: upsert.value,
-      enabled: existing?.enabled ?? true,
-    });
-  }
-  return Array.from(byKey.values());
-}
-
-type ClaudeJsonResult = {
-  readonly result?: string;
-  readonly usage?: {
-    readonly input_tokens?: number;
-    readonly output_tokens?: number;
-    readonly cache_read_input_tokens?: number;
-  };
-  readonly subtype?: string;
-  readonly is_error?: boolean;
-};
-
-function extractTextAndUsage(
-  providerId: ProviderId,
-  stdout: string,
-  model: string,
-): { text: string; usage: SummarizerUsage } {
-  if (providerId === 'anthropic') {
-    return extractClaudeJsonOutput(stdout, model);
-  }
-  return { text: stdout.trim(), usage: zeroUsage() };
-}
-
-function extractClaudeJsonOutput(
-  stdout: string,
-  model: string,
-): { text: string; usage: SummarizerUsage } {
-  const trimmed = stdout.trim();
-  let parsed: ClaudeJsonResult;
-  try {
-    parsed = JSON.parse(trimmed) as ClaudeJsonResult;
-  } catch {
-    return { text: trimmed, usage: zeroUsage() };
-  }
-
-  const text = parsed.result ?? '';
-  const rawUsage = parsed.usage ?? {};
-  const inputTokens = rawUsage.input_tokens ?? 0;
-  const outputTokens = rawUsage.output_tokens ?? 0;
-  const cachedInputTokens = rawUsage.cache_read_input_tokens ?? 0;
-  const estimatedCostUsd = computeCostUsd(
-    { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd: 0 },
-    model,
-  );
-  return { text, usage: { inputTokens, outputTokens, cachedInputTokens, estimatedCostUsd } };
-}
-
-function zeroUsage(): SummarizerUsage {
-  return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 };
 }
 
 function buildUserPrompt(input: SummarizeInput): string {
@@ -202,7 +146,7 @@ function buildUserPrompt(input: SummarizeInput): string {
 }
 
 function parseDelta(raw: string): ContextSlotDelta {
-  const stripped = extractJson(raw);
+  const stripped = extractJson({ raw });
   let parsed: unknown;
   try {
     parsed = JSON.parse(stripped);
@@ -238,65 +182,4 @@ function parseDelta(raw: string): ContextSlotDelta {
     upserts.push({ key, value });
   }
   return { upserts };
-}
-
-function extractJson(raw: string): string {
-  const trimmed = raw.trim();
-
-  const edgeFence = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/i.exec(trimmed);
-  if (edgeFence?.[1]) {
-    return edgeFence[1].trim();
-  }
-
-  const innerFence = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
-  if (innerFence?.[1]) {
-    return innerFence[1].trim();
-  }
-
-  const balanced = extractBalancedJsonObject(trimmed);
-  if (balanced !== null) {
-    return balanced;
-  }
-
-  return trimmed;
-}
-
-function extractBalancedJsonObject(text: string): string | null {
-  const start = text.indexOf('{');
-  if (start === -1) {
-    return null;
-  }
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let i = start; i < text.length; i++) {
-    const ch = text[i];
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (ch === '\\') {
-        escaped = true;
-        continue;
-      }
-      if (ch === '"') {
-        inString = false;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inString = true;
-      continue;
-    }
-    if (ch === '{') {
-      depth++;
-    } else if (ch === '}') {
-      depth--;
-      if (depth === 0) {
-        return text.slice(start, i + 1);
-      }
-    }
-  }
-  return null;
 }

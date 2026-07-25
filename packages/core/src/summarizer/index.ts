@@ -1,5 +1,6 @@
 export {
   Summarizer,
+  SummarizerCliError,
   SummarizerParseError,
   SummarizerSpawnError,
   type ContextSlotDelta,
@@ -9,13 +10,6 @@ export {
   type SummarizerResult,
   type SummarizerUsage,
 } from './client';
-export {
-  inferNextActions,
-  type InferNextActionsInput,
-  type NextAction,
-  type NextActionKind,
-  type NextActionsPrState,
-} from './next-actions';
 export {
   rewriteWorkflowGoal,
   buildGoalRewriteUserPrompt,
