@@ -9,7 +9,13 @@ const { hooks, remote, store } = vi.hoisted(() => {
     'session-1': [],
   };
   return {
-    hooks: { agentCount: 0, planCount: 0, questionCount: 0 },
+    hooks: {
+      agentCount: 0,
+      planCount: 0,
+      questionCount: 0,
+      liveTerminals: 0,
+      summarizerStatus: 'idle' as 'idle' | 'running' | 'error',
+    },
     remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
     store: {
       agentKindOverride: {},
@@ -50,6 +56,8 @@ vi.mock('../../../../../store', () => ({
     })),
   useSessionStageInfo: () => ({ stage: 'done' as const, reason: 'idle' }),
   useSessionUnreadLens: () => null,
+  useLiveTerminalCount: () => hooks.liveTerminals,
+  useSummarizerStatus: () => ({ status: hooks.summarizerStatus }),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -77,6 +85,8 @@ beforeEach(() => {
   hooks.agentCount = 0;
   hooks.planCount = 0;
   hooks.questionCount = 0;
+  hooks.liveTerminals = 0;
+  hooks.summarizerStatus = 'idle';
   store.sessionPhaseRuns = {};
   store.reviewDrafts = {};
   store.sessionExternalTasks = {};
@@ -308,6 +318,92 @@ describe('LensColumn', () => {
     const row = screen.getByRole('button', { name: 'Review board 1' });
     fireEvent.click(row);
     expect(onSelect).toHaveBeenCalledWith('review');
+  });
+
+  it('counts live terminals and pulses only while some are alive', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const idle = screen.getByRole('button', { name: 'Terminal' });
+    expect(idle.querySelector('[class*="animate-pulse"]')).toBeNull();
+
+    cleanup();
+    hooks.liveTerminals = 2;
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const live = screen.getByRole('button', { name: 'Terminal 2' });
+    expect(live.querySelector('[class*="animate-pulse"]')).not.toBeNull();
+  });
+
+  it('pulses every context row while the summarizer runs', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    for (const label of ['Goal', 'Decisions', 'Session summary']) {
+      expect(
+        screen.getByRole('button', { name: label }).querySelector('[class*="animate-pulse"]'),
+      ).toBeNull();
+    }
+
+    cleanup();
+    hooks.summarizerStatus = 'running';
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    for (const label of ['Goal', 'Decisions', 'Session summary']) {
+      expect(
+        screen.getByRole('button', { name: label }).querySelector('[class*="animate-pulse"]'),
+      ).not.toBeNull();
+    }
+  });
+
+  it('marks every context row for attention when the summarizer failed', () => {
+    hooks.summarizerStatus = 'error';
+    const { container } = render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    for (const label of ['Goal', 'Decisions', 'Session summary']) {
+      const row = screen.getByRole('button', { name: label });
+      expect(row.querySelector('[class*="bg-warning"]')).not.toBeNull();
+      expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
+    }
+    expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
   });
 
   it('hides disconnected integration rows without linked tasks', () => {

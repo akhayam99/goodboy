@@ -24,6 +24,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
+import type { TerminalTab } from '../shared/types/terminal';
 import { useAppStore } from './store';
 import type { AppState, SessionLoadingFlags, SummarizerSessionStatus } from './types';
 import {
@@ -35,6 +36,7 @@ import {
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
+const EMPTY_TERMINAL_TABS: ReadonlyArray<TerminalTab> = [];
 
 export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
   let sum = 0;
@@ -305,6 +307,16 @@ export const useSessionAnsweredQuestions = (
       ? (s.sessionAnsweredQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS)
       : EMPTY_OPEN_QUESTIONS,
   );
+
+export const useLiveTerminalCount = (sessionId: SessionId | null): number =>
+  useAppStore((s) => {
+    if (sessionId == null) {
+      return 0;
+    }
+    const tabs = s.terminalTabs[sessionId] ?? EMPTY_TERMINAL_TABS;
+    const liveTabs = tabs.filter((tab) => tab.status !== 'exited').length;
+    return liveTabs + (s.terminalSessions[sessionId] === 'open' ? 1 : 0);
+  });
 
 const IDLE_STATUS: SummarizerSessionStatus = {
   status: 'idle',

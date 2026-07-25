@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 import { formatStepDuration } from './formatStepDuration';
 import { stripWorkflowHandoffHeading } from './stripWorkflowHandoffHeading';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptChevron } from '../TranscriptChevron';
+import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
 import { TranscriptShell } from '../TranscriptShell';
 
 const accent = MARKER_ACCENT.merged;
@@ -30,17 +32,9 @@ export const PhaseTransitionCard = ({ item }: Props) => {
         onClick={() => setOpen((v) => !v)}
         tone="merged"
         variant="leftBorder"
-        className="group flex w-full items-center gap-2 text-left motion-safe:transition-opacity hover:opacity-80"
+        className={cn('flex w-full items-center gap-2 text-left', TRANSCRIPT_ROW_HOVER)}
       >
-        <ChevronRight
-          size={11}
-          aria-hidden
-          className={cn(
-            'shrink-0 opacity-50 motion-safe:transition-transform',
-            accent.icon,
-            open && 'rotate-90',
-          )}
-        />
+        <TranscriptChevron open={open} />
         <span
           className={cn(
             'shrink-0 text-2xs font-medium uppercase tracking-wide opacity-80',

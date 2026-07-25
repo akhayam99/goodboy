@@ -9,14 +9,10 @@ import type {
   AgentId,
   DiffComment,
   PrComment,
-  ProviderName,
-  ProviderRunId,
   Session,
-  TelemetryRecord,
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import type { ProviderContextUsage } from './ContextWindowBar';
 import {
   EMPTY_ARRAY,
   agentHasUnread,
@@ -28,8 +24,8 @@ import { classifyWorkflowChain } from '@goodboy/core';
 import { pickNextWorkflowStep } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { PendingResolutionsStrip } from '../../../../../features/context/components/ContextPanel/strips/PendingResolutionsStrip';
-import { computeLatestTelemetryByAgentId } from '../../../../../features/session/agent-row-format';
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
+import { useAgentMetrics } from '../../../../../features/session/hooks/useAgentMetrics';
 import { formatError } from '../../../../../shared/lib/errors';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { SectionToggle } from './SectionToggle';
@@ -66,26 +62,7 @@ export const AgentsSection = ({
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const telemetry = useAppStore(
-    (s) => s.sessionTelemetry[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
   const messages = useAppStore((s) => s.messages[task.id] ?? EMPTY_ARRAY);
-  const agentRunHistory = useAppStore(
-    useShallow((s) => {
-      const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      const runs = s.sessionPhaseRuns[task.id];
-      if (!runs) {
-        return out;
-      }
-      for (const run of runs) {
-        const history = s.agentRunHistory[run.id];
-        if (history) {
-          out[run.id] = history;
-        }
-      }
-      return out;
-    }),
-  );
   const agentKindOverride = useAppStore(
     useShallow((s) => {
       const out: Record<string, AgentKind> = {};
@@ -340,28 +317,6 @@ export const AgentsSection = ({
     [reorderSessionWorkflows, task.id, task.workflowRuns],
   );
 
-  const telemetryByRunId = useMemo(() => {
-    const map = new Map<string, TelemetryRecord>();
-    for (const rec of telemetry) {
-      const existing = map.get(rec.runId);
-      if (!existing || existing.recordedAt < rec.recordedAt) {
-        map.set(rec.runId, rec);
-      }
-    }
-    return map;
-  }, [telemetry]);
-
-  const turnsByAgentId = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const m of messages) {
-      if (m.role !== 'user') {
-        continue;
-      }
-      map.set(m.agentId, (map.get(m.agentId) ?? 0) + 1);
-    }
-    return map;
-  }, [messages]);
-
   const firstUserTextByAgentId = useMemo(() => {
     const map = new Map<string, string>();
     for (const message of messages) {
@@ -425,174 +380,7 @@ export const AgentsSection = ({
     (s) => s.sessionPanelExpanded[task.id]?.agents ?? standaloneAgentCount > 0,
   );
 
-  const aggregatesByAgentId = useMemo(() => {
-    const map = new Map<
-      string,
-      { inputTokens: number; outputTokens: number; estimatedCostUsd: number; turns: number }
-    >();
-    const telemetryByRun = new Map<string, TelemetryRecord>();
-    for (const rec of telemetry) {
-      if (rec.kind !== 'turn') {
-        continue;
-      }
-      const existing = telemetryByRun.get(rec.runId);
-      if (!existing || existing.recordedAt < rec.recordedAt) {
-        telemetryByRun.set(rec.runId, rec);
-      }
-    }
-    for (const run of phaseRuns) {
-      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
-      let inputTokens = 0;
-      let outputTokens = 0;
-      let estimatedCostUsd = 0;
-      let turns = 0;
-      for (const rid of runIds) {
-        const rec = telemetryByRun.get(rid);
-        if (!rec) {
-          continue;
-        }
-        inputTokens += rec.inputTokens;
-        outputTokens += rec.outputTokens;
-        estimatedCostUsd += rec.estimatedCostUsd;
-        turns += 1;
-      }
-      map.set(run.id, { inputTokens, outputTokens, estimatedCostUsd, turns });
-    }
-    const childIds = new Map<string, string[]>();
-    for (const run of phaseRuns) {
-      if (run.parentAgentId == null) {
-        continue;
-      }
-      const bucket = childIds.get(run.parentAgentId) ?? [];
-      bucket.push(run.id);
-      childIds.set(run.parentAgentId, bucket);
-    }
-    const rolled = new Set<string>();
-    const rollup = (id: string) => {
-      if (rolled.has(id)) {
-        return;
-      }
-      rolled.add(id);
-      const self = map.get(id);
-      if (!self) {
-        return;
-      }
-      for (const cid of childIds.get(id) ?? []) {
-        rollup(cid);
-        const child = map.get(cid);
-        if (!child) {
-          continue;
-        }
-        self.inputTokens += child.inputTokens;
-        self.outputTokens += child.outputTokens;
-        self.estimatedCostUsd += child.estimatedCostUsd;
-        self.turns += child.turns;
-      }
-    };
-    for (const run of phaseRuns) rollup(run.id);
-    return map;
-  }, [telemetry, phaseRuns, agentRunHistory]);
-
-  const providerUsageByAgentId = useMemo(() => {
-    type Entry = {
-      provider: ProviderName;
-      model: string;
-      recordedAt: string;
-      inputTokens: number;
-      outputTokens: number;
-    };
-    const merge = (target: Map<ProviderName, Entry>, rec: Entry) => {
-      const e = target.get(rec.provider);
-      if (!e) {
-        target.set(rec.provider, { ...rec });
-        return;
-      }
-      e.inputTokens += rec.inputTokens;
-      e.outputTokens += rec.outputTokens;
-      if (e.recordedAt < rec.recordedAt) {
-        e.recordedAt = rec.recordedAt;
-        e.model = rec.model;
-      }
-    };
-    const telemetryByRun = new Map<string, TelemetryRecord>();
-    for (const rec of telemetry) {
-      if (rec.kind !== 'turn') {
-        continue;
-      }
-      const existing = telemetryByRun.get(rec.runId);
-      if (!existing || existing.recordedAt < rec.recordedAt) {
-        telemetryByRun.set(rec.runId, rec);
-      }
-    }
-    const map = new Map<string, Map<ProviderName, Entry>>();
-    for (const run of phaseRuns) {
-      const runIds = agentRunHistory[run.id] ?? (run.runId ? [run.runId] : []);
-      const byProvider = new Map<ProviderName, Entry>();
-      for (const rid of runIds) {
-        const rec = telemetryByRun.get(rid);
-        if (!rec) {
-          continue;
-        }
-        merge(byProvider, {
-          provider: rec.provider,
-          model: rec.model,
-          recordedAt: rec.recordedAt,
-          inputTokens: rec.inputTokens,
-          outputTokens: rec.outputTokens,
-        });
-      }
-      map.set(run.id, byProvider);
-    }
-    const childIds = new Map<string, string[]>();
-    for (const run of phaseRuns) {
-      if (run.parentAgentId == null) {
-        continue;
-      }
-      const bucket = childIds.get(run.parentAgentId) ?? [];
-      bucket.push(run.id);
-      childIds.set(run.parentAgentId, bucket);
-    }
-    const rolled = new Set<string>();
-    const rollup = (id: string) => {
-      if (rolled.has(id)) {
-        return;
-      }
-      rolled.add(id);
-      const self = map.get(id);
-      if (!self) {
-        return;
-      }
-      for (const cid of childIds.get(id) ?? []) {
-        rollup(cid);
-        const child = map.get(cid);
-        if (!child) {
-          continue;
-        }
-        for (const ce of child.values()) {
-          merge(self, ce);
-        }
-      }
-    };
-    for (const run of phaseRuns) rollup(run.id);
-    const result = new Map<string, ReadonlyArray<ProviderContextUsage>>();
-    for (const [id, byProvider] of map) {
-      const list = [...byProvider.values()]
-        .map((e) => ({
-          provider: e.provider,
-          model: e.model,
-          inputTokens: e.inputTokens,
-          outputTokens: e.outputTokens,
-        }))
-        .sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens));
-      result.set(id, list);
-    }
-    return result;
-  }, [telemetry, phaseRuns, agentRunHistory]);
-
-  const latestTelemetryByAgentId = useMemo(
-    () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
-    [telemetryByRunId, phaseRuns, agentRunHistory],
-  );
+  const metrics = useAgentMetrics({ sessionId: task.id });
 
   const onPickAgent = (sid: AgentId) => {
     if (sid === selectedAgentId) {
@@ -714,10 +502,10 @@ export const AgentsSection = ({
                       selectedAgentId={selectedAgentId}
                       isTaskActive={isTaskActive}
                       editingId={editingId}
-                      latestTelemetryByAgentId={latestTelemetryByAgentId}
-                      aggregatesByAgentId={aggregatesByAgentId}
-                      providerUsageByAgentId={providerUsageByAgentId}
-                      turnsByAgentId={turnsByAgentId}
+                      latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
+                      aggregatesByAgentId={metrics.aggregatesByAgentId}
+                      providerUsageByAgentId={metrics.providerUsageByAgentId}
+                      turnsByAgentId={metrics.turnsByAgentId}
                       isTranscriptLoading={loading.transcript}
                       onStartStepAgent={onStartStepAgent}
                       onPickAgent={onPickAgent}
@@ -775,10 +563,10 @@ export const AgentsSection = ({
                           firstUserTextByAgentId={firstUserTextByAgentId}
                           agentKindOverride={agentKindOverride}
                           childrenByParentId={childrenByParentId}
-                          latestTelemetryByAgentId={latestTelemetryByAgentId}
-                          aggregatesByAgentId={aggregatesByAgentId}
-                          providerUsageByAgentId={providerUsageByAgentId}
-                          turnsByAgentId={turnsByAgentId}
+                          latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
+                          aggregatesByAgentId={metrics.aggregatesByAgentId}
+                          providerUsageByAgentId={metrics.providerUsageByAgentId}
+                          turnsByAgentId={metrics.turnsByAgentId}
                           selectedAgentId={selectedAgentId}
                           isTranscriptLoading={loading.transcript}
                           isTaskActive={isTaskActive}
@@ -842,10 +630,10 @@ export const AgentsSection = ({
                         firstUserTextByAgentId={firstUserTextByAgentId}
                         agentKindOverride={agentKindOverride}
                         childrenByParentId={childrenByParentId}
-                        latestTelemetryByAgentId={latestTelemetryByAgentId}
-                        aggregatesByAgentId={aggregatesByAgentId}
-                        providerUsageByAgentId={providerUsageByAgentId}
-                        turnsByAgentId={turnsByAgentId}
+                        latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
+                        aggregatesByAgentId={metrics.aggregatesByAgentId}
+                        providerUsageByAgentId={metrics.providerUsageByAgentId}
+                        turnsByAgentId={metrics.turnsByAgentId}
                         selectedAgentId={selectedAgentId}
                         isTranscriptLoading={loading.transcript}
                         isTaskActive={isTaskActive}
@@ -909,6 +697,8 @@ export const AgentsSection = ({
               resolverState={resolverState}
               commentByThreadId={commentByThreadId}
               diffCommentByAgentId={diffCommentByAgentId}
+              metrics={metrics}
+              isTranscriptLoading={loading.transcript}
               selectedAgentId={selectedAgentId}
               expanded={forceExpanded || resolveExpanded}
               onToggle={() => setResolveExpanded((v) => !v)}

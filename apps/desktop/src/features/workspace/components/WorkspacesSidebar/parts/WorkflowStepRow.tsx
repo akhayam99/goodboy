@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
@@ -10,11 +9,11 @@ import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
+import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import type { WorkflowBlockReason } from '../lib';
 
-type WorkflowStepRowProps = {
+type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
@@ -37,7 +36,7 @@ type WorkflowStepRowProps = {
   readonly onResolveFirst?: () => void;
 };
 
-export function WorkflowStepRow({
+export const WorkflowStepRow = ({
   run,
   kind,
   index,
@@ -58,10 +57,9 @@ export function WorkflowStepRow({
   onRenameCommit,
   onRenameCancel,
   onResolveFirst,
-}: WorkflowStepRowProps) {
+}: Props) => {
   const isBlocked = blockReason !== null;
   const isPendingFuture = run.status === 'pending' && !isActionable;
-  const modelLabel = resolvedModel.split('-').slice(1, 3).join('-');
   const isStartable = isActionable && !isBlocked;
   const isRunning = run.status === 'running';
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
@@ -224,42 +222,19 @@ export function WorkflowStepRow({
               {run.name}
             </span>
           )}
-          <div className="flex shrink-0 items-center gap-1.5">
-            <ProviderIcon
-              provider={telemetry?.provider ?? getModelProvider(resolvedModel)}
-              muted={isPendingFuture}
-              variant="glyph"
-            />
-            <span
-              className={cn(
-                'text-2xs tabular-nums',
-                isPendingFuture ? 'text-muted-foreground/50' : 'text-muted-foreground/70',
-              )}
-              title={`model: ${resolvedModel}`}
-            >
-              {modelLabel}
-            </span>
-          </div>
         </div>
-        <div
-          className={cn(
-            'grid transition-[grid-template-rows] duration-200 ease-out',
-            isSelected && !isPendingFuture ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-          )}
-        >
-          <div className="overflow-hidden">
-            <div className="flex flex-col gap-1 px-2 pb-1.5">
-              <AgentMetricsBlock
-                run={run}
-                telemetry={telemetry}
-                aggregate={aggregate}
-                turns={turns}
-                turnsLoading={turnsLoading}
-                variant="workflow"
-              />
-              <ContextWindowBar usage={contextUsage} />
-            </div>
-          </div>
+        <div className="flex flex-col gap-0.5 px-2 pb-1.5">
+          <AgentMetricsInline
+            telemetry={telemetry}
+            aggregate={aggregate}
+            contextUsage={contextUsage}
+            turns={turns}
+            turnsLoading={turnsLoading}
+            plannedModel={resolvedModel}
+            muted={isPendingFuture}
+          />
+          <AgentMetricsBlock run={run} aggregate={aggregate} />
+          <ContextWindowBar usage={contextUsage} />
         </div>
       </div>
       {pendingConfirm ? (
@@ -296,4 +271,4 @@ export function WorkflowStepRow({
       ) : null}
     </div>
   );
-}
+};

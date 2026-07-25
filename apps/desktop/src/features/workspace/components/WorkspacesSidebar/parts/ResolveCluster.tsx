@@ -1,6 +1,8 @@
 import { ArrowUpRight, ChevronDown, ChevronRight, MessageSquareReply, Play } from 'lucide-react';
 import type { Agent, AgentId, DiffComment, PrComment, SessionId } from '@goodboy/types';
 import { openUrl } from '../../../../../shared/lib/editor';
+import { EMPTY_ARRAY } from '../../../../../store';
+import type { AgentMetrics } from '../../../../session/hooks/useAgentMetrics';
 import { resolverStatus, type ResolverState, type ResolverStatus } from '../lib';
 import { ResolveClusterRow } from './ResolveClusterRow';
 
@@ -14,6 +16,8 @@ type ResolveClusterProps = {
   readonly resolverState: Readonly<Record<string, ResolverState>>;
   readonly commentByThreadId: ReadonlyMap<string, PrComment>;
   readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>;
+  readonly metrics: AgentMetrics;
+  readonly isTranscriptLoading: boolean;
   readonly selectedAgentId: AgentId | null;
   readonly expanded: boolean;
   readonly onToggle: () => void;
@@ -32,6 +36,8 @@ export const ResolveCluster = ({
   resolverState,
   commentByThreadId,
   diffCommentByAgentId,
+  metrics,
+  isTranscriptLoading,
   selectedAgentId,
   expanded,
   onToggle,
@@ -130,6 +136,11 @@ export const ResolveCluster = ({
                 status={statusOf(agent)}
                 threadComment={threadComment}
                 diffComment={diffComment}
+                telemetry={metrics.latestTelemetryByAgentId.get(agent.id) ?? null}
+                aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
+                contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
+                turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
+                turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
                 isSelected={agent.id === selectedAgentId}
                 isTaskActive={isTaskActive}
                 canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}

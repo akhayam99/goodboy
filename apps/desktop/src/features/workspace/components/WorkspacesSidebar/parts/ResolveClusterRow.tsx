@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import { MessageSquareReply, Upload } from 'lucide-react';
-import type { Agent, DiffComment, PrComment } from '@goodboy/types';
+import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import {
   ResolverStateBadge,
@@ -9,6 +9,12 @@ import {
 } from '../../../../session/components/ResolverStateBadge';
 import { CommentSnippet } from '../../../../session/components/CommentSnippet';
 import { ForceResolveAction } from '../../../../session/components/ForceResolveAction';
+import {
+  AgentMetricsBlock,
+  type AgentAggregate,
+} from '../../../../session/components/AgentMetricsBlock';
+import { AgentMetricsInline } from '../../../../session/components/AgentMetricsInline';
+import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import type { ResolverStatus } from '../lib';
 
 type Props = {
@@ -18,6 +24,11 @@ type Props = {
   readonly status: ResolverStatus;
   readonly threadComment: PrComment | null;
   readonly diffComment: DiffComment | null;
+  readonly telemetry: TelemetryRecord | null;
+  readonly aggregate: AgentAggregate | null;
+  readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
+  readonly turns: number;
+  readonly turnsLoading: boolean;
   readonly isSelected: boolean;
   readonly isTaskActive: boolean;
   readonly canJump: boolean;
@@ -50,6 +61,11 @@ export const ResolveClusterRow = ({
   status,
   threadComment,
   diffComment,
+  telemetry,
+  aggregate,
+  contextUsage,
+  turns,
+  turnsLoading,
   isSelected,
   isTaskActive,
   canJump,
@@ -126,6 +142,17 @@ export const ResolveClusterRow = ({
             <MessageSquareReply size={11} aria-hidden />
           </button>
         ) : null}
+      </div>
+      <div className="flex flex-col gap-0.5 pl-7">
+        <AgentMetricsInline
+          telemetry={telemetry}
+          aggregate={aggregate}
+          contextUsage={contextUsage}
+          turns={turns}
+          turnsLoading={turnsLoading}
+        />
+        <AgentMetricsBlock run={agent} aggregate={aggregate} />
+        <ContextWindowBar usage={contextUsage} />
       </div>
       {snippet ? <div className="pl-7">{snippet}</div> : null}
       {canPush ? (

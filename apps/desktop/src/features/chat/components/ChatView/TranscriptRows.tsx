@@ -48,6 +48,9 @@ export const TranscriptRows = ({
   };
 
   rows.forEach((row, idx) => {
+    if (row.kind === 'item' && row.item.kind === 'done') {
+      return;
+    }
     if (row.kind === 'item' && row.item.kind === 'oq_answer') {
       flushOrdinal(userTurnOrdinal);
       userTurnOrdinal += 1;

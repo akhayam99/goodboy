@@ -37,9 +37,33 @@ describe('ToolCallCard', () => {
     expect(screen.getByText('file content')).toBeTruthy();
   });
 
-  it('shows a running border when running', () => {
-    const { container } = render(<ToolCallCard item={tool({ ended: false, output: null })} />);
-    expect(container.querySelectorAll('[class*="animate-border-pulse"]').length).toBeGreaterThan(0);
+  it('pulses the state icon while running', () => {
+    render(<ToolCallCard item={tool({ ended: false, output: null })} />);
+    const icon = screen.getByTestId('tool-state-icon');
+    expect(icon.getAttribute('class')).toContain('animate-pulse');
+    expect(icon.getAttribute('class')).toContain('text-warning');
+  });
+
+  it('colors the state icon green once it succeeded', () => {
+    render(<ToolCallCard item={tool()} />);
+    const icon = screen.getByTestId('tool-state-icon');
+    expect(icon.getAttribute('class')).toContain('text-success');
+    expect(icon.getAttribute('class')).not.toContain('animate-pulse');
+  });
+
+  it('colors the state icon red on error', () => {
+    render(<ToolCallCard item={tool({ isError: true })} />);
+    expect(screen.getByTestId('tool-state-icon').getAttribute('class')).toContain('text-danger');
+  });
+
+  it('has a single leading chevron as the expand affordance', () => {
+    render(<ToolCallCard item={tool()} />);
+    const chevron = screen.getByTestId('transcript-chevron');
+    expect(chevron.getAttribute('class')).not.toContain('rotate-90');
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    expect(screen.getAllByTestId('transcript-chevron')[0]!.getAttribute('class')).toContain(
+      'rotate-90',
+    );
   });
 
   it('shows error badge when isError', () => {

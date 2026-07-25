@@ -5,56 +5,27 @@ import {
   CheckCircle2,
   ClipboardList,
   Eye,
+  List,
   Pencil,
   Play,
   RotateCw,
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import {
-  Divider,
-  EmptyState,
-  Markdown,
-  ScrollFade,
-  Textarea,
-  Tooltip,
-  cn,
-  tintClasses,
-  type Tone,
-} from '@goodboy/ui';
-import type { Agent, PlanId, PlanStatus, PlanWithCount, SessionId } from '@goodboy/types';
+import { Divider, EmptyState, Markdown, ScrollFade, Textarea, Tooltip, cn } from '@goodboy/ui';
+import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
+import { fmtTimestamp } from './fmtTimestamp';
+import { planStatusBadge } from './planStatusBadge';
+import { PlanListPanel } from './PlanListPanel';
 
-const PLAN_STATUS_TONE: Record<PlanStatus, Tone> = {
-  active: 'warning',
-  consumed: 'info',
-  superseded: 'neutral',
-  discarded: 'neutral',
-};
-
-const PLAN_STATUS_OVERRIDE: Partial<Record<PlanStatus, string>> = {
-  discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
-};
-
-const planStatusStyle = (status: PlanStatus): string => {
-  const tint = tintClasses(PLAN_STATUS_TONE[status]);
-  return PLAN_STATUS_OVERRIDE[status] ?? cn(tint.bg, tint.text);
-};
-
-const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
-  active: 'active',
-  consumed: 'consumed',
-  superseded: 'superseded',
-  discarded: 'discarded',
-};
-
-interface Props {
+type Props = {
   readonly sessionId: SessionId;
   readonly initialPlanId?: PlanId;
-}
+};
 
-export function PlanStudio({ sessionId, initialPlanId }: Props) {
+export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -70,6 +41,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
   const { showToast } = useToast();
 
   const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
+  const [listOpen, setListOpen] = useState(false);
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
@@ -137,6 +109,7 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
     if (mode === 'edit') commitEdit();
     setMode('preview');
     setSelectedId(id);
+    setListOpen(false);
   };
 
   const handleTrigger = async () => {
@@ -181,16 +154,32 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-background">
-      <div className="flex shrink-0 items-center gap-2.5 px-6 py-4">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
-          <ClipboardList size={16} aria-hidden className="text-success" />
-        </span>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-semibold leading-snug text-foreground">Plans</h1>
-          <p className="text-sm text-muted-foreground">
-            Plans agents drafted for this session. Run one to spawn an executor.
-          </p>
+      <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
+            <ClipboardList size={16} aria-hidden className="text-success" />
+          </span>
+          <div className="flex min-w-0 flex-col">
+            <h1 className="text-xl font-semibold leading-snug text-foreground">Plans</h1>
+            <p className="text-sm text-muted-foreground">
+              Plans agents drafted for this session. Run one to spawn an executor.
+            </p>
+          </div>
         </div>
+        {plans.length > 1 ? (
+          <button
+            type="button"
+            onClick={() => setListOpen((open) => !open)}
+            title="browse the other plans in this session"
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground',
+              listOpen && 'bg-foreground/5 text-foreground',
+            )}
+          >
+            <List size={13} aria-hidden />
+            Other plans ({plans.length - 1})
+          </button>
+        ) : null}
       </div>
       <Divider />
       <div className="flex min-h-0 flex-1">
@@ -206,52 +195,25 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
           </div>
         ) : (
           <>
-            <ScrollFade className="w-72 shrink-0">
-              <ul className="flex w-full flex-col gap-1 px-3 py-4">
-                {plans.map((plan, idx) => {
-                  const isSel = plan.id === selectedId;
-                  const isDiscarded = plan.status === 'discarded';
-                  return (
-                    <li key={plan.id}>
-                      <button
-                        type="button"
-                        onClick={() => handleSelectPlan(plan.id)}
-                        className={cn(
-                          'flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors',
-                          isSel ? 'bg-muted' : 'hover:bg-muted/40',
-                          isDiscarded && 'opacity-60',
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between gap-1.5">
-                          <span className="shrink-0 text-2xs lowercase tracking-wide text-muted-foreground">
-                            plan {idx + 1}
-                          </span>
-                          <span
-                            className={cn(
-                              'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] lowercase tracking-wide',
-                              planStatusStyle(plan.status),
-                            )}
-                          >
-                            {PLAN_STATUS_LABEL[plan.status]}
-                          </span>
-                        </div>
-                        <span className="line-clamp-2 text-xs text-foreground">{plan.title}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {fmtTimestamp(plan.createdAt)}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </ScrollFade>
-            <Divider orientation="vertical" />
             <div className="min-h-0 flex-1">
               <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-3xl flex-col gap-2 px-6 py-4">
                 {selected ? (
                   <>
                     <div className="flex shrink-0 items-start gap-3">
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-2xs text-muted-foreground">
+                      <div className="flex min-w-0 flex-1 flex-col gap-1 text-2xs text-muted-foreground">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <h2 className="min-w-0 truncate text-sm font-medium text-foreground">
+                            {selected.title}
+                          </h2>
+                          <span
+                            className={cn(
+                              'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] lowercase tracking-wide',
+                              planStatusBadge({ status: selected.status }).className,
+                            )}
+                          >
+                            {planStatusBadge({ status: selected.status }).label}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-1.5">
                           <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
                           <span>Created by</span>
@@ -486,21 +448,23 @@ export function PlanStudio({ sessionId, initialPlanId }: Props) {
                 )}
               </div>
             </div>
+            {listOpen && plans.length > 1 ? (
+              <>
+                <Divider orientation="vertical" />
+                <PlanListPanel
+                  plans={plans}
+                  selectedId={selectedId}
+                  onSelect={handleSelectPlan}
+                  onClose={() => setListOpen(false)}
+                />
+              </>
+            ) : null}
           </>
         )}
       </div>
     </div>
   );
-}
-
-function fmtTimestamp(ts: string | number): string {
-  return new Date(ts).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+};
 
 function planToSource(plan: { title: string; bodyMd: string }): string {
   const head = plan.title.startsWith('#') ? plan.title : `# ${plan.title}`;

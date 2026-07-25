@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { Divider } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -85,7 +84,7 @@ function TranscriptCardImpl({
     case 'oq_answer':
       return null;
     case 'done':
-      return <Divider />;
+      return null;
     case 'permission_request':
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':

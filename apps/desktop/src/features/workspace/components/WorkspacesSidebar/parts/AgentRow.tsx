@@ -10,9 +10,8 @@ import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
-import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
+import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import { AgentLifetime } from './AgentLifetime';
 
 type Props = {
   readonly run: Agent;
@@ -173,10 +172,6 @@ export const AgentRow = ({
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-1.5">
-              <ProviderIcon provider={telemetry?.provider} variant="glyph" />
-              <span className="text-2xs text-muted-foreground/70 group-hover:hidden">
-                <AgentLifetime run={run} />
-              </span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -192,25 +187,16 @@ export const AgentRow = ({
             </div>
           ))}
       </div>
-      <div
-        className={cn(
-          'grid transition-[grid-template-rows] duration-200 ease-out',
-          isSelected ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="flex flex-col gap-1 px-2 pb-1.5">
-            <AgentMetricsBlock
-              run={run}
-              telemetry={telemetry}
-              aggregate={aggregate}
-              turns={turns}
-              turnsLoading={turnsLoading}
-              variant="adhoc"
-            />
-            <ContextWindowBar usage={contextUsage} />
-          </div>
-        </div>
+      <div className="flex flex-col gap-0.5 px-2 pb-1.5">
+        <AgentMetricsInline
+          telemetry={telemetry}
+          aggregate={aggregate}
+          contextUsage={contextUsage}
+          turns={turns}
+          turnsLoading={turnsLoading}
+        />
+        <AgentMetricsBlock run={run} aggregate={aggregate} />
+        <ContextWindowBar usage={contextUsage} />
       </div>
     </li>
   );

@@ -23,11 +23,13 @@ import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useLiveTerminalCount,
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionPlans,
   useSessionStageInfo,
   useSessionUnreadLens,
+  useSummarizerStatus,
 } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
@@ -136,7 +138,14 @@ export const LensColumn = ({
     }
     return Object.values(runs).filter((r) => r.status === 'pending').length;
   });
-  const terminalOpen = useAppStore((s) => s.terminalSessions[sessionId] === 'open');
+  const liveTerminals = useLiveTerminalCount(sessionId);
+  const summarizerStatus = useSummarizerStatus(sessionId).status;
+  const summarizerDot: LensRow['dot'] =
+    summarizerStatus === 'running'
+      ? 'running'
+      : summarizerStatus === 'error'
+        ? 'attention'
+        : undefined;
   const hasPr = useAppStore(
     (s) => s.sessionGithub[sessionId]?.pr != null || s.sessionGitlabMr[sessionId]?.mr != null,
   );
@@ -160,8 +169,7 @@ export const LensColumn = ({
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const reviewDraftCount = useAppStore(
     (s) =>
-      (s.reviewDrafts[sessionId] ?? EMPTY_ARRAY).filter((draft) => draft.status === 'draft')
-        .length,
+      (s.reviewDrafts[sessionId] ?? EMPTY_ARRAY).filter((draft) => draft.status === 'draft').length,
   );
   const linearCount = externalTasks.filter((task) => task.provider === 'linear').length;
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
@@ -314,9 +322,21 @@ export const LensColumn = ({
     {
       label: 'Context',
       rows: [
-        { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary' },
-        { kind: 'decisions', label: 'Decisions', icon: CheckCheck, tone: 'success' },
-        { kind: 'last_output_summary', label: 'Session summary', icon: Activity, tone: 'info' },
+        { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary', dot: summarizerDot },
+        {
+          kind: 'decisions',
+          label: 'Decisions',
+          icon: CheckCheck,
+          tone: 'success',
+          dot: summarizerDot,
+        },
+        {
+          kind: 'last_output_summary',
+          label: 'Session summary',
+          icon: Activity,
+          tone: 'info',
+          dot: summarizerDot,
+        },
       ],
     },
     {
@@ -331,7 +351,8 @@ export const LensColumn = ({
           label: 'Terminal',
           icon: SquareTerminal,
           tone: 'neutral',
-          dot: terminalOpen ? 'running' : undefined,
+          count: liveTerminals,
+          dot: liveTerminals > 0 ? 'running' : undefined,
         },
       ],
     },

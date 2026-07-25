@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronRight, Rocket } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 import { Markdown, cn } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
 import { MARKER_ACCENT } from '../marker-accents';
+import { TranscriptChevron } from '../TranscriptChevron';
+import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
 import { TranscriptShell } from '../TranscriptShell';
 
 const accent = MARKER_ACCENT.primary;
@@ -35,17 +37,9 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
         onClick={() => setOpen((v) => !v)}
         tone="primary"
         variant="leftBorder"
-        className="group flex w-full items-center gap-2 text-left motion-safe:transition-opacity hover:opacity-80"
+        className={cn('flex w-full items-center gap-2 text-left', TRANSCRIPT_ROW_HOVER)}
       >
-        <ChevronRight
-          size={11}
-          aria-hidden
-          className={cn(
-            'shrink-0 opacity-50 motion-safe:transition-transform',
-            accent.icon,
-            open && 'rotate-90',
-          )}
-        />
+        <TranscriptChevron open={open} />
         <Rocket size={11} aria-hidden className={cn('shrink-0', accent.icon)} />
         <span
           className={cn(

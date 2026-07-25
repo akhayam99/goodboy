@@ -21,7 +21,7 @@ vi.mock('./store', () => ({
   useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
 }));
 
-import { sumSessionCost, useSessionUnreadLens } from './selectors';
+import { sumSessionCost, useLiveTerminalCount, useSessionUnreadLens } from './selectors';
 
 type Params = {
   readonly kind: TelemetryKind;
@@ -71,7 +71,38 @@ beforeEach(() => {
     selectedAgentId: {},
     currentSessionId: null,
     agentKindOverride: {},
+    terminalTabs: {},
+    terminalSessions: {},
   };
+});
+
+describe('useLiveTerminalCount', () => {
+  it('counts dock tabs that have not exited', () => {
+    store.state.terminalTabs = {
+      [SESSION_ID]: [{ status: 'running' }, { status: 'attention' }, { status: 'exited' }],
+    };
+
+    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
+
+    expect(result.current).toBe(2);
+  });
+
+  it('counts the scripts-panel terminal as a live terminal too', () => {
+    store.state.terminalSessions = { [SESSION_ID]: 'open' };
+
+    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
+
+    expect(result.current).toBe(1);
+  });
+
+  it('returns zero once every terminal is gone', () => {
+    store.state.terminalTabs = { [SESSION_ID]: [{ status: 'exited' }] };
+    store.state.terminalSessions = { [SESSION_ID]: 'closed' };
+
+    const { result } = renderHook(() => useLiveTerminalCount(SESSION_ID));
+
+    expect(result.current).toBe(0);
+  });
 });
 
 describe('sumSessionCost', () => {
