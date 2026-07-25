@@ -30,6 +30,8 @@ pub struct SummarizeArgs {
     pub binary: String,
     pub user_message: String,
     pub system_prompt: String,
+    #[serde(default)]
+    pub working_dir: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -45,7 +47,15 @@ pub async fn summarize_session(args: SummarizeArgs) -> Result<SummarizeResult, S
     tauri::async_runtime::spawn_blocking(move || {
         let cli_args = build_cli_args(&args)?;
 
-        let output = crate::path_env::command(&args.binary)
+        let mut command = crate::path_env::command(&args.binary);
+        crate::aux_spawn::scrub_nested_session_env(&mut command);
+        if let Some(dir) = args.working_dir.as_deref() {
+            if !dir.is_empty() {
+                command.current_dir(dir);
+            }
+        }
+
+        let output = command
             .args(&cli_args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -70,6 +80,8 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             args.model.clone(),
             "--system-prompt".to_string(),
             args.system_prompt.clone(),
+            "--setting-sources".to_string(),
+            crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
             "--output-format".to_string(),
             "json".to_string(),
             "--no-session-persistence".to_string(),
@@ -93,6 +105,54 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             "--skip-git-repo-check".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
         ]),
+        "gemini" => Ok(vec![
+            "-p".to_string(),
+            format!("{}\n\n{}", args.system_prompt, args.user_message),
+            "--model".to_string(),
+            args.model.clone(),
+            "--sandbox".to_string(),
+        ]),
         other => Err(SummarizeError::UnknownProvider(other.to_string())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_args(provider_id: &str) -> SummarizeArgs {
+        SummarizeArgs {
+            provider_id: provider_id.to_string(),
+            model: "cheap-model".to_string(),
+            binary: "claude".to_string(),
+            user_message: "summarize this".to_string(),
+            system_prompt: "you summarize".to_string(),
+            working_dir: None,
+        }
+    }
+
+    #[test]
+    fn anthropic_args_isolate_user_settings() {
+        let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
+        let idx = cli
+            .iter()
+            .position(|a| a == "--setting-sources")
+            .expect("--setting-sources");
+        assert_eq!(cli[idx + 1], "project,local");
+        assert!(!cli.iter().any(|a| a == "--bare"));
+    }
+
+    #[test]
+    fn gemini_is_supported() {
+        let cli = build_cli_args(&make_args("gemini")).expect("gemini args");
+        assert!(cli.iter().any(|a| a == "--sandbox"));
+        let idx = cli.iter().position(|a| a == "--model").expect("--model");
+        assert_eq!(cli[idx + 1], "cheap-model");
+    }
+
+    #[test]
+    fn unknown_provider_is_rejected() {
+        let err = build_cli_args(&make_args("openrouter")).expect_err("unknown provider");
+        assert_eq!(err.kind(), "unknown_provider");
     }
 }

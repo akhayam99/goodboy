@@ -195,6 +195,8 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 args.model.to_string(),
                 "--permission-mode".to_string(),
                 args.permission_mode.to_string(),
+                "--setting-sources".to_string(),
+                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
             ]);
             if let Some(sp) = args.system_prompt {
                 v.push("--append-system-prompt".to_string());
@@ -245,17 +247,8 @@ pub(crate) fn spawn_one(
     args: SpawnOneArgs<'_>,
 ) -> Result<String, TurnError> {
     let mut command = crate::path_env::command(args.binary);
-    command
-        .current_dir(args.working_dir)
-        // Strip env vars that signal "running inside another Claude Code /
-        // Agent SDK session". When Goodboy is launched from such a context the
-        // vars propagate to children; the claude CLI then either refuses with
-        // a nested-session error or falls through to broken auth (401). We
-        // want every spawn to behave as a fresh shell invocation that hits
-        // claude's own ~/.claude credentials.
-        .env_remove("CLAUDECODE")
-        .env_remove("CLAUDE_CODE_ENTRYPOINT")
-        .env_remove("CLAUDE_AGENT_SDK_VERSION");
+    command.current_dir(args.working_dir);
+    crate::aux_spawn::scrub_nested_session_env(&mut command);
 
     if let (Some(env_name), Some(cred_id)) = (args.api_key_env, args.credential_id) {
         if let Ok(Some(secret)) = crate::secrets::read(&format!("provider_credential.{cred_id}")) {
@@ -564,6 +557,26 @@ mod tests {
         let args = make_args(None, None, &empty);
         let cli = build_provider_cli_args("claude", &args);
         assert!(!cli.contains(&"--effort".to_string()));
+    }
+
+    #[test]
+    fn claude_args_isolate_user_settings() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        let idx = cli
+            .iter()
+            .position(|a| a == "--setting-sources")
+            .expect("--setting-sources");
+        assert_eq!(cli[idx + 1], "project,local");
+    }
+
+    #[test]
+    fn claude_args_never_use_bare() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, Some("sp"), &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        assert!(!cli.iter().any(|a| a == "--bare"));
     }
 
     #[test]

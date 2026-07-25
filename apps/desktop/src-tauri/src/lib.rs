@@ -1,4 +1,5 @@
 mod attachment;
+mod aux_spawn;
 mod bridge;
 mod budget;
 mod config_export;
