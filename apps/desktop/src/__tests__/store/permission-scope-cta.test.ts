@@ -266,6 +266,7 @@ describe('resolvePermissionRequest', () => {
       }
       expect(decEv.decidedBy).toBe('user');
       expect(decEv.decision).toBe(scope === 'deny' ? 'deny' : 'allow');
+      expect(decEv.scope).toBe(scope);
     }
   });
 });

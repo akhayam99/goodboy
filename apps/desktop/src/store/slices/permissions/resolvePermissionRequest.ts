@@ -2,6 +2,7 @@ import type {
   AgentId,
   IsoDateTime,
   PermissionDecisionKind,
+  PermissionScope,
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
@@ -14,7 +15,7 @@ type Params = {
   toolUseId: string;
   toolName: string;
   runId: ProviderRunId;
-  scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
+  scope: PermissionScope;
 };
 
 export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
@@ -47,6 +48,7 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
       runId,
       toolUseId,
       decision: scope === 'deny' ? 'deny' : 'allow',
+      scope,
       ruleId: null,
       decidedBy: 'user',
       at: now,

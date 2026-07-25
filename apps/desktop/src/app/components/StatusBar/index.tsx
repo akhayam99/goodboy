@@ -15,6 +15,7 @@ const STATE_LABEL: Record<TurnState['kind'], string | null> = {
   starting: 'starting',
   idle: null,
   running: 'running',
+  blocked: 'waiting on approval',
   error: 'failed',
   ended: 'ended',
 };

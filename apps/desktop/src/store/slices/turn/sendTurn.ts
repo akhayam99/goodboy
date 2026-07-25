@@ -484,7 +484,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (nextAgentState.kind === 'draft') {
         nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
       }
-      if (nextAgentState.kind === 'error') {
+      if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
         nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
       }
       nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });

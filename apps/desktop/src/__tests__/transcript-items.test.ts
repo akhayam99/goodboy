@@ -116,6 +116,26 @@ describe('reduceTranscript, permission_decision', () => {
     }
     expect(dec.toolName).toBe('tu-orphan');
   });
+
+  it('carries the approval scope, and leaves it unset for events persisted without one', () => {
+    const scoped: TurnEvent = {
+      kind: 'permission_decision',
+      runId: RUN,
+      toolUseId: 'tu-scoped',
+      decision: 'allow',
+      scope: 'session',
+      ruleId: null,
+      decidedBy: 'user',
+      at: AT,
+    };
+    const items = reduceTranscript([scoped, permDecEvent('tu-legacy')]);
+    const [withScope, withoutScope] = items;
+    if (withScope?.kind !== 'permission_decision' || withoutScope?.kind !== 'permission_decision') {
+      throw new Error('expected two permission_decision items');
+    }
+    expect(withScope.scope).toBe('session');
+    expect(withoutScope.scope).toBeUndefined();
+  });
 });
 
 describe('reduceTranscript, request + decision pair', () => {

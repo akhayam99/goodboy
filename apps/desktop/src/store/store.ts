@@ -18,6 +18,7 @@ import type {
   OverrideSettings,
   OpenQuestion,
   OpenQuestionId,
+  PermissionScope,
   PlanId,
   PlanStatus,
   StepId,
@@ -460,7 +461,12 @@ export type AppActions = {
     toolUseId: string;
     toolName: string;
     runId: ProviderRunId;
-    scope: 'global' | 'workspace' | 'session' | 'once' | 'deny';
+    scope: PermissionScope;
+  }): Promise<void>;
+  retryBlockedTool(input: {
+    sessionId: SessionId;
+    agentId: AgentId;
+    toolName: string;
   }): Promise<void>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;

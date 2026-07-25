@@ -117,6 +117,7 @@ describe('status icon mapping', () => {
     'starting',
     'idle',
     'running',
+    'blocked',
     'ended',
     'error',
   ];
@@ -127,6 +128,7 @@ describe('status icon mapping', () => {
       starting: 'loader',
       idle: 'circle',
       running: 'pulse',
+      blocked: 'shield-alert',
       ended: 'check',
       error: 'x',
     };
