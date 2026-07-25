@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  AgentSourceKind,
   IsoDateTime,
   PlanId,
   PlanWithCount,
@@ -36,6 +37,7 @@ type SpawnArgs = {
   kindOverride?: AgentKind;
   sourceThreadId?: string;
   sourceCommentUrl?: string;
+  sourceKind?: AgentSourceKind;
   deferKickoff?: boolean;
 };
 
@@ -97,6 +99,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
       ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
+      ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
     });
     const refreshed = await invokeAgentList(sessionId);
     set((s) => ({

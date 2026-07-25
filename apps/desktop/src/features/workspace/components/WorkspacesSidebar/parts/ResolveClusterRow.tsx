@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
-import { MessageSquareReply, Upload } from 'lucide-react';
+import { MessageSquareReply, PanelRight, Upload } from 'lucide-react';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import {
@@ -15,6 +15,9 @@ import {
 } from '../../../../session/components/AgentMetricsBlock';
 import { AgentMetricsInline } from '../../../../session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
+import { ForceCloseResolverAction } from '../../../../session/components/ForceCloseResolverAction';
+import { diffCommentLocation } from '../../../../session/diff-comment-location';
+import { prCommentLocation } from '../../../../session/pr-comment-location';
 import type { ResolverStatus } from '../lib';
 
 type Props = {
@@ -32,26 +35,11 @@ type Props = {
   readonly isSelected: boolean;
   readonly isTaskActive: boolean;
   readonly canJump: boolean;
+  readonly isInspected?: boolean;
   readonly onSelect: () => void;
   readonly onJump: () => void;
+  readonly onInspect?: () => void;
   readonly onResolveThread: (threadId: string) => Promise<void> | void;
-};
-
-const diffLocation = (comment: DiffComment): string => {
-  if (comment.anchor == null) {
-    return comment.filePath;
-  }
-  return `${comment.filePath}:${comment.anchor.lineNumber}`;
-};
-
-const commentLocation = (comment: PrComment): string | null => {
-  if (comment.source === 'issue') {
-    return 'conversation';
-  }
-  if (comment.path == null) {
-    return null;
-  }
-  return comment.line != null ? `${comment.path}:${comment.line}` : comment.path;
 };
 
 export const ResolveClusterRow = ({
@@ -69,8 +57,10 @@ export const ResolveClusterRow = ({
   isSelected,
   isTaskActive,
   canJump,
+  isInspected = false,
   onSelect,
   onJump,
+  onInspect,
   onResolveThread,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
@@ -90,11 +80,14 @@ export const ResolveClusterRow = ({
   const snippet = threadComment ? (
     <CommentSnippet
       author={threadComment.author}
-      location={commentLocation(threadComment)}
+      location={prCommentLocation({ comment: threadComment })}
       body={threadComment.body}
     />
   ) : diffComment ? (
-    <CommentSnippet location={diffLocation(diffComment)} body={diffComment.body} />
+    <CommentSnippet
+      location={diffCommentLocation({ comment: diffComment })}
+      body={diffComment.body}
+    />
   ) : null;
   return (
     <div
@@ -128,6 +121,24 @@ export const ResolveClusterRow = ({
           {agent.name}
         </span>
         <ResolverStateBadge state={resolverBadgeState(status)} />
+        {onInspect !== undefined ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onInspect();
+            }}
+            title="Inspect resolver"
+            aria-label="Inspect resolver"
+            aria-pressed={isInspected}
+            className={cn(
+              'shrink-0 rounded-md p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground',
+              isInspected && 'bg-foreground/10 text-foreground',
+            )}
+          >
+            <PanelRight size={11} aria-hidden />
+          </button>
+        ) : null}
         {canJump ? (
           <button
             type="button"
@@ -137,7 +148,7 @@ export const ResolveClusterRow = ({
             }}
             title="Go to comment"
             aria-label="Go to comment"
-            className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="shrink-0 rounded-md p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <MessageSquareReply size={11} aria-hidden />
           </button>
@@ -179,7 +190,8 @@ export const ResolveClusterRow = ({
           </button>
         </div>
       ) : null}
-      <div className="pl-7">
+      <div className="flex items-center justify-end gap-1.5 pl-7">
+        <ForceCloseResolverAction agent={agent} sessionId={agent.sessionId} status={status} />
         <ForceResolveAction agent={agent} sessionId={agent.sessionId} status={status} />
       </div>
     </div>

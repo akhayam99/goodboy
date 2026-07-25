@@ -209,7 +209,6 @@ describe('useWorkspaceRuns', () => {
     const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
     expect(result.current.freeAgents.map((n) => n.id)).toEqual(['free-1']);
     expect(result.current.resolveQueue.map((n) => n.id)).toEqual(['resolve-1']);
-    expect(result.current.resolveQueue[0]!.resolver?.commentUrl).toBe('https://x/y');
     expect(result.current.aggregate.runningCount).toBe(2);
     expect(result.current.aggregate.agentCount).toBe(2);
   });

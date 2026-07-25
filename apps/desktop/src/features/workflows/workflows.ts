@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AgentEffort,
   AgentRole,
+  AgentSourceKind,
   IsoDateTime,
   ParallelMergeStrategy,
   ParallelGroup,
@@ -86,6 +87,7 @@ type RawAgentRow = {
   readonly verbosity: string | null;
   readonly sourceThreadId: string | null;
   readonly sourceCommentUrl: string | null;
+  readonly sourceKind: string | null;
 };
 
 function rowToStep(row: RawWorkflowStepRow): Step {
@@ -162,6 +164,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
+    ...(row.sourceKind != null && { sourceKind: row.sourceKind as AgentSourceKind }),
   };
 }
 
@@ -292,6 +295,7 @@ export type AgentInsertArgs = {
   readonly verbosity?: VerbosityLevel;
   readonly sourceThreadId?: string;
   readonly sourceCommentUrl?: string;
+  readonly sourceKind?: AgentSourceKind;
 };
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
@@ -313,6 +317,7 @@ export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> =>
       verbosity: run.verbosity ?? null,
       sourceThreadId: run.sourceThreadId ?? null,
       sourceCommentUrl: run.sourceCommentUrl ?? null,
+      sourceKind: run.sourceKind ?? null,
     },
   });
   return rowToAgent(row);

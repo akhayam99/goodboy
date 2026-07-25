@@ -103,6 +103,7 @@ export type {
   Agent,
   AgentEffort,
   AgentRole,
+  AgentSourceKind,
   AgentStatus,
   ParallelAgent,
   ParallelMergeStrategy,

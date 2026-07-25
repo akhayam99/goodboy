@@ -228,6 +228,7 @@ export const PrDetailPanel = ({
       kindOverride: args.kind,
       ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
       sourceCommentUrl: args.sourceCommentUrl,
+      sourceKind: args.sourceKind,
       ...(deferKickoff && { deferKickoff: true }),
     });
     await setAgentConfig(sessionId, agentId, {

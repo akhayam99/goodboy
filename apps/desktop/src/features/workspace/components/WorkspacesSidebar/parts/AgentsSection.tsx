@@ -36,7 +36,7 @@ import { WorkflowStartButton } from './WorkflowStartButton';
 import { CollapsedSummary } from './CollapsedSummary';
 import { AdHocRow } from './AdHocRow';
 import { WorkflowRow } from './WorkflowRow';
-import { pluralize, workflowKindName, type WorkflowBlockReason } from '../lib';
+import { pluralize, workflowKindName, type ResolverState, type WorkflowBlockReason } from '../lib';
 
 type Props = {
   task: Session;
@@ -44,6 +44,8 @@ type Props = {
   workflowRunId?: WorkflowRunId;
   workflowVariant?: 'sidebar' | 'detail';
   showWorkflowAttach?: boolean;
+  inspectedResolverId?: AgentId | null;
+  onInspectResolver?: (agentId: AgentId) => void;
 };
 
 export const AgentsSection = ({
@@ -52,6 +54,8 @@ export const AgentsSection = ({
   workflowRunId,
   workflowVariant = 'sidebar',
   showWorkflowAttach = true,
+  inspectedResolverId = null,
+  onInspectResolver,
 }: Props) => {
   const showWorkflows = only == null || only === 'workflows';
   const showAgents = only == null || only === 'agents';
@@ -113,7 +117,7 @@ export const AgentsSection = ({
   );
   const resolverState = useAppStore(
     useShallow((s) => {
-      const out: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'> = {};
+      const out: Record<string, ResolverState> = {};
       const runs = s.sessionPhaseRuns[task.id];
       if (!runs) {
         return out;
@@ -700,9 +704,11 @@ export const AgentsSection = ({
               metrics={metrics}
               isTranscriptLoading={loading.transcript}
               selectedAgentId={selectedAgentId}
+              inspectedAgentId={inspectedResolverId}
               expanded={forceExpanded || resolveExpanded}
               onToggle={() => setResolveExpanded((v) => !v)}
               onSelect={onPickAgent}
+              onInspect={onInspectResolver}
               onForceNext={() => void activateNextResolver(task.id)}
               onResolveThread={onResolveThread}
             />

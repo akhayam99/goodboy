@@ -12,7 +12,6 @@ export type SpawnNode = {
   readonly costUsd: number;
   readonly outputSummary: string | null;
   readonly children: ReadonlyArray<SpawnNode>;
-  readonly resolver?: { readonly state: string; readonly commentUrl: string | null };
   readonly isSelected: boolean;
 };
 
@@ -59,28 +58,6 @@ export const outcomeTone = (status: SpawnNodeStatus): Tone => {
     return 'danger';
   }
   return 'neutral';
-};
-
-export const resolverOutcome = (state: string): { tone: Tone; label: string } => {
-  if (state === 'resolved') {
-    return { tone: 'success', label: 'resolved' };
-  }
-  if (state === 'committed') {
-    return { tone: 'success', label: 'committed' };
-  }
-  if (state === 'wontfix') {
-    return { tone: 'neutral', label: "won't fix" };
-  }
-  if (state === 'awaiting') {
-    return { tone: 'warning', label: 'awaiting you' };
-  }
-  if (state === 'failed') {
-    return { tone: 'danger', label: 'stalled' };
-  }
-  if (state === 'running') {
-    return { tone: 'info', label: 'running' };
-  }
-  return { tone: 'neutral', label: 'queued' };
 };
 
 const KIND_EYEBROW_LABEL: Partial<Record<AgentKind, string>> = {

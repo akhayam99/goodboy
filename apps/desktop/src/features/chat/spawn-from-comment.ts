@@ -1,4 +1,4 @@
-import type { PrComment, ProviderId, PullRequestState } from '@goodboy/types';
+import type { AgentSourceKind, PrComment, ProviderId, PullRequestState } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 import { kindRouting } from '../session/agent-kind';
 import type { EffortLevel } from './utils/chat-constants';
@@ -94,6 +94,7 @@ export type CommentAgentArgs = {
   readonly initialPrompt: string;
   readonly sourceThreadId?: string;
   readonly sourceCommentUrl: string;
+  readonly sourceKind: AgentSourceKind;
   readonly mode?: ResolveMode;
 };
 
@@ -122,6 +123,7 @@ export const buildCommentAgentArgs = (
     initialPrompt: buildCommentAgentPrompt({ comment: c, pr, replies, mode, hint: choice.hint }),
     ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
     sourceCommentUrl: c.url,
+    sourceKind: c.source === 'review' ? 'review_comment' : 'issue_comment',
     ...(mode !== 'fix' && { mode }),
   };
 };

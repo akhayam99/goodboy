@@ -12,6 +12,10 @@ vi.mock('../../../../session/components/ForceResolveAction', () => ({
   ForceResolveAction: () => null,
 }));
 
+vi.mock('../../../../session/components/ForceCloseResolverAction', () => ({
+  ForceCloseResolverAction: () => null,
+}));
+
 import { ResolveClusterRow } from './ResolveClusterRow';
 
 const SID = 'sess-1' as SessionId;

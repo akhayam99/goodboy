@@ -7,6 +7,7 @@ import {
   buildResolverIndex,
   resolverStatus,
   type ResolverIndex,
+  type ResolverState,
   type ResolverStatus,
 } from '../../resolver-linkage';
 
@@ -47,7 +48,7 @@ export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
   );
   const resolverState = useAppStore(
     useShallow((s) => {
-      const out: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'> = {};
+      const out: Record<string, ResolverState> = {};
       const runs = s.sessionPhaseRuns[sessionId];
       if (!runs) {
         return out;

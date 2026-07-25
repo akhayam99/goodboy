@@ -130,6 +130,12 @@ describe('ForceResolveAction', () => {
     },
   );
 
+  it('stays available for a resolver the user force closed', () => {
+    render(<ForceResolveAction agent={AGENT} sessionId={SESSION_ID} status="stopped" />);
+
+    expect(screen.getByRole('button', { name: 'Mark resolved' })).toBeDefined();
+  });
+
   it('resets the armed note when the selected resolver changes', () => {
     const view = render(
       <ForceResolveAction agent={AGENT} sessionId={SESSION_ID} status="awaiting" />,
