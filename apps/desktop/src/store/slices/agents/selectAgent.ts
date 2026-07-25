@@ -2,6 +2,7 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { listMessagesForAgent, listTurnEventsForAgent } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
+import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { EMPTY_LOADING } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
 
@@ -42,7 +43,15 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
       runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
 
-    set((state) => ({ sessionStudio: { ...state.sessionStudio, [sessionId]: null } }));
+    set((state) =>
+      workSurfaceFocus({
+        sessionId,
+        focus: { kind: 'agent', agentId },
+        activeLens: state.activeLens,
+        sessionStudio: state.sessionStudio,
+        selectedAgentId: state.selectedAgentId,
+      }),
+    );
 
     const cached = get().transcripts[agentId];
     if (cached) {
