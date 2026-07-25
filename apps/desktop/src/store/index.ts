@@ -7,6 +7,7 @@ export {
   useCurrentWorkspace,
   useDiffComments,
   useFilesTouched,
+  useLiveTerminalCount,
   useSessionAnsweredQuestions,
   useSessionById,
   useSessionCost,
