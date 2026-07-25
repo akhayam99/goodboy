@@ -94,6 +94,19 @@ impl From<DbError> for ScriptError {
 // Command — run a workspace script in a pty
 // ---------------------------------------------------------------------------
 
+fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -> CommandBuilder {
+    let mut cmd = CommandBuilder::new("bash");
+    cmd.arg("-c");
+    cmd.arg(body);
+    cmd.cwd(cwd);
+    for (key, value) in login_env {
+        cmd.env(key, value);
+    }
+    cmd.env("PATH", crate::path_env::resolved_path());
+    cmd.env("TERM", "xterm-256color");
+    cmd
+}
+
 /// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
 /// returns immediately. Output is streamed as `script-output` events (base64
 /// chunks). A `script-exit` event fires when the process exits or is killed.
@@ -131,12 +144,7 @@ pub async fn workspace_script_run(
             })
             .map_err(|e| ScriptError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("bash");
-        cmd.arg("-c");
-        cmd.arg(&body);
-        cmd.cwd(&cwd);
-        cmd.env("PATH", crate::path_env::resolved_path());
-        cmd.env("TERM", "xterm-256color");
+        let cmd = build_script_command(&body, &cwd, crate::path_env::resolved_env());
 
         let child = pair
             .slave
@@ -306,4 +314,62 @@ pub fn workspace_script_cancel(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn login_env() -> Vec<(String, String)> {
+        vec![
+            ("GITHUB_PACKAGES_TOKEN".to_string(), "tok".to_string()),
+            ("NVM_DIR".to_string(), "/home/u/.nvm".to_string()),
+        ]
+    }
+
+    #[test]
+    fn script_runs_through_bash_with_the_body_and_cwd() {
+        let cmd = build_script_command("yarn install", "/tmp/worktree", &login_env());
+        let argv: Vec<String> = cmd
+            .get_argv()
+            .iter()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(argv, vec!["bash", "-c", "yarn install"]);
+        assert_eq!(
+            cmd.get_cwd().map(|c| c.to_string_lossy().into_owned()),
+            Some("/tmp/worktree".to_string())
+        );
+    }
+
+    #[test]
+    fn script_inherits_the_login_shell_environment() {
+        let cmd = build_script_command("yarn install", "/tmp/worktree", &login_env());
+        assert_eq!(
+            cmd.get_env("GITHUB_PACKAGES_TOKEN")
+                .map(|v| v.to_string_lossy().into_owned()),
+            Some("tok".to_string())
+        );
+        assert_eq!(
+            cmd.get_env("NVM_DIR").map(|v| v.to_string_lossy().into_owned()),
+            Some("/home/u/.nvm".to_string())
+        );
+    }
+
+    #[test]
+    fn script_path_and_term_win_over_the_login_environment() {
+        let env = vec![
+            ("PATH".to_string(), "/stale".to_string()),
+            ("TERM".to_string(), "dumb".to_string()),
+        ];
+        let cmd = build_script_command("echo hi", "/tmp", &env);
+        assert_eq!(
+            cmd.get_env("TERM").map(|v| v.to_string_lossy().into_owned()),
+            Some("xterm-256color".to_string())
+        );
+        assert_ne!(
+            cmd.get_env("PATH").map(|v| v.to_string_lossy().into_owned()),
+            Some("/stale".to_string())
+        );
+    }
 }

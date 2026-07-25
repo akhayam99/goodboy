@@ -61,33 +61,7 @@ impl TerminalError {
 }
 
 fn login_shell() -> String {
-    if let Ok(shell) = std::env::var("SHELL") {
-        let shell = shell.trim();
-        if !shell.is_empty() && std::path::Path::new(shell).exists() {
-            return shell.to_string();
-        }
-    }
-    for candidate in shell_fallbacks() {
-        if std::path::Path::new(candidate).exists() {
-            return (*candidate).to_string();
-        }
-    }
-    "/bin/sh".to_string()
-}
-
-#[cfg(target_os = "macos")]
-fn shell_fallbacks() -> &'static [&'static str] {
-    &["/bin/zsh", "/bin/bash"]
-}
-
-#[cfg(target_os = "linux")]
-fn shell_fallbacks() -> &'static [&'static str] {
-    &["/bin/bash", "/bin/zsh"]
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
-fn shell_fallbacks() -> &'static [&'static str] {
-    &["/bin/sh"]
+    crate::path_env::login_shell()
 }
 
 #[tauri::command]

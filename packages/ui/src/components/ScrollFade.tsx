@@ -72,8 +72,8 @@ export const ScrollFade = ({
         onScroll={sync}
         className={cn(
           horizontal
-            ? 'h-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-            : 'h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+            ? 'h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           viewportClassName,
         )}
       >

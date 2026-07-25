@@ -165,4 +165,26 @@ describe('NotificationCenter', () => {
     expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', expected);
     expect(screen.queryByRole('button', { name: /confirm retry with selected model/i })).toBeNull();
   });
+
+  it('keeps a long notification list inside a bounded scroll viewport', async () => {
+    state.notifications = Array.from({ length: 30 }, (_, i) => ({
+      id: `n${i}`,
+      read: true,
+      severity: 'info',
+      title: `title ${i}`,
+      body: 'b',
+      ts: new Date().toISOString(),
+    })) as unknown as ReadonlyArray<Notification>;
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+
+    const list = screen.getByText('title 0').closest('ul');
+    const viewport = list?.parentElement;
+    const fadeRoot = viewport?.parentElement;
+    expect(viewport?.className).toContain('overflow-y-auto');
+    expect(viewport?.className).toContain('max-h-[inherit]');
+    expect(fadeRoot?.className).toContain('max-h-80');
+  });
 });

@@ -149,6 +149,9 @@ pub async fn provider_lifecycle_run(
         cmd.arg(&command);
         let cwd = std::env::var("HOME").unwrap_or_else(|_| "/".to_string());
         cmd.cwd(&cwd);
+        for (key, value) in crate::path_env::resolved_env() {
+            cmd.env(key, value);
+        }
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");
         if let Ok(home) = std::env::var("HOME") {

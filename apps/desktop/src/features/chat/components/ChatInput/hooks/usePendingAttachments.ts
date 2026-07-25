@@ -9,6 +9,7 @@ import {
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { isAllowedAttachment, resolveAttachmentMime } from '../../../attachment-kinds';
 import { readDroppedAttachment } from '../../../turn';
+import { currentZoom } from '../../../../../shared/lib/zoom';
 import type { ToastKind } from '../../../../../app/components/Toast';
 import {
   ATTACHMENT_LIMIT,
@@ -24,17 +25,13 @@ type PersistArgs = {
   readonly dataUrl: string;
 };
 
-interface UsePendingAttachmentsArgs {
+type Params = {
   readonly showToast: (kind: ToastKind, message: string) => void;
   readonly enabled?: boolean;
   readonly persistToDisk?: (att: PersistArgs) => Promise<string | null>;
-}
+};
 
-export function usePendingAttachments({
-  showToast,
-  enabled = true,
-  persistToDisk,
-}: UsePendingAttachmentsArgs) {
+export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk }: Params) => {
   const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,23 +131,31 @@ export function usePendingAttachments({
 
     const isInsideComposer = (px: number, py: number): boolean => {
       const el = composerRef.current;
-      if (!el) {
+      if (!el || el.offsetParent === null) {
         return false;
       }
       const rect = el.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const candidates: ReadonlyArray<readonly [number, number]> = [
-        [px / dpr, py / dpr],
-        [px, py],
-      ];
-      return candidates.some(
-        ([x, y]) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom,
-      );
+      const scale = (window.devicePixelRatio || 1) * currentZoom();
+      const x = px / scale;
+      const y = py / scale;
+      return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
     };
 
+    const basename = (path: string): string => path.split('/').pop() ?? path;
+
     const ingestDroppedPaths = async (paths: ReadonlyArray<string>) => {
+      const supported = paths.filter((p) => isAllowedAttachment({ name: basename(p), type: '' }));
+      const unsupported = paths.length - supported.length;
+      if (unsupported > 0) {
+        showToastRef.current(
+          'warning',
+          `${unsupported} file${unsupported === 1 ? '' : 's'} skipped, unsupported type`,
+        );
+      }
       const dropped: PendingAttachment[] = [];
-      for (const path of paths) {
+      const rejected: string[] = [];
+      for (const path of supported) {
+        const name = basename(path);
         try {
           const r = await readDroppedAttachment(path);
           const id = crypto.randomUUID();
@@ -167,7 +172,16 @@ export function usePendingAttachments({
             dataUrl,
             relPath,
           });
-        } catch {}
+        } catch {
+          rejected.push(name);
+        }
+      }
+      if (rejected.length > 0) {
+        const label =
+          rejected.length === 1
+            ? `could not attach ${rejected[0]}, it may be over 15MB`
+            : `${rejected.length} files could not be read`;
+        showToastRef.current('error', label);
       }
       if (dropped.length === 0) {
         return;
@@ -189,14 +203,10 @@ export function usePendingAttachments({
       try {
         const off = await getCurrentWebview().onDragDropEvent((event) => {
           const p = event.payload;
-          if (!enabledRef.current) {
-            setIsDragging(false);
-            return;
-          }
           switch (p.type) {
             case 'enter':
             case 'over':
-              setIsDragging(true);
+              setIsDragging(enabledRef.current && isInsideComposer(p.position.x, p.position.y));
               break;
             case 'leave':
               setIsDragging(false);
@@ -204,6 +214,10 @@ export function usePendingAttachments({
             case 'drop': {
               setIsDragging(false);
               if (!isInsideComposer(p.position.x, p.position.y)) {
+                return;
+              }
+              if (!enabledRef.current) {
+                showToastRef.current('warning', 'connect the provider before attaching files');
                 return;
               }
               void ingestDroppedPaths(p.paths);
@@ -238,4 +252,4 @@ export function usePendingAttachments({
     onPaste,
     onFileInputChange,
   };
-}
+};
