@@ -1,8 +1,9 @@
 import { cn } from '@goodboy/ui';
 import { Gauge } from 'lucide-react';
-import type { ProviderId, ProviderName } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import type { ProviderName } from '@goodboy/types';
 import { formatTokens } from '../../../../../features/session/agent-row-format';
+import { contextUsageTone } from '../../../../../features/session/contextUsageTone';
+import { contextWindowFor } from '../../../../../features/session/contextWindowFor';
 import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
 
 export type ProviderContextUsage = {
@@ -12,32 +13,6 @@ export type ProviderContextUsage = {
   readonly outputTokens: number;
 };
 
-function findContextWindow(provider: ProviderName, model: string): number | null {
-  const cap = PROVIDER_CAPABILITIES[provider as ProviderId];
-  if (!cap) {
-    return null;
-  }
-  const exact = cap.models.find((m) => m.id === model);
-  if (exact) {
-    return exact.contextWindow;
-  }
-  const fallback = cap.models.find((m) => m.tier === 'turn') ?? cap.models[0];
-  return fallback?.contextWindow ?? null;
-}
-
-function tone(pct: number, prefix: 'bg' | 'text'): string {
-  if (pct >= 0.9) {
-    return `${prefix}-danger`;
-  }
-  if (pct >= 0.75) {
-    return `${prefix}-warning`;
-  }
-  if (pct >= 0.5) {
-    return `${prefix}-info`;
-  }
-  return `${prefix}-success`;
-}
-
 function ProviderBar({
   usage,
   showProvider,
@@ -45,7 +20,7 @@ function ProviderBar({
   usage: ProviderContextUsage;
   showProvider: boolean;
 }) {
-  const window = findContextWindow(usage.provider, usage.model);
+  const window = contextWindowFor({ provider: usage.provider, model: usage.model });
   if (!window) {
     return null;
   }
@@ -59,7 +34,9 @@ function ProviderBar({
   return (
     <div className="flex flex-col gap-0.5" title={tooltip}>
       <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
-        <span className={cn('flex items-center gap-0.5', tone(pct, 'text'))}>
+        <span
+          className={cn('flex items-center gap-0.5', contextUsageTone({ pct, prefix: 'text' }))}
+        >
           {showProvider ? (
             <ProviderIcon provider={usage.provider} variant="glyph" />
           ) : (
@@ -73,7 +50,10 @@ function ProviderBar({
       </div>
       <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted/60">
         <div
-          className={cn('h-full rounded-full transition-all', tone(pct, 'bg'))}
+          className={cn(
+            'h-full rounded-full transition-all',
+            contextUsageTone({ pct, prefix: 'bg' }),
+          )}
           style={{ width: `${pct * 100}%` }}
         />
       </div>
