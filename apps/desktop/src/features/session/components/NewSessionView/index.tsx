@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
 import { AlertTriangle, GitBranch, Inbox, Paperclip, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { ProviderId, SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
 import { resolveTaskModel } from '@goodboy/core';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';

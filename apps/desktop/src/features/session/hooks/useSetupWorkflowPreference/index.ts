@@ -1,10 +1,21 @@
 import { useCallback, useState } from 'react';
 
 const STORAGE_KEY = 'goodboy:session-setup-workflow';
+const LEGACY_STORAGE_KEY = 'goodboy:new-session-setup-workflow';
 
 const readPreference = (): boolean => {
   try {
-    return localStorage.getItem(STORAGE_KEY) !== '0';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored !== null) {
+      return stored !== '0';
+    }
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy !== null) {
+      localStorage.setItem(STORAGE_KEY, legacy);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return legacy !== '0';
+    }
+    return true;
   } catch {
     return true;
   }
