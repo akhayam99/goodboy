@@ -9,6 +9,7 @@ import {
 } from '@goodboy/db';
 import type {
   AgentId,
+  AgentSourceKind,
   BudgetAlert,
   BudgetRule,
   ClaudePermissionMode,
@@ -328,10 +329,12 @@ export type AppActions = {
       kindOverride?: AgentKind;
       sourceThreadId?: string;
       sourceCommentUrl?: string;
+      sourceKind?: AgentSourceKind;
       deferKickoff?: boolean;
     },
   ): Promise<AgentId>;
   activateNextResolver(sessionId: SessionId): Promise<void>;
+  forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
   setAgentKind(agentId: AgentId, kind: AgentKind): void;
   setAgentEffortOverride(agentId: AgentId, effort: string): void;

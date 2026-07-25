@@ -1,5 +1,5 @@
 import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Ban, Check, CheckCheck, Clock, GitCommit } from 'lucide-react';
+import { AlertTriangle, Ban, Check, CheckCheck, CircleStop, Clock, GitCommit } from 'lucide-react';
 import type { ResolverStatus } from '../../resolver-linkage';
 
 export type ResolverBadgeState =
@@ -11,6 +11,7 @@ export type ResolverBadgeState =
   | 'resolved'
   | 'wontfix'
   | 'awaiting'
+  | 'stopped'
   | 'failed';
 
 export const resolverBadgeState = (status: ResolverStatus): ResolverBadgeState => {
@@ -29,6 +30,8 @@ export const resolverBadgeState = (status: ResolverStatus): ResolverBadgeState =
       return 'wontfix';
     case 'awaiting':
       return 'awaiting';
+    case 'stopped':
+      return 'stopped';
     case 'failed':
       return 'failed';
     default:
@@ -50,6 +53,7 @@ const COPY: Record<ResolverBadgeState, string> = {
   resolved: 'resolved',
   wontfix: 'explained',
   awaiting: 'needs you',
+  stopped: 'stopped',
   failed: 'failed',
 };
 
@@ -59,6 +63,8 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
       <StatusDot tone="info" size="sm" pulsing />
     ) : state === 'failed' ? (
       <span className="size-1.5 rounded-full bg-danger" aria-hidden />
+    ) : state === 'stopped' ? (
+      <CircleStop size={10} className="text-danger" aria-hidden />
     ) : state === 'queued' ? (
       <Clock size={10} className="text-muted-foreground/60" aria-hidden />
     ) : state === 'resolved' ? (
@@ -80,7 +86,7 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
           ? 'bg-success/10 text-success'
           : state === 'committed' || state === 'awaiting' || state === 'analyzed'
             ? 'bg-warning/10 text-warning'
-            : state === 'failed'
+            : state === 'failed' || state === 'stopped'
               ? 'bg-danger/10 text-danger'
               : state === 'running'
                 ? 'bg-info/10 text-info'

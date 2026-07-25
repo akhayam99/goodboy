@@ -9,6 +9,7 @@ import {
 } from '@goodboy/core';
 import type {
   AgentId,
+  AgentSourceKind,
   AttachmentInput,
   ProviderId,
   SessionId,
@@ -626,12 +627,18 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       markSessionMobileShared(sessionId);
       const sourceCommentUrl = asString(data.commentUrl);
       const sourceThreadId = asString(data.threadId);
+      const sourceKind: AgentSourceKind | null = sourceThreadId
+        ? 'review_comment'
+        : sourceCommentUrl
+          ? 'issue_comment'
+          : null;
       await store.spawnAgent(sessionId, {
         kindOverride: 'resolver',
         deferKickoff: true,
         initialPrompt: prompt,
         ...(sourceCommentUrl ? { sourceCommentUrl } : {}),
         ...(sourceThreadId ? { sourceThreadId } : {}),
+        ...(sourceKind !== null && { sourceKind }),
       });
       await store.activateNextResolver(sessionId);
       return undefined;

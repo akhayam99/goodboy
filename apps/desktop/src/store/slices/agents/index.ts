@@ -4,6 +4,7 @@ import { clearAgentDraft } from './clearAgentDraft';
 import { clearAgentQueue } from './clearAgentQueue';
 import { deleteAgent } from './deleteAgent';
 import { deselectAgent } from './deselectAgent';
+import { forceCloseResolver } from './forceCloseResolver';
 import { markAgentViewed } from './markAgentViewed';
 import { renameAgent } from './renameAgent';
 import { selectAgent } from './selectAgent';
@@ -32,5 +33,6 @@ export const createAgentsSlice = (set: SetFn, get: GetFn) => {
     spawnAgent: spawnAgent(set, get),
     deleteAgent: deleteAgent(set, get),
     activateNextResolver: activateNextResolver(set, get),
+    forceCloseResolver: forceCloseResolver(set, get),
   };
 };

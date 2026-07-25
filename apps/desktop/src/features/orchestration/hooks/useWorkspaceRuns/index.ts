@@ -137,10 +137,6 @@ const agentToNode = (
   const children = [...kids]
     .sort((a, b) => a.ordinal - b.ordinal)
     .map((c) => agentToNode(c, childrenByParentId, costByAgentId, selectedAgentId, depth + 1));
-  const resolver =
-    agent.sourceThreadId != null
-      ? { state: statusToNodeStatus(agent.status), commentUrl: agent.sourceCommentUrl ?? null }
-      : undefined;
   return {
     id: agent.id,
     name: agent.name,
@@ -149,7 +145,6 @@ const agentToNode = (
     costUsd: costByAgentId.get(agent.id) ?? 0,
     outputSummary: agent.outputSummary ?? null,
     children,
-    ...(resolver != null && { resolver }),
     isSelected: agent.id === selectedAgentId,
   };
 };

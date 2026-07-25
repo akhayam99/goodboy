@@ -45,6 +45,7 @@ import type {
   WorkspaceScriptId,
 } from '@goodboy/types';
 import type { AgentKind } from '../features/session/agent-kind';
+import type { ResolverState } from '../features/workspace/components/WorkspacesSidebar/lib';
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
 import type {
   ProviderAuthResults,
@@ -227,9 +228,7 @@ export type AppState = UpdaterState & {
   readonly agentEffortOverride: Readonly<Record<AgentId, string>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
-  readonly resolverState: Readonly<
-    Record<AgentId, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'>
-  >;
+  readonly resolverState: Readonly<Record<AgentId, ResolverState>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;

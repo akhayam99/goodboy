@@ -1,8 +1,12 @@
 import type { Agent, AgentId } from '@goodboy/types';
-import { resolverStatus, type ResolverStatus } from '../workspace/components/WorkspacesSidebar/lib';
+import {
+  resolverStatus,
+  type ResolverState,
+  type ResolverStatus,
+} from '../workspace/components/WorkspacesSidebar/lib';
 
 export { resolverStatus };
-export type { ResolverStatus };
+export type { ResolverState, ResolverStatus };
 
 export type ResolverLink = {
   readonly agent: Agent;

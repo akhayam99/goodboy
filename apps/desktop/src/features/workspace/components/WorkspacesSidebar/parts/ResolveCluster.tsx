@@ -19,9 +19,11 @@ type ResolveClusterProps = {
   readonly metrics: AgentMetrics;
   readonly isTranscriptLoading: boolean;
   readonly selectedAgentId: AgentId | null;
+  readonly inspectedAgentId?: AgentId | null;
   readonly expanded: boolean;
   readonly onToggle: () => void;
   readonly onSelect: (id: AgentId) => void;
+  readonly onInspect?: (id: AgentId) => void;
   readonly onForceNext: () => void;
   readonly onResolveThread: (threadId: string) => Promise<void> | void;
 };
@@ -39,9 +41,11 @@ export const ResolveCluster = ({
   metrics,
   isTranscriptLoading,
   selectedAgentId,
+  inspectedAgentId = null,
   expanded,
   onToggle,
   onSelect,
+  onInspect,
   onForceNext,
   onResolveThread,
 }: ResolveClusterProps) => {
@@ -144,8 +148,10 @@ export const ResolveCluster = ({
                 isSelected={agent.id === selectedAgentId}
                 isTaskActive={isTaskActive}
                 canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}
+                isInspected={agent.id === inspectedAgentId}
                 onSelect={() => onSelect(agent.id)}
                 onJump={() => jump(agent)}
+                onInspect={onInspect === undefined ? undefined : () => onInspect(agent.id)}
                 onResolveThread={onResolveThread}
               />
             );

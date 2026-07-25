@@ -14,5 +14,5 @@ export const canForceResolve = ({ agent, status, turnState }: Params): boolean =
   if (turnState?.kind === 'running' || turnState?.kind === 'starting') {
     return false;
   }
-  return status === 'awaiting' || status === 'failed' || status === 'done';
+  return status === 'awaiting' || status === 'failed' || status === 'done' || status === 'stopped';
 };

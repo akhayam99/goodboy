@@ -588,6 +588,7 @@ export const DiffViewerContent = ({
         model: resolverRouting.model,
         effort: resolverRouting.effort,
         kindOverride: 'resolver',
+        sourceKind: 'diff_comment',
       });
       try {
         await consumeDiffComments(sessionId, idsToConsume, agentId);

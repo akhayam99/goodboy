@@ -24,6 +24,7 @@ import { SessionTopBar } from './parts/SessionTopBar';
 import { LensColumn } from './parts/LensColumn';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { SlotPane } from './parts/SlotPane';
+import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
@@ -292,16 +293,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
                 ) : null}
                 {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
-                {lens === 'resolve' ? (
-                  <PaneShell
-                    title="Resolve"
-                    description="Resolver agents spawned from pull request comments and diff selections."
-                    meta={resolveMeta}
-                    width="3xl"
-                  >
-                    <AgentsSection task={session} only="resolve" />
-                  </PaneShell>
-                ) : null}
+                {lens === 'resolve' ? <ResolvePane session={session} meta={resolveMeta} /> : null}
                 {lens === 'scripts' ? (
                   <PaneShell title="Scripts" width="3xl">
                     <ScriptsPanel
