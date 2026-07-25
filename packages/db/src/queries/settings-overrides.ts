@@ -2,6 +2,7 @@ import type {
   OverrideSettings,
   ProviderBindings,
   ProviderId,
+  RoleModelPreferences,
   SessionId,
   TaskModelPreferences,
   VerbosityLevel,
@@ -18,6 +19,7 @@ type WorkspaceOverrideRow = {
   default_verbosity: string | null;
   provider_bindings: string | null;
   task_models: string | null;
+  role_models: string | null;
   scout_fanout: number | null;
 };
 
@@ -59,6 +61,21 @@ function serializeTaskModels(taskModels: TaskModelPreferences | null): string | 
   return taskModels && Object.keys(taskModels).length > 0 ? JSON.stringify(taskModels) : null;
 }
 
+function parseRoleModels(raw: string | null): RoleModelPreferences | null {
+  if (!raw) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as RoleModelPreferences;
+  } catch {
+    return null;
+  }
+}
+
+function serializeRoleModels(roleModels: RoleModelPreferences | null): string | null {
+  return roleModels && Object.keys(roleModels).length > 0 ? JSON.stringify(roleModels) : null;
+}
+
 function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
   return {
     defaultProviderId: row.default_provider_id as ProviderId | null,
@@ -68,6 +85,7 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
     providerBindings: parseBindings(row.provider_bindings),
     taskModels: parseTaskModels(row.task_models),
+    roleModels: parseRoleModels(row.role_models),
     scoutFanout: row.scout_fanout === null ? null : row.scout_fanout !== 0,
   };
 }
@@ -81,6 +99,7 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
     defaultVerbosity: null,
     providerBindings: parseBindings(row.provider_bindings),
     taskModels: null,
+    roleModels: null,
     scoutFanout: null,
   };
 }
@@ -90,7 +109,7 @@ export const getWorkspaceOverrides = async (
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<WorkspaceOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, scout_fanout
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -112,6 +131,7 @@ export const setWorkspaceOverrides = async (
          default_verbosity = ?,
          provider_bindings = ?,
          task_models = ?,
+         role_models = ?,
          scout_fanout = ?,
          updated_at = ?
      WHERE id = ?`,
@@ -123,6 +143,7 @@ export const setWorkspaceOverrides = async (
       overrides.defaultVerbosity,
       serializeBindings(overrides.providerBindings),
       serializeTaskModels(overrides.taskModels),
+      serializeRoleModels(overrides.roleModels),
       overrides.scoutFanout === null ? null : overrides.scoutFanout ? 1 : 0,
       Date.now(),
       workspaceId,

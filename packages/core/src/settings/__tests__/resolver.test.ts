@@ -20,6 +20,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
+  roleModels: null,
   scoutFanout: null,
 };
 
@@ -41,6 +42,7 @@ describe('resolveSettings', () => {
       defaultVerbosity: 'verbose',
       providerBindings: null,
       taskModels: null,
+      roleModels: null,
       scoutFanout: null,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
@@ -60,6 +62,7 @@ describe('resolveSettings', () => {
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
+      roleModels: null,
       scoutFanout: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
@@ -79,6 +82,7 @@ describe('resolveSettings', () => {
       defaultVerbosity: 'verbose',
       providerBindings: null,
       taskModels: null,
+      roleModels: null,
       scoutFanout: null,
     };
     const sessOverride: OverrideSettings = {
@@ -89,6 +93,7 @@ describe('resolveSettings', () => {
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
+      roleModels: null,
       scoutFanout: null,
     };
     const result = resolveSettings({
@@ -112,6 +117,7 @@ describe('resolveSettings', () => {
       defaultVerbosity: 'verbose',
       providerBindings: null,
       taskModels: null,
+      roleModels: null,
       scoutFanout: null,
     };
     const sessOverride: OverrideSettings = {
@@ -122,6 +128,7 @@ describe('resolveSettings', () => {
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
+      roleModels: null,
       scoutFanout: null,
     };
     const result = resolveSettings({

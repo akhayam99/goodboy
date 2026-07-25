@@ -98,6 +98,8 @@ export { resolveModelForProvider } from './providers/model-map';
 
 export { resolveTaskModel } from './providers/task-models';
 
+export { resolveRoleRouting, type ResolvedRoleRouting } from './providers/role-models';
+
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 

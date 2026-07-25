@@ -1,15 +1,22 @@
-import type { ModelCostTier, ProviderId } from '@goodboy/types';
+import type { ModelCostTier, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
-import { defaultsForRole } from '../roles';
+import { resolveRoleRouting } from './role-models';
 
 export type AutoModelChoice = {
   readonly provider: ProviderId;
   readonly model: string;
 };
 
+type AutoParams = {
+  readonly role: string;
+  readonly providers: ReadonlyArray<ProviderId>;
+  readonly prefs?: RoleModelPreferences | null;
+};
+
 type Params = {
   readonly role: string;
   readonly provider: ProviderId;
+  readonly prefs?: RoleModelPreferences | null;
 };
 
 const COST_RANK: Readonly<Record<ModelCostTier, number>> = {
@@ -18,26 +25,22 @@ const COST_RANK: Readonly<Record<ModelCostTier, number>> = {
   expensive: 3,
 };
 
-const targetCostRankForRole = (role: string): number => {
-  const { provider, model } = defaultsForRole(role);
-  const tier = PROVIDER_CAPABILITIES[provider].models.find((m) => m.id === model)?.costTier;
-  return COST_RANK[tier ?? 'mid'];
-};
-
-export const autoModelForRole = (
-  role: string,
-  providers: ReadonlyArray<ProviderId>,
-): AutoModelChoice | null => {
+export const autoModelForRole = ({
+  role,
+  providers,
+  prefs,
+}: AutoParams): AutoModelChoice | null => {
   if (providers.length === 0) {
     return null;
   }
 
-  const def = defaultsForRole(role);
+  const def = resolveRoleRouting({ role, prefs });
   if (providers.includes(def.provider)) {
     return { provider: def.provider, model: def.model };
   }
 
-  const target = targetCostRankForRole(role);
+  const tier = PROVIDER_CAPABILITIES[def.provider].models.find((m) => m.id === def.model)?.costTier;
+  const target = COST_RANK[tier ?? 'mid'];
   let best: { provider: ProviderId; model: string; score: number } | null = null;
   for (const provider of providers) {
     for (const m of PROVIDER_CAPABILITIES[provider].models) {
@@ -53,6 +56,8 @@ export const autoModelForRole = (
   return { provider: best.provider, model: best.model };
 };
 
-export const recommendedModelForRole = ({ role, provider }: Params): string => {
-  return autoModelForRole(role, [provider])?.model ?? getDefaultTurnModel(provider);
+export const recommendedModelForRole = ({ role, provider, prefs }: Params): string => {
+  return (
+    autoModelForRole({ role, providers: [provider], prefs })?.model ?? getDefaultTurnModel(provider)
+  );
 };
