@@ -108,7 +108,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
       class="relative min-h-0 max-h-[70vh] overflow-y-auto"
     >
       <div
-        class="h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
+        class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
       >
         <div
           class="flex w-full flex-col gap-8"
@@ -851,7 +851,7 @@ exports[`snapshot, error states > DeleteSessionDialog: error state 1`] = `
       class="relative min-h-0 flex-1 text-sm"
     >
       <div
-        class="h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-4 px-6 py-5"
+        class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-4 px-6 py-5"
       >
         <div
           class="flex flex-col gap-3"
@@ -950,7 +950,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
       class="relative min-h-0 max-h-[70vh] overflow-y-auto"
     >
       <div
-        class="h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
+        class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
       >
         <div
           class="flex w-full flex-col gap-8"

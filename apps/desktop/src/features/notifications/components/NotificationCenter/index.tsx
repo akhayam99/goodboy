@@ -57,6 +57,9 @@ function relativeTime(iso: string): string {
 
 const DROPDOWN_WIDTH = 320;
 const VIEWPORT_MARGIN = 8;
+const LIST_MAX_HEIGHT = 320;
+const HEADER_HEIGHT = 37;
+const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
@@ -103,7 +106,7 @@ export const NotificationCenter = () => {
       const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
       const spaceBelow = window.innerHeight - rect.bottom;
-      const openAbove = spaceBelow < 300;
+      const openAbove = spaceBelow < DROPDOWN_MAX_HEIGHT + VIEWPORT_MARGIN;
       const top = openAbove ? undefined : rect.bottom + 6;
       const bottom = openAbove ? window.innerHeight - rect.top + 6 : undefined;
       setCoords({ top, bottom, left });
