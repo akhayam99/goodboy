@@ -31,6 +31,8 @@ async function applyZoom(factor: number): Promise<void> {
   }
 }
 
+export const currentZoom = (): number => readZoom();
+
 export const applyStoredZoom = async (): Promise<void> => {
   await applyZoom(readZoom());
 };
