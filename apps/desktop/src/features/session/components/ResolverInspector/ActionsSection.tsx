@@ -188,6 +188,16 @@ export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) =
     );
   }
 
+  if (status === 'running') {
+    return (
+      <InspectorSection question="What you can do">
+        <p className="text-2xs italic text-muted-foreground/70">
+          working on it, force close above if it is stuck
+        </p>
+      </InspectorSection>
+    );
+  }
+
   if (status === 'resolved' || status === 'done' || status === 'stopped') {
     return (
       <InspectorSection question="What you can do">

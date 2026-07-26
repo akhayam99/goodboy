@@ -105,4 +105,10 @@ describe('ActionsSection', () => {
 
     expect(screen.getByRole('button', { name: 'Run now' })).toBeDefined();
   });
+
+  it('points at force close for a running resolver', () => {
+    renderSection({ status: 'running' });
+
+    expect(screen.getByText(/force close above/i)).toBeDefined();
+  });
 });
