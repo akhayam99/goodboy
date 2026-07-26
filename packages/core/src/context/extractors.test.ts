@@ -15,6 +15,7 @@ import {
   extractMarkers,
   extractPlanFromMarker,
   extractReviewComments,
+  extractScoutDomains,
   extractScoutSplit,
   extractStepDone,
   isOpenQuestionAnswerText,
@@ -607,6 +608,28 @@ describe('extractScoutSplit', () => {
     const text =
       '<<scout-split>>[{"area":"old","query":"x"}]<</scout-split>> later <<scout-split>>[{"area":"new","query":"y"}]<</scout-split>>';
     expect(extractScoutSplit(text)).toEqual([{ area: 'new', query: 'y' }]);
+  });
+});
+
+describe('extractScoutDomains', () => {
+  it('normalizes a well-formed marker and caps it at six keywords', () => {
+    const text = 'done\n<<scout-domains keywords=" Auth,db, Routing,API,cache,tests,ignored ">>';
+    expect(extractScoutDomains(text)).toEqual(['auth', 'db', 'routing', 'api', 'cache', 'tests']);
+    expect(stripControlMarkers(text)).toBe('done');
+  });
+
+  it('returns null for empty keywords', () => {
+    expect(extractScoutDomains('<<scout-domains keywords=" , , ">>')).toBeNull();
+  });
+
+  it('returns null when keywords are missing', () => {
+    expect(extractScoutDomains('<<scout-domains reason="done">>')).toBeNull();
+  });
+
+  it('drops prose and malformed keyword junk', () => {
+    expect(
+      extractScoutDomains('<<scout-domains keywords="auth, two words, @db, routing">>'),
+    ).toEqual(['auth', 'routing']);
   });
 });
 
