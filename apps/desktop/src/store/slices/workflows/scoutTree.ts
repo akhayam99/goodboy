@@ -68,6 +68,7 @@ function composeScoutKickoff(area: ExtractedScoutArea, depth: number): string {
     canSplit
       ? 'If this area is itself too broad, you MAY fan out further: emit on its own line <<scout-split>> followed by a JSON array of {"area","query"} (2 to 6 entries), then <</scout-split>>.'
       : 'You are at maximum split depth. Do not fan out further: read your scope and summarize directly.',
+    'End your exploration reply with <<scout-domains keywords="auth,db,routing">>, listing 2 to 4 bare single-word domain keywords and no prose inside the attribute.',
   ].join('\n');
 }
 

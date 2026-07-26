@@ -36,9 +36,40 @@ type AgentRow = {
   model_override: string | null;
   provider_override: string | null;
   kind: string | null;
+  domains_json: string | null;
 };
 
-function toAgent(row: AgentRow): Agent {
+type ParseDomainsParams = {
+  readonly value: string | null;
+};
+
+type ToAgentParams = {
+  readonly row: AgentRow;
+};
+
+type UpdateAgentDomainsParams = {
+  readonly db: Database;
+  readonly id: AgentId;
+  readonly domains: ReadonlyArray<string> | null;
+};
+
+const parseDomains = ({ value }: ParseDomainsParams): ReadonlyArray<string> => {
+  if (value === null) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((domain): domain is string => typeof domain === 'string');
+  } catch {
+    return [];
+  }
+};
+
+const toAgent = ({ row }: ToAgentParams): Agent => {
+  const domains = parseDomains({ value: row.domains_json });
   return {
     id: row.id as AgentId,
     sessionId: row.session_id as SessionId,
@@ -66,8 +97,9 @@ function toAgent(row: AgentRow): Agent {
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
     ...(row.kind && { kind: row.kind }),
+    ...(domains.length > 0 && { domains }),
   };
-}
+};
 
 export const listAgentsForSession = async (
   db: Database,
@@ -77,7 +109,7 @@ export const listAgentsForSession = async (
     'SELECT * FROM agents WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
-  return rows.map(toAgent);
+  return rows.map((row) => toAgent({ row }));
 };
 
 export const listAgentsForSessions = async (
@@ -94,7 +126,7 @@ export const listAgentsForSessions = async (
     sessionIds,
   );
   for (const row of rows) {
-    const agent = toAgent(row);
+    const agent = toAgent({ row });
     const bucket = out.get(agent.sessionId) ?? [];
     bucket.push(agent);
     out.set(agent.sessionId, bucket);
@@ -105,14 +137,14 @@ export const listAgentsForSessions = async (
 export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | null> => {
   const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id]);
   const row = rows[0];
-  return row ? toAgent(row) : null;
+  return row ? toAgent({ row }) : null;
 };
 
 export const insertAgent = async (db: Database, agent: Agent): Promise<void> => {
   await db.execute(
     `INSERT INTO agents
-      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at, domains_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       agent.id,
       agent.sessionId,
@@ -126,8 +158,20 @@ export const insertAgent = async (db: Database, agent: Agent): Promise<void> => 
       agent.outputSummary ?? null,
       agent.startedAt ?? null,
       agent.completedAt ?? null,
+      agent.domains !== undefined ? JSON.stringify(agent.domains) : null,
     ],
   );
+};
+
+export const updateAgentDomains = async ({
+  db,
+  id,
+  domains,
+}: UpdateAgentDomainsParams): Promise<void> => {
+  await db.execute('UPDATE agents SET domains_json = ? WHERE id = ?', [
+    domains !== null ? JSON.stringify(domains) : null,
+    id,
+  ]);
 };
 
 export const updateAgentStatus = async (

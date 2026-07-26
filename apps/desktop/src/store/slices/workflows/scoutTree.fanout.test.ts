@@ -39,7 +39,7 @@ const areas = (n: number) =>
   Array.from({ length: n }, (_, i) => ({ area: `area-${i}`, query: `q-${i}` }));
 
 function makeStore(c: Agent) {
-  const sendTurn = vi.fn(async () => undefined);
+  const sendTurn = vi.fn(async (_args: { content: string }) => undefined);
   const emitNotification = vi.fn(async () => undefined);
   const state: Record<string, unknown> = {
     sessionPhaseRuns: { [SID]: [c] },
@@ -112,6 +112,10 @@ describe('fanOutScouts workflowRunId propagation', () => {
     await fanOutScouts(set, get, SID, c, areas(3));
 
     expect(sendTurn).toHaveBeenCalledTimes(3);
+    for (const [args] of sendTurn.mock.calls) {
+      expect(args.content).toContain('<<scout-domains keywords="auth,db,routing">>');
+      expect(args.content).toContain('2 to 4 bare single-word domain keywords');
+    }
   });
 
   it('does not fan out (no inserts, no status flip) for fewer than 2 areas', async () => {

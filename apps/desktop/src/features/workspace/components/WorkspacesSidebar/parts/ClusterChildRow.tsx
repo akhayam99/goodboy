@@ -3,7 +3,7 @@ import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 
-type ClusterChildRowProps = {
+type Props = {
   readonly child: Agent;
   readonly index: number;
   readonly total: number;
@@ -13,7 +13,7 @@ type ClusterChildRowProps = {
   readonly onSelect: () => void;
 };
 
-export function ClusterChildRow({
+export const ClusterChildRow = ({
   child,
   index,
   total,
@@ -21,8 +21,11 @@ export function ClusterChildRow({
   isSelected,
   isTaskActive,
   onSelect,
-}: ClusterChildRowProps) {
+}: Props) => {
   const hasUnread = agentHasUnread(child, isSelected && isTaskActive);
+  const domains = child.domains ?? [];
+  const visibleDomains = domains.slice(0, 3);
+  const hiddenDomainCount = domains.length - visibleDomains.length;
   const icon =
     child.status === 'running' ? (
       <StatusDot tone="info" size="sm" pulsing />
@@ -52,14 +55,27 @@ export function ClusterChildRow({
       </span>
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
-      {costUsd > 0 && (
+      {visibleDomains.map((domain, domainIndex) => (
+        <span
+          key={`${domain}-${domainIndex}`}
+          className="shrink-0 rounded bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground"
+        >
+          {domain}
+        </span>
+      ))}
+      {hiddenDomainCount > 0 ? (
+        <span className="shrink-0 rounded bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground">
+          +{hiddenDomainCount}
+        </span>
+      ) : null}
+      {costUsd > 0 ? (
         <span
           className="shrink-0 tabular-nums text-muted-foreground/60"
           title={`$${costUsd.toFixed(4)}`}
         >
           ${costUsd.toFixed(2)}
         </span>
-      )}
+      ) : null}
     </button>
   );
-}
+};

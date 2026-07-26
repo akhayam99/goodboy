@@ -185,6 +185,8 @@ pub struct SessionRow {
     pub source_comment_url: Option<String>,
     #[serde(rename = "sourceKind")]
     pub source_kind: Option<String>,
+    #[serde(rename = "domainsJson")]
+    pub domains_json: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -219,6 +221,8 @@ pub struct PhaseRunInsertInput {
     pub source_comment_url: Option<String>,
     #[serde(rename = "sourceKind")]
     pub source_kind: Option<String>,
+    #[serde(rename = "domainsJson")]
+    pub domains_json: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -866,7 +870,7 @@ pub fn agent_list_for_session(
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
                 parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url,
-                source_kind
+                source_kind, domains_json
          FROM agents
          WHERE session_id = ?1
          ORDER BY ordinal ASC",
@@ -895,6 +899,7 @@ pub fn agent_list_for_session(
             source_thread_ids: row.get(19)?,
             source_comment_url: row.get(20)?,
             source_kind: row.get(21)?,
+            domains_json: row.get(22)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -912,8 +917,9 @@ pub fn agent_insert(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
             provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
-            parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+            parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
+            domains_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
         rusqlite::params![
             id,
             input.session_id,
@@ -933,6 +939,7 @@ pub fn agent_insert(
             input.source_thread_ids,
             input.source_comment_url,
             input.source_kind,
+            input.domains_json,
         ],
     )?;
 
@@ -959,6 +966,7 @@ pub fn agent_insert(
         source_thread_ids: input.source_thread_ids,
         source_comment_url: input.source_comment_url,
         source_kind: input.source_kind,
+        domains_json: input.domains_json,
     })
 }
 
@@ -1001,7 +1009,7 @@ pub fn agent_update_status(
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
                 parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url,
-                source_kind
+                source_kind, domains_json
          FROM agents
          WHERE id = ?1
          LIMIT 1",
@@ -1030,6 +1038,7 @@ pub fn agent_update_status(
             source_thread_ids: row.get(19)?,
             source_comment_url: row.get(20)?,
             source_kind: row.get(21)?,
+            domains_json: row.get(22)?,
         })
     })?;
     match rows.next() {

@@ -4,6 +4,7 @@ import {
   extractClustersFromMarker,
   extractHandoff,
   extractPlanFromMarker,
+  extractScoutDomains,
   SLOT_BUDGETS,
   Summarizer,
   SummarizerParseError,
@@ -22,6 +23,7 @@ import {
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkspaceTelemetry,
   updateProviderRunStatus,
+  updateAgentDomains,
   upsertContextSlot,
   type NudgeEvent,
   type NudgeKind,
@@ -457,6 +459,47 @@ export const capturePlanFromTurn = async (
   } catch (err) {
     if (import.meta.env.DEV) {
       console.warn(`[plan-capture] failed for session ${sessionId}: ${formatError(err)}`);
+    }
+    return null;
+  }
+};
+
+type CaptureScoutDomainsParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly agentKind: AgentKind;
+  readonly assistantText: string;
+};
+
+export const captureScoutDomainsFromTurn = async ({
+  set,
+  sessionId,
+  agentId,
+  agentKind,
+  assistantText,
+}: CaptureScoutDomainsParams): Promise<ReadonlyArray<string> | null> => {
+  if (agentKind !== 'scout') {
+    return null;
+  }
+  const domains = extractScoutDomains(assistantText);
+  if (domains === null) {
+    return null;
+  }
+  try {
+    await updateAgentDomains({ db: tauriDatabase, id: agentId, domains });
+    set((state) => ({
+      sessionPhaseRuns: {
+        ...state.sessionPhaseRuns,
+        [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((agent) =>
+          agent.id === agentId ? { ...agent, domains } : agent,
+        ),
+      },
+    }));
+    return domains;
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn(`[scout-domains] failed for agent ${agentId}: ${formatError(err)}`);
     }
     return null;
   }

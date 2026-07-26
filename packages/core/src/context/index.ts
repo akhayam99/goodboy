@@ -25,6 +25,7 @@ export {
   extractMarkers,
   extractPlanFromMarker,
   extractReviewComments,
+  extractScoutDomains,
   extractScoutSplit,
   extractStepDone,
   isOpenQuestionAnswerText,

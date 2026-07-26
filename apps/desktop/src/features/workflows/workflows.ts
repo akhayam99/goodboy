@@ -92,6 +92,11 @@ type RawAgentRow = {
   readonly sourceThreadIds: string | null;
   readonly sourceCommentUrl: string | null;
   readonly sourceKind: string | null;
+  readonly domainsJson: string | null;
+};
+
+type ParseStringArrayParams = {
+  readonly value: string | null;
 };
 
 function rowToStep(row: RawWorkflowStepRow): Step {
@@ -150,11 +155,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
   };
 }
 
-const parseSourceThreadIds = ({
-  value,
-}: {
-  readonly value: string | null;
-}): ReadonlyArray<string> => {
+const parseStringArray = ({ value }: ParseStringArrayParams): ReadonlyArray<string> => {
   if (value === null) {
     return [];
   }
@@ -170,7 +171,8 @@ const parseSourceThreadIds = ({
 };
 
 function rowToAgent(row: RawAgentRow): Agent {
-  const sourceThreadIds = parseSourceThreadIds({ value: row.sourceThreadIds });
+  const sourceThreadIds = parseStringArray({ value: row.sourceThreadIds });
+  const domains = parseStringArray({ value: row.domainsJson });
   return {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,
@@ -194,6 +196,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
     ...(row.sourceKind != null && { sourceKind: row.sourceKind as AgentSourceKind }),
+    ...(domains.length > 0 && { domains }),
   };
 }
 
@@ -330,6 +333,7 @@ export type AgentInsertArgs = {
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl?: string;
   readonly sourceKind?: AgentSourceKind;
+  readonly domains?: ReadonlyArray<string>;
 };
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
@@ -354,6 +358,7 @@ export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> =>
         run.sourceThreadIds !== undefined ? JSON.stringify(run.sourceThreadIds) : null,
       sourceCommentUrl: run.sourceCommentUrl ?? null,
       sourceKind: run.sourceKind ?? null,
+      domainsJson: run.domains !== undefined ? JSON.stringify(run.domains) : null,
     },
   });
   return rowToAgent(row);

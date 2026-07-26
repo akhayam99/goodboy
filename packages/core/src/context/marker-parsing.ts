@@ -35,7 +35,9 @@ const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
+const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
+const SCOUT_DOMAIN_RE = /^[a-z0-9][a-z0-9_-]*$/;
 
 const extractSelfClosingInner = (text: string, open: string): ReadonlyArray<string> => {
   const out: string[] = [];
@@ -569,6 +571,22 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
   return last;
 };
 
+export const extractScoutDomains = (text: string): ReadonlyArray<string> | null => {
+  let last: ReadonlyArray<string> | null = null;
+  for (const inner of extractSelfClosingInner(text, SCOUT_DOMAINS_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const domains = (attrs.keywords ?? '')
+      .split(',')
+      .map((keyword) => keyword.trim().toLowerCase())
+      .filter((keyword) => keyword.length > 0 && SCOUT_DOMAIN_RE.test(keyword))
+      .slice(0, 6);
+    if (domains.length > 0) {
+      last = domains;
+    }
+  }
+  return last;
+};
+
 export const extractStepDone = (assistantText: string): { readonly id: string } | null => {
   STEP_DONE_RE.lastIndex = 0;
   let last: { id: string } | null = null;
@@ -687,7 +705,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 const BLOCK_MARKER_ALT =
   'plan|clusters|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,

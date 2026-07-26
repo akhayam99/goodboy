@@ -121,6 +121,7 @@ export {
   softDeleteAgent,
   restoreAgent,
   updateAgentConfig,
+  updateAgentDomains,
   getAgentById,
   type AgentConfigUpdate,
 } from './queries/agent';
