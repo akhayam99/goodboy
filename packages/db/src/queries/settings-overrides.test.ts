@@ -33,14 +33,15 @@ async function makeDb() {
   return db;
 }
 
-describe('workspace role model overrides', () => {
-  it('round-trips role preferences through the overrides row', async () => {
+describe('workspace overrides', () => {
+  it('round-trips role preferences and the routing pool', async () => {
     const db = await makeDb();
     await setWorkspaceOverrides(db, WS_ID, {
       ...EMPTY,
       roleModels: {
         reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
       },
+      enabledProviders: ['anthropic', 'codex'],
     });
 
     const stored = await getWorkspaceOverrides(db, WS_ID);
@@ -48,6 +49,7 @@ describe('workspace role model overrides', () => {
     expect(stored?.roleModels).toEqual({
       reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
     });
+    expect(stored?.enabledProviders).toEqual(['anthropic', 'codex']);
   });
 
   it('stores no row value for an empty preference map', async () => {

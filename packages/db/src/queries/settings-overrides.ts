@@ -21,6 +21,7 @@ type WorkspaceOverrideRow = {
   task_models: string | null;
   role_models: string | null;
   scout_fanout: number | null;
+  provider_pool: string | null;
 };
 
 type SessionOverrideRow = {
@@ -76,6 +77,45 @@ function serializeRoleModels(roleModels: RoleModelPreferences | null): string | 
   return roleModels && Object.keys(roleModels).length > 0 ? JSON.stringify(roleModels) : null;
 }
 
+type RawProviderPool = {
+  readonly raw: string | null;
+};
+
+const parseProviderPool = ({ raw }: RawProviderPool): ReadonlyArray<ProviderId> | undefined => {
+  if (raw == null) {
+    return undefined;
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return undefined;
+    }
+    const providers: ProviderId[] = [];
+    for (const value of parsed) {
+      switch (value) {
+        case 'anthropic':
+        case 'cursor':
+        case 'codex':
+        case 'gemini':
+          providers.push(value);
+          break;
+        default:
+          return undefined;
+      }
+    }
+    return providers;
+  } catch {
+    return undefined;
+  }
+};
+
+type ProviderPool = {
+  readonly enabledProviders: ReadonlyArray<ProviderId> | undefined;
+};
+
+const serializeProviderPool = ({ enabledProviders }: ProviderPool): string | null =>
+  enabledProviders == null ? null : JSON.stringify(enabledProviders);
+
 function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
   return {
     defaultProviderId: row.default_provider_id as ProviderId | null,
@@ -87,6 +127,7 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     taskModels: parseTaskModels(row.task_models),
     roleModels: parseRoleModels(row.role_models),
     scoutFanout: row.scout_fanout === null ? null : row.scout_fanout !== 0,
+    enabledProviders: parseProviderPool({ raw: row.provider_pool }),
   };
 }
 
@@ -101,6 +142,7 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
     taskModels: null,
     roleModels: null,
     scoutFanout: null,
+    enabledProviders: undefined,
   };
 }
 
@@ -109,7 +151,7 @@ export const getWorkspaceOverrides = async (
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<WorkspaceOverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout, provider_pool
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -133,6 +175,7 @@ export const setWorkspaceOverrides = async (
          task_models = ?,
          role_models = ?,
          scout_fanout = ?,
+         provider_pool = ?,
          updated_at = ?
      WHERE id = ?`,
     [
@@ -145,6 +188,7 @@ export const setWorkspaceOverrides = async (
       serializeTaskModels(overrides.taskModels),
       serializeRoleModels(overrides.roleModels),
       overrides.scoutFanout === null ? null : overrides.scoutFanout ? 1 : 0,
+      serializeProviderPool({ enabledProviders: overrides.enabledProviders }),
       Date.now(),
       workspaceId,
     ],
