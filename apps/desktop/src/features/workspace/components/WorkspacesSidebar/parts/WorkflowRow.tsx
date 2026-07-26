@@ -39,6 +39,7 @@ import { ScoutSubtree } from './ScoutSubtree';
 import { ClusterChildRow } from './ClusterChildRow';
 import { WorkflowKillButton } from './WorkflowKillButton';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
+import { WorkflowStepRuns } from './WorkflowStepRuns';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -340,6 +341,34 @@ export const WorkflowRow = ({
                     index={index}
                     step={step}
                     showBrief={isDetail}
+                    detailContent={
+                      !isDetail || clusterChildren.length === 0 ? null : kind === 'scout' ? (
+                        <ScoutSubtree
+                          containerId={run.id}
+                          depth={0}
+                          childrenByParentId={childrenByParentId}
+                          aggregatesByAgentId={aggregatesByAgentId}
+                          selectedAgentId={selectedAgentId}
+                          isTaskActive={isTaskActive}
+                          expandState={clusterExpand}
+                          onToggle={toggleClusterExpand}
+                          onSelect={onPickAgent}
+                          variant="detail"
+                        />
+                      ) : (
+                        <WorkflowStepRuns
+                          run={run}
+                          children={clusterChildren}
+                          isExpanded={clustersExpanded}
+                          unreadCount={clusterUnread}
+                          aggregatesByAgentId={aggregatesByAgentId}
+                          selectedAgentId={selectedAgentId}
+                          isTaskActive={isTaskActive}
+                          onToggle={() => toggleClusterExpand(run.id)}
+                          onSelect={onPickAgent}
+                        />
+                      )
+                    }
                     resolvedModel={resolvedModel}
                     isActionable={isActionable}
                     blockReason={isActionable ? wfBlockReason : null}
@@ -358,7 +387,7 @@ export const WorkflowRow = ({
                     onRenameCancel={() => setEditingId(null)}
                     onResolveFirst={() => onResolveFirstForRun(workflowRun)}
                   />
-                  {clusterChildren.length === 0 ? null : kind === 'scout' ? (
+                  {isDetail || clusterChildren.length === 0 ? null : kind === 'scout' ? (
                     <ScoutSubtree
                       containerId={run.id}
                       depth={0}

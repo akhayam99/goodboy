@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, Step, StepId, WorkflowId } from '@goodboy/types';
@@ -39,9 +40,10 @@ type RenderParams = {
   readonly showBrief: boolean;
   readonly stepDef?: Step;
   readonly runDef?: Agent;
+  readonly detailContent?: ReactNode;
 };
 
-const renderRow = ({ showBrief, stepDef = step, runDef = agent }: RenderParams) =>
+const renderRow = ({ showBrief, stepDef = step, runDef = agent, detailContent }: RenderParams) =>
   render(
     <WorkflowStepRow
       run={runDef}
@@ -49,6 +51,7 @@ const renderRow = ({ showBrief, stepDef = step, runDef = agent }: RenderParams) 
       index={0}
       step={stepDef}
       showBrief={showBrief}
+      detailContent={detailContent}
       resolvedModel="claude-haiku-4-5"
       isActionable={false}
       blockReason={null}
@@ -79,6 +82,9 @@ describe('WorkflowStepRow details', () => {
     expect(screen.getByText('map the area first')).toBeDefined();
     expect(screen.getByText('a file map with references')).toBeDefined();
     expect(screen.getByText('mapped 12 files')).toBeDefined();
+    const brief = screen.getByText('Instructions').parentElement?.parentElement;
+    expect(brief?.className).toContain('pl-4');
+    expect(brief?.className).not.toContain('bg-muted');
   });
 
   it('keeps the details collapsed until asked', () => {
@@ -101,5 +107,18 @@ describe('WorkflowStepRow details', () => {
     });
 
     expect(screen.queryByRole('button', { name: /details for scout/i })).toBeNull();
+  });
+
+  it('keeps detail content within the step row below its brief', () => {
+    renderRow({
+      showBrief: true,
+      detailContent: <div data-testid="step-runs">Runs (1/2)</div>,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /show details for scout/i }));
+
+    const brief = screen.getByText('Instructions').parentElement?.parentElement;
+    const runs = screen.getByTestId('step-runs');
+    expect(brief?.compareDocumentPosition(runs) ?? 0).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 });
