@@ -16,11 +16,13 @@ import {
 } from '../../../features/settings/verbosity';
 import { useDropdown } from '../../hooks/useDropdown';
 import { ModelOptions } from './ModelOptions';
-import { OptionRow } from './OptionRow';
+import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
 import { TriggerLabel } from './TriggerLabel';
 import { resolveRouting } from './resolveRouting';
+
+const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
 
 export type Props = {
   readonly providers: ReadonlyArray<ProviderId>;
@@ -74,7 +76,7 @@ export const RoutingPicker = ({
     align,
     openEvent,
     expectedHeight: 320,
-    width: variant === 'pill' ? 'w-80' : 'w-full min-w-[15rem]',
+    width: 'w-80 max-w-[calc(100vw-2rem)]',
   });
   const routing = resolveRouting({
     providers,
@@ -143,7 +145,6 @@ export const RoutingPicker = ({
             model={routing.model}
             effort={routing.effort}
             showEffort={showEffort}
-            isModelRecommended={isModelRecommended}
             verbosity={verbosity}
           />
         </span>
@@ -160,7 +161,7 @@ export const RoutingPicker = ({
         <Popover
           role="dialog"
           ariaLabel={ariaLabel ?? 'model routing'}
-          className={cn(popupClassName, 'flex max-h-[24rem] flex-col bg-subtle')}
+          className={cn(popupClassName, 'flex flex-col bg-subtle')}
         >
           {defaultSummary != null && (
             <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
@@ -189,13 +190,11 @@ export const RoutingPicker = ({
               )}
             </div>
           )}
-          <ScrollFade fadeFrom="subtle" className="min-h-0 flex-1">
-            <PickerSection label="Provider" hint="Which CLI agent runs the turn">
+          <PickerSection label="Provider" hint="Which CLI agent runs the turn">
+            <div className={CHIP_GROUP_CLASS_NAME}>
               {(recommendedProvider != null || provider === '') && (
-                <OptionRow
-                  label={
-                    recommendedProvider != null ? PROVIDER_LABEL[recommendedProvider] : 'Default'
-                  }
+                <PickerChip
+                  label="auto"
                   active={routing.isProviderRecommended}
                   onSelect={() => onPickProvider('')}
                   glyph={
@@ -208,7 +207,9 @@ export const RoutingPicker = ({
                       />
                     )
                   }
-                  tag={recommendedProvider != null ? 'recommended' : undefined}
+                  note={
+                    recommendedProvider != null ? PROVIDER_LABEL[recommendedProvider] : undefined
+                  }
                 />
               )}
               {providers
@@ -217,7 +218,7 @@ export const RoutingPicker = ({
                   const unavailable =
                     connectedProviders != null && !connectedProviders.includes(id);
                   return (
-                    <OptionRow
+                    <PickerChip
                       key={id}
                       label={PROVIDER_LABEL[id]}
                       active={!routing.isProviderRecommended && routing.provider === id}
@@ -228,9 +229,11 @@ export const RoutingPicker = ({
                     />
                   );
                 })}
-            </PickerSection>
-            <Divider />
-            <PickerSection label="Model" hint="Cost tier shown next to each variant">
+            </div>
+          </PickerSection>
+          <Divider />
+          <PickerSection label="Model" hint="Cost tier shown next to each variant">
+            <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
               <ModelOptions
                 ids={routing.models}
                 value={routing.model}
@@ -241,23 +244,25 @@ export const RoutingPicker = ({
                   close();
                 }}
               />
-            </PickerSection>
-            <Divider />
-            <PickerSection label="Effort" hint="How hard the model thinks before answering">
-              {onEffort == null && (
-                <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
-                  This task always runs at the model default effort.
-                </p>
-              )}
-              {onEffort != null && routing.effortLevels == null && (
-                <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
-                  {modelLabel(routing.model)} answers in a single pass, so it has no thinking levels
-                  to set.
-                </p>
-              )}
-              {onEffort != null &&
-                routing.effortLevels?.map((level) => (
-                  <OptionRow
+            </ScrollFade>
+          </PickerSection>
+          <Divider />
+          <PickerSection label="Effort" hint="How hard the model thinks before answering">
+            {onEffort == null && (
+              <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
+                This task always runs at the model default effort.
+              </p>
+            )}
+            {onEffort != null && routing.effortLevels == null && (
+              <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
+                {modelLabel(routing.model)} answers in a single pass, so it has no thinking levels
+                to set.
+              </p>
+            )}
+            {onEffort != null && routing.effortLevels != null && (
+              <div className={CHIP_GROUP_CLASS_NAME}>
+                {routing.effortLevels.map((level) => (
+                  <PickerChip
                     key={level}
                     label={EFFORT_LABEL[level]}
                     active={routing.effort === level}
@@ -273,13 +278,16 @@ export const RoutingPicker = ({
                     }
                   />
                 ))}
-            </PickerSection>
-            {verbosity != null && onVerbosity != null && (
-              <>
-                <Divider />
-                <PickerSection label="Replies" hint="How detailed the answers should be">
+              </div>
+            )}
+          </PickerSection>
+          {verbosity != null && onVerbosity != null && (
+            <>
+              <Divider />
+              <PickerSection label="Replies" hint="How detailed the answers should be">
+                <div className={CHIP_GROUP_CLASS_NAME}>
                   {VERBOSITY_LEVELS.map((level) => (
-                    <OptionRow
+                    <PickerChip
                       key={level}
                       label={VERBOSITY_LABEL[level]}
                       active={verbosity === level}
@@ -295,10 +303,10 @@ export const RoutingPicker = ({
                       }
                     />
                   ))}
-                </PickerSection>
-              </>
-            )}
-          </ScrollFade>
+                </div>
+              </PickerSection>
+            </>
+          )}
         </Popover>
       )}
     </div>

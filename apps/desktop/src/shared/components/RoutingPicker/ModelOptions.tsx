@@ -37,7 +37,7 @@ export const ModelOptions = ({ ids, value, recommendedModel, isRecommended, onSe
         active={isRecommended}
         onSelect={() => onSelect('')}
         glyph={<Sparkles size={11} className="shrink-0 text-primary" aria-hidden />}
-        tag="recommended"
+        tag="auto"
       />
     )}
     {groupModels({ ids }).map((group) => (

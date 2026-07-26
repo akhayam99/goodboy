@@ -65,7 +65,7 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
         aria-label={`${ariaLabel} model`}
         onClick={() => onModel('claude-sonnet-4-6')}
       >
-        {model === '' ? `${recommendedModel} recommended` : model}
+        {model === '' ? `${recommendedModel} auto` : model}
       </button>
       <button
         type="button"
@@ -115,14 +115,14 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        'claude-haiku-4-5 recommended',
+        'claude-haiku-4-5 auto',
       );
     }
   });
 
   it('persists a selected task model immediately', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getAllByText('claude-haiku-4-5 recommended')[0]!);
+    fireEvent.click(screen.getAllByText('claude-haiku-4-5 auto')[0]!);
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
@@ -148,7 +148,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
-      'claude-opus-5 recommended',
+      'claude-opus-5 auto',
     );
   });
 

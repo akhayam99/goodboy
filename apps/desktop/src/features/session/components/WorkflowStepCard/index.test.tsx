@@ -14,14 +14,6 @@ vi.mock('../RoleSelect', () => ({
   ),
 }));
 
-vi.mock('../VerbositySelect', () => ({
-  VerbositySelect: ({ onChange }: { onChange: (v: string) => void }) => (
-    <button type="button" onClick={() => onChange('verbose')}>
-      verbosity-select
-    </button>
-  ),
-}));
-
 vi.mock('../../../../shared/components/AgentAvatar', () => ({
   AgentAvatar: ({ kind }: { kind: string }) => <span data-testid="agent-avatar">{kind}</span>,
 }));
@@ -46,6 +38,7 @@ const baseProps = {
   resolvedModel: 'claude-haiku-4-5',
   recommendedModel: 'claude-haiku-4-5',
   effort: 'medium' as EffortLevel,
+  verbosity: 'normal' as const,
   expanded: false,
   dragging: false,
   disabled: false,
@@ -58,6 +51,7 @@ const baseProps = {
   onModel: vi.fn(),
   onProvider: vi.fn(),
   onEffort: vi.fn(),
+  onVerbosity: vi.fn(),
   onRemove: vi.fn(),
   onMoveUp: vi.fn(),
   onMoveDown: vi.fn(),
@@ -107,5 +101,13 @@ describe('WorkflowStepCard (expanded)', () => {
 
     render(<WorkflowStepCard {...baseProps} expanded={true} />);
     expect(screen.queryByRole('button', { name: /polish step instruction/i })).toBeNull();
+  });
+
+  it('changes verbosity through the routing picker', () => {
+    const onVerbosity = vi.fn();
+    render(<WorkflowStepCard {...baseProps} expanded={true} onVerbosity={onVerbosity} />);
+    fireEvent.click(screen.getByRole('button', { name: 'routing for step 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Verbose' }));
+    expect(onVerbosity).toHaveBeenCalledWith('verbose');
   });
 });

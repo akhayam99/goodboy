@@ -48,7 +48,7 @@ describe('SpawnAgentMenu', () => {
     openMenu();
     const picker = screen.getByRole('button', { name: 'new agent routing' });
     expect(picker.textContent).toContain('Claude');
-    expect(picker.textContent).toContain('recommended');
+    expect(picker.textContent).not.toContain('recommended');
   });
 
   it('spawns with the role default until the routing is pinned', () => {

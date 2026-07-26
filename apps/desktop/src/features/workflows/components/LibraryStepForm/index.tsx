@@ -14,7 +14,6 @@ import type { StepDefUpsertArgs } from '../../workflows';
 import { modelEffortLevels, type EffortLevel } from '../../../chat/utils/chat-constants';
 import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
-import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../store';
 
@@ -22,9 +21,7 @@ type Props = {
   readonly def: StepDef | null;
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  // Commit the current values without closing the editor (blur-driven autosave).
   readonly onCommit: (args: StepDefUpsertArgs) => void;
-  // Close the editor; for an unsaved new step this discards it.
   readonly onClose: () => void;
 };
 
@@ -72,8 +69,6 @@ export const LibraryStepForm = ({
     verbosity: VerbosityLevel;
   };
 
-  // Build args from a partial override so a freshly-changed select commits its new
-  // value immediately rather than the stale state captured in this render.
   const commit = (over: Partial<FormState> = {}) => {
     const next: FormState = {
       name,
@@ -168,6 +163,7 @@ export const LibraryStepForm = ({
               effort={effort}
               recommendedProvider={recommendedProv}
               recommendedModel={recommendedMod}
+              verbosity={verbosity}
               disabled={false}
               onProvider={(p) => {
                 setProviderOverride(p);
@@ -187,19 +183,13 @@ export const LibraryStepForm = ({
                 setEffort(eff);
                 commit({ effort: eff });
               }}
+              onVerbosity={(next) => {
+                setVerbosity(next);
+                commit({ verbosity: next });
+              }}
             />
           </InlineField>
         </div>
-        <InlineField label="Verbosity">
-          <VerbositySelect
-            value={verbosity}
-            onChange={(v) => {
-              setVerbosity(v);
-              commit({ verbosity: v });
-            }}
-            disabled={false}
-          />
-        </InlineField>
       </div>
     </div>
   );

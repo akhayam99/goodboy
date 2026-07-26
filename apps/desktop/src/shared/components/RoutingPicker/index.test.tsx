@@ -41,7 +41,10 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} model="" recommendedModel="claude-sonnet-4-6" />);
     const trigger = screen.getByRole('button', { name: /routing/i });
     expect(trigger.textContent).toContain('Sonnet 4.6');
-    expect(trigger.textContent).toContain('recommended');
+    expect(trigger.textContent).not.toContain('recommended');
+    fireEvent.click(trigger);
+    expect(screen.getByRole('dialog').textContent).toContain('auto');
+    expect(screen.getByRole('dialog').textContent).not.toContain('recommended');
   });
 
   it('reports the picked model and closes the popover', () => {
@@ -51,6 +54,15 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByTitle('claude-sonnet-4-6'));
     expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('bounds only the model list as the scroll region', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const viewports = screen.getByRole('dialog').querySelectorAll('[class*="overflow-y-auto"]');
+    const viewport = viewports.item(0);
+    expect(viewports).toHaveLength(1);
+    expect(viewport?.parentElement?.className).toContain('max-h-[15rem]');
   });
 
   it('offers verbosity only when the caller wires it', () => {
