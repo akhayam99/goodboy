@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { X } from 'lucide-react';
 import { Divider, ScrollFade } from '@goodboy/ui';
+import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 import type { AgentId, AgentSourceKind, PrComment, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -97,20 +97,7 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2.5">
-        <span className="truncate text-xs font-medium text-foreground" title={agent.name}>
-          {agent.name}
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="close resolver inspector"
-          className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          <X size={14} aria-hidden />
-        </button>
-      </div>
-      <Divider />
+      <InspectorHeader title={agent.name} closeLabel="close resolver inspector" onClose={onClose} />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         <div className="flex flex-col gap-4">
           <OriginSection

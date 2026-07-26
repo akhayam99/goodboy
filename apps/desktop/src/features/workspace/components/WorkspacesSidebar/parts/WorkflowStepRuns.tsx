@@ -5,7 +5,7 @@ import { ClusterChildRow } from './ClusterChildRow';
 
 type Props = {
   readonly run: Agent;
-  readonly children: ReadonlyArray<Agent>;
+  readonly agents: ReadonlyArray<Agent>;
   readonly isExpanded: boolean;
   readonly unreadCount: number;
   readonly aggregatesByAgentId: ReadonlyMap<string, AgentAggregate>;
@@ -17,7 +17,7 @@ type Props = {
 
 export const WorkflowStepRuns = ({
   run,
-  children,
+  agents,
   isExpanded,
   unreadCount,
   aggregatesByAgentId,
@@ -26,7 +26,7 @@ export const WorkflowStepRuns = ({
   onToggle,
   onSelect,
 }: Props) => {
-  const doneCount = children.filter(
+  const doneCount = agents.filter(
     (child) => child.status === 'completed' || child.status === 'skipped',
   ).length;
 
@@ -45,7 +45,7 @@ export const WorkflowStepRuns = ({
           <ChevronRight size={11} aria-hidden className="shrink-0" />
         )}
         <span className="min-w-0 truncate">
-          Runs ({doneCount}/{children.length})
+          Runs ({doneCount}/{agents.length})
         </span>
         {!isExpanded && unreadCount > 0 ? (
           <span
@@ -58,12 +58,12 @@ export const WorkflowStepRuns = ({
         ) : null}
       </button>
       {isExpanded
-        ? children.map((child, index) => (
+        ? agents.map((child, index) => (
             <ClusterChildRow
               key={child.id}
               child={child}
               index={index}
-              total={children.length}
+              total={agents.length}
               costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
               isSelected={child.id === selectedAgentId}
               isTaskActive={isTaskActive}

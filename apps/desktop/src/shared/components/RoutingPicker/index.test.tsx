@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { RoutingPicker } from './index';
 
@@ -59,10 +60,18 @@ describe('RoutingPicker', () => {
   it('bounds only the model list as the scroll region', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const viewports = screen.getByRole('dialog').querySelectorAll('[class*="overflow-y-auto"]');
+    const dialog = screen.getByRole('dialog');
+    const viewports = dialog.querySelectorAll('[class*="overflow-y-auto"]');
     const viewport = viewports.item(0);
     expect(viewports).toHaveLength(1);
     expect(viewport?.parentElement?.className).toContain('max-h-[15rem]');
+    expect(viewport?.className).toContain('max-h-[inherit]');
+    expect(dialog.className).not.toMatch(/max-h-/);
+    const modelIds = PROVIDER_CAPABILITIES.anthropic.models.map((entry) => entry.id);
+    expect(modelIds.length).toBeGreaterThan(3);
+    for (const id of modelIds) {
+      expect(viewport?.querySelector(`[title="${id}"]`)).not.toBeNull();
+    }
   });
 
   it('offers verbosity only when the caller wires it', () => {
