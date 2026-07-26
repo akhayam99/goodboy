@@ -153,23 +153,36 @@ export const OnboardingChip = () => {
     : ONBOARDING_STEPS;
 
   return (
-    <button
-      type="button"
-      onClick={() => reopen()}
-      title={`Setup, ${progress.completedCount} of ${progress.totalCount} done`}
-      aria-label="open onboarding checklist"
-      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border"
-    >
-      {visibleSteps.map((step, i) => (
-        <span
-          key={step.id}
-          aria-hidden
-          className={cn(
-            'size-1.5 rounded-full motion-safe:transition-colors',
-            i < progress.completedCount ? 'bg-primary' : 'bg-border',
-          )}
-        />
-      ))}
-    </button>
+    <div className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border">
+      <button
+        type="button"
+        onClick={() => reopen()}
+        title={`Setup, ${progress.completedCount} of ${progress.totalCount} done`}
+        aria-label="open onboarding checklist"
+        className="inline-flex items-center gap-1"
+      >
+        {visibleSteps.map((step, i) => (
+          <span
+            key={step.id}
+            aria-hidden
+            className={cn(
+              'size-1.5 rounded-full motion-safe:transition-colors',
+              i < progress.completedCount ? 'bg-primary' : 'bg-border',
+            )}
+          />
+        ))}
+      </button>
+      <button
+        type="button"
+        aria-label="Skip tutorial"
+        onClick={(event) => {
+          event.stopPropagation();
+          finish();
+        }}
+        className="flex items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+      >
+        <X size={10} aria-hidden />
+      </button>
+    </div>
   );
 };

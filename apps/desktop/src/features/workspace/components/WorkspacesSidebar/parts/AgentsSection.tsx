@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { EmptyState, SectionHeader, cn } from '@goodboy/ui';
-import { ArrowUpRight, CheckCheck, ChevronDown, ChevronRight, Layers } from 'lucide-react';
+import { ArrowUpRight, CheckCheck, ChevronDown, ChevronRight } from 'lucide-react';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import type {
   Agent,
   AgentId,
@@ -483,7 +484,7 @@ export const AgentsSection = ({
           {forceExpanded ? null : (
             <SectionHeader
               className="pb-1.5"
-              icon={<Layers size={11} aria-hidden className="text-primary" />}
+              icon={<SECTION_ICONS.workflows size={11} aria-hidden className="text-primary" />}
               label="Workflow"
               action={
                 <SectionToggle

@@ -1,6 +1,6 @@
-import { Layers } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { WorkflowsPanel } from '../WorkflowsPanel';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) => {
   return (
     <StudioShell
-      icon={Layers}
+      icon={SECTION_ICONS.workflows}
       title="Workflow Studio"
       workspaceName={workspaceName}
       closeLabel="close workflow studio"

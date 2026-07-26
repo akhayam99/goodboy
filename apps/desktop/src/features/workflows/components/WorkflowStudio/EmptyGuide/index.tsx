@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, ArrowRight, Layers, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import { Button } from '@goodboy/ui';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 
 type Props = {
   readonly onNew: () => void;
@@ -32,7 +33,7 @@ export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
       <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
         <div className="flex flex-col items-center gap-3">
           <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Layers size={18} aria-hidden />
+            <SECTION_ICONS.workflows size={18} aria-hidden />
           </span>
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-foreground">

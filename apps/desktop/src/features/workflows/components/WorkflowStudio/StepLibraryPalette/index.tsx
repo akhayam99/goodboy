@@ -1,7 +1,8 @@
 import { Fragment, useState } from 'react';
 import { Divider, EmptyState, SectionHeader } from '@goodboy/ui';
-import { Layers, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import type { StepDefUpsertArgs } from '../../../workflows';
 import { LibraryCard } from '../../LibraryCard';
 import { LibraryStepForm } from '../../LibraryStepForm';
@@ -58,7 +59,7 @@ export const StepLibraryPalette = ({
 
       {library.length === 0 && editing !== 'new' && (
         <EmptyState
-          icon={Layers}
+          icon={SECTION_ICONS.workflows}
           title="No library steps yet"
           description="Create one to reuse it across workflows."
           bordered
