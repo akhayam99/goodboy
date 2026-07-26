@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, IconTile } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND, brandColor } from './provider-brand';
 
@@ -47,17 +47,20 @@ export const ProviderIcon = ({
     return <Icon size={size} aria-label={label} style={{ color }} />;
   }
 
+  let tileSize: 'xs' | 'sm' | 'md' | 'lg' = 'md';
+  if (size <= 16) {
+    tileSize = 'xs';
+  }
+  if (size > 16 && size <= 22) {
+    tileSize = 'sm';
+  }
+  if (size > 30) {
+    tileSize = 'lg';
+  }
+
   return (
-    <span
-      className="flex items-center justify-center rounded"
-      style={{
-        width: size + 8,
-        height: size + 8,
-        backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`,
-        color,
-      }}
-    >
+    <IconTile size={tileSize} color={color}>
       <Icon size={size} aria-label={label} />
-    </span>
+    </IconTile>
   );
 };

@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, IconTile } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import {
   GithubIcon,
@@ -20,13 +20,6 @@ const INTEGRATION_BRAND: Record<IntegrationGlyphProvider, IntegrationBrand> = {
   gitlab: { icon: GitlabIcon, label: 'GitLab', cssVar: '--color-provider-gitlab' },
   linear: { icon: LinearIcon, label: 'Linear', cssVar: '--color-provider-linear' },
   sentry: { icon: SentryIcon, label: 'Sentry', cssVar: '--color-provider-sentry' },
-};
-
-const FRAME_STYLE: Record<IntegrationGlyphProvider, string> = {
-  github: 'bg-provider-github/10',
-  gitlab: 'bg-provider-gitlab/10',
-  linear: 'bg-provider-linear/10',
-  sentry: 'bg-provider-sentry/10',
 };
 
 const MARK_SIZE: Record<'xs' | 'sm', number> = {
@@ -60,14 +53,8 @@ export const IntegrationGlyph = ({ provider, size = 'sm', framed = false, classN
   }
 
   return (
-    <span
-      className={cn(
-        'flex size-8 shrink-0 items-center justify-center rounded-lg',
-        FRAME_STYLE[provider],
-        className,
-      )}
-    >
+    <IconTile size="sm" color={color} className={className}>
       <Icon size={FRAMED_MARK_SIZE} role="img" aria-label={label} style={{ color }} />
-    </span>
+    </IconTile>
   );
 };

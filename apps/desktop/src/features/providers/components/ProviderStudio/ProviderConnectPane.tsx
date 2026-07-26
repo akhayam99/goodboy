@@ -1,4 +1,4 @@
-import { Button, Divider, ScrollFade } from '@goodboy/ui';
+import { Button, Divider, IconTile, ScrollFade } from '@goodboy/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -41,13 +41,9 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
         >
           <ArrowLeft size={16} aria-hidden />
         </button>
-        <span
-          aria-hidden
-          className="flex size-9 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`, color }}
-        >
-          <Icon size={18} strokeWidth={2} />
-        </span>
+        <IconTile size="md" color={color}>
+          <Icon size={18} strokeWidth={2} aria-hidden />
+        </IconTile>
         <span className="text-base font-semibold lowercase text-foreground">
           {provider?.label ?? providerId}
         </span>

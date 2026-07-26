@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { cn, Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, IconTile, ScrollFade, SectionHeader } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
@@ -66,12 +66,9 @@ function Detail({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
-        <span
-          className="flex size-11 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`, color }}
-        >
+        <IconTile size="lg" color={color}>
           <Icon size={22} aria-hidden />
-        </span>
+        </IconTile>
         <div className="flex min-w-0 flex-col">
           <span className="text-base font-semibold lowercase text-foreground">{info.label}</span>
           <span className="truncate text-2xs text-muted-foreground">
