@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, FieldRow, Input, ScrollFade, cn } from '@goodboy/ui';
+import { Button, FieldRow, Input, ScrollFade, SegmentedTabs, cn } from '@goodboy/ui';
 import { AlertTriangle, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
@@ -214,37 +214,20 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
 
               {branchEditOpen ? (
                 <div id="session-branch-editor" className="flex flex-col gap-3">
-                  <div
-                    role="tablist"
-                    aria-label="branch source"
-                    className="inline-flex w-fit rounded-md bg-muted/40 p-0.5"
-                  >
-                    {(['existing', 'new'] as const).map((m) => {
-                      const active = branchMode === m;
-                      return (
-                        <button
-                          key={m}
-                          type="button"
-                          role="tab"
-                          aria-selected={active}
-                          onClick={() => {
-                            setBranchMode(m);
-                            setBranchTarget('');
-                            setConfirmReuse(false);
-                          }}
-                          disabled={busy}
-                          className={cn(
-                            'rounded px-2.5 py-0.5 text-2xs font-medium motion-safe:transition-colors',
-                            active
-                              ? 'bg-background text-primary shadow-sm'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          {m === 'existing' ? 'pick existing' : 'create new'}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <SegmentedTabs
+                    ariaLabel="branch source"
+                    options={[
+                      { value: 'existing', label: 'pick existing', disabled: busy },
+                      { value: 'new', label: 'create new', disabled: busy },
+                    ]}
+                    value={branchMode}
+                    onChange={(nextMode) => {
+                      setBranchMode(nextMode);
+                      setBranchTarget('');
+                      setConfirmReuse(false);
+                    }}
+                    size="sm"
+                  />
 
                   {branchMode === 'existing' ? (
                     <BranchCombobox

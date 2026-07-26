@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, StatusDot, cn } from '@goodboy/ui';
+import { Button, Dialog, Input, SegmentedTabs, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { Boxes, Check, FolderGit2, FolderPlus } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -260,39 +260,16 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     >
       <div className="flex flex-col gap-4">
         <AppBreadcrumb crumbs={breadcrumbCrumbs} />
-        <div
-          role="tablist"
-          aria-label="Workspace type"
-          className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/40 p-1"
-        >
-          {(['single', 'multi'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => setMode(m)}
-              className={cn(
-                'flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
-                mode === m
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {m === 'single' ? (
-                <FolderGit2 size={13} aria-hidden />
-              ) : (
-                <Boxes size={13} aria-hidden />
-              )}
-              {m === 'single' ? 'Single project' : 'Multi project'}
-              {m === 'multi' && (
-                <span className="rounded bg-primary/15 px-1 text-2xs font-bold uppercase tracking-wide text-primary">
-                  beta
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs
+          ariaLabel="Workspace type"
+          options={[
+            { value: 'single', label: 'Single project', icon: FolderGit2 },
+            { value: 'multi', label: 'Multi project', icon: Boxes, badge: 'beta' },
+          ]}
+          value={mode}
+          onChange={setMode}
+          fill
+        />
 
         <p className="text-xs leading-relaxed text-muted-foreground">
           {mode === 'single'

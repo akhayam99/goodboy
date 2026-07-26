@@ -98,7 +98,7 @@ describe('GitHubStudio', () => {
     expect(screen.getByRole('tab', { name: 'Pull requests' }).getAttribute('aria-selected')).toBe(
       'true',
     );
-    expect(screen.getByRole('radio', { name: 'Mine' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'Mine' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('Pull request inbox')).toBeDefined();
     expect(screen.getByText('Pull request detail')).toBeDefined();
   });
@@ -106,15 +106,15 @@ describe('GitHubStudio', () => {
   it('switches to the review inbox for the others and all scopes', () => {
     renderStudio();
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Others' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Others' }));
     expect(screen.getByText('Review inbox github others')).toBeDefined();
     expect(screen.getByText('Review pull request detail')).toBeDefined();
     expect(screen.queryByText('Pull request inbox')).toBeNull();
 
-    fireEvent.click(screen.getByRole('radio', { name: 'All' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }));
     expect(screen.getByText('Review inbox github all')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Mine' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Mine' }));
     expect(screen.getByText('Pull request inbox')).toBeDefined();
   });
 
