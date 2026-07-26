@@ -29,7 +29,7 @@ export const WelcomeStep = () => {
         <SetupRow
           icon={<FolderGit2 size={15} className="text-primary" aria-hidden />}
           title="Connect a workspace"
-          detail="A git repo. Every session gets its own worktree and branch."
+          detail="A project space for sessions, agents, workflows, and shared context."
         />
       </div>
     </div>

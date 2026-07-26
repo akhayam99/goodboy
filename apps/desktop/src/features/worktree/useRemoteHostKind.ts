@@ -11,6 +11,9 @@ export const useRemoteHostKind = (workspaceId: WorkspaceId | null): RemoteHostKi
   const rootPath = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
   );
+  const isSimple = useAppStore(
+    (s) => s.workspaces.find((w) => w.id === workspaceId)?.kind === 'simple',
+  );
   const gitlabHosts = useAppStore(
     useShallow((s) =>
       (s.workspaceIntegrations[workspaceId as WorkspaceId] ?? [])
@@ -19,13 +22,13 @@ export const useRemoteHostKind = (workspaceId: WorkspaceId | null): RemoteHostKi
     ),
   );
   const [kind, setKind] = useState<RemoteHostKind | null>(() =>
-    rootPath ? (cache.get(rootPath) ?? null) : null,
+    rootPath && !isSimple ? (cache.get(rootPath) ?? null) : null,
   );
 
   const hostsKey = gitlabHosts.join('|');
 
   useEffect(() => {
-    if (!rootPath) {
+    if (!rootPath || isSimple) {
       setKind(null);
       return;
     }
@@ -52,7 +55,7 @@ export const useRemoteHostKind = (workspaceId: WorkspaceId | null): RemoteHostKi
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rootPath, hostsKey]);
+  }, [rootPath, hostsKey, isSimple]);
 
   return kind;
 };

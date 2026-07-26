@@ -18,6 +18,9 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
     if (workspace == null) {
       return;
     }
+    if (workspace.kind === 'simple') {
+      return;
+    }
     set((state) => ({
       reviewPrs: {
         ...state.reviewPrs,

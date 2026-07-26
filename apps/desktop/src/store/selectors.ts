@@ -96,6 +96,8 @@ function sessionHasRunningAgentIn(state: AppState, sessionId: SessionId): boolea
 
 function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
   const sessionId = session.id as SessionId;
+  const workspaceKind =
+    state.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo';
   return deriveSessionStage({
     session,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
@@ -103,6 +105,7 @@ function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
+    workspaceKind,
   });
 }
 

@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OnboardingStepId } from '../../onboarding-store';
 
 let completed: Array<OnboardingStepId> = [];
-const workspaces: Array<{ id: string }> = [];
+const workspaces: Array<{ id: string; kind?: 'repo' | 'simple' }> = [];
+let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 let sessions: Array<unknown> = [];
 
@@ -13,7 +14,15 @@ const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../onboarding-store', () => ({
-  ONBOARDING_STEPS: new Array(7).fill({ id: 'x', title: 'x', why: 'x' }),
+  ONBOARDING_STEPS: [
+    { id: 'workspace', title: 'x', why: 'x' },
+    { id: 'codeHost', title: 'x', why: 'x' },
+    { id: 'tools', title: 'x', why: 'x' },
+    { id: 'session', title: 'x', why: 'x' },
+    { id: 'agent', title: 'x', why: 'x' },
+    { id: 'plan', title: 'x', why: 'x' },
+    { id: 'palette', title: 'x', why: 'x' },
+  ],
   getCompleted: () => completed,
   isCollapsed: () => false,
   isFinished: () => false,
@@ -30,6 +39,7 @@ vi.mock('../../../../store', () => ({
       sessions: typeof sessions;
       sessionPhaseRuns: Record<string, unknown[]>;
       sessionPlans: Record<string, unknown[]>;
+      currentWorkspaceId: string | null;
       workspaceIntegrations: typeof workspaceIntegrations;
     }) => unknown,
   ) =>
@@ -37,6 +47,7 @@ vi.mock('../../../../store', () => ({
       sessions,
       sessionPhaseRuns: {},
       sessionPlans: {},
+      currentWorkspaceId,
       workspaceIntegrations,
     }),
   useCurrentSession: () => null,
@@ -46,6 +57,7 @@ vi.mock('../../../../store', () => ({
 function reset() {
   completed = [];
   workspaces.length = 0;
+  currentWorkspaceId = null;
   workspaceIntegrations = {};
   sessions = [];
   markStepCompleteMock.mockReset();
@@ -109,5 +121,16 @@ describe('useOnboardingProgress auto-mark', () => {
     expect(result.current.completedCount).toBe(2);
     expect(result.current.totalCount).toBe(7);
     expect(result.current.isDone).toBe(false);
+  });
+
+  it('removes integration steps from progress for a simple workspace', () => {
+    completed = ['workspace', 'session', 'agent', 'plan', 'palette'];
+    workspaces.push({ id: 'w1', kind: 'simple' });
+    const { result } = renderHook(() => useOnboardingProgress());
+    expect(result.current.isSimple).toBe(true);
+    expect(result.current.completedCount).toBe(5);
+    expect(result.current.totalCount).toBe(5);
+    expect(result.current.isDone).toBe(true);
+    expect(ghStatusMock).not.toHaveBeenCalled();
   });
 });

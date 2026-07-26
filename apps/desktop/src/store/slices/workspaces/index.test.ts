@@ -273,6 +273,12 @@ vi.mock('../../../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
 }));
 
+const prepareSimpleWorkspaceSpy = vi.fn(async ({ path }: { path: string }) => path);
+
+vi.mock('../../../features/workspace/prepareSimpleWorkspace', () => ({
+  prepareSimpleWorkspace: prepareSimpleWorkspaceSpy,
+}));
+
 vi.mock('../../../shared/lib/editor', () => ({
   detectEditors: vi.fn(async () => []),
 }));
@@ -551,6 +557,25 @@ describe('store contract', () => {
       expect(wsList[0]?.id).toBe(created.id);
       expect(wsList[0]?.name).toBe('app');
       expect(wsList[0]?.rootPath).toBe('/tmp/repo');
+    });
+
+    it('addSimpleWorkspace accepts a non-repository directory and persists its kind', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      vi.mocked(repo.validateGitRepo).mockRejectedValueOnce(new Error('not a repository'));
+      prepareSimpleWorkspaceSpy.mockResolvedValueOnce('/tmp/study-space');
+
+      const created = await store
+        .getState()
+        .addSimpleWorkspace({ name: 'Study space', path: '/tmp/study-space' });
+
+      expect(created).toMatchObject({
+        name: 'Study space',
+        rootPath: '/tmp/study-space',
+        kind: 'simple',
+      });
+      expect(store.getState().workspaces[0]).toEqual(created);
+      expect(repo.validateGitRepo).not.toHaveBeenCalled();
     });
 
     it('deleteWorkspace drops it from state and clears workspace-scoped caches when current', async () => {

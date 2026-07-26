@@ -12,7 +12,7 @@ import type { SessionProviderPreference } from './provider-preference';
 import type { ModelEffort } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 
-export type WorkspaceKind = 'repo' | 'composite';
+export type WorkspaceKind = 'repo' | 'composite' | 'simple';
 
 export type WorkspaceMember = Readonly<{
   workspaceId: WorkspaceId;

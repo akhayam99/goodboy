@@ -20,6 +20,7 @@ mod providers;
 mod repo;
 mod scripts;
 mod secrets;
+mod session_dir;
 mod sentry;
 mod settings_overrides;
 mod skills;
@@ -114,6 +115,9 @@ pub fn run() {
       bridge::bridge_status,
       bridge::bridge_command_result,
       bridge::bridge_revoke,
+      session_dir::simple_workspace_default_path,
+      session_dir::simple_workspace_prepare,
+      session_dir::session_dir_create,
       worktree::worktree_create,
       worktree::worktree_remove,
       worktree::worktree_list,

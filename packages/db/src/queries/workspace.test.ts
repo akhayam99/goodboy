@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {
@@ -26,6 +26,7 @@ function makeWorkspace(
     id: string;
     name: string;
     rootPath: string;
+    kind: WorkspaceKind;
     lastAccessedAt?: IsoDateTime;
   }> = {},
 ) {
@@ -34,6 +35,7 @@ function makeWorkspace(
     id: (overrides.id ?? 'w1') as WorkspaceId,
     name: overrides.name ?? 'my-repo',
     rootPath: overrides.rootPath ?? '/tmp/my-repo',
+    ...(overrides.kind != null ? { kind: overrides.kind } : {}),
     createdAt: now,
     updatedAt: now,
     ...(overrides.lastAccessedAt != null ? { lastAccessedAt: overrides.lastAccessedAt } : {}),
@@ -69,6 +71,19 @@ describe('insertWorkspace', () => {
     const row = await getWorkspaceById(db, ws.id);
     expect(row?.lastAccessedAt).toBeDefined();
     expect(Date.parse(row!.lastAccessedAt!)).toBeCloseTo(Date.parse(ws.updatedAt), -2);
+  });
+
+  it('keeps simple kinds and coerces unknown kinds to repo', async () => {
+    const db = await makeDb();
+    const simple = makeWorkspace({ id: 'simple', rootPath: '/tmp/simple', kind: 'simple' });
+    await insertWorkspace(db, simple);
+    await db.execute(
+      'INSERT INTO workspaces (id, name, root_path, kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      ['unknown', 'unknown', '/tmp/unknown', 'future-kind', Date.now(), Date.now()],
+    );
+
+    expect((await getWorkspaceById(db, simple.id))?.kind).toBe('simple');
+    expect((await getWorkspaceById(db, 'unknown' as WorkspaceId))?.kind).toBe('repo');
   });
 });
 

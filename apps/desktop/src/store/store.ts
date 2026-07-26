@@ -160,6 +160,7 @@ export type AppActions = {
     containerPath: string;
     members: ReadonlyArray<{ workspaceId: WorkspaceId; mountName: string }>;
   }): Promise<Workspace>;
+  addSimpleWorkspace(input: { name: string; path: string }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;

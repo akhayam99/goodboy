@@ -103,6 +103,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const { showToast } = useToast();
   const settingKey = settingBranchPrefix(workspaceId);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
+  const isSimple = workspace?.kind === 'simple';
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
 
   const [goal, setGoal] = useState('');
@@ -133,10 +134,12 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     useShallow((s) => s.workspaceIntegrations?.[workspaceId] ?? EMPTY_INTEGRATIONS),
   );
   const remoteKind = useRemoteHostKind(workspaceId);
-  const issueSources = resolveIssueSources({
-    integrations: workspaceIntegrations,
-    remoteKind,
-  });
+  const issueSources = isSimple
+    ? []
+    : resolveIssueSources({
+        integrations: workspaceIntegrations,
+        remoteKind,
+      });
 
   const connectedProviders = providers.filter((p) => p.connection === 'connected');
   const noProviderConnected = providers.length > 0 && connectedProviders.length === 0;
@@ -148,10 +151,13 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       : pickDefaultProvider(connectedProviderIds);
 
   useEffect(() => {
+    if (isSimple) {
+      return;
+    }
     void loadSetting(settingKey).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
-  }, [settingKey, loadSetting]);
+  }, [isSimple, settingKey, loadSetting]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -177,7 +183,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   }, [workspaceId]);
 
   useEffect(() => {
-    if (branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
+    if (isSimple || branchMode !== 'existing' || branchesLoaded || !workspace?.rootPath) {
       return;
     }
     setBranchesLoading(true);
@@ -188,7 +194,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         setBranchesLoading(false);
         setBranchesLoaded(true);
       });
-  }, [branchMode, branchesLoaded, workspace?.rootPath]);
+  }, [branchMode, branchesLoaded, isSimple, workspace?.rootPath]);
 
   useEffect(() => {
     if (slugTouched) {
@@ -234,14 +240,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   };
 
   const conflict = useBranchConflict(
-    branchMode === 'existing' ? existingBranch.trim() || null : null,
+    !isSimple && branchMode === 'existing' ? existingBranch.trim() || null : null,
     workspace?.rootPath ?? null,
   );
   const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
   const conflictWorktreePath = conflict?.kind === 'worktree' ? conflict.path : null;
 
   const branchReady =
-    branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0;
+    isSimple ||
+    (branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0);
   const goalReady = goal.trim().length > 0;
   const canCreate =
     goalReady &&
@@ -260,15 +267,20 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     setError(null);
     setBusy(true);
     try {
-      if (eraseWorktreePath && workspace?.rootPath) {
+      if (!isSimple && eraseWorktreePath && workspace?.rootPath) {
         await removeWorktree(workspace.rootPath, eraseWorktreePath);
       }
-      const useExisting = branchMode === 'existing' && existingBranch.trim().length > 0;
+      const useExisting =
+        !isSimple && branchMode === 'existing' && existingBranch.trim().length > 0;
       await createSession({
         workspaceId,
         goal,
-        branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
-        branchSlug: branchSlug.trim() || undefined,
+        ...(!isSimple
+          ? {
+              branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
+              branchSlug: branchSlug.trim() || undefined,
+            }
+          : {}),
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
         ...(issue
           ? {
@@ -327,7 +339,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                 </div>
               </div>
             ) : null}
-            {issueSources.length > 0 ? (
+            {!isSimple && issueSources.length > 0 ? (
               <Section
                 icon={<Inbox size={14} aria-hidden className="text-primary" />}
                 tone="primary"
@@ -353,7 +365,11 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             >
               <Textarea
                 value={goal}
-                placeholder="Refactor auth domain to extract token validation into a shared module…"
+                placeholder={
+                  isSimple
+                    ? 'Prepare a study plan for next week’s exam…'
+                    : 'Refactor auth domain to extract token validation into a shared module…'
+                }
                 onChange={(e) => setGoal(e.target.value)}
                 autoGrow
                 minRows={4}
@@ -411,85 +427,87 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
               </div>
             </Section>
 
-            <Section
-              icon={<GitBranch size={14} aria-hidden className="text-success" />}
-              tone="success"
-              title="Branch"
-              subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
-            >
-              <div className="flex flex-col gap-2">
-                <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
-                {branchMode === 'new' ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                      {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
-                    </span>
-                    {slugGenerating ? (
-                      <Skeleton className="h-8 flex-1 rounded border border-border" />
-                    ) : (
-                      <Input
-                        value={branchSlug}
-                        onChange={(e) => {
-                          setBranchSlug(sanitizeBranchSlug(e.target.value));
-                          setSlugTouched(true);
-                        }}
-                        placeholder="branch-slug"
-                        className="h-8 flex-1 font-mono text-sm"
-                        disabled={busy}
-                        autoCapitalize="off"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        aria-label="Branch slug"
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleGenerateSlug}
-                      disabled={!goal.trim() || slugGenerating || busy}
-                      title="Generate from goal"
-                      aria-label="Generate branch name"
-                      className={cn(
-                        'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
-                        goal.trim() && !slugGenerating && !busy
-                          ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          : 'cursor-not-allowed text-muted-foreground/30',
+            {!isSimple ? (
+              <Section
+                icon={<GitBranch size={14} aria-hidden className="text-success" />}
+                tone="success"
+                title="Branch"
+                subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
+              >
+                <div className="flex flex-col gap-2">
+                  <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
+                  {branchMode === 'new' ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="shrink-0 text-xs text-muted-foreground font-mono">
+                        {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
+                      </span>
+                      {slugGenerating ? (
+                        <Skeleton className="h-8 flex-1 rounded border border-border" />
+                      ) : (
+                        <Input
+                          value={branchSlug}
+                          onChange={(e) => {
+                            setBranchSlug(sanitizeBranchSlug(e.target.value));
+                            setSlugTouched(true);
+                          }}
+                          placeholder="branch-slug"
+                          className="h-8 flex-1 font-mono text-sm"
+                          disabled={busy}
+                          autoCapitalize="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          aria-label="Branch slug"
+                        />
                       )}
-                    >
-                      <Wand2 size={13} aria-hidden />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    <BranchCombobox
-                      branches={existingBranches}
-                      value={existingBranch}
-                      onChange={setExistingBranch}
-                      disabled={busy || branchesLoading}
-                      loading={branchesLoading}
-                    />
-                    {conflictSessionId ? (
-                      <p className="text-2xs leading-relaxed text-muted-foreground">
-                        This branch is already used by an open session. Open it instead of creating
-                        a duplicate.
-                      </p>
-                    ) : conflictWorktreePath ? (
-                      <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
-                        <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
-                        <span>
-                          Checked out in another worktree (
-                          <span className="break-all font-mono">{conflictWorktreePath}</span>).
-                          Creating erases that worktree and recreates it here.
-                        </span>
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            </Section>
+                      <button
+                        type="button"
+                        onClick={handleGenerateSlug}
+                        disabled={!goal.trim() || slugGenerating || busy}
+                        title="Generate from goal"
+                        aria-label="Generate branch name"
+                        className={cn(
+                          'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
+                          goal.trim() && !slugGenerating && !busy
+                            ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'cursor-not-allowed text-muted-foreground/30',
+                        )}
+                      >
+                        <Wand2 size={13} aria-hidden />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      <BranchCombobox
+                        branches={existingBranches}
+                        value={existingBranch}
+                        onChange={setExistingBranch}
+                        disabled={busy || branchesLoading}
+                        loading={branchesLoading}
+                      />
+                      {conflictSessionId ? (
+                        <p className="text-2xs leading-relaxed text-muted-foreground">
+                          This branch is already used by an open session. Open it instead of
+                          creating a duplicate.
+                        </p>
+                      ) : conflictWorktreePath ? (
+                        <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
+                          <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
+                          <span>
+                            Checked out in another worktree (
+                            <span className="break-all font-mono">{conflictWorktreePath}</span>).
+                            Creating erases that worktree and recreates it here.
+                          </span>
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </Section>
+            ) : null}
           </div>
         </ScrollFade>
 
-        {error && isMissingBaseRefError(error) ? (
+        {!isSimple && error && isMissingBaseRefError(error) ? (
           <div className="px-6 pb-2">
             <BaseBranchGuide />
           </div>

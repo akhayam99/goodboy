@@ -37,6 +37,9 @@ export const OnboardingCard = () => {
 };
 
 function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
+  const visibleSteps = progress.isSimple
+    ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost' && step.id !== 'tools')
+    : ONBOARDING_STEPS;
   return (
     <>
       <div className="flex items-center justify-between">
@@ -53,7 +56,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
       </div>
       <div className="flex flex-col gap-2.5">
         {GROUP_ORDER.map((group) => {
-          const steps = ONBOARDING_STEPS.filter((s) => s.group === group);
+          const steps = visibleSteps.filter((s) => s.group === group);
           if (steps.length === 0) {
             return null;
           }
@@ -145,6 +148,10 @@ export const OnboardingChip = () => {
     return null;
   }
 
+  const visibleSteps = progress.isSimple
+    ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost' && step.id !== 'tools')
+    : ONBOARDING_STEPS;
+
   return (
     <button
       type="button"
@@ -153,7 +160,7 @@ export const OnboardingChip = () => {
       aria-label="open onboarding checklist"
       className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border"
     >
-      {ONBOARDING_STEPS.map((step, i) => (
+      {visibleSteps.map((step, i) => (
         <span
           key={step.id}
           aria-hidden

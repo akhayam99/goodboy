@@ -252,11 +252,13 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 const createWorktreeSpy = vi.fn();
+const createSessionDirSpy = vi.fn();
 const removeWorktreeSpy = vi.fn(async () => undefined);
 const changeWorktreeBranchSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
+  createSessionDir: createSessionDirSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
   worktreeChangedFiles: vi.fn(async () => []),
@@ -778,6 +780,47 @@ describe('store contract', () => {
         );
         expect(summary?.[2]).toBe('failed to restore 2 of 2 sessions');
       });
+    });
+  });
+
+  describe('createSession simple workspace', () => {
+    it('registers a plain session directory with an empty branch', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
+        buildWorkspace({
+          rootPath: '/tmp/study-space',
+          kind: 'simple',
+        }),
+      ]);
+      createSessionDirSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/study-space/sessions/study-plan-12345678',
+        branchName: '',
+        slug: 'study-plan-12345678',
+        reused: false,
+      });
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      const { session, worktree } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+
+      expect(createSessionDirSpy).toHaveBeenCalledWith({
+        basePath: '/tmp/study-space',
+        slug: expect.stringMatching(/^study-plan-[a-f0-9]{8}$/),
+      });
+      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(worktree.branchName).toBe('');
+      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          sessionId: session.id,
+          worktreePath: worktree.worktreePath,
+          branch: '',
+          parallelIndex: 0,
+        }),
+      );
+      expect(store.getState().sessionBranches[session.id]).toBe('');
     });
   });
 

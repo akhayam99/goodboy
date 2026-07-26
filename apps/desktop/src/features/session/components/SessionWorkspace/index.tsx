@@ -58,6 +58,16 @@ const LENS_LABEL: Record<LensKind, string> = {
   gitlab_issues: 'GitLab issues',
 };
 
+const SIMPLE_LENSES = new Set<LensKind>([
+  'workflows',
+  'agents',
+  'questions',
+  'plans',
+  'goal',
+  'decisions',
+  'last_output_summary',
+]);
+
 type SessionWorkspaceProps = {
   readonly session: Session;
   readonly isActive: boolean;
@@ -68,7 +78,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
   const hasInitializedResolverInspector = useRef(false);
-  const activeLens = useAppStore((s) => s.activeLens[sessionId]);
+  const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
+  const workspaceKind = useAppStore(
+    (s) => s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo',
+  );
+  const isSimple = workspaceKind === 'simple';
+  const activeLens =
+    isSimple && storedActiveLens != null && !SIMPLE_LENSES.has(storedActiveLens)
+      ? null
+      : storedActiveLens;
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
   const selectedAgentId = useAppStore(
@@ -81,7 +99,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
-  const filesTouched = useFilesTouched(sessionId, isActive);
+  const filesTouched = useFilesTouched(sessionId, isActive && !isSimple);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -97,7 +115,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [activeLens, sessionId, setActiveLens]);
 
   useEffect(() => {
-    if (!isActive || !workingDir) return;
+    if (!isActive || !workingDir || isSimple) return;
     let cancelled = false;
     worktreeStatus(workingDir)
       .then((status) => {
@@ -109,7 +127,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () => {
       cancelled = true;
     };
-  }, [isActive, workingDir, sessionId, filesTouched.count, reconcileSessionBranch]);
+  }, [isActive, workingDir, sessionId, filesTouched.count, isSimple, reconcileSessionBranch]);
 
   const lens: LensKind | null = activeLens ?? null;
   const isOverviewLoading = sessionLoading?.agents === true || sessionLoading?.plans === true;
@@ -278,6 +296,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             onSelectOverview={onSelectOverview}
             onSelect={onSelectLens}
             filesCount={filesTouched.count}
+            workspaceKind={workspaceKind}
           />
         </div>
         <Divider orientation="vertical" />
@@ -381,18 +400,20 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               />
             ) : null}
 
-            <div
-              className={cn(
-                'absolute inset-0 z-10 flex flex-col',
-                !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
-              )}
-            >
-              <TerminalDock
-                sessionId={sessionId}
-                isActive={isActive && lens === 'terminal' && showLens}
-                cwd={workingDir}
-              />
-            </div>
+            {!isSimple ? (
+              <div
+                className={cn(
+                  'absolute inset-0 z-10 flex flex-col',
+                  !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
+                )}
+              >
+                <TerminalDock
+                  sessionId={sessionId}
+                  isActive={isActive && lens === 'terminal' && showLens}
+                  cwd={workingDir}
+                />
+              </div>
+            ) : null}
 
             {studio != null ? (
               <div className="absolute inset-0 z-30">

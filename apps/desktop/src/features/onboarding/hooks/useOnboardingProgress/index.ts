@@ -17,6 +17,7 @@ export type OnboardingProgress = {
   readonly collapsed: boolean;
   readonly finished: boolean;
   readonly isDone: boolean;
+  readonly isSimple: boolean;
 };
 
 export const useOnboardingProgress = (): OnboardingProgress => {
@@ -32,6 +33,10 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const finished = useMemo(() => isFinished(), [tick]);
 
   const workspaces = useWorkspaces();
+  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
+  const workspace =
+    workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
+  const isSimple = workspace?.kind === 'simple';
   const sessionCount = useAppStore((s) => s.sessions.length);
   const needsAgentDetect = !persistedCompleted.has('agent');
   const needsPlanDetect = !persistedCompleted.has('plan');
@@ -59,9 +64,8 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   });
   const currentSession = useCurrentSession();
 
-  const workspaceId = workspaces[0]?.id ?? null;
-  const needsCodeHostDetect = !persistedCompleted.has('codeHost');
-  const needsToolsDetect = !persistedCompleted.has('tools');
+  const workspaceId = workspace?.id ?? null;
+  const needsCodeHostDetect = !isSimple && !persistedCompleted.has('codeHost');
   const gitlabConnected = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
@@ -92,10 +96,10 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     if (workspaces.length > 0 && !persistedCompleted.has('workspace')) {
       markStepComplete('workspace');
     }
-    if ((gitlabConnected || githubScoped) && !persistedCompleted.has('codeHost')) {
+    if (!isSimple && (gitlabConnected || githubScoped) && !persistedCompleted.has('codeHost')) {
       markStepComplete('codeHost');
     }
-    if (hasTools && !persistedCompleted.has('tools')) {
+    if (!isSimple && hasTools && !persistedCompleted.has('tools')) {
       markStepComplete('tools');
     }
     if (sessionCount > 0 && !persistedCompleted.has('session')) {
@@ -115,12 +119,16 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     gitlabConnected,
     githubScoped,
     hasTools,
+    isSimple,
     persistedCompleted,
     currentSession,
   ]);
 
-  const totalCount = ONBOARDING_STEPS.length;
-  const completedCount = persistedCompleted.size;
+  const visibleSteps = isSimple
+    ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost' && step.id !== 'tools')
+    : ONBOARDING_STEPS;
+  const totalCount = visibleSteps.length;
+  const completedCount = visibleSteps.filter((step) => persistedCompleted.has(step.id)).length;
 
   return {
     completedCount,
@@ -129,5 +137,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     collapsed,
     finished,
     isDone: completedCount >= totalCount,
+    isSimple,
   };
 };

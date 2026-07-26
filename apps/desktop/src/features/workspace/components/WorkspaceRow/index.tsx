@@ -37,6 +37,11 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">{workspace.name}</span>
+          {workspace.kind === 'simple' ? (
+            <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              simple
+            </span>
+          ) : null}
           {hasUnread ? (
             <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
               unread

@@ -44,6 +44,7 @@ const baseState: OnboardingWizardState = {
   providersConnected: 0,
   hasWorkspace: false,
   workspaceId: null,
+  workspaceKind: null,
   githubConnected: false,
   gitlabConnected: false,
   hasCodeHost: false,
@@ -145,6 +146,22 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('PreferencesStep')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
       expect(screen.queryByTestId('stepper')).toBeNull();
+    });
+
+    it('jumps from preferences to ready for a simple workspace', () => {
+      setHook({
+        mode: 'setup',
+        hasWorkspace: true,
+        workspaceId: 'simple-workspace' as never,
+        workspaceKind: 'simple',
+      });
+      render(<OnboardingWizard />);
+      expect(screen.getByTestId('PreferencesStep')).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      expect(screen.getByTestId('ReadyStep')).toBeDefined();
+      expect(screen.queryByTestId('CodeHostStep')).toBeNull();
+      expect(screen.queryByTestId('TrackerStep')).toBeNull();
+      expect(screen.queryByTestId('SentryStep')).toBeNull();
     });
   });
 

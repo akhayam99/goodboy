@@ -168,6 +168,43 @@ describe('LensColumn', () => {
     ]);
   });
 
+  it('renders only shared-context lenses for a simple workspace', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={3}
+        workspaceKind="simple"
+      />,
+    );
+
+    expect(
+      screen.getAllByText(/^(Work|Artifacts|Context)$/).map((heading) => heading.textContent),
+    ).toEqual(['Work', 'Artifacts', 'Context']);
+    expect(
+      screen.getAllByRole('button').map((button) => {
+        const clone = button.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+        const shortcut = clone.querySelector('kbd')?.textContent ?? '';
+        return clone.textContent?.replace(shortcut, '').trim();
+      }),
+    ).toEqual([
+      'Overview',
+      'Workflows',
+      'Agents',
+      'Questions',
+      'Plans',
+      'Goal',
+      'Decisions',
+      'Session summary',
+    ]);
+    expect(screen.queryByText('Integrations')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Diff 3' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Terminal' })).toBeNull();
+  });
+
   it('shows shortcuts on bound rows only', () => {
     render(
       <LensColumn

@@ -15,6 +15,8 @@ import { ReadyStep } from './steps/ReadyStep';
 const STEP_COUNT = 8;
 const SETUP_START_STEP = 3;
 const EXIT_MS = 200;
+const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
+const SIMPLE_STEPS = [0, 1, 2, 3, 7];
 
 type Cta = {
   readonly label: string;
@@ -30,6 +32,7 @@ export const OnboardingWizard = () => {
     providersConnected,
     hasWorkspace,
     workspaceId,
+    workspaceKind,
     githubConnected,
     gitlabConnected,
     hasCodeHost,
@@ -41,7 +44,12 @@ export const OnboardingWizard = () => {
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const minStep = mode === 'setup' ? SETUP_START_STEP : 0;
+  const isSimple = workspaceKind === 'simple';
+  const availableSteps = isSimple ? SIMPLE_STEPS : ALL_STEPS;
+  const steps = availableSteps.filter((candidate) =>
+    mode === 'setup' ? candidate >= SETUP_START_STEP : true,
+  );
+  const minStep = steps[0] ?? 0;
   const last = STEP_COUNT - 1;
 
   useEffect(() => {
@@ -57,8 +65,16 @@ export const OnboardingWizard = () => {
     return null;
   }
 
-  const goNext = () => setStep((s) => Math.min(s + 1, last));
-  const goBack = () => setStep((s) => Math.max(s - 1, minStep));
+  const goNext = () =>
+    setStep((current) => {
+      const index = steps.indexOf(current);
+      return steps[index + 1] ?? last;
+    });
+  const goBack = () =>
+    setStep((current) => {
+      const index = steps.indexOf(current);
+      return steps[index - 1] ?? minStep;
+    });
   const canSkipSetup = hasWorkspace;
   const dismiss = () => {
     setClosing(true);
@@ -80,7 +96,7 @@ export const OnboardingWizard = () => {
     body = <WorkspaceStep hasWorkspace={hasWorkspace} />;
     cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
   } else if (step === 3) {
-    body = <PreferencesStep workspaceId={workspaceId} />;
+    body = <PreferencesStep workspaceId={workspaceId} workspaceKind={workspaceKind} />;
     cta = { label: 'Continue', onClick: goNext, variant: 'primary' };
   } else if (step === 4) {
     body = (
@@ -133,7 +149,9 @@ export const OnboardingWizard = () => {
       <header className="relative grid min-h-[3.25rem] shrink-0 grid-cols-3 items-center px-6 pt-5">
         <span aria-hidden />
         <div className="flex justify-center">
-          {step > minStep && <Stepper current={step - minStep} total={last - minStep} />}
+          {step > minStep && (
+            <Stepper current={steps.indexOf(step)} total={Math.max(steps.length - 1, 0)} />
+          )}
         </div>
         <div className="flex justify-end">
           {step < last && canSkipSetup && (
