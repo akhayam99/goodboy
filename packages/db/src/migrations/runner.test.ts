@@ -553,6 +553,7 @@ describe('migrate', () => {
       ordinal: 0,
       name: 'Discovery',
       status: 'pending',
+      domains: ['auth', 'db'],
     };
 
     await insertAgent(db, agent);
@@ -563,6 +564,7 @@ describe('migrate', () => {
       throw new Error('agents[0] should exist');
     }
     expect(agents[0].status).toBe('pending');
+    expect(agents[0].domains).toEqual(['auth', 'db']);
 
     await updateAgentStatus(db, agent.id, {
       status: 'completed',
