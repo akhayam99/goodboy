@@ -119,7 +119,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts
-          are shared across every session of this workspace
+          are shared across every session of this workspace.
         </p>
         <Button
           variant="ghost"

@@ -161,7 +161,7 @@ export const GitHubStudio = ({
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <IntegrationConnectPanel
               provider="github"
-              description="This workspace does not have a GitHub remote. Add one to review pull requests"
+              description="This workspace does not have a GitHub remote. Add one to review pull requests, or set a workspace token below."
             >
               <GithubFormBody workspaceId={workspaceId} />
             </IntegrationConnectPanel>

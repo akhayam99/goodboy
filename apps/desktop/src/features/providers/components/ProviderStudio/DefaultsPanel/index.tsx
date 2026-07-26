@@ -160,7 +160,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             <Divider />
             <FieldRow
               label="Routing pool"
-              help="Providers Goodboy can pick on its own. New sessions start with this pool"
+              help="Providers Goodboy can pick on its own. New sessions start with this pool."
             >
               {connectedProviderIds.length === 0 ? (
                 <span className="text-2xs text-muted-foreground">No providers connected</span>

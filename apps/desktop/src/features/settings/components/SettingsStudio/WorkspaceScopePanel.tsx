@@ -206,7 +206,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           <div ref={anchor('scripts')} className="py-4 first:pt-0 last:pb-0">
             <FieldRow
               label="Scripts"
-              help="Shell scripts you run by hand. No agent, no tokens. Scripts are shared across every session of this workspace"
+              help="Shell scripts you run by hand. No agent, no tokens. Scripts are shared across every session of this workspace."
               layout="stacked"
             >
               <ScriptsPanel workspaceId={workspaceId} />

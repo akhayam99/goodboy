@@ -148,7 +148,7 @@ describe('GitHubStudio', () => {
 
     expect(
       screen.getByText(
-        'This workspace does not have a GitHub remote. Add one to review pull requests',
+        'This workspace does not have a GitHub remote. Add one to review pull requests, or set a workspace token below.',
       ),
     ).toBeDefined();
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
