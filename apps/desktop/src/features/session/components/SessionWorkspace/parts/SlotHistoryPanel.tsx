@@ -125,7 +125,7 @@ export const SlotHistoryPanel = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div className="flex w-80 shrink-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2.5">
         <span className="text-xs font-medium text-foreground">history: {label}</span>
         <button
