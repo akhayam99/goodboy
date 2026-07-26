@@ -237,10 +237,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     providers.find((p) => p.id === session.providerOverride)?.id ??
     session.providerPreference.defaultProvider;
 
-  const candidateProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
-    const connected = providers.filter((p) => p.connection === 'connected').map((p) => p.id);
-    return connected.length > 0 ? connected : [providerId];
-  }, [providers, providerId]);
+  const connectedProviders = useMemo<ReadonlyArray<ProviderId>>(
+    () => providers.filter((p) => p.connection === 'connected').map((p) => p.id),
+    [providers],
+  );
 
   const resolvedPlanTaskModel = useMemo(
     () => resolveTaskModel('plan_generation', workspaceOverrides?.taskModels, providerId),
@@ -985,7 +985,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <div className="w-64">
                             <RoutingPicker
                               ariaLabel="planner routing"
-                              providers={candidateProviders}
+                              connectedProviders={connectedProviders}
                               provider={plannerProviderOverride}
                               model={plannerModelOverride}
                               effort={PLANNER_EFFORT}
@@ -1070,7 +1070,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 provider={resolvedProvider(st)}
                                 providerValue={st.providerOverride ?? ''}
                                 recommendedProvider={recommendedProvider(st)}
-                                candidateProviders={candidateProviders}
+                                connectedProviders={connectedProviders}
                                 name={st.name}
                                 promptPrefix={st.promptPrefix}
                                 expectedOutput={st.expectedOutput}

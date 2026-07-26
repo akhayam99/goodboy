@@ -78,7 +78,7 @@ export const RoleModelRow = ({
       <div className="w-80">
         <RoutingPicker
           ariaLabel={`${label} routing`}
-          providers={availableProviderIds}
+          connectedProviders={availableProviderIds}
           provider={providerId}
           model={resolved.isOverride ? resolved.model : ''}
           effort={resolved.effort}

@@ -197,7 +197,7 @@ export function SpawnAgentMenu({ sessionId, trigger, onSpawned }: SpawnAgentMenu
               </span>
               <RoutingPicker
                 ariaLabel="new agent routing"
-                providers={connectedProviders}
+                connectedProviders={connectedProviders}
                 provider={routing?.provider ?? ''}
                 model={routing?.model ?? ''}
                 effort={routing?.effort ?? baseline.effort}

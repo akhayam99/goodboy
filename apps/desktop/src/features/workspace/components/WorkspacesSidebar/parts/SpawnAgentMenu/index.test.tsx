@@ -60,7 +60,7 @@ describe('SpawnAgentMenu', () => {
   it('passes a pinned model, provider and effort to the spawn', () => {
     openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'new agent routing' }));
-    fireEvent.click(screen.getByTitle('claude-opus-5'));
+    fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
     fireEvent.click(screen.getByRole('menuitem', { name: /Docs/ }));
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'docs',

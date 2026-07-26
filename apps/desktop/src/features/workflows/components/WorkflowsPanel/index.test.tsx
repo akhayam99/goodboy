@@ -20,7 +20,10 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => undefined) }));
 
-vi.mock('@goodboy/core', () => ({ formatWorkflowFromNL: vi.fn(async () => null) }));
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core')>();
+  return { ...actual, formatWorkflowFromNL: vi.fn(async () => null) };
+});
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],

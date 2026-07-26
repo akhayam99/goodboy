@@ -305,7 +305,7 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
       <div className="min-w-0 flex-1">
         <RoutingPicker
           ariaLabel="retry routing"
-          providers={availableProviderIds}
+          connectedProviders={availableProviderIds}
           provider={providerId}
           model={model}
           recommendedModel={recommendedModel}

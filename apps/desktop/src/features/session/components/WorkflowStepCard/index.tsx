@@ -25,7 +25,7 @@ type Props = {
   readonly provider: ProviderId;
   readonly providerValue: ProviderId | '';
   readonly recommendedProvider: ProviderId;
-  readonly candidateProviders: ReadonlyArray<ProviderId>;
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly name: string;
   readonly promptPrefix: string;
   readonly expectedOutput?: string;
@@ -110,7 +110,7 @@ export const WorkflowStepCard = ({
   provider,
   providerValue,
   recommendedProvider,
-  candidateProviders,
+  connectedProviders,
   name,
   promptPrefix,
   expectedOutput,
@@ -316,7 +316,7 @@ export const WorkflowStepCard = ({
                 <FieldLabel>Provider, model, effort</FieldLabel>
                 <RoutingPicker
                   ariaLabel={`routing for step ${ordinal + 1}`}
-                  providers={candidateProviders}
+                  connectedProviders={connectedProviders}
                   provider={providerValue}
                   model={model}
                   effort={effort}

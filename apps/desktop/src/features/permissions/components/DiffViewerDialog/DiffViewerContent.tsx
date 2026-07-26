@@ -825,7 +825,7 @@ export const DiffViewerContent = ({
           routing={
             <RoutingPicker
               ariaLabel="resolver routing"
-              providers={connectedProviderIds}
+              connectedProviders={connectedProviderIds}
               provider={resolverRouting.provider}
               model={resolverRouting.model}
               effort={resolverRouting.effort}

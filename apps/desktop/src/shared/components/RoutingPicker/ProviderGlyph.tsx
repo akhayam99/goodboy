@@ -3,9 +3,10 @@ import { PROVIDER_BRAND, brandColor } from '../../../features/providers/componen
 
 type Props = {
   readonly id: ProviderId;
+  readonly size?: number;
 };
 
-export const ProviderGlyph = ({ id }: Props) => {
+export const ProviderGlyph = ({ id, size = 13 }: Props) => {
   const Icon = PROVIDER_BRAND[id].icon;
-  return <Icon size={13} className="shrink-0" style={{ color: brandColor(id) }} aria-hidden />;
+  return <Icon size={size} className="shrink-0" style={{ color: brandColor(id) }} aria-hidden />;
 };

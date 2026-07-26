@@ -44,7 +44,7 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className }: Props
     <div className={cn('flex flex-col gap-2', className)}>
       <RoutingPicker
         ariaLabel="Agent settings"
-        providers={connectedProviders}
+        connectedProviders={connectedProviders}
         provider={value.provider}
         model={value.model}
         effort={value.effort}

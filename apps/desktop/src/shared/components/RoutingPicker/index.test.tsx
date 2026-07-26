@@ -4,10 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
+import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from './index';
 
 const baseProps = {
-  providers: ['anthropic', 'codex'] as ReadonlyArray<ProviderId>,
+  connectedProviders: ['anthropic', 'cursor', 'codex', 'gemini'] as ReadonlyArray<ProviderId>,
   provider: 'anthropic' as ProviderId,
   model: 'claude-opus-5',
   effort: 'high' as const,
@@ -17,8 +18,14 @@ const baseProps = {
   onModel: vi.fn(),
   onEffort: vi.fn(),
 };
+const providers = Object.keys(PROVIDER_CAPABILITIES).filter(
+  (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
+);
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 describe('RoutingPicker', () => {
   it('reads provider, model and effort in the closed trigger', () => {
@@ -48,13 +55,31 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog').textContent).not.toContain('recommended');
   });
 
-  it('reports the picked model and closes the popover', () => {
+  it('reports the picked model and keeps the popover open', () => {
     const onModel = vi.fn();
     render(<RoutingPicker {...baseProps} onModel={onModel} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    fireEvent.click(screen.getByTitle('claude-sonnet-4-6'));
+    fireEvent.click(screen.getByTitle(/^claude-sonnet-4-6 \(/));
     expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('reports the picked provider and keeps the popover open', () => {
+    const onProvider = vi.fn();
+    render(<RoutingPicker {...baseProps} onProvider={onProvider} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    expect(onProvider).toHaveBeenCalledWith('cursor');
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('reports the picked effort and keeps the popover open', () => {
+    const onEffort = vi.fn();
+    render(<RoutingPicker {...baseProps} onEffort={onEffort} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Medium' }));
+    expect(onEffort).toHaveBeenCalledWith('medium');
+    expect(screen.getByRole('dialog')).toBeDefined();
   });
 
   it('bounds only the model list as the scroll region', () => {
@@ -70,7 +95,8 @@ describe('RoutingPicker', () => {
     const modelIds = PROVIDER_CAPABILITIES.anthropic.models.map((entry) => entry.id);
     expect(modelIds.length).toBeGreaterThan(3);
     for (const id of modelIds) {
-      expect(viewport?.querySelector(`[title="${id}"]`)).not.toBeNull();
+      const chips = Array.from(viewport?.querySelectorAll('[title]') ?? []);
+      expect(chips.some((chip) => chip.getAttribute('title')?.startsWith(`${id} (`))).toBe(true);
     }
   });
 
@@ -82,9 +108,60 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog').textContent).toContain('Replies');
   });
 
-  it('marks unconnected providers as a connect affordance', () => {
+  it('shows every registry provider when only one is connected', () => {
     render(<RoutingPicker {...baseProps} connectedProviders={['anthropic']} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByTitle('not connected, click to connect').textContent).toContain('Codex');
+    for (const id of providers) {
+      expect(screen.getByRole('button', { name: PROVIDER_LABEL[id] })).toBeDefined();
+    }
+  });
+
+  it('offers to connect an unconnected provider without selecting it', () => {
+    const onProvider = vi.fn();
+    const events: CustomEvent[] = [];
+    const onOpenProviderStudio = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        events.push(event);
+      }
+    };
+    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+    render(
+      <RoutingPicker {...baseProps} connectedProviders={['anthropic']} onProvider={onProvider} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
+    expect(onProvider).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
+    expect(events).toHaveLength(1);
+    expect(events[0]?.detail.providerId).toBe('codex');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
+  });
+
+  it('filters cursor models and omits the filter for anthropic', () => {
+    const cursorModel = PROVIDER_CAPABILITIES.cursor.models.at(-1);
+    if (cursorModel == null) {
+      throw new Error('cursor model registry is empty');
+    }
+    const view = render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model={PROVIDER_CAPABILITIES.cursor.models[0]?.id ?? ''}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const filter = screen.getByPlaceholderText('Filter models');
+    fireEvent.change(filter, { target: { value: cursorModel.label } });
+    const modelChips = screen
+      .getAllByRole('button')
+      .filter((button) => button.title.includes(' ('));
+    expect(modelChips).toHaveLength(1);
+    expect(modelChips[0]?.title).toContain(cursorModel.id);
+    view.unmount();
+
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.queryByPlaceholderText('Filter models')).toBeNull();
   });
 });
