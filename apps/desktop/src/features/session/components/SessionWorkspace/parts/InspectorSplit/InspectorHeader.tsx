@@ -3,8 +3,8 @@ import { X } from 'lucide-react';
 
 type Props = {
   readonly title: string;
-  readonly closeLabel: string;
-  readonly onClose: () => void;
+  readonly closeLabel?: string;
+  readonly onClose?: () => void;
 };
 
 export const InspectorHeader = ({ title, closeLabel, onClose }: Props) => (
@@ -13,14 +13,16 @@ export const InspectorHeader = ({ title, closeLabel, onClose }: Props) => (
       <span className="truncate text-xs font-medium text-foreground" title={title}>
         {title}
       </span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label={closeLabel}
-        className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-      >
-        <X size={14} aria-hidden />
-      </button>
+      {onClose === undefined ? null : (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={closeLabel}
+          className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          <X size={14} aria-hidden />
+        </button>
+      )}
     </div>
     <Divider />
   </>

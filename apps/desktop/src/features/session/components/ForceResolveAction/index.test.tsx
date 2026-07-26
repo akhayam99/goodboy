@@ -149,7 +149,9 @@ describe('ForceResolveAction', () => {
       <ForceResolveAction agent={OTHER_AGENT} sessionId={SESSION_ID} status="awaiting" />,
     );
 
-    expect(screen.queryByRole('textbox', { name: 'Resolution note' })).toBeNull();
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Resolution note' }).value).toBe(
+      '',
+    );
     expect(screen.getByRole('button', { name: 'Mark resolved' })).toBeDefined();
   });
 

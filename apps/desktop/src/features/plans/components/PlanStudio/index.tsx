@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  AlertTriangle,
   ArchiveRestore,
   CheckCircle2,
   ClipboardList,
@@ -25,6 +24,7 @@ import {
 import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
+import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
@@ -54,22 +54,6 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
-  const [retriggerArmed, setRetriggerArmed] = useState(false);
-  const retriggerTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setRetriggerArmed(false);
-    if (retriggerTimerRef.current !== null) {
-      window.clearTimeout(retriggerTimerRef.current);
-      retriggerTimerRef.current = null;
-    }
-  }, [selectedId]);
-
-  useEffect(() => {
-    return () => {
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     if (selectedId === null && plans.length > 0) {
@@ -122,21 +106,9 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   };
 
   const handleTrigger = async () => {
-    if (!selected || spawning) return;
-    if (selected.status === 'consumed' && !retriggerArmed) {
-      setRetriggerArmed(true);
-      if (retriggerTimerRef.current !== null) window.clearTimeout(retriggerTimerRef.current);
-      retriggerTimerRef.current = window.setTimeout(() => {
-        setRetriggerArmed(false);
-        retriggerTimerRef.current = null;
-      }, 4000);
+    if (!selected || spawning) {
       return;
     }
-    if (retriggerTimerRef.current !== null) {
-      window.clearTimeout(retriggerTimerRef.current);
-      retriggerTimerRef.current = null;
-    }
-    setRetriggerArmed(false);
     setSpawning(true);
     try {
       await runPlan(sessionId, selected.id);
@@ -334,38 +306,43 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                           size="sm"
                         />
                         {selected.status !== 'discarded' ? (
-                          <button
-                            type="button"
-                            onClick={() => void handleTrigger()}
-                            disabled={spawning}
-                            className={cn(
-                              'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-xs font-medium shadow-sm transition-colors',
-                              retriggerArmed
-                                ? 'w-36 bg-warning/15 text-warning hover:bg-warning/20'
-                                : 'bg-primary text-primary-foreground hover:bg-primary/90',
-                              spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                            )}
-                            title={
-                              retriggerArmed
-                                ? 'Already consumed, click again to confirm and spawn a fresh agent'
-                                : selected.status === 'consumed' || selected.status === 'superseded'
-                                  ? 'Plan already ran, click to replay (asks for confirmation)'
-                                  : 'Spawn new agent to execute this plan'
-                            }
-                          >
-                            {retriggerArmed ? (
-                              <AlertTriangle size={12} aria-hidden />
-                            ) : selected.status === 'active' ? (
-                              <Play size={12} aria-hidden className="fill-current" />
-                            ) : (
-                              <RotateCw size={12} aria-hidden />
-                            )}
-                            {retriggerArmed
-                              ? 'Confirm replay'
-                              : selected.status === 'active'
-                                ? 'Start'
-                                : 'Replay'}
-                          </button>
+                          selected.status === 'consumed' ? (
+                            <ConfirmableButton
+                              key={selected.id}
+                              label="Replay"
+                              armedLabel="Confirm replay"
+                              busyLabel="Replaying..."
+                              onConfirm={handleTrigger}
+                              disabled={spawning}
+                              tone="warning"
+                              autoDisarmMs={4000}
+                              title="Plan already ran, click to replay and confirm"
+                              icon={<RotateCw size={12} aria-hidden />}
+                              className="rounded-md px-2.5 py-1 text-xs"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => void handleTrigger()}
+                              disabled={spawning}
+                              className={cn(
+                                'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90',
+                                spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
+                              )}
+                              title={
+                                selected.status === 'active'
+                                  ? 'Spawn new agent to execute this plan'
+                                  : 'Replay this plan'
+                              }
+                            >
+                              {selected.status === 'active' ? (
+                                <Play size={12} aria-hidden className="fill-current" />
+                              ) : (
+                                <RotateCw size={12} aria-hidden />
+                              )}
+                              {selected.status === 'active' ? 'Start' : 'Replay'}
+                            </button>
+                          )
                         ) : null}
                         {selected.status === 'consumed' ? (
                           <Tooltip content="Consumed plans cannot be deleted">

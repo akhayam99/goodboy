@@ -35,7 +35,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
           <HandoffChip assistantText={text} sessionId={sessionId} />
           <CommentAnalysisChip assistantText={text} sessionId={sessionId} agentId={agentId} />
           <CommentResolvedChip assistantText={text} sessionId={sessionId} agentId={agentId} />
-          <CommentWontfixChip assistantText={text} sessionId={sessionId} />
+          <CommentWontfixChip assistantText={text} sessionId={sessionId} agentId={agentId} />
         </div>
       ) : null}
     </TranscriptShell>

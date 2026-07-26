@@ -1,115 +1,57 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
-  extractMock: vi.fn<(text: string) => unknown>(() => null),
-  resolveMock: vi.fn(async () => true),
-  queueMock: vi.fn(async () => {}),
-  dequeueMock: vi.fn(async () => {}),
-  loadMock: vi.fn(async () => {}),
-  selectMock: vi.fn(async () => {}),
-  pr: { number: 123 } as { number: number } | null,
+  extract: vi.fn<(text: string) => unknown>(() => null),
   pending: [] as Array<{ threadId: string }>,
 }));
 
 vi.mock('@goodboy/core', () => ({
-  extractCommentResolved: h.extractMock,
+  extractCommentResolved: h.extract,
   isReviewThreadId: (id: string) => /^PRRT_/.test(id),
 }));
+
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
-    selector: (s: {
-      queueResolution: typeof h.queueMock;
-      dequeueResolution: typeof h.dequeueMock;
-      resolveGithubThread: typeof h.resolveMock;
-      loadPendingResolutions: typeof h.loadMock;
-      selectAgent: typeof h.selectMock;
-      sessionGithub: Record<string, { pr: { number: number } | null; detail: null }>;
+    selector: (state: {
+      sessionGithub: Record<string, { detail: null }>;
       sessionPendingResolutions: Record<string, Array<{ threadId: string }>>;
     }) => T,
   ) =>
     selector({
-      queueResolution: h.queueMock,
-      dequeueResolution: h.dequeueMock,
-      resolveGithubThread: h.resolveMock,
-      loadPendingResolutions: h.loadMock,
-      selectAgent: h.selectMock,
-      sessionGithub: { s: { pr: h.pr, detail: null } },
+      sessionGithub: { s: { detail: null } },
       sessionPendingResolutions: { s: h.pending },
     }),
 }));
 
-import { CommentResolvedChip } from './index';
-
-beforeEach(() => {
-  h.extractMock.mockReset();
-  h.resolveMock.mockReset().mockResolvedValue(true);
-  h.queueMock.mockReset().mockResolvedValue(undefined);
-  h.dequeueMock.mockReset().mockResolvedValue(undefined);
-  h.loadMock.mockReset().mockResolvedValue(undefined);
-  h.selectMock.mockReset().mockResolvedValue(undefined);
-  localStorage.clear();
-  h.pr = { number: 123 };
-  h.pending = [];
-});
-afterEach(cleanup);
+import { CommentResolvedChip } from '.';
 
 describe('CommentResolvedChip', () => {
-  it('renders nothing when no marker is found', () => {
-    h.extractMock.mockReturnValue(null);
-    const { container } = render(<CommentResolvedChip assistantText="" sessionId={'s' as never} />);
-    expect(container.firstChild).toBeNull();
+  beforeEach(() => {
+    h.extract.mockReset();
+    h.pending = [];
+    localStorage.clear();
   });
 
-  it('renders nothing when the marker references a local diff comment id', () => {
-    h.extractMock.mockReturnValue({
-      threadId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-      commitSha: 'abcdef1234567890',
-    });
-    const { container } = render(
-      <CommentResolvedChip assistantText="x" sessionId={'s' as never} />,
+  afterEach(cleanup);
+
+  it('renders nothing without a review marker', () => {
+    h.extract.mockReturnValue(null);
+    const { container, rerender } = render(
+      <CommentResolvedChip assistantText="" sessionId={'s' as never} />,
     );
     expect(container.firstChild).toBeNull();
+
+    h.extract.mockReturnValue({ threadId: 'local-1', commitSha: 'abcdef1234567890' });
+    rerender(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
+    expect(container.firstChild).toBeNull();
   });
 
-  it('queues the resolution when the primary button is clicked', async () => {
-    h.extractMock.mockReturnValue({ threadId: 'PRRT_kwDOABC123', commitSha: 'abcdef1234567890' });
-    render(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('comment-resolved-queue'));
-    });
-    expect(h.queueMock).toHaveBeenCalledWith('s', {
-      threadId: 'PRRT_kwDOABC123',
-      commitSha: 'abcdef1234567890',
-      prNumber: 123,
-    });
-  });
-
-  it('pushes and resolves the thread when the secondary button is clicked', async () => {
-    h.extractMock.mockReturnValue({ threadId: 'PRRT_kwDOABC123', commitSha: 'abcdef1234567890' });
-    render(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('comment-resolved-confirm'));
-    });
-    expect(h.resolveMock).toHaveBeenCalledWith('s', 'PRRT_kwDOABC123', {
-      commitSha: 'abcdef1234567890',
-    });
-    expect(screen.getByText(/conversation resolved/i)).toBeDefined();
-  });
-
-  it('shows the pending-push state when the thread is queued', () => {
-    h.extractMock.mockReturnValue({ threadId: 'PRRT_kwDOABC123', commitSha: 'abcdef1234567890' });
-    h.pending = [{ threadId: 'PRRT_kwDOABC123' }];
-    render(<CommentResolvedChip assistantText="x" sessionId={'s' as never} />);
-    expect(screen.getByText(/pending push/i)).toBeDefined();
-  });
-
-  it('selects the resolver and focuses the composer when continuing work', async () => {
-    h.extractMock.mockReturnValue({ threadId: 'PRRT_kwDOABC123', commitSha: 'abcdef1234567890' });
-    const focus = vi.fn();
-    window.addEventListener('goodboy:focus-composer', focus);
+  it('shows queued status without action buttons', () => {
+    h.extract.mockReturnValue({ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' });
+    h.pending = [{ threadId: 'PRRT_1' }];
     render(
       <CommentResolvedChip
         assistantText="x"
@@ -118,12 +60,28 @@ describe('CommentResolvedChip', () => {
       />,
     );
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('comment-resolved-continue'));
-    });
+    expect(screen.getByText(/pending push/i)).toBeDefined();
+    expect(screen.queryByText('Push now')).toBeNull();
+    expect(screen.getByText('Manage in panel')).toBeDefined();
+  });
 
-    expect(h.selectMock).toHaveBeenCalledWith('s', 'agent-1');
-    expect(focus).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:focus-composer', focus);
+  it('opens the resolver inspector from the manage link', () => {
+    h.extract.mockReturnValue({ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' });
+    const onOpen = vi.fn();
+    window.addEventListener('goodboy:open-resolver-inspector', onOpen);
+    render(
+      <CommentResolvedChip
+        assistantText="x"
+        sessionId={'s' as never}
+        agentId={'agent-1' as never}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('comment-resolved-manage'));
+
+    expect(onOpen).toHaveBeenCalledOnce();
+    const event = onOpen.mock.calls[0]?.[0] as CustomEvent;
+    expect(event.detail).toEqual({ sessionId: 's', agentId: 'agent-1' });
+    window.removeEventListener('goodboy:open-resolver-inspector', onOpen);
   });
 });

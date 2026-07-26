@@ -1,10 +1,10 @@
 import { ArrowLeft } from 'lucide-react';
 import { Divider, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ChatView } from '../../../../chat/components/ChatView';
 import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
 import type { AgentHomeLens } from '../../../agent-kind';
-import type { ResolverStatus } from '../../../resolver-linkage';
+import { ResolverInspector } from '../../ResolverInspector';
 import { agentOverlayHeader } from './agentOverlayHeader';
 
 type Props = {
@@ -12,12 +12,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly isChatActive: boolean;
   readonly selectedAgentId: AgentId | null;
-  readonly selectedAgent: Agent | null;
+  readonly inspectedResolverId: AgentId | null;
   readonly overlayHome: AgentHomeLens;
   readonly overlayHomeLabel: string;
   readonly showWorkflowStrip: boolean;
-  readonly showForceResolve: boolean;
-  readonly resolverStatus: ResolverStatus | null;
   readonly onBack: () => void;
   readonly onOpenWorkflow: () => void;
 };
@@ -27,12 +25,10 @@ export const AgentOverlay = ({
   sessionId,
   isChatActive,
   selectedAgentId,
-  selectedAgent,
+  inspectedResolverId,
   overlayHome,
   overlayHomeLabel,
   showWorkflowStrip,
-  showForceResolve,
-  resolverStatus,
   onBack,
   onOpenWorkflow,
 }: Props) => {
@@ -40,12 +36,9 @@ export const AgentOverlay = ({
     session,
     sessionId,
     selectedAgentId,
-    selectedAgent,
     overlayHome,
     overlayHomeLabel,
     showWorkflowStrip,
-    showForceResolve,
-    resolverStatus,
     onBack,
     onOpenWorkflow,
   });
@@ -76,6 +69,14 @@ export const AgentOverlay = ({
       <div className="min-h-0 min-w-0 flex-1">
         <ChatView session={session} isActive={isChatActive} header={header} />
       </div>
+      {overlayHome === 'resolve' && inspectedResolverId !== null ? (
+        <>
+          <Divider orientation="vertical" />
+          <div className="flex w-80 shrink-0 flex-col bg-background">
+            <ResolverInspector sessionId={sessionId} agentId={inspectedResolverId} />
+          </div>
+        </>
+      ) : null}
     </div>
   );
 };

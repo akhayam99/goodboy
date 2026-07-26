@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import { ArrowUpRight, ChevronDown, ChevronRight, MessageSquareReply, Play } from 'lucide-react';
 import type { Agent, AgentId, DiffComment, PrComment, SessionId } from '@goodboy/types';
 import { openUrl } from '../../../../../shared/lib/editor';
-import { EMPTY_ARRAY } from '../../../../../store';
 import type { AgentMetrics } from '../../../../session/hooks/useAgentMetrics';
 import { resolverStatus, type ResolverState, type ResolverStatus } from '../lib';
-import { ResolveClusterRow } from './ResolveClusterRow';
+import { ResolverRows } from './ResolverRows';
 
 type ResolveClusterProps = {
   readonly agents: ReadonlyArray<Agent>;
@@ -49,9 +49,17 @@ export const ResolveCluster = ({
   onForceNext,
   onResolveThread,
 }: ResolveClusterProps) => {
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const statusOf = (a: Agent): ResolverStatus =>
     resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id]);
-  const resolvedCount = agents.filter((a) => statusOf(a) === 'resolved').length;
+  const entries = agents.map((agent, index) => ({ agent, index, status: statusOf(agent) }));
+  const completedEntries = entries.filter(({ status }) =>
+    ['resolved', 'wontfix', 'stopped', 'done'].includes(status),
+  );
+  const activeEntries = entries.filter(
+    ({ status }) => !['resolved', 'wontfix', 'stopped', 'done'].includes(status),
+  );
+  const resolvedCount = entries.filter(({ status }) => status === 'resolved').length;
   const anyRunning = agents.some((a) => a.status === 'running');
   const queuedCount = agents.filter((a) => a.status === 'pending').length;
   const stalled = !anyRunning && queuedCount > 0;
@@ -122,40 +130,53 @@ export const ResolveCluster = ({
       </div>
       {expanded ? (
         <>
-          {agents.map((agent, i) => {
-            const diffComment =
-              agent.sourceThreadId == null && agent.sourceCommentUrl == null
-                ? (diffCommentByAgentId.get(agent.id) ?? null)
-                : null;
-            const threadComment =
-              agent.sourceThreadId != null
-                ? (commentByThreadId.get(agent.sourceThreadId) ?? null)
-                : null;
-            return (
-              <ResolveClusterRow
-                key={agent.id}
-                agent={agent}
-                index={i}
-                total={agents.length}
-                status={statusOf(agent)}
-                threadComment={threadComment}
-                diffComment={diffComment}
-                telemetry={metrics.latestTelemetryByAgentId.get(agent.id) ?? null}
-                aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
-                contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
-                turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
-                turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
-                isSelected={agent.id === selectedAgentId}
-                isTaskActive={isTaskActive}
-                canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}
-                isInspected={agent.id === inspectedAgentId}
-                onSelect={() => onSelect(agent.id)}
-                onJump={() => jump(agent)}
-                onInspect={onInspect === undefined ? undefined : () => onInspect(agent.id)}
-                onResolveThread={onResolveThread}
-              />
-            );
-          })}
+          <ResolverRows
+            entries={activeEntries}
+            total={agents.length}
+            isTaskActive={isTaskActive}
+            isTranscriptLoading={isTranscriptLoading}
+            selectedAgentId={selectedAgentId}
+            inspectedAgentId={inspectedAgentId}
+            commentByThreadId={commentByThreadId}
+            diffCommentByAgentId={diffCommentByAgentId}
+            metrics={metrics}
+            onSelect={onSelect}
+            onInspect={onInspect}
+            onJump={jump}
+            onResolveThread={onResolveThread}
+          />
+          {completedEntries.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setIsCompletedExpanded((current) => !current)}
+              aria-expanded={isCompletedExpanded}
+              className="flex items-center gap-1 self-start rounded px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {isCompletedExpanded ? (
+                <ChevronDown size={11} aria-hidden className="shrink-0" />
+              ) : (
+                <ChevronRight size={11} aria-hidden className="shrink-0" />
+              )}
+              Completed ({completedEntries.length})
+            </button>
+          ) : null}
+          {isCompletedExpanded ? (
+            <ResolverRows
+              entries={completedEntries}
+              total={agents.length}
+              isTaskActive={isTaskActive}
+              isTranscriptLoading={isTranscriptLoading}
+              selectedAgentId={selectedAgentId}
+              inspectedAgentId={inspectedAgentId}
+              commentByThreadId={commentByThreadId}
+              diffCommentByAgentId={diffCommentByAgentId}
+              metrics={metrics}
+              onSelect={onSelect}
+              onInspect={onInspect}
+              onJump={jump}
+              onResolveThread={onResolveThread}
+            />
+          ) : null}
           <button
             type="button"
             onClick={openResolveBoard}
