@@ -34,8 +34,8 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   cursor: 'cursor',
   codex: 'codex',
   gemini: 'gemini',
-  opencode: 'OpenCode',
-  openrouter: 'OpenRouter',
+  opencode: 'opencode',
+  openrouter: 'openrouter',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
