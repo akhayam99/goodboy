@@ -172,7 +172,7 @@ describe('IntegrationPane', () => {
     h.store.sessionExternalTasks = {};
     h.store.workspaceIntegrations = {};
     const listener = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', listener);
+    window.addEventListener('goodboy:open-linear-studio', listener);
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
@@ -180,10 +180,7 @@ describe('IntegrationPane', () => {
     expect(screen.queryByRole('textbox', { name: 'Linear issue URL' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     expect(listener).toHaveBeenCalledOnce();
-    expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
-      section: 'integrations',
-    });
-    window.removeEventListener('goodboy:open-workspace-settings', listener);
+    window.removeEventListener('goodboy:open-linear-studio', listener);
   });
 
   it.each([

@@ -25,6 +25,14 @@ vi.mock('./useLinearIssues', () => ({
     refetch: vi.fn(),
   }),
 }));
+vi.mock('../LinearFormBody', () => ({
+  LinearFormBody: () => (
+    <label htmlFor="linear-token-test">
+      Personal access token
+      <input id="linear-token-test" />
+    </label>
+  ),
+}));
 
 import { LinearStudio } from '.';
 
@@ -40,7 +48,7 @@ describe('LinearStudio', () => {
       />,
     );
 
-    expect(screen.getByText('Connect Linear')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
+    expect(screen.getByText('Connect Linear to review issues from this workspace')).toBeDefined();
+    expect(screen.getByLabelText('Personal access token')).toBeDefined();
   });
 });

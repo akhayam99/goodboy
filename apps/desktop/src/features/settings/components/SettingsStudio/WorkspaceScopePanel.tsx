@@ -1,24 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type {
-  GhTokenStatus,
-  GitlabIntegrationConfig,
-  LinearIntegrationConfig,
-  SentryIntegrationConfig,
-  VerbosityLevel,
-  WorkspaceId,
-  WorkspaceIntegration,
-} from '@goodboy/types';
+import { useEffect, useRef, useState } from 'react';
+import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
-import { ConnectLinearDialog } from '../../../../features/integrations/linear/ConnectLinearDialog';
-import { ConnectSentryDialog } from '../../../../features/integrations/sentry/ConnectSentryDialog';
-import { ConnectGitlabDialog } from '../../../../features/integrations/gitlab/ConnectGitlabDialog';
-import { ConnectGithubDialog } from '../../../../features/integrations/github/ConnectGithubDialog';
-import { ghStatus } from '../../../../features/github/github';
 import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
@@ -87,6 +73,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         scoutFanout,
+        enabledProviders: wsOverrides?.enabledProviders,
         ...partial,
       });
       showToast('success', successMessage);
@@ -204,13 +191,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             </FieldRow>
           </div>
 
-          <div ref={anchor('integrations')} className="py-4 first:pt-0 last:pb-0">
-            <LinearRow workspaceId={workspaceId} />
-            <SentryRow workspaceId={workspaceId} />
-            <GitlabRow workspaceId={workspaceId} />
-          </div>
-          <GithubRow workspaceId={workspaceId} />
-
           {WORKSPACE_FEATURES.skills ? (
             <div ref={anchor('skills')} className="py-4 first:pt-0 last:pb-0">
               <FieldRow
@@ -226,7 +206,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           <div ref={anchor('scripts')} className="py-4 first:pt-0 last:pb-0">
             <FieldRow
               label="Scripts"
-              help="Shell scripts you run by hand. No agent, no tokens."
+              help="Shell scripts you run by hand. No agent, no tokens. Scripts are shared across every session of this workspace"
               layout="stacked"
             >
               <ScriptsPanel workspaceId={workspaceId} />
@@ -285,114 +265,3 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     </ScrollFade>
   );
 };
-
-function LinearRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
-  const config = linear ? (linear.config as LinearIntegrationConfig) : null;
-  const [open, setOpen] = useState(false);
-
-  return (
-    <FieldRow
-      label="Linear"
-      help={
-        config
-          ? `Connected as ${config.viewerName} · linear.app/${config.workspaceUrlKey}`
-          : 'Pull issues assigned to you into session goals.'
-      }
-    >
-      <Button variant={linear ? 'ghost' : 'secondary'} size="sm" onClick={() => setOpen(true)}>
-        {linear ? 'Manage' : 'Connect'}
-      </Button>
-      <ConnectLinearDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
-    </FieldRow>
-  );
-}
-
-function SentryRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const sentry =
-    (integrations.find((i) => i.provider === 'sentry') as
-      | (WorkspaceIntegration & { config: SentryIntegrationConfig })
-      | undefined) ?? null;
-  const [open, setOpen] = useState(false);
-
-  return (
-    <FieldRow
-      label="Sentry"
-      help={
-        sentry
-          ? `Connected to ${sentry.config.org}/${sentry.config.project}`
-          : 'Pull app issues into session goals.'
-      }
-    >
-      <Button variant={sentry ? 'ghost' : 'secondary'} size="sm" onClick={() => setOpen(true)}>
-        {sentry ? 'Manage' : 'Connect'}
-      </Button>
-      <ConnectSentryDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
-    </FieldRow>
-  );
-}
-
-function GitlabRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const gitlab = integrations.find((i) => i.provider === 'gitlab') ?? null;
-  const config = gitlab ? (gitlab.config as GitlabIntegrationConfig) : null;
-  const [open, setOpen] = useState(false);
-
-  return (
-    <FieldRow
-      label="GitLab"
-      help={
-        config
-          ? `Connected as ${config.userName} · ${config.host.replace(/^https?:\/\//, '')}`
-          : 'Pull issues assigned to you into session goals.'
-      }
-    >
-      <Button variant={gitlab ? 'ghost' : 'secondary'} size="sm" onClick={() => setOpen(true)}>
-        {gitlab ? 'Manage' : 'Connect'}
-      </Button>
-      <ConnectGitlabDialog workspaceId={workspaceId} open={open} onClose={() => setOpen(false)} />
-    </FieldRow>
-  );
-}
-
-function GithubRow({ workspaceId }: { workspaceId: WorkspaceId }) {
-  const [status, setStatus] = useState<GhTokenStatus | null>(null);
-  const [open, setOpen] = useState(false);
-
-  const refresh = useCallback(async () => {
-    try {
-      setStatus(await ghStatus(workspaceId));
-    } catch {
-      setStatus(null);
-    }
-  }, [workspaceId]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const scoped = status?.scoped ?? false;
-  const subtitle = scoped
-    ? `Connected as ${status?.user ?? '(unknown)'} · this workspace`
-    : status?.user
-      ? `Using system gh (${status.user}). Connect a token to override.`
-      : 'Resolve and act on pull requests.';
-
-  return (
-    <FieldRow label="GitHub" help={subtitle}>
-      <Button variant={scoped ? 'ghost' : 'secondary'} size="sm" onClick={() => setOpen(true)}>
-        {scoped ? 'Manage' : 'Connect'}
-      </Button>
-      <ConnectGithubDialog
-        workspaceId={workspaceId}
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          void refresh();
-        }}
-      />
-    </FieldRow>
-  );
-}

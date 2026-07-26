@@ -32,18 +32,6 @@ vi.mock('../../../../features/scripts', () => ({
   ScriptsPanel: () => null,
 }));
 
-vi.mock('../../../../features/integrations/linear/ConnectLinearDialog', () => ({
-  ConnectLinearDialog: () => null,
-}));
-
-vi.mock('../../../../features/integrations/github/ConnectGithubDialog', () => ({
-  ConnectGithubDialog: () => null,
-}));
-
-vi.mock('../../../../features/github/github', () => ({
-  ghStatus: vi.fn(async () => ({ scoped: false, user: null })),
-}));
-
 vi.mock('../../../../features/session/components/VerbositySelect', () => ({
   VerbositySelect: () => null,
 }));
@@ -82,8 +70,8 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.getByLabelText(/branch prefix/i)).toBeDefined();
     expect(screen.queryByText(/default provider/i)).toBeNull();
     expect(screen.getByText(/parallel scouts/i)).toBeDefined();
-    expect(screen.getByText('Linear')).toBeDefined();
-    expect(screen.getByText('GitHub')).toBeDefined();
+    expect(screen.queryByText('Linear')).toBeNull();
+    expect(screen.queryByText('GitHub')).toBeNull();
     expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();
   });
 

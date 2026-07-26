@@ -4,9 +4,10 @@ import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
+import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../connection';
+import { SentryFormBody } from '../SentryFormBody';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
 import { useSentryIssues } from './useSentryIssues';
@@ -109,8 +110,13 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
             </div>
           </>
         ) : (
-          <div className="flex min-h-0 flex-1 items-center justify-center">
-            <ConnectIntegrationEmptyState provider="sentry" />
+          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+            <IntegrationConnectPanel
+              provider="sentry"
+              description="Connect Sentry to review errors from this workspace"
+            >
+              <SentryFormBody workspaceId={workspaceId} />
+            </IntegrationConnectPanel>
           </div>
         )
       }

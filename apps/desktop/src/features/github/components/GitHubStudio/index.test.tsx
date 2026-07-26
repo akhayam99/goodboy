@@ -29,6 +29,14 @@ vi.mock('./useGithubIssues', () => ({
 }));
 vi.mock('./InboxList', () => ({ InboxList: () => <div>Pull request inbox</div> }));
 vi.mock('./PrDetailPanel', () => ({ PrDetailPanel: () => <div>Pull request detail</div> }));
+vi.mock('../../../integrations/github/GithubFormBody', () => ({
+  GithubFormBody: () => (
+    <label htmlFor="github-token-test">
+      Personal access token
+      <input id="github-token-test" />
+    </label>
+  ),
+}));
 vi.mock('../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => h.remoteKind,
 }));
@@ -134,13 +142,16 @@ describe('GitHubStudio', () => {
     expect(h.refetch).toHaveBeenCalledOnce();
   });
 
-  it('renders a neutral disconnected state without a connect action', () => {
+  it('renders the remote explanation with workspace token controls', () => {
     h.remoteKind = null;
     renderStudio();
 
-    expect(screen.getByText('No GitHub remote')).toBeDefined();
-    expect(screen.getByText('This workspace does not have a GitHub remote.')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
+    expect(
+      screen.getByText(
+        'This workspace does not have a GitHub remote. Add one to review pull requests',
+      ),
+    ).toBeDefined();
+    expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(h.useGithubIssues).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       rootPath: '/repo',

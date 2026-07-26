@@ -162,6 +162,7 @@ describe('LensColumn', () => {
       'Decisions',
       'Session summary',
       'GitHub',
+      'GitLab',
       'Linear',
       'Sentry',
       'Terminal',
@@ -330,7 +331,7 @@ describe('LensColumn', () => {
 
     expect(screen.getByRole('button', { name: 'Linear 2' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Sentry 1' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'GitLab issues 1' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'GitLab 1' })).toBeDefined();
 
     cleanup();
     remote.kind = 'gitlab';
@@ -344,8 +345,30 @@ describe('LensColumn', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'GitLab' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'GitLab issues 1' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'GitLab 1' })).toBeDefined();
+  });
+
+  it('opens the studio from a disconnected integration row', () => {
+    store.workspaceIntegrations = {};
+    remote.kind = null;
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-gitlab-studio', listener);
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+    const gitlab = screen.getByRole('button', { name: 'GitLab' });
+    fireEvent.click(gitlab);
+
+    expect(gitlab.className).toContain('opacity-40');
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-gitlab-studio', listener);
   });
 
   it('shows the review board lens only for PR review sessions', () => {
@@ -466,40 +489,5 @@ describe('LensColumn', () => {
       expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
     }
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
-  });
-
-  it('offers integration settings when no integration rows are available', () => {
-    remote.kind = 'other';
-    store.workspaceIntegrations = {};
-    const workspaceSettingsListener = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
-
-    render(
-      <LensColumn
-        session={SESSION}
-        activeLens={null}
-        onSelectOverview={vi.fn()}
-        onSelect={vi.fn()}
-        filesCount={0}
-      />,
-    );
-
-    expect(screen.queryByRole('button', { name: 'Linear' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Sentry' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /GitLab issues/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'GitHub' })).toBeNull();
-    const connect = screen.getByRole('button', { name: 'Connect an integration' });
-    expect(connect).toBeDefined();
-
-    for (const heading of screen.getAllByText(/^(Work|Artifacts|Context|Integrations|Infra)$/)) {
-      expect(heading.parentElement?.querySelector('button')).not.toBeNull();
-    }
-
-    fireEvent.click(connect);
-
-    expect(workspaceSettingsListener).toHaveBeenCalledWith(
-      expect.objectContaining({ detail: { section: 'integrations' } }),
-    );
-    window.removeEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
   });
 });
