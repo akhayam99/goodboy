@@ -28,7 +28,7 @@ const TRIVIAL_VERB_PATTERNS: ReadonlyArray<RegExp> = [
 const QUESTION_OPENERS = /^(what|where|when|which|why|who|how\s+(do|does|is|are|can|should))\b/i;
 
 const ARCHITECTURAL_VERBS =
-  /\b(design|architect|propose\s+architecture|migrate\s+database|redesign|rewrite)\b/i;
+  /\b(design|propose\s+architecture|migrate\s+database|redesign|rewrite)\b/i;
 
 const MULTI_STEP =
   /\bfirst\b.+\bthen\b.+\bthen\b|\bimplement\b.+\band\s+also\b|\brefactor\b.+\bacross\b/i;

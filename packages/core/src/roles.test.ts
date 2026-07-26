@@ -10,10 +10,7 @@ describe('ROLE_DEFAULTS', () => {
       'implementer',
       'reviewer',
       'investigator',
-      'product',
-      'architect',
       'tester',
-      'explorer',
       'custom',
     ];
     for (const role of expected) {
@@ -46,7 +43,6 @@ describe('ROLE_DEFAULTS', () => {
 
   it('routes design-heavy roles to the strong model', () => {
     expect(ROLE_DEFAULTS.planner.model).toMatch(/opus/);
-    expect(ROLE_DEFAULTS.architect.model).toMatch(/opus/);
   });
 
   it('routes balanced roles to sonnet', () => {

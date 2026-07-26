@@ -22,7 +22,7 @@ describe('AgentAvatar', () => {
   });
 
   it('applies the title attribute when provided', () => {
-    const { container } = render(<AgentAvatar kind="scout" title="explorer" />);
-    expect(container.querySelector('[title="explorer"]')).not.toBeNull();
+    const { container } = render(<AgentAvatar kind="scout" title="scout" />);
+    expect(container.querySelector('[title="scout"]')).not.toBeNull();
   });
 });
