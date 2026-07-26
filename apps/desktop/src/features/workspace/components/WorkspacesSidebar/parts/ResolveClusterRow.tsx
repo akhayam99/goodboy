@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
-import { MessageSquareReply, PanelRight, Upload } from 'lucide-react';
+import { MessageSquare, MessageSquareReply, PanelRight, Upload } from 'lucide-react';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import {
@@ -18,6 +18,7 @@ import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar'
 import { ForceCloseResolverAction } from '../../../../session/components/ForceCloseResolverAction';
 import { diffCommentLocation } from '../../../../session/diff-comment-location';
 import { prCommentLocation } from '../../../../session/pr-comment-location';
+import { resolverOrigin } from '../../../../session/resolver-origin';
 import type { ResolverStatus } from '../lib';
 
 type Props = {
@@ -66,6 +67,7 @@ export const ResolveClusterRow = ({
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const [pushing, setPushing] = useState(false);
   const canPush = agent.sourceThreadId != null && (status === 'committed' || status === 'wontfix');
+  const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const onPush = async () => {
     if (pushing || agent.sourceThreadId == null) {
       return;
@@ -93,17 +95,21 @@ export const ResolveClusterRow = ({
     <div
       role="button"
       tabIndex={0}
-      onClick={onSelect}
+      onClick={onInspect ?? onSelect}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) {
+          return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onSelect();
+          (onInspect ?? onSelect)();
         }
       }}
-      aria-label={agent.name}
+      aria-label={onInspect === undefined ? agent.name : `${agent.name} details`}
+      aria-pressed={onInspect === undefined ? isSelected : isInspected}
       className={cn(
         'relative flex w-full cursor-pointer flex-col gap-1 rounded border px-2 py-1.5 text-2xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-        isSelected
+        isSelected || isInspected
           ? 'bg-elevated text-foreground border-border'
           : 'text-foreground/70 hover:bg-muted/60',
         status === 'running'
@@ -121,6 +127,9 @@ export const ResolveClusterRow = ({
           {agent.name}
         </span>
         <ResolverStateBadge state={resolverBadgeState(status)} />
+        <span className="inline-flex shrink-0 items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          {origin.label}
+        </span>
         {onInspect !== undefined ? (
           <button
             type="button"
@@ -128,15 +137,31 @@ export const ResolveClusterRow = ({
               e.stopPropagation();
               onInspect();
             }}
-            title="Inspect resolver"
-            aria-label="Inspect resolver"
+            title="Toggle resolver details"
+            aria-label="Toggle resolver details"
             aria-pressed={isInspected}
             className={cn(
-              'shrink-0 rounded-md p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground',
+              'inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground',
               isInspected && 'bg-foreground/10 text-foreground',
             )}
           >
-            <PanelRight size={11} aria-hidden />
+            <PanelRight size={12} aria-hidden />
+            Details
+          </button>
+        ) : null}
+        {onInspect !== undefined ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            title="Open resolver chat"
+            aria-label="Open resolver chat"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <MessageSquare size={12} aria-hidden />
+            Open chat
           </button>
         ) : null}
         {canJump ? (
