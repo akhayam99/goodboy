@@ -22,10 +22,7 @@ export type AgentRole =
   | 'implementer'
   | 'reviewer'
   | 'investigator'
-  | 'product'
-  | 'architect'
   | 'tester'
-  | 'explorer'
   | 'custom';
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';

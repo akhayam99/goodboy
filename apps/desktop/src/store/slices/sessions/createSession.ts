@@ -13,6 +13,7 @@ import type {
   WorkspaceId,
   WorkspaceMember,
 } from '@goodboy/types';
+import { resolveRoleRouting } from '@goodboy/core';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
   insertSession,
@@ -278,7 +279,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
             ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
           });
           agentModelOverrides[agent.id] =
-            step.modelOverride ?? kindRouting({ kind, roleModels }).model;
+            step.modelOverride ??
+            (step.role != null
+              ? resolveRoleRouting({ role: step.role, prefs: roleModels }).model
+              : kindRouting({ kind, roleModels }).model);
           agentKindOverrides[agent.id] = kind;
           allAgents.push(agent);
         }
