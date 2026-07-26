@@ -49,6 +49,19 @@ afterEach(() => {
 });
 
 describe('SpawnAgentControl', () => {
+  it('groups the action and quiet configuration controls in one bordered row', () => {
+    renderControl();
+    const create = screen.getByRole('button', { name: 'Create agent' });
+    const role = screen.getByRole('combobox', { name: 'agent role' });
+    const routing = screen.getByRole('button', { name: 'new agent routing' });
+    const row = create.parentElement;
+
+    expect(row?.className).toContain('border-dashed');
+    expect(role.closest('.border-dashed')).toBe(row);
+    expect(routing.closest('.border-dashed')).toBe(row);
+    expect(create.className).not.toContain('border-dashed');
+  });
+
   it('spawns a generic agent with untouched defaults', () => {
     renderControl();
     createAgent();

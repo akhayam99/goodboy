@@ -1,7 +1,7 @@
 import { useState, type ChangeEventHandler, type MouseEventHandler } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { getDefaultTurnModel } from '@goodboy/core';
-import { Select, cn } from '@goodboy/ui';
+import { Divider, Select, cn } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore, useCurrentWorkspace } from '../../../../../store';
@@ -79,62 +79,70 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
   };
 
   return (
-    <div className={cn('relative flex flex-wrap items-center gap-2 overflow-visible', className)}>
-      <button
-        type="button"
-        onClick={onCreate}
-        className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-dashed border-border-soft px-2 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
-      >
-        <Plus size={13} aria-hidden />
-        Create agent
-      </button>
-      {agentKinds.length > 1 && (
-        <Select
-          size="sm"
-          value={selectedRole}
-          onChange={onRoleChange}
-          aria-label="agent role"
-          className="h-7 text-xs"
+    <div className={cn('relative overflow-visible pl-2', className)}>
+      <div className="flex h-8 items-center gap-1 rounded-md border border-dashed border-border-soft bg-muted/20">
+        <button
+          type="button"
+          onClick={onCreate}
+          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
         >
-          {agentKinds.map((kind) => (
-            <option key={kind} value={kind} title={AGENT_KIND_META[kind].hint}>
-              {AGENT_KIND_META[kind].label}
-            </option>
-          ))}
-        </Select>
-      )}
-      <RoutingPicker
-        variant="pill"
-        align="end"
-        ariaLabel="new agent routing"
-        connectedProviders={connectedProviders}
-        provider={routing?.provider ?? ''}
-        model={routing?.model ?? ''}
-        effort={routing?.effort ?? recommendedRouting.effort}
-        recommendedProvider={recommendedRouting.provider}
-        recommendedModel={recommendedRouting.model}
-        disabled={false}
-        overridden={routing != null}
-        onProvider={onProvider}
-        onModel={(model) => {
-          if (model === '') {
-            setRouting(null);
-            return;
-          }
-          setRouting({
-            provider: routing?.provider ?? recommendedRouting.provider,
-            model,
-            effort: clampEffort(model, routing?.effort ?? recommendedRouting.effort),
-          });
-        }}
-        onEffort={(effort) =>
-          setRouting({
-            provider: routing?.provider ?? recommendedRouting.provider,
-            model: routing?.model ?? recommendedRouting.model,
-            effort,
-          })
-        }
-      />
+          <Plus size={13} aria-hidden />
+          Create agent
+        </button>
+        {agentKinds.length > 1 && (
+          <>
+            <Divider orientation="vertical" className="h-4 self-auto" />
+            <Select
+              size="sm"
+              value={selectedRole}
+              onChange={onRoleChange}
+              aria-label="agent role"
+              className="h-7 border-0 bg-transparent text-xs text-muted-foreground shadow-none hover:border-transparent hover:bg-muted/50 hover:text-foreground"
+            >
+              {agentKinds.map((kind) => (
+                <option key={kind} value={kind} title={AGENT_KIND_META[kind].hint}>
+                  {AGENT_KIND_META[kind].label}
+                </option>
+              ))}
+            </Select>
+          </>
+        )}
+        <Divider orientation="vertical" className="h-4 self-auto" />
+        <div className="[&>div>button]:bg-transparent [&>div>button]:ring-0 [&>div>button]:hover:bg-muted/50">
+          <RoutingPicker
+            variant="pill"
+            align="end"
+            ariaLabel="new agent routing"
+            connectedProviders={connectedProviders}
+            provider={routing?.provider ?? ''}
+            model={routing?.model ?? ''}
+            effort={routing?.effort ?? recommendedRouting.effort}
+            recommendedProvider={recommendedRouting.provider}
+            recommendedModel={recommendedRouting.model}
+            disabled={false}
+            overridden={routing != null}
+            onProvider={onProvider}
+            onModel={(model) => {
+              if (model === '') {
+                setRouting(null);
+                return;
+              }
+              setRouting({
+                provider: routing?.provider ?? recommendedRouting.provider,
+                model,
+                effort: clampEffort(model, routing?.effort ?? recommendedRouting.effort),
+              });
+            }}
+            onEffort={(effort) =>
+              setRouting({
+                provider: routing?.provider ?? recommendedRouting.provider,
+                model: routing?.model ?? recommendedRouting.model,
+                effort,
+              })
+            }
+          />
+        </div>
+      </div>
     </div>
   );
 };

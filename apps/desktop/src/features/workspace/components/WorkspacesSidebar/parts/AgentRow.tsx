@@ -231,7 +231,7 @@ export const AgentRow = ({
             </div>
           ))}
       </div>
-      <div className="flex flex-col gap-0.5 px-2 pb-1.5">
+      <div className="flex flex-col gap-0.5 px-2 pb-1.5 pt-0.5">
         <AgentMetricsInline
           telemetry={telemetry}
           aggregate={aggregate}
