@@ -37,6 +37,9 @@ export const addCompositeWorkspace = (set: SetFn, get: GetFn) => {
       if (ws.kind === 'composite') {
         throw new Error('cannot nest a multi-project workspace inside another');
       }
+      if (ws.kind === 'simple') {
+        throw new Error('a simple workspace cannot be linked as a repository');
+      }
       return { workspaceId: m.workspaceId, rootPath: ws.rootPath, mountName: m.mountName.trim() };
     });
 

@@ -7,7 +7,8 @@ import { useOnboardingWizard } from './index';
 let wizardDone = false;
 let hydrated = true;
 const providers: Array<{ connection: ProviderConnectionState }> = [];
-const workspaces: Array<{ id: string }> = [];
+const workspaces: Array<{ id: string; kind?: 'repo' | 'simple' }> = [];
+let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 
 const { ghStatusMock } = vi.hoisted(() => ({
@@ -28,9 +29,10 @@ vi.mock('../../../../store', () => ({
     selector: (s: {
       providers: typeof providers;
       hydrated: boolean;
+      currentWorkspaceId: string | null;
       workspaceIntegrations: typeof workspaceIntegrations;
     }) => unknown,
-  ) => selector({ providers, hydrated, workspaceIntegrations }),
+  ) => selector({ providers, hydrated, currentWorkspaceId, workspaceIntegrations }),
   useWorkspaces: () => workspaces,
 }));
 
@@ -39,6 +41,7 @@ function reset() {
   hydrated = true;
   providers.length = 0;
   workspaces.length = 0;
+  currentWorkspaceId = null;
   workspaceIntegrations = {};
   ghStatusMock.mockReset();
   ghStatusMock.mockResolvedValue({ scoped: false });
@@ -188,6 +191,14 @@ describe('useOnboardingWizard', () => {
       const { result } = renderHook(() => useOnboardingWizard());
       expect(result.current.workspaceId).toBe('w1');
     });
+
+    it('prefers the active workspace and exposes its kind', () => {
+      workspaces.push({ id: 'w1', kind: 'repo' }, { id: 'w2', kind: 'simple' });
+      currentWorkspaceId = 'w2';
+      const { result } = renderHook(() => useOnboardingWizard());
+      expect(result.current.workspaceId).toBe('w2');
+      expect(result.current.workspaceKind).toBe('simple');
+    });
   });
 
   describe('hasCodeHost', () => {
@@ -221,6 +232,14 @@ describe('useOnboardingWizard', () => {
       const { result } = renderHook(() => useOnboardingWizard());
       await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith('w1'));
       expect(result.current.hasCodeHost).toBe(false);
+    });
+
+    it('does not query gh status for a simple workspace', () => {
+      workspaces.push({ id: 'w1', kind: 'simple' });
+      const { result } = renderHook(() => useOnboardingWizard());
+      expect(result.current.workspaceKind).toBe('simple');
+      expect(result.current.hasCodeHost).toBe(false);
+      expect(ghStatusMock).not.toHaveBeenCalled();
     });
   });
 

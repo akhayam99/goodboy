@@ -568,6 +568,17 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
     });
 
+    it('refreshSessionPr noops for a simple workspace even with a branch', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [{ ...buildWorkspace(), kind: 'simple' } as never],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+      });
+      await store.getState().refreshSessionPr(SESSION_ID);
+      expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
+    });
+
     it('sweepGithub is a no-op when github is unavailable', async () => {
       const store = await getStore();
       store.setState({

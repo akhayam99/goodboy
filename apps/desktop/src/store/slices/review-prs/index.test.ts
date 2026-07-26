@@ -161,7 +161,11 @@ describe('review-prs slice', () => {
         author: { username: 'nbro', name: 'N', avatarUrl: 'https://gitlab.com/n.png' },
       }),
       buildMr({ iid: 3, state: 'merged' }),
-      buildMr({ iid: 4, state: 'closed', reviewers: [{ username: 'nbro', name: 'N', avatarUrl: null }] }),
+      buildMr({
+        iid: 4,
+        state: 'closed',
+        reviewers: [{ username: 'nbro', name: 'N', avatarUrl: null }],
+      }),
     ]);
     const { slice, getState } = buildHarness({
       workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
@@ -209,6 +213,23 @@ describe('review-prs slice', () => {
     const result = selectReviewPrs(WS_ID)(getState());
     expect(result.items.map((p) => p.id)).toEqual(['gitlab:2', 'github:1']);
     expect(result.fetchedAt).not.toBeNull();
+  });
+
+  it('skips fetching entirely for a simple workspace', async () => {
+    detectRepoSlugSpy.mockResolvedValue('org/repo');
+    const { slice, getState } = buildHarness({
+      workspaces: [{ ...buildWorkspace(), kind: 'simple' }],
+      workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
+    });
+    await slice.refreshReviewPrs(WS_ID);
+    expect(detectRepoSlugSpy).not.toHaveBeenCalled();
+    expect(gitlabFetchProjectMrsSpy).not.toHaveBeenCalled();
+    expect(selectReviewPrs(WS_ID)(getState())).toEqual({
+      items: [],
+      loading: false,
+      error: null,
+      fetchedAt: null,
+    });
   });
 
   it('selectReviewPrs falls back to an empty idle state', () => {

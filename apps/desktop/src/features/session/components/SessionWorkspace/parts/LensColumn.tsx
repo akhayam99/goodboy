@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { IconTile, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Agent, Session, SessionId } from '@goodboy/types';
+import type { Agent, Session, SessionId, WorkspaceKind } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import {
@@ -46,6 +46,7 @@ type LensColumnProps = {
   readonly onSelectOverview: () => void;
   readonly onSelect: (lens: LensKind) => void;
   readonly filesCount: number;
+  readonly workspaceKind?: WorkspaceKind;
 };
 
 type LensRow = {
@@ -90,6 +91,7 @@ export const LensColumn = ({
   onSelectOverview,
   onSelect,
   filesCount,
+  workspaceKind = 'repo',
 }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
@@ -250,7 +252,7 @@ export const LensColumn = ({
       : []),
   ];
 
-  const groups: ReadonlyArray<LensGroup> = [
+  const repoGroups: ReadonlyArray<LensGroup> = [
     {
       label: 'Work',
       rows: [
@@ -361,6 +363,78 @@ export const LensColumn = ({
       ],
     },
   ];
+  const simpleGroups: ReadonlyArray<LensGroup> = [
+    {
+      label: 'Work',
+      rows: [
+        {
+          kind: 'workflows',
+          label: 'Workflows',
+          icon: Layers,
+          tone: 'accent',
+          count: activeWorkflows,
+          dot:
+            attentionLens === 'workflows' || unreadLens === 'workflows' ? 'attention' : undefined,
+        },
+        {
+          kind: 'agents',
+          label: 'Agents',
+          icon: Bot,
+          tone: 'primary',
+          count: activeNonResolverStandalone.length,
+          isCountLoading: areAgentsLoading,
+          dot:
+            attentionLens === 'agents' || unreadLens === 'agents'
+              ? 'attention'
+              : hasRunningAgent
+                ? 'running'
+                : undefined,
+        },
+        {
+          kind: 'questions',
+          label: 'Questions',
+          icon: CircleHelp,
+          tone: 'warning',
+          count: openCount,
+          isCountLoading: areQuestionsLoading,
+        },
+      ],
+    },
+    {
+      label: 'Artifacts',
+      rows: [
+        {
+          kind: 'plans',
+          label: 'Plans',
+          icon: FileText,
+          tone: 'success',
+          count: activePlans,
+          isCountLoading: arePlansLoading,
+        },
+      ],
+    },
+    {
+      label: 'Context',
+      rows: [
+        { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary', dot: summarizerDot },
+        {
+          kind: 'decisions',
+          label: 'Decisions',
+          icon: CheckCheck,
+          tone: 'success',
+          dot: summarizerDot,
+        },
+        {
+          kind: 'last_output_summary',
+          label: 'Session summary',
+          icon: Activity,
+          tone: 'info',
+          dot: summarizerDot,
+        },
+      ],
+    },
+  ];
+  const groups = workspaceKind === 'simple' ? simpleGroups : repoGroups;
 
   return (
     <ScrollFade className="min-h-0 flex-1">

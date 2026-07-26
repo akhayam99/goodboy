@@ -11,6 +11,13 @@ type Args = {
 
 export const changeSessionBranch = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, { branch, createNew }: Args) => {
+    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const workspace = session
+      ? get().workspaces.find((candidate) => candidate.id === session.workspaceId)
+      : null;
+    if (workspace?.kind === 'simple') {
+      return;
+    }
     const target = branch.trim();
     if (!target) {
       throw new Error('branch name cannot be empty');
@@ -20,8 +27,6 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
     if (!primary) {
       throw new Error(`no worktree found for session ${sessionId}`);
     }
-    const session = get().sessions.find((s) => s.id === sessionId);
-    const workspace = session ? get().workspaces.find((w) => w.id === session.workspaceId) : null;
     if (!workspace) {
       throw new Error('workspace not found for session');
     }

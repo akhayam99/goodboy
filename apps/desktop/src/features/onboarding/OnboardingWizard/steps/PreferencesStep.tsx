@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { OverrideSettings, ProviderId, VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import type {
+  OverrideSettings,
+  ProviderId,
+  VerbosityLevel,
+  WorkspaceId,
+  WorkspaceKind,
+} from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, FieldRow, cn } from '@goodboy/ui';
 import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
@@ -13,6 +19,7 @@ import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
+  readonly workspaceKind?: WorkspaceKind | null;
 };
 
 const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
@@ -24,7 +31,7 @@ const sanitizePrefix = (input: string): string =>
     .replace(/^-+/, '')
     .slice(0, 16);
 
-export const PreferencesStep = ({ workspaceId }: Props) => {
+export const PreferencesStep = ({ workspaceId, workspaceKind = 'repo' }: Props) => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
@@ -39,7 +46,11 @@ export const PreferencesStep = ({ workspaceId }: Props) => {
         </p>
       </div>
 
-      {workspaceId === null ? <EmptyState /> : <PreferencesForm workspaceId={workspaceId} />}
+      {workspaceId === null ? (
+        <EmptyState />
+      ) : (
+        <PreferencesForm workspaceId={workspaceId} isSimple={workspaceKind === 'simple'} />
+      )}
     </div>
   );
 };
@@ -62,7 +73,12 @@ const EmptyState = () => (
   </div>
 );
 
-const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
+type FormProps = {
+  readonly workspaceId: WorkspaceId;
+  readonly isSimple: boolean;
+};
+
+const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
@@ -82,12 +98,15 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
   const scoutFanout = wsOverrides?.scoutFanout ?? false;
 
   useEffect(() => {
+    if (isSimple) {
+      return;
+    }
     void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
       const value = v ?? DEFAULT_BRANCH_PREFIX;
       setBranchPrefix(value);
       setSavedBranchPrefix(value);
     });
-  }, [workspaceId, loadSetting]);
+  }, [isSimple, workspaceId, loadSetting]);
 
   const persistOverrides = async (
     partial: Partial<
@@ -137,37 +156,39 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
   return (
     <div className="flex w-full flex-col gap-4 text-left">
       <div className="flex flex-col divide-y divide-border-soft/50 rounded-lg border border-border-soft/40 bg-subtle/20 px-4">
-        <FieldRow
-          label="Branch prefix"
-          help="Prefixes every new session branch, e.g. your initials."
-        >
-          <div className="flex items-center gap-1.5">
-            <GitBranch size={13} aria-hidden className="shrink-0 text-muted-foreground" />
-            <input
-              type="text"
-              value={branchPrefix}
-              onChange={(e) => setBranchPrefix(sanitizePrefix(e.target.value))}
-              onBlur={() => void commitBranchPrefix()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  void commitBranchPrefix();
-                }
-              }}
-              placeholder={DEFAULT_BRANCH_PREFIX}
-              disabled={busy}
-              maxLength={16}
-              size={12}
-              aria-label="branch prefix"
-              className={cn(
-                'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
-                'placeholder:text-muted-foreground/40',
-                'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-                busy && 'cursor-not-allowed opacity-50',
-              )}
-            />
-            <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
-          </div>
-        </FieldRow>
+        {!isSimple ? (
+          <FieldRow
+            label="Branch prefix"
+            help="Prefixes every new session branch, e.g. your initials."
+          >
+            <div className="flex items-center gap-1.5">
+              <GitBranch size={13} aria-hidden className="shrink-0 text-muted-foreground" />
+              <input
+                type="text"
+                value={branchPrefix}
+                onChange={(e) => setBranchPrefix(sanitizePrefix(e.target.value))}
+                onBlur={() => void commitBranchPrefix()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    void commitBranchPrefix();
+                  }
+                }}
+                placeholder={DEFAULT_BRANCH_PREFIX}
+                disabled={busy}
+                maxLength={16}
+                size={12}
+                aria-label="branch prefix"
+                className={cn(
+                  'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
+                  'placeholder:text-muted-foreground/40',
+                  'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+                  busy && 'cursor-not-allowed opacity-50',
+                )}
+              />
+              <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
+            </div>
+          </FieldRow>
+        ) : null}
 
         <FieldRow
           label="Default provider"
@@ -210,17 +231,19 @@ const PreferencesForm = ({ workspaceId }: { workspaceId: WorkspaceId }) => {
           </div>
         </FieldRow>
 
-        <FieldRow
-          label="Parallel scouts"
-          help="Split broad searches across parallel sub-scouts. Much faster on large codebases."
-        >
-          <ToggleSwitch
-            label={scoutFanout ? 'On' : 'Off'}
-            checked={scoutFanout}
-            disabled={busy}
-            onChange={(next) => void persistOverrides({ scoutFanout: next })}
-          />
-        </FieldRow>
+        {!isSimple ? (
+          <FieldRow
+            label="Parallel scouts"
+            help="Split broad searches across parallel sub-scouts. Much faster on large codebases."
+          >
+            <ToggleSwitch
+              label={scoutFanout ? 'On' : 'Off'}
+              checked={scoutFanout}
+              disabled={busy}
+              onChange={(next) => void persistOverrides({ scoutFanout: next })}
+            />
+          </FieldRow>
+        ) : null}
       </div>
 
       {error ? <p className="text-xs text-danger">{error}</p> : null}

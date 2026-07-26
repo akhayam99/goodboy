@@ -646,25 +646,35 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
     const scopeWorkspace = get().workspaces.find((w) => w.id === session.workspaceId);
+    const isSimpleWorkspace = scopeWorkspace?.kind === 'simple';
     const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
     const scopeGuard = (
-      scopeMembers.length > 0
+      isSimpleWorkspace
         ? [
-            '[multi-repo-scope]',
-            `You are operating across ${scopeMembers.length} linked git repositories mounted under: ${workingDir}`,
-            `Each repo lives in its own subfolder: ${scopeMembers.map((m) => m.mountName).join(', ')}.`,
-            'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
-            'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
-            '[/multi-repo-scope]',
+            '[session-directory-scope]',
+            `You are operating inside this session directory: ${workingDir}`,
+            'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
+            'NEVER write to absolute paths that exit this directory.',
+            'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
+            '[/session-directory-scope]',
           ]
-        : [
-            '[worktree-scope]',
-            `You are operating inside an isolated git worktree at: ${workingDir}`,
-            'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-            'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
-            'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
-            '[/worktree-scope]',
-          ]
+        : scopeMembers.length > 0
+          ? [
+              '[multi-repo-scope]',
+              `You are operating across ${scopeMembers.length} linked git repositories mounted under: ${workingDir}`,
+              `Each repo lives in its own subfolder: ${scopeMembers.map((m) => m.mountName).join(', ')}.`,
+              'Each subfolder is a separate git repository with its own branch. Run git commands inside the relevant subfolder, never at the container root.',
+              'ALL file operations MUST resolve inside one of these subfolders. Do NOT create files at the container root or outside it.',
+              '[/multi-repo-scope]',
+            ]
+          : [
+              '[worktree-scope]',
+              `You are operating inside an isolated git worktree at: ${workingDir}`,
+              'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
+              'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
+              'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
+              '[/worktree-scope]',
+            ]
     ).join('\n');
     const fullSystemPrompt = kindSystemPrompt ? `${scopeGuard}\n\n${kindSystemPrompt}` : scopeGuard;
 
@@ -839,20 +849,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // The existing `files_touched` slot is left untouched (mobile falls back
         // to it, paths-only, when this slot is absent). Best-effort: a git failure
         // must not fail the turn.
-        try {
-          const changed = await worktreeChangedFiles(workingDir);
-          await upsertContextSlot(
-            tauriDatabase,
-            sessionId,
-            { key: FILES_TOUCHED_NUMSTAT_SLOT, value: changed.numstat, enabled: true },
-            'summarizer',
-          );
-          const refreshedSlots = await listContextSlotsForSession(tauriDatabase, sessionId);
-          set((state) => ({
-            sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
-          }));
-        } catch (e) {
-          console.error('files_touched_numstat slot write failed', e);
+        if (!isSimpleWorkspace) {
+          try {
+            const changed = await worktreeChangedFiles(workingDir);
+            await upsertContextSlot(
+              tauriDatabase,
+              sessionId,
+              { key: FILES_TOUCHED_NUMSTAT_SLOT, value: changed.numstat, enabled: true },
+              'summarizer',
+            );
+            const refreshedSlots = await listContextSlotsForSession(tauriDatabase, sessionId);
+            set((state) => ({
+              sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
+            }));
+          } catch (e) {
+            console.error('files_touched_numstat slot write failed', e);
+          }
         }
       } catch (e) {
         console.error('autoPopulateContext failed', e);

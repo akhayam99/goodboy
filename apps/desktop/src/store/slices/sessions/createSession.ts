@@ -23,7 +23,11 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { createWorktree, type CreatedWorktree } from '../../../features/worktree/worktree';
+import {
+  createSessionDir,
+  createWorktree,
+  type CreatedWorktree,
+} from '../../../features/worktree/worktree';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import {
   kindRouting,
@@ -111,6 +115,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       markSessionMobileShared(sessionId);
     }
     const isComposite = workspace.kind === 'composite';
+    const isSimple = workspace.kind === 'simple';
     const members = isComposite ? (workspace.members ?? []) : [];
     if (isComposite && members.length < 2) {
       throw new Error(`multi-project workspace has no linked repos: ${workspaceId}`);
@@ -118,7 +123,13 @@ export const createSession = (set: SetFn, get: GetFn) => {
 
     let worktree: CreatedWorktree;
     const memberWorktrees: Array<{ member: WorkspaceMember; worktree: CreatedWorktree }> = [];
-    if (isComposite) {
+    if (isSimple) {
+      const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
+      worktree = await createSessionDir({
+        basePath: workspace.rootPath,
+        slug: dirSlug,
+      });
+    } else if (isComposite) {
       const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
       const compositeDir = `${workspace.rootPath}/${dirSlug}`;
       for (const member of members) {

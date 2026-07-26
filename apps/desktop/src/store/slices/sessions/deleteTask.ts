@@ -32,7 +32,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (workspace) {
+    if (workspace && workspace.kind !== 'simple') {
       for (const worktreePath of paths) {
         try {
           await removeWorktree(workspace.rootPath, worktreePath);

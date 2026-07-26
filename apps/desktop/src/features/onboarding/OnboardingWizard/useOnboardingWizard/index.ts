@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { ghStatus } from '../../../github/github';
 import { isWizardDone, OPEN_WIZARD_EVENT, type WizardMode } from '../../onboarding-store';
@@ -10,6 +10,7 @@ export type OnboardingWizardState = {
   readonly providersConnected: number;
   readonly hasWorkspace: boolean;
   readonly workspaceId: WorkspaceId | null;
+  readonly workspaceKind: WorkspaceKind | null;
   readonly githubConnected: boolean;
   readonly gitlabConnected: boolean;
   readonly hasCodeHost: boolean;
@@ -22,8 +23,13 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const providersConnected = useAppStore(
     (s) => s.providers.filter((p) => p.connection === 'connected').length,
   );
-  const workspaceId = useWorkspaces()[0]?.id ?? null;
-  const hasWorkspace = useWorkspaces().length > 0;
+  const workspaces = useWorkspaces();
+  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
+  const workspace =
+    workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
+  const workspaceId = workspace?.id ?? null;
+  const workspaceKind = workspace?.kind ?? null;
+  const hasWorkspace = workspaces.length > 0;
   const hydrated = useAppStore((s) => s.hydrated);
 
   const gitlabConnected = useAppStore((s) =>
@@ -44,14 +50,14 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
 
   const [githubScoped, setGithubScoped] = useState(false);
   const refreshGithubStatus = useCallback(() => {
-    if (!workspaceId) {
+    if (!workspaceId || workspaceKind === 'simple') {
       setGithubScoped(false);
       return;
     }
     void ghStatus(workspaceId)
       .then((status) => setGithubScoped(status.scoped ?? false))
       .catch(() => setGithubScoped(false));
-  }, [workspaceId]);
+  }, [workspaceId, workspaceKind]);
 
   useEffect(() => {
     refreshGithubStatus();
@@ -107,6 +113,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     providersConnected,
     hasWorkspace,
     workspaceId,
+    workspaceKind,
     githubConnected: githubScoped,
     gitlabConnected,
     hasCodeHost,

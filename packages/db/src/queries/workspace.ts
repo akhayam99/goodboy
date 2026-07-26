@@ -13,12 +13,23 @@ type WorkspaceRow = {
   last_accessed_at: number | null;
 };
 
+type Params = {
+  kind: string | null;
+};
+
+const coerceWorkspaceKind = ({ kind }: Params): WorkspaceKind => {
+  if (kind === 'composite' || kind === 'simple') {
+    return kind;
+  }
+  return 'repo';
+};
+
 function toDomain(row: WorkspaceRow): Workspace {
   return {
     id: row.id as WorkspaceId,
     name: row.name,
     rootPath: row.root_path,
-    kind: (row.kind === 'composite' ? 'composite' : 'repo') as WorkspaceKind,
+    kind: coerceWorkspaceKind({ kind: row.kind }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
     ...(row.disconnected_at != null

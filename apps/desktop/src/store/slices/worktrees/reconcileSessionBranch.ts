@@ -5,6 +5,13 @@ import type { GetFn, SetFn } from './types';
 
 export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, observedBranch: string) => {
+    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const workspace = session
+      ? get().workspaces.find((candidate) => candidate.id === session.workspaceId)
+      : null;
+    if (workspace?.kind === 'simple') {
+      return;
+    }
     const trimmed = observedBranch.trim();
     if (!trimmed) {
       return;

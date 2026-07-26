@@ -23,6 +23,18 @@ export const createWorktree = async (args: CreateWorktreeArgs): Promise<CreatedW
   return invoke<CreatedWorktree>('worktree_create', { args });
 };
 
+export type CreateSessionDirArgs = {
+  readonly basePath: string;
+  readonly slug: string;
+};
+
+export const createSessionDir = async ({
+  basePath,
+  slug,
+}: CreateSessionDirArgs): Promise<CreatedWorktree> => {
+  return invoke<CreatedWorktree>('session_dir_create', { args: { basePath, slug } });
+};
+
 export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {
   await invoke('worktree_remove', { repoPath, worktreePath });
 };

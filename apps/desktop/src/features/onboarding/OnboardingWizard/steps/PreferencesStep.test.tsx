@@ -129,6 +129,13 @@ describe('PreferencesStep', () => {
       fireEvent.blur(input);
       await waitFor(() => expect(input.value).toBe(DEFAULT_BRANCH_PREFIX));
     });
+
+    it('is hidden with repository-specific defaults for simple workspaces', () => {
+      render(<PreferencesStep workspaceId={WS_ID} workspaceKind="simple" />);
+      expect(screen.queryByLabelText(/branch prefix/i)).toBeNull();
+      expect(screen.queryByRole('switch')).toBeNull();
+      expect(state.loadSetting).not.toHaveBeenCalled();
+    });
   });
 
   describe('parallel scouts toggle', () => {

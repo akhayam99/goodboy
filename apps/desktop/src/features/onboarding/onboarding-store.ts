@@ -21,7 +21,7 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   {
     id: 'workspace',
     title: 'Connect a workspace',
-    why: 'Point Goodboy at a git repo, every session worktree lives off it.',
+    why: 'Create a project space for sessions, agents, workflows, and shared context.',
     group: 'setup',
   },
   {
@@ -39,7 +39,7 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   {
     id: 'session',
     title: 'Create your first session',
-    why: 'A session = one goal on its own worktree + branch. Pick something concrete.',
+    why: 'A session focuses agents and shared context on one concrete goal.',
     group: 'build',
   },
   {

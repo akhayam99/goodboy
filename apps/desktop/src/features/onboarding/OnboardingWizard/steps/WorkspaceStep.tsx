@@ -1,7 +1,11 @@
 import { Check, FolderGit2 } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 
-export const WorkspaceStep = ({ hasWorkspace }: { hasWorkspace: boolean }) => {
+type Props = {
+  readonly hasWorkspace: boolean;
+};
+
+export const WorkspaceStep = ({ hasWorkspace }: Props) => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
@@ -13,8 +17,8 @@ export const WorkspaceStep = ({ hasWorkspace }: { hasWorkspace: boolean }) => {
           Connect a workspace
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Point at a git repo to create your first workspace. Every session gets its own worktree
-          and branch, so your checkout stays clean.
+          Add a repository-backed project, or create a simple project for agents, workflows, and
+          shared context.
         </p>
       </div>
 

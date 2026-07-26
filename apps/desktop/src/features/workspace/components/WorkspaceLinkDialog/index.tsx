@@ -2,20 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Dialog, Input, SegmentedTabs, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
-import { Boxes, Check, FolderGit2, FolderPlus } from 'lucide-react';
+import { Boxes, Check, Folder, FolderGit2, FolderPlus } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
+import { defaultSimpleWorkspacePath } from '../../defaultSimpleWorkspacePath';
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-type Mode = 'single' | 'multi';
+type Mode = 'single' | 'multi' | 'simple';
+
+const DEFAULT_SIMPLE_NAME = 'My workspace';
 
 const lastSegment = (p: string): string => p.split('/').filter(Boolean).at(-1) ?? p;
 
@@ -40,9 +43,13 @@ const commonParentDir = (paths: ReadonlyArray<string>): string => {
 export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const addWorkspace = useAppStore((s) => s.addWorkspace);
   const addCompositeWorkspace = useAppStore((s) => s.addCompositeWorkspace);
+  const addSimpleWorkspace = useAppStore((s) => s.addSimpleWorkspace);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const workspaces = useWorkspaces();
-  const linkable = useMemo(() => workspaces.filter((w) => w.kind !== 'composite'), [workspaces]);
+  const linkable = useMemo(
+    () => workspaces.filter((w) => w.kind !== 'composite' && w.kind !== 'simple'),
+    [workspaces],
+  );
 
   const [mode, setMode] = useState<Mode>('single');
 
@@ -58,6 +65,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const [containerPath, setContainerPath] = useState('');
   const [containerEdited, setContainerEdited] = useState(false);
   const [compositeName, setCompositeName] = useState('');
+  const [simpleName, setSimpleName] = useState(DEFAULT_SIMPLE_NAME);
+  const [simplePath, setSimplePath] = useState('');
+  const [simplePathEdited, setSimplePathEdited] = useState(false);
 
   const pathInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,7 +87,31 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     setContainerPath('');
     setContainerEdited(false);
     setCompositeName('');
+    setSimpleName(DEFAULT_SIMPLE_NAME);
+    setSimplePath('');
+    setSimplePathEdited(false);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || mode !== 'simple' || simplePathEdited) {
+      return;
+    }
+    let cancelled = false;
+    void defaultSimpleWorkspacePath({ name: simpleName })
+      .then((suggestedPath) => {
+        if (!cancelled) {
+          setSimplePath(suggestedPath);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSimplePath('');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, open, simpleName, simplePathEdited]);
 
   useEffect(() => {
     if (path.length === 0) {
@@ -159,6 +193,14 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     }
   }, []);
 
+  const onPickSimple = useCallback(async () => {
+    const picked = await openDialog({ directory: true, multiple: false });
+    if (typeof picked === 'string') {
+      setSimplePathEdited(true);
+      setSimplePath(picked);
+    }
+  }, []);
+
   const onSubmitSingle = useCallback(async () => {
     setBusy(true);
     setSubmitError(null);
@@ -209,6 +251,26 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     onClose,
   ]);
 
+  const onSubmitSimple = useCallback(async () => {
+    setBusy(true);
+    setSubmitError(null);
+    try {
+      const ws = await addSimpleWorkspace({
+        name: simpleName.trim(),
+        path: simplePath.trim(),
+      });
+      await setCurrentWorkspace(ws.id);
+      onClose();
+      if (!isWizardDone()) {
+        reopenWizard('setup');
+      }
+    } catch (err) {
+      setSubmitError(formatError(err));
+    } finally {
+      setBusy(false);
+    }
+  }, [addSimpleWorkspace, onClose, setCurrentWorkspace, simpleName, simplePath]);
+
   const mountValues = selectedWorkspaces.map((w) =>
     (mountNames[w.id] ?? lastSegment(w.rootPath)).trim(),
   );
@@ -216,7 +278,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     mountValues.every((m) => m.length > 0) && new Set(mountValues).size === mountValues.length;
   const multiDisabled =
     busy || selectedWorkspaces.length < 2 || containerPath.trim().length === 0 || !mountsValid;
-  const primaryDisabled = mode === 'single' ? busy || !validPath : multiDisabled;
+  const simpleDisabled = busy || simpleName.trim().length === 0 || simplePath.trim().length === 0;
+  const primaryDisabled =
+    mode === 'single' ? busy || !validPath : mode === 'multi' ? multiDisabled : simpleDisabled;
 
   const previewMounts = selectedWorkspaces.map((w) => mountNames[w.id] ?? lastSegment(w.rootPath));
 
@@ -240,7 +304,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       onClose={onClose}
       size="md"
       title="Add workspace"
-      description="Point Goodboy at a local git repo, or link several into one."
+      description="Add a project, link projects, or create a simple workspace."
       footer={
         <>
           {submitError ? <span className="mr-auto text-xs text-danger">{submitError}</span> : null}
@@ -248,12 +312,22 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
             Cancel
           </Button>
           <Button
-            onClick={() => void (mode === 'single' ? onSubmitSingle() : onSubmitMulti())}
+            onClick={() =>
+              void (mode === 'single'
+                ? onSubmitSingle()
+                : mode === 'multi'
+                  ? onSubmitMulti()
+                  : onSubmitSimple())
+            }
             disabled={primaryDisabled}
             aria-busy={busy}
             className={busy ? 'animate-border-pulse' : undefined}
           >
-            {mode === 'single' ? 'Add workspace' : 'Link projects'}
+            {mode === 'single'
+              ? 'Add workspace'
+              : mode === 'multi'
+                ? 'Link projects'
+                : 'Create workspace'}
           </Button>
         </>
       }
@@ -265,6 +339,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
           options={[
             { value: 'single', label: 'Single project', icon: FolderGit2 },
             { value: 'multi', label: 'Multi project', icon: Boxes, badge: 'beta' },
+            { value: 'simple', label: 'Simple', icon: Folder },
           ]}
           value={mode}
           onChange={setMode}
@@ -274,7 +349,9 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
         <p className="text-xs leading-relaxed text-muted-foreground">
           {mode === 'single'
             ? 'Work in one git repository.'
-            : 'Working on both a frontend and a backend? Link them into one workspace so a single chat can work across all of them.'}
+            : mode === 'multi'
+              ? 'Working on both a frontend and a backend? Link them into one workspace so a single chat can work across all of them.'
+              : 'Use agents, workflows, and shared context in a standalone project space.'}
         </p>
 
         {mode === 'single' ? (
@@ -317,7 +394,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
               )}
             </div>
           </div>
-        ) : (
+        ) : mode === 'multi' ? (
           <div className="flex flex-col gap-4">
             {linkable.length < 2 ? (
               <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
@@ -433,6 +510,40 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
                 </div>
               </>
             )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-foreground">name</span>
+              <Input
+                autoFocus
+                value={simpleName}
+                placeholder="My workspace"
+                onChange={(event) => setSimpleName(event.target.value)}
+                disabled={busy}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-foreground">directory</span>
+              <div className="flex gap-2">
+                <Input
+                  value={simplePath}
+                  placeholder="/path/to/workspace"
+                  onChange={(event) => {
+                    setSimplePathEdited(true);
+                    setSimplePath(event.target.value);
+                  }}
+                  disabled={busy}
+                  className="flex-1"
+                />
+                <Button variant="secondary" onClick={() => void onPickSimple()} disabled={busy}>
+                  Browse
+                </Button>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                The directory is created when it does not exist.
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -112,6 +112,10 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   ]);
 
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+  const isSimple = useAppStore(
+    (s) =>
+      s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind === 'simple',
+  );
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const flagOn = useAppStore((s) => s.settings['experimental.enable_parallel_agents'] === 'true');
@@ -197,8 +201,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
   const diffLoader = useMemo(
-    () => (worktreePath ? () => worktreeDiff(worktreePath) : undefined),
-    [worktreePath],
+    () => (worktreePath && !isSimple ? () => worktreeDiff(worktreePath) : undefined),
+    [isSimple, worktreePath],
   );
 
   const handleOpenDiff = useCallback((filePath: string) => {
