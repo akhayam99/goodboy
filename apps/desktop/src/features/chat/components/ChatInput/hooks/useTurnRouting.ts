@@ -1,11 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  PROVIDER_IDS,
-  type ProviderId,
-  type Session,
-  type TurnProviderOverride,
-} from '@goodboy/types';
+import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
@@ -106,13 +101,6 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
-  const routableProviders = PROVIDER_IDS.filter(
-    (id) => (PROVIDER_CAPABILITIES[id]?.models.length ?? 0) > 0,
-  );
-  const providerCandidates: ReadonlyArray<ProviderId> = [
-    ...routableProviders.filter((id) => connectedProviderIds.includes(id)),
-    ...routableProviders.filter((id) => !connectedProviderIds.includes(id)),
-  ];
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
     if (effectiveModel) ids.add(effectiveModel);
@@ -171,12 +159,6 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
 
   const onSelectProvider = useCallback(
     (id: ProviderId) => {
-      if (!connectedProviderIds.includes(id)) {
-        window.dispatchEvent(
-          new CustomEvent('goodboy:open-provider-studio', { detail: { providerId: id } }),
-        );
-        return;
-      }
       if (!allowOverride || isRunning) return;
       setSelectedProviderState(id);
       setSelectedModelState(null);
@@ -189,7 +171,6 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
       }
     },
     [
-      connectedProviderIds,
       allowOverride,
       isRunning,
       storeSetSessionConfig,
@@ -233,7 +214,6 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     currentModelRef,
     currentEffortRef,
     connectedProviderIds,
-    providerCandidates,
     modelCandidates,
     setEffort,
     setVerbosity,

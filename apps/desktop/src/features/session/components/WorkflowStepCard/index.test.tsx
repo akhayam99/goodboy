@@ -31,7 +31,7 @@ const baseProps = {
   provider: 'anthropic' as ProviderId,
   providerValue: '' as ProviderId | '',
   recommendedProvider: 'anthropic' as ProviderId,
-  candidateProviders: ['anthropic'] as ReadonlyArray<ProviderId>,
+  connectedProviders: ['anthropic'] as ReadonlyArray<ProviderId>,
   name: 'Scout',
   promptPrefix: 'Find the relevant files.',
   model: '',

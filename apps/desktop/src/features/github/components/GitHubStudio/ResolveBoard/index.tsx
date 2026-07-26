@@ -440,7 +440,7 @@ function ConfigPanel({
       </span>
       <RoutingPicker
         ariaLabel={`${title} routing`}
-        providers={connectedProviders}
+        connectedProviders={connectedProviders}
         provider={config.provider}
         model={config.model}
         effort={config.effort}

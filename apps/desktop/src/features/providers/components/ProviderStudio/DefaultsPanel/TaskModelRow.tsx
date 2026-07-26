@@ -43,7 +43,7 @@ export const TaskModelRow = ({
       <div className="w-80">
         <RoutingPicker
           ariaLabel={`${label} routing`}
-          providers={availableProviderIds}
+          connectedProviders={availableProviderIds}
           provider={providerId}
           model={model}
           recommendedModel={recommendedModel}

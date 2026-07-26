@@ -157,7 +157,7 @@ export const LibraryStepForm = ({
           <InlineField label="Provider, model, effort">
             <RoutingPicker
               ariaLabel="step routing"
-              providers={connectedProviders}
+              connectedProviders={connectedProviders}
               provider={providerOverride}
               model={modelOverride}
               effort={effort}
