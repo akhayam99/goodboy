@@ -307,10 +307,13 @@ export const WorkflowRow = ({
         )}
       </div>
       {isDetail && expanded ? (
-        <WorkflowRunAsk
-          goal={(run.goal ?? workflow.goal ?? '').trim()}
-          processText={(workflow.processText ?? '').trim()}
-        />
+        <div className="flex flex-col gap-2">
+          <WorkflowRunAsk
+            goal={(run.goal ?? workflow.goal ?? '').trim()}
+            processText={(workflow.processText ?? '').trim()}
+          />
+          <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+        </div>
       ) : null}
       {expanded ? (
         wfAgents.length > 0 ? (
@@ -473,7 +476,7 @@ export const WorkflowRow = ({
           />
         </div>
       ) : null}
-      {expanded ? (
+      {expanded && !isDetail ? (
         <div className={cn('pb-1', !isDetail && 'pl-3')}>
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
         </div>

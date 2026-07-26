@@ -7,6 +7,9 @@ import type { Agent, AgentId, SessionId, Step, StepId, WorkflowId } from '@goodb
 
 vi.mock('../../../../../store', () => ({
   agentHasUnread: () => false,
+  useAppStore: <T,>(selector: (state: { planConsumptions: Record<string, never[]> }) => T) =>
+    selector({ planConsumptions: {} }),
+  useSessionPlans: () => [],
 }));
 
 vi.mock('../../../../session/components/AgentMetricsBlock', () => ({
@@ -119,6 +122,10 @@ describe('WorkflowStepRow details', () => {
 
     const brief = screen.getByText('Instructions').parentElement?.parentElement;
     const runs = screen.getByTestId('step-runs');
+    const card = screen.getByTestId('workflow-step-card');
     expect(brief?.compareDocumentPosition(runs) ?? 0).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(card.contains(brief ?? null)).toBe(true);
+    expect(card.contains(runs)).toBe(true);
+    expect(card.querySelectorAll('[role="separator"]')).toHaveLength(2);
   });
 });

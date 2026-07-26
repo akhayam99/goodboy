@@ -24,7 +24,7 @@ vi.mock('../../../../../store', () => ({
 vi.mock(
   '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip',
   () => ({
-    GoalAttachmentsStrip: () => null,
+    GoalAttachmentsStrip: () => <div data-testid="goal-attachments" />,
   }),
 );
 
@@ -219,6 +219,17 @@ describe('WorkflowRow detail dashboard', () => {
     expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
   });
 
+  it('places workflow attachments between the goal and the steps', () => {
+    renderDetail();
+
+    const goal = screen.getByRole('region', { name: 'what you asked for' });
+    const attachments = screen.getByTestId('goal-attachments');
+    const firstStep = screen.getByTestId(`step-${agents[0]!.id}`);
+
+    expect(goal.compareDocumentPosition(attachments)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(attachments.compareDocumentPosition(firstStep)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('places non-scout runs inside the owning step without an indented rail', () => {
     const child = {
       ...agents[1]!,
@@ -232,8 +243,10 @@ describe('WorkflowRow detail dashboard', () => {
     });
 
     const stepRow = screen.getByTestId(`step-${agents[1]!.id}`);
-    expect(within(stepRow).getByRole('button', { name: 'expand runs for Plan' })).toBeDefined();
+    const runs = within(stepRow).getByRole('button', { name: 'expand runs for Plan' });
+    expect(runs).toBeDefined();
     expect(within(stepRow).getByText('Runs (1/1)')).toBeDefined();
+    expect(stepRow.contains(runs)).toBe(true);
     expect(stepRow.querySelector('.ml-3')).toBeNull();
     expect(stepRow.querySelector('.border-l')).toBeNull();
   });

@@ -1,8 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { StatusDot, cn } from '@goodboy/ui';
+import { Divider, StatusDot, cn } from '@goodboy/ui';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Clock, Play } from 'lucide-react';
 import type { Agent, Step, TelemetryRecord } from '@goodboy/types';
-import { getModelProvider } from '@goodboy/core';
 import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
@@ -13,6 +12,7 @@ import {
 import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowStepBrief } from './WorkflowStepBrief';
+import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
 
@@ -106,21 +106,20 @@ export const WorkflowStepRow = ({
   };
 
   const containerClass = cn(
-    'group rounded border transition-colors',
-    isEditing || isPendingFuture ? '' : 'cursor-pointer',
+    'group overflow-hidden rounded-lg border transition-colors',
     isPendingFuture
       ? 'border-transparent'
       : isStartable
-        ? 'border-primary/45 bg-primary/[0.06] hover:bg-primary/[0.1]'
+        ? 'border-primary/45 bg-primary/[0.06]'
         : isActionable && isBlocked
-          ? 'border-warning/60 bg-warning/[0.06] hover:bg-warning/[0.1]'
+          ? 'border-warning/60 bg-warning/[0.06]'
           : isRunning
             ? cn('border-info/60', isSelected ? 'bg-elevated' : 'bg-muted/40')
             : hasUnread
-              ? 'border-warning/70 bg-muted/40 hover:bg-muted/60'
+              ? 'border-warning/70 bg-muted/40'
               : isSelected
                 ? 'border-border bg-elevated'
-                : 'border-transparent bg-muted/40 hover:bg-muted/60',
+                : 'border-transparent bg-muted/40',
   );
 
   const renderStatusIcon = () => {
@@ -168,25 +167,28 @@ export const WorkflowStepRow = ({
 
   return (
     <div className="flex flex-col gap-1">
-      <div
-        role={isPendingFuture ? undefined : 'button'}
-        tabIndex={isEditing || isPendingFuture ? -1 : 0}
-        aria-pressed={isPendingFuture ? undefined : isSelected}
-        title={stableTitle}
-        onClick={isEditing || isPendingFuture ? undefined : handleRowClick}
-        onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
-        onKeyDown={(e) => {
-          if (isEditing) {
-            return;
-          }
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleRowClick();
-          }
-        }}
-        className={containerClass}
-      >
-        <div className="flex items-center gap-2 px-2 py-1.5">
+      <div className={containerClass} data-testid="workflow-step-card">
+        <div
+          role={isPendingFuture ? undefined : 'button'}
+          tabIndex={isEditing || isPendingFuture ? -1 : 0}
+          aria-pressed={isPendingFuture ? undefined : isSelected}
+          title={stableTitle}
+          onClick={isEditing || isPendingFuture ? undefined : handleRowClick}
+          onDoubleClick={isEditing || isPendingFuture ? undefined : onRenameStart}
+          onKeyDown={(e) => {
+            if (isEditing) {
+              return;
+            }
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleRowClick();
+            }
+          }}
+          className={cn(
+            'flex items-center gap-2 px-2 py-1.5 transition-colors',
+            !isEditing && !isPendingFuture && 'cursor-pointer hover:bg-foreground/[0.04]',
+          )}
+        >
           <span
             aria-hidden
             className={cn(
@@ -235,6 +237,7 @@ export const WorkflowStepRow = ({
               {run.name}
             </span>
           )}
+          <WorkflowStepPlanBadge run={run} kind={kind} />
         </div>
         <div className="flex flex-col gap-0.5 px-2 pb-1.5">
           <AgentMetricsInline
@@ -249,33 +252,41 @@ export const WorkflowStepRow = ({
           <AgentMetricsBlock run={run} aggregate={aggregate} />
           <ContextWindowBar usage={contextUsage} />
         </div>
+        {hasBrief ? (
+          <>
+            <Divider />
+            <div className="flex flex-col gap-1 px-2 py-1.5">
+              <button
+                type="button"
+                onClick={() => setBriefOpen((open) => !open)}
+                aria-expanded={briefOpen}
+                aria-label={`${briefOpen ? 'hide' : 'show'} details for ${run.name}`}
+                className="flex items-center gap-1 self-start rounded text-2xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {briefOpen ? (
+                  <ChevronDown size={11} aria-hidden className="shrink-0" />
+                ) : (
+                  <ChevronRight size={11} aria-hidden className="shrink-0" />
+                )}
+                Details
+              </button>
+              {briefOpen ? (
+                <WorkflowStepBrief
+                  promptPrefix={promptPrefix}
+                  expectedOutput={expectedOutput}
+                  outputSummary={outputSummary}
+                />
+              ) : null}
+            </div>
+          </>
+        ) : null}
+        {detailContent != null ? (
+          <>
+            <Divider />
+            <div className="px-2 py-1.5">{detailContent}</div>
+          </>
+        ) : null}
       </div>
-      {hasBrief ? (
-        <div className="flex flex-col gap-1">
-          <button
-            type="button"
-            onClick={() => setBriefOpen((open) => !open)}
-            aria-expanded={briefOpen}
-            aria-label={`${briefOpen ? 'hide' : 'show'} details for ${run.name}`}
-            className="flex items-center gap-1 self-start rounded text-2xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {briefOpen ? (
-              <ChevronDown size={11} aria-hidden className="shrink-0" />
-            ) : (
-              <ChevronRight size={11} aria-hidden className="shrink-0" />
-            )}
-            Details
-          </button>
-          {briefOpen ? (
-            <WorkflowStepBrief
-              promptPrefix={promptPrefix}
-              expectedOutput={expectedOutput}
-              outputSummary={outputSummary}
-            />
-          ) : null}
-        </div>
-      ) : null}
-      {detailContent ?? null}
       {pendingConfirm && blockReason !== null ? (
         <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-[11px]">
           <AlertTriangle size={12} aria-hidden className="shrink-0 text-warning" />
