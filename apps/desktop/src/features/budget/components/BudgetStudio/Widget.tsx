@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
-import { SectionHeader } from './SectionHeader';
+import { SectionHeader, cn } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;

@@ -363,7 +363,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     goToApproach();
-    fireEvent.click(screen.getByRole('button', { name: /custom/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /custom/i }));
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
   });
 });
@@ -688,14 +688,14 @@ describe('WorkflowBuilderView (no-presets empty state)', () => {
   it('shows the empty state message when preset mode is selected but no presets exist', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     goToApproach();
-    fireEvent.click(screen.getByRole('button', { name: /^preset$/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /^preset$/i }));
     expect(screen.getByText(/no presets in this workspace yet/i)).toBeDefined();
   });
 
   it('clicking "Describe your own" from the empty state switches to custom mode', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     goToApproach();
-    fireEvent.click(screen.getByRole('button', { name: /^preset$/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /^preset$/i }));
     fireEvent.click(screen.getByRole('button', { name: /describe your own/i }));
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
   });
