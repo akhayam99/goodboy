@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
+import type { Agent, AgentId, Skill, WorkspaceScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -102,9 +102,6 @@ export const CommandPalette = ({
   const skills = useAppStore((s) =>
     currentWorkspace ? (s.skills[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Skill>;
-  const workflows = useAppStore((s) =>
-    currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Workflow>;
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.workspaceScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<WorkspaceScript>;
@@ -175,22 +172,6 @@ export const CommandPalette = ({
       });
     }
 
-    for (const wf of workflows) {
-      out.push({
-        id: `workflow:${wf.id}`,
-        label: wf.name,
-        sublabel: `${wf.steps.length} step${wf.steps.length === 1 ? '' : 's'}`,
-        group: 'workflow',
-        onSelect: () => {
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-workspace-settings', {
-              detail: { section: 'phases' },
-            }),
-          );
-        },
-      });
-    }
-
     for (const sc of scripts) {
       out.push({
         id: `script:${sc.id}`,
@@ -246,7 +227,6 @@ export const CommandPalette = ({
     sessions,
     agents,
     skills,
-    workflows,
     scripts,
     currentSession,
     sessionWorktree,
