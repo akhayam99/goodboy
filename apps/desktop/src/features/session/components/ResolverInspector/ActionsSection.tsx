@@ -3,6 +3,7 @@ import { Clock, MessageSquareReply, Play, Upload, X } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { ResolverThreadOutcome } from '../../../../store/types';
 import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
 import type { ResolverStatus } from '../../resolver-linkage';
@@ -16,6 +17,9 @@ type Props = {
   readonly commitSha: string | null;
 };
 
+const EMPTY_PENDING: ReadonlyArray<never> = [];
+const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
+
 const SINGLE_ACTION_CLASS =
   'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
@@ -28,8 +32,9 @@ export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) =
   const sendTurn = useAppStore((state) => state.sendTurn);
   const selectAgent = useAppStore((state) => state.selectAgent);
   const prNumber = useAppStore((state) => state.sessionGithub[sessionId]?.pr?.number ?? null);
-  const pending = useAppStore((state) => state.sessionPendingResolutions[sessionId] ?? []);
-  const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id] ?? {});
+  const pending =
+    useAppStore((state) => state.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
+  const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
   const [reason, setReason] = useState('');
 
   useEffect(() => setReason(''), [agent.id]);
