@@ -23,6 +23,8 @@ import { TriggerLabel } from './TriggerLabel';
 import { resolveRouting } from './resolveRouting';
 
 const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
+const PROVIDER_CHIP_GROUP_CLASS_NAME =
+  'flex gap-1.5 bg-subtle px-2.5 [&>button]:h-7 [&>button]:flex-1';
 const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
@@ -95,20 +97,28 @@ export const RoutingPicker = ({
   const [viewProvider, setViewProvider] = useState(routing.provider);
   const [isViewingAuto, setIsViewingAuto] = useState(routing.isProviderRecommended);
   const isViewingRoutingProvider = viewProvider === routing.provider;
+  const viewedRecommendedModel =
+    isViewingRoutingProvider &&
+    recommendedModel != null &&
+    PROVIDER_CAPABILITIES[viewProvider].models.some((entry) => entry.id === recommendedModel)
+      ? recommendedModel
+      : undefined;
+  const viewedLiteralAutoModel = PROVIDER_CAPABILITIES[viewProvider].models.find(
+    (entry) => entry.id === 'auto',
+  )?.id;
   const viewedRouting = resolveRouting({
     providers: PROVIDERS,
     provider: viewProvider,
     model: isViewingRoutingProvider ? model : '',
     effort,
     recommendedProvider: isViewingRoutingProvider ? recommendedProvider : undefined,
-    recommendedModel: isViewingRoutingProvider ? recommendedModel : undefined,
+    recommendedModel: viewedRecommendedModel,
   });
-  const viewedRecommendedModel = isViewingRoutingProvider ? recommendedModel : undefined;
   const isViewProviderConnected = connectedProviders.includes(viewProvider);
   const showEffort = onEffort != null && routing.effortLevels != null;
   const showViewedEffort = onEffort != null && viewedRouting.effortLevels != null;
   const isModelRecommended =
-    isViewingRoutingProvider && routing.isModelRecommended && recommendedModel != null;
+    isViewingRoutingProvider && routing.isModelRecommended && viewedRecommendedModel != null;
   const summary = `${PROVIDER_LABEL[routing.provider]} · ${modelLabel(routing.model)}${
     showEffort ? ` · ${EFFORT_LABEL[routing.effort]} effort` : ''
   }`;
@@ -221,8 +231,8 @@ export const RoutingPicker = ({
             </div>
           )}
           <PickerSection label="Provider" hint="Which CLI agent runs the turn">
-            <div className={CHIP_GROUP_CLASS_NAME}>
-              {(recommendedProvider != null || provider === '') && (
+            <div className={PROVIDER_CHIP_GROUP_CLASS_NAME}>
+              {recommendedProvider != null && (
                 <PickerChip
                   label="auto"
                   active={isViewingAuto}
@@ -232,19 +242,8 @@ export const RoutingPicker = ({
                       viewedProvider: routing.provider,
                     })
                   }
-                  glyph={
-                    recommendedProvider != null ? (
-                      <ProviderGlyph id={recommendedProvider} size={15} />
-                    ) : (
-                      <span
-                        className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40"
-                        aria-hidden
-                      />
-                    )
-                  }
-                  note={
-                    recommendedProvider != null ? PROVIDER_LABEL[recommendedProvider] : undefined
-                  }
+                  glyph={<ProviderGlyph id={recommendedProvider} size={15} />}
+                  note={PROVIDER_LABEL[recommendedProvider]}
                 />
               )}
               {PROVIDERS.map((id) => {
@@ -266,7 +265,7 @@ export const RoutingPicker = ({
                       onProvider(id);
                     }}
                     className={cn(
-                      'relative inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
+                      'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
                       isActive && 'bg-background text-foreground shadow-sm',
                     )}
                   >
@@ -285,7 +284,7 @@ export const RoutingPicker = ({
             </div>
           </PickerSection>
           <Divider />
-          <PickerSection label="Model" hint="Premium variants marked with $$">
+          <PickerSection label="Model" hint="Color shows the cost tier">
             {!isViewProviderConnected && (
               <div className="flex items-center gap-2 px-2.5 py-1">
                 <p className="flex-1 text-xs text-muted-foreground">
@@ -312,6 +311,7 @@ export const RoutingPicker = ({
                   ids={viewedRouting.models}
                   value={viewedRouting.model}
                   recommendedModel={viewedRecommendedModel}
+                  literalAutoModel={viewedLiteralAutoModel}
                   isRecommended={isModelRecommended}
                   onSelect={onModel}
                 />

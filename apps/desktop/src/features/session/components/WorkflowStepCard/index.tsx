@@ -10,6 +10,7 @@ import {
   EFFORT_DOT,
   EFFORT_LABEL,
   PROVIDER_LABEL,
+  clampEffort,
   modelLabel,
 } from '../../../chat/utils/chat-constants';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
@@ -68,6 +69,7 @@ const StepMetaRow = ({
   readonly effort: EffortLevel;
 }) => {
   const ProviderGlyph = PROVIDER_BRAND[provider].icon;
+  const resolvedEffort = clampEffort(resolvedModel, effort);
   return (
     <span className="flex flex-wrap items-center gap-1.5">
       <span className={CHIP_CLS}>
@@ -90,8 +92,11 @@ const StepMetaRow = ({
         {modelLabel(resolvedModel)}
       </span>
       <span className={CHIP_CLS}>
-        <span className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[effort])} aria-hidden />
-        {EFFORT_LABEL[effort]}
+        <span
+          className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[resolvedEffort])}
+          aria-hidden
+        />
+        {EFFORT_LABEL[resolvedEffort]}
       </span>
     </span>
   );

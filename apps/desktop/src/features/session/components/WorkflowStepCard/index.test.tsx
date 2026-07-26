@@ -69,6 +69,12 @@ describe('WorkflowStepCard (collapsed)', () => {
     expect(screen.getByText('Claude')).toBeDefined();
   });
 
+  it('shows the clamped effort for the resolved model', () => {
+    render(<WorkflowStepCard {...baseProps} resolvedModel="claude-sonnet-4-6" effort="max" />);
+    expect(screen.getByText('High')).toBeDefined();
+    expect(screen.queryByText('Max')).toBeNull();
+  });
+
   it('clicking the card button calls onExpand', () => {
     const onExpand = vi.fn();
     render(<WorkflowStepCard {...baseProps} onExpand={onExpand} />);
