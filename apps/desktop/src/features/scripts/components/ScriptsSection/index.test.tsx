@@ -11,6 +11,7 @@ type MockState = {
   loadScripts: ReturnType<typeof vi.fn>;
   runScript: ReturnType<typeof vi.fn>;
   cancelScript: ReturnType<typeof vi.fn>;
+  setActiveLens: ReturnType<typeof vi.fn>;
 };
 
 const { state } = vi.hoisted<{ state: MockState }>(() => ({
@@ -22,6 +23,7 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
     loadScripts: vi.fn(async () => undefined),
     runScript: vi.fn(async () => undefined),
     cancelScript: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
   },
 }));
 
@@ -41,6 +43,7 @@ beforeEach(() => {
   state.loadScripts = vi.fn(async () => undefined);
   state.runScript = vi.fn(async () => undefined);
   state.cancelScript = vi.fn(async () => undefined);
+  state.setActiveLens = vi.fn();
 });
 afterEach(cleanup);
 
@@ -57,10 +60,8 @@ describe('ScriptsSection', () => {
     expect(screen.getByText('Create script')).toBeDefined();
   });
 
-  it('opens workspace script settings from the create-script entry', () => {
+  it('opens the session scripts lens from the create-script entry', () => {
     state.workspaceScripts = {};
-    const spy = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', spy);
     render(
       <ScriptsSection
         sessionId={'sess-1' as never}
@@ -69,9 +70,7 @@ describe('ScriptsSection', () => {
       />,
     );
     fireEvent.click(screen.getByText('Create script'));
-    window.removeEventListener('goodboy:open-workspace-settings', spy);
-    expect(spy).toHaveBeenCalledTimes(1);
-    expect((spy.mock.calls[0]![0] as CustomEvent).detail).toEqual({ section: 'scripts' });
+    expect(state.setActiveLens).toHaveBeenCalledWith('sess-1', 'scripts');
   });
 
   it('lists the workspace scripts', () => {

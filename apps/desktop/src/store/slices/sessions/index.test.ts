@@ -824,6 +824,42 @@ describe('store contract', () => {
       );
       expect(store.getState().sessionBranches[session.id]).toBe('');
     });
+
+    it('seeds the workspace routing pool and includes its default provider', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
+        buildWorkspace({
+          rootPath: '/tmp/study-space',
+          kind: 'simple',
+        }),
+      ]);
+      createSessionDirSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/study-space/sessions/study-plan-12345678',
+        branchName: '',
+        slug: 'study-plan-12345678',
+        reused: false,
+      });
+      store.setState({
+        currentWorkspaceId: WS_ID,
+        workspaceOverrides: {
+          [WS_ID]: {
+            defaultProviderId: 'codex',
+            enabledProviders: ['anthropic'],
+          } as never,
+        },
+      });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+
+      expect(session.providerPreference).toEqual({
+        defaultProvider: 'codex',
+        allowTurnOverride: true,
+        enabledProviders: ['anthropic', 'codex'],
+      });
+    });
   });
 
   describe('createSession external task', () => {

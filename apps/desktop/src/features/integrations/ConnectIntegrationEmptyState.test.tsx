@@ -11,23 +11,16 @@ const PROVIDERS = [
 afterEach(cleanup);
 
 describe('ConnectIntegrationEmptyState', () => {
-  it.each(PROVIDERS)('opens workspace integration settings for %s', (provider, name) => {
-    const workspaceSettingsListener = vi.fn();
-    const appSettingsListener = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
-    window.addEventListener('goodboy:open-settings', appSettingsListener);
+  it.each(PROVIDERS)('opens the %s studio', (provider, name) => {
+    const studioListener = vi.fn();
+    window.addEventListener(`goodboy:open-${provider}-studio`, studioListener);
 
     render(<ConnectIntegrationEmptyState provider={provider} />);
     expect(screen.getByText(`Connect ${name}`)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
 
-    expect(workspaceSettingsListener).toHaveBeenCalledOnce();
-    expect((workspaceSettingsListener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
-      section: 'integrations',
-    });
-    expect(appSettingsListener).not.toHaveBeenCalled();
+    expect(studioListener).toHaveBeenCalledOnce();
 
-    window.removeEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
-    window.removeEventListener('goodboy:open-settings', appSettingsListener);
+    window.removeEventListener(`goodboy:open-${provider}-studio`, studioListener);
   });
 });

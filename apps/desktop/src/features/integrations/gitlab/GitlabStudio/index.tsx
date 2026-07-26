@@ -4,9 +4,10 @@ import { RefreshCw } from 'lucide-react';
 import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
+import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../connection';
+import { GitlabFormBody } from '../GitlabFormBody';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
 import { MrDetailPanel } from './MrDetailPanel';
@@ -138,8 +139,13 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     >
       {(requestClose) =>
         !isConnected ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center">
-            <ConnectIntegrationEmptyState provider="gitlab" />
+          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+            <IntegrationConnectPanel
+              provider="gitlab"
+              description="Connect GitLab to review merge requests from this workspace"
+            >
+              <GitlabFormBody workspaceId={workspaceId} />
+            </IntegrationConnectPanel>
           </div>
         ) : tab === 'issues' ? (
           <>

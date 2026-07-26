@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, FieldRow, Input, ScrollFade, SegmentedTabs, cn } from '@goodboy/ui';
-import { AlertTriangle, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
+import { FieldRow, Input, ScrollFade, cn } from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessionById } from '../../../../store';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { parseCap } from '../../../../shared/lib/parse-cap';
-import { listLocalBranches, type LocalBranchInfo } from '../../../../features/worktree/worktree';
-import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_LABEL } from '../../../../features/chat/utils/chat-constants';
 import { ProviderChip } from '../../../../features/providers/components/ProviderChip';
@@ -19,8 +16,6 @@ type Props = {
 
 export const SessionScopePanel = ({ sessionId }: Props) => {
   const session = useSessionById(sessionId);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
-  const sessionBranches = useAppStore((s) => s.sessionBranches);
   const budget = useAppStore((s) => s.sessionBudgets[sessionId] ?? null);
   const sessionSummary = useAppStore((s) => s.sessionSummary);
   const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
@@ -29,39 +24,15 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
   const connectedProviderIds = useAppStore(
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
-  const changeSessionBranch = useAppStore((s) => s.changeSessionBranch);
-  const workspace = useAppStore((s) =>
-    session ? (s.workspaces.find((w) => w.id === session.workspaceId) ?? null) : null,
-  );
   const { showToast } = useToast();
 
   const [capDraft, setCapDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const [branchEditOpen, setBranchEditOpen] = useState(false);
-  const [branchMode, setBranchMode] = useState<'existing' | 'new'>('existing');
-  const [branchTarget, setBranchTarget] = useState('');
-  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
-  const [branchesLoading, setBranchesLoading] = useState(false);
-  const [confirmReuse, setConfirmReuse] = useState(false);
-
   useEffect(() => {
     void loadSessionBudget(sessionId);
   }, [sessionId, loadSessionBudget]);
-
-  useEffect(() => {
-    if (!branchEditOpen || !workspace?.rootPath) {
-      return;
-    }
-    setBranchesLoading(true);
-    setConfirmReuse(false);
-    setBranchTarget('');
-    listLocalBranches(workspace.rootPath)
-      .then(setBranches)
-      .catch(() => setBranches([]))
-      .finally(() => setBranchesLoading(false));
-  }, [branchEditOpen, workspace?.rootPath]);
 
   useEffect(() => {
     setCapDraft(budget?.softCapUsd != null ? String(budget.softCapUsd) : '');
@@ -90,45 +61,6 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
     try {
       await setSessionBudget(sessionId, parsed);
       showToast('success', 'budget cap saved');
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const targetTrimmed = branchTarget.trim();
-  const targetInfo = branches.find((b) => b.name === targetTrimmed) ?? null;
-  const targetOwnedByOtherSession = Object.entries(sessionBranches).some(
-    ([otherSessionId, b]) => otherSessionId !== sessionId && b === targetTrimmed,
-  );
-  const targetInUseElsewhere = targetInfo?.inUse === true;
-  const targetDirty = targetInfo?.hasUncommitted === true;
-  const targetNeedsConfirm =
-    branchMode === 'existing' && (targetOwnedByOtherSession || targetInUseElsewhere || targetDirty);
-
-  const onChangeBranch = async () => {
-    if (!targetTrimmed) {
-      setError('Pick a branch.');
-      return;
-    }
-    if (targetTrimmed === branch) {
-      setBranchEditOpen(false);
-      return;
-    }
-    if (targetNeedsConfirm && !confirmReuse) {
-      setConfirmReuse(true);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      await changeSessionBranch(sessionId, {
-        branch: targetTrimmed,
-        createNew: branchMode === 'new',
-      });
-      showToast('success', `branch switched to ${targetTrimmed}`);
-      setBranchEditOpen(false);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -185,120 +117,6 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col divide-y divide-border-soft/50">
-          <FieldRow label="Branch" help="Worktree branch this session runs on." layout="stacked">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 truncate font-mono text-xs text-foreground">
-                  <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground" />
-                  <span className="truncate">{branch ?? 'unknown'}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setBranchEditOpen(!branchEditOpen)}
-                  disabled={busy || !workspace}
-                  aria-expanded={branchEditOpen}
-                  aria-controls="session-branch-editor"
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground',
-                    (busy || !workspace) && 'cursor-not-allowed opacity-50',
-                  )}
-                >
-                  {branchEditOpen ? (
-                    <ChevronUp size={12} aria-hidden />
-                  ) : (
-                    <ChevronDown size={12} aria-hidden />
-                  )}
-                  {branchEditOpen ? 'Cancel' : 'Change…'}
-                </button>
-              </div>
-
-              {branchEditOpen ? (
-                <div id="session-branch-editor" className="flex flex-col gap-3">
-                  <SegmentedTabs
-                    ariaLabel="branch source"
-                    options={[
-                      { value: 'existing', label: 'pick existing', disabled: busy },
-                      { value: 'new', label: 'create new', disabled: busy },
-                    ]}
-                    value={branchMode}
-                    onChange={(nextMode) => {
-                      setBranchMode(nextMode);
-                      setBranchTarget('');
-                      setConfirmReuse(false);
-                    }}
-                    size="sm"
-                  />
-
-                  {branchMode === 'existing' ? (
-                    <BranchCombobox
-                      branches={branches}
-                      value={branchTarget}
-                      onChange={(v) => {
-                        setBranchTarget(v);
-                        setConfirmReuse(false);
-                      }}
-                      disabled={busy}
-                      loading={branchesLoading}
-                      excludeNames={branch ? [branch] : undefined}
-                    />
-                  ) : (
-                    <Input
-                      value={branchTarget}
-                      onChange={(e) => {
-                        setBranchTarget(e.target.value);
-                        setConfirmReuse(false);
-                      }}
-                      placeholder="feat/something"
-                      disabled={busy}
-                      className="font-mono"
-                    />
-                  )}
-
-                  {targetNeedsConfirm ? (
-                    <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-xs">
-                      <AlertTriangle
-                        size={13}
-                        aria-hidden
-                        className="mt-0.5 shrink-0 text-warning"
-                      />
-                      <div className="flex flex-col gap-1">
-                        <ul className="list-disc pl-4 text-muted-foreground">
-                          {targetOwnedByOtherSession ? (
-                            <li>Already attached to another session.</li>
-                          ) : null}
-                          {targetInUseElsewhere ? (
-                            <li>Checked out in another git worktree.</li>
-                          ) : null}
-                          {targetDirty ? <li>That worktree has uncommitted changes.</li> : null}
-                        </ul>
-                        <span className="text-2xs text-warning/80">
-                          Click {confirmReuse ? '"Confirm switch"' : '"Switch branch"'} again to
-                          confirm.
-                        </span>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="flex items-center justify-end">
-                    <Button
-                      size="sm"
-                      onClick={() => void onChangeBranch()}
-                      disabled={busy || branchesLoading || branchTarget.trim().length === 0}
-                      variant={targetNeedsConfirm && confirmReuse ? 'warning' : 'primary'}
-                      className={busy ? 'animate-border-pulse' : undefined}
-                    >
-                      {busy
-                        ? 'Switching…'
-                        : targetNeedsConfirm && confirmReuse
-                          ? 'Confirm switch'
-                          : 'Switch branch'}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </FieldRow>
-
           <FieldRow label="Default provider" help="Runs new agents and workflow steps.">
             <div className="flex flex-wrap justify-end gap-1">
               {SESSION_PROVIDER_OPTIONS.map((id) => (
@@ -320,7 +138,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
 
           <FieldRow
             label="Routing pool"
-            help="Providers Goodboy can pick on its own, like when drafting a workflow. Unselected ones still appear in the step and chat pickers."
+            help="Starts from the workspace pool. Providers Goodboy can pick on its own, like when drafting a workflow. Unselected ones still appear in the step and chat pickers."
           >
             {connectedProviderIds.length === 0 ? (
               <span className="text-2xs text-muted-foreground">No providers connected.</span>

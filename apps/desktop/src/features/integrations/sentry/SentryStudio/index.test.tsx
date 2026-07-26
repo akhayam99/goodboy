@@ -29,6 +29,16 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
 vi.mock('./useSentryIssues', () => ({
   useSentryIssues: h.useSentryIssues,
 }));
+vi.mock('../SentryFormBody', () => ({
+  SentryFormBody: () => (
+    <div>
+      <label htmlFor="sentry-token-test">Auth token</label>
+      <input id="sentry-token-test" />
+      <label htmlFor="sentry-project-test">Project slug</label>
+      <input id="sentry-project-test" />
+    </div>
+  ),
+}));
 
 import { SentryStudio } from '.';
 
@@ -42,8 +52,9 @@ describe('SentryStudio', () => {
     const workspaceId = 'workspace-1' as WorkspaceId;
     render(<SentryStudio workspaceId={workspaceId} workspaceName="Goodboy" onClose={vi.fn()} />);
 
-    expect(screen.getByText('Connect Sentry')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
+    expect(screen.getByText('Connect Sentry to review errors from this workspace')).toBeDefined();
+    expect(screen.getByLabelText('Auth token')).toBeDefined();
+    expect(screen.getByLabelText('Project slug')).toBeDefined();
     expect(h.useSentryIssues).toHaveBeenCalledWith(workspaceId, false);
   });
 });

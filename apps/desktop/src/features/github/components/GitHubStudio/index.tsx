@@ -17,9 +17,10 @@ import {
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
 import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { IntegrationConnectPanel } from '../../../integrations/components/IntegrationConnectPanel';
+import { GithubFormBody } from '../../../integrations/github/GithubFormBody';
 import { resolveIntegrationConnection } from '../../../integrations/connection';
 import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
-import { MissingGithubRemoteEmptyState } from '../MissingGithubRemoteEmptyState';
 
 type Tab = 'pull-requests' | 'issues';
 
@@ -157,8 +158,13 @@ export const GitHubStudio = ({
     >
       {(requestClose) =>
         !isConnected ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center">
-            <MissingGithubRemoteEmptyState />
+          <div className="flex min-h-0 flex-1 items-center justify-center p-5">
+            <IntegrationConnectPanel
+              provider="github"
+              description="This workspace does not have a GitHub remote. Add one to review pull requests, or set a workspace token below."
+            >
+              <GithubFormBody workspaceId={workspaceId} />
+            </IntegrationConnectPanel>
           </div>
         ) : tab === 'pull-requests' ? (
           <>

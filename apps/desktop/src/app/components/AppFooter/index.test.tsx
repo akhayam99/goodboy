@@ -70,9 +70,8 @@ describe('AppFooter', () => {
     expect(onOpenBudget).toHaveBeenCalledOnce();
   });
 
-  it('renders every disconnected integration and opens integration settings', () => {
-    const workspaceSettingsListener = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
+  it('renders every disconnected integration and opens its studio', () => {
+    const onOpenGitlab = vi.fn();
 
     render(
       <AppFooter
@@ -83,7 +82,7 @@ describe('AppFooter', () => {
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
+        onOpenGitlab={onOpenGitlab}
         githubEnabled={false}
         linearEnabled={false}
         sentryEnabled={false}
@@ -104,10 +103,7 @@ describe('AppFooter', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitLab' }));
 
-    expect(workspaceSettingsListener).toHaveBeenCalledWith(
-      expect.objectContaining({ detail: { section: 'integrations' } }),
-    );
-    window.removeEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
+    expect(onOpenGitlab).toHaveBeenCalledOnce();
   });
 
   it('opens the GitLab studio when GitLab is connected', () => {

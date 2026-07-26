@@ -11,18 +11,12 @@ const { state, toastMock } = vi.hoisted(() => ({
       providerPreference: { defaultProvider: 'anthropic' },
       workspaceId: 'ws-1',
     },
-    sessionBranches: { 'sess-1': 'feat/x' } as Record<string, string | null>,
     sessionBudgets: {} as Record<string, unknown>,
     sessionSummary: null as null | { estimatedCostUsd: number },
     loadSessionBudget: vi.fn(async () => undefined),
     setSessionBudget: vi.fn(async () => undefined),
     setSessionConfig: vi.fn(async () => undefined),
-    changeSessionBranch: vi.fn(async () => undefined),
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
-    workspaces: [{ id: 'ws-1', rootPath: '/repo' }] as ReadonlyArray<{
-      id: string;
-      rootPath: string;
-    }>,
   },
   toastMock: vi.fn(),
 }));
@@ -34,14 +28,6 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
-}));
-
-vi.mock('../../../../features/worktree/worktree', () => ({
-  listLocalBranches: vi.fn(async () => []),
-}));
-
-vi.mock('../../../../features/worktree/BranchCombobox', () => ({
-  BranchCombobox: () => null,
 }));
 
 vi.mock('../../../../features/chat/utils/chat-constants', () => ({
@@ -61,7 +47,6 @@ vi.mock('../../../../features/providers/components/provider-brand', () => ({
 import { SessionScopePanel } from './SessionScopePanel';
 
 beforeEach(() => {
-  state.sessionBranches = { 'sess-1': 'feat/x' };
   state.sessionBudgets = {};
   state.sessionSummary = null;
   state.session.providerPreference = { defaultProvider: 'anthropic' };
@@ -73,12 +58,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionScopePanel', () => {
-  it('shows the current branch with a change affordance', () => {
-    render(<SessionScopePanel sessionId={'sess-1' as never} />);
-    expect(screen.getByText('feat/x')).toBeDefined();
-    expect(screen.getByRole('button', { name: /change/i })).toBeDefined();
-  });
-
   it('sets the default provider from a connected brand chip', () => {
     state.providers = [
       { id: 'anthropic', connection: 'connected' },

@@ -81,6 +81,7 @@ import { m080AgentDone } from './m080-agent-done';
 import { m081RoleCleanup } from './m081-role-cleanup';
 import { m082AgentSourceThreads } from './m082-agent-source-threads';
 import { m083AgentDomains } from './m083-agent-domains';
+import { m084WorkspaceProviderPool } from './m084-workspace-provider-pool';
 
 export type Migration = {
   readonly version: number;
@@ -171,4 +172,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 81, sql: m081RoleCleanup },
   { version: 82, sql: m082AgentSourceThreads },
   { version: 83, sql: m083AgentDomains },
+  { version: 84, sql: m084WorkspaceProviderPool },
 ];

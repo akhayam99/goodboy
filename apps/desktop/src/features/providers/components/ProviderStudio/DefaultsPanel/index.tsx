@@ -1,5 +1,11 @@
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import type { AgentRole, AuxTaskId, OverrideSettings, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentRole,
+  AuxTaskId,
+  OverrideSettings,
+  ProviderId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
 import { Divider, FieldRow, ScrollFade, SectionHeader } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,6 +19,10 @@ import { useDefaultsPersistence } from './useDefaultsPersistence';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+};
+
+type ProviderParams = {
+  readonly providerId: ProviderId;
 };
 
 const TASKS: ReadonlyArray<{
@@ -75,12 +85,42 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
   const defaultProviderId =
     overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
+  const enabledProviderIds = new Set(overrides.enabledProviders ?? connectedProviderIds);
+  enabledProviderIds.add(defaultProviderId);
 
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
     useDefaultsPersistence({
       workspaceId,
       overrides,
     });
+
+  const onDefaultProvider = ({ providerId }: ProviderParams) => {
+    const enabledProviders =
+      overrides.enabledProviders == null
+        ? undefined
+        : Array.from(new Set([...overrides.enabledProviders, providerId]));
+    void persistOverrides({ partial: { defaultProviderId: providerId, enabledProviders } });
+  };
+
+  const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
+    if (providerId === defaultProviderId) {
+      return;
+    }
+    const nextProviderIds = new Set(enabledProviderIds);
+    if (nextProviderIds.has(providerId)) {
+      nextProviderIds.delete(providerId);
+    } else {
+      nextProviderIds.add(providerId);
+    }
+    nextProviderIds.add(defaultProviderId);
+    const selectedProviderIds = connectedProviderIds.filter((id) => nextProviderIds.has(id));
+    const isEveryProviderEnabled = selectedProviderIds.length === connectedProviderIds.length;
+    void persistOverrides({
+      partial: {
+        enabledProviders: isEveryProviderEnabled ? undefined : selectedProviderIds,
+      },
+    });
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -102,9 +142,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                     id={providerId}
                     selected={defaultProviderId === providerId}
                     disabled={busy || !connectedProviderIds.includes(providerId)}
-                    onClick={() =>
-                      void persistOverrides({ partial: { defaultProviderId: providerId } })
-                    }
+                    onClick={() => onDefaultProvider({ providerId })}
                     trailing={
                       connectedProviderIds.includes(providerId) ? null : (
                         <span className="text-2xs uppercase tracking-wide text-warning">
@@ -119,6 +157,38 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             <p className="text-2xs text-muted-foreground">
               Default rows follow the provider you set above.
             </p>
+            <Divider />
+            <FieldRow
+              label="Routing pool"
+              help="Providers Goodboy can pick on its own. New sessions start with this pool."
+            >
+              {connectedProviderIds.length === 0 ? (
+                <span className="text-2xs text-muted-foreground">No providers connected</span>
+              ) : (
+                <div className="flex flex-wrap justify-end gap-1">
+                  {connectedProviderIds.map((providerId) => {
+                    const isDefaultProvider = providerId === defaultProviderId;
+                    return (
+                      <ProviderChip
+                        key={providerId}
+                        id={providerId}
+                        selected={enabledProviderIds.has(providerId)}
+                        disabled={busy || isDefaultProvider}
+                        onClick={() => onToggleRoutingProvider({ providerId })}
+                        title={isDefaultProvider ? 'Default provider is always enabled' : undefined}
+                        trailing={
+                          isDefaultProvider ? (
+                            <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
+                              default
+                            </span>
+                          ) : null
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </FieldRow>
           </section>
 
           <section className="flex flex-col gap-2">

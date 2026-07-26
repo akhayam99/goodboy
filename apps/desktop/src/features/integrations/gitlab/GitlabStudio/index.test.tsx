@@ -34,6 +34,16 @@ vi.mock('./useGitlabMrs', () => ({
 vi.mock('./IssueInbox', () => ({ IssueInbox: () => <div>Issue inbox</div> }));
 vi.mock('./IssueDetailPanel', () => ({ IssueDetailPanel: () => <div>Issue detail</div> }));
 vi.mock('./MrDetailPanel', () => ({ MrDetailPanel: () => <div>Merge request detail</div> }));
+vi.mock('../GitlabFormBody', () => ({
+  GitlabFormBody: () => (
+    <div>
+      <label htmlFor="gitlab-host-test">Host</label>
+      <input id="gitlab-host-test" />
+      <label htmlFor="gitlab-token-test">Personal access token</label>
+      <input id="gitlab-token-test" />
+    </div>
+  ),
+}));
 vi.mock('../../../review/components/ReviewInboxList', () => ({
   ReviewInboxList: ({ provider, scope }: { provider: string; scope: string }) => (
     <div>
@@ -145,8 +155,11 @@ describe('GitlabStudio', () => {
     const workspaceId = 'workspace-1' as WorkspaceId;
     render(<GitlabStudio workspaceId={workspaceId} workspaceName="Goodboy" onClose={vi.fn()} />);
 
-    expect(screen.getByText('Connect GitLab')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
+    expect(
+      screen.getByText('Connect GitLab to review merge requests from this workspace'),
+    ).toBeDefined();
+    expect(screen.getByLabelText('Host')).toBeDefined();
+    expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(h.useGitlabIssues).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
     expect(h.useGitlabMrs).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
   });

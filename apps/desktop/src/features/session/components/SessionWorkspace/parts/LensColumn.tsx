@@ -10,7 +10,6 @@ import {
   FileText,
   LayoutDashboard,
   MessageSquareReply,
-  Plug,
   SquareTerminal,
   Target,
   Terminal,
@@ -60,6 +59,8 @@ type LensRow = {
   readonly isCountLoading?: boolean;
   readonly dot?: 'attention' | 'running';
   readonly secondaryDot?: boolean;
+  readonly studioEvent?: string;
+  readonly isConnected?: boolean;
 };
 
 type LensGroup = {
@@ -153,9 +154,8 @@ export const LensColumn = ({
       : summarizerStatus === 'error'
         ? 'attention'
         : undefined;
-  const hasPr = useAppStore(
-    (s) => s.sessionGithub[sessionId]?.pr != null || s.sessionGitlabMr[sessionId]?.mr != null,
-  );
+  const hasGithubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
+  const hasGitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr != null);
   const openResolvers = useMemo(
     () =>
       phaseRuns.reduce(
@@ -181,9 +181,8 @@ export const LensColumn = ({
   const linearCount = externalTasks.filter((task) => task.provider === 'linear').length;
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
   const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
-  const isGitlabRemote = remoteKind === 'gitlab';
-  const prConnection = resolveIntegrationConnection({
-    provider: 'pr',
+  const githubConnection = resolveIntegrationConnection({
+    provider: 'github',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
@@ -207,50 +206,43 @@ export const LensColumn = ({
     externalTasks,
   });
   const integrationRows: ReadonlyArray<LensRow> = [
-    ...(prConnection.isAvailable
-      ? [
-          {
-            kind: 'pr',
-            label: isGitlabRemote ? 'GitLab' : 'GitHub',
-            glyph: isGitlabRemote ? 'gitlab' : 'github',
-            tone: 'accent',
-            dot: hasPr ? 'running' : undefined,
-          } satisfies LensRow,
-        ]
-      : []),
-    ...(linearConnection.isAvailable
-      ? [
-          {
-            kind: 'linear',
-            label: 'Linear',
-            glyph: 'linear',
-            tone: 'primary',
-            count: linearCount,
-          } satisfies LensRow,
-        ]
-      : []),
-    ...(sentryConnection.isAvailable
-      ? [
-          {
-            kind: 'sentry',
-            label: 'Sentry',
-            glyph: 'sentry',
-            tone: 'warning',
-            count: sentryCount,
-          } satisfies LensRow,
-        ]
-      : []),
-    ...(gitlabConnection.isAvailable
-      ? [
-          {
-            kind: 'gitlab_issues',
-            label: 'GitLab issues',
-            glyph: 'gitlab',
-            tone: 'accent',
-            count: gitlabCount,
-          } satisfies LensRow,
-        ]
-      : []),
+    {
+      kind: 'pr',
+      label: 'GitHub',
+      glyph: 'github',
+      tone: 'accent',
+      dot: hasGithubPr ? 'running' : undefined,
+      studioEvent: 'goodboy:open-github-studio',
+      isConnected: githubConnection.isConnected,
+    },
+    {
+      kind: 'gitlab_issues',
+      label: 'GitLab',
+      glyph: 'gitlab',
+      tone: 'accent',
+      count: gitlabCount,
+      dot: hasGitlabMr ? 'running' : undefined,
+      studioEvent: 'goodboy:open-gitlab-studio',
+      isConnected: gitlabConnection.isConnected,
+    },
+    {
+      kind: 'linear',
+      label: 'Linear',
+      glyph: 'linear',
+      tone: 'primary',
+      count: linearCount,
+      studioEvent: 'goodboy:open-linear-studio',
+      isConnected: linearConnection.isConnected,
+    },
+    {
+      kind: 'sentry',
+      label: 'Sentry',
+      glyph: 'sentry',
+      tone: 'warning',
+      count: sentryCount,
+      studioEvent: 'goodboy:open-sentry-studio',
+      isConnected: sentryConnection.isConnected,
+    },
   ];
 
   const repoGroups: ReadonlyArray<LensGroup> = [
@@ -479,30 +471,12 @@ export const LensColumn = ({
               {group.label}
             </span>
             {group.rows.length === 0 ? (
-              <button
-                type="button"
-                onClick={() =>
-                  window.dispatchEvent(
-                    new CustomEvent('goodboy:open-workspace-settings', {
-                      detail: { section: 'integrations' },
-                    }),
-                  )
-                }
-                className={cn(
-                  'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-muted-foreground transition-colors',
-                  'hover:bg-foreground/[0.03] hover:text-foreground',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                )}
-              >
-                <span className="flex w-5 flex-none items-center justify-center text-muted-foreground transition-colors">
-                  <Plug size={14} aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[13px]">Connect an integration</span>
-              </button>
+              <></>
             ) : (
               group.rows.map((row) => {
                 const active = activeLens === row.kind;
                 const shortcut = LENS_SHORTCUTS[row.kind];
+                const studioEvent = row.studioEvent;
                 const hasBadge =
                   row.isCountLoading === true ||
                   (row.count != null && row.count > 0) ||
@@ -512,7 +486,11 @@ export const LensColumn = ({
                   <button
                     key={row.kind}
                     type="button"
-                    onClick={() => onSelect(row.kind)}
+                    onClick={
+                      studioEvent != null
+                        ? () => window.dispatchEvent(new CustomEvent(studioEvent))
+                        : () => onSelect(row.kind)
+                    }
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
@@ -520,6 +498,7 @@ export const LensColumn = ({
                       active
                         ? 'bg-foreground/[0.06] text-foreground'
                         : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
+                      row.isConnected === false && 'opacity-40 hover:opacity-70',
                     )}
                   >
                     {row.glyph != null ? (

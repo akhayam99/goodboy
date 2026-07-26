@@ -50,6 +50,9 @@ describe('ScriptsPanel', () => {
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
     expect(state.loadScripts).toHaveBeenCalledWith('ws-1');
     expect(screen.getByText(/no scripts yet/i)).toBeDefined();
+    expect(
+      screen.getByText(/scripts are shared across every session of this workspace/i),
+    ).toBeDefined();
   });
 
   it('reveals the editor when "New script" is clicked', () => {

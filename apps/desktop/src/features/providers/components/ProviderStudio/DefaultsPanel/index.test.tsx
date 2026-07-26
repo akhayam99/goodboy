@@ -90,6 +90,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   taskModels: null,
   roleModels: null,
   scoutFanout: null,
+  enabledProviders: undefined,
 };
 
 beforeEach(() => {
@@ -108,6 +109,45 @@ afterEach(cleanup);
 const TASK_LABELS = ['Summaries', 'Branch names', 'Planning', 'Agent titles', 'PR and MR drafts'];
 
 describe('DefaultsPanel', () => {
+  it('uses connected providers as the routing pool and locks the default', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    const anthropic = screen.getAllByRole('button', { name: 'anthropic' })[1]!;
+    const cursor = screen.getAllByRole('button', { name: 'cursor' })[1]!;
+
+    expect(anthropic.getAttribute('aria-pressed')).toBe('true');
+    expect(anthropic.hasAttribute('disabled')).toBe(true);
+    expect(cursor.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('persists a restricted routing pool', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'cursor' })[1]!);
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({ enabledProviders: ['anthropic'] }),
+    );
+  });
+
+  it('adds a new default provider to a restricted routing pool', () => {
+    state.workspaceOverrides = {
+      'ws-1': { ...EMPTY_OVERRIDES, enabledProviders: ['anthropic'] },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'cursor' })[0]!);
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        defaultProviderId: 'cursor',
+        enabledProviders: ['anthropic', 'cursor'],
+      }),
+    );
+  });
+
   it('renders every task model row', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 

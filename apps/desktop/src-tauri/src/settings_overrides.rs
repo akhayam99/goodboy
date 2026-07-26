@@ -23,6 +23,8 @@ pub struct SettingsOverrides {
     pub role_models: Option<serde_json::Value>,
     #[serde(rename = "scoutFanout")]
     pub scout_fanout: Option<bool>,
+    #[serde(rename = "enabledProviders")]
+    pub enabled_providers: Option<Vec<String>>,
 }
 
 fn json_to_text(value: &Option<serde_json::Value>) -> Option<String> {
@@ -36,6 +38,16 @@ fn json_from_text(raw: Option<String>) -> Option<serde_json::Value> {
     raw.and_then(|s| serde_json::from_str(&s).ok())
 }
 
+fn string_array_to_text(value: &Option<Vec<String>>) -> Option<String> {
+    value
+        .as_ref()
+        .and_then(|items| serde_json::to_string(items).ok())
+}
+
+fn string_array_from_text(raw: Option<String>) -> Option<Vec<String>> {
+    raw.and_then(|value| serde_json::from_str(&value).ok())
+}
+
 #[tauri::command]
 pub fn get_workspace_overrides(
     state: State<'_, Db>,
@@ -43,7 +55,7 @@ pub fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, scout_fanout, provider_pool
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
@@ -59,6 +71,7 @@ pub fn get_workspace_overrides(
             task_models: json_from_text(row.get(6)?),
             role_models: json_from_text(row.get(7)?),
             scout_fanout: scout_raw.map(|v| v != 0),
+            enabled_providers: string_array_from_text(row.get(9)?),
         })
     })?;
     match rows.next() {
@@ -88,8 +101,9 @@ pub fn set_workspace_overrides(
              task_models = ?7,
              role_models = ?8,
              scout_fanout = ?9,
-             updated_at = ?10
-         WHERE id = ?11",
+             provider_pool = ?10,
+             updated_at = ?11
+         WHERE id = ?12",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_workflow_id,
@@ -100,6 +114,7 @@ pub fn set_workspace_overrides(
             json_to_text(&overrides.task_models),
             json_to_text(&overrides.role_models),
             scout_val,
+            string_array_to_text(&overrides.enabled_providers),
             now,
             workspace_id,
         ],
@@ -129,6 +144,7 @@ pub fn get_session_overrides(
             task_models: None,
             role_models: None,
             scout_fanout: None,
+            enabled_providers: None,
         })
     })?;
     match rows.next() {

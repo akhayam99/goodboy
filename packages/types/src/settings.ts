@@ -38,6 +38,7 @@ export type OverrideSettings = Readonly<{
   taskModels: TaskModelPreferences | null;
   roleModels: RoleModelPreferences | null;
   scoutFanout: boolean | null;
+  enabledProviders?: ReadonlyArray<ProviderId>;
 }>;
 
 export type ResolvedSettings = Readonly<{

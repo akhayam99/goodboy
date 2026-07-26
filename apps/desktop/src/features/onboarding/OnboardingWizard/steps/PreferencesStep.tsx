@@ -126,6 +126,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
         scoutFanout,
+        enabledProviders: wsOverrides?.enabledProviders,
         ...partial,
       });
     } catch (err) {

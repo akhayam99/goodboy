@@ -95,16 +95,7 @@ export const AppFooter = ({
                 ? 'review and act on pull requests across this workspace'
                 : 'Connect GitHub'
             }
-            onClick={
-              githubEnabled
-                ? onOpenGithub
-                : () =>
-                    window.dispatchEvent(
-                      new CustomEvent('goodboy:open-workspace-settings', {
-                        detail: { section: 'integrations' },
-                      }),
-                    )
-            }
+            onClick={onOpenGithub}
             active={activeStudio === 'github'}
             connected={githubEnabled}
           />
@@ -112,16 +103,7 @@ export const AppFooter = ({
             icon={<IntegrationGlyph provider="gitlab" size="xs" />}
             label="GitLab"
             title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
-            onClick={
-              gitlabEnabled
-                ? onOpenGitlab
-                : () =>
-                    window.dispatchEvent(
-                      new CustomEvent('goodboy:open-workspace-settings', {
-                        detail: { section: 'integrations' },
-                      }),
-                    )
-            }
+            onClick={onOpenGitlab}
             active={activeStudio === 'gitlab'}
             connected={gitlabEnabled}
           />
@@ -129,16 +111,7 @@ export const AppFooter = ({
             icon={<IntegrationGlyph provider="linear" size="xs" />}
             label="Linear"
             title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
-            onClick={
-              linearEnabled
-                ? onOpenLinear
-                : () =>
-                    window.dispatchEvent(
-                      new CustomEvent('goodboy:open-workspace-settings', {
-                        detail: { section: 'integrations' },
-                      }),
-                    )
-            }
+            onClick={onOpenLinear}
             active={activeStudio === 'linear'}
             connected={linearEnabled}
           />
@@ -146,16 +119,7 @@ export const AppFooter = ({
             icon={<IntegrationGlyph provider="sentry" size="xs" />}
             label="Sentry"
             title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
-            onClick={
-              sentryEnabled
-                ? onOpenSentry
-                : () =>
-                    window.dispatchEvent(
-                      new CustomEvent('goodboy:open-workspace-settings', {
-                        detail: { section: 'integrations' },
-                      }),
-                    )
-            }
+            onClick={onOpenSentry}
             active={activeStudio === 'sentry'}
             connected={sentryEnabled}
           />

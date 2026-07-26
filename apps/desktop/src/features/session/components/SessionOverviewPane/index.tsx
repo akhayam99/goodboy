@@ -266,7 +266,13 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                 <span className="truncate">{workspace.name}</span>
               </span>
             ) : null}
-            {branch ? <BranchChip branch={branch} /> : null}
+            {branch ? (
+              <BranchChip
+                branch={branch}
+                sessionId={session.id as SessionId}
+                canEdit={workspace != null && workspace.kind !== 'simple'}
+              />
+            ) : null}
             <SessionCostChip sessionId={session.id as SessionId} />
             <SummarizerBadge sessionId={session.id as SessionId} />
             <span className="text-2xs text-muted-foreground/70">

@@ -12,22 +12,22 @@ const PROVIDER_NAMES: Record<Props['provider'], string> = {
   gitlab: 'GitLab',
 };
 
+const STUDIO_EVENTS: Record<Props['provider'], string> = {
+  linear: 'goodboy:open-linear-studio',
+  sentry: 'goodboy:open-sentry-studio',
+  gitlab: 'goodboy:open-gitlab-studio',
+};
+
 export const ConnectIntegrationEmptyState = ({ provider, compact = false }: Props) => (
   <EmptyState
     icon={Plug}
     title={`Connect ${PROVIDER_NAMES[provider]}`}
-    description={`Connect ${PROVIDER_NAMES[provider]} in Settings to use this integration.`}
+    description={`Open the ${PROVIDER_NAMES[provider]} studio to connect this integration.`}
     className={compact ? 'py-5' : undefined}
     action={
       <Button
         size="sm"
-        onClick={() =>
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-workspace-settings', {
-              detail: { section: 'integrations' },
-            }),
-          )
-        }
+        onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_EVENTS[provider]))}
       >
         Connect
       </Button>
