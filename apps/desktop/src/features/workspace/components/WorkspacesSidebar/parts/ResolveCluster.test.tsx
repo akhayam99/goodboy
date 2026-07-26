@@ -34,6 +34,20 @@ const completed = {
   status: 'completed',
   sourceThreadId: 'PRRT_1',
 } satisfies Agent;
+const newerActive = {
+  ...active,
+  id: 'newer-active' as AgentId,
+  ordinal: 2,
+  name: 'Newer active resolver',
+  status: 'pending',
+} satisfies Agent;
+const newestCompleted = {
+  ...completed,
+  id: 'newest-completed' as AgentId,
+  ordinal: 3,
+  name: 'Newest completed resolver',
+  sourceThreadId: 'PRRT_2',
+} satisfies Agent;
 
 describe('ResolveCluster', () => {
   afterEach(cleanup);
@@ -41,11 +55,11 @@ describe('ResolveCluster', () => {
   it('keeps active resolvers visible and completed resolvers collapsed', () => {
     render(
       <ResolveCluster
-        agents={[active, completed]}
+        agents={[active, completed, newerActive, newestCompleted]}
         sessionId={SESSION_ID}
         isTaskActive
         prNumber={null}
-        resolvedThreadIds={new Set(['PRRT_1'])}
+        resolvedThreadIds={new Set(['PRRT_1', 'PRRT_2'])}
         pendingThreadIds={new Set()}
         resolverState={{}}
         commentByThreadId={new Map()}
@@ -67,11 +81,17 @@ describe('ResolveCluster', () => {
       />,
     );
 
+    expect(screen.getByText('Newer active resolver:pending')).toBeDefined();
     expect(screen.getByText('Active resolver:running')).toBeDefined();
     expect(screen.queryByText('Completed resolver:resolved')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
 
-    expect(screen.getByText('Completed resolver:resolved')).toBeDefined();
+    expect(screen.getAllByText(/resolver:/).map((row) => row.textContent)).toEqual([
+      'Newer active resolver:pending',
+      'Active resolver:running',
+      'Newest completed resolver:resolved',
+      'Completed resolver:resolved',
+    ]);
   });
 });

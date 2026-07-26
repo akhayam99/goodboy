@@ -43,6 +43,10 @@ import { AdHocRow } from './AdHocRow';
 import { WorkflowRow } from './WorkflowRow';
 import { pluralize, workflowKindName, type ResolverState } from '../lib';
 
+const LIST_CLASS = 'flex flex-col gap-1 pl-2';
+const FIRST_HEADER_CLASS = 'pb-1.5';
+const SUBSEQUENT_HEADER_CLASS = 'mt-6 pb-1.5';
+
 type Props = {
   task: Session;
   only?: 'workflows' | 'agents' | 'scripts' | 'resolve';
@@ -348,17 +352,22 @@ export const AgentsSection = ({
 
   const resolverAgents = useMemo(
     () =>
-      sorted.filter(
-        (r) =>
-          r.parentAgentId == null &&
-          r.stepId == null &&
-          classifyAgent(r, agentKindOverride[r.id] ?? null) === 'resolver',
-      ),
+      sorted
+        .filter(
+          (r) =>
+            r.parentAgentId == null &&
+            r.stepId == null &&
+            classifyAgent(r, agentKindOverride[r.id] ?? null) === 'resolver',
+        )
+        .sort((a, b) => b.ordinal - a.ordinal),
     [sorted, agentKindOverride],
   );
   const resolverIds = useMemo(() => new Set(resolverAgents.map((r) => r.id)), [resolverAgents]);
   const standaloneAgents = useMemo(
-    () => adHocAgents.filter((agent) => !resolverIds.has(agent.id)),
+    () =>
+      adHocAgents
+        .filter((agent) => !resolverIds.has(agent.id))
+        .sort((a, b) => b.ordinal - a.ordinal),
     [adHocAgents, resolverIds],
   );
   const activeStandaloneAgents = useMemo(
@@ -490,7 +499,7 @@ export const AgentsSection = ({
         <>
           {forceExpanded ? null : (
             <SectionHeader
-              className="pb-1.5"
+              className={FIRST_HEADER_CLASS}
               icon={<SECTION_ICONS.workflows size={11} aria-hidden className="text-primary" />}
               label="Workflow"
               action={
@@ -573,7 +582,7 @@ export const AgentsSection = ({
         <>
           {forceExpanded ? null : (
             <SectionHeader
-              className="mt-6 pb-1.5"
+              className={SUBSEQUENT_HEADER_CLASS}
               icon={<DogMascot size={14} className="shrink-0 text-success" />}
               label="Agents"
               action={
@@ -589,7 +598,7 @@ export const AgentsSection = ({
             <>
               {hasAnyWorkflow ? (
                 activeStandaloneAgents.length > 0 ? (
-                  <ul className="flex flex-col gap-1 pl-2">
+                  <ul className={LIST_CLASS}>
                     {activeStandaloneAgents.map((run, index) => (
                       <AdHocRow
                         key={run.id}
@@ -621,11 +630,7 @@ export const AgentsSection = ({
                 ) : null
               ) : standaloneAgents.length === 0 ? (
                 loading.agents ? (
-                  <ul
-                    role="status"
-                    aria-label="loading agents"
-                    className="flex flex-col gap-1 pl-2"
-                  >
+                  <ul role="status" aria-label="loading agents" className={LIST_CLASS}>
                     {[0, 1].map((i) => (
                       <li key={i} className="flex items-center gap-2 rounded px-2 py-1.5">
                         <span className="h-3 w-3 motion-safe:animate-pulse rounded-full bg-muted" />
@@ -657,7 +662,7 @@ export const AgentsSection = ({
                   )
                 ) : null
               ) : (
-                <ul className="flex flex-col gap-1 pl-2">
+                <ul className={LIST_CLASS}>
                   {activeStandaloneAgents.map((run, index) => (
                     <AdHocRow
                       key={run.id}
@@ -703,7 +708,7 @@ export const AgentsSection = ({
                 </button>
               ) : null}
               {doneExpanded ? (
-                <ul className="flex flex-col gap-1 pl-2">
+                <ul className={LIST_CLASS}>
                   {doneStandaloneAgents.map((run, index) => (
                     <AdHocRow
                       key={run.id}
@@ -765,7 +770,7 @@ export const AgentsSection = ({
           <>
             {forceExpanded ? null : (
               <SectionHeader
-                className="mt-6 pb-1.5"
+                className={SUBSEQUENT_HEADER_CLASS}
                 icon={<CheckCheck size={11} aria-hidden className="text-success" />}
                 label="Resolve"
               />

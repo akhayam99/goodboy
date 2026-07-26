@@ -6,9 +6,11 @@ import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ScriptsPanel } from '../../../scripts';
 import {
   EMPTY_ARRAY,
+  agentHasUnread,
   readPersistedLens,
   useAppStore,
   useFilesTouched,
+  useSessionOpenQuestions,
   useSessionPlans,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -81,6 +83,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
   const hasInitializedResolverInspector = useRef(false);
+  const hasInitializedAgentInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const workspaceKind = useAppStore(
     (s) => s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo',
@@ -109,6 +112,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
   const plans = useSessionPlans(sessionId);
+  const openQuestions = useSessionOpenQuestions(sessionId);
   const sessionLoading = useAppStore((s) => s.sessionLoading[sessionId]);
 
   useEffect(() => {
@@ -190,6 +194,31 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     resolverCounts.queued === 0 && resolverCounts.resolved === 0
       ? undefined
       : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
+  useEffect(() => {
+    if (lens !== 'agents' || standaloneAgents.length === 0) {
+      return;
+    }
+    const isInspectedAgentPresent =
+      inspectedAgentId !== null && standaloneAgents.some((agent) => agent.id === inspectedAgentId);
+    if (isInspectedAgentPresent) {
+      hasInitializedAgentInspector.current = true;
+      return;
+    }
+    if (inspectedAgentId === null && hasInitializedAgentInspector.current) {
+      return;
+    }
+    const newestAgents = [...standaloneAgents].sort((a, b) => b.ordinal - a.ordinal);
+    const running = newestAgents.find((agent) => agent.status === 'running');
+    const attention = newestAgents.find(
+      (agent) =>
+        agent.status === 'failed' ||
+        agentHasUnread(agent, false) ||
+        openQuestions.some((question) => question.createdByAgentId === agent.id),
+    );
+    hasInitializedAgentInspector.current = true;
+    setInspectedAgentId((running ?? attention ?? newestAgents[0])?.id ?? null);
+  }, [inspectedAgentId, lens, openQuestions, standaloneAgents]);
+
   useEffect(() => {
     if (hasInitializedResolverInspector.current || resolverIndex.links.length === 0) {
       return;
