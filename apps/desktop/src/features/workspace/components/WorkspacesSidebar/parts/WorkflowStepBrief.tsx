@@ -8,7 +8,7 @@ const LABEL_CLS = 'text-2xs font-semibold uppercase tracking-wide text-muted-for
 const BODY_CLS = 'whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground';
 
 export const WorkflowStepBrief = ({ promptPrefix, expectedOutput, outputSummary }: Props) => (
-  <div className="flex flex-col gap-2 rounded-md bg-muted/30 px-2.5 py-2">
+  <div className="flex flex-col gap-2 pl-4">
     {promptPrefix !== '' ? (
       <div className="flex flex-col gap-0.5">
         <span className={LABEL_CLS}>Instructions</span>

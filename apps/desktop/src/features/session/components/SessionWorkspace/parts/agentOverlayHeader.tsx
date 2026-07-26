@@ -4,7 +4,7 @@ import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import type { AgentHomeLens } from '../../../agent-kind';
 import type { ResolverStatus } from '../../../resolver-linkage';
 import { ForceResolveAction } from '../../ForceResolveAction';
-import { ChatWorkflowContext } from './ChatWorkflowContext';
+import { ChatHeaderBack } from './ChatHeaderBack';
 import { ChatWorkflowHeader } from './ChatWorkflowHeader';
 
 type Params = {
@@ -13,10 +13,11 @@ type Params = {
   readonly selectedAgentId: AgentId | null;
   readonly selectedAgent: Agent | null;
   readonly overlayHome: AgentHomeLens;
+  readonly overlayHomeLabel: string;
   readonly showWorkflowStrip: boolean;
-  readonly workflowName: string | null;
   readonly showForceResolve: boolean;
   readonly resolverStatus: ResolverStatus | null;
+  readonly onBack: () => void;
   readonly onOpenWorkflow: () => void;
 };
 
@@ -26,10 +27,11 @@ export const agentOverlayHeader = ({
   selectedAgentId,
   selectedAgent,
   overlayHome,
+  overlayHomeLabel,
   showWorkflowStrip,
-  workflowName,
   showForceResolve,
   resolverStatus,
+  onBack,
   onOpenWorkflow,
 }: Params): ReactNode | undefined => {
   if (showWorkflowStrip && selectedAgentId != null) {
@@ -38,21 +40,19 @@ export const agentOverlayHeader = ({
         sessionId={sessionId}
         session={session}
         selectedAgentId={selectedAgentId}
+        onOpenWorkflow={onOpenWorkflow}
       />
     );
   }
-  if (overlayHome !== 'workflows' && workflowName != null) {
-    return <ChatWorkflowContext workflowName={workflowName} onOpenWorkflow={onOpenWorkflow} />;
-  }
-  if (showForceResolve && selectedAgent != null && resolverStatus != null) {
-    return (
-      <>
-        <div className="flex h-[var(--chat-header-h)] shrink-0 items-center justify-end px-3">
+  return (
+    <>
+      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center justify-between gap-2 px-3">
+        <ChatHeaderBack label={overlayHomeLabel} onClick={onBack} />
+        {showForceResolve && selectedAgent != null && resolverStatus != null ? (
           <ForceResolveAction agent={selectedAgent} sessionId={sessionId} status={resolverStatus} />
-        </div>
-        <Divider className="shrink-0" />
-      </>
-    );
-  }
-  return undefined;
+        ) : null}
+      </div>
+      <Divider className="shrink-0" />
+    </>
+  );
 };

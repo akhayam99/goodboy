@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -29,12 +29,25 @@ vi.mock(
 );
 
 vi.mock('./WorkflowStepRow', () => ({
-  WorkflowStepRow: ({ run }: { readonly run: Agent }) => (
-    <div data-testid={`step-${run.id}`}>{run.name}</div>
+  WorkflowStepRow: ({
+    run,
+    detailContent,
+  }: {
+    readonly run: Agent;
+    readonly detailContent?: React.ReactNode;
+  }) => (
+    <div data-testid={`step-${run.id}`}>
+      {run.name}
+      {detailContent}
+    </div>
   ),
 }));
 
-vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }));
+vi.mock('./ScoutSubtree', () => ({
+  ScoutSubtree: ({ variant }: { readonly variant?: string }) => (
+    <div data-testid={`scout-subtree-${variant ?? 'sidebar'}`} />
+  ),
+}));
 vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 
@@ -107,9 +120,15 @@ const session = { id: SESSION_ID, workflowRuns: [run] } as unknown as Session;
 
 type RenderParams = {
   readonly runOverride?: WorkflowRun;
+  readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
+  readonly clusterExpand?: ReadonlyMap<string, boolean>;
 };
 
-const renderDetail = ({ runOverride = run }: RenderParams = {}) =>
+const renderDetail = ({
+  runOverride = run,
+  childrenByParentId = new Map(),
+  clusterExpand = new Map(),
+}: RenderParams = {}) =>
   render(
     <WorkflowRow
       run={runOverride}
@@ -133,8 +152,8 @@ const renderDetail = ({ runOverride = run }: RenderParams = {}) =>
       onDiscardWorkflow={vi.fn(async () => undefined)}
       agentKindOverride={{}}
       agentModelOverride={{}}
-      childrenByParentId={new Map()}
-      clusterExpand={new Map()}
+      childrenByParentId={childrenByParentId}
+      clusterExpand={clusterExpand}
       selectedAgentId={null}
       isTaskActive
       editingId={null}
@@ -174,6 +193,10 @@ describe('WorkflowRow detail dashboard', () => {
 
     expect(screen.getByText('just the auth module')).toBeDefined();
     expect(screen.queryByText('template goal')).toBeNull();
+    const goal = screen.getByRole('region', { name: 'what you asked for' });
+    expect(goal.className).not.toContain('rounded');
+    expect(goal.className).not.toContain('bg-');
+    expect(goal.className).not.toContain('ring-');
   });
 
   it('falls back to the template goal when the run carries none', () => {
@@ -194,5 +217,39 @@ describe('WorkflowRow detail dashboard', () => {
     renderDetail();
 
     expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
+  });
+
+  it('places non-scout runs inside the owning step without an indented rail', () => {
+    const child = {
+      ...agents[1]!,
+      id: 'cluster-1' as AgentId,
+      name: 'Plan run',
+      status: 'completed',
+      parentAgentId: agents[1]!.id,
+    } as Agent;
+    renderDetail({
+      childrenByParentId: new Map([[agents[1]!.id, [child]]]),
+    });
+
+    const stepRow = screen.getByTestId(`step-${agents[1]!.id}`);
+    expect(within(stepRow).getByRole('button', { name: 'expand runs for Plan' })).toBeDefined();
+    expect(within(stepRow).getByText('Runs (1/1)')).toBeDefined();
+    expect(stepRow.querySelector('.ml-3')).toBeNull();
+    expect(stepRow.querySelector('.border-l')).toBeNull();
+  });
+
+  it('places scout subtrees inside the owning step in detail mode', () => {
+    const child = {
+      ...agents[0]!,
+      id: 'scout-child-1' as AgentId,
+      name: 'Scout run',
+      parentAgentId: agents[0]!.id,
+    } as Agent;
+    renderDetail({
+      childrenByParentId: new Map([[agents[0]!.id, [child]]]),
+    });
+
+    const stepRow = screen.getByTestId(`step-${agents[0]!.id}`);
+    expect(within(stepRow).getByTestId('scout-subtree-detail')).toBeDefined();
   });
 });

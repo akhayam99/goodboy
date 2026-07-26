@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { SectionHeader } from '@goodboy/ui';
 
 type Props = {
   readonly goal: string;
   readonly processText: string;
 };
-
-const EYEBROW_CLS = 'text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70';
 
 export const WorkflowRunAsk = ({ goal, processText }: Props) => {
   const [processOpen, setProcessOpen] = useState(false);
@@ -16,11 +15,8 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
   }
 
   return (
-    <section
-      aria-label="what you asked for"
-      className="flex flex-col gap-2 rounded-lg bg-subtle/50 px-3 py-2.5 ring-1 ring-border-soft"
-    >
-      <span className={EYEBROW_CLS}>Goal</span>
+    <section aria-label="what you asked for" className="flex flex-col gap-2">
+      <SectionHeader label="Goal" />
       {goal !== '' ? (
         <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">{goal}</p>
       ) : (

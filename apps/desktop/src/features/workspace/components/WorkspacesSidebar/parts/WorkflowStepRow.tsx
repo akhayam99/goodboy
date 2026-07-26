@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Clock, Play } from 'lucide-react';
 import type { Agent, Step, TelemetryRecord } from '@goodboy/types';
@@ -22,6 +22,7 @@ type Props = {
   readonly index: number;
   readonly step?: Step;
   readonly showBrief?: boolean;
+  readonly detailContent?: ReactNode;
   readonly resolvedModel: string;
   readonly isActionable: boolean;
   readonly blockReason: WorkflowBlockReason | null;
@@ -47,6 +48,7 @@ export const WorkflowStepRow = ({
   index,
   step,
   showBrief = false,
+  detailContent,
   resolvedModel,
   isActionable,
   blockReason,
@@ -273,6 +275,7 @@ export const WorkflowStepRow = ({
           ) : null}
         </div>
       ) : null}
+      {detailContent ?? null}
       {pendingConfirm && blockReason !== null ? (
         <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-[11px]">
           <AlertTriangle size={12} aria-hidden className="shrink-0 text-warning" />
