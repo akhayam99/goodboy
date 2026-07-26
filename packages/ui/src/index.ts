@@ -22,6 +22,8 @@ export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
+export { IconTile } from './components/IconTile';
+export type { Props as IconTileProps } from './components/IconTile';
 export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
