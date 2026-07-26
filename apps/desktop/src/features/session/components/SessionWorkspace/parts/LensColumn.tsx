@@ -100,6 +100,10 @@ export const LensColumn = ({
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const nonResolverStandalone = useNonResolverStandaloneAgents(sessionId);
+  const activeNonResolverStandalone = useMemo(
+    () => nonResolverStandalone.filter((agent) => agent.doneAt == null),
+    [nonResolverStandalone],
+  );
   const unreadLens = useSessionUnreadLens(sessionId);
   const remoteKind = useRemoteHostKind(session.workspaceId);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
@@ -113,14 +117,14 @@ export const LensColumn = ({
     [agentKindOverride],
   );
 
-  const hasNonResolverStandalone = nonResolverStandalone.length > 0;
+  const hasNonResolverStandalone = activeNonResolverStandalone.length > 0;
   const hasResolverAgent = useMemo(
     () => phaseRuns.some((a) => isStandaloneAgent(a) && isResolver(a)),
     [phaseRuns, isResolver],
   );
   const hasRunningAgent = useMemo(
-    () => nonResolverStandalone.some((agent) => agent.status === 'running'),
-    [nonResolverStandalone],
+    () => activeNonResolverStandalone.some((agent) => agent.status === 'running'),
+    [activeNonResolverStandalone],
   );
 
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
@@ -275,7 +279,7 @@ export const LensColumn = ({
           label: 'Agents',
           icon: Bot,
           tone: 'primary',
-          count: nonResolverStandalone.length,
+          count: activeNonResolverStandalone.length,
           isCountLoading: areAgentsLoading,
           dot:
             attentionLens === 'agents' || unreadLens === 'agents'

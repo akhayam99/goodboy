@@ -169,6 +169,8 @@ pub struct SessionRow {
     pub last_finished_at: Option<String>,
     #[serde(rename = "lastViewedAt")]
     pub last_viewed_at: Option<String>,
+    #[serde(rename = "doneAt")]
+    pub done_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
     #[serde(rename = "parentAgentId")]
@@ -858,7 +860,7 @@ pub fn agent_list_for_session(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
+                provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
                 parent_agent_id, workflow_run_id, source_thread_id, source_comment_url,
                 source_kind
          FROM agents
@@ -880,13 +882,14 @@ pub fn agent_list_for_session(
             provider_session_id: row.get(10)?,
             last_finished_at: row.get(11)?,
             last_viewed_at: row.get(12)?,
-            kind: row.get(13)?,
-            verbosity: row.get(14)?,
-            parent_agent_id: row.get(15)?,
-            workflow_run_id: row.get(16)?,
-            source_thread_id: row.get(17)?,
-            source_comment_url: row.get(18)?,
-            source_kind: row.get(19)?,
+            done_at: row.get(13)?,
+            kind: row.get(14)?,
+            verbosity: row.get(15)?,
+            parent_agent_id: row.get(16)?,
+            workflow_run_id: row.get(17)?,
+            source_thread_id: row.get(18)?,
+            source_comment_url: row.get(19)?,
+            source_kind: row.get(20)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -941,6 +944,7 @@ pub fn agent_insert(
         provider_session_id: None,
         last_finished_at: None,
         last_viewed_at: None,
+        done_at: None,
         kind: input.kind,
         verbosity: input.verbosity,
         parent_agent_id: input.parent_agent_id,
@@ -988,7 +992,7 @@ pub fn agent_update_status(
     let mut stmt = conn.prepare(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, kind, verbosity,
+                provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
                 parent_agent_id, workflow_run_id, source_thread_id, source_comment_url,
                 source_kind
          FROM agents
@@ -1010,13 +1014,14 @@ pub fn agent_update_status(
             provider_session_id: row.get(10)?,
             last_finished_at: row.get(11)?,
             last_viewed_at: row.get(12)?,
-            kind: row.get(13)?,
-            verbosity: row.get(14)?,
-            parent_agent_id: row.get(15)?,
-            workflow_run_id: row.get(16)?,
-            source_thread_id: row.get(17)?,
-            source_comment_url: row.get(18)?,
-            source_kind: row.get(19)?,
+            done_at: row.get(13)?,
+            kind: row.get(14)?,
+            verbosity: row.get(15)?,
+            parent_agent_id: row.get(16)?,
+            workflow_run_id: row.get(17)?,
+            source_thread_id: row.get(18)?,
+            source_comment_url: row.get(19)?,
+            source_kind: row.get(20)?,
         })
     })?;
     match rows.next() {
@@ -1102,6 +1107,19 @@ pub fn agent_mark_viewed(
     Ok(())
 }
 
+#[tauri::command]
+pub fn agent_set_done(state: State<'_, Db>, id: String, done: bool) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let affected = conn.execute(
+        "UPDATE agents SET done_at = CASE WHEN ?2 = 1 THEN CURRENT_TIMESTAMP ELSE NULL END WHERE id = ?1",
+        rusqlite::params![id, done as i32],
+    )?;
+    if affected == 0 {
+        return Err(PhaseError::RunNotFound(id));
+    }
+    Ok(())
+}
+
 // Returns the set of workspace ids that contain at least one agent whose
 // terminal turn hasn't been viewed yet. The sidebar uses this to pulse the
 // workspace dot even for workspaces the user isn't currently on (their tasks
@@ -1115,6 +1133,7 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
          JOIN sessions t ON a.session_id = t.id
          WHERE a.last_finished_at IS NOT NULL
            AND a.status != 'skipped'
+           AND a.done_at IS NULL
            AND (a.last_viewed_at IS NULL OR a.last_finished_at > a.last_viewed_at)
            AND t.archived_at IS NULL
            AND t.deleted_at IS NULL",

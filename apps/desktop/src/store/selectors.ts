@@ -426,6 +426,9 @@ export const useFilesTouched = (
 };
 
 export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolean => {
+  if (agent.doneAt != null) {
+    return false;
+  }
   if (isCurrentlyViewed) {
     return false;
   }

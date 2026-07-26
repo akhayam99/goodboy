@@ -268,7 +268,7 @@ export type AppActions = {
     override?: TurnProviderOverride;
     onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   }): Promise<void>;
-  cancelCurrentTurn(sessionId: SessionId): Promise<void>;
+  cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
@@ -315,6 +315,8 @@ export type AppActions = {
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   deselectAgent(sessionId: SessionId): void;
   markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  setAgentDone(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  clearAgentDone(sessionId: SessionId, agentId: AgentId): Promise<void>;
   spawnAgent(
     sessionId: SessionId,
     args: {

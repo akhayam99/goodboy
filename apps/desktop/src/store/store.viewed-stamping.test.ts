@@ -252,6 +252,11 @@ describe('agentHasUnread skipped guard', () => {
     const agent = buildAgent({ status: 'skipped', lastFinishedAt: T2 });
     expect(agentHasUnread(agent, false)).toBe(false);
   });
+
+  it('returns false for a user-completed agent', () => {
+    const agent = buildAgent({ status: 'completed', lastFinishedAt: T2, doneAt: T2 });
+    expect(agentHasUnread(agent, false)).toBe(false);
+  });
 });
 
 describe('selectAgent cascades lastViewedAt to descendants', () => {

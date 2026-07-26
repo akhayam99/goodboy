@@ -4,6 +4,7 @@ import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ChatView } from '../../../../chat/components/ChatView';
 import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
 import type { AgentHomeLens } from '../../../agent-kind';
+import { AgentInspector } from '../../AgentInspector';
 import { ResolverInspector } from '../../ResolverInspector';
 import { agentOverlayHeader } from './agentOverlayHeader';
 
@@ -74,6 +75,14 @@ export const AgentOverlay = ({
           <Divider orientation="vertical" />
           <div className="flex w-80 shrink-0 flex-col bg-background">
             <ResolverInspector sessionId={sessionId} agentId={inspectedResolverId} />
+          </div>
+        </>
+      ) : null}
+      {overlayHome === 'agents' && selectedAgentId !== null ? (
+        <>
+          <Divider orientation="vertical" />
+          <div className="flex w-80 shrink-0 flex-col bg-background">
+            <AgentInspector sessionId={sessionId} agentId={selectedAgentId} />
           </div>
         </>
       ) : null}
