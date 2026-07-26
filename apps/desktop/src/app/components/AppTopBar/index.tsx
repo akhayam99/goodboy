@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Moon, Smartphone, Sun } from 'lucide-react';
-import { cn, Divider, StatusDot, Tooltip, formatUsd } from '@goodboy/ui';
+import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../shared/components/section-icons';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
-import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
 import { useThemeStore } from '../../../shared/lib/theme';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
+import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
 
 const TOPBAR_ICON_BTN =
   'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
@@ -37,14 +37,7 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
 
         <div className="min-w-0 flex-1" />
 
-        <button
-          type="button"
-          onClick={onOpenBudget}
-          title="Today's spend across providers, open budget"
-          className="rounded px-1.5 py-1 transition-colors hover:bg-muted/50"
-        >
-          <WorkspaceRollupStrip />
-        </button>
+        <WorkspaceRollupStrip onOpenBudget={onOpenBudget} />
 
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 
@@ -133,38 +126,5 @@ const PairDeviceCta = () => {
         <span aria-hidden className="ml-0.5 size-1.5 shrink-0 rounded-full bg-success" />
       ) : null}
     </button>
-  );
-};
-
-const WorkspaceRollupStrip = () => {
-  const workspace = useCurrentWorkspace();
-  const sessions = useSessions();
-  const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions);
-  if (!workspace) {
-    return null;
-  }
-  return (
-    <div className="flex shrink-0 items-center gap-3 text-2xs">
-      {rollup.attentionCount > 0 ? (
-        <span className="flex items-center gap-1">
-          <StatusDot tone="warning" size="sm" pulsing />
-          <span className="font-medium tabular-nums text-foreground">{rollup.attentionCount}</span>
-          <span className="text-muted-foreground">need you</span>
-        </span>
-      ) : null}
-      {rollup.runningCount > 0 ? (
-        <span className="flex items-center gap-1">
-          <StatusDot tone="info" size="sm" pulsing />
-          <span className="font-medium tabular-nums text-foreground">{rollup.runningCount}</span>
-          <span className="text-muted-foreground">running</span>
-        </span>
-      ) : null}
-      <span className="flex items-center gap-1 text-muted-foreground">
-        <span className="font-medium tabular-nums text-foreground">
-          {formatUsd(rollup.todaySpend)}
-        </span>
-        today
-      </span>
-    </div>
   );
 };
