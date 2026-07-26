@@ -98,13 +98,6 @@ export const SegmentedTabs = <T extends string>({
           isActive && option.accent != null
             ? { color: option.accent, borderColor: option.accent }
             : undefined;
-        const iconStyle: CSSProperties | undefined =
-          isActive && option.accent != null
-            ? {
-                backgroundColor: `color-mix(in oklch, ${option.accent} 16%, transparent)`,
-              }
-            : undefined;
-
         return (
           <button
             key={option.value}
@@ -131,12 +124,7 @@ export const SegmentedTabs = <T extends string>({
           >
             {Icon != null ? (
               isMedium ? (
-                <span
-                  className="flex size-6 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors"
-                  style={iconStyle}
-                >
-                  <Icon size={15} aria-hidden />
-                </span>
+                <Icon size={15} aria-hidden className="shrink-0" />
               ) : (
                 <Icon size={13} aria-hidden className="shrink-0" />
               )

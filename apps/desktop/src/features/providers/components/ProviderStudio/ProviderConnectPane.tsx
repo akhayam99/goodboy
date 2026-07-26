@@ -1,7 +1,7 @@
-import { Button, Divider, IconTile, ScrollFade } from '@goodboy/ui';
+import { Button, Divider, ScrollFade } from '@goodboy/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
+import { PROVIDER_BRAND } from '../provider-brand';
 import { CommandPreview } from '../ProviderLifecycleTile/CommandPreview';
 import { ErrorPanel } from '../ProviderLifecycleTile/ErrorPanel';
 import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
@@ -28,7 +28,6 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
 
   const brand = PROVIDER_BRAND[providerId];
   const Icon = brand.icon;
-  const color = brandColor(providerId);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -41,9 +40,13 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
         >
           <ArrowLeft size={16} aria-hidden />
         </button>
-        <IconTile size="md" color={color}>
-          <Icon size={18} strokeWidth={2} aria-hidden />
-        </IconTile>
+        <Icon
+          size={18}
+          strokeWidth={2}
+          aria-hidden
+          className="shrink-0"
+          style={{ color: `var(${brand.cssVar})` }}
+        />
         <span className="text-base font-semibold lowercase text-foreground">
           {provider?.label ?? providerId}
         </span>

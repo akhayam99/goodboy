@@ -59,7 +59,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
 
   return (
     <StudioShell
-      glyph={<IntegrationGlyph provider="sentry" framed />}
+      glyph={<IntegrationGlyph provider="sentry" size={20} />}
       title="Sentry"
       workspaceName={workspaceName}
       closeLabel="close sentry studio"

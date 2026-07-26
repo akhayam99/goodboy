@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Dialog, IconTile } from '@goodboy/ui';
+import { Button, Dialog } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
+import { PROVIDER_BRAND } from '../provider-brand';
 import { CommandPreview } from '../ProviderLifecycleTile/CommandPreview';
 import { ErrorPanel } from '../ProviderLifecycleTile/ErrorPanel';
 import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
@@ -59,7 +59,6 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
 
   const brand = PROVIDER_BRAND[providerId];
   const Icon = brand.icon;
-  const color = brandColor(providerId);
 
   return (
     <Dialog
@@ -71,9 +70,13 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       panelClassName="bg-subtle/30 px-5 py-5 overflow-y-auto"
       title={
         <span className="inline-flex items-center gap-2">
-          <IconTile size="sm" color={color}>
-            <Icon size={14} strokeWidth={2} aria-hidden />
-          </IconTile>
+          <Icon
+            size={16}
+            strokeWidth={2}
+            aria-hidden
+            className="shrink-0"
+            style={{ color: `var(${brand.cssVar})` }}
+          />
           <span className="lowercase">{provider?.label ?? providerId}</span>
           <StatusPill phase={lifecycle.phase} connection={provider?.connection ?? 'missing'} />
         </span>

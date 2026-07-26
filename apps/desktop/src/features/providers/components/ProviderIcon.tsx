@@ -5,18 +5,11 @@ import { PROVIDER_BRAND } from './provider-brand';
 type Props = {
   readonly provider: string | null | undefined;
   readonly size?: number;
-  readonly withChip?: boolean;
   readonly muted?: boolean;
   readonly variant?: 'glyph' | 'icon';
 };
 
-export const ProviderIcon = ({
-  provider,
-  size = 14,
-  withChip = false,
-  muted,
-  variant = 'icon',
-}: Props) => {
+export const ProviderIcon = ({ provider, size = 14, muted, variant = 'icon' }: Props) => {
   const id = PROVIDER_IDS.find((candidate) => candidate === provider);
   if (id == null && variant === 'glyph') {
     return null;
@@ -42,7 +35,6 @@ export const ProviderIcon = ({
       icon={brand.icon}
       cssVar={brand.cssVar}
       size={size}
-      framed={withChip}
       label={id === 'anthropic' ? 'claude' : id}
     />
   );

@@ -45,11 +45,12 @@ describe('IntegrationGlyph, sizes', () => {
   });
 });
 
-describe('IntegrationGlyph, framed variant', () => {
-  it('keeps the named mark inside a tinted frame', () => {
-    render(<IntegrationGlyph provider="sentry" framed />);
+describe('IntegrationGlyph, numeric size', () => {
+  it('renders the named mark bare at the requested size', () => {
+    render(<IntegrationGlyph provider="sentry" size={20} />);
     const mark = screen.getByRole('img', { name: 'Sentry' });
-    expect(mark.getAttribute('width')).toBe('16');
-    expect(mark.parentElement?.className).toContain('size-7 rounded-md');
+    expect(mark.getAttribute('width')).toBe('20');
+    expect(mark.parentElement?.tagName).toBe('DIV');
+    expect(mark.parentElement?.className).not.toContain('rounded');
   });
 });

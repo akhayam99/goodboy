@@ -14,15 +14,6 @@ type Props = {
   readonly rows: ReadonlyArray<DefinitionRow>;
 };
 
-const TONE_BG: Record<Tone, string> = {
-  primary: 'bg-primary/10',
-  success: 'bg-success/10',
-  warning: 'bg-warning/10',
-  danger: 'bg-danger/10',
-  info: 'bg-info/10',
-  muted: 'bg-muted',
-};
-
 const TONE_FG: Record<Tone, string> = {
   primary: 'text-primary',
   success: 'text-success',
@@ -42,8 +33,7 @@ export const DefinitionList = ({ rows }: Props) => (
         {row.icon ? (
           <span
             className={cn(
-              'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md',
-              TONE_BG[row.tone ?? 'muted'],
+              'flex size-5 shrink-0 items-center justify-center',
               TONE_FG[row.tone ?? 'muted'],
             )}
           >

@@ -15,7 +15,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react';
-import { IconTile, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
+import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId, WorkspaceKind } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
@@ -455,9 +455,9 @@ export const LensColumn = ({
               : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
           )}
         >
-          <IconTile size="xs" tone="neutral" className="transition-colors">
-            <LayoutDashboard size={12} aria-hidden />
-          </IconTile>
+          <span className="flex w-5 flex-none items-center justify-center text-muted-foreground transition-colors">
+            <LayoutDashboard size={14} aria-hidden />
+          </span>
           <span
             className={cn(
               'min-w-0 flex-1 truncate pr-12 text-[13px]',
@@ -494,9 +494,9 @@ export const LensColumn = ({
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                 )}
               >
-                <IconTile size="xs" tone="neutral" className="transition-colors">
-                  <Plug size={12} aria-hidden />
-                </IconTile>
+                <span className="flex w-5 flex-none items-center justify-center text-muted-foreground transition-colors">
+                  <Plug size={14} aria-hidden />
+                </span>
                 <span className="min-w-0 flex-1 truncate text-[13px]">Connect an integration</span>
               </button>
             ) : (
@@ -522,21 +522,22 @@ export const LensColumn = ({
                         : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
                     )}
                   >
-                    {row.glyph ? (
-                      <IconTile
-                        size="xs"
-                        color={`var(--color-provider-${row.glyph})`}
-                        ring
-                        className="transition-colors"
+                    {row.glyph != null ? (
+                      <span
+                        aria-hidden
+                        className="flex w-5 flex-none items-center justify-center transition-colors"
                       >
-                        <span aria-hidden>
-                          <IntegrationGlyph provider={row.glyph} />
-                        </span>
-                      </IconTile>
-                    ) : row.icon ? (
-                      <IconTile size="xs" tone={row.tone} className="transition-colors">
-                        <row.icon size={12} aria-hidden />
-                      </IconTile>
+                        <IntegrationGlyph provider={row.glyph} size={14} />
+                      </span>
+                    ) : row.icon != null ? (
+                      <span
+                        className={cn(
+                          'flex w-5 flex-none items-center justify-center transition-colors',
+                          tintClasses(row.tone).icon,
+                        )}
+                      >
+                        <row.icon size={14} aria-hidden />
+                      </span>
                     ) : null}
                     <span
                       className={cn(
