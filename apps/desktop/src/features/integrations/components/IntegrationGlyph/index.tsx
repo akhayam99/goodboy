@@ -24,19 +24,17 @@ const INTEGRATION_BRAND: Record<IntegrationGlyphProvider, IntegrationBrand> = {
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
-  readonly size?: 'xs' | 'sm';
-  readonly framed?: boolean;
+  readonly size?: number | 'xs' | 'sm';
   readonly className?: string;
 };
 
-export const IntegrationGlyph = ({ provider, size = 'sm', framed = false, className }: Props) => {
+export const IntegrationGlyph = ({ provider, size = 'sm', className }: Props) => {
   const brand = INTEGRATION_BRAND[provider];
   return (
     <BrandGlyph
       icon={brand.icon}
       cssVar={brand.cssVar}
       size={size}
-      framed={framed}
       className={className}
       label={brand.label}
     />

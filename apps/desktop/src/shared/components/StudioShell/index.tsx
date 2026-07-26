@@ -52,11 +52,7 @@ export const StudioShell = ({
       ) : (
         <header className="flex shrink-0 items-center gap-3 px-6 py-3">
           {glyph ??
-            (Icon ? (
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-                <Icon size={16} className="text-primary" aria-hidden />
-              </span>
-            ) : null)}
+            (Icon ? <Icon size={18} className="shrink-0 text-primary" aria-hidden /> : null)}
           <div className="flex min-w-0 flex-col">
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-semibold text-foreground">{title}</h1>

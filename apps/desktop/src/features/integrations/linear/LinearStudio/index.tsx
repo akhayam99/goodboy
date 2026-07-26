@@ -66,7 +66,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
 
   return (
     <StudioShell
-      glyph={<IntegrationGlyph provider="linear" framed />}
+      glyph={<IntegrationGlyph provider="linear" size={20} />}
       title="Linear"
       workspaceName={workspaceName}
       closeLabel="close linear studio"

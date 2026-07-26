@@ -34,11 +34,7 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
 
   return (
     <PanelShell
-      icon={
-        <span className="flex size-11 shrink-0 items-center justify-center">
-          <ProviderIcon provider={provider} size={26} withChip />
-        </span>
-      }
+      icon={<ProviderIcon provider={provider} size={20} />}
       title={providerLabel(provider)}
       subtitle={`${formatUsdPrecise(spent)} total spend`}
     >

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { cn, Divider, IconTile, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
@@ -12,7 +12,7 @@ import {
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { brandColor, PROVIDER_BRAND } from '../provider-brand';
+import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 
@@ -41,7 +41,6 @@ function Detail({
 }) {
   const id = info.id as ProviderId;
   const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? Sparkles;
-  const color = brandColor(id);
   const lifecycle = useAppStore((s) => s.providerLifecycle[id]);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -66,9 +65,12 @@ function Detail({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
-        <IconTile size="lg" color={color}>
-          <Icon size={22} aria-hidden />
-        </IconTile>
+        <Icon
+          size={20}
+          aria-hidden
+          className="shrink-0"
+          style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}
+        />
         <div className="flex min-w-0 flex-col">
           <span className="text-base font-semibold lowercase text-foreground">{info.label}</span>
           <span className="truncate text-2xs text-muted-foreground">

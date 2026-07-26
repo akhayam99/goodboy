@@ -6,7 +6,7 @@ import { BrandGlyph } from './index';
 afterEach(cleanup);
 
 describe('BrandGlyph', () => {
-  it('renders an unframed glyph with its size and color', () => {
+  it('renders a glyph with its semantic size and brand color', () => {
     render(
       <BrandGlyph icon={GithubIcon} cssVar="--color-provider-github" size="xs" label="GitHub" />,
     );
@@ -17,22 +17,15 @@ describe('BrandGlyph', () => {
     expect(glyph.getAttribute('class')).toContain('shrink-0');
   });
 
-  it('renders a framed glyph with a tinted tile', () => {
+  it('renders a numeric size without a wrapper tile', () => {
     render(
-      <BrandGlyph
-        icon={GithubIcon}
-        cssVar="--color-provider-github"
-        size={26}
-        framed
-        label="GitHub"
-      />,
+      <BrandGlyph icon={GithubIcon} cssVar="--color-provider-github" size={20} label="GitHub" />,
     );
 
     const glyph = screen.getByRole('img', { name: 'GitHub' });
-    const tile = glyph.parentElement;
-    expect(glyph.getAttribute('width')).toBe('26');
-    expect(tile?.className).toContain('size-9 rounded-lg');
-    expect(tile?.style.color).toBe('var(--color-provider-github)');
+    expect(glyph.getAttribute('width')).toBe('20');
+    expect(glyph.parentElement?.tagName).toBe('DIV');
+    expect(glyph.parentElement?.className).not.toContain('rounded');
   });
 
   it('hides an unlabeled glyph from assistive technology', () => {

@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Chip, cn, tintClasses } from '@goodboy/ui';
+import { Chip, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 
 type Props = {
@@ -13,16 +13,7 @@ type Props = {
 
 export const StartRowContent = ({ icon: Icon, tone, label, description, chip }: Props) => (
   <>
-    <span
-      aria-hidden
-      className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
-        tintClasses(tone).bg,
-        tintClasses(tone).ring,
-      )}
-    >
-      <Icon size={16} aria-hidden className={tintClasses(tone).icon} />
-    </span>
+    <Icon size={16} aria-hidden className={`shrink-0 ${tintClasses(tone).icon}`} />
     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
       <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
         {label}

@@ -62,6 +62,14 @@ describe('StudioShell header', () => {
     expect(screen.getByText('beta')).toBeDefined();
   });
 
+  it('renders the header icon bare', () => {
+    render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
+    const header = screen.getByText('Test Studio').closest('header');
+    const icon = header?.querySelector('svg.lucide-settings');
+    expect(icon?.getAttribute('width')).toBe('18');
+    expect(icon?.parentElement).toBe(header);
+  });
+
   it('renders close button with correct aria-label', () => {
     render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     expect(screen.getByRole('button', { name: 'close test studio' })).toBeDefined();

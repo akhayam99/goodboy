@@ -128,7 +128,7 @@ export const GitHubStudio = ({
 
   return (
     <StudioShell
-      glyph={<IntegrationGlyph provider="github" framed />}
+      glyph={<IntegrationGlyph provider="github" size={20} />}
       title="GitHub"
       workspaceName={workspaceName}
       closeLabel="close github studio"

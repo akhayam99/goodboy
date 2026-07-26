@@ -53,7 +53,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     )}
                   >
                     <div className="flex items-center gap-2.5">
-                      <ProviderIcon provider={entry.provider} size={15} withChip />
+                      <ProviderIcon provider={entry.provider} size={15} />
                       <span className="flex-1 truncate text-sm font-medium capitalize text-foreground">
                         {providerLabel(entry.provider)}
                       </span>

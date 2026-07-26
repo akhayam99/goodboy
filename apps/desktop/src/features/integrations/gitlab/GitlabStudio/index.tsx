@@ -109,7 +109,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
 
   return (
     <StudioShell
-      glyph={<IntegrationGlyph provider="gitlab" framed />}
+      glyph={<IntegrationGlyph provider="gitlab" size={20} />}
       title="GitLab"
       workspaceName={workspaceName}
       closeLabel="close gitlab studio"
