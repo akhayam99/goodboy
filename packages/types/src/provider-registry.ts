@@ -1,10 +1,12 @@
-export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini';
+export type ProviderId = 'anthropic' | 'cursor' | 'codex' | 'gemini' | 'opencode' | 'openrouter';
 
 export const PROVIDER_IDS = [
   'anthropic',
   'cursor',
   'codex',
   'gemini',
+  'opencode',
+  'openrouter',
 ] as const satisfies readonly ProviderId[];
 
 export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
@@ -51,9 +53,10 @@ export type ProviderInfo = {
   readonly identity: string | null;
 };
 
-export const PROVIDER_API_KEY_ENV = {
+export const PROVIDER_API_KEY_ENV: Readonly<Partial<Record<ProviderId, string>>> = {
   anthropic: 'ANTHROPIC_API_KEY',
   cursor: 'CURSOR_API_KEY',
   codex: 'OPENAI_API_KEY',
   gemini: 'GEMINI_API_KEY',
-} satisfies Record<ProviderId, string>;
+  openrouter: 'OPENROUTER_API_KEY',
+};

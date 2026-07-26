@@ -1,7 +1,14 @@
 import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
 import type { RoutingDecision } from './budget';
 
-export type ProviderName = 'anthropic' | 'openai' | 'cursor' | 'codex' | 'gemini';
+export type ProviderName =
+  | 'anthropic'
+  | 'openai'
+  | 'cursor'
+  | 'codex'
+  | 'gemini'
+  | 'opencode'
+  | 'openrouter';
 
 export type ProviderRunStatus =
   | { kind: 'pending' }

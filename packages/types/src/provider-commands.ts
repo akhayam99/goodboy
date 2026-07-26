@@ -16,7 +16,7 @@ export type ProviderLifecycleCommands = {
   readonly logout: string;
 };
 
-export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCommands> = {
+export const PROVIDER_LIFECYCLE_COMMANDS: Partial<Record<ProviderId, ProviderLifecycleCommands>> = {
   anthropic: {
     install: {
       darwin: 'npm install -g @anthropic-ai/claude-code',
@@ -52,5 +52,14 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Record<ProviderId, ProviderLifecycleCo
     },
     login: 'agy login',
     logout: 'rm -rf ~/.gemini/antigravity-cli && echo "antigravity credentials removed"',
+  },
+  opencode: {
+    install: {
+      darwin: 'npm install -g opencode-ai',
+      linux: 'npm install -g opencode-ai',
+      win32: 'npm install -g opencode-ai',
+    },
+    login: 'opencode auth login',
+    logout: 'opencode auth logout',
   },
 };
