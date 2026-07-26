@@ -31,6 +31,8 @@ export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { ScrollFade } from './components/ScrollFade';
 export type { ScrollFadeProps } from './components/ScrollFade';
+export { SegmentedTabs } from './components/SegmentedTabs';
+export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
 export { Select } from './components/Select';
