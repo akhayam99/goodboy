@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { DollarSign, RotateCcw } from 'lucide-react';
-import { Button, cn, FieldRow, KbdPill, ScrollFade, Select } from '@goodboy/ui';
+import { RotateCcw } from 'lucide-react';
+import { Button, cn, Divider, FieldRow, ScrollFade, SectionHeader, Select } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -8,54 +8,18 @@ import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
+import { ShortcutsSection } from './ShortcutsSection';
 
 type Props = {
   readonly initialSection?: string;
   readonly requestClose: () => void;
-  readonly registerScrollTo?: (fn: (id: string) => void) => void;
 };
 
-const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly label: string }> = [
-  { combo: ['⌘', 'K'], label: 'command palette' },
-  { combo: ['⌘', 'N'], label: 'new session' },
-  { combo: ['⌘', 'B'], label: 'toggle sessions sidebar' },
-  { combo: ['⌘', '1', '..', '9'], label: 'jump to workspace 1 to 9' },
-  { combo: ['⌘', '['], label: 'back (lens history)' },
-  { combo: ['⌘', ']'], label: 'forward (lens history)' },
-  { combo: ['⌘', '⇧', '['], label: 'previous session' },
-  { combo: ['⌘', '⇧', ']'], label: 'next session' },
-  { combo: ['⌘', '⇧', 'K'], label: 'open model picker' },
-  { combo: ['⌘', '⇧', 'P'], label: 'open permission picker' },
-  { combo: ['⌘', 'J'], label: 'toggle terminal' },
-  { combo: ['⌘', 'T'], label: 'new terminal tab' },
-  { combo: ['⌘', 'W'], label: 'close terminal tab' },
-  { combo: ['⌘', '⇧', 'G'], label: 'jump to goal' },
-  { combo: ['⌘', '⇧', 'W'], label: 'jump to workflows' },
-  { combo: ['⌘', '⇧', 'B'], label: 'jump to agents' },
-  { combo: ['⌘', '⇧', 'R'], label: 'jump to resolve' },
-  { combo: ['⌘', '⇧', 'D'], label: 'jump to diff' },
-  { combo: ['⌘', '⇧', 'L'], label: 'jump to plans' },
-  { combo: ['⌘', '⇧', 'S'], label: 'jump to scripts' },
-  { combo: ['⌘', '⇧', 'Q'], label: 'jump to questions' },
-  { combo: ['⌘', '⇧', 'O'], label: 'jump to overview' },
-  { combo: ['⌘', '⇧', 'H'], label: 'jump to GitHub or GitLab' },
-  { combo: ['⌘', '⇧', 'E'], label: 'jump to decisions' },
-  { combo: ['⌘', '⇧', 'U'], label: 'jump to session summary' },
-  { combo: ['⌘', '⇧', '⎋'], label: 'back to board' },
-  { combo: ['⌘', '↵'], label: 'send message (queue if running)' },
-  { combo: ['⌘', '⇧', 'A'], label: 'archive current session' },
-  { combo: ['⌘', '.'], label: 'delete current session' },
-  { combo: ['⌘', ','], label: 'open settings' },
-  { combo: ['⌘', '/'], label: 'keyboard shortcuts' },
-  { combo: ['Esc'], label: 'close dialog or cancel' },
-];
-
-export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }: Props) => {
+export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
@@ -81,7 +45,7 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
   );
   const [wipeError, setWipeError] = useState<string | null>(null);
 
-  const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
     void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
@@ -90,17 +54,11 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
   }, [loadSetting]);
 
   useEffect(() => {
-    if (!initialSection) {
+    if (initialSection == null || initialSection === '') {
       return;
     }
     anchorsRef.current[initialSection]?.scrollIntoView({ block: 'start' });
   }, [initialSection]);
-
-  useEffect(() => {
-    registerScrollTo?.((id) =>
-      anchorsRef.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
-  }, [registerScrollTo]);
 
   const onExport = async () => {
     setExportState('busy');
@@ -155,89 +113,71 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
     ? detectedEditors
     : [...detectedEditors, { binary: editorBinary, label: editorBinary }];
 
-  const anchor = (id: string) => (el: HTMLDivElement | null) => {
+  const anchor = (id: string) => (el: HTMLElement | null) => {
     anchorsRef.current[id] = el;
   };
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
-        <div className="flex flex-col divide-y divide-border-soft/50">
-          <div ref={anchor('editor')} className="py-4 first:pt-0 last:pb-0">
-            <FieldRow label="Default editor" help="Opens session worktrees.">
-              <Select
-                size="sm"
-                value={editorBinary}
-                onChange={(e) => void onChangeEditor(e.target.value)}
-                aria-label="default editor"
-              >
-                {editorOptions.map((ed) => (
-                  <option key={ed.binary} value={ed.binary}>
-                    {ed.label}
-                  </option>
-                ))}
-              </Select>
-            </FieldRow>
+        <div className="flex flex-col gap-6">
+          <section id="editor" ref={anchor('editor')} className="flex flex-col gap-4">
+            <SectionHeader label="Editor" hint="Default tools and first-run preferences." />
+            <div className="flex flex-col">
+              <FieldRow label="Default editor" help="Opens session worktrees.">
+                <Select
+                  size="sm"
+                  value={editorBinary}
+                  onChange={(e) => void onChangeEditor(e.target.value)}
+                  aria-label="default editor"
+                >
+                  {editorOptions.map((editor) => (
+                    <option key={editor.binary} value={editor.binary}>
+                      {editor.label}
+                    </option>
+                  ))}
+                </Select>
+              </FieldRow>
 
-            <FieldRow label="Setup guide" help="Replay the first-run walkthrough.">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  requestClose();
-                  reopenWizard();
-                }}
-              >
-                <RotateCcw size={14} aria-hidden /> Run setup again
-              </Button>
-            </FieldRow>
-          </div>
-
-          {SESSION_FEATURES.budget ? (
-            <div ref={anchor('budget')} className="py-4 first:pt-0 last:pb-0">
-              <FieldRow label="Budget" help="Spend, caps, and alerts live in Budget Studio.">
+              <FieldRow label="Setup guide" help="Replay the first-run walkthrough.">
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={() => {
                     requestClose();
-                    window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio'));
+                    reopenWizard();
                   }}
                 >
-                  <DollarSign size={14} aria-hidden /> Open Budget Studio
+                  <RotateCcw size={14} aria-hidden /> Run setup again
                 </Button>
               </FieldRow>
             </div>
-          ) : null}
+          </section>
 
-          <div ref={anchor('shortcuts')} className="py-4 first:pt-0 last:pb-0">
-            <FieldRow label="Keyboard shortcuts" layout="stacked">
-              <ul className="grid grid-cols-2 gap-x-10">
-                {SHORTCUTS.map((s) => (
-                  <li key={s.label} className="flex items-center justify-between py-1.5 text-xs">
-                    <span className="text-muted-foreground">{s.label}</span>
-                    <span className="flex items-center gap-0.5">
-                      {s.combo.map((k) => (
-                        <KbdPill key={k}>{k}</KbdPill>
-                      ))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </FieldRow>
-          </div>
+          <Divider />
 
-          <div ref={anchor('integrations')} className="py-4 first:pt-0 last:pb-0">
-            <FieldRow label="GitHub" layout="stacked">
-              <GithubPanel hideSectionHeader />
-            </FieldRow>
-          </div>
+          <section id="shortcuts" ref={anchor('shortcuts')}>
+            <ShortcutsSection initiallyExpanded={initialSection === 'shortcuts'} />
+          </section>
 
-          <div ref={anchor('advanced')} className="py-4 first:pt-0 last:pb-0">
-            <FieldRow
+          <Divider />
+
+          <section id="integrations" ref={anchor('integrations')} className="flex flex-col gap-4">
+            <SectionHeader label="GitHub" hint="Global fallback token used by every workspace." />
+            <GithubPanel hideSectionHeader />
+            <p className="text-2xs text-muted-foreground">
+              Per-workspace overrides live in Workspace settings, Integrations.
+            </p>
+          </section>
+
+          <Divider />
+
+          <section id="advanced" ref={anchor('advanced')} className="flex flex-col gap-4">
+            <SectionHeader
               label="Config backup"
-              help="Export or import workspaces, skills, workflows, rules, and settings as JSON. API keys are never included."
-            >
+              hint="Export or import workspaces, skills, workflows, rules, and settings as JSON."
+            />
+            <FieldRow label="Backup file" help="API keys are never included.">
               <span className="flex items-center gap-2">
                 <Button
                   variant="secondary"
@@ -257,9 +197,16 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
                 </Button>
               </span>
             </FieldRow>
-          </div>
+          </section>
 
-          <div ref={anchor('initialization')} className="py-4 first:pt-0 last:pb-0">
+          <Divider />
+
+          <section
+            id="initialization"
+            ref={anchor('initialization')}
+            className="flex flex-col gap-4"
+          >
+            <SectionHeader label="Danger zone" hint="Destructive local data controls." />
             <FieldRow
               label="Wipe local database"
               help="Every workspace, session, transcript, and rule. Keychain keys are untouched. Fresh schema on next boot."
@@ -301,8 +248,8 @@ export const AppScopePanel = ({ initialSection, requestClose, registerScrollTo }
                 </Button>
               )}
             </FieldRow>
-            {wipeError ? <p className="pt-2 text-xs text-danger">{wipeError}</p> : null}
-          </div>
+            {wipeError ? <p className="text-xs text-danger">{wipeError}</p> : null}
+          </section>
         </div>
       </div>
 
