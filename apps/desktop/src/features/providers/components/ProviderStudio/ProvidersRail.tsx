@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, IconTile } from '@goodboy/ui';
 import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -43,9 +43,9 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
               : 'text-muted-foreground hover:bg-muted/50',
           )}
         >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <IconTile size="sm" tone="primary" ring={false}>
             <SlidersHorizontal size={15} aria-hidden />
-          </span>
+          </IconTile>
           <span className="text-sm font-medium text-foreground">Defaults</span>
         </button>
       </section>
@@ -75,15 +75,9 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                     : 'text-muted-foreground hover:bg-muted/50',
                 )}
               >
-                <span
-                  className="flex size-7 shrink-0 items-center justify-center rounded-md"
-                  style={{
-                    backgroundColor: `color-mix(in oklch, ${brandColor(id)} 18%, transparent)`,
-                    color: brandColor(id),
-                  }}
-                >
+                <IconTile size="sm" color={brandColor(id)}>
                   <Icon size={15} aria-hidden />
-                </span>
+                </IconTile>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium lowercase text-foreground">
                     {p.label}

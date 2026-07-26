@@ -15,7 +15,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react';
-import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { IconTile, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
@@ -373,16 +373,9 @@ export const LensColumn = ({
               : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
           )}
         >
-          <span
-            aria-hidden
-            className={cn(
-              'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
-              tintClasses('neutral').bg,
-              tintClasses('neutral').ring,
-            )}
-          >
-            <LayoutDashboard size={12} aria-hidden className={tintClasses('neutral').icon} />
-          </span>
+          <IconTile size="xs" tone="neutral" className="transition-colors">
+            <LayoutDashboard size={12} aria-hidden />
+          </IconTile>
           <span
             className={cn(
               'min-w-0 flex-1 truncate pr-12 text-[13px]',
@@ -426,20 +419,20 @@ export const LensColumn = ({
                   )}
                 >
                   {row.glyph ? (
-                    <span aria-hidden className="flex size-5 shrink-0 items-center justify-center">
-                      <IntegrationGlyph provider={row.glyph} />
-                    </span>
-                  ) : row.icon ? (
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'flex size-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors',
-                        tintClasses(row.tone).bg,
-                        tintClasses(row.tone).ring,
-                      )}
+                    <IconTile
+                      size="xs"
+                      color={`var(--color-provider-${row.glyph})`}
+                      ring
+                      className="transition-colors"
                     >
-                      <row.icon size={12} aria-hidden className={tintClasses(row.tone).icon} />
-                    </span>
+                      <span aria-hidden>
+                        <IntegrationGlyph provider={row.glyph} />
+                      </span>
+                    </IconTile>
+                  ) : row.icon ? (
+                    <IconTile size="xs" tone={row.tone} className="transition-colors">
+                      <row.icon size={12} aria-hidden />
+                    </IconTile>
                   ) : null}
                   <span
                     className={cn(

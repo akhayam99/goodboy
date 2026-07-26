@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Dialog, Button } from '@goodboy/ui';
+import { Button, Dialog, IconTile } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -71,16 +71,9 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
       panelClassName="bg-subtle/30 px-5 py-5 overflow-y-auto"
       title={
         <span className="inline-flex items-center gap-2">
-          <span
-            aria-hidden
-            className="flex h-7 w-7 items-center justify-center rounded-full"
-            style={{
-              backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)`,
-              color,
-            }}
-          >
-            <Icon size={14} strokeWidth={2} />
-          </span>
+          <IconTile size="sm" color={color}>
+            <Icon size={14} strokeWidth={2} aria-hidden />
+          </IconTile>
           <span className="lowercase">{provider?.label ?? providerId}</span>
           <StatusPill phase={lifecycle.phase} connection={provider?.connection ?? 'missing'} />
         </span>

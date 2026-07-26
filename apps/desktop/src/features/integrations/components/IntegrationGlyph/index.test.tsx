@@ -50,6 +50,6 @@ describe('IntegrationGlyph, framed variant', () => {
     render(<IntegrationGlyph provider="sentry" framed />);
     const mark = screen.getByRole('img', { name: 'Sentry' });
     expect(mark.getAttribute('width')).toBe('16');
-    expect(mark.parentElement?.className).toContain('bg-provider-sentry/10');
+    expect(mark.parentElement?.className).toContain('size-7 rounded-md');
   });
 });
