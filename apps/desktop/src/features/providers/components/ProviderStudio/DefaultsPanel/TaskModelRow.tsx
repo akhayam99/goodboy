@@ -3,6 +3,7 @@ import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { RoutingStatusControl } from './RoutingStatusControl';
 
 type Props = {
   readonly task: AuxTaskId;
@@ -40,28 +41,36 @@ export const TaskModelRow = ({
 
   return (
     <FieldRow label={label} help={help}>
-      <div className="w-80">
-        <RoutingPicker
-          ariaLabel={`${label} routing`}
-          connectedProviders={availableProviderIds}
-          provider={providerId}
-          model={model}
-          recommendedModel={recommendedModel}
+      <div className="flex items-center gap-2">
+        <RoutingStatusControl
+          label={label}
+          isCustom={preference != null}
           disabled={disabled}
-          onProvider={(next) => {
-            if (next === '') {
-              return;
-            }
-            setProviderId(next);
-            if (preference == null) {
-              return;
-            }
-            onChange(resolveTaskModel(task, null, next));
-          }}
-          onModel={(nextModel) =>
-            onChange(nextModel === '' ? null : { providerId, model: nextModel })
-          }
+          onReset={() => onChange(null)}
         />
+        <div className="w-80">
+          <RoutingPicker
+            ariaLabel={`${label} routing`}
+            connectedProviders={availableProviderIds}
+            provider={providerId}
+            model={model}
+            recommendedModel={recommendedModel}
+            disabled={disabled}
+            onProvider={(next) => {
+              if (next === '') {
+                return;
+              }
+              setProviderId(next);
+              if (preference == null) {
+                return;
+              }
+              onChange(resolveTaskModel(task, null, next));
+            }}
+            onModel={(nextModel) =>
+              onChange(nextModel === '' ? null : { providerId, model: nextModel })
+            }
+          />
+        </div>
       </div>
     </FieldRow>
   );

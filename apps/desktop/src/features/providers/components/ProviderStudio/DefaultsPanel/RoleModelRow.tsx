@@ -19,12 +19,14 @@ import {
   modelLabel,
 } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { RoutingStatusControl } from './RoutingStatusControl';
 
 type Props = {
   readonly role: AgentRole;
   readonly label: string;
   readonly help: string;
   readonly preference: RoleModelPreference | null;
+  readonly defaultProviderId: ProviderId;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly onChange: (preference: RoleModelPreference | null) => void;
@@ -41,6 +43,7 @@ export const RoleModelRow = ({
   label,
   help,
   preference,
+  defaultProviderId,
   connectedProviderIds,
   disabled,
   onChange,
@@ -48,20 +51,22 @@ export const RoleModelRow = ({
   const compiled = defaultsForRole(role);
   const prefs: RoleModelPreferences | null = preference == null ? null : { [role]: preference };
   const resolved = resolveRoleRouting({ role, prefs });
-  const [providerId, setProviderId] = useState(resolved.provider);
+  const resolvedProviderId = resolved.isOverride ? resolved.provider : defaultProviderId;
+  const [providerId, setProviderId] = useState(resolvedProviderId);
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
   const recommendedModel = recommendedModelForRole({ role, provider: providerId });
-  const compiledRouting = `${PROVIDER_LABEL[compiled.provider]} · ${modelLabel(compiled.model)}`;
+  const defaultModel = recommendedModelForRole({ role, provider: defaultProviderId });
+  const compiledRouting = `${PROVIDER_LABEL[defaultProviderId]} · ${modelLabel(defaultModel)}`;
   const defaultSummary =
-    modelEffortLevels(compiled.model) == null
+    modelEffortLevels(defaultModel) == null
       ? compiledRouting
       : `${compiledRouting} · ${EFFORT_LABEL[compiled.effort]} effort`;
 
   useEffect(() => {
-    setProviderId(resolved.provider);
-  }, [resolved.provider]);
+    setProviderId(resolvedProviderId);
+  }, [resolvedProviderId]);
 
   const commit = ({ providerId: nextProvider, model, effort }: CommitParams) => {
     const candidate: RoleModelPreference = { providerId: nextProvider, model, effort };
@@ -75,49 +80,56 @@ export const RoleModelRow = ({
 
   return (
     <FieldRow label={label} help={help}>
-      <div className="w-80">
-        <RoutingPicker
-          ariaLabel={`${label} routing`}
-          connectedProviders={availableProviderIds}
-          provider={providerId}
-          model={resolved.isOverride ? resolved.model : ''}
-          effort={resolved.effort}
-          recommendedProvider={compiled.provider}
-          recommendedModel={recommendedModel}
-          defaultSummary={defaultSummary}
-          overridden={resolved.isOverride}
+      <div className="flex items-center gap-2">
+        <RoutingStatusControl
+          label={label}
+          isCustom={resolved.isOverride}
           disabled={disabled}
           onReset={() => onChange(null)}
-          onProvider={(next) => {
-            if (next === '') {
-              onChange(null);
-              return;
-            }
-            setProviderId(next);
-            if (!resolved.isOverride) {
-              return;
-            }
-            commit({
-              providerId: next,
-              model: recommendedModelForRole({ role, provider: next }),
-              effort: resolved.effort,
-            });
-          }}
-          onModel={(nextModel) => {
-            if (nextModel === '') {
-              onChange(null);
-              return;
-            }
-            commit({ providerId, model: nextModel, effort: resolved.effort });
-          }}
-          onEffort={(effort) =>
-            commit({
-              providerId,
-              model: resolved.isOverride ? resolved.model : recommendedModel,
-              effort,
-            })
-          }
         />
+        <div className="w-80">
+          <RoutingPicker
+            ariaLabel={`${label} routing`}
+            connectedProviders={availableProviderIds}
+            provider={providerId}
+            model={resolved.isOverride ? resolved.model : ''}
+            effort={resolved.effort}
+            recommendedProvider={defaultProviderId}
+            recommendedModel={recommendedModel}
+            defaultSummary={defaultSummary}
+            overridden={resolved.isOverride}
+            disabled={disabled}
+            onProvider={(next) => {
+              if (next === '') {
+                onChange(null);
+                return;
+              }
+              setProviderId(next);
+              if (!resolved.isOverride) {
+                return;
+              }
+              commit({
+                providerId: next,
+                model: recommendedModelForRole({ role, provider: next }),
+                effort: resolved.effort,
+              });
+            }}
+            onModel={(nextModel) => {
+              if (nextModel === '') {
+                onChange(null);
+                return;
+              }
+              commit({ providerId, model: nextModel, effort: resolved.effort });
+            }}
+            onEffort={(effort) =>
+              commit({
+                providerId,
+                model: resolved.isOverride ? resolved.model : recommendedModel,
+                effort,
+              })
+            }
+          />
+        </div>
       </div>
     </FieldRow>
   );

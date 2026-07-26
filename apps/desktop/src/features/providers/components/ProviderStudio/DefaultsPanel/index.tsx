@@ -93,7 +93,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       <Divider />
       <ScrollFade className="flex-1" fadeFrom="background">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-8 py-6">
-          <section className="flex flex-col">
+          <section className="flex flex-col gap-1">
             <FieldRow label="Default provider" help="New sessions start on it and can override it.">
               <div className="flex flex-wrap justify-end gap-1">
                 {PROVIDER_ORDER.map((providerId) => (
@@ -116,6 +116,9 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                 ))}
               </div>
             </FieldRow>
+            <p className="text-2xs text-muted-foreground">
+              Default rows follow the provider you set above.
+            </p>
           </section>
 
           <section className="flex flex-col gap-2">
@@ -153,6 +156,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                     label={ROLE_LABEL[role]}
                     help={ROLE_DEFAULTS[role].description}
                     preference={overrides.roleModels?.[role] ?? null}
+                    defaultProviderId={defaultProviderId}
                     connectedProviderIds={connectedProviderIds}
                     disabled={busy}
                     onChange={(preference) => persistRoleModel({ role, preference })}
