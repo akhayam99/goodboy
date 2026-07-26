@@ -105,6 +105,7 @@ export type Agent = Readonly<{
   sourceThreadIds?: ReadonlyArray<string>;
   sourceCommentUrl?: string;
   sourceKind?: AgentSourceKind;
+  domains?: ReadonlyArray<string>;
 }>;
 
 export type ParallelGroup = {
