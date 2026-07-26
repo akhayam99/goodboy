@@ -582,12 +582,12 @@ describe('store contract', () => {
       await store.getState().setAgentDone(SESSION_ID, AGENT_ID);
 
       expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeDefined();
-      expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, true);
+      expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, true, expect.any(String));
 
       await store.getState().clearAgentDone(SESSION_ID, AGENT_ID);
 
       expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeUndefined();
-      expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, false);
+      expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, false, null);
     });
 
     it('markAgentViewed stamps lastViewedAt and invokes persist when finished is newer than viewed', async () => {

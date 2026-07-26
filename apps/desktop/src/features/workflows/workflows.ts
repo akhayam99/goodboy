@@ -384,8 +384,12 @@ export const invokeAgentMarkViewed = async (id: AgentId, at: IsoDateTime): Promi
   await invoke<void>('agent_mark_viewed', { id, at });
 };
 
-export const invokeAgentSetDone = async (id: AgentId, done: boolean): Promise<void> => {
-  await invoke<void>('agent_set_done', { id, done });
+export const invokeAgentSetDone = async (
+  id: AgentId,
+  done: boolean,
+  at: IsoDateTime | null,
+): Promise<void> => {
+  await invoke<void>('agent_set_done', { id, done, at });
 };
 
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {

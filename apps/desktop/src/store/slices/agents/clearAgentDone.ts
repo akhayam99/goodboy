@@ -16,6 +16,6 @@ export const clearAgentDone = (set: SetFn) => {
         }),
       },
     }));
-    await invokeAgentSetDone(agentId, false);
+    await invokeAgentSetDone(agentId, false, null);
   };
 };

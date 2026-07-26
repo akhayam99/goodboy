@@ -1108,11 +1108,16 @@ pub fn agent_mark_viewed(
 }
 
 #[tauri::command]
-pub fn agent_set_done(state: State<'_, Db>, id: String, done: bool) -> Result<(), PhaseError> {
+pub fn agent_set_done(
+    state: State<'_, Db>,
+    id: String,
+    done: bool,
+    at: Option<String>,
+) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
-        "UPDATE agents SET done_at = CASE WHEN ?2 = 1 THEN CURRENT_TIMESTAMP ELSE NULL END WHERE id = ?1",
-        rusqlite::params![id, done as i32],
+        "UPDATE agents SET done_at = CASE WHEN ?2 = 1 THEN ?3 ELSE NULL END WHERE id = ?1",
+        rusqlite::params![id, done as i32, at],
     )?;
     if affected == 0 {
         return Err(PhaseError::RunNotFound(id));

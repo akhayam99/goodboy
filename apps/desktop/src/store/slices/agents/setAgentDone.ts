@@ -13,6 +13,6 @@ export const setAgentDone = (set: SetFn) => {
         ),
       },
     }));
-    await invokeAgentSetDone(agentId, true);
+    await invokeAgentSetDone(agentId, true, doneAt);
   };
 };

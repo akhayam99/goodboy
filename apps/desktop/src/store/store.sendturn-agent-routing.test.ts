@@ -801,7 +801,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'continue' });
 
     expect(useAppStore.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeUndefined();
-    expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_A, false);
+    expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_A, false, null);
   });
 
   it('omits effort from runTurn when no override is set (model default preserved)', async () => {
