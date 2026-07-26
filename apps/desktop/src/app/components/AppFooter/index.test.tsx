@@ -1,6 +1,14 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const { integrationGlyph } = vi.hoisted(() => ({
+  integrationGlyph: vi.fn(),
+}));
+
+type MockGlyphProps = {
+  provider: string;
+};
+
 vi.mock('../../../store', () => ({
   useAppStore: (
     selector: (state: { providers: ReadonlyArray<{ connection: string }> }) => unknown,
@@ -8,10 +16,16 @@ vi.mock('../../../store', () => ({
 }));
 
 vi.mock('../../../features/integrations/components/IntegrationGlyph', () => ({
-  IntegrationGlyph: () => null,
+  IntegrationGlyph: ({ provider }: MockGlyphProps) => {
+    integrationGlyph(provider);
+    return null;
+  },
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 import { AppFooter } from './index';
 
@@ -30,6 +44,7 @@ describe('AppFooter', () => {
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
+        githubEnabled={false}
         linearEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
@@ -53,5 +68,69 @@ describe('AppFooter', () => {
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenBudget).toHaveBeenCalledOnce();
+  });
+
+  it('renders every disconnected integration and opens integration settings', () => {
+    const workspaceSettingsListener = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
+
+    render(
+      <AppFooter
+        activeStudio={null}
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
+        githubEnabled={false}
+        linearEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled={false}
+      />,
+    );
+
+    expect(integrationGlyph.mock.calls.map(([provider]) => provider)).toEqual([
+      'github',
+      'gitlab',
+      'linear',
+      'sentry',
+    ]);
+    expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect GitLab' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Sentry' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect GitLab' }));
+
+    expect(workspaceSettingsListener).toHaveBeenCalledWith(
+      expect.objectContaining({ detail: { section: 'integrations' } }),
+    );
+    window.removeEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
+  });
+
+  it('opens the GitLab studio when GitLab is connected', () => {
+    const onOpenGitlab = vi.fn();
+    render(
+      <AppFooter
+        activeStudio={null}
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={onOpenGitlab}
+        githubEnabled={false}
+        linearEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'launch a session from a GitLab issue' }));
+
+    expect(onOpenGitlab).toHaveBeenCalledOnce();
   });
 });
