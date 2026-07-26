@@ -124,3 +124,38 @@ describe('extractAuxOutput, gemini', () => {
     expect(out.envelopeDecoded).toBe(true);
   });
 });
+
+describe('extractAuxOutput, opencode json stream', () => {
+  it('uses cumulative text parts and token usage', () => {
+    const stdout = [
+      JSON.stringify({
+        type: 'text',
+        part: { id: 'part_1', type: 'text', text: 'branch' },
+      }),
+      JSON.stringify({
+        type: 'text',
+        part: { id: 'part_1', type: 'text', text: 'branch-name' },
+      }),
+      JSON.stringify({
+        type: 'step_finish',
+        part: {
+          type: 'step-finish',
+          tokens: { input: 5, output: 2, reasoning: 3, cache: { read: 1, write: 1 } },
+        },
+      }),
+    ].join('\n');
+    const out = extractAuxOutput({ providerId: 'opencode', stdout });
+    expect(out.text).toBe('branch-name');
+    expect(out.usage).toEqual({ inputTokens: 5, outputTokens: 5, cachedInputTokens: 2 });
+  });
+
+  it('decodes nested errors for openrouter', () => {
+    const stdout = JSON.stringify({
+      type: 'error',
+      error: { name: 'APIError', data: { message: 'Invalid key' } },
+    });
+    const out = extractAuxOutput({ providerId: 'openrouter', stdout });
+    expect(out.isError).toBe(true);
+    expect(out.errorMessage).toBe('Invalid key');
+  });
+});

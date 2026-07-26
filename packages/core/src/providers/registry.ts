@@ -9,6 +9,7 @@ import { ClaudeAdapter } from './claude/adapter';
 import { CursorAdapter } from './cursor/adapter';
 import { CodexAdapter } from './codex/adapter';
 import { GeminiAdapter } from './gemini/adapter';
+import { OpenCodeAdapter } from './opencode/adapter';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type { ProviderRegistryCapabilities };
@@ -38,6 +39,10 @@ export const createProvider = (id: ProviderId, deps: ProviderDeps = {}): Provide
       return new CodexAdapter(deps);
     case 'gemini':
       return new GeminiAdapter(deps);
+    case 'opencode':
+      return new OpenCodeAdapter({ ...deps, providerId: 'opencode' });
+    case 'openrouter':
+      return new OpenCodeAdapter({ ...deps, providerId: 'openrouter' });
     default: {
       const _exhaustive: never = id;
       throw new UnknownProviderError(_exhaustive);

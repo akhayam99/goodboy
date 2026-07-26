@@ -3,6 +3,7 @@ import { ClaudeAdapter } from './claude/adapter';
 import { CursorAdapter } from './cursor/adapter';
 import { CodexAdapter } from './codex/adapter';
 import { GeminiAdapter } from './gemini/adapter';
+import { OpenCodeAdapter } from './opencode/adapter';
 import {
   UnknownProviderError,
   createProvider,
@@ -13,8 +14,15 @@ import { getDefaultTurnModel } from './capabilities';
 import { GEMINI_DEFAULT_MODEL } from './gemini/constants';
 
 describe('listSupportedProviders', () => {
-  it('returns all four provider ids', () => {
-    expect(listSupportedProviders()).toEqual(['anthropic', 'cursor', 'codex', 'gemini']);
+  it('returns all provider ids', () => {
+    expect(listSupportedProviders()).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+      'openrouter',
+    ]);
   });
 
   it('result is readonly array', () => {
@@ -46,6 +54,15 @@ describe('createProvider', () => {
     const adapter = createProvider('gemini');
     expect(adapter).toBeInstanceOf(GeminiAdapter);
     expect(adapter.id).toBe('gemini');
+  });
+
+  it('returns OpenCodeAdapter for opencode and openrouter', () => {
+    const opencode = createProvider('opencode');
+    const openrouter = createProvider('openrouter');
+    expect(opencode).toBeInstanceOf(OpenCodeAdapter);
+    expect(opencode.id).toBe('opencode');
+    expect(openrouter).toBeInstanceOf(OpenCodeAdapter);
+    expect(openrouter.id).toBe('openrouter');
   });
 
   it('passes deps through to adapter', () => {

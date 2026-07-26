@@ -139,6 +139,14 @@ export {
   type ParseContext as CodexParseContext,
 } from './providers/codex/parser';
 
+export { OPENCODE_MODELS } from './providers/opencode/constants';
+export { OPENROUTER_MODELS } from './providers/openrouter/constants';
+export { computeOpenCodeCostUsd } from './providers/opencode/cost';
+export {
+  parseJsonLine as parseOpenCodeJsonLine,
+  type ParseContext as OpenCodeParseContext,
+} from './providers/opencode/parser';
+
 export {
   GEMINI_CHEAP_MODEL,
   GEMINI_DEFAULT_MODEL,
