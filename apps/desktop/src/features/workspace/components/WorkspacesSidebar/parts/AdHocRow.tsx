@@ -27,6 +27,10 @@ type Props = {
   readonly onPickAgent: (id: AgentId) => void;
   readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
   readonly onDeleteAgent: (id: AgentId) => Promise<void>;
+  readonly isInspected?: boolean;
+  readonly onInspectAgent?: (id: AgentId) => void;
+  readonly onMarkDone: (id: AgentId) => void;
+  readonly isMuted?: boolean;
 };
 
 export const AdHocRow = ({
@@ -49,6 +53,10 @@ export const AdHocRow = ({
   onPickAgent,
   onRenameCommit,
   onDeleteAgent,
+  isInspected = false,
+  onInspectAgent,
+  onMarkDone,
+  isMuted = false,
 }: Props) => {
   const kind = resolveAgentKind(
     run.name,
@@ -75,6 +83,10 @@ export const AdHocRow = ({
         onRenameCommit={(name) => void onRenameCommit(run.id, name)}
         onRenameCancel={() => setEditingId(null)}
         onDelete={() => void onDeleteAgent(run.id)}
+        isInspected={isInspected}
+        onInspect={onInspectAgent === undefined ? undefined : () => onInspectAgent(run.id)}
+        onMarkDone={() => onMarkDone(run.id)}
+        isMuted={isMuted}
       />
       {scoutChildren.length > 0 && (
         <li>

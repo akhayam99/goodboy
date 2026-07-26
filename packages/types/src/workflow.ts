@@ -97,6 +97,7 @@ export type Agent = Readonly<{
   providerSessionId?: string;
   lastFinishedAt?: IsoDateTime;
   lastViewedAt?: IsoDateTime;
+  doneAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: VerbosityLevel;
   effort?: ModelEffort;

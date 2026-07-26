@@ -132,6 +132,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!activeAgentId) {
       throw new Error('no agent selected. spawn one before sending a turn');
     }
+    const activeAgent = (before.sessionPhaseRuns[sessionId] ?? []).find(
+      (candidate) => candidate.id === activeAgentId,
+    );
+    if (activeAgent?.doneAt != null) {
+      await get().clearAgentDone(sessionId, activeAgentId);
+    }
 
     const userTurnText = content;
 

@@ -20,6 +20,7 @@ const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 const invokeSpy = vi.fn();
 const invokeAgentUpdateStatusSpy = vi.fn();
+const invokeAgentSetDoneSpy = vi.fn(async () => undefined);
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
@@ -136,6 +137,7 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
   invokeAgentMarkViewed: vi.fn(async () => undefined),
+  invokeAgentSetDone: invokeAgentSetDoneSpy,
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
@@ -778,6 +780,28 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
     expect(runTurnSpy).toHaveBeenCalledOnce();
     expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('xhigh');
+  });
+
+  it('reopens a done agent before sending its next turn', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          {
+            ...buildAgent(AGENT_A, 0),
+            doneAt: '2026-07-26T12:00:00.000Z' as IsoDateTime,
+          },
+        ],
+      },
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'continue' });
+
+    expect(useAppStore.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeUndefined();
+    expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_A, false, null);
   });
 
   it('omits effort from runTurn when no override is set (model default preserved)', async () => {

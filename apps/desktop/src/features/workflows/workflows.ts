@@ -85,6 +85,7 @@ type RawAgentRow = {
   readonly providerSessionId: string | null;
   readonly lastFinishedAt: string | null;
   readonly lastViewedAt: string | null;
+  readonly doneAt: string | null;
   readonly kind: string | null;
   readonly verbosity: string | null;
   readonly sourceThreadId: string | null;
@@ -165,6 +166,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.providerSessionId != null && { providerSessionId: row.providerSessionId }),
     ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
+    ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
     ...(row.kind != null && { kind: row.kind }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
@@ -380,6 +382,14 @@ export const invokeAgentSetProviderSessionId = async (
 
 export const invokeAgentMarkViewed = async (id: AgentId, at: IsoDateTime): Promise<void> => {
   await invoke<void>('agent_mark_viewed', { id, at });
+};
+
+export const invokeAgentSetDone = async (
+  id: AgentId,
+  done: boolean,
+  at: IsoDateTime | null,
+): Promise<void> => {
+  await invoke<void>('agent_set_done', { id, done, at });
 };
 
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {

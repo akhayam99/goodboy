@@ -13,11 +13,11 @@ import {
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { worktreeStatus } from '../../../worktree/worktree';
-import { AgentsSection } from '../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { AgentOverlay } from './parts/AgentOverlay';
+import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { SessionTopBar } from './parts/SessionTopBar';
@@ -66,6 +66,7 @@ type SessionWorkspaceProps = {
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
+  const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
   const hasInitializedResolverInspector = useRef(false);
   const activeLens = useAppStore((s) => s.activeLens[sessionId]);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
@@ -347,14 +348,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   />
                 ) : null}
                 <Pane visible={lens === 'agents'}>
-                  <PaneShell
-                    title="Agents"
-                    description="Agents you spawn by hand to work this session."
+                  <AgentsPane
+                    session={session}
                     meta={agentsMeta}
-                    width="3xl"
-                  >
-                    <AgentsSection task={session} only="agents" />
-                  </PaneShell>
+                    inspectedAgentId={inspectedAgentId}
+                    onInspectAgent={setInspectedAgentId}
+                  />
                 </Pane>
               </div>
             ) : null}

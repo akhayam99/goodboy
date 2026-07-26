@@ -73,8 +73,16 @@ vi.mock('./CollapsedSummary', () => ({
   CollapsedSummary: ({ text }: { text: string }) => <div data-testid="collapsed">{text}</div>,
 }));
 vi.mock('./AgentRow', () => ({
-  AgentRow: ({ run, onClick }: { run: Agent; onClick?: () => void }) => (
-    <li data-testid="agent-row">
+  AgentRow: ({
+    run,
+    onClick,
+    isMuted,
+  }: {
+    run: Agent;
+    onClick?: () => void;
+    isMuted?: boolean;
+  }) => (
+    <li data-testid="agent-row" data-muted={isMuted}>
       <button onClick={onClick}>{run.name}</button>
     </li>
   ),
@@ -181,6 +189,7 @@ function reset() {
     activateWorkflowAgent: vi.fn(),
     renameAgent: vi.fn(),
     deleteAgent: vi.fn(),
+    setAgentDone: vi.fn(),
     phaseTemplates: {},
     sessionWorkflows: {},
     discardWorkflow: vi.fn(),
@@ -248,6 +257,24 @@ describe('AgentsSection collapse defaults', () => {
 
     expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
     expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
+  });
+
+  it('partitions user-completed agents into a collapsed done group', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({ id: 'active' as AgentId, name: 'active agent' }),
+        buildAgent({ id: 'done' as AgentId, name: 'done agent', doneAt: NOW }),
+      ],
+    };
+
+    render(<AgentsSection task={buildSession()} only="agents" />);
+
+    expect(screen.getByText('active agent')).toBeDefined();
+    expect(screen.queryByText('done agent')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Done (1)' }));
+    expect(screen.getByText('done agent').closest('[data-muted]')?.getAttribute('data-muted')).toBe(
+      'true',
+    );
   });
 
   it('workflow unread badge counts step agents and their cluster children', () => {

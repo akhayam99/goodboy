@@ -138,6 +138,11 @@ vi.mock('../ResolverInspector', () => ({
     <div data-testid="resolver-inspector">{agentId}</div>
   ),
 }));
+vi.mock('../AgentInspector', () => ({
+  AgentInspector: ({ agentId }: { agentId: string }) => (
+    <div data-testid="agent-inspector">{agentId}</div>
+  ),
+}));
 
 import { SessionWorkspace } from './index';
 
@@ -284,7 +289,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByTestId('force-resolve-action')).toBeNull();
   });
 
-  it('keeps the agents-home overlay panel unchanged', () => {
+  it('adds the selected agent inspector to the agents-home overlay', () => {
     const standaloneAgent = {
       ...selectedAgent,
       stepId: undefined,
@@ -298,11 +303,12 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('agents-section').getAttribute('data-home')).toBe('agents');
     expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(2);
     expect(screen.queryByTestId('resolver-inspector')).toBeNull();
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(standaloneAgent.id);
     expect(
       screen
         .getAllByTestId('divider')
         .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
   it('keeps the selected inspector open across the resolve chat overlay', () => {

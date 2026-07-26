@@ -11,6 +11,7 @@ const { hooks, remote, store } = vi.hoisted(() => {
   return {
     hooks: {
       agentCount: 0,
+      doneAgentCount: 0,
       planCount: 0,
       questionCount: 0,
       liveTerminals: 0,
@@ -39,11 +40,17 @@ const { hooks, remote, store } = vi.hoisted(() => {
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-  useNonResolverStandaloneAgents: () =>
-    Array.from({ length: hooks.agentCount }, (_, index) => ({
+  useNonResolverStandaloneAgents: () => [
+    ...Array.from({ length: hooks.agentCount }, (_, index) => ({
       id: `agent-${index}`,
       status: 'running',
     })),
+    ...Array.from({ length: hooks.doneAgentCount }, (_, index) => ({
+      id: `done-agent-${index}`,
+      status: 'completed',
+      doneAt: '2026-07-26T12:00:00.000Z',
+    })),
+  ],
   useSessionOpenQuestions: () =>
     Array.from({ length: hooks.questionCount }, (_, index) => ({
       id: `question-${index}`,
@@ -83,6 +90,7 @@ const SESSION = {
 beforeEach(() => {
   remote.kind = 'github';
   hooks.agentCount = 0;
+  hooks.doneAgentCount = 0;
   hooks.planCount = 0;
   hooks.questionCount = 0;
   hooks.liveTerminals = 0;
@@ -224,6 +232,23 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'Questions 1' })).toBeDefined();
     expect(screen.queryByTestId('lens-count-loading-agents')).toBeNull();
     expect(screen.queryByTestId('lens-count-loading-plans')).toBeNull();
+  });
+
+  it('excludes user-completed agents from the agents count', () => {
+    hooks.agentCount = 2;
+    hooks.doneAgentCount = 1;
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Agents 2' })).toBeDefined();
   });
 
   it('keeps the question badge loading until questions resolve', () => {

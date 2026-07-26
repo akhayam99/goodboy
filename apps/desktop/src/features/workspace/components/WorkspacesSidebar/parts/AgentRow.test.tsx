@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 
 vi.mock('../../../../../store', () => ({
@@ -33,11 +33,13 @@ const telemetry = {
   recordedAt: '2026-01-01T00:00:00.000Z',
 } as TelemetryRecord;
 
-const renderRow = (isSelected: boolean) =>
+const markDone = vi.fn();
+
+const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
   render(
     <ul>
       <AgentRow
-        run={run}
+        run={{ ...run, ...runOverride }}
         kind="scout"
         index={0}
         telemetry={telemetry}
@@ -60,11 +62,15 @@ const renderRow = (isSelected: boolean) =>
         onRenameCommit={() => undefined}
         onRenameCancel={() => undefined}
         onDelete={() => undefined}
+        onMarkDone={markDone}
       />
     </ul>,
   );
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 describe('AgentRow', () => {
   it('shows model, cost, context share and turns without being selected', () => {
@@ -106,5 +112,16 @@ describe('AgentRow', () => {
   it('shows the agent status next to its name', () => {
     renderRow(false);
     expect(screen.getByText('scout one').nextElementSibling?.textContent).toBe('completed');
+  });
+
+  it('offers mark done for a stopped standalone agent', () => {
+    renderRow(false);
+    fireEvent.click(screen.getByRole('button', { name: 'mark agent done' }));
+    expect(markDone).toHaveBeenCalledOnce();
+  });
+
+  it('hides mark done while the agent is running', () => {
+    renderRow(false, { status: 'running' });
+    expect(screen.queryByRole('button', { name: 'mark agent done' })).toBeNull();
   });
 });

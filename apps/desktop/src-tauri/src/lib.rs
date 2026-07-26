@@ -192,6 +192,7 @@ pub fn run() {
       workflows::agent_set_kind,
       workflows::agent_set_verbosity,
       workflows::agent_mark_viewed,
+      workflows::agent_set_done,
       workflows::workspaces_with_unread,
       parallel_groups::parallel_group_create,
       parallel_groups::parallel_group_list,

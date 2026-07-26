@@ -233,6 +233,7 @@ const invokeAgentUpdateStatusSpy = vi.fn();
 const invokeAgentSetKindSpy = vi.fn(async () => undefined);
 const invokeAgentSetVerbositySpy = vi.fn(async () => undefined);
 const invokeAgentMarkViewedSpy = vi.fn(async () => undefined);
+const invokeAgentSetDoneSpy = vi.fn(async () => undefined);
 const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined);
 const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>);
 
@@ -246,6 +247,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentSetKind: invokeAgentSetKindSpy,
   invokeAgentSetVerbosity: invokeAgentSetVerbositySpy,
   invokeAgentMarkViewed: invokeAgentMarkViewedSpy,
+  invokeAgentSetDone: invokeAgentSetDoneSpy,
   invokeAgentSetProviderSessionId: invokeAgentSetProviderSessionIdSpy,
   invokeWorkspacesWithUnread: invokeWorkspacesWithUnreadSpy,
 }));
@@ -570,6 +572,22 @@ describe('store contract', () => {
       store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
       await store.getState().markAgentViewed(SESSION_ID, AGENT_ID);
       expect(invokeAgentMarkViewedSpy).not.toHaveBeenCalled();
+    });
+
+    it('sets and clears the user-controlled done timestamp', async () => {
+      const store = await getStore();
+      const agent = buildAgent({ id: AGENT_ID });
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+
+      await store.getState().setAgentDone(SESSION_ID, AGENT_ID);
+
+      expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeDefined();
+      expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, true, expect.any(String));
+
+      await store.getState().clearAgentDone(SESSION_ID, AGENT_ID);
+
+      expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeUndefined();
+      expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, false, null);
     });
 
     it('markAgentViewed stamps lastViewedAt and invokes persist when finished is newer than viewed', async () => {

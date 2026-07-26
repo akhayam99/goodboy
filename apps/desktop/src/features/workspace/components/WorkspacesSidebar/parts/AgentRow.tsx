@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@goodboy/ui';
-import { Trash2 } from 'lucide-react';
+import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
@@ -31,6 +31,10 @@ type Props = {
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
   readonly onDelete: () => void;
+  readonly isInspected?: boolean;
+  readonly isMuted?: boolean;
+  readonly onInspect?: () => void;
+  readonly onMarkDone?: () => void;
 };
 
 export const AgentRow = ({
@@ -50,6 +54,10 @@ export const AgentRow = ({
   onRenameCommit,
   onRenameCancel,
   onDelete,
+  isInspected = false,
+  isMuted = false,
+  onInspect,
+  onMarkDone,
 }: Props) => {
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
@@ -94,6 +102,7 @@ export const AgentRow = ({
       }}
       className={cn(
         'group rounded border transition-colors',
+        isMuted && 'opacity-60',
         isEditing ? '' : 'cursor-pointer',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
         run.status === 'running'
@@ -149,6 +158,25 @@ export const AgentRow = ({
           </span>
         )}
         <AgentStatusBadge status={run.status} />
+        {!isEditing && onInspect !== undefined ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onInspect();
+            }}
+            title="Toggle agent details"
+            aria-label="Toggle agent details"
+            aria-pressed={isInspected}
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground',
+              isInspected && 'bg-foreground/10 text-foreground',
+            )}
+          >
+            <PanelRight size={12} aria-hidden />
+            Details
+          </button>
+        ) : null}
         {!isEditing &&
           (confirmingDelete ? (
             <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -174,6 +202,20 @@ export const AgentRow = ({
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-1.5">
+              {onMarkDone !== undefined && run.status !== 'running' && run.doneAt == null ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onMarkDone();
+                  }}
+                  className="hidden rounded p-0.5 text-muted-foreground/60 transition-colors group-hover:inline-flex hover:text-success"
+                  title="mark agent done"
+                  aria-label="mark agent done"
+                >
+                  <CircleCheck size={11} aria-hidden />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={(e) => {

@@ -29,6 +29,7 @@ type AgentRow = {
   provider_session_id: string | null;
   last_finished_at: string | null;
   last_viewed_at: string | null;
+  done_at: string | null;
   deleted_at: number | null;
   verbosity: string | null;
   effort: string | null;
@@ -54,6 +55,7 @@ function toAgent(row: AgentRow): Agent {
     ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
     ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
     ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
+    ...(row.done_at && { doneAt: row.done_at as IsoDateTime }),
     ...(row.deleted_at != null && {
       deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
     }),
