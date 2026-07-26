@@ -7,14 +7,6 @@ import type { ProviderId, SessionId, WorkspaceId, WorkspaceKind } from '@goodboy
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
   readonly providers: ReadonlyArray<{ readonly id: ProviderId; readonly connection: string }>;
-  readonly sessions: ReadonlyArray<{
-    readonly id: SessionId;
-    readonly workspaceId: WorkspaceId;
-  }>;
-  readonly workspaces: ReadonlyArray<{
-    readonly id: WorkspaceId;
-    readonly kind?: WorkspaceKind;
-  }>;
 };
 
 const h = vi.hoisted(() => ({
@@ -28,19 +20,8 @@ vi.mock('../../../../../store', () => ({
     selector({
       spawnAgent: h.spawnAgent,
       providers: h.providers,
-      sessions: [
-        {
-          id: 'sess-1' as SessionId,
-          workspaceId: 'workspace-1' as WorkspaceId,
-        },
-      ],
-      workspaces: [
-        {
-          id: 'workspace-1' as WorkspaceId,
-          kind: h.workspaceKind,
-        },
-      ],
     }),
+  useCurrentWorkspace: () => ({ id: 'workspace-1' as WorkspaceId, kind: h.workspaceKind }),
 }));
 
 import { SpawnAgentControl } from './SpawnAgentControl';

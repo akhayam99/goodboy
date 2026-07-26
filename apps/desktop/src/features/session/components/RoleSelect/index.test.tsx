@@ -17,16 +17,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Store) => T) =>
-    selector({
-      currentWorkspaceId: 'workspace-1' as WorkspaceId,
-      workspaces: [
-        {
-          id: 'workspace-1' as WorkspaceId,
-          kind: h.workspaceKind,
-        },
-      ],
-    }),
+  useCurrentWorkspace: () => ({ id: 'workspace-1' as WorkspaceId, kind: h.workspaceKind }),
 }));
 
 import { RoleSelect } from '.';

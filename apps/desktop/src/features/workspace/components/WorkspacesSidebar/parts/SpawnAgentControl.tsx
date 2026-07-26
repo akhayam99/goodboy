@@ -4,7 +4,7 @@ import { getDefaultTurnModel } from '@goodboy/core';
 import { Select, cn } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { ProviderId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { useAppStore, useCurrentWorkspace } from '../../../../../store';
 import { clampEffort } from '../../../../chat/utils/chat-constants';
 import {
   AGENT_KIND_META,
@@ -26,11 +26,7 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
   const [role, setRole] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const workspaceKind = useAppStore((state) => {
-    const workspaceId =
-      state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null;
-    return state.workspaces.find((workspace) => workspace.id === workspaceId)?.kind;
-  });
+  const workspaceKind = useCurrentWorkspace()?.kind;
   const agentKinds = visibleAgentKinds({ workspaceKind });
   const selectedRole = agentKinds.includes(role) ? role : (agentKinds[0] ?? 'generic');
   const connectedProviders = useAppStore(

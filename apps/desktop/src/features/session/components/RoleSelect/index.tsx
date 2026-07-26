@@ -1,7 +1,7 @@
 import { Popover, cn } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
 import { Check, ChevronDown } from 'lucide-react';
-import { useAppStore } from '../../../../store';
+import { useCurrentWorkspace } from '../../../../store';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { ROLE_LABEL, ROLE_TO_KIND, visibleAgentRoles } from '../../agent-kind';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
@@ -14,9 +14,7 @@ type Props = {
 
 export const RoleSelect = ({ value, onChange, disabled }: Props) => {
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({ disabled });
-  const workspaceKind = useAppStore((state) => {
-    return state.workspaces.find((workspace) => workspace.id === state.currentWorkspaceId)?.kind;
-  });
+  const workspaceKind = useCurrentWorkspace()?.kind;
   const agentRoles = visibleAgentRoles({ workspaceKind });
 
   return (
