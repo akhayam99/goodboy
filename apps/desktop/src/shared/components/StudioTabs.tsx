@@ -1,9 +1,7 @@
-import { cn } from '@goodboy/ui';
+import { SegmentedTabs } from '@goodboy/ui';
+import type { SegmentedTabOption } from '@goodboy/ui';
 
-export type StudioTab<T extends string> = Readonly<{
-  label: string;
-  value: T;
-}>;
+export type StudioTab<T extends string> = SegmentedTabOption<T>;
 
 type Props<T extends string> = {
   readonly ariaLabel: string;
@@ -13,30 +11,5 @@ type Props<T extends string> = {
 };
 
 export const StudioTabs = <T extends string>({ ariaLabel, tabs, value, onChange }: Props<T>) => (
-  <div
-    role="tablist"
-    aria-label={ariaLabel}
-    className="flex items-center gap-1 rounded-md bg-muted/50 p-1"
-  >
-    {tabs.map((tab) => {
-      const isActive = tab.value === value;
-      return (
-        <button
-          key={tab.value}
-          type="button"
-          role="tab"
-          aria-selected={isActive}
-          onClick={() => onChange(tab.value)}
-          className={cn(
-            'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-            isActive
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          {tab.label}
-        </button>
-      );
-    })}
-  </div>
+  <SegmentedTabs ariaLabel={ariaLabel} options={tabs} value={value} onChange={onChange} size="sm" />
 );

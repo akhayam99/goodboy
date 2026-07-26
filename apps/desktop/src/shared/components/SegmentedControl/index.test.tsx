@@ -24,11 +24,9 @@ describe('SegmentedControl', () => {
       />,
     );
 
-    expect(screen.getByRole('radio', { name: 'Mine' }).getAttribute('aria-checked')).toBe('true');
-    expect(screen.getByRole('radio', { name: 'Others' }).getAttribute('aria-checked')).toBe(
-      'false',
-    );
-    fireEvent.click(screen.getByRole('radio', { name: 'Others' }));
+    expect(screen.getByRole('tab', { name: 'Mine' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'Others' }).getAttribute('aria-selected')).toBe('false');
+    fireEvent.click(screen.getByRole('tab', { name: 'Others' }));
     expect(onChange).toHaveBeenCalledWith('others');
   });
 
@@ -42,6 +40,6 @@ describe('SegmentedControl', () => {
       />,
     );
 
-    expect(screen.getByRole('radiogroup', { name: 'Review inbox filter' })).toBeDefined();
+    expect(screen.getByRole('tablist', { name: 'Review inbox filter' })).toBeDefined();
   });
 });

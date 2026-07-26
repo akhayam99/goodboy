@@ -20,7 +20,7 @@ import {
   Undo2,
   Wand2,
 } from 'lucide-react';
-import { Button, Divider, Skeleton, Textarea, cn } from '@goodboy/ui';
+import { Button, Divider, SectionHeader, SegmentedTabs, Skeleton, Textarea, cn } from '@goodboy/ui';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -69,7 +69,6 @@ import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { ChainAfterSelect } from './parts/ChainAfterSelect';
 import { LaunchToggleRow } from './parts/LaunchToggleRow';
-import { SectionHeader } from './parts/SectionHeader';
 import { StageHeading } from './parts/StageHeading';
 import { StepperRail } from './parts/StepperRail';
 import { TriggerButton } from './parts/TriggerButton';
@@ -718,42 +717,49 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     subtitle="Set the objective and attach any files. Every step in the workflow works toward this."
                   />
                   <section className="flex flex-col gap-2">
-                    <SectionHeader icon={Target} label="Goal" htmlFor="workflow-goal">
-                      {sessionGoal.length > 0 ? (
-                        <button
-                          type="button"
-                          onClick={onUseSessionGoal}
-                          disabled={blocked || polishing || goalText === sessionGoal}
-                          className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Target size={10} aria-hidden /> Use session goal
-                        </button>
-                      ) : null}
-                      {goalHistory.length > 0 ? (
-                        <button
-                          type="button"
-                          onClick={onUndoGoal}
-                          disabled={blocked || polishing}
-                          aria-label="undo goal change"
-                          className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Undo2 size={10} aria-hidden /> Undo
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => void onPolishGoal()}
-                        disabled={blocked || polishing || goalText.trim().length === 0}
-                        aria-label="polish goal"
-                        className={cn(
-                          'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
-                          polishing && 'animate-border-pulse',
-                        )}
-                      >
-                        <Wand2 size={10} aria-hidden />
-                        Polish
-                      </button>
-                    </SectionHeader>
+                    <SectionHeader
+                      icon={<Target size={11} aria-hidden />}
+                      label="Goal"
+                      htmlFor="workflow-goal"
+                      action={
+                        <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
+                          {sessionGoal.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={onUseSessionGoal}
+                              disabled={blocked || polishing || goalText === sessionGoal}
+                              className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Target size={10} aria-hidden /> Use session goal
+                            </button>
+                          ) : null}
+                          {goalHistory.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={onUndoGoal}
+                              disabled={blocked || polishing}
+                              aria-label="undo goal change"
+                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Undo2 size={10} aria-hidden /> Undo
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => void onPolishGoal()}
+                            disabled={blocked || polishing || goalText.trim().length === 0}
+                            aria-label="polish goal"
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                              polishing && 'animate-border-pulse',
+                            )}
+                          >
+                            <Wand2 size={10} aria-hidden />
+                            Polish
+                          </button>
+                        </div>
+                      }
+                    />
                     <Textarea
                       id="workflow-goal"
                       value={goalText}
@@ -773,7 +779,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   <Divider />
 
                   <section className="flex flex-col gap-2">
-                    <SectionHeader icon={Paperclip} label="Attachments" />
+                    <SectionHeader icon={<Paperclip size={11} aria-hidden />} label="Attachments" />
                     <div
                       ref={composerRef}
                       className={cn(
@@ -831,38 +837,32 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     subtitle="Start from a preset and customize, or describe a flow and let the planner draft the steps."
                   />
                   <section className="flex flex-col gap-3">
-                    <SectionHeader icon={Layers} label="Approach">
-                      <div className="flex items-center gap-0.5 rounded-md bg-subtle/80 p-0.5 ring-1 ring-border-soft">
-                        <button
-                          type="button"
-                          onClick={() => setMode('preset')}
-                          disabled={blocked}
-                          aria-pressed={mode === 'preset'}
-                          className={cn(
-                            'inline-flex items-center gap-1.5 rounded px-2.5 py-0.5 text-2xs font-medium transition-colors',
-                            mode === 'preset'
-                              ? 'bg-background text-foreground shadow-sm'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          <ListChecks size={11} aria-hidden /> Preset
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMode('custom')}
-                          disabled={blocked}
-                          aria-pressed={mode === 'custom'}
-                          className={cn(
-                            'inline-flex items-center gap-1.5 rounded px-2.5 py-0.5 text-2xs font-medium transition-colors',
-                            mode === 'custom'
-                              ? 'bg-background text-foreground shadow-sm'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          <Sparkles size={11} aria-hidden /> Custom
-                        </button>
-                      </div>
-                    </SectionHeader>
+                    <SectionHeader
+                      icon={<Layers size={11} aria-hidden />}
+                      label="Approach"
+                      action={
+                        <SegmentedTabs
+                          ariaLabel="workflow approach"
+                          options={[
+                            {
+                              value: 'preset',
+                              label: 'Preset',
+                              icon: ListChecks,
+                              disabled: blocked,
+                            },
+                            {
+                              value: 'custom',
+                              label: 'Custom',
+                              icon: Sparkles,
+                              disabled: blocked,
+                            },
+                          ]}
+                          value={mode}
+                          onChange={setMode}
+                          size="sm"
+                        />
+                      }
+                    />
 
                     {mode === 'preset' ? (
                       <div className="flex flex-col gap-2">
@@ -1169,7 +1169,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   <Divider />
 
                   <section className="flex flex-col gap-3">
-                    <SectionHeader icon={Rocket} label="Launch options" />
+                    <SectionHeader icon={<Rocket size={11} aria-hidden />} label="Launch options" />
                     <div className="flex flex-col divide-y divide-border-soft/70 overflow-hidden rounded-lg border border-border-soft bg-subtle/40">
                       <div className="flex flex-col gap-2 px-3 py-2.5">
                         <div className="flex items-center justify-between gap-2">

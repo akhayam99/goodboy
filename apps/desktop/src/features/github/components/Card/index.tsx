@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { SegmentedTabs, cn } from '@goodboy/ui';
+import type { SegmentedTabOption } from '@goodboy/ui';
 import type { PrComment, PrDetail, PullRequestState } from '@goodboy/types';
 import { pickSmartTab, TAB_ICON_BTN, TAB_KEYS, TAB_LABEL, type GithubTabKey } from './lib';
 import { computeTabStatus } from './status';
@@ -8,7 +9,6 @@ import { AnimatedTabBody } from './parts/AnimatedTabBody';
 import { DetailSkeleton } from './parts/DetailSkeleton';
 import { ErrorRow } from './parts/ErrorRow';
 import { StaleCaption } from './parts/StaleCaption';
-import { TabBadge } from './parts/TabBadge';
 import { CiPane } from './panes/CiPane';
 import { CommentsPane } from './panes/CommentsPane';
 import { ReviewPane } from './panes/ReviewPane';
@@ -63,39 +63,26 @@ export const GithubCard = ({
   };
 
   const tabStatus = useMemo(() => computeTabStatus(pr, detail), [pr, detail]);
+  const tabOptions: ReadonlyArray<SegmentedTabOption<GithubTabKey>> = TAB_KEYS.map((key) => {
+    const status = tabStatus[key];
+    return {
+      value: key,
+      label: TAB_LABEL[key],
+      hint: status?.label,
+      badge: status?.count != null ? String(status.count) : undefined,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1">
-        <span
-          className="inline-flex rounded border border-border-soft bg-subtle"
-          role="tablist"
-          aria-label="GitHub card view"
-        >
-          {TAB_KEYS.map((k) => {
-            const isActive = k === active;
-            const status = tabStatus[k];
-            return (
-              <button
-                key={k}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => selectTab(k)}
-                title={status?.label}
-                className={cn(
-                  'inline-flex items-center gap-1 px-2 py-0.5 text-2xs transition-colors first:rounded-l last:rounded-r',
-                  isActive
-                    ? 'bg-background font-semibold text-foreground shadow-sm'
-                    : 'text-muted-foreground/70 hover:text-foreground',
-                )}
-              >
-                <span>{TAB_LABEL[k]}</span>
-                {status ? <TabBadge status={status} dim={!isActive} /> : null}
-              </button>
-            );
-          })}
-        </span>
+        <SegmentedTabs
+          ariaLabel="GitHub card view"
+          options={tabOptions}
+          value={active}
+          onChange={selectTab}
+          size="sm"
+        />
         <div className="ml-auto flex items-center gap-1">
           <StaleCaption fetchedAt={detailFetchedAt} />
           <button

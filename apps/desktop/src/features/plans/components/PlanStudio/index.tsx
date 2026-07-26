@@ -12,7 +12,16 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { Divider, EmptyState, Markdown, ScrollFade, Textarea, Tooltip, cn } from '@goodboy/ui';
+import {
+  Divider,
+  EmptyState,
+  Markdown,
+  ScrollFade,
+  SegmentedTabs,
+  Textarea,
+  Tooltip,
+  cn,
+} from '@goodboy/ui';
 import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -295,57 +304,35 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                         })}
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
-                        <div
-                          role="tablist"
-                          aria-label="Content mode"
-                          className={cn(
-                            'inline-flex items-center rounded-md border border-border-soft p-0.5',
-                            selected.status === 'discarded' && 'opacity-50',
-                          )}
-                        >
-                          <button
-                            type="button"
-                            role="tab"
-                            aria-selected={mode === 'preview'}
-                            onClick={() => {
-                              if (mode === 'edit') commitEdit();
-                              setMode('preview');
-                            }}
-                            className={cn(
-                              'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
-                              mode === 'preview'
-                                ? 'bg-muted text-foreground'
-                                : 'text-muted-foreground hover:text-foreground',
-                            )}
-                            title="Preview rendered markdown"
-                          >
-                            <Eye size={11} aria-hidden />
-                            Preview
-                          </button>
-                          <button
-                            type="button"
-                            role="tab"
-                            aria-selected={mode === 'edit'}
-                            disabled={selected.status === 'discarded'}
-                            onClick={() => setMode('edit')}
-                            className={cn(
-                              'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs transition',
-                              mode === 'edit'
-                                ? 'bg-muted text-foreground'
-                                : 'text-muted-foreground hover:text-foreground',
-                              selected.status === 'discarded' &&
-                                'cursor-not-allowed hover:text-muted-foreground',
-                            )}
-                            title={
-                              selected.status === 'discarded'
-                                ? 'Discarded plans cannot be edited, restore first'
-                                : 'Edit markdown source'
+                        <SegmentedTabs
+                          ariaLabel="Content mode"
+                          options={[
+                            {
+                              value: 'preview',
+                              label: 'Preview',
+                              icon: Eye,
+                              hint: 'Preview rendered markdown',
+                            },
+                            {
+                              value: 'edit',
+                              label: 'Edit',
+                              icon: Pencil,
+                              hint:
+                                selected.status === 'discarded'
+                                  ? 'Discarded plans cannot be edited, restore first'
+                                  : 'Edit markdown source',
+                              disabled: selected.status === 'discarded',
+                            },
+                          ]}
+                          value={mode}
+                          onChange={(nextMode) => {
+                            if (nextMode === 'preview' && mode === 'edit') {
+                              commitEdit();
                             }
-                          >
-                            <Pencil size={11} aria-hidden />
-                            Edit
-                          </button>
-                        </div>
+                            setMode(nextMode);
+                          }}
+                          size="sm"
+                        />
                         {selected.status !== 'discarded' ? (
                           <button
                             type="button"

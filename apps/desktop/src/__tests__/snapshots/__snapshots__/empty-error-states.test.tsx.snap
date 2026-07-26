@@ -306,24 +306,42 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
             >
               <div
                 aria-label="branch source"
-                class="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
+                class="gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1 inline-flex items-center"
                 role="tablist"
               >
                 <button
                   aria-selected="true"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-muted text-foreground shadow-sm"
+                  class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs bg-background text-foreground shadow-sm"
                   role="tab"
+                  tabindex="0"
                   type="button"
                 >
-                  New
+                  <span
+                    class="min-w-0"
+                  >
+                    <span
+                      class="block truncate"
+                    >
+                      New
+                    </span>
+                  </span>
                 </button>
                 <button
                   aria-selected="false"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                  class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
                   role="tab"
+                  tabindex="-1"
                   type="button"
                 >
-                  Existing
+                  <span
+                    class="min-w-0"
+                  >
+                    <span
+                      class="block truncate"
+                    >
+                      Existing
+                    </span>
+                  </span>
                 </button>
               </div>
               <div
@@ -1159,24 +1177,42 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
             >
               <div
                 aria-label="branch source"
-                class="inline-flex shrink-0 rounded border border-border bg-background p-0.5"
+                class="gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1 inline-flex items-center"
                 role="tablist"
               >
                 <button
                   aria-selected="true"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors bg-muted text-foreground shadow-sm"
+                  class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs bg-background text-foreground shadow-sm"
                   role="tab"
+                  tabindex="0"
                   type="button"
                 >
-                  New
+                  <span
+                    class="min-w-0"
+                  >
+                    <span
+                      class="block truncate"
+                    >
+                      New
+                    </span>
+                  </span>
                 </button>
                 <button
                   aria-selected="false"
-                  class="rounded px-2 py-0.5 text-2xs font-medium motion-safe:transition-colors text-muted-foreground hover:text-foreground"
+                  class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
                   role="tab"
+                  tabindex="-1"
                   type="button"
                 >
-                  Existing
+                  <span
+                    class="min-w-0"
+                  >
+                    <span
+                      class="block truncate"
+                    >
+                      Existing
+                    </span>
+                  </span>
                 </button>
               </div>
               <div

@@ -118,7 +118,7 @@ describe('GitlabStudio', () => {
     );
     fireEvent.click(screen.getByRole('tab', { name: 'Merge requests' }));
 
-    expect(screen.getByRole('radio', { name: 'Mine' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'Mine' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('acme/web')).toBeDefined();
     expect(screen.getByText('Add merge request dashboard')).toBeDefined();
     expect(screen.getByText('Merge request detail')).toBeDefined();
@@ -133,7 +133,7 @@ describe('GitlabStudio', () => {
       />,
     );
     fireEvent.click(screen.getByRole('tab', { name: 'Merge requests' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Others' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Others' }));
 
     expect(screen.getByText('Review inbox gitlab others')).toBeDefined();
     expect(screen.getByText('Review merge request detail')).toBeDefined();
