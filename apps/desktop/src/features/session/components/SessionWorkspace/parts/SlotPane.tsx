@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CheckSquare, Copy, FileText, History, Target } from 'lucide-react';
-import { Button, Divider, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
+import { Button, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -12,6 +12,7 @@ import {
   useSummarizerStatus,
 } from '../../../../../store';
 import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
+import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
 
@@ -172,150 +173,146 @@ export const SlotPane = ({ session, slotKey }: Props) => {
   };
 
   return (
-    <div className="flex h-full min-h-0">
-      <div className="min-h-0 flex-1">
-        <PaneShell
-          title={SLOT_TITLE[slotKey]}
-          description={SLOT_DESCRIPTION[slotKey]}
-          actions={
-            <>
-              {hasValue ? (
-                <button
-                  type="button"
-                  onClick={() => void copyValue()}
-                  title={
-                    valueCopied
-                      ? 'copied'
-                      : slotKey === 'last_output_summary'
-                        ? 'copy shareable summary'
-                        : 'copy'
-                  }
-                  aria-label={
-                    valueCopied
-                      ? 'copied'
-                      : slotKey === 'last_output_summary'
-                        ? 'copy shareable summary'
-                        : 'copy'
-                  }
-                  className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-                >
-                  {valueCopied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
-                </button>
-              ) : null}
-              {history.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={toggleHistory}
-                  title="view history"
-                  aria-label={`view history for ${SLOT_TITLE[slotKey]}`}
-                  className={cn(
-                    'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
-                    historyOpen && 'bg-foreground/5 text-foreground',
-                  )}
-                >
-                  <History size={15} aria-hidden />
-                </button>
-              ) : null}
-            </>
-          }
-        >
+    <InspectorSplit
+      open={historyOpen}
+      panel={
+        <SlotHistoryPanel
+          label={SLOT_TITLE[slotKey]}
+          renderAsMarkdown={renderAsMarkdown}
+          entries={history}
+          onRestore={(entry) => {
+            void upsertSessionSlot(sessionId, slotKey, entry.value);
+            setHistoryOpen(false);
+          }}
+          onClose={() => setHistoryOpen(false)}
+        />
+      }
+    >
+      <PaneShell
+        title={SLOT_TITLE[slotKey]}
+        description={SLOT_DESCRIPTION[slotKey]}
+        actions={
           <>
-            {slot === undefined && loading.slots ? (
-              <div className="flex flex-col gap-2">
-                <div className="h-4 w-full rounded bg-muted/50" />
-                <div className="h-4 w-3/4 rounded bg-muted/50" />
-              </div>
-            ) : editing ? (
-              <Textarea
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={commit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    setDraft(value);
-                    setEditing(false);
-                  }
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    commit();
-                  }
-                }}
-                className="font-mono text-sm"
-                autoGrow
-                maxRows={24}
-              />
-            ) : !hasValue ? (
-              <EmptyState
-                bordered
-                tone={SLOT_TONE[slotKey]}
-                icon={SLOT_ICON[slotKey]}
-                title={SLOT_EMPTY_CTA[slotKey]}
-                description={SLOT_EMPTY_DESCRIPTION[slotKey]}
-                action={
-                  <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
-                    Add
-                  </Button>
-                }
-              />
-            ) : renderAsMarkdown ? (
-              <div
-                role={isSummarizing ? undefined : 'button'}
-                tabIndex={isSummarizing ? -1 : 0}
-                onClick={startEditing}
-                onKeyDown={(e) => {
-                  if (isSummarizing) {
-                    return;
-                  }
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setEditing(true);
-                  }
-                }}
-                className={cn(
-                  'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
-                  isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
-                )}
-              >
-                <Markdown text={value} className="text-sm text-foreground" />
-              </div>
-            ) : (
+            {hasValue ? (
               <button
                 type="button"
-                onClick={startEditing}
-                disabled={isSummarizing}
+                onClick={() => void copyValue()}
+                title={
+                  valueCopied
+                    ? 'copied'
+                    : slotKey === 'last_output_summary'
+                      ? 'copy shareable summary'
+                      : 'copy'
+                }
+                aria-label={
+                  valueCopied
+                    ? 'copied'
+                    : slotKey === 'last_output_summary'
+                      ? 'copy shareable summary'
+                      : 'copy'
+                }
+                className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              >
+                {valueCopied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
+              </button>
+            ) : null}
+            {history.length > 0 ? (
+              <button
+                type="button"
+                onClick={toggleHistory}
+                title="view history"
+                aria-label={`view history for ${SLOT_TITLE[slotKey]}`}
                 className={cn(
-                  'whitespace-pre-wrap break-words rounded-lg text-left text-base font-medium leading-relaxed text-foreground transition-colors',
-                  isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
+                  'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
+                  historyOpen && 'bg-foreground/5 text-foreground',
                 )}
               >
-                {value}
+                <History size={15} aria-hidden />
               </button>
-            )}
-
-            {slotKey === 'goal' ? (
-              <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
             ) : null}
           </>
-        </PaneShell>
-      </div>
-
-      {historyOpen ? (
+        }
+      >
         <>
-          <Divider orientation="vertical" />
-          <SlotHistoryPanel
-            label={SLOT_TITLE[slotKey]}
-            renderAsMarkdown={renderAsMarkdown}
-            entries={history}
-            onRestore={(entry) => {
-              void upsertSessionSlot(sessionId, slotKey, entry.value);
-              setHistoryOpen(false);
-            }}
-            onClose={() => setHistoryOpen(false)}
-          />
+          {slot === undefined && loading.slots ? (
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-full rounded bg-muted/50" />
+              <div className="h-4 w-3/4 rounded bg-muted/50" />
+            </div>
+          ) : editing ? (
+            <Textarea
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setDraft(value);
+                  setEditing(false);
+                }
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  commit();
+                }
+              }}
+              className="font-mono text-sm"
+              autoGrow
+              maxRows={24}
+            />
+          ) : !hasValue ? (
+            <EmptyState
+              bordered
+              tone={SLOT_TONE[slotKey]}
+              icon={SLOT_ICON[slotKey]}
+              title={SLOT_EMPTY_CTA[slotKey]}
+              description={SLOT_EMPTY_DESCRIPTION[slotKey]}
+              action={
+                <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
+                  Add
+                </Button>
+              }
+            />
+          ) : renderAsMarkdown ? (
+            <div
+              role={isSummarizing ? undefined : 'button'}
+              tabIndex={isSummarizing ? -1 : 0}
+              onClick={startEditing}
+              onKeyDown={(e) => {
+                if (isSummarizing) {
+                  return;
+                }
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setEditing(true);
+                }
+              }}
+              className={cn(
+                'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
+                isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
+              )}
+            >
+              <Markdown text={value} className="text-sm text-foreground" />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={startEditing}
+              disabled={isSummarizing}
+              className={cn(
+                'whitespace-pre-wrap break-words rounded-lg text-left text-base font-medium leading-relaxed text-foreground transition-colors',
+                isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
+              )}
+            >
+              {value}
+            </button>
+          )}
+
+          {slotKey === 'goal' ? (
+            <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
+          ) : null}
         </>
-      ) : null}
-    </div>
+      </PaneShell>
+    </InspectorSplit>
   );
 };

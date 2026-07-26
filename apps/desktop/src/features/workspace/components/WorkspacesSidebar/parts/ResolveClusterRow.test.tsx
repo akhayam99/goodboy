@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 
 vi.mock('../../../../../store', () => ({
@@ -26,6 +26,7 @@ const agent = {
   ordinal: 0,
   name: 'resolve comment 12',
   status: 'completed',
+  sourceKind: 'review_comment',
   startedAt: '2026-05-28T00:00:00Z',
   completedAt: '2026-05-28T00:01:00Z',
 } as Agent;
@@ -41,7 +42,12 @@ const telemetry = {
   recordedAt: '2026-01-01T00:00:00.000Z',
 } as TelemetryRecord;
 
-const renderRow = () =>
+type Params = {
+  readonly onSelect?: () => void;
+  readonly onInspect?: () => void;
+};
+
+const renderRow = ({ onSelect = () => undefined, onInspect }: Params = {}) =>
   render(
     <ResolveClusterRow
       agent={agent}
@@ -60,8 +66,9 @@ const renderRow = () =>
       isSelected={false}
       isTaskActive
       canJump={false}
-      onSelect={() => undefined}
+      onSelect={onSelect}
       onJump={() => undefined}
+      onInspect={onInspect}
       onResolveThread={() => undefined}
     />,
   );
@@ -98,5 +105,26 @@ describe('ResolveClusterRow', () => {
     renderRow();
     expect(screen.getByText('resolve comment 12')).toBeTruthy();
     expect(screen.getByText('1/2')).toBeTruthy();
+    expect(screen.getByText('Review comment')).toBeTruthy();
+  });
+
+  it('opens details from the row and keeps chat behind an explicit button', () => {
+    const onInspect = vi.fn();
+    const onSelect = vi.fn();
+    renderRow({ onInspect, onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'resolve comment 12 details' }));
+    expect(onInspect).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+
+    expect(screen.getByRole('button', { name: 'Toggle resolver details' }).textContent).toContain(
+      'Details',
+    );
+    const openChat = screen.getByRole('button', { name: 'Open resolver chat' });
+    fireEvent.keyDown(openChat, { key: 'Enter' });
+    expect(onInspect).toHaveBeenCalledOnce();
+    fireEvent.click(openChat);
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(onInspect).toHaveBeenCalledOnce();
   });
 });

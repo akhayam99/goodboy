@@ -102,4 +102,9 @@ describe('AgentRow', () => {
     expect(screen.getAllByTestId('agent-metrics-inline')).toHaveLength(1);
     expect(screen.getAllByTestId('agent-metrics-block')).toHaveLength(1);
   });
+
+  it('shows the agent status next to its name', () => {
+    renderRow(false);
+    expect(screen.getByText('scout one').nextElementSibling?.textContent).toBe('completed');
+  });
 });

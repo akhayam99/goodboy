@@ -358,7 +358,7 @@ export const WorkflowRow = ({
                       ) : (
                         <WorkflowStepRuns
                           run={run}
-                          children={clusterChildren}
+                          agents={clusterChildren}
                           isExpanded={clustersExpanded}
                           unreadCount={clusterUnread}
                           aggregatesByAgentId={aggregatesByAgentId}

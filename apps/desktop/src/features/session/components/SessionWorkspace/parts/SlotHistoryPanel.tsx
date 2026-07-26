@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, RotateCcw, X } from 'lucide-react';
-import { Divider, Markdown, ScrollFade, cn } from '@goodboy/ui';
+import { Check, Copy, RotateCcw } from 'lucide-react';
+import { Markdown, ScrollFade, cn } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
+import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -125,19 +126,12 @@ export const SlotHistoryPanel = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div className="flex w-80 shrink-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2.5">
-        <span className="text-xs font-medium text-foreground">history: {label}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="close history panel"
-          className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          <X size={14} aria-hidden />
-        </button>
-      </div>
-      <Divider />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <InspectorHeader
+        title={`history: ${label}`}
+        closeLabel="close history panel"
+        onClose={onClose}
+      />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         {entries.length === 0 ? (
           <p className="text-xs italic text-muted-foreground">no history yet</p>

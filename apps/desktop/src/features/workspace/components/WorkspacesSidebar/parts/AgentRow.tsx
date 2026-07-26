@@ -12,6 +12,7 @@ import {
 } from '../../../../../features/session/components/AgentMetricsBlock';
 import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
+import { AgentStatusBadge } from './AgentStatusBadge';
 
 type Props = {
   readonly run: Agent;
@@ -147,6 +148,7 @@ export const AgentRow = ({
             {run.name}
           </span>
         )}
+        <AgentStatusBadge status={run.status} />
         {!isEditing &&
           (confirmingDelete ? (
             <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
