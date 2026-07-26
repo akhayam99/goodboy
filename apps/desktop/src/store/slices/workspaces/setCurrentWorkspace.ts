@@ -35,6 +35,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
 import { buildProviderSpendBreakdown } from '../budget';
+import { relinkSimpleSessionDirectories } from './relinkSimpleSessionDirectories';
 import type { GetFn, SetFn } from './types';
 
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
@@ -77,6 +78,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       boardReady: false,
     });
     if (id) {
+      const workspace = get().workspaces.find((candidate) => candidate.id === id) ?? null;
       const touchNow = new Date().toISOString() as IsoDateTime;
       set((state) => ({
         workspaces: state.workspaces.map((w) =>
@@ -117,11 +119,19 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         return { ...run, status: 'pending' };
       };
       const sessionIds = sessions.map((s) => s.id);
-      const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
+      const [loadedWorktreesBySession, agentsBySession, externalTasks] = await Promise.all([
         listWorktreesForSessions(tauriDatabase, sessionIds),
         listAgentsForSessions(tauriDatabase, sessionIds),
         listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
       ]);
+      const worktreesBySession =
+        workspace?.kind === 'simple'
+          ? await relinkSimpleSessionDirectories({
+              rootPath: workspace.rootPath,
+              workspaceId: id,
+              worktreesBySession: loadedWorktreesBySession,
+            })
+          : loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};

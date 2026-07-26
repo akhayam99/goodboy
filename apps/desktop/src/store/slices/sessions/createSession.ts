@@ -129,6 +129,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
       worktree = await createSessionDir({
         basePath: workspace.rootPath,
         slug: dirSlug,
+        sessionId,
+        workspaceId,
       });
     } else if (isComposite) {
       const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;

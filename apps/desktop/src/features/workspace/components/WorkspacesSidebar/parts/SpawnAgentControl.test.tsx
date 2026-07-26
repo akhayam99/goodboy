@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ProviderId, SessionId } from '@goodboy/types';
+import type { ProviderId, SessionId, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
@@ -12,11 +12,16 @@ type Store = {
 const h = vi.hoisted(() => ({
   spawnAgent: vi.fn(async () => 'a1'),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
+  workspaceKind: 'repo' as WorkspaceKind,
 }));
 
 vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) =>
-    selector({ spawnAgent: h.spawnAgent, providers: h.providers }),
+    selector({
+      spawnAgent: h.spawnAgent,
+      providers: h.providers,
+    }),
+  useCurrentWorkspace: () => ({ id: 'workspace-1' as WorkspaceId, kind: h.workspaceKind }),
 }));
 
 import { SpawnAgentControl } from './SpawnAgentControl';
@@ -40,11 +45,21 @@ const createAgent = () => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  h.workspaceKind = 'repo';
 });
 
 describe('SpawnAgentControl', () => {
   it('spawns a generic agent with untouched defaults', () => {
     renderControl();
+    createAgent();
+    expect(h.spawnAgent).toHaveBeenCalledWith(SID, { kindOverride: 'generic' });
+  });
+
+  it('hides the role select and spawns generic in a simple workspace', () => {
+    h.workspaceKind = 'simple';
+    renderControl();
+
+    expect(screen.queryByRole('combobox', { name: 'agent role' })).toBeNull();
     createAgent();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, { kindOverride: 'generic' });
   });

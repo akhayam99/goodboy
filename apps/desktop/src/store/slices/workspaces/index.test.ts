@@ -97,6 +97,7 @@ vi.mock('@goodboy/db', () => ({
   listAgentsForSessions: vi.fn(async () => new Map()),
   deleteWorktreesForSession: vi.fn(async () => undefined),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
+  updateSessionWorktreePath: vi.fn(async () => undefined),
   listAllSessionWorktrees: vi.fn(async () => []),
   renameSession: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
@@ -261,12 +262,20 @@ vi.mock('../../../features/workflows/workflows', () => ({
 const createWorktreeSpy = vi.fn();
 const removeWorktreeSpy = vi.fn(async () => undefined);
 const changeWorktreeBranchSpy = vi.fn(async () => undefined);
+const scanSimpleSessionsSpy = vi.fn(
+  async () => [] as ReadonlyArray<{ readonly sessionId: SessionId; readonly path: string }>,
+);
+const simpleSessionDirExistsSpy = vi.fn(async () => true);
+const writeSimpleSessionMarkerSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
   worktreeChangedFiles: vi.fn(async () => []),
+  scanSimpleSessions: scanSimpleSessionsSpy,
+  simpleSessionDirExists: simpleSessionDirExistsSpy,
+  writeSimpleSessionMarker: writeSimpleSessionMarkerSpy,
 }));
 
 vi.mock('../../../shared/lib/repo', () => ({
@@ -684,6 +693,73 @@ describe('store contract', () => {
         workspaceId: WS_ID,
       });
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual(tasks);
+    });
+
+    it('relinks a moved simple session directory during workspace load', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const storedPath = '/tmp/study-space/sessions/study-plan';
+      const movedPath = '/tmp/study-space/study-plan';
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
+        new Map([[SESSION_ID, [buildWorktree(SESSION_ID, storedPath, '')]]]),
+      );
+      scanSimpleSessionsSpy.mockResolvedValueOnce([{ sessionId: SESSION_ID, path: movedPath }]);
+      simpleSessionDirExistsSpy.mockResolvedValueOnce(false);
+      store.setState({
+        workspaces: [
+          buildWorkspace({
+            rootPath: '/tmp/study-space',
+            kind: 'simple',
+          }),
+        ],
+      });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(db.updateSessionWorktreePath).toHaveBeenCalledWith({
+        db: expect.anything(),
+        sessionId: SESSION_ID,
+        parallelIndex: 0,
+        worktreePath: movedPath,
+      });
+      expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([movedPath]);
+    });
+
+    it('backfills a marker for an existing unmarked simple session directory', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const storedPath = '/tmp/study-space/sessions/study-plan';
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
+        new Map([[SESSION_ID, [buildWorktree(SESSION_ID, storedPath, '')]]]),
+      );
+      scanSimpleSessionsSpy.mockResolvedValueOnce([]);
+      simpleSessionDirExistsSpy.mockResolvedValueOnce(true);
+      store.setState({
+        workspaces: [
+          buildWorkspace({
+            rootPath: '/tmp/study-space',
+            kind: 'simple',
+          }),
+        ],
+      });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(writeSimpleSessionMarkerSpy).toHaveBeenCalledWith({
+        path: storedPath,
+        sessionId: SESSION_ID,
+        workspaceId: WS_ID,
+      });
+      expect(db.updateSessionWorktreePath).not.toHaveBeenCalled();
+      expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([storedPath]);
     });
 
     it('setCurrentWorkspace(null) clears the active workspace and resets workspaceSummary etc.', async () => {

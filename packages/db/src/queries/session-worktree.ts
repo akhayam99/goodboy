@@ -111,6 +111,25 @@ export const updateSessionWorktreeBranch = async (
   );
 };
 
+type UpdateSessionWorktreePathParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly parallelIndex: number;
+  readonly worktreePath: string;
+};
+
+export const updateSessionWorktreePath = async ({
+  db,
+  sessionId,
+  parallelIndex,
+  worktreePath,
+}: UpdateSessionWorktreePathParams): Promise<void> => {
+  await db.execute(
+    'UPDATE session_worktrees SET worktree_path = ? WHERE session_id = ? AND parallel_index = ?',
+    [worktreePath, sessionId, parallelIndex],
+  );
+};
+
 export const listAllSessionWorktrees = async (
   db: Database,
 ): Promise<ReadonlyArray<SessionWorktree>> => {
