@@ -272,7 +272,7 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     expect(screen.getByText('Start')).toBeDefined();
     expect(screen.getByText('Choose how to start')).toBeDefined();
     expect(screen.getByRole('button', { name: /Workflow/ })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Agent/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
     expect(screen.getByText('recommended')).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
@@ -292,10 +292,12 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     window.removeEventListener('goodboy:open-workflow-builder', handler);
   });
 
-  it('opens the role picker from the fresh agent option and spawns the chosen kind', () => {
+  it('spawns the selected kind from the fresh agent control', () => {
     renderPane();
-    fireEvent.click(screen.getByRole('button', { name: /Agent/ }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Scout/i }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'agent role' }), {
+      target: { value: 'scout' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
     expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 
@@ -308,11 +310,13 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
-  it('opens the role picker from the non-fresh create-agent card', () => {
+  it('spawns the selected kind from the non-fresh agent control', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
     renderPane();
+    fireEvent.change(screen.getByRole('combobox', { name: 'agent role' }), {
+      target: { value: 'scout' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Scout/i }));
     expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 

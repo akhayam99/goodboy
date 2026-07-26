@@ -32,7 +32,7 @@ import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
 import { classifyAgent, selectStandaloneAgents } from '../../agent-kind';
 import { resolveAttentionLens, selectAttention, selectOpenQuestions } from './lib';
-import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentMenu';
+import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
@@ -329,25 +329,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                     chip
                   />
                 </button>
-                <SpawnAgentMenu
-                  sessionId={session.id as SessionId}
-                  trigger={({ ref, onClick, ...aria }) => (
-                    <button
-                      ref={ref}
-                      type="button"
-                      onClick={onClick}
-                      className={startRowClass()}
-                      {...aria}
-                    >
-                      <StartRowContent
-                        icon={Bot}
-                        tone="primary"
-                        label="Agent"
-                        description="A single specialist for a one-off task."
-                      />
-                    </button>
-                  )}
-                />
+                <SpawnAgentControl sessionId={session.id as SessionId} />
               </div>
             </div>
           </div>
@@ -362,20 +344,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                   label="New workflow"
                 />
               </button>
-              <SpawnAgentMenu
-                sessionId={session.id as SessionId}
-                trigger={({ ref, onClick, ...aria }) => (
-                  <button
-                    ref={ref}
-                    type="button"
-                    onClick={onClick}
-                    className={startTileClass()}
-                    {...aria}
-                  >
-                    <StartTileContent icon={Bot} tone="primary" label="Create agent" />
-                  </button>
-                )}
-              />
+              <SpawnAgentControl sessionId={session.id as SessionId} />
             </div>
           </div>
         )}
