@@ -11,25 +11,41 @@ type FooterButtonProps = {
   onClick: () => void;
   pulse?: boolean;
   active?: boolean;
+  connected?: boolean;
 };
 
-const FooterButton = ({ icon, label, title, onClick, pulse, active }: FooterButtonProps) => (
+const FooterButton = ({
+  icon,
+  label,
+  title,
+  onClick,
+  pulse,
+  active,
+  connected,
+}: FooterButtonProps) => (
   <button
     type="button"
     onClick={onClick}
     title={title ?? label}
     aria-label={title ?? label}
     className={cn(
-      'flex items-center gap-1.5 rounded px-2 py-1 text-2xs font-medium transition-colors',
+      'relative flex items-center gap-1.5 rounded px-2 py-1 text-2xs font-medium transition-colors',
       active
         ? 'bg-foreground text-background'
         : pulse
           ? 'animate-soft-pulse text-info hover:bg-info/10'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+      connected === false && 'opacity-40',
     )}
   >
     {icon}
     <span>{label}</span>
+    {connected === false ? (
+      <span
+        aria-hidden
+        className="absolute right-0 top-0 size-1.5 rounded-full bg-warning ring-1 ring-subtle"
+      />
+    ) : null}
   </button>
 );
 
@@ -42,6 +58,7 @@ type Props = {
   onOpenLinear: () => void;
   onOpenSentry: () => void;
   onOpenGitlab: () => void;
+  githubEnabled: boolean;
   linearEnabled: boolean;
   sentryEnabled: boolean;
   gitlabEnabled: boolean;
@@ -56,6 +73,7 @@ export const AppFooter = ({
   onOpenLinear,
   onOpenSentry,
   onOpenGitlab,
+  githubEnabled,
   linearEnabled,
   sentryEnabled,
   gitlabEnabled,
@@ -69,42 +87,78 @@ export const AppFooter = ({
       <Divider />
       <div className="relative flex h-9 items-center justify-between bg-background px-2">
         <div className="flex items-center gap-0.5">
-          {!gitlabEnabled ? (
-            <FooterButton
-              icon={<IntegrationGlyph provider="github" size="xs" />}
-              label="GitHub"
-              title="review and act on pull requests across this workspace"
-              onClick={onOpenGithub}
-              active={activeStudio === 'github'}
-            />
-          ) : null}
-          {gitlabEnabled ? (
-            <FooterButton
-              icon={<IntegrationGlyph provider="gitlab" size="xs" />}
-              label="GitLab"
-              title="launch a session from a GitLab issue"
-              onClick={onOpenGitlab}
-              active={activeStudio === 'gitlab'}
-            />
-          ) : null}
-          {linearEnabled ? (
-            <FooterButton
-              icon={<IntegrationGlyph provider="linear" size="xs" />}
-              label="Linear"
-              title="launch a session from a Linear issue"
-              onClick={onOpenLinear}
-              active={activeStudio === 'linear'}
-            />
-          ) : null}
-          {sentryEnabled ? (
-            <FooterButton
-              icon={<IntegrationGlyph provider="sentry" size="xs" />}
-              label="Sentry"
-              title="launch a session from a Sentry issue"
-              onClick={onOpenSentry}
-              active={activeStudio === 'sentry'}
-            />
-          ) : null}
+          <FooterButton
+            icon={<IntegrationGlyph provider="github" size="xs" />}
+            label="GitHub"
+            title={
+              githubEnabled
+                ? 'review and act on pull requests across this workspace'
+                : 'Connect GitHub'
+            }
+            onClick={
+              githubEnabled
+                ? onOpenGithub
+                : () =>
+                    window.dispatchEvent(
+                      new CustomEvent('goodboy:open-workspace-settings', {
+                        detail: { section: 'integrations' },
+                      }),
+                    )
+            }
+            active={activeStudio === 'github'}
+            connected={githubEnabled}
+          />
+          <FooterButton
+            icon={<IntegrationGlyph provider="gitlab" size="xs" />}
+            label="GitLab"
+            title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
+            onClick={
+              gitlabEnabled
+                ? onOpenGitlab
+                : () =>
+                    window.dispatchEvent(
+                      new CustomEvent('goodboy:open-workspace-settings', {
+                        detail: { section: 'integrations' },
+                      }),
+                    )
+            }
+            active={activeStudio === 'gitlab'}
+            connected={gitlabEnabled}
+          />
+          <FooterButton
+            icon={<IntegrationGlyph provider="linear" size="xs" />}
+            label="Linear"
+            title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
+            onClick={
+              linearEnabled
+                ? onOpenLinear
+                : () =>
+                    window.dispatchEvent(
+                      new CustomEvent('goodboy:open-workspace-settings', {
+                        detail: { section: 'integrations' },
+                      }),
+                    )
+            }
+            active={activeStudio === 'linear'}
+            connected={linearEnabled}
+          />
+          <FooterButton
+            icon={<IntegrationGlyph provider="sentry" size="xs" />}
+            label="Sentry"
+            title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
+            onClick={
+              sentryEnabled
+                ? onOpenSentry
+                : () =>
+                    window.dispatchEvent(
+                      new CustomEvent('goodboy:open-workspace-settings', {
+                        detail: { section: 'integrations' },
+                      }),
+                    )
+            }
+            active={activeStudio === 'sentry'}
+            connected={sentryEnabled}
+          />
         </div>
 
         <span className="pointer-events-none absolute inset-x-0 mx-auto w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">

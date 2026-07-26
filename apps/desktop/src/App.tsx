@@ -63,6 +63,7 @@ import {
 import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
+import { useRemoteHostKind } from './features/worktree/useRemoteHostKind';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -77,6 +78,7 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const remoteKind = useRemoteHostKind(currentWorkspace?.id ?? null);
   const sessionsSidebarCollapsed = useAppStore((s) => s.sessionsSidebarCollapsed);
   const toggleSessionsSidebar = useAppStore((s) => s.toggleSessionsSidebar);
   const hasLinear = useAppStore((s) =>
@@ -793,6 +795,7 @@ export const App = () => {
           currentWorkspace ? (
             <AppFooter
               activeStudio={activeStudio}
+              githubEnabled={remoteKind === 'github'}
               linearEnabled={hasLinear}
               sentryEnabled={hasSentry}
               gitlabEnabled={hasGitlab}

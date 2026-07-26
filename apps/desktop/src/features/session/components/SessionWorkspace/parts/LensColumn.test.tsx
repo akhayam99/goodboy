@@ -468,9 +468,11 @@ describe('LensColumn', () => {
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
   });
 
-  it('hides disconnected integration rows without linked tasks', () => {
+  it('offers integration settings when no integration rows are available', () => {
     remote.kind = 'other';
     store.workspaceIntegrations = {};
+    const workspaceSettingsListener = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
 
     render(
       <LensColumn
@@ -486,5 +488,18 @@ describe('LensColumn', () => {
     expect(screen.queryByRole('button', { name: 'Sentry' })).toBeNull();
     expect(screen.queryByRole('button', { name: /GitLab issues/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'GitHub' })).toBeNull();
+    const connect = screen.getByRole('button', { name: 'Connect an integration' });
+    expect(connect).toBeDefined();
+
+    for (const heading of screen.getAllByText(/^(Work|Artifacts|Context|Integrations|Infra)$/)) {
+      expect(heading.parentElement?.querySelector('button')).not.toBeNull();
+    }
+
+    fireEvent.click(connect);
+
+    expect(workspaceSettingsListener).toHaveBeenCalledWith(
+      expect.objectContaining({ detail: { section: 'integrations' } }),
+    );
+    window.removeEventListener('goodboy:open-workspace-settings', workspaceSettingsListener);
   });
 });
