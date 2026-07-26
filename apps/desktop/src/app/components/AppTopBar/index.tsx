@@ -40,7 +40,7 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
         <button
           type="button"
           onClick={onOpenBudget}
-          title="Open budget"
+          title="Today's spend across providers, open budget"
           className="rounded px-1.5 py-1 transition-colors hover:bg-muted/50"
         >
           <WorkspaceRollupStrip />

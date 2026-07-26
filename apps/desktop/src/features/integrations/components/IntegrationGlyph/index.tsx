@@ -1,5 +1,5 @@
-import { cn, IconTile } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
+import { BrandGlyph } from '../../../../shared/components/BrandGlyph';
 import {
   GithubIcon,
   GitlabIcon,
@@ -22,13 +22,6 @@ const INTEGRATION_BRAND: Record<IntegrationGlyphProvider, IntegrationBrand> = {
   sentry: { icon: SentryIcon, label: 'Sentry', cssVar: '--color-provider-sentry' },
 };
 
-const MARK_SIZE: Record<'xs' | 'sm', number> = {
-  xs: 12,
-  sm: 14,
-};
-
-const FRAMED_MARK_SIZE = 16;
-
 type Props = {
   readonly provider: IntegrationGlyphProvider;
   readonly size?: 'xs' | 'sm';
@@ -37,24 +30,15 @@ type Props = {
 };
 
 export const IntegrationGlyph = ({ provider, size = 'sm', framed = false, className }: Props) => {
-  const { icon: Icon, label, cssVar } = INTEGRATION_BRAND[provider];
-  const color = `var(${cssVar})`;
-
-  if (!framed) {
-    return (
-      <Icon
-        size={MARK_SIZE[size]}
-        role="img"
-        aria-label={label}
-        className={cn('shrink-0', className)}
-        style={{ color }}
-      />
-    );
-  }
-
+  const brand = INTEGRATION_BRAND[provider];
   return (
-    <IconTile size="sm" color={color} className={className}>
-      <Icon size={FRAMED_MARK_SIZE} role="img" aria-label={label} style={{ color }} />
-    </IconTile>
+    <BrandGlyph
+      icon={brand.icon}
+      cssVar={brand.cssVar}
+      size={size}
+      framed={framed}
+      className={className}
+      label={brand.label}
+    />
   );
 };
