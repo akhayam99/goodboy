@@ -287,6 +287,22 @@ export const extractCommentResolved = (
   return last;
 };
 
+export const extractAllCommentResolved = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentResolution> => {
+  const markers: Array<ExtractedCommentResolution> = [];
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_RESOLVED_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const commitSha = (attrs.commitsha ?? attrs.commit ?? attrs.sha ?? '').trim();
+    if (threadId.length === 0 || commitSha.length === 0) {
+      continue;
+    }
+    markers.push({ threadId, commitSha });
+  }
+  return markers;
+};
+
 const REVIEW_THREAD_ID_RE = /^PRRT_/;
 
 export const isReviewThreadId = (threadId: string): boolean => {
@@ -379,6 +395,26 @@ export const extractCommentAnalysis = (assistantText: string): ExtractedCommentA
   return last;
 };
 
+export const extractAllCommentAnalysis = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentAnalysis> => {
+  const markers: Array<ExtractedCommentAnalysis> = [];
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_ANALYSIS_OPEN)) {
+    const attrs = parseCommentAnalysisAttrs(inner);
+    const threadId = attrs?.threadid?.trim() ?? '';
+    const verdict = attrs?.verdict?.trim() ?? '';
+    const summary = attrs?.summary?.trim() ?? '';
+    if (!threadId.startsWith('PRRT_') || summary.length === 0) {
+      continue;
+    }
+    if (verdict !== 'fix' && verdict !== 'wontfix') {
+      continue;
+    }
+    markers.push({ threadId, verdict, summary });
+  }
+  return markers;
+};
+
 export type ExtractedCommentWontfix = {
   readonly threadId: string;
   readonly reason: string;
@@ -396,6 +432,22 @@ export const extractCommentWontfix = (assistantText: string): ExtractedCommentWo
     last = { threadId, reason };
   }
   return last;
+};
+
+export const extractAllCommentWontfix = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentWontfix> => {
+  const markers: Array<ExtractedCommentWontfix> = [];
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_WONTFIX_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const reason = (attrs.reason ?? '').trim();
+    if (threadId.length === 0 || reason.length === 0) {
+      continue;
+    }
+    markers.push({ threadId, reason });
+  }
+  return markers;
 };
 
 export type ExtractedReviewComment = {

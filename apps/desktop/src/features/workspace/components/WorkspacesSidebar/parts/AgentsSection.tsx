@@ -150,6 +150,7 @@ export const AgentsSection = ({
   const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const activateNextResolver = useAppStore((s) => s.activateNextResolver);
   const resolveGithubThread = useAppStore((s) => s.resolveGithubThread);
+  const resolveAgentThreads = useAppStore((s) => s.resolveAgentThreads);
   const dequeueResolution = useAppStore((s) => s.dequeueResolution);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
@@ -401,6 +402,12 @@ export const AgentsSection = ({
       }
     },
     [resolveGithubThread, dequeueResolution, task.id],
+  );
+  const onResolveAgent = useCallback(
+    async (agentId: AgentId) => {
+      await resolveAgentThreads(task.id, agentId);
+    },
+    [resolveAgentThreads, task.id],
   );
   const standaloneAgentCount = useMemo(
     () => activeStandaloneAgents.length,
@@ -786,6 +793,7 @@ export const AgentsSection = ({
               onInspect={onInspectResolver}
               onForceNext={() => void activateNextResolver(task.id)}
               onResolveThread={onResolveThread}
+              onResolveAgent={onResolveAgent}
             />
           </>
         ) : forceExpanded ? (

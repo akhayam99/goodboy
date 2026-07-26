@@ -1,5 +1,6 @@
 import type { Agent, Workflow } from '@goodboy/types';
 import { WORKFLOW_LIBRARY } from '@goodboy/core';
+import { agentThreadIds } from '../../../session/agentThreadIds';
 
 export function workflowKindName(workflow: Workflow): string {
   const raw = workflow.name.trim();
@@ -26,12 +27,12 @@ export type ResolverStatus =
   | 'stopped'
   | 'done';
 
-export function resolverStatus(
+export const resolverStatus = (
   agent: Agent,
   resolvedThreadIds: ReadonlySet<string>,
   pendingThreadIds: ReadonlySet<string>,
   state: ResolverState | undefined,
-): ResolverStatus {
+): ResolverStatus => {
   if (agent.status === 'running') {
     return 'running';
   }
@@ -41,11 +42,11 @@ export function resolverStatus(
   if (agent.status === 'pending') {
     return 'pending';
   }
-  const tid = agent.sourceThreadId;
-  if (tid != null && resolvedThreadIds.has(tid)) {
+  const threadIds = agentThreadIds(agent);
+  if (threadIds.length > 0 && threadIds.every((threadId) => resolvedThreadIds.has(threadId))) {
     return 'resolved';
   }
-  if (state === 'committed' || (tid != null && pendingThreadIds.has(tid))) {
+  if (state === 'committed' || threadIds.some((threadId) => pendingThreadIds.has(threadId))) {
     return 'committed';
   }
   if (state === 'stopped') {
@@ -61,4 +62,4 @@ export function resolverStatus(
     return 'awaiting';
   }
   return 'done';
-}
+};

@@ -70,6 +70,7 @@ const renderRow = ({ onSelect = () => undefined, onInspect }: Params = {}) =>
       onJump={() => undefined}
       onInspect={onInspect}
       onResolveThread={() => undefined}
+      onResolveAgent={() => undefined}
     />,
   );
 

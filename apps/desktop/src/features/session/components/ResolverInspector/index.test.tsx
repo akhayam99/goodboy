@@ -22,6 +22,7 @@ const h = vi.hoisted(() => {
     listBranchCommits: vi.fn(async () => [] as ReadonlyArray<unknown>),
     forceCloseResolver: vi.fn(async () => undefined),
     resolveGithubThread: vi.fn(async () => true),
+    resolveAgentThreads: vi.fn(async () => true),
   };
 });
 
@@ -52,6 +53,7 @@ const state = {
   },
   agentKindOverride: {},
   resolverState: {},
+  resolverThreadOutcomes: {},
   sessionPendingResolutions: {},
   diffComments: { [SESSION_ID]: [] },
   sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -78,6 +80,7 @@ const state = {
   },
   forceCloseResolver: h.forceCloseResolver,
   resolveGithubThread: h.resolveGithubThread,
+  resolveAgentThreads: h.resolveAgentThreads,
 };
 
 vi.mock('../../../../store', () => ({

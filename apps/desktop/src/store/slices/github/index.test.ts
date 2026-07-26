@@ -61,6 +61,8 @@ const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
 const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
 const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const deletePendingResolutionSpy = vi.fn(async () => undefined);
+const listPendingResolutionsForSessionSpy = vi.fn(async () => []);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -118,6 +120,8 @@ vi.mock('@goodboy/db', () => ({
   listWorkspaceScripts: listWorkspaceScriptsSpy,
   upsertWorkspaceScript: upsertWorkspaceScriptSpy,
   deleteWorkspaceScript: deleteWorkspaceScriptSpy,
+  deletePendingResolution: deletePendingResolutionSpy,
+  listPendingResolutionsForSession: listPendingResolutionsForSessionSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -644,6 +648,66 @@ describe('store contract', () => {
       expect(ok).toBe(true);
       expect(gitPushSpy).not.toHaveBeenCalled();
       expect(resolveThreadSpy).toHaveBeenCalled();
+    });
+
+    it('resolveAgentThreads pushes once and resolves every resolved outcome', async () => {
+      const store = await getStore();
+      const refresh = vi.fn(async () => undefined);
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+            PRRT_2: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+          },
+        },
+        sessionPendingResolutions: {
+          [SESSION_ID]: [
+            {
+              id: 'pending-1',
+              sessionId: SESSION_ID,
+              prNumber: 1,
+              threadId: 'PRRT_1',
+              commitSha: 'abcdef1234567890',
+              createdAt: NOW,
+            },
+            {
+              id: 'pending-2',
+              sessionId: SESSION_ID,
+              prNumber: 1,
+              threadId: 'PRRT_2',
+              commitSha: 'abcdef1234567890',
+              createdAt: NOW,
+            },
+          ],
+        },
+        refreshSessionPrDetail: refresh,
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(gitPushSpy).toHaveBeenCalledTimes(1);
+      expect(resolveThreadSpy).toHaveBeenCalledTimes(2);
+      expect(deletePendingResolutionSpy).toHaveBeenCalledTimes(2);
+      expect(store.getState().sessionPendingResolutions[SESSION_ID]).toEqual([]);
+      expect(refresh).toHaveBeenCalledOnce();
     });
   });
 });

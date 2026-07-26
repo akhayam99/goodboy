@@ -4,8 +4,10 @@ import {
   type ResolverState,
   type ResolverStatus,
 } from '../workspace/components/WorkspacesSidebar/lib';
+import { agentThreadIds } from './agentThreadIds';
 
 export { resolverStatus };
+export { agentThreadIds };
 export type { ResolverState, ResolverStatus };
 
 export type ResolverLink = {
@@ -34,9 +36,12 @@ export const buildResolverIndex = (
   const byDiffAgentId = new Map<AgentId, ResolverLink>();
   for (const link of links) {
     const { agent } = link;
-    if (agent.sourceThreadId != null) {
-      if (!byThreadId.has(agent.sourceThreadId)) {
-        byThreadId.set(agent.sourceThreadId, link);
+    const threadIds = agentThreadIds(agent);
+    if (threadIds.length > 0) {
+      for (const threadId of threadIds) {
+        if (!byThreadId.has(threadId)) {
+          byThreadId.set(threadId, link);
+        }
       }
       continue;
     }

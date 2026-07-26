@@ -65,6 +65,11 @@ import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 
+export type ResolverThreadOutcome =
+  | { readonly kind: 'resolved'; readonly commitSha: string }
+  | { readonly kind: 'wontfix'; readonly reason: string }
+  | { readonly kind: 'analyzed' };
+
 export type BootPhase =
   | 'pending'
   | 'migrating'
@@ -229,6 +234,9 @@ export type AppState = UpdaterState & {
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly pendingResolverKickoff: Readonly<Record<AgentId, string>>;
   readonly resolverState: Readonly<Record<AgentId, ResolverState>>;
+  readonly resolverThreadOutcomes: Readonly<
+    Record<AgentId, Readonly<Record<string, ResolverThreadOutcome>>>
+  >;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;

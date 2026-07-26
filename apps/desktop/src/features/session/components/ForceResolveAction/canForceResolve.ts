@@ -1,5 +1,6 @@
 import type { Agent, TurnState } from '@goodboy/types';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { agentThreadIds } from '../../agentThreadIds';
 
 type Params = {
   readonly agent: Agent;
@@ -8,7 +9,7 @@ type Params = {
 };
 
 export const canForceResolve = ({ agent, status, turnState }: Params): boolean => {
-  if (agent.sourceThreadId == null) {
+  if (agentThreadIds(agent).length === 0) {
     return false;
   }
   if (turnState?.kind === 'running' || turnState?.kind === 'starting') {

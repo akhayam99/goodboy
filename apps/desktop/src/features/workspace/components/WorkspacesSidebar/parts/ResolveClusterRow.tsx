@@ -20,6 +20,7 @@ import { diffCommentLocation } from '../../../../session/diff-comment-location';
 import { prCommentLocation } from '../../../../session/pr-comment-location';
 import { resolverOrigin } from '../../../../session/resolver-origin';
 import type { ResolverStatus } from '../lib';
+import { agentThreadIds } from '../../../../session/agentThreadIds';
 
 type Props = {
   readonly agent: Agent;
@@ -41,6 +42,7 @@ type Props = {
   readonly onJump: () => void;
   readonly onInspect?: () => void;
   readonly onResolveThread: (threadId: string) => Promise<void> | void;
+  readonly onResolveAgent: (agentId: Agent['id']) => Promise<void> | void;
 };
 
 export const ResolveClusterRow = ({
@@ -63,18 +65,27 @@ export const ResolveClusterRow = ({
   onJump,
   onInspect,
   onResolveThread,
+  onResolveAgent,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const [pushing, setPushing] = useState(false);
-  const canPush = agent.sourceThreadId != null && (status === 'committed' || status === 'wontfix');
+  const threadIds = agentThreadIds(agent);
+  const threadId = threadIds[0];
+  const canPush =
+    threadId != null &&
+    (status === 'committed' || (threadIds.length === 1 && status === 'wontfix'));
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const onPush = async () => {
-    if (pushing || agent.sourceThreadId == null) {
+    if (pushing || threadId == null) {
       return;
     }
     setPushing(true);
     try {
-      await onResolveThread(agent.sourceThreadId);
+      if (threadIds.length >= 2) {
+        await onResolveAgent(agent.id);
+        return;
+      }
+      await onResolveThread(threadId);
     } finally {
       setPushing(false);
     }

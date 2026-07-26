@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { TurnEvent } from '@goodboy/types';
 import {
   assessPlanReadiness,
+  extractAllCommentAnalysis,
+  extractAllCommentResolved,
+  extractAllCommentWontfix,
   extractClusterDone,
   extractClustersFromMarker,
   extractCommentAnalysis,
@@ -294,6 +297,17 @@ describe('extractCommentResolved', () => {
   });
 });
 
+describe('extractAllCommentResolved', () => {
+  it('captures every marker in order', () => {
+    const text =
+      '<<comment-resolved threadId="PRRT_1" commit="aaa">> <<comment-resolved threadId="PRRT_2" commitSha="bbb">>';
+    expect(extractAllCommentResolved(text)).toEqual([
+      { threadId: 'PRRT_1', commitSha: 'aaa' },
+      { threadId: 'PRRT_2', commitSha: 'bbb' },
+    ]);
+  });
+});
+
 describe('extractCommentAnalysis', () => {
   it('parses a valid analysis marker', () => {
     const text =
@@ -358,6 +372,17 @@ describe('extractCommentAnalysis', () => {
   });
 });
 
+describe('extractAllCommentAnalysis', () => {
+  it('captures every marker in order', () => {
+    const text =
+      '<<comment-analysis threadId="PRRT_1" verdict="fix" summary="first">> <<comment-analysis threadId="PRRT_2" verdict="wontfix" summary="second">>';
+    expect(extractAllCommentAnalysis(text)).toEqual([
+      { threadId: 'PRRT_1', verdict: 'fix', summary: 'first' },
+      { threadId: 'PRRT_2', verdict: 'wontfix', summary: 'second' },
+    ]);
+  });
+});
+
 describe('extractCommentWontfix', () => {
   it('returns null when the marker is absent', () => {
     expect(extractCommentWontfix('this is a valid point, fixing it')).toBeNull();
@@ -375,6 +400,17 @@ describe('extractCommentWontfix', () => {
   it('requires both threadId and a non-empty reason', () => {
     expect(extractCommentWontfix('<<comment-wontfix threadId="PRRT_1">>')).toBeNull();
     expect(extractCommentWontfix('<<comment-wontfix reason="nope">>')).toBeNull();
+  });
+});
+
+describe('extractAllCommentWontfix', () => {
+  it('captures every marker in order', () => {
+    const text =
+      '<<comment-wontfix threadId="PRRT_1" reason="first">> <<comment-wontfix threadId="PRRT_2" reason="second">>';
+    expect(extractAllCommentWontfix(text)).toEqual([
+      { threadId: 'PRRT_1', reason: 'first' },
+      { threadId: 'PRRT_2', reason: 'second' },
+    ]);
   });
 });
 

@@ -1,7 +1,7 @@
 import {
-  extractCommentAnalysis,
-  extractCommentResolved,
-  extractCommentWontfix,
+  extractAllCommentAnalysis,
+  extractAllCommentResolved,
+  extractAllCommentWontfix,
   extractPlanFromMarker,
   extractReviewComments,
   extractScoutSplit,
@@ -11,6 +11,7 @@ import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { inferAgentKindFromName, type AgentKind } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
+import type { ResolverThreadOutcome } from '../../types';
 
 type Params = {
   readonly set: SetFn;
@@ -84,21 +85,36 @@ export const completeResolvedAgent = async ({
     return null;
   }
 
-  const resolvedMarker = extractCommentResolved(assistantText);
-  const wontfixMarker = extractCommentWontfix(assistantText);
-  const analysisMarker = extractCommentAnalysis(assistantText);
+  const resolvedMarkers = extractAllCommentResolved(assistantText);
+  const wontfixMarkers = extractAllCommentWontfix(assistantText);
+  const analysisMarkers = extractAllCommentAnalysis(assistantText);
+  const outcomes: Record<string, ResolverThreadOutcome> = {};
+  for (const marker of resolvedMarkers) {
+    outcomes[marker.threadId] = { kind: 'resolved', commitSha: marker.commitSha };
+  }
+  for (const marker of wontfixMarkers) {
+    outcomes[marker.threadId] = { kind: 'wontfix', reason: marker.reason };
+  }
+  for (const marker of analysisMarkers) {
+    outcomes[marker.threadId] = { kind: 'analyzed' };
+  }
+  const markerCount = resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length;
   const nextState =
-    resolvedMarker !== null
+    resolvedMarkers.length > 0
       ? 'committed'
-      : wontfixMarker !== null
+      : markerCount > 0 && wontfixMarkers.length === markerCount
         ? 'wontfix'
-        : analysisMarker !== null
+        : analysisMarkers.length > 0
           ? 'analyzed'
           : 'awaiting';
   set((state) => ({
     resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
+    resolverThreadOutcomes: {
+      ...state.resolverThreadOutcomes,
+      [resolvedAgentId]: outcomes,
+    },
   }));
-  if (resolvedMarker !== null || wontfixMarker !== null || analysisMarker !== null) {
+  if (markerCount > 0) {
     void get().activateNextResolver(sessionId);
   }
   return null;

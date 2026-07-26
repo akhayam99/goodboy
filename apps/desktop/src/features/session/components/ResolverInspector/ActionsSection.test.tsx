@@ -16,6 +16,7 @@ const AGENT = {
 const h = vi.hoisted(() => ({
   pending: [] as Array<{ threadId: string; commitSha: string }>,
   resolveGithubThread: vi.fn(async () => true),
+  resolveAgentThreads: vi.fn(async () => true),
   queueResolution: vi.fn(async () => undefined),
   dequeueResolution: vi.fn(async () => undefined),
   activateNextResolver: vi.fn(async () => undefined),
@@ -27,6 +28,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (state: {
       resolveGithubThread: typeof h.resolveGithubThread;
+      resolveAgentThreads: typeof h.resolveAgentThreads;
       queueResolution: typeof h.queueResolution;
       dequeueResolution: typeof h.dequeueResolution;
       activateNextResolver: typeof h.activateNextResolver;
@@ -34,10 +36,15 @@ vi.mock('../../../../store', () => ({
       selectAgent: typeof h.selectAgent;
       sessionGithub: Record<string, { pr: { number: number } }>;
       sessionPendingResolutions: Record<string, Array<{ threadId: string; commitSha: string }>>;
+      resolverThreadOutcomes: Record<
+        string,
+        Record<string, { kind: 'resolved'; commitSha: string }>
+      >;
     }) => T,
   ) =>
     selector({
       resolveGithubThread: h.resolveGithubThread,
+      resolveAgentThreads: h.resolveAgentThreads,
       queueResolution: h.queueResolution,
       dequeueResolution: h.dequeueResolution,
       activateNextResolver: h.activateNextResolver,
@@ -45,6 +52,7 @@ vi.mock('../../../../store', () => ({
       selectAgent: h.selectAgent,
       sessionGithub: { [SESSION_ID]: { pr: { number: 7 } } },
       sessionPendingResolutions: { [SESSION_ID]: h.pending },
+      resolverThreadOutcomes: {},
     }),
 }));
 

@@ -40,6 +40,10 @@ type Props = {
     threads: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => void;
+  readonly onSpawnCombined: (
+    threads: ReadonlyArray<CommentThread>,
+    choiceById: Readonly<Record<string, ResolveModelChoice>>,
+  ) => void;
   readonly onOpenResolver?: (agentId: AgentId) => void;
   readonly onOpenThread: (threadId: string) => void;
   readonly roleModels: RoleModelPreferences | null;
@@ -58,6 +62,7 @@ export const ResolveBoard = ({
   resolverFor,
   onSpawnOne,
   onSpawnBatch,
+  onSpawnCombined,
   onOpenResolver,
   onOpenThread,
   roleModels,
@@ -178,6 +183,18 @@ export const ResolveBoard = ({
           ) : null}
         </div>
 
+        {selected.length >= 2 ? (
+          <button
+            type="button"
+            onClick={() => onSpawnCombined(selected, choiceById)}
+            disabled={selected.length > 8}
+            title={selected.length > 8 ? 'Too many threads for one resolver (max 8)' : undefined}
+            className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 px-2.5 py-1 text-xs font-semibold text-accent transition-opacity hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Sparkles size={12} aria-hidden />
+            Spawn 1 combined resolver
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => onSpawnBatch(selected, choiceById)}
@@ -185,7 +202,9 @@ export const ResolveBoard = ({
           className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Sparkles size={12} aria-hidden />
-          Spawn resolver for {selected.length} {selected.length === 1 ? 'comment' : 'comments'}
+          {selected.length >= 2
+            ? `Spawn ${selected.length} resolvers`
+            : `Spawn resolver for ${selected.length} comment`}
         </button>
       </div>
 

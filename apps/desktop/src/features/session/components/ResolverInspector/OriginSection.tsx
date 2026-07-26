@@ -12,9 +12,19 @@ type Props = {
   readonly diffComment: DiffComment | null;
   readonly openLabel: string | null;
   readonly onOpen: () => void;
+  readonly threadLinks?: ReadonlyArray<{ readonly threadId: string; readonly label: string }>;
+  readonly onOpenThread?: (threadId: string) => void;
 };
 
-export const OriginSection = ({ origin, threadComment, diffComment, openLabel, onOpen }: Props) => (
+export const OriginSection = ({
+  origin,
+  threadComment,
+  diffComment,
+  openLabel,
+  onOpen,
+  threadLinks = [],
+  onOpenThread,
+}: Props) => (
   <InspectorSection question="Where it came from">
     <div className="flex items-center gap-2">
       <span className="rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-foreground/80">
@@ -52,6 +62,21 @@ export const OriginSection = ({ origin, threadComment, diffComment, openLabel, o
         {openLabel}
         <ArrowUpRight size={11} aria-hidden className="opacity-70" />
       </button>
+    ) : null}
+    {threadLinks.length > 1 && onOpenThread !== undefined ? (
+      <div className="flex flex-col items-start gap-1">
+        {threadLinks.map((link) => (
+          <button
+            key={link.threadId}
+            type="button"
+            onClick={() => onOpenThread(link.threadId)}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            {link.label}
+            <ArrowUpRight size={11} aria-hidden className="opacity-70" />
+          </button>
+        ))}
+      </div>
     ) : null}
   </InspectorSection>
 );

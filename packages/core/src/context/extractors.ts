@@ -1,5 +1,8 @@
 export {
   assessPlanReadiness,
+  extractAllCommentAnalysis,
+  extractAllCommentResolved,
+  extractAllCommentWontfix,
   extractClusterDone,
   extractClustersFromMarker,
   extractCommentAnalysis,
