@@ -7,12 +7,11 @@ import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { clampEffort } from '../../../../chat/utils/chat-constants';
 import {
-  AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
-  AGENT_KIND_ORDER,
   kindRouting,
   type AgentKind,
   type AgentKindRouting,
+  visibleAgentKinds,
 } from '../../../../session/agent-kind';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
@@ -23,14 +22,17 @@ type Props = {
   readonly onSpawned?: () => void;
 };
 
-const VISIBLE_AGENT_KINDS = AGENT_KIND_ORDER.filter(
-  (kind) => AGENT_KIND_DEFAULTS[kind].visible !== false,
-);
-
 export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) => {
   const [role, setRole] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
+  const workspaceKind = useAppStore((state) => {
+    const workspaceId =
+      state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null;
+    return state.workspaces.find((workspace) => workspace.id === workspaceId)?.kind;
+  });
+  const agentKinds = visibleAgentKinds({ workspaceKind });
+  const selectedRole = agentKinds.includes(role) ? role : (agentKinds[0] ?? 'generic');
   const connectedProviders = useAppStore(
     useShallow((state) =>
       state.providers
@@ -39,10 +41,10 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
     ),
   );
   const roleModels = useSessionRoleModels({ sessionId });
-  const recommendedRouting = kindRouting({ kind: role, roleModels });
+  const recommendedRouting = kindRouting({ kind: selectedRole, roleModels });
 
   const onRoleChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
-    const nextRole = VISIBLE_AGENT_KINDS.find((kind) => kind === event.target.value);
+    const nextRole = agentKinds.find((kind) => kind === event.target.value);
     if (nextRole == null) {
       return;
     }
@@ -64,7 +66,7 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
 
   const onCreate: MouseEventHandler<HTMLButtonElement> = async () => {
     await spawnAgent(sessionId, {
-      kindOverride: role,
+      kindOverride: selectedRole,
       ...(routing != null && {
         provider: routing.provider,
         model: routing.model,
@@ -90,19 +92,21 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
         <Plus size={13} aria-hidden />
         Create agent
       </button>
-      <Select
-        size="sm"
-        value={role}
-        onChange={onRoleChange}
-        aria-label="agent role"
-        className="h-7 text-xs"
-      >
-        {VISIBLE_AGENT_KINDS.map((kind) => (
-          <option key={kind} value={kind} title={AGENT_KIND_META[kind].hint}>
-            {AGENT_KIND_META[kind].label}
-          </option>
-        ))}
-      </Select>
+      {agentKinds.length > 1 && (
+        <Select
+          size="sm"
+          value={selectedRole}
+          onChange={onRoleChange}
+          aria-label="agent role"
+          className="h-7 text-xs"
+        >
+          {agentKinds.map((kind) => (
+            <option key={kind} value={kind} title={AGENT_KIND_META[kind].hint}>
+              {AGENT_KIND_META[kind].label}
+            </option>
+          ))}
+        </Select>
+      )}
       <RoutingPicker
         variant="pill"
         align="end"
