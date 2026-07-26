@@ -16,7 +16,6 @@ import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provid
 import { MODEL_COST_DOT, modelCostTier } from '../dropdown-utils';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { RoleSelect } from '../RoleSelect';
-import { VerbositySelect } from '../VerbositySelect';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 
 type Props = {
@@ -313,12 +312,6 @@ export const WorkflowStepCard = ({
                   <RoleSelect value={role} onChange={onRole} disabled={disabled} />
                 </div>
               )}
-              {verbosity != null && onVerbosity != null && (
-                <div className="flex flex-col gap-1">
-                  <FieldLabel>Verbosity</FieldLabel>
-                  <VerbositySelect value={verbosity} onChange={onVerbosity} disabled={disabled} />
-                </div>
-              )}
               <div className="col-span-2 flex flex-col gap-1">
                 <FieldLabel>Provider, model, effort</FieldLabel>
                 <RoutingPicker
@@ -329,10 +322,12 @@ export const WorkflowStepCard = ({
                   effort={effort}
                   recommendedProvider={recommendedProvider}
                   recommendedModel={recommendedModel}
+                  verbosity={verbosity}
                   disabled={disabled}
                   onProvider={onProvider}
                   onModel={onModel}
                   onEffort={onEffort}
+                  onVerbosity={onVerbosity}
                 />
               </div>
             </div>
