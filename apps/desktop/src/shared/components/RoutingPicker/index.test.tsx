@@ -73,6 +73,35 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
+  it('hides auto when the recommendation does not apply to the viewed provider', () => {
+    render(<RoutingPicker {...baseProps} model="" recommendedModel="claude-sonnet-4-6" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
+    expect(screen.queryByRole('button', { name: 'auto' })).toBeNull();
+  });
+
+  it('hides provider auto when no provider recommendation exists', () => {
+    render(<RoutingPicker {...baseProps} provider="" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.queryByRole('button', { name: 'auto' })).toBeNull();
+  });
+
+  it('always offers Cursor literal auto and selects its model id', () => {
+    const onModel = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        model=""
+        recommendedModel="claude-sonnet-4-6"
+        onModel={onModel}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'auto' }));
+    expect(onModel).toHaveBeenCalledWith('auto');
+  });
+
   it('reports the picked effort and keeps the popover open', () => {
     const onEffort = vi.fn();
     render(<RoutingPicker {...baseProps} onEffort={onEffort} />);
@@ -155,20 +184,27 @@ describe('RoutingPicker', () => {
     expect(screen.queryByPlaceholderText('Filter models')).toBeNull();
   });
 
-  it('marks expensive variants with text and renders no tier dots in the model grid', () => {
+  it('tints model variants by cost tier and intensifies the active chip', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const expensiveChip = screen.getByTitle(/^claude-opus-5 \(/);
     const cheapChip = screen.getByTitle(/^claude-haiku-4-5 \(/);
-    const modelGrid = expensiveChip.closest('div.flex.flex-col.gap-1');
-    expect(expensiveChip.textContent).toContain('$$');
-    expect(expensiveChip.querySelector('span')?.className).toContain('text-muted-foreground/50');
-    expect(cheapChip.textContent).not.toContain('$$');
-    expect(modelGrid).not.toBeNull();
-    expect(
-      modelGrid?.querySelector(
-        '[class*="bg-success"], [class*="bg-warning"], [class*="bg-danger"]',
-      ),
-    ).toBeNull();
+    expect(expensiveChip.textContent).not.toContain('$$');
+    expect(expensiveChip.className).toContain('bg-danger/20');
+    expect(expensiveChip.className).toContain('text-danger');
+    expect(expensiveChip.className).toContain('ring-danger/40');
+    expect(cheapChip.className).toContain('bg-success/10');
+    expect(cheapChip.className).toContain('text-success/70');
+    expect(cheapChip.className).not.toContain('ring-success/40');
+  });
+
+  it('distributes provider tabs evenly across the row', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const providerButton = screen.getByRole('button', { name: 'Cursor' });
+    const providerRow = providerButton.parentElement;
+    expect(providerRow?.className).toContain('gap-1.5');
+    expect(providerRow?.className).toContain('[&>button]:flex-1');
+    expect(providerButton.className).toContain('min-w-0');
   });
 });
