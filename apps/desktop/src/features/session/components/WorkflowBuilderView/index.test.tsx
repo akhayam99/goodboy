@@ -98,6 +98,9 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       >
         model:{model === '' ? 'auto' : model}
       </button>
+      <button type="button" onClick={() => onModel('claude-sonnet-4-6')}>
+        model:sonnet
+      </button>
     </>
   ),
 }));
@@ -285,6 +288,33 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     const saved = mockSavePhaseTemplate.mock.calls[0]![0];
     expect(saved.steps[0]!.modelOverride).toBe('claude-opus-4-6');
     expect(saved.steps[1]!.modelOverride).toBeUndefined();
+  });
+
+  it('clamps persisted effort when switching from opus to sonnet', async () => {
+    const baseWorkflow = presetWorkflow('wf-preset-1', 'Ship It');
+    const workflow: Workflow = {
+      ...baseWorkflow,
+      steps: baseWorkflow.steps.map((step, index) =>
+        index === 0
+          ? {
+              ...step,
+              modelOverride: 'claude-opus-4-6',
+              effort: 'max',
+            }
+          : step,
+      ),
+    };
+    storeState.phaseTemplates = { 'ws-1': [workflow] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+    expandStep(0);
+    fireEvent.click(screen.getAllByRole('button', { name: 'model:sonnet' })[0]!);
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.steps[0]!.modelOverride).toBe('claude-sonnet-4-6');
+    expect(saved.steps[0]!.effort).toBe('high');
   });
 
   it('respects the preset and auto-run toggles', async () => {

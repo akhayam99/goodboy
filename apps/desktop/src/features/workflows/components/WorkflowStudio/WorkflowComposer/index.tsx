@@ -5,6 +5,7 @@ import { recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../../form';
+import { clampEffort } from '../../../../chat/utils/chat-constants';
 import { ROLE_TO_KIND } from '../../../../session/agent-kind';
 import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCard';
 import { StepFlowConnector } from '../StepFlowConnector';
@@ -256,7 +257,12 @@ export const WorkflowComposer = ({
                     onPrompt={(v) => onUpdateStep(idx, { promptPrefix: v })}
                     onExpectedOutput={(v) => onUpdateStep(idx, { expectedOutput: v })}
                     onProvider={(v) => onUpdateStep(idx, { providerOverride: v })}
-                    onModel={(v) => onUpdateStep(idx, { modelOverride: v })}
+                    onModel={(v) =>
+                      onUpdateStep(idx, {
+                        modelOverride: v,
+                        effort: clampEffort(v, def.effort),
+                      })
+                    }
                     onEffort={(v) => onUpdateStep(idx, { effort: v })}
                     onRole={(v) => onUpdateStep(idx, { role: v })}
                     onVerbosity={(v) => onUpdateStep(idx, { verbosity: v })}

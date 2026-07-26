@@ -1093,7 +1093,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 onPrompt={(v) => patchStep(st.key, { promptPrefix: v })}
                                 onExpectedOutput={(v) => patchStep(st.key, { expectedOutput: v })}
                                 onModel={(v) =>
-                                  patchStep(st.key, { modelOverride: v || undefined })
+                                  patchStep(st.key, {
+                                    modelOverride: v || undefined,
+                                    effort: clampEffort(v, st.effort ?? roleEffort(st.role)),
+                                  })
                                 }
                                 onProvider={(v) =>
                                   patchStep(st.key, { providerOverride: v || undefined })
