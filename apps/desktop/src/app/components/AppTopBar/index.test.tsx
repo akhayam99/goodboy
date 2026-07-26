@@ -62,7 +62,7 @@ describe('AppTopBar', () => {
   it('opens budget from the workspace rollup and omits the beta chip', () => {
     const onOpenBudget = vi.fn();
     render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={onOpenBudget} activeStudio={null} />);
-    fireEvent.click(screen.getByTitle('Open budget'));
+    fireEvent.click(screen.getByTitle("Today's spend across providers, open budget"));
     expect(onOpenBudget).toHaveBeenCalledOnce();
     expect(screen.queryByText('Beta')).toBeNull();
   });
