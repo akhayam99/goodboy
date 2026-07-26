@@ -138,11 +138,7 @@ describe('RoutingPicker', () => {
     window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
   });
 
-  it('filters cursor models and omits the filter for anthropic', () => {
-    const cursorModel = PROVIDER_CAPABILITIES.cursor.models.at(-1);
-    if (cursorModel == null) {
-      throw new Error('cursor model registry is empty');
-    }
+  it('does not show a model filter for providers with large or small model registries', () => {
     const view = render(
       <RoutingPicker
         {...baseProps}
@@ -151,17 +147,28 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const filter = screen.getByPlaceholderText('Filter models');
-    fireEvent.change(filter, { target: { value: cursorModel.label } });
-    const modelChips = screen
-      .getAllByRole('button')
-      .filter((button) => button.title.includes(' ('));
-    expect(modelChips).toHaveLength(1);
-    expect(modelChips[0]?.title).toContain(cursorModel.id);
+    expect(screen.queryByPlaceholderText('Filter models')).toBeNull();
     view.unmount();
 
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.queryByPlaceholderText('Filter models')).toBeNull();
+  });
+
+  it('marks expensive variants with text and renders no tier dots in the model grid', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const expensiveChip = screen.getByTitle(/^claude-opus-5 \(/);
+    const cheapChip = screen.getByTitle(/^claude-haiku-4-5 \(/);
+    const modelGrid = expensiveChip.closest('div.flex.flex-col.gap-1');
+    expect(expensiveChip.textContent).toContain('$$');
+    expect(expensiveChip.querySelector('span')?.className).toContain('text-muted-foreground/50');
+    expect(cheapChip.textContent).not.toContain('$$');
+    expect(modelGrid).not.toBeNull();
+    expect(
+      modelGrid?.querySelector(
+        '[class*="bg-success"], [class*="bg-warning"], [class*="bg-danger"]',
+      ),
+    ).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FolderGit2, Layers, ListChecks } from 'lucide-react';
+import { FolderGit2, Kanban, ListChecks } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { LinearIcon } from '../../../../shared/components/brand-icons';
@@ -24,7 +24,7 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
       color: 'var(--color-provider-linear)',
       connected: linearConnected,
     },
-    { value: 'jira', label: 'Jira', icon: Layers, badge: 'soon', disabled: true },
+    { value: 'jira', label: 'Jira', icon: Kanban, badge: 'soon', disabled: true },
   ];
 
   return (

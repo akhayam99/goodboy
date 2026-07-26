@@ -18,8 +18,8 @@ describe('AgentKindChip', () => {
   });
 
   it('applies the title attribute when provided', () => {
-    const { container } = render(<AgentKindChip kind="scout" title="explorer agent" />);
-    expect(container.querySelector('[title="explorer agent"]')).not.toBeNull();
+    const { container } = render(<AgentKindChip kind="scout" title="scout agent" />);
+    expect(container.querySelector('[title="scout agent"]')).not.toBeNull();
   });
 
   it('marks the chip as aria-hidden so screen readers skip it', () => {

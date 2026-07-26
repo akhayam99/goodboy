@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Hand,
-  Layers,
   Link2,
   ListChecks,
   Paperclip,
@@ -21,6 +20,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { Button, Divider, SectionHeader, SegmentedTabs, Skeleton, Textarea, cn } from '@goodboy/ui';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -838,7 +838,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   />
                   <section className="flex flex-col gap-3">
                     <SectionHeader
-                      icon={<Layers size={11} aria-hidden />}
+                      icon={<SECTION_ICONS.workflows size={11} aria-hidden />}
                       label="Approach"
                       action={
                         <SegmentedTabs
@@ -1153,7 +1153,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-soft px-4 py-8 text-center">
-                        <Layers size={22} className="text-muted-foreground/30" aria-hidden />
+                        <SECTION_ICONS.workflows
+                          size={22}
+                          className="text-muted-foreground/30"
+                          aria-hidden
+                        />
                         <p className="text-xs font-medium text-foreground">
                           {mode === 'preset' ? 'No preset selected' : 'No plan yet'}
                         </p>

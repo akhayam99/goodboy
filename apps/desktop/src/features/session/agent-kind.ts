@@ -196,13 +196,10 @@ export const AGENT_ROLES: ReadonlyArray<AgentRole> = [
 export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
   scout: 'scout',
   planner: 'planner',
-  architect: 'planner',
-  product: 'generic',
   implementer: 'implementer',
   reviewer: 'reviewer',
   tester: 'tester',
   investigator: 'debugger',
-  explorer: 'scout',
   custom: 'generic',
 };
 
@@ -222,13 +219,10 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
 export const ROLE_LABEL: Record<AgentRole, string> = {
   scout: 'Scout',
   planner: 'Planner',
-  architect: 'Architect',
-  product: 'Product',
   implementer: 'Implementer',
   reviewer: 'Reviewer',
   tester: 'Tester',
   investigator: 'Debugger',
-  explorer: 'Explorer',
   custom: 'Custom',
 };
 
@@ -305,11 +299,8 @@ export const AGENT_KIND_DEFAULTS: Record<
 
 const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {
   scout: 'scout',
-  explorer: 'scout',
   investigator: 'debugger',
   planner: 'planner',
-  architect: 'planner',
-  product: 'planner',
   implementer: 'implementer',
   tester: 'tester',
   reviewer: 'reviewer',
@@ -334,7 +325,7 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
   if (/scout|explor|survey|map/.test(lower)) {
     return 'scout';
   }
-  if (/plan|design|architect|spec|product/.test(lower)) {
+  if (/plan|design|spec/.test(lower)) {
     return 'planner';
   }
   if (/impl|build|develop|code|feature|refactor/.test(lower)) {

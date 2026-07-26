@@ -2,7 +2,6 @@ import { useRef, useState, type ReactNode } from 'react';
 import { cn, Divider } from '@goodboy/ui';
 import {
   BookOpen,
-  Coins,
   GitBranch,
   LayoutDashboard,
   Lightbulb,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { GuideContent } from './parts/GuideContent';
 
 type Props = {
@@ -41,7 +41,11 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   { id: 'session', label: 'Sessions', icon: <GitBranch size={13} aria-hidden /> },
   { id: 'turn', label: 'Turns', icon: <MessagesSquare size={13} aria-hidden /> },
   { id: 'tools', label: 'Tools', icon: <Wrench size={13} aria-hidden /> },
-  { id: 'tokens', label: 'Tokens & cost', icon: <Coins size={13} aria-hidden /> },
+  {
+    id: 'tokens',
+    label: 'Tokens & cost',
+    icon: <SECTION_ICONS.budget size={13} aria-hidden />,
+  },
   { id: 'agents', label: 'Agents', icon: <DogMascot size={13} /> },
   { id: 'tips', label: 'Tips', icon: <Lightbulb size={13} aria-hidden /> },
   { id: 'legenda', label: 'Legend', icon: <Palette size={13} aria-hidden /> },

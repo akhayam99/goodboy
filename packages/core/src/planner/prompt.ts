@@ -20,7 +20,7 @@ no code fences. The schema is:
   "steps": [
     {
       "name": "<short imperative title>",
-      "role": "<scout|planner|implementer|reviewer|tester|investigator|product|architect|explorer|custom>",
+      "role": "<scout|planner|implementer|reviewer|tester|investigator|custom>",
       "promptPrefix": "<system-style instructions for the step's agent>",
       "expectedOutput": "<one sentence describing what the step should produce>"
     },

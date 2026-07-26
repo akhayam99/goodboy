@@ -4,15 +4,14 @@ import {
   Bot,
   CircleHelp,
   GitPullRequest,
-  Layers,
   MessageSquareReply,
   Pencil,
-  Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
 import { cn, Eyebrow, Input, ScrollFade, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId, SessionStage } from '@goodboy/types';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
   agentHasUnread,
   EMPTY_ARRAY,
@@ -33,7 +32,7 @@ import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
 import { classifyAgent, selectStandaloneAgents } from '../../agent-kind';
 import { resolveAttentionLens, selectAttention, selectOpenQuestions } from './lib';
-import { SpawnAgentMenu } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentMenu';
+import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
@@ -193,7 +192,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
       attentionLens === 'pr'
         ? GitPullRequest
         : attentionLens === 'workflows'
-          ? Layers
+          ? SECTION_ICONS.workflows
           : attentionLens === 'resolve'
             ? MessageSquareReply
             : Bot;
@@ -323,32 +322,14 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
               <div className="flex flex-col gap-2">
                 <button type="button" onClick={openWorkflowBuilder} className={startRowClass(true)}>
                   <StartRowContent
-                    icon={Workflow}
+                    icon={SECTION_ICONS.workflows}
                     tone="accent"
                     label="Workflow"
                     description="Runs a multi-step pipeline: scout, plan, implement, test, review."
                     chip
                   />
                 </button>
-                <SpawnAgentMenu
-                  sessionId={session.id as SessionId}
-                  trigger={({ ref, onClick, ...aria }) => (
-                    <button
-                      ref={ref}
-                      type="button"
-                      onClick={onClick}
-                      className={startRowClass()}
-                      {...aria}
-                    >
-                      <StartRowContent
-                        icon={Bot}
-                        tone="primary"
-                        label="Agent"
-                        description="A single specialist for a one-off task."
-                      />
-                    </button>
-                  )}
-                />
+                <SpawnAgentControl sessionId={session.id as SessionId} />
               </div>
             </div>
           </div>
@@ -357,22 +338,13 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
             <Eyebrow label="Start" muted className="px-0.5 font-medium" />
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={openWorkflowBuilder} className={startTileClass()}>
-                <StartTileContent icon={Workflow} tone="accent" label="New workflow" />
+                <StartTileContent
+                  icon={SECTION_ICONS.workflows}
+                  tone="accent"
+                  label="New workflow"
+                />
               </button>
-              <SpawnAgentMenu
-                sessionId={session.id as SessionId}
-                trigger={({ ref, onClick, ...aria }) => (
-                  <button
-                    ref={ref}
-                    type="button"
-                    onClick={onClick}
-                    className={startTileClass()}
-                    {...aria}
-                  >
-                    <StartTileContent icon={Bot} tone="primary" label="Create agent" />
-                  </button>
-                )}
-              />
+              <SpawnAgentControl sessionId={session.id as SessionId} />
             </div>
           </div>
         )}

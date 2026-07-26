@@ -9,7 +9,6 @@ import {
   MessageSquareDiff,
   FileText,
   LayoutDashboard,
-  Layers,
   MessageSquareReply,
   SquareTerminal,
   Target,
@@ -18,6 +17,7 @@ import {
 import { IconTile, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId, WorkspaceKind } from '@goodboy/types';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import {
@@ -270,7 +270,7 @@ export const LensColumn = ({
         {
           kind: 'workflows',
           label: 'Workflows',
-          icon: Layers,
+          icon: SECTION_ICONS.workflows,
           tone: 'accent',
           count: activeWorkflows,
           dot:
@@ -370,7 +370,7 @@ export const LensColumn = ({
         {
           kind: 'workflows',
           label: 'Workflows',
-          icon: Layers,
+          icon: SECTION_ICONS.workflows,
           tone: 'accent',
           count: activeWorkflows,
           dot:

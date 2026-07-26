@@ -1,5 +1,6 @@
-import { ArrowRight, Network, Workflow } from 'lucide-react';
+import { ArrowRight, Network } from 'lucide-react';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { Block } from './Block';
 import { Chip } from './Chip';
 import { DefinitionList } from './DefinitionList';
@@ -22,7 +23,7 @@ export const AgentsSection = ({}: Props) => (
           {
             term: 'Role separation',
             desc: 'Spawn a planning agent on one model, then a coding agent on another. Each keeps its own transcript.',
-            icon: <Workflow size={11} aria-hidden />,
+            icon: <SECTION_ICONS.workflows size={11} aria-hidden />,
             tone: 'primary',
           },
           {

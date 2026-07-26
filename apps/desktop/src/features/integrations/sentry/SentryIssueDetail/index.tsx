@@ -1,5 +1,5 @@
 import { SectionHeader, cn } from '@goodboy/ui';
-import { ExternalLink, Layers } from 'lucide-react';
+import { ExternalLink, ListTree } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
 import { levelTone } from '../levelTone';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
@@ -83,7 +83,7 @@ export const SentryIssueDetail = ({
       <section className="flex flex-col gap-3">
         <SectionHeader
           label="stack trace"
-          icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
+          icon={<ListTree size={13} aria-hidden className="text-muted-foreground" />}
         />
         <SentryStackTrace frames={frames} isLoading={isLoading} error={error} />
       </section>

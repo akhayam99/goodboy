@@ -146,7 +146,17 @@ function buildHarness(plans: ReadonlyArray<PlanWithCount>) {
     planConsumptions: {},
     selectedAgentId: {},
     agentTurnState: {},
-    workspaceOverrides: {},
+    workspaceOverrides: {
+      [WS_ID]: {
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5',
+            effort: 'high',
+          },
+        },
+      },
+    },
     transcripts: {},
     messages: {},
     agentModelOverride: {},
@@ -182,6 +192,26 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'debugger', name: 'debug startup crash' }),
     );
+  });
+
+  it('seeds routing overrides from the workspace role model', async () => {
+    const { getState, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { kindOverride: 'planner' });
+
+    expect(getState().agentModelOverride[INSERTED_ID]).toBe('claude-opus-5');
+    expect(getState().agentProviderOverride[INSERTED_ID]).toBe('anthropic');
+    expect(getState().agentEffortOverride[INSERTED_ID]).toBe('high');
+  });
+
+  it('keeps an explicit model while seeding omitted routing fields', async () => {
+    const { getState, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { kindOverride: 'planner', model: 'claude-sonnet-4-6' });
+
+    expect(getState().agentModelOverride[INSERTED_ID]).toBe('claude-sonnet-4-6');
+    expect(getState().agentProviderOverride[INSERTED_ID]).toBe('anthropic');
+    expect(getState().agentEffortOverride[INSERTED_ID]).toBe('high');
   });
 
   it('fans out an explicit (triggeredPlanId) plan with 2+ clusters', async () => {

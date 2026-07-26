@@ -1,8 +1,8 @@
 import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react';
-import { Workflow } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
   AGENT_KIND_META,
   inferAgentKindFromName,
@@ -176,7 +176,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
       </ul>
       {showWorkflowCta ? (
         <Button variant="secondary" size="sm" onClick={openWorkflowBuilder}>
-          <Workflow size={13} aria-hidden />
+          <SECTION_ICONS.workflows size={13} aria-hidden />
           Set up a workflow
         </Button>
       ) : null}

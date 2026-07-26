@@ -414,11 +414,8 @@ describe('kindRouting role overrides', () => {
 describe('inferAgentKindFromStep', () => {
   it.each([
     ['scout', 'scout'],
-    ['explorer', 'scout'],
     ['investigator', 'debugger'],
     ['planner', 'planner'],
-    ['architect', 'planner'],
-    ['product', 'planner'],
     ['implementer', 'implementer'],
     ['tester', 'tester'],
     ['reviewer', 'reviewer'],

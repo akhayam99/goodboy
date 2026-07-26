@@ -1,6 +1,10 @@
 export { cn } from './cn';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
-export { AppShell } from './components/AppShell';
+export {
+  AppShell,
+  LEFT_SIDEBAR_STORAGE_KEY,
+  RIGHT_SIDEBAR_STORAGE_KEY,
+} from './components/AppShell';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';

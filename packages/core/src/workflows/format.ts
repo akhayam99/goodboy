@@ -1,19 +1,7 @@
 import type { AgentRole, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
-
-const VALID_ROLES: ReadonlySet<AgentRole> = new Set<AgentRole>([
-  'scout',
-  'planner',
-  'implementer',
-  'reviewer',
-  'investigator',
-  'product',
-  'architect',
-  'tester',
-  'explorer',
-  'custom',
-]);
+import { isAgentRole } from '../roles';
 
 const WORKFLOW_FORMAT_SYSTEM_PROMPT = `You design multi-step AI coding workflows. Each step runs as its own dedicated agent, in order, left to right.
 
@@ -23,7 +11,7 @@ Rules:
 - Match the language of the DESIRED WORKFLOW description for all text fields (name, description, goal, step names, promptPrefix, expectedOutput, suggestions). If the description is written in Italian, write every field in Italian; same for any other language. Keep role values from the canonical list unchanged.
 - 2 to 6 steps. Each step has a single clear responsibility; do not bundle "plan and implement" into one step.
 - name: a short verb or noun (e.g. "Scout", "Plan", "Implement", "Review"). Title case, no numbering.
-- role: one of scout, planner, implementer, reviewer, investigator, product, architect, tester, explorer, custom. Pick the closest fit; use custom only when none apply.
+- role: one of scout, planner, implementer, reviewer, investigator, tester, custom. Pick the closest fit; use custom only when none apply.
 - promptPrefix: a direct instruction to that step's agent. Imperative voice. State what to do and what NOT to do (e.g. "do not write code yet"). One to three sentences.
 - expectedOutput: one sentence describing the artifact this step hands to the next.
 - Order steps so each depends only on prior outputs.
@@ -160,9 +148,8 @@ export const parseFormattedWorkflow = (text: string): FormattedWorkflow | null =
     if (name.length === 0) {
       continue;
     }
-    const roleRaw =
-      typeof e.role === 'string' ? (e.role.trim().toLowerCase() as AgentRole) : 'custom';
-    const role = VALID_ROLES.has(roleRaw) ? roleRaw : 'custom';
+    const roleRaw = typeof e.role === 'string' ? e.role.trim().toLowerCase() : 'custom';
+    const role = isAgentRole(roleRaw) ? roleRaw : 'custom';
     const promptPrefix = typeof e.promptPrefix === 'string' ? e.promptPrefix.trim() : '';
     const expectedOutput = typeof e.expectedOutput === 'string' ? e.expectedOutput.trim() : '';
     steps.push({ name, role, promptPrefix, expectedOutput });

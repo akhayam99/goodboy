@@ -28,18 +28,6 @@ export const ROLE_DEFAULTS = {
     effort: 'high',
     description: 'design the change; produce an ordered plan',
   },
-  architect: {
-    provider: 'anthropic',
-    model: 'claude-opus-5',
-    effort: 'high',
-    description: 'propose technical approach, modules, data flow, migrations',
-  },
-  product: {
-    provider: 'anthropic',
-    model: 'claude-sonnet-4-6',
-    effort: 'medium',
-    description: 'clarify user-facing behavior + acceptance criteria',
-  },
   implementer: {
     provider: 'anthropic',
     model: 'claude-sonnet-4-6',
@@ -57,12 +45,6 @@ export const ROLE_DEFAULTS = {
     model: 'claude-sonnet-4-6',
     effort: 'medium',
     description: 'write tests covering happy path + edge cases',
-  },
-  explorer: {
-    provider: 'anthropic',
-    model: 'claude-sonnet-4-6',
-    effort: 'medium',
-    description: 'open-ended chat; no fixed structure',
   },
   custom: {
     provider: 'anthropic',

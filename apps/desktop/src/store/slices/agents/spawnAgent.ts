@@ -18,6 +18,7 @@ import {
 } from '../../../features/plans/plans';
 import {
   inferAgentKindFromName,
+  kindRouting,
   kindConsumesPlan,
   type AgentKind,
 } from '../../../features/session/agent-kind';
@@ -88,6 +89,8 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     const workspaceVerbositySeed =
       state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
     const resolvedKind = args.kindOverride ?? inferAgentKindFromName(resolvedName);
+    const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
+    const routing = kindRouting({ kind: resolvedKind, roleModels });
     const inserted = await invokeAgentInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -111,15 +114,18 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
         ...s.agentTurnState,
         [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
       },
-      ...(args.model !== undefined && {
-        agentModelOverride: { ...s.agentModelOverride, [inserted.id]: args.model },
-      }),
-      ...(args.provider !== undefined && {
-        agentProviderOverride: { ...s.agentProviderOverride, [inserted.id]: args.provider },
-      }),
-      ...(args.effort !== undefined && {
-        agentEffortOverride: { ...s.agentEffortOverride, [inserted.id]: args.effort },
-      }),
+      agentModelOverride: {
+        ...s.agentModelOverride,
+        [inserted.id]: args.model ?? routing.model,
+      },
+      agentProviderOverride: {
+        ...s.agentProviderOverride,
+        [inserted.id]: args.provider ?? routing.provider,
+      },
+      agentEffortOverride: {
+        ...s.agentEffortOverride,
+        [inserted.id]: args.effort ?? routing.effort,
+      },
       ...(args.kindOverride !== undefined && {
         agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
       }),

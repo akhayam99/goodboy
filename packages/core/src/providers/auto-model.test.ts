@@ -73,7 +73,7 @@ describe('autoModelForRole', () => {
     });
 
     it('cursor provider: picks a real cursor slug for a mid-tier role, not auto', () => {
-      const result = autoModelForRole({ role: 'product', providers: ['cursor'] });
+      const result = autoModelForRole({ role: 'reviewer', providers: ['cursor'] });
       expect(result?.provider).toBe('cursor');
       expect(result?.model).not.toBe('auto');
       expect(CURSOR_MODELS.some((m) => m.id === result?.model)).toBe(true);

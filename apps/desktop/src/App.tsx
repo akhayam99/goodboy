@@ -546,6 +546,11 @@ export const App = () => {
     setAppSettingsFocus(undefined);
     setAppSettingsOpen(true);
   }, [closeAllStudios, clearSessionStudio]);
+  const openBudget = useCallback(() => {
+    closeAllStudios();
+    setBudgetStudioScope({ kind: 'overview' });
+    setBudgetStudioOpen(true);
+  }, [closeAllStudios]);
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
       setDeleteOpen(true);
@@ -776,7 +781,13 @@ export const App = () => {
     <ToastProvider>
       <NotificationToastBridge />
       <AppShell
-        topBar={<AppTopBar onOpenSettings={openSettings} activeStudio={activeStudio} />}
+        topBar={
+          <AppTopBar
+            onOpenSettings={openSettings}
+            onOpenBudget={openBudget}
+            activeStudio={activeStudio}
+          />
+        }
         workspaceBar={currentWorkspace ? <WorkspaceHeader /> : undefined}
         footer={
           currentWorkspace ? (
@@ -795,11 +806,7 @@ export const App = () => {
                 setProviderStudioAction(null);
                 setProviderStudioOpen(true);
               }}
-              onOpenBudget={() => {
-                closeAllStudios();
-                setBudgetStudioScope({ kind: 'overview' });
-                setBudgetStudioOpen(true);
-              }}
+              onOpenBudget={openBudget}
               onOpenGithub={() => {
                 closeAllStudios();
                 setGithubStudioSession(currentSession?.id ?? null);

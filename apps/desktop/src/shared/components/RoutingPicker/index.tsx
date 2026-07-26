@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
-import { Button, Divider, Input, Popover, ScrollFade, cn } from '@goodboy/ui';
+import { Button, Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import {
-  EFFORT_DOT,
   EFFORT_LABEL,
   PROVIDER_LABEL,
   modelLabel,
   type EffortLevel,
 } from '../../../features/chat/utils/chat-constants';
 import {
-  VERBOSITY_DOT,
   VERBOSITY_LABEL,
   VERBOSITY_LEVELS,
   type VerbosityLevel,
@@ -96,7 +94,6 @@ export const RoutingPicker = ({
   });
   const [viewProvider, setViewProvider] = useState(routing.provider);
   const [isViewingAuto, setIsViewingAuto] = useState(routing.isProviderRecommended);
-  const [modelFilter, setModelFilter] = useState('');
   const isViewingRoutingProvider = viewProvider === routing.provider;
   const viewedRouting = resolveRouting({
     providers: PROVIDERS,
@@ -107,13 +104,6 @@ export const RoutingPicker = ({
     recommendedModel: isViewingRoutingProvider ? recommendedModel : undefined,
   });
   const viewedRecommendedModel = isViewingRoutingProvider ? recommendedModel : undefined;
-  const normalizedFilter = modelFilter.trim().toLowerCase();
-  const filteredModels = viewedRouting.models.filter(
-    (id) =>
-      normalizedFilter === '' ||
-      id.toLowerCase().includes(normalizedFilter) ||
-      modelLabel(id).toLowerCase().includes(normalizedFilter),
-  );
   const isViewProviderConnected = connectedProviders.includes(viewProvider);
   const showEffort = onEffort != null && routing.effortLevels != null;
   const showViewedEffort = onEffort != null && viewedRouting.effortLevels != null;
@@ -129,14 +119,12 @@ export const RoutingPicker = ({
     }
     setViewProvider(routing.provider);
     setIsViewingAuto(routing.isProviderRecommended);
-    setModelFilter('');
   }, [open, routing.isProviderRecommended, routing.provider]);
 
   const onPickProvider = ({ next, viewedProvider }: PickProviderParams) => {
     onProvider(next);
     setViewProvider(viewedProvider);
     setIsViewingAuto(next === '');
-    setModelFilter('');
   };
 
   return (
@@ -272,7 +260,6 @@ export const RoutingPicker = ({
                     onClick={() => {
                       setViewProvider(id);
                       setIsViewingAuto(false);
-                      setModelFilter('');
                       if (!isConnected) {
                         return;
                       }
@@ -298,7 +285,7 @@ export const RoutingPicker = ({
             </div>
           </PickerSection>
           <Divider />
-          <PickerSection label="Model" hint="Cost tier shown next to each variant">
+          <PickerSection label="Model" hint="Premium variants marked with $$">
             {!isViewProviderConnected && (
               <div className="flex items-center gap-2 px-2.5 py-1">
                 <p className="flex-1 text-xs text-muted-foreground">
@@ -320,32 +307,15 @@ export const RoutingPicker = ({
               </div>
             )}
             {isViewProviderConnected && (
-              <>
-                {viewedRouting.models.length > 8 && (
-                  <div className="px-2.5">
-                    <Input
-                      value={modelFilter}
-                      onChange={(event) => setModelFilter(event.target.value)}
-                      placeholder="Filter models"
-                      aria-label="Filter models"
-                      className="h-7 text-xs"
-                    />
-                  </div>
-                )}
-                <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
-                  {filteredModels.length === 0 ? (
-                    <p className="px-2.5 py-1 text-xs text-muted-foreground">No matching models</p>
-                  ) : (
-                    <ModelGrid
-                      ids={filteredModels}
-                      value={viewedRouting.model}
-                      recommendedModel={viewedRecommendedModel}
-                      isRecommended={isModelRecommended}
-                      onSelect={onModel}
-                    />
-                  )}
-                </ScrollFade>
-              </>
+              <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
+                <ModelGrid
+                  ids={viewedRouting.models}
+                  value={viewedRouting.model}
+                  recommendedModel={viewedRecommendedModel}
+                  isRecommended={isModelRecommended}
+                  onSelect={onModel}
+                />
+              </ScrollFade>
             )}
           </PickerSection>
           {isViewProviderConnected && (
@@ -371,12 +341,6 @@ export const RoutingPicker = ({
                         label={EFFORT_LABEL[level]}
                         active={viewedRouting.effort === level}
                         onSelect={() => onEffort(level)}
-                        glyph={
-                          <span
-                            className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[level])}
-                            aria-hidden
-                          />
-                        }
                       />
                     ))}
                   </div>
@@ -393,12 +357,6 @@ export const RoutingPicker = ({
                           label={VERBOSITY_LABEL[level]}
                           active={verbosity === level}
                           onSelect={() => onVerbosity(level)}
-                          glyph={
-                            <span
-                              className={cn('size-1.5 shrink-0 rounded-full', VERBOSITY_DOT[level])}
-                              aria-hidden
-                            />
-                          }
                         />
                       ))}
                     </div>

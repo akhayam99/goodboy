@@ -78,6 +78,7 @@ import { m077StepExpectedOutput } from './m077-step-expected-output';
 import { m078WorkflowProcessText } from './m078-workflow-process-text';
 import { m079RoleModels } from './m079-role-models';
 import { m080AgentDone } from './m080-agent-done';
+import { m081RoleCleanup } from './m081-role-cleanup';
 
 export type Migration = {
   readonly version: number;
@@ -165,4 +166,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 78, sql: m078WorkflowProcessText },
   { version: 79, sql: m079RoleModels },
   { version: 80, sql: m080AgentDone },
+  { version: 81, sql: m081RoleCleanup },
 ];

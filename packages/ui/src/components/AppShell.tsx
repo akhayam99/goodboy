@@ -19,13 +19,13 @@ export type AppShellProps = {
 const LEFT_SIDEBAR_MIN = 260;
 const LEFT_SIDEBAR_MAX = 640;
 const LEFT_SIDEBAR_DEFAULT = 340;
-const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
+export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
 const LEFT_RAIL_WIDTH = 44;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
 const RIGHT_SIDEBAR_DEFAULT = 340;
-const RIGHT_SIDEBAR_STORAGE_KEY = 'goodboy:right-sidebar-width';
+export const RIGHT_SIDEBAR_STORAGE_KEY = 'goodboy:right-sidebar-width';
 const RIGHT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
