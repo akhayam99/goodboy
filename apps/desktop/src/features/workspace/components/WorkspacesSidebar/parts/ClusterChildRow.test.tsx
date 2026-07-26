@@ -103,4 +103,19 @@ describe('ClusterChildRow unread border', () => {
     fireEvent.click(button);
     expect(onSelect).toHaveBeenCalledOnce();
   });
+
+  it('shows three scout domains and an overflow chip', () => {
+    renderRow(
+      buildAgent({
+        id: 'c1' as AgentId,
+        domains: ['auth', 'db', 'routing', 'sessions', 'api'],
+      }),
+    );
+
+    expect(screen.getByText('auth')).toBeTruthy();
+    expect(screen.getByText('db')).toBeTruthy();
+    expect(screen.getByText('routing')).toBeTruthy();
+    expect(screen.getByText('+2')).toBeTruthy();
+    expect(screen.queryByText('sessions')).toBeNull();
+  });
 });

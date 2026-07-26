@@ -64,6 +64,7 @@ import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import {
   buildGoalAttachmentsBlock,
   capturePlanFromTurn,
+  captureScoutDomainsFromTurn,
   emitTurnNudges,
   enqueueSummarizer,
   toRelPath,
@@ -931,6 +932,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         assistantText,
         phaseWorkflowRunId ?? undefined,
       );
+      await captureScoutDomainsFromTurn({
+        set,
+        sessionId,
+        agentId: activeAgentId,
+        agentKind: earlyAgentKind,
+        assistantText,
+      });
       void emitTurnNudges(set, get, sessionId, activeAgentId, assistantText, capturedPlan);
       const driftViolations = detectDrift({
         agentKind: earlyAgentKind,
