@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@goodboy/ui';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import { isApiProvider, type ProviderId, type ProviderLifecycleAction } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
@@ -9,7 +9,14 @@ import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/
 import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
 import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'cursor', 'gemini'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'codex',
+  'cursor',
+  'gemini',
+  'opencode',
+  'openrouter',
+];
 
 type ConnectTarget = { readonly providerId: ProviderId; readonly action: ProviderLifecycleAction };
 
@@ -64,6 +71,7 @@ function ProviderRow({
 }) {
   const Icon = PROVIDER_BRAND[info.id].icon;
   const connected = info.connection === 'connected';
+  const isApi = isApiProvider({ id: info.id });
   const action: ProviderLifecycleAction = info.connection === 'missing' ? 'install' : 'login';
 
   return (
@@ -84,6 +92,8 @@ function ProviderRow({
         <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
           <Check size={14} aria-hidden /> Connected
         </span>
+      ) : isApi ? (
+        <span className="text-xs text-muted-foreground">Set up later</span>
       ) : (
         <Button
           size="sm"

@@ -9,12 +9,18 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import {
+  PROVIDER_BETA,
+  isApiProvider,
+  type ProviderId,
+  type ProviderLifecycleAction,
+} from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
+import { ApiProviderDetail } from './ApiProviderDetail';
 
 type Props = {
   readonly info: ProviderInfo | null;
@@ -28,6 +34,9 @@ export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
         Select a provider
       </div>
     );
+  }
+  if (isApiProvider({ id: info.id })) {
+    return <ApiProviderDetail info={info} />;
   }
   return <Detail info={info} onConnect={onConnect} />;
 };
@@ -72,7 +81,14 @@ function Detail({
           style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}
         />
         <div className="flex min-w-0 flex-col">
-          <span className="text-base font-semibold lowercase text-foreground">{info.label}</span>
+          <span className="flex items-center gap-2">
+            <span className="text-base font-semibold text-foreground">{info.label}</span>
+            {PROVIDER_BETA.has(id) ? (
+              <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-2xs font-medium text-warning">
+                beta
+              </span>
+            ) : null}
+          </span>
           <span className="truncate text-2xs text-muted-foreground">
             {info.version ? `${info.binary} ${info.version}` : info.binary}
           </span>

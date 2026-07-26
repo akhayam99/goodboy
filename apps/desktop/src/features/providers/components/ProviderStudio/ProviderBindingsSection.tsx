@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { SectionHeader, Select } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
-import { CLI_CREDENTIAL, type ProviderId } from '@goodboy/types';
+import { CLI_CREDENTIAL, isApiProvider, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -20,6 +20,7 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
     [credentials, providerId],
   );
   const connected = useMemo(() => workspaces.filter((w) => !w.disconnectedAt), [workspaces]);
+  const isApi = isApiProvider({ id: providerId });
 
   if (mine.length === 0 || connected.length === 0) {
     return null;
@@ -35,7 +36,8 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
       />
       <ul className="flex flex-col gap-2">
         {connected.map((ws) => {
-          const bound = workspaceOverrides[ws.id]?.providerBindings?.[providerId] ?? CLI_CREDENTIAL;
+          const fallback = isApi ? (mine[0]?.id ?? '') : CLI_CREDENTIAL;
+          const bound = workspaceOverrides[ws.id]?.providerBindings?.[providerId] ?? fallback;
           const usingKey = bound !== CLI_CREDENTIAL;
           return (
             <li
@@ -67,7 +69,7 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
                   );
                 }}
               >
-                <option value={CLI_CREDENTIAL}>{cliLabel}</option>
+                {!isApi ? <option value={CLI_CREDENTIAL}>{cliLabel}</option> : null}
                 {mine.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.label}

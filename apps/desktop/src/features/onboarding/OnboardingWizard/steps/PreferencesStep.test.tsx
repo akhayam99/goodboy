@@ -43,6 +43,8 @@ beforeEach(() => {
     { id: 'cursor', connection: 'connected' },
     { id: 'codex', connection: 'disconnected' },
     { id: 'gemini', connection: 'disconnected' },
+    { id: 'opencode', connection: 'disconnected' },
+    { id: 'openrouter', connection: 'disconnected' },
   ];
 });
 afterEach(cleanup);
@@ -79,7 +81,7 @@ describe('PreferencesStep', () => {
       const gemini = screen.getByRole('button', { name: /gemini/i }) as HTMLButtonElement;
       expect(codex.disabled).toBe(true);
       expect(gemini.disabled).toBe(true);
-      expect(screen.getAllByText(/offline/i).length).toBe(2);
+      expect(screen.getAllByText(/offline/i).length).toBe(4);
     });
 
     it('leaves connected providers enabled', () => {

@@ -12,7 +12,7 @@ export { INITIAL_LIFECYCLE_MAP } from './types';
 export const createProvidersSlice = (set: SetFn, get: GetFn) => {
   return {
     refreshProviderStatus: refreshProviderStatus(set),
-    refreshProviders: refreshProviders(set),
+    refreshProviders: refreshProviders(set, get),
     installProvider: installProvider(set, get),
     loginProvider: loginProvider(set, get),
     logoutProvider: logoutProvider(set, get),

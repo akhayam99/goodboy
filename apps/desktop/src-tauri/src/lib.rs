@@ -59,6 +59,7 @@ pub fn run() {
   let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
   let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
   let gemini_state = providers::GeminiState(Mutex::new(providers::detect_gemini()));
+  let opencode_state = providers::OpencodeState(Mutex::new(providers::detect_opencode()));
   let turn_registry = turn::TurnRegistry::new();
   let script_registry = scripts::ScriptRegistry::new();
   let terminal_registry = terminal::TerminalRegistry::new();
@@ -76,6 +77,7 @@ pub fn run() {
     .manage(cursor_state)
     .manage(codex_state)
     .manage(gemini_state)
+    .manage(opencode_state)
     .manage(turn_registry)
     .manage(script_registry)
     .manage(terminal_registry)
@@ -143,6 +145,9 @@ pub fn run() {
       providers::refresh_codex_status,
       providers::get_gemini_status,
       providers::refresh_gemini_status,
+      providers::get_opencode_status,
+      providers::get_openrouter_status,
+      providers::refresh_opencode_status,
       providers::check_provider_auth,
       provider_credentials::provider_api_key_validate,
       provider_lifecycle::provider_lifecycle_run,

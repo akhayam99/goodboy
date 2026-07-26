@@ -37,6 +37,10 @@ fn probe_for(provider_id: &str, api_key: &str) -> Probe {
             base: "https://generativelanguage.googleapis.com/v1beta/models",
             key: api_key.to_string(),
         },
+        "openrouter" => Probe::Header {
+            url: "https://openrouter.ai/api/v1/auth/key",
+            headers: vec![("authorization", format!("Bearer {api_key}"))],
+        },
         _ => Probe::Skip,
     }
 }

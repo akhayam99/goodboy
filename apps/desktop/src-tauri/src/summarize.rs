@@ -112,6 +112,22 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             args.model.clone(),
             "--sandbox".to_string(),
         ]),
+        "opencode" | "openrouter" => {
+            let mut cli_args = vec![
+                "run".to_string(),
+                "--format".to_string(),
+                "json".to_string(),
+                "-m".to_string(),
+                args.model.clone(),
+            ];
+            if let Some(working_dir) = args.working_dir.as_deref() {
+                cli_args.push("--dir".to_string());
+                cli_args.push(working_dir.to_string());
+            }
+            cli_args.push("--dangerously-skip-permissions".to_string());
+            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
+            Ok(cli_args)
+        }
         other => Err(SummarizeError::UnknownProvider(other.to_string())),
     }
 }
@@ -151,8 +167,29 @@ mod tests {
     }
 
     #[test]
+    fn opencode_uses_run_args() {
+        let mut args = make_args("opencode");
+        args.working_dir = Some("/tmp/project".to_string());
+        let cli = build_cli_args(&args).expect("opencode args");
+        assert_eq!(
+            cli,
+            vec![
+                "run",
+                "--format",
+                "json",
+                "-m",
+                "cheap-model",
+                "--dir",
+                "/tmp/project",
+                "--dangerously-skip-permissions",
+                "you summarize\n\nsummarize this",
+            ]
+        );
+    }
+
+    #[test]
     fn unknown_provider_is_rejected() {
-        let err = build_cli_args(&make_args("openrouter")).expect_err("unknown provider");
+        let err = build_cli_args(&make_args("nonexistent")).expect_err("unknown provider");
         assert_eq!(err.kind(), "unknown_provider");
     }
 }
