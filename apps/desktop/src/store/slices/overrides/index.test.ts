@@ -521,8 +521,21 @@ describe('store contract', () => {
   describe('overrides', () => {
     it('setWorkspaceOverrides caches the override map keyed by workspace', async () => {
       const store = await getStore();
-      await store.getState().setWorkspaceOverrides(WS_ID, { defaultVerbosity: 'brief' } as never);
+      const overrides = {
+        defaultVerbosity: 'brief',
+        enabledProviders: ['anthropic', 'codex'],
+      } as never;
+      await store.getState().setWorkspaceOverrides(WS_ID, overrides);
       expect(store.getState().workspaceOverrides[WS_ID]?.defaultVerbosity).toBe('brief');
+      expect(store.getState().workspaceOverrides[WS_ID]?.enabledProviders).toEqual([
+        'anthropic',
+        'codex',
+      ]);
+      const { invoke } = await import('@tauri-apps/api/core');
+      expect(invoke).toHaveBeenCalledWith('set_workspace_overrides', {
+        workspaceId: WS_ID,
+        overrides,
+      });
     });
 
     it('setTaskOverrides caches the override map keyed by session', async () => {

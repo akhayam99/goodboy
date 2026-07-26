@@ -166,11 +166,19 @@ export const createSession = (set: SetFn, get: GetFn) => {
         // best-effort: missing overrides just means we fall back to global default
       }
     }
-    const workspaceDefaultProvider =
-      get().workspaceOverrides[workspaceId]?.defaultProviderId ?? null;
-    const inheritedPreference: SessionProviderPreference = workspaceDefaultProvider
-      ? { ...DEFAULT_SESSION_PROVIDER_PREFERENCE, defaultProvider: workspaceDefaultProvider }
-      : DEFAULT_SESSION_PROVIDER_PREFERENCE;
+    const workspaceOverrides = get().workspaceOverrides[workspaceId] ?? null;
+    const workspaceDefaultProvider = workspaceOverrides?.defaultProviderId ?? null;
+    const inheritedDefaultProvider =
+      workspaceDefaultProvider ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
+    const inheritedEnabledProviders =
+      workspaceOverrides?.enabledProviders == null
+        ? undefined
+        : Array.from(new Set([...workspaceOverrides.enabledProviders, inheritedDefaultProvider]));
+    const inheritedPreference: SessionProviderPreference = {
+      ...DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      defaultProvider: inheritedDefaultProvider,
+      ...(inheritedEnabledProviders == null ? {} : { enabledProviders: inheritedEnabledProviders }),
+    };
 
     const now = new Date().toISOString() as IsoDateTime;
     const initialState: TurnState = { kind: 'draft' };
