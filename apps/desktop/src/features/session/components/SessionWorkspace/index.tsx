@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { Divider, cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
@@ -35,7 +35,6 @@ import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
-import { canForceResolve } from '../ForceResolveAction/canForceResolve';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
 import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
@@ -66,6 +65,8 @@ type SessionWorkspaceProps = {
 
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
+  const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
+  const hasInitializedResolverInspector = useRef(false);
   const activeLens = useAppStore((s) => s.activeLens[sessionId]);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
@@ -122,10 +123,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
   const overlayHome = resolveOverlayHome({ lens, agentHome });
-  const selectedAgent = useMemo(
-    () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
-    [phaseRuns, selectedAgentId],
-  );
   const selectedRootAgent = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
@@ -135,7 +132,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const selectedWorkflowRunId = selectedRootAgent?.workflowRunId ?? null;
   const showWorkflowStrip =
     showAgentOverlay && overlayHome === 'workflows' && selectedWorkflowRunId != null;
-  const selectedThreadId = selectedAgent?.sourceThreadId ?? null;
   const resolverIndex = useResolverIndex(sessionId);
   const resolverAgentIds = useMemo(
     () => new Set(resolverIndex.links.map(({ agent }) => agent.id)),
@@ -172,23 +168,42 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     resolverCounts.queued === 0 && resolverCounts.resolved === 0
       ? undefined
       : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
-  const selectedResolverLink =
-    selectedThreadId == null ? undefined : resolverIndex.byThreadId.get(selectedThreadId);
-  const selectedResolverStatus =
-    selectedResolverLink?.agent.id === selectedAgentId ? selectedResolverLink.status : null;
-  const selectedTurnState = useAppStore((state) =>
-    selectedAgentId == null ? undefined : state.agentTurnState[selectedAgentId],
-  );
-  const showForceResolveHeader =
-    showAgentOverlay &&
-    overlayHome === 'resolve' &&
-    selectedAgent != null &&
-    selectedResolverStatus != null &&
-    canForceResolve({
-      agent: selectedAgent,
-      status: selectedResolverStatus,
-      turnState: selectedTurnState,
-    });
+  useEffect(() => {
+    if (hasInitializedResolverInspector.current || resolverIndex.links.length === 0) {
+      return;
+    }
+    const running = resolverIndex.links.find(({ status }) => status === 'running');
+    const awaiting = resolverIndex.links.find(({ status }) => status === 'awaiting');
+    const unresolved = resolverIndex.links.find(
+      ({ status }) => !['resolved', 'wontfix', 'stopped', 'done'].includes(status),
+    );
+    hasInitializedResolverInspector.current = true;
+    setInspectedResolverId((running ?? awaiting ?? unresolved)?.agent.id ?? null);
+  }, [resolverIndex]);
+
+  useEffect(() => {
+    if (showAgentOverlay && overlayHome === 'resolve' && selectedAgentId !== null) {
+      hasInitializedResolverInspector.current = true;
+      setInspectedResolverId(selectedAgentId);
+    }
+  }, [overlayHome, selectedAgentId, showAgentOverlay]);
+
+  useEffect(() => {
+    const onOpenResolverInspector = (event: Event) => {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+      const detail = event.detail as { sessionId?: unknown; agentId?: unknown };
+      if (detail.sessionId !== sessionId || typeof detail.agentId !== 'string') {
+        return;
+      }
+      hasInitializedResolverInspector.current = true;
+      setInspectedResolverId(detail.agentId as AgentId);
+    };
+    window.addEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
+    return () =>
+      window.removeEventListener('goodboy:open-resolver-inspector', onOpenResolverInspector);
+  }, [sessionId]);
   const focusedWorkflowName = useMemo(() => {
     const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
     const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
@@ -281,7 +296,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
                 ) : null}
                 {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
-                {lens === 'resolve' ? <ResolvePane session={session} meta={resolveMeta} /> : null}
+                {lens === 'resolve' ? (
+                  <ResolvePane
+                    session={session}
+                    meta={resolveMeta}
+                    inspectedResolverId={inspectedResolverId}
+                    onInspectResolver={setInspectedResolverId}
+                  />
+                ) : null}
                 {lens === 'scripts' ? (
                   <PaneShell title="Scripts" width="3xl">
                     <ScriptsPanel
@@ -343,12 +365,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 sessionId={sessionId}
                 isChatActive={isActive && selectedAgentId != null}
                 selectedAgentId={selectedAgentId}
-                selectedAgent={selectedAgent}
+                inspectedResolverId={
+                  overlayHome === 'resolve' ? selectedAgentId : inspectedResolverId
+                }
                 overlayHome={overlayHome}
                 overlayHomeLabel={LENS_LABEL[overlayHome]}
                 showWorkflowStrip={showWorkflowStrip}
-                showForceResolve={showForceResolveHeader}
-                resolverStatus={selectedResolverStatus}
                 onBack={() => setActiveLens(sessionId, overlayHome)}
                 onOpenWorkflow={() => {
                   if (selectedWorkflowRunId == null) {

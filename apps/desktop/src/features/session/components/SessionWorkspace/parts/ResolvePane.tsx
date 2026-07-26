@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
 import { ResolverInspector } from '../../ResolverInspector';
@@ -8,21 +7,22 @@ import { PaneShell } from './PaneShell';
 type Props = {
   readonly session: Session;
   readonly meta: string | undefined;
+  readonly inspectedResolverId: AgentId | null;
+  readonly onInspectResolver: (agentId: AgentId | null) => void;
 };
 
-export const ResolvePane = ({ session, meta }: Props) => {
+export const ResolvePane = ({ session, meta, inspectedResolverId, onInspectResolver }: Props) => {
   const sessionId = session.id as SessionId;
-  const [inspectedId, setInspectedId] = useState<AgentId | null>(null);
 
   return (
     <InspectorSplit
-      open={inspectedId !== null}
+      open={inspectedResolverId !== null}
       panel={
-        inspectedId !== null ? (
+        inspectedResolverId !== null ? (
           <ResolverInspector
             sessionId={sessionId}
-            agentId={inspectedId}
-            onClose={() => setInspectedId(null)}
+            agentId={inspectedResolverId}
+            onClose={() => onInspectResolver(null)}
           />
         ) : null
       }
@@ -36,10 +36,8 @@ export const ResolvePane = ({ session, meta }: Props) => {
         <AgentsSection
           task={session}
           only="resolve"
-          inspectedResolverId={inspectedId}
-          onInspectResolver={(agentId) =>
-            setInspectedId((prev) => (prev === agentId ? null : agentId))
-          }
+          inspectedResolverId={inspectedResolverId}
+          onInspectResolver={(agentId) => onInspectResolver(agentId)}
         />
       </PaneShell>
     </InspectorSplit>

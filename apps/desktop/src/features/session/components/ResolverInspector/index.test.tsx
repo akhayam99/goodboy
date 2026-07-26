@@ -123,12 +123,13 @@ describe('ResolverInspector', () => {
 
   afterEach(cleanup);
 
-  it('groups the answers into the three governance questions', () => {
+  it('groups the answers into the four governance questions', () => {
     render(
       <ResolverInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
     );
 
     expect(screen.getByText('Where it came from')).toBeDefined();
+    expect(screen.getByText('What you can do')).toBeDefined();
     expect(screen.getByText('What it changed')).toBeDefined();
     expect(screen.getByText('What state it is in')).toBeDefined();
   });

@@ -8,13 +8,14 @@ import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { useResolverChanges } from '../../hooks/useResolverChanges';
 import { resolverOrigin } from '../../resolver-origin';
 import { ChangesSection } from './ChangesSection';
+import { ActionsSection } from './ActionsSection';
 import { OriginSection } from './OriginSection';
 import { StateSection } from './StateSection';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
-  readonly onClose: () => void;
+  readonly onClose?: () => void;
 };
 
 const OPEN_LABEL: Record<AgentSourceKind | 'unknown', string | null> = {
@@ -106,6 +107,13 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
             diffComment={diffComment}
             openLabel={canOpen ? OPEN_LABEL[origin.kind] : null}
             onOpen={onOpen}
+          />
+          <Divider />
+          <ActionsSection
+            agent={agent}
+            sessionId={sessionId}
+            status={link.status}
+            commitSha={changes.reported[0]?.sha ?? changes.reportedMissingShas[0] ?? null}
           />
           <Divider />
           <ChangesSection

@@ -133,6 +133,11 @@ vi.mock('../ForceResolveAction', () => ({
     <div data-testid="force-resolve-action">{agent.name}</div>
   ),
 }));
+vi.mock('../ResolverInspector', () => ({
+  ResolverInspector: ({ agentId }: { agentId: string }) => (
+    <div data-testid="resolver-inspector">{agentId}</div>
+  ),
+}));
 
 import { SessionWorkspace } from './index';
 
@@ -257,7 +262,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
   });
 
-  it('shows the force resolve action in a markerless resolver header', () => {
+  it('shows the selected resolver in the overlay inspector without a header action', () => {
     const standaloneResolver = {
       ...selectedAgent,
       id: 'resolver-1',
@@ -275,7 +280,8 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('force-resolve-action').textContent).toBe('Markerless resolver');
+    expect(screen.getByTestId('resolver-inspector').textContent).toBe('resolver-1');
+    expect(screen.queryByTestId('force-resolve-action')).toBeNull();
   });
 
   it('keeps the agents-home overlay panel unchanged', () => {
@@ -291,11 +297,65 @@ describe('SessionWorkspace agent overlay', () => {
     expect(container.querySelector('.w-72')).not.toBeNull();
     expect(screen.getByTestId('agents-section').getAttribute('data-home')).toBe('agents');
     expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(2);
+    expect(screen.queryByTestId('resolver-inspector')).toBeNull();
     expect(
       screen
         .getAllByTestId('divider')
         .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
     ).toHaveLength(2);
+  });
+
+  it('keeps the selected inspector open across the resolve chat overlay', () => {
+    const waiting = {
+      ...selectedAgent,
+      id: 'resolver-waiting',
+      name: 'Waiting resolver',
+      kind: 'resolver',
+      status: 'completed',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [waiting] };
+    store.resolverState = { [waiting.id]: 'awaiting' };
+    hooks.agentHome = 'resolve';
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('resolver-inspector').textContent).toBe(waiting.id);
+
+    store.selectedAgentId = { [SESSION_ID]: waiting.id };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('resolver-inspector').textContent).toBe(waiting.id);
+
+    store.selectedAgentId = {};
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('resolver-inspector').textContent).toBe(waiting.id);
+  });
+
+  it('opens the running resolver by default before an awaiting resolver', () => {
+    const awaiting = {
+      ...selectedAgent,
+      id: 'resolver-awaiting',
+      kind: 'resolver',
+      status: 'completed',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    const running = {
+      ...awaiting,
+      id: 'resolver-running',
+      ordinal: 1,
+      status: 'running',
+    } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [awaiting, running] };
+    store.resolverState = { [awaiting.id]: 'awaiting' };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('resolver-inspector').textContent).toBe(running.id);
   });
 });
 
