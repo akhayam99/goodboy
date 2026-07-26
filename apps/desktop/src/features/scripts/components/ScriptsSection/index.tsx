@@ -44,6 +44,7 @@ export const ScriptsSection = ({
   const loadScripts = useAppStore((s) => s.loadScripts);
   const runScript = useAppStore((s) => s.runScript);
   const cancelScript = useAppStore((s) => s.cancelScript);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
 
   useEffect(() => {
     void loadScripts(workspaceId);
@@ -72,10 +73,7 @@ export const ScriptsSection = ({
 
   const list = scripts ?? [];
 
-  const openSettings = () =>
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-workspace-settings', { detail: { section: 'scripts' } }),
-    );
+  const openScripts = () => setActiveLens(sessionId, 'scripts');
 
   const logScript = log ? list.find((s) => s.id === log.scriptId) : null;
   const logResult = log ? (runs?.[log.scriptId]?.result ?? null) : null;
@@ -125,7 +123,7 @@ export const ScriptsSection = ({
           ) : null}
           <button
             type="button"
-            onClick={openSettings}
+            onClick={openScripts}
             className="mt-1.5 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
           >
             <Plus size={13} aria-hidden className="shrink-0" />
