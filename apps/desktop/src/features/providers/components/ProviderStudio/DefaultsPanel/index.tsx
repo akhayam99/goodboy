@@ -117,7 +117,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               </div>
             </FieldRow>
             <p className="text-2xs text-muted-foreground">
-              Default rows follow the provider you set above
+              Default rows follow the provider you set above.
             </p>
           </section>
 
