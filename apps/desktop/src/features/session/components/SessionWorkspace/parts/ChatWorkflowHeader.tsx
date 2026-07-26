@@ -3,7 +3,9 @@ import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { Divider } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
+import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { resolveRootAgent } from '../../../agent-kind';
+import { ChatHeaderBack } from './ChatHeaderBack';
 import { ChatWorkflowAdvance } from './ChatWorkflowAdvance';
 import { WorkflowStepper } from './WorkflowStepper';
 
@@ -11,9 +13,15 @@ type Props = {
   readonly sessionId: SessionId;
   readonly session: Session;
   readonly selectedAgentId: AgentId;
+  readonly onOpenWorkflow: () => void;
 };
 
-export const ChatWorkflowHeader = ({ sessionId, session, selectedAgentId }: Props) => {
+export const ChatWorkflowHeader = ({
+  sessionId,
+  session,
+  selectedAgentId,
+  onOpenWorkflow,
+}: Props) => {
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -26,7 +34,12 @@ export const ChatWorkflowHeader = ({ sessionId, session, selectedAgentId }: Prop
 
   return (
     <>
-      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center px-3">
+      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-2 px-3">
+        <ChatHeaderBack
+          label={attached == null ? 'Workflows' : workflowKindName(attached.workflow)}
+          onClick={onOpenWorkflow}
+        />
+        <Divider orientation="vertical" className="h-4 shrink-0" />
         <WorkflowStepper
           sessionId={sessionId}
           session={session}

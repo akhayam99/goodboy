@@ -189,7 +189,7 @@ describe('SessionWorkspace agent overlay', () => {
       screen
         .getAllByTestId('divider')
         .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it('hides the workflow stepper for a standalone resolver', () => {
@@ -209,12 +209,15 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
-    expect(screen.getByTestId('breadcrumb').textContent).toBe(
-      'Overview / Resolve / Standalone resolver',
-    );
+    expect(screen.queryByTestId('breadcrumb')).toBeNull();
+    expect(
+      screen
+        .getByTestId('chat-view')
+        .contains(screen.getAllByRole('button', { name: 'Resolve' })[1]!),
+    ).toBe(true);
   });
 
-  it('shows linked workflow context outside the workflows lens and focuses its run', () => {
+  it('does not show workflow linkage outside the workflows lens', () => {
     const linkedAgent = {
       ...selectedAgent,
       stepId: undefined,
@@ -249,10 +252,9 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
-    expect(screen.getByText('Part of').textContent).toBe('Part of Release flow');
-    fireEvent.click(screen.getByRole('button', { name: 'Release flow' }));
-    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
+    expect(screen.queryByTestId('breadcrumb')).toBeNull();
+    expect(screen.queryByText('Part of')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
   });
 
   it('shows the force resolve action in a markerless resolver header', () => {
@@ -288,7 +290,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
     expect(container.querySelector('.w-72')).not.toBeNull();
     expect(screen.getByTestId('agents-section').getAttribute('data-home')).toBe('agents');
-    expect(screen.getByRole('button', { name: 'Agents' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(2);
     expect(
       screen
         .getAllByTestId('divider')
@@ -379,8 +381,8 @@ describe('SessionWorkspace pane metadata', () => {
   });
 });
 
-describe('SessionWorkspace workflow breadcrumb', () => {
-  it('uses the selected workflow agent run name in the overlay breadcrumb', () => {
+describe('SessionWorkspace breadcrumb visibility', () => {
+  it('moves the workflow run name into the chat header while an agent is open', () => {
     const workflowAgent = {
       ...selectedAgent,
       stepId: 'step-1',
@@ -414,12 +416,13 @@ describe('SessionWorkspace workflow breadcrumb', () => {
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
-    expect(screen.getByTestId('breadcrumb').textContent).toBe(
-      'Overview / Workflows / Release flow',
-    );
+    expect(screen.queryByTestId('breadcrumb')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Release flow' }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
+    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
   });
 
-  it('keeps the resolve lens in the breadcrumb when a workflow step agent auto-advances', () => {
+  it('keeps resolve as the chat-header back target when a workflow step agent auto-advances', () => {
     const workflowAgent = {
       ...selectedAgent,
       stepId: 'step-1',
@@ -447,11 +450,10 @@ describe('SessionWorkspace workflow breadcrumb', () => {
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
-    expect(screen.getByTestId('breadcrumb').textContent).toBe(
-      'Overview / Resolve / Selected agent',
-    );
+    expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
-    expect(screen.getByText('Part of').textContent).toBe('Part of Release flow');
+    expect(screen.getAllByRole('button', { name: 'Resolve' })).toHaveLength(2);
+    expect(screen.queryByText('Part of')).toBeNull();
   });
 
   it('uses the visible workflow name when the only run is not explicitly focused', () => {

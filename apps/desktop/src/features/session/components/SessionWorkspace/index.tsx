@@ -132,7 +132,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     }
     return resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId });
   }, [phaseRuns, selectedAgentId]);
-  const selectedAgentName = selectedAgent?.name ?? (selectedAgentId != null ? 'Agent' : null);
   const selectedWorkflowRunId = selectedRootAgent?.workflowRunId ?? null;
   const showWorkflowStrip =
     showAgentOverlay && overlayHome === 'workflows' && selectedWorkflowRunId != null;
@@ -190,13 +189,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       status: selectedResolverStatus,
       turnState: selectedTurnState,
     });
-  const stripWorkflowName = useMemo(() => {
-    if (selectedWorkflowRunId == null) {
-      return null;
-    }
-    const attachedRun = attachedWorkflowRuns.find(({ run }) => run.id === selectedWorkflowRunId);
-    return attachedRun == null ? null : workflowKindName(attachedRun.workflow);
-  }, [attachedWorkflowRuns, selectedWorkflowRunId]);
   const focusedWorkflowName = useMemo(() => {
     const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
     const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
@@ -212,10 +204,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       buildSessionBreadcrumb({
         lens,
         studio,
-        selectedAgentName,
-        overlayHomeLens: overlayHome,
-        suppressAgentTail: showWorkflowStrip,
-        stripWorkflowName,
         focusedWorkflowName,
         focusedPlanTitle,
         lensLabel: (l) => LENS_LABEL[l],
@@ -235,10 +223,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     [
       lens,
       studio,
-      selectedAgentName,
-      overlayHome,
-      showWorkflowStrip,
-      stripWorkflowName,
       focusedWorkflowName,
       focusedPlanTitle,
       sessionId,
@@ -262,10 +246,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="flex h-full w-full flex-col">
       <SessionTopBar session={session} />
-      <div className="flex min-w-0 shrink-0 items-center px-6 py-2.5">
-        <AppBreadcrumb crumbs={crumbs} />
-      </div>
-      <Divider />
+      {showAgentOverlay ? null : (
+        <>
+          <div className="flex min-w-0 shrink-0 items-center px-6 py-2.5">
+            <AppBreadcrumb crumbs={crumbs} />
+          </div>
+          <Divider />
+        </>
+      )}
       <div className="flex min-h-0 flex-1">
         <div className="flex w-60 shrink-0 flex-col bg-background">
           <LensColumn
@@ -359,7 +347,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 overlayHome={overlayHome}
                 overlayHomeLabel={LENS_LABEL[overlayHome]}
                 showWorkflowStrip={showWorkflowStrip}
-                workflowName={selectedWorkflowRunId == null ? null : stripWorkflowName}
                 showForceResolve={showForceResolveHeader}
                 resolverStatus={selectedResolverStatus}
                 onBack={() => setActiveLens(sessionId, overlayHome)}

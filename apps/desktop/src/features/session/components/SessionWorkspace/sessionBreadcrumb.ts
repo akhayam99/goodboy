@@ -1,7 +1,5 @@
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import type { LensKind, SessionStudio } from '../../../../store';
-import type { AgentHomeLens } from '../../agent-kind';
-import { resolveOverlayHome } from './resolveOverlayHome';
 
 export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
@@ -13,10 +11,6 @@ export type SessionBreadcrumbHandlers = {
 export type SessionBreadcrumbInput = {
   lens: LensKind | null;
   studio: SessionStudio | null;
-  selectedAgentName: string | null;
-  overlayHomeLens: AgentHomeLens;
-  suppressAgentTail: boolean;
-  stripWorkflowName: string | null;
   focusedWorkflowName: string | null;
   focusedPlanTitle: string | null;
   lensLabel: (lens: LensKind) => string;
@@ -31,18 +25,7 @@ const sealLast = (crumbs: BreadcrumbCrumb[]): BreadcrumbCrumb[] => {
 };
 
 export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): BreadcrumbCrumb[] => {
-  const {
-    lens,
-    studio,
-    selectedAgentName,
-    overlayHomeLens,
-    suppressAgentTail,
-    stripWorkflowName,
-    focusedWorkflowName,
-    focusedPlanTitle,
-    lensLabel,
-    handlers,
-  } = input;
+  const { lens, studio, focusedWorkflowName, focusedPlanTitle, lensLabel, handlers } = input;
 
   const overview: BreadcrumbCrumb = {
     id: 'overview',
@@ -78,27 +61,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       overview,
       { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
       { id: 'mr', label: 'Merge request' },
-    ]);
-  }
-
-  const home = resolveOverlayHome({ lens, agentHome: overlayHomeLens });
-
-  if (suppressAgentTail && home === 'workflows') {
-    if (stripWorkflowName != null) {
-      return [overview, workflowsList, { id: 'workflow-run', label: stripWorkflowName }];
-    }
-    return [overview, workflowsList];
-  }
-
-  if (selectedAgentName != null) {
-    return sealLast([
-      overview,
-      {
-        id: 'overlay-home',
-        label: lensLabel(home),
-        onClick: () => (home === 'workflows' ? handlers.toWorkflowsList() : handlers.toLens(home)),
-      },
-      { id: 'agent', label: selectedAgentName },
     ]);
   }
 

@@ -18,10 +18,6 @@ const base = (
 ): SessionBreadcrumbInput => ({
   lens: null,
   studio: null,
-  selectedAgentName: null,
-  overlayHomeLens: 'agents',
-  suppressAgentTail: false,
-  stripWorkflowName: null,
   focusedWorkflowName: null,
   focusedPlanTitle: null,
   lensLabel,
@@ -70,64 +66,6 @@ describe('buildSessionBreadcrumb', () => {
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
-  it('renders Overview > {home} > {agent} for an agent overlay', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base({ selectedAgentName: 'scout-1', overlayHomeLens: 'agents' }, h),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'scout-1']);
-    crumbs[1]!.onClick!();
-    expect(h.toLens).toHaveBeenCalledWith('agents');
-    expect(last(crumbs)?.onClick).toBeUndefined();
-  });
-
-  it('routes the overlay-home crumb through toWorkflowsList when home is workflows', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base({ selectedAgentName: 'scout-1', overlayHomeLens: 'workflows' }, h),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'workflows', 'scout-1']);
-    crumbs[1]!.onClick!();
-    expect(h.toWorkflowsList).toHaveBeenCalledOnce();
-    expect(h.toLens).not.toHaveBeenCalled();
-  });
-
-  it('replaces the workflow agent tail with the workflow name when the stepper is present', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base(
-        {
-          selectedAgentName: 'scout-1',
-          overlayHomeLens: 'workflows',
-          suppressAgentTail: true,
-          stripWorkflowName: 'Release flow',
-        },
-        h,
-      ),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Release flow']);
-    expect(crumbs[0]?.onClick).toBeDefined();
-    expect(crumbs[1]?.onClick).toBeDefined();
-    expect(crumbs[2]?.onClick).toBeUndefined();
-  });
-
-  it('falls back to the workflow list when the stepper workflow name is unavailable', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base(
-        {
-          selectedAgentName: 'scout-1',
-          overlayHomeLens: 'workflows',
-          suppressAgentTail: true,
-        },
-        h,
-      ),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows']);
-    expect(crumbs[0]?.onClick).toBeDefined();
-    expect(crumbs[1]?.onClick).toBeDefined();
-  });
-
   it('degrades a workflows lens with no focused run to a two-crumb leaf trail', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
@@ -171,58 +109,12 @@ describe('buildSessionBreadcrumb', () => {
     expect(h.toPlansList).toHaveBeenCalledOnce();
   });
 
-  it('never names the workflow while the resolve lens is active', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base(
-        {
-          lens: 'resolve',
-          selectedAgentName: 'resolve #12',
-          overlayHomeLens: 'workflows',
-          suppressAgentTail: true,
-          stripWorkflowName: 'Release flow',
-        },
-        h,
-      ),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'resolve', 'resolve #12']);
-    crumbs[1]!.onClick!();
-    expect(h.toLens).toHaveBeenCalledWith('resolve');
-    expect(h.toWorkflowsList).not.toHaveBeenCalled();
-  });
-
-  it('never names the workflow while the agents lens is active', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base(
-        {
-          lens: 'agents',
-          selectedAgentName: 'scout-1',
-          overlayHomeLens: 'workflows',
-          stripWorkflowName: 'Release flow',
-        },
-        h,
-      ),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'scout-1']);
-  });
-
-  it('keeps the agent home when the active lens is not an agent list', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base({ lens: 'pr', selectedAgentName: 'scout-1', overlayHomeLens: 'resolve' }, h),
-    );
-    expect(labels(crumbs)).toEqual(['Overview', 'resolve', 'scout-1']);
-  });
-
-  it('lets the studio trail win over agent and workflow inputs', () => {
+  it('lets the studio trail win over the active workflow detail', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
       base(
         {
           studio: { kind: 'workflow' },
-          selectedAgentName: 'scout-1',
-          overlayHomeLens: 'agents',
           lens: 'workflows',
           focusedWorkflowName: 'refactor',
         },
