@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
-import { Divider, EmptyState, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import { Divider, EmptyState, ResizeHandle, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
@@ -11,6 +11,8 @@ import { DraftsPanel } from './DraftsPanel';
 import { PublishBar } from './PublishBar';
 import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
 import { useReviewDiff } from './useReviewDiff';
+import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
+import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 
 type Props = {
   readonly session: Session;
@@ -18,6 +20,7 @@ type Props = {
 
 export const ReviewBoardPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
+  const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.reviewBoardListWidth, 320);
   const drafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
   );
@@ -37,10 +40,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
     void loadReviewDrafts(sessionId);
   }, [loadReviewDrafts, sessionId]);
 
-  const openDrafts = useMemo(
-    () => drafts.filter((draft) => draft.status === 'draft'),
-    [drafts],
-  );
+  const openDrafts = useMemo(() => drafts.filter((draft) => draft.status === 'draft'), [drafts]);
   const draftsByPath = useMemo(() => {
     const byPath = new Map<string, PrReviewDraft[]>();
     for (const draft of openDrafts) {
@@ -88,8 +88,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
     setPublishing(true);
     try {
       const result = await publishPrReview(sessionId, opts);
-      const staleNote =
-        result.stale.length > 0 ? `, ${result.stale.length} stale skipped` : '';
+      const staleNote = result.stale.length > 0 ? `, ${result.stale.length} stale skipped` : '';
       if (result.failed.length > 0) {
         showToast('error', `${result.failed.length} comments failed to publish${staleNote}`);
       } else {
@@ -179,8 +178,16 @@ export const ReviewBoardPane = ({ session }: Props) => {
             </ScrollFade>
           )}
         </div>
-        <Divider orientation="vertical" />
-        <div className="flex w-80 shrink-0 flex-col">
+        <ResizeHandle
+          value={listWidth}
+          min={260}
+          max={560}
+          onChange={setListWidth}
+          onReset={() => setListWidth(320)}
+          side="right"
+          ariaLabel="resize review list"
+        />
+        <div className="flex shrink-0 flex-col" style={{ width: listWidth }}>
           <DraftsPanel
             drafts={openDrafts}
             onEdit={(id, body) => void updateReviewDraft(id, body)}

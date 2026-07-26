@@ -29,6 +29,8 @@ export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
 export { Popover } from './components/Popover';
 export type { PopoverProps } from './components/Popover';
+export { ResizeHandle } from './components/ResizeHandle';
+export type { ResizeHandleProps } from './components/ResizeHandle';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { ScrollFade } from './components/ScrollFade';

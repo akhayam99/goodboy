@@ -4,7 +4,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { InspectorSplit } from './index';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 describe('InspectorSplit', () => {
   it('keeps the main content visible while the panel is closed', () => {
@@ -18,14 +21,14 @@ describe('InspectorSplit', () => {
     expect(screen.queryByText('Inspector content')).toBeNull();
   });
 
-  it('shows the panel at the standard width when open', () => {
-    const { container } = render(
+  it('shows a resizable panel at the standard width when open', () => {
+    render(
       <InspectorSplit open panel={<div>Inspector content</div>}>
         <div>Main content</div>
       </InspectorSplit>,
     );
 
-    expect(screen.getByText('Inspector content')).toBeDefined();
-    expect(container.querySelector('.w-80')).not.toBeNull();
+    expect(screen.getByText('Inspector content').parentElement?.style.width).toBe('320px');
+    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
   });
 });

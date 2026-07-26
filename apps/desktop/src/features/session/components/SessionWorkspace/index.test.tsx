@@ -193,13 +193,9 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('chat-view').contains(screen.getByTestId('workflow-stepper'))).toBe(
       true,
     );
-    expect(container.querySelector('.w-72')).toBeNull();
+    expect(container.querySelector('[aria-label="resize agent list"]')).toBeNull();
     expect(screen.queryByTestId('agents-section')).toBeNull();
-    expect(
-      screen
-        .getAllByTestId('divider')
-        .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
-    ).toHaveLength(2);
+    expect(screen.queryByRole('separator', { name: 'resize agent inspector' })).toBeNull();
   });
 
   it('hides the workflow stepper for a standalone resolver', () => {
@@ -297,18 +293,14 @@ describe('SessionWorkspace agent overlay', () => {
     } as Agent;
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
     hooks.agentHome = 'agents';
-    const { container } = render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} isActive />);
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
-    expect(container.querySelector('.w-72')).not.toBeNull();
+    expect(screen.getByRole('separator', { name: 'resize agent list' })).toBeDefined();
     expect(screen.getByTestId('agents-section').getAttribute('data-home')).toBe('agents');
     expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(2);
     expect(screen.queryByTestId('resolver-inspector')).toBeNull();
     expect(screen.getByTestId('agent-inspector').textContent).toBe(standaloneAgent.id);
-    expect(
-      screen
-        .getAllByTestId('divider')
-        .filter((divider) => divider.getAttribute('data-orientation') === 'vertical'),
-    ).toHaveLength(3);
+    expect(screen.getByRole('separator', { name: 'resize agent inspector' })).toBeDefined();
   });
 
   it('keeps the selected inspector open across the resolve chat overlay', () => {

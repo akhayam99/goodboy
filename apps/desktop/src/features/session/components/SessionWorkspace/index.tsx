@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, ResizeHandle, cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ScriptsPanel } from '../../../scripts';
@@ -38,6 +38,8 @@ import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
 import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
+import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
+import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -75,6 +77,7 @@ type SessionWorkspaceProps = {
 
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
+  const [lensColumnWidth, setLensColumnWidth] = useColumnWidth(STORAGE_KEYS.lensColumnWidth, 240);
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
   const hasInitializedResolverInspector = useRef(false);
@@ -289,7 +292,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         </>
       )}
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-60 shrink-0 flex-col bg-background">
+        <div className="flex shrink-0 flex-col bg-background" style={{ width: lensColumnWidth }}>
           <LensColumn
             session={session}
             activeLens={lens}
@@ -299,7 +302,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             workspaceKind={workspaceKind}
           />
         </div>
-        <Divider orientation="vertical" />
+        <ResizeHandle
+          value={lensColumnWidth}
+          min={200}
+          max={400}
+          onChange={setLensColumnWidth}
+          onReset={() => setLensColumnWidth(240)}
+          ariaLabel="resize lens column"
+        />
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-1">
             {showLens ? (

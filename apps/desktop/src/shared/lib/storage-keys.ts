@@ -5,6 +5,13 @@ export const STORAGE_KEYS = {
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
   sessionsSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
+  lensColumnWidth: `${PREFIX}lens-column-width`,
+  inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
+  agentOverlayListWidth: `${PREFIX}agent-overlay-list-width`,
+  reviewBoardListWidth: `${PREFIX}review-board-list-width`,
+  planListWidth: `${PREFIX}plan-list-width`,
+  workflowsRailWidth: `${PREFIX}workflows-rail-width`,
+  workflowStudioRailWidth: `${PREFIX}workflow-studio-rail-width`,
 } as const;
 
 export const STORAGE_PREFIXES = {

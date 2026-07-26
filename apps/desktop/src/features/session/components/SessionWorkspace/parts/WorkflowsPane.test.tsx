@@ -14,6 +14,7 @@ type Store = {
 
 type ButtonMockProps = React.ComponentProps<'button'>;
 type DividerMockProps = { readonly orientation?: string };
+type ResizeHandleMockProps = { readonly ariaLabel: string };
 type ChildrenMockProps = { readonly children: React.ReactNode };
 type AgentsSectionMockProps = { readonly workflowRunId?: string };
 type BuildWorkflowParams = { readonly id: string; readonly name: string };
@@ -43,6 +44,9 @@ vi.mock('@goodboy/ui', () => ({
   ),
   EmptyState: ({ title }: { readonly title: string }) => (
     <div data-testid="workflow-empty">{title}</div>
+  ),
+  ResizeHandle: ({ ariaLabel }: ResizeHandleMockProps) => (
+    <div role="separator" aria-label={ariaLabel} />
   ),
   ScrollFade: ({ children }: ChildrenMockProps) => <div>{children}</div>,
   StatusDot: () => <span data-testid="status-dot" />,
@@ -128,6 +132,7 @@ describe('WorkflowsPane', () => {
     expect(screen.queryByText('0/2 steps')).toBeNull();
     expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
     expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
+    expect(screen.getByRole('separator', { name: 'resize workflows rail' })).toBeDefined();
   });
 
   it('focuses a run when its rail card is clicked', () => {
