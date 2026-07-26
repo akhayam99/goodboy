@@ -25,7 +25,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
       return;
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) {
+    if (!workspace || workspace.kind === 'simple') {
       return;
     }
     set((state) => ({
