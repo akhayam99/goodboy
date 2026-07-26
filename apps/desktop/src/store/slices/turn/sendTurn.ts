@@ -15,6 +15,7 @@ import {
   insertMessage,
   insertProviderRun,
   listContextSlotsForSession,
+  listWorktreesForSession,
   updateProviderRunStatus,
   updateSessionState,
   upsertContextSlot,
@@ -43,7 +44,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
-import { worktreeChangedFiles } from '../../../features/worktree/worktree';
+import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   encodeAuthRequiredMessage,
   isAuthErrorMessage,
@@ -61,6 +62,7 @@ import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import {
   buildGoalAttachmentsBlock,
   capturePlanFromTurn,
@@ -119,11 +121,40 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
-    const workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
+    let workingDir = (before.sessionWorktrees[sessionId] ?? [])[0] ?? null;
     if (!workingDir) {
       throw new Error(
         'session worktree not initialized. restart the app to reload persisted worktree paths',
       );
+    }
+    const workspace =
+      before.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null;
+    if (workspace?.kind === 'simple') {
+      const exists = await simpleSessionDirExists({ path: workingDir });
+      if (!exists) {
+        const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
+        const resolved = await relinkSimpleSessionDirectories({
+          rootPath: workspace.rootPath,
+          workspaceId: workspace.id,
+          worktreesBySession: new Map([[sessionId, worktrees]]),
+        });
+        const relinkedPath = resolved.get(sessionId)?.[0]?.worktreePath ?? workingDir;
+        const relinkedExists = await simpleSessionDirExists({ path: relinkedPath });
+        if (!relinkedExists) {
+          throw new Error(
+            'Session directory not found. It may have been moved outside the workspace folder.',
+          );
+        }
+        workingDir = relinkedPath;
+        set((state) => ({
+          sessionWorktrees: {
+            ...state.sessionWorktrees,
+            [sessionId]: resolved.get(sessionId)?.map((worktree) => worktree.worktreePath) ?? [
+              relinkedPath,
+            ],
+          },
+        }));
+      }
     }
 
     const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;

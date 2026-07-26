@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -11,6 +11,8 @@ pub enum SessionDirError {
     EmptyPath,
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::Error),
 }
 
 crate::util::impl_error_serialize!(SessionDirError);
@@ -21,6 +23,7 @@ impl SessionDirError {
             SessionDirError::HomeUnavailable => "home_unavailable",
             SessionDirError::EmptyPath => "empty_path",
             SessionDirError::Io(_) => "io",
+            SessionDirError::Json(_) => "json",
         }
     }
 }
@@ -30,6 +33,10 @@ pub struct CreateArgs {
     #[serde(rename = "basePath")]
     pub base_path: String,
     pub slug: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -40,6 +47,23 @@ pub struct CreatedSessionDir {
     pub branch_name: String,
     pub slug: String,
     pub reused: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SessionMarker {
+    #[serde(rename = "sessionId")]
+    session_id: String,
+    #[serde(rename = "workspaceId")]
+    workspace_id: String,
+    #[serde(rename = "createdAt")]
+    created_at: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SimpleSessionScanEntry {
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    pub path: String,
 }
 
 fn expand_home(path: &str) -> Result<PathBuf, SessionDirError> {
@@ -71,6 +95,43 @@ fn create_absolute_dir(path: PathBuf) -> Result<PathBuf, SessionDirError> {
     Ok(std::fs::canonicalize(absolute)?)
 }
 
+fn marker_write(
+    path: &Path,
+    session_id: String,
+    workspace_id: String,
+) -> Result<(), SessionDirError> {
+    let marker = SessionMarker {
+        session_id,
+        workspace_id,
+        created_at: crate::util::iso_now(),
+    };
+    std::fs::write(path.join(".goodboy"), serde_json::to_vec(&marker)?)?;
+    Ok(())
+}
+
+fn scan_directory(path: &Path) -> Option<SimpleSessionScanEntry> {
+    if !path.is_dir() {
+        return None;
+    }
+    let marker = std::fs::read(path.join(".goodboy")).ok()?;
+    let marker = serde_json::from_slice::<SessionMarker>(&marker).ok()?;
+    let resolved = std::fs::canonicalize(path).ok()?;
+    Some(SimpleSessionScanEntry {
+        session_id: marker.session_id,
+        path: resolved.to_string_lossy().into_owned(),
+    })
+}
+
+fn scan_children(path: &Path) -> Vec<SimpleSessionScanEntry> {
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return Vec::new();
+    };
+    entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| scan_directory(&entry.path()))
+        .collect()
+}
+
 #[tauri::command]
 pub fn simple_workspace_default_path(name: String) -> Result<String, SessionDirError> {
     let home = dirs::home_dir().ok_or(SessionDirError::HomeUnavailable)?;
@@ -96,6 +157,7 @@ pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, Session
     let target = absolute_path(base)?.join("sessions").join(&slug);
     let reused = target.exists();
     let resolved = create_absolute_dir(target)?;
+    marker_write(&resolved, args.session_id, args.workspace_id)?;
     Ok(CreatedSessionDir {
         worktree_path: resolved.to_string_lossy().into_owned(),
         branch_name: String::new(),
@@ -104,33 +166,105 @@ pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, Session
     })
 }
 
+#[tauri::command]
+pub fn simple_sessions_scan(
+    root_path: String,
+) -> Result<Vec<SimpleSessionScanEntry>, SessionDirError> {
+    let root = absolute_path(expand_home(&root_path)?)?;
+    let mut entries = scan_children(&root.join("sessions"));
+    entries.extend(scan_children(&root));
+    Ok(entries)
+}
+
+#[tauri::command]
+pub fn simple_session_marker_write(
+    path: String,
+    session_id: String,
+    workspace_id: String,
+) -> Result<(), SessionDirError> {
+    marker_write(
+        &absolute_path(expand_home(&path)?)?,
+        session_id,
+        workspace_id,
+    )
+}
+
+#[tauri::command]
+pub fn simple_session_dir_exists(path: String) -> Result<bool, SessionDirError> {
+    Ok(absolute_path(expand_home(&path)?)?.is_dir())
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
-    use super::{session_dir_create, CreateArgs};
+    use super::{session_dir_create, simple_sessions_scan, CreateArgs, SessionMarker};
 
-    #[test]
-    fn creates_and_reuses_a_plain_session_directory() {
-        let root = std::env::temp_dir().join(format!(
-            "goodboy-simple-session-{}-{}",
+    fn test_root(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "goodboy-{name}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
-        ));
+        ))
+    }
+
+    #[test]
+    fn creates_and_reuses_a_marked_session_directory() {
+        let root = test_root("simple-session");
         let args = || CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
         };
         let created = session_dir_create(args()).unwrap();
         assert_eq!(created.branch_name, "");
         assert_eq!(created.slug, "study-plan");
         assert!(!created.reused);
         assert!(Path::new(&created.worktree_path).is_dir());
+        let marker = std::fs::read(Path::new(&created.worktree_path).join(".goodboy")).unwrap();
+        let marker = serde_json::from_slice::<SessionMarker>(&marker).unwrap();
+        assert_eq!(marker.session_id, "session-1");
+        assert_eq!(marker.workspace_id, "workspace-1");
+        assert!(!marker.created_at.is_empty());
         let reused = session_dir_create(args()).unwrap();
         assert!(reused.reused);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scans_session_and_root_children_for_markers() {
+        let root = test_root("simple-session-scan");
+        let created = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+        let moved = root.join("study-plan-moved");
+        std::fs::rename(&created.worktree_path, &moved).unwrap();
+        let moved = std::fs::canonicalize(moved).unwrap();
+        let second = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Second Plan".to_string(),
+            session_id: "session-2".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+
+        let scanned = simple_sessions_scan(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(scanned.len(), 2);
+        assert!(scanned
+            .iter()
+            .any(|entry| entry.session_id == "session-1" && entry.path == moved.to_string_lossy()));
+        assert!(scanned
+            .iter()
+            .any(|entry| entry.session_id == "session-2" && entry.path == second.worktree_path));
         std::fs::remove_dir_all(root).unwrap();
     }
 }

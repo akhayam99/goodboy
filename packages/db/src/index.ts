@@ -130,6 +130,7 @@ export {
   listWorktreesForSessions,
   deleteWorktreesForSession,
   updateSessionWorktreeBranch,
+  updateSessionWorktreePath,
   listAllSessionWorktrees,
   type SessionWorktree,
 } from './queries/session-worktree';

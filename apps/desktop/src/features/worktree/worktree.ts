@@ -1,5 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { BranchCommit, WorktreeDiffScope, WorktreeStatus } from '@goodboy/types';
+import type {
+  BranchCommit,
+  SessionId,
+  WorkspaceId,
+  WorktreeDiffScope,
+  WorktreeStatus,
+} from '@goodboy/types';
 
 export type CreatedWorktree = {
   readonly worktreePath: string;
@@ -26,13 +32,58 @@ export const createWorktree = async (args: CreateWorktreeArgs): Promise<CreatedW
 export type CreateSessionDirArgs = {
   readonly basePath: string;
   readonly slug: string;
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
 };
 
 export const createSessionDir = async ({
   basePath,
   slug,
+  sessionId,
+  workspaceId,
 }: CreateSessionDirArgs): Promise<CreatedWorktree> => {
-  return invoke<CreatedWorktree>('session_dir_create', { args: { basePath, slug } });
+  return invoke<CreatedWorktree>('session_dir_create', {
+    args: { basePath, slug, sessionId, workspaceId },
+  });
+};
+
+export type SimpleSessionScanEntry = {
+  readonly sessionId: SessionId;
+  readonly path: string;
+};
+
+type ScanSimpleSessionsParams = {
+  readonly rootPath: string;
+};
+
+export const scanSimpleSessions = async ({
+  rootPath,
+}: ScanSimpleSessionsParams): Promise<ReadonlyArray<SimpleSessionScanEntry>> => {
+  return invoke<ReadonlyArray<SimpleSessionScanEntry>>('simple_sessions_scan', { rootPath });
+};
+
+type WriteSimpleSessionMarkerParams = {
+  readonly path: string;
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
+};
+
+export const writeSimpleSessionMarker = async ({
+  path,
+  sessionId,
+  workspaceId,
+}: WriteSimpleSessionMarkerParams): Promise<void> => {
+  await invoke('simple_session_marker_write', { path, sessionId, workspaceId });
+};
+
+type SimpleSessionDirExistsParams = {
+  readonly path: string;
+};
+
+export const simpleSessionDirExists = async ({
+  path,
+}: SimpleSessionDirExistsParams): Promise<boolean> => {
+  return invoke<boolean>('simple_session_dir_exists', { path });
 };
 
 export const removeWorktree = async (repoPath: string, worktreePath: string): Promise<void> => {

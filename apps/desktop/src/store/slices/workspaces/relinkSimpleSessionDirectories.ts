@@ -1,0 +1,81 @@
+import { updateSessionWorktreePath, type SessionWorktree } from '@goodboy/db';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  scanSimpleSessions,
+  simpleSessionDirExists,
+  writeSimpleSessionMarker,
+  type SimpleSessionScanEntry,
+} from '../../../features/worktree/worktree';
+import { tauriDatabase } from '../../../shared/lib/db';
+
+type Params = {
+  readonly rootPath: string;
+  readonly workspaceId: WorkspaceId;
+  readonly worktreesBySession: ReadonlyMap<SessionId, ReadonlyArray<SessionWorktree>>;
+};
+
+export const relinkSimpleSessionDirectories = async ({
+  rootPath,
+  workspaceId,
+  worktreesBySession,
+}: Params): Promise<Map<SessionId, ReadonlyArray<SessionWorktree>>> => {
+  let scanned: ReadonlyArray<SimpleSessionScanEntry>;
+  try {
+    scanned = await scanSimpleSessions({ rootPath });
+  } catch (error) {
+    console.warn('[simple-session] directory scan failed', error);
+    return new Map(worktreesBySession);
+  }
+
+  const scannedBySession = new Map(scanned.map((entry) => [entry.sessionId, entry.path]));
+  const resolved = new Map<SessionId, ReadonlyArray<SessionWorktree>>();
+
+  await Promise.all(
+    [...worktreesBySession].map(async ([sessionId, worktrees]) => {
+      const nextWorktrees = await Promise.all(
+        worktrees.map(async (worktree) => {
+          let exists;
+          try {
+            exists = await simpleSessionDirExists({ path: worktree.worktreePath });
+          } catch (error) {
+            console.warn('[simple-session] directory check failed', error);
+            return worktree;
+          }
+
+          if (exists) {
+            const hasMarker = scanned.some(
+              (entry) => entry.sessionId === sessionId && entry.path === worktree.worktreePath,
+            );
+            if (!hasMarker) {
+              await writeSimpleSessionMarker({
+                path: worktree.worktreePath,
+                sessionId,
+                workspaceId,
+              }).catch((error) => {
+                console.warn('[simple-session] marker backfill failed', error);
+              });
+            }
+            return worktree;
+          }
+
+          const relinkedPath = scannedBySession.get(sessionId);
+          if (relinkedPath == null || relinkedPath === worktree.worktreePath) {
+            return worktree;
+          }
+
+          await updateSessionWorktreePath({
+            db: tauriDatabase,
+            sessionId,
+            parallelIndex: worktree.parallelIndex,
+            worktreePath: relinkedPath,
+          });
+          console.info(`[simple-session] relinked ${sessionId} to ${relinkedPath}`);
+          return { ...worktree, worktreePath: relinkedPath };
+        }),
+      );
+      resolved.set(sessionId, nextWorktrees);
+    }),
+  );
+
+  return resolved;
+};

@@ -808,6 +808,8 @@ describe('store contract', () => {
       expect(createSessionDirSpy).toHaveBeenCalledWith({
         basePath: '/tmp/study-space',
         slug: expect.stringMatching(/^study-plan-[a-f0-9]{8}$/),
+        sessionId: session.id,
+        workspaceId: WS_ID,
       });
       expect(createWorktreeSpy).not.toHaveBeenCalled();
       expect(worktree.branchName).toBe('');
