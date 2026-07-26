@@ -55,16 +55,24 @@ const { store, hooks } = vi.hoisted(() => ({
     setFocusedPlanId: vi.fn(),
     reconcileSessionBranch: vi.fn(async () => undefined),
   } as Store,
-  hooks: { agentHome: 'workflows' as LensKind },
+  hooks: {
+    agentHome: 'workflows' as LensKind,
+    openQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
+  },
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
+  agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean) =>
+    !isCurrentlyViewed &&
+    agent.status !== 'skipped' &&
+    agent.lastFinishedAt != null &&
+    (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
   readPersistedLens: () => null,
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
   useFilesTouched: () => ({ count: 0 }),
   useSessionPlans: () => [],
-  useSessionOpenQuestions: () => [],
+  useSessionOpenQuestions: () => hooks.openQuestions,
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -88,8 +96,27 @@ vi.mock('../../../plans/components/PlanStudio', () => ({ PlanStudio: () => null 
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
 vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({
-  AgentsSection: ({ only }: { only: string }) => (
-    <div data-testid="agents-section" data-home={only} />
+  AgentsSection: ({
+    only,
+    task,
+    onInspectAgent,
+  }: {
+    only: string;
+    task: Session;
+    onInspectAgent?: (agentId: string) => void;
+  }) => (
+    <div data-testid="agents-section" data-home={only}>
+      {only === 'agents'
+        ? (store.sessionPhaseRuns[task.id] ?? []).map((agent) => (
+            <button
+              key={agent.id}
+              type="button"
+              onClick={() => onInspectAgent?.(agent.id)}
+              aria-label={`inspect ${agent.id}`}
+            />
+          ))
+        : null}
+    </div>
   ),
 }));
 vi.mock('../../../../app/components/AppBreadcrumb', () => ({
@@ -180,6 +207,7 @@ beforeEach(() => {
   store.sessionLoading = {};
   store.setActiveLens.mockReset();
   hooks.agentHome = 'workflows';
+  hooks.openQuestions = [];
 });
 
 afterEach(cleanup);
@@ -354,6 +382,88 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('resolver-inspector').textContent).toBe(running.id);
+  });
+});
+
+describe('SessionWorkspace agents inspector', () => {
+  it('opens the running standalone agent before newer attention and pending agents', () => {
+    const running = {
+      ...selectedAgent,
+      id: 'agent-running',
+      ordinal: 0,
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    const attention = {
+      ...running,
+      id: 'agent-attention',
+      ordinal: 1,
+      status: 'failed',
+    } as Agent;
+    const newest = {
+      ...running,
+      id: 'agent-newest',
+      ordinal: 2,
+      status: 'pending',
+    } as Agent;
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [running, attention, newest] };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(running.id);
+  });
+
+  it('prioritizes an agent awaiting attention over the newest pending agent', () => {
+    const attention = {
+      ...selectedAgent,
+      id: 'agent-attention',
+      ordinal: 0,
+      status: 'completed',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    const newest = {
+      ...attention,
+      id: 'agent-newest',
+      ordinal: 1,
+      status: 'pending',
+    } as Agent;
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [attention, newest] };
+    hooks.openQuestions = [{ createdByAgentId: attention.id }];
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(attention.id);
+  });
+
+  it('keeps manual details selections and re-picks after the inspected agent is deleted', () => {
+    const older = {
+      ...selectedAgent,
+      id: 'agent-older',
+      ordinal: 0,
+      status: 'pending',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    const newer = {
+      ...older,
+      id: 'agent-newer',
+      ordinal: 1,
+    } as Agent;
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [older, newer] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(newer.id);
+
+    fireEvent.click(screen.getByRole('button', { name: `inspect ${older.id}` }));
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(older.id);
+
+    store.sessionPhaseRuns = { [SESSION_ID]: [newer] };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(newer.id);
   });
 });
 
