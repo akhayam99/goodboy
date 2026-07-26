@@ -13,6 +13,7 @@ vi.mock('../../../../store', () => ({
     selector({
       workspaceOverrides: null,
     }),
+  useCurrentWorkspace: () => null,
 }));
 
 import { LibraryStepForm } from './index';
