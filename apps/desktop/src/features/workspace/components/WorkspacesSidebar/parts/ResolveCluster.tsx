@@ -55,7 +55,9 @@ export const ResolveCluster = ({
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const statusOf = (a: Agent): ResolverStatus =>
     resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id]);
-  const entries = agents.map((agent, index) => ({ agent, index, status: statusOf(agent) }));
+  const entries = [...agents]
+    .sort((a, b) => b.ordinal - a.ordinal)
+    .map((agent, index) => ({ agent, index, status: statusOf(agent) }));
   const completedEntries = entries.filter(({ status }) =>
     ['resolved', 'wontfix', 'stopped', 'done'].includes(status),
   );
@@ -89,8 +91,8 @@ export const ResolveCluster = ({
     );
   };
   return (
-    <div className="flex flex-col gap-0.5 pl-2">
-      <div className="flex items-center gap-1 pr-1">
+    <div className="flex flex-col gap-1 pl-2">
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={onToggle}

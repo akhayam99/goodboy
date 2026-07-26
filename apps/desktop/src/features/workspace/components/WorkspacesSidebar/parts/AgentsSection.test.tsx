@@ -277,6 +277,27 @@ describe('AgentsSection collapse defaults', () => {
     );
   });
 
+  it('renders active and done standalone agents newest-first', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({ id: 'active-old' as AgentId, name: 'active old', ordinal: 0 }),
+        buildAgent({ id: 'done-old' as AgentId, name: 'done old', ordinal: 1, doneAt: NOW }),
+        buildAgent({ id: 'active-new' as AgentId, name: 'active new', ordinal: 2 }),
+        buildAgent({ id: 'done-new' as AgentId, name: 'done new', ordinal: 3, doneAt: NOW }),
+      ],
+    };
+
+    render(<AgentsSection task={buildSession()} only="agents" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Done (2)' }));
+
+    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
+      'active new',
+      'active old',
+      'done new',
+      'done old',
+    ]);
+  });
+
   it('workflow unread badge counts step agents and their cluster children', () => {
     const RUN_ID = 'run-1' as WorkflowRunId;
     const workflow = {
