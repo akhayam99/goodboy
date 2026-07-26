@@ -1,6 +1,10 @@
 export { cn } from './cn';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
-export { AppShell } from './components/AppShell';
+export {
+  AppShell,
+  LEFT_SIDEBAR_STORAGE_KEY,
+  RIGHT_SIDEBAR_STORAGE_KEY,
+} from './components/AppShell';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
@@ -29,6 +33,8 @@ export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
 export { Popover } from './components/Popover';
 export type { PopoverProps } from './components/Popover';
+export { ResizeHandle } from './components/ResizeHandle';
+export type { ResizeHandleProps } from './components/ResizeHandle';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { ScrollFade } from './components/ScrollFade';

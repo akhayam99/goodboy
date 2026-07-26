@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { Divider, ResizeHandle, ScrollFade } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ChatView } from '../../../../chat/components/ChatView';
 import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
@@ -7,6 +7,8 @@ import type { AgentHomeLens } from '../../../agent-kind';
 import { AgentInspector } from '../../AgentInspector';
 import { ResolverInspector } from '../../ResolverInspector';
 import { agentOverlayHeader } from './agentOverlayHeader';
+import { useColumnWidth } from '../../../../../shared/hooks/useColumnWidth';
+import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
 
 type Props = {
   readonly session: Session;
@@ -33,6 +35,8 @@ export const AgentOverlay = ({
   onBack,
   onOpenWorkflow,
 }: Props) => {
+  const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.agentOverlayListWidth, 288);
+  const [inspectorWidth, setInspectorWidth] = useColumnWidth(STORAGE_KEYS.inspectorPanelWidth, 320);
   const header = agentOverlayHeader({
     session,
     sessionId,
@@ -48,7 +52,7 @@ export const AgentOverlay = ({
     <div className="absolute inset-0 z-20 flex bg-background motion-safe:animate-studio-in">
       {overlayHome === 'workflows' ? null : (
         <>
-          <div className="flex w-72 shrink-0 flex-col bg-background">
+          <div className="flex shrink-0 flex-col bg-background" style={{ width: listWidth }}>
             <button
               type="button"
               onClick={onBack}
@@ -64,7 +68,14 @@ export const AgentOverlay = ({
               </div>
             </ScrollFade>
           </div>
-          <Divider orientation="vertical" />
+          <ResizeHandle
+            value={listWidth}
+            min={220}
+            max={480}
+            onChange={setListWidth}
+            onReset={() => setListWidth(288)}
+            ariaLabel="resize agent list"
+          />
         </>
       )}
       <div className="min-h-0 min-w-0 flex-1">
@@ -72,16 +83,32 @@ export const AgentOverlay = ({
       </div>
       {overlayHome === 'resolve' && inspectedResolverId !== null ? (
         <>
-          <Divider orientation="vertical" />
-          <div className="flex w-80 shrink-0 flex-col bg-background">
+          <ResizeHandle
+            value={inspectorWidth}
+            min={260}
+            max={560}
+            onChange={setInspectorWidth}
+            onReset={() => setInspectorWidth(320)}
+            side="right"
+            ariaLabel="resize resolver inspector"
+          />
+          <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
             <ResolverInspector sessionId={sessionId} agentId={inspectedResolverId} />
           </div>
         </>
       ) : null}
       {overlayHome === 'agents' && selectedAgentId !== null ? (
         <>
-          <Divider orientation="vertical" />
-          <div className="flex w-80 shrink-0 flex-col bg-background">
+          <ResizeHandle
+            value={inspectorWidth}
+            min={260}
+            max={560}
+            onChange={setInspectorWidth}
+            onReset={() => setInspectorWidth(320)}
+            side="right"
+            ariaLabel="resize agent inspector"
+          />
+          <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
             <AgentInspector sessionId={sessionId} agentId={selectedAgentId} />
           </div>
         </>

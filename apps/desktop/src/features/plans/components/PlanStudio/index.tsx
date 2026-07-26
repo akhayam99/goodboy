@@ -413,15 +413,12 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
               </div>
             </div>
             {listOpen && plans.length > 1 ? (
-              <>
-                <Divider orientation="vertical" />
-                <PlanListPanel
-                  plans={plans}
-                  selectedId={selectedId}
-                  onSelect={handleSelectPlan}
-                  onClose={() => setListOpen(false)}
-                />
-              </>
+              <PlanListPanel
+                plans={plans}
+                selectedId={selectedId}
+                onSelect={handleSelectPlan}
+                onClose={() => setListOpen(false)}
+              />
             ) : null}
           </>
         )}

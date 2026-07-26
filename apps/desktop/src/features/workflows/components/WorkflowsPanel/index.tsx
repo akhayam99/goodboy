@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Divider } from '@goodboy/ui';
 import { formatWorkflowFromNL, type FormattedWorkflow } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
 import type {
@@ -281,7 +280,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   const setApprovedAndSave = (next: boolean) => {
     // Cancel any pending debounced autosave so the immediate flush is the only
-    // save — otherwise both can run with id=null and double-INSERT (mirror closeEdit).
+    // save, otherwise both can run with id=null and double-INSERT (mirror closeEdit).
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
@@ -403,9 +402,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         onDelete={(t) => void onDelete(t)}
         onReset={() => void onReset()}
       />
-
-      <Divider orientation="vertical" />
-
       <WorkflowComposer
         open={editing !== null}
         isNew={editing === 'new'}
