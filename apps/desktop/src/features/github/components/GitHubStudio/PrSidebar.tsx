@@ -235,7 +235,7 @@ function ReviewerPicker({
       </button>
       {open ? (
         <div className="absolute right-0 top-6 z-10 flex w-52 flex-col gap-1 rounded-md border border-border-soft bg-background p-1.5 shadow-lg">
-          <div className="flex items-center gap-1.5 rounded border border-border-soft px-1.5 py-1">
+          <div className="flex items-center gap-1.5 px-1.5 py-1">
             <Search size={12} aria-hidden className="shrink-0 text-muted-foreground" />
             <input
               autoFocus

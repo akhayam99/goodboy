@@ -115,6 +115,7 @@ const makeMr = ({
 beforeEach(() => {
   h.gitlabMergeMr.mockClear();
   h.store.refreshSessionMr.mockClear();
+  h.store.createMrForSession.mockClear();
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
   h.store.setCurrentSession.mockClear();
@@ -125,6 +126,29 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MrDetailPanel', () => {
+  it('creates an MR from the form footer', async () => {
+    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Merge request title' }), {
+      target: { value: 'Ship the GitLab release' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Merge request description' }), {
+      target: { value: 'Documents the release changes.' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Target branch' }), {
+      target: { value: 'develop' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create MR' }));
+
+    await waitFor(() =>
+      expect(h.store.createMrForSession).toHaveBeenCalledWith(SESSION_ID, {
+        title: 'Ship the GitLab release',
+        description: 'Documents the release changes.',
+        targetBranch: 'develop',
+        draft: true,
+      }),
+    );
+  });
+
   it('spawns an MR agent with the chosen config and operator notes', async () => {
     const onClose = vi.fn();
     render(<MrDetailPanel sessionId={SESSION_ID} onClose={onClose} />);

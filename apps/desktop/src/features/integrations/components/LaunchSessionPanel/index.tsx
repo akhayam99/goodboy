@@ -176,7 +176,6 @@ export const LaunchSessionPanel = ({
           maxRows={10}
           disabled={busy}
           aria-label="Session goal"
-          className="rounded-lg bg-subtle/80 px-3 py-2.5 ring-1 ring-border-soft focus-visible:ring-foreground/15"
         />
       </LaunchField>
 
@@ -184,7 +183,7 @@ export const LaunchSessionPanel = ({
         label="Branch"
         icon={<GitBranch size={13} aria-hidden className="text-success" />}
       >
-        <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-muted/10 p-3">
+        <div className="flex flex-col gap-2">
           {adoptable != null && (
             <SegmentedTabs
               ariaLabel="branch source"

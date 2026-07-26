@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
+import { Divider, EmptyState, Markdown, SectionHeader, cn } from '@goodboy/ui';
 import { ExternalLink, GitPullRequest, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -233,9 +233,10 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         )}
       </DetailSection>
 
-      <DetailSection label="comments">
+      <section className="flex flex-col gap-3">
+        <SectionHeader label="comments" />
         <LinearIssueComments workspaceId={workspaceId} issueId={issue.id} />
-      </DetailSection>
+      </section>
     </StudioDetailLayout>
   );
 };

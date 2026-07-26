@@ -104,7 +104,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       )}
 
       {adding ? (
-        <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-muted/20 p-3">
+        <div className="flex flex-col gap-2">
           <Input
             autoFocus
             value={label}
