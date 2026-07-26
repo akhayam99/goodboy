@@ -226,7 +226,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                 />
               </div>
               {logOpen && result ? (
-                <pre className="m-0 max-h-60 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
+                <pre className="m-0 max-h-60 overflow-auto whitespace-pre-wrap break-all bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
                   {result.stdout}
                   {result.stderr ? (
                     <span className="text-danger">
@@ -237,7 +237,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                   {!result.stdout && !result.stderr ? '(no output)' : null}
                 </pre>
               ) : (
-                <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all border-t border-border-soft bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
+                <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/75">
                   {script.body}
                 </pre>
               )}
@@ -318,7 +318,7 @@ function ScriptEditor({
   onCancel: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-primary/40 bg-subtle/50 p-2.5">
+    <div className="flex flex-col gap-2">
       <Input
         value={draft.name}
         onChange={(e) => setDraft({ ...draft, name: e.target.value })}

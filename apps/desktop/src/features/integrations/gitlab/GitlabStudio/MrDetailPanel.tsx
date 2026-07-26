@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, Markdown, SectionHeader, Textarea, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  EmptyState,
+  Input,
+  Markdown,
+  SectionHeader,
+  Textarea,
+  cn,
+} from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
@@ -313,42 +322,39 @@ export const MrDetailPanel = ({
         }
       >
         {mr.hasConflicts || mr.state === 'opened' ? (
-          <DetailSection label="merge status">
-            <div className="flex flex-col gap-3">
-              {mr.hasConflicts ? (
-                <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
-                  <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-                  <span>
-                    This merge request has conflicts that must be resolved before merging.
-                  </span>
-                </div>
-              ) : null}
-              {mr.state === 'opened' ? (
-                <div className="flex items-center gap-3">
-                  <span className="flex-1" />
-                  <Button
-                    onClick={() => void onMerge()}
-                    disabled={
-                      busy !== null ||
-                      mr.hasConflicts ||
-                      mr.mergeStatus === 'cannot_be_merged' ||
-                      (sessionId == null && mergeProjectPath == null)
-                    }
-                    className={busy === 'merge' ? 'animate-border-pulse' : undefined}
-                  >
-                    {busy === 'merge' ? (
-                      'Merging…'
-                    ) : (
-                      <>
-                        <GitMerge size={13} className="mr-1.5" aria-hidden />
-                        Merge request
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          </DetailSection>
+          <section className="flex flex-col gap-3">
+            <SectionHeader label="merge status" />
+            {mr.hasConflicts ? (
+              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
+                <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                <span>This merge request has conflicts that must be resolved before merging.</span>
+              </div>
+            ) : null}
+            {mr.state === 'opened' ? (
+              <div className="flex items-center gap-3">
+                <span className="flex-1" />
+                <Button
+                  onClick={() => void onMerge()}
+                  disabled={
+                    busy !== null ||
+                    mr.hasConflicts ||
+                    mr.mergeStatus === 'cannot_be_merged' ||
+                    (sessionId == null && mergeProjectPath == null)
+                  }
+                  className={busy === 'merge' ? 'animate-border-pulse' : undefined}
+                >
+                  {busy === 'merge' ? (
+                    'Merging…'
+                  ) : (
+                    <>
+                      <GitMerge size={13} className="mr-1.5" aria-hidden />
+                      Merge request
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : null}
+          </section>
         ) : null}
 
         <DetailSection label="description">
@@ -384,52 +390,55 @@ export const MrDetailPanel = ({
     >
       {session != null && sessionId != null ? (
         <section className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader label="title" />
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={busy !== null}
-                aria-label="Merge request title"
-                className="h-8 text-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader label="description" />
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                autoGrow
-                minRows={3}
-                maxRows={10}
-                disabled={busy !== null}
-                aria-label="Merge request description"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader label="target branch" icon={<GitBranch size={13} aria-hidden />} />
-              <Input
-                value={targetBranch}
-                onChange={(e) => setTargetBranch(e.target.value)}
-                placeholder="main"
-                className="h-8 font-mono text-sm"
-                disabled={busy !== null}
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Target branch"
-              />
-            </div>
-            <AgentSpawnConfig
-              value={agentConfig}
-              onChange={(value) => {
-                setAgentConfigUserTouched(true);
-                setAgentConfig(value);
-              }}
+          <div className="flex flex-col gap-1.5">
+            <SectionHeader label="title" />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               disabled={busy !== null}
+              aria-label="Merge request title"
+              className="h-8 text-sm"
             />
-            <div className="flex items-center gap-3 pt-1">
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <SectionHeader label="description" />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              autoGrow
+              minRows={3}
+              maxRows={10}
+              disabled={busy !== null}
+              aria-label="Merge request description"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <SectionHeader label="target branch" icon={<GitBranch size={13} aria-hidden />} />
+            <Input
+              value={targetBranch}
+              onChange={(e) => setTargetBranch(e.target.value)}
+              placeholder="main"
+              className="h-8 font-mono text-sm"
+              disabled={busy !== null}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label="Target branch"
+            />
+          </div>
+          <AgentSpawnConfig
+            value={agentConfig}
+            onChange={(value) => {
+              setAgentConfigUserTouched(true);
+              setAgentConfig(value);
+            }}
+            disabled={busy !== null}
+          />
+
+          <Divider />
+
+          <footer className="flex shrink-0 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
@@ -440,7 +449,13 @@ export const MrDetailPanel = ({
                 />
                 Mark as draft
               </label>
-              <span className="flex-1" />
+              {error != null ? (
+                <span role="alert" className="text-xs text-danger">
+                  {error}
+                </span>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="secondary"
                 onClick={() => void onCreateWithAi()}
@@ -466,8 +481,7 @@ export const MrDetailPanel = ({
                 )}
               </Button>
             </div>
-            {error ? <span className="text-xs text-danger">{error}</span> : null}
-          </div>
+          </footer>
         </section>
       ) : null}
     </StudioDetailLayout>

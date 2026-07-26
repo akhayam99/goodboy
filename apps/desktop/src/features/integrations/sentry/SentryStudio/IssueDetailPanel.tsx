@@ -1,4 +1,4 @@
-import { Divider, EmptyState, StatCard, cn } from '@goodboy/ui';
+import { Divider, EmptyState, SectionHeader, StatCard, cn } from '@goodboy/ui';
 import { ExternalLink, Layers, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
@@ -143,12 +143,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </div>
       ) : null}
 
-      <DetailSection
-        label="stack trace"
-        icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
-      >
+      <section className="flex flex-col gap-3">
+        <SectionHeader
+          label="stack trace"
+          icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
+        />
         <SentryStackTrace frames={frames} isLoading={detailLoading} error={detailError} />
-      </DetailSection>
+      </section>
 
       <SentryBreadcrumbs breadcrumbs={breadcrumbs} isLoading={detailLoading} error={detailError} />
     </StudioDetailLayout>

@@ -13,11 +13,11 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
   }
 
   return (
-    <details className="rounded-lg border border-border-soft bg-muted/10">
-      <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-foreground">
+    <details className="flex flex-col gap-2">
+      <summary className="cursor-pointer text-xs font-medium text-foreground">
         Breadcrumbs ({breadcrumbs.length})
       </summary>
-      <div className="flex flex-col gap-2 px-3 pb-3">
+      <div className="flex flex-col gap-2">
         {breadcrumbs.map((breadcrumb, index) => {
           const relativeDate =
             breadcrumb.timestamp == null ? '' : formatRelativeDuration(breadcrumb.timestamp);
