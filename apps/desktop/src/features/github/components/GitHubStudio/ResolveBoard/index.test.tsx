@@ -58,10 +58,11 @@ describe('ResolveBoard', () => {
         threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={onSpawnBatch}
+        onSpawnCombined={vi.fn()}
         onOpenThread={vi.fn()}
       />,
     );
-    expect(screen.getByText(/Spawn resolver for 2 comments/i)).toBeDefined();
+    expect(screen.getByText(/Spawn 2 resolvers/i)).toBeDefined();
 
     const checkboxes = screen.getAllByRole('checkbox');
     act(() => {
@@ -85,6 +86,7 @@ describe('ResolveBoard', () => {
         threads={[thread({ id: 'c1' })]}
         onSpawnOne={onSpawnOne}
         onSpawnBatch={vi.fn()}
+        onSpawnCombined={vi.fn()}
         onOpenThread={vi.fn()}
       />,
     );
@@ -106,6 +108,7 @@ describe('ResolveBoard', () => {
         threads={[thread({ id: 'c1' })]}
         onSpawnOne={onSpawnOne}
         onSpawnBatch={vi.fn()}
+        onSpawnCombined={vi.fn()}
         onOpenThread={vi.fn()}
       />,
     );
@@ -140,6 +143,7 @@ describe('ResolveBoard', () => {
         threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={onSpawnBatch}
+        onSpawnCombined={vi.fn()}
         onOpenThread={vi.fn()}
       />,
     );
@@ -153,7 +157,7 @@ describe('ResolveBoard', () => {
       });
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Spawn resolver for 2 comments/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
     });
     const choices = onSpawnBatch.mock.calls[0]?.[1];
     expect(choices?.c1).toEqual(
@@ -175,6 +179,7 @@ describe('ResolveBoard', () => {
         ]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={vi.fn()}
+        onSpawnCombined={vi.fn()}
         onOpenThread={vi.fn()}
       />,
     );
@@ -190,9 +195,31 @@ describe('ResolveBoard', () => {
         threads={[]}
         onSpawnOne={vi.fn()}
         onSpawnBatch={vi.fn()}
+        onSpawnCombined={vi.fn()}
         onOpenThread={vi.fn()}
       />,
     );
     expect(screen.getByText(/Nothing to resolve/i)).toBeDefined();
+  });
+
+  it('spawns one combined resolver for the selected threads', () => {
+    const onSpawnCombined = vi.fn();
+    render(
+      <ResolveBoard
+        roleModels={null}
+        threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
+        onSpawnOne={vi.fn()}
+        onSpawnBatch={vi.fn()}
+        onSpawnCombined={onSpawnCombined}
+        onOpenThread={vi.fn()}
+      />,
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Spawn 1 combined resolver' }));
+    });
+    expect(onSpawnCombined).toHaveBeenCalledOnce();
+    expect(
+      onSpawnCombined.mock.calls[0]?.[0].map((item: CommentThread) => item.head.threadId),
+    ).toEqual(['PRRT_1', 'PRRT_2']);
   });
 });

@@ -3,6 +3,7 @@ import { EMPTY_ARRAY } from '../../../../../store';
 import type { AgentMetrics } from '../../../../session/hooks/useAgentMetrics';
 import type { ResolverStatus } from '../lib';
 import { ResolveClusterRow } from './ResolveClusterRow';
+import { agentThreadIds } from '../../../../session/agentThreadIds';
 
 type Entry = {
   readonly agent: Agent;
@@ -24,6 +25,7 @@ type Props = {
   readonly onInspect?: (id: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
   readonly onResolveThread: (threadId: string) => Promise<void> | void;
+  readonly onResolveAgent: (agentId: AgentId) => Promise<void> | void;
 };
 
 export const ResolverRows = ({
@@ -40,15 +42,17 @@ export const ResolverRows = ({
   onInspect,
   onJump,
   onResolveThread,
+  onResolveAgent,
 }: Props) => (
   <>
     {entries.map(({ agent, status, index }) => {
+      const threadIds = agentThreadIds(agent);
+      const threadId = threadIds[0];
       const diffComment =
-        agent.sourceThreadId == null && agent.sourceCommentUrl == null
+        threadIds.length === 0 && agent.sourceCommentUrl == null
           ? (diffCommentByAgentId.get(agent.id) ?? null)
           : null;
-      const threadComment =
-        agent.sourceThreadId != null ? (commentByThreadId.get(agent.sourceThreadId) ?? null) : null;
+      const threadComment = threadId != null ? (commentByThreadId.get(threadId) ?? null) : null;
       return (
         <ResolveClusterRow
           key={agent.id}
@@ -65,12 +69,13 @@ export const ResolverRows = ({
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
           isSelected={agent.id === selectedAgentId}
           isTaskActive={isTaskActive}
-          canJump={agent.sourceThreadId != null || agent.sourceCommentUrl != null}
+          canJump={threadIds.length > 0 || agent.sourceCommentUrl != null}
           isInspected={agent.id === inspectedAgentId}
           onSelect={() => onSelect(agent.id)}
           onJump={() => onJump(agent)}
           onInspect={onInspect === undefined ? undefined : () => onInspect(agent.id)}
           onResolveThread={onResolveThread}
+          onResolveAgent={onResolveAgent}
         />
       );
     })}

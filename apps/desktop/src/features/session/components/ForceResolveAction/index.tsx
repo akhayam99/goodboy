@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { canForceResolve } from './canForceResolve';
+import { agentThreadIds } from '../../agentThreadIds';
 
 type Props = {
   readonly agent: Agent;
@@ -26,16 +27,16 @@ export const ForceResolveAction = ({ agent, sessionId, status }: Props) => {
   }
 
   const onConfirm = async () => {
-    if (agent.sourceThreadId == null) {
+    const threadIds = agentThreadIds(agent);
+    if (threadIds.length === 0) {
       return;
     }
     const reason = note.trim();
-    const didResolve = await resolveGithubThread(
-      sessionId,
-      agent.sourceThreadId,
-      reason !== '' ? { reason } : {},
-    );
-    if (didResolve) {
+    const results = [];
+    for (const threadId of threadIds) {
+      results.push(await resolveGithubThread(sessionId, threadId, reason !== '' ? { reason } : {}));
+    }
+    if (results.every((didResolve) => didResolve)) {
       setNote('');
     }
   };

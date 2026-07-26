@@ -37,6 +37,7 @@ type SpawnArgs = {
   triggeredPlanId?: PlanId;
   kindOverride?: AgentKind;
   sourceThreadId?: string;
+  sourceThreadIds?: ReadonlyArray<string>;
   sourceCommentUrl?: string;
   sourceKind?: AgentSourceKind;
   deferKickoff?: boolean;
@@ -91,6 +92,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
     const resolvedKind = args.kindOverride ?? inferAgentKindFromName(resolvedName);
     const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
     const routing = kindRouting({ kind: resolvedKind, roleModels });
+    const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
     const inserted = await invokeAgentInsert({
       sessionId,
       ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -100,7 +102,8 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       status: 'pending',
       kind: resolvedKind,
       ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-      ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
+      ...(sourceThreadId !== undefined && { sourceThreadId }),
+      ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
       ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
       ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
     });

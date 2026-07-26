@@ -63,6 +63,7 @@ describe('ResolveCluster', () => {
         onSelect={vi.fn()}
         onForceNext={vi.fn()}
         onResolveThread={vi.fn()}
+        onResolveAgent={vi.fn()}
       />,
     );
 

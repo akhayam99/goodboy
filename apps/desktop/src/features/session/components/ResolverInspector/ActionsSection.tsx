@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { agentThreadIds } from '../../agentThreadIds';
 import { InspectorSection } from './InspectorSection';
 
 type Props = {
@@ -20,26 +21,45 @@ const SINGLE_ACTION_CLASS =
 
 export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) => {
   const resolveGithubThread = useAppStore((state) => state.resolveGithubThread);
+  const resolveAgentThreads = useAppStore((state) => state.resolveAgentThreads);
   const queueResolution = useAppStore((state) => state.queueResolution);
   const dequeueResolution = useAppStore((state) => state.dequeueResolution);
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
   const sendTurn = useAppStore((state) => state.sendTurn);
   const selectAgent = useAppStore((state) => state.selectAgent);
   const prNumber = useAppStore((state) => state.sessionGithub[sessionId]?.pr?.number ?? null);
-  const pendingResolution = useAppStore(
-    (state) =>
-      state.sessionPendingResolutions[sessionId]?.find(
-        (resolution) => resolution.threadId === agent.sourceThreadId,
-      ) ?? null,
-  );
+  const pending = useAppStore((state) => state.sessionPendingResolutions[sessionId] ?? []);
+  const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id] ?? {});
   const [reason, setReason] = useState('');
 
   useEffect(() => setReason(''), [agent.id]);
 
-  const threadId = agent.sourceThreadId ?? null;
+  const threadIds = agentThreadIds(agent);
+  const isCombined = threadIds.length >= 2;
+  const threadId = threadIds[0] ?? null;
+  const pendingResolutions = pending.filter((resolution) =>
+    threadIds.includes(resolution.threadId),
+  );
+  const pendingResolution = pendingResolutions[0] ?? null;
   const effectiveCommitSha = pendingResolution?.commitSha ?? commitSha;
+  const resolvedTargets = Object.entries(outcomes).flatMap(([targetThreadId, outcome]) =>
+    outcome.kind === 'resolved' ? [{ threadId: targetThreadId, commitSha: outcome.commitSha }] : [],
+  );
+  const queueTargets =
+    resolvedTargets.length > 0
+      ? resolvedTargets
+      : effectiveCommitSha !== null
+        ? threadIds.map((targetThreadId) => ({
+            threadId: targetThreadId,
+            commitSha: effectiveCommitSha,
+          }))
+        : [];
   const push = async () => {
     if (threadId === null || effectiveCommitSha === null) {
+      return;
+    }
+    if (isCombined) {
+      await resolveAgentThreads(sessionId, agent.id);
       return;
     }
     const didResolve = await resolveGithubThread(sessionId, threadId, {
@@ -50,23 +70,32 @@ export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) =
     }
   };
   const queue = async () => {
-    if (threadId === null || effectiveCommitSha === null || prNumber === null) {
+    if (prNumber === null) {
       return;
     }
-    await queueResolution(sessionId, { threadId, commitSha: effectiveCommitSha, prNumber });
+    for (const target of queueTargets) {
+      await queueResolution(sessionId, { ...target, prNumber });
+    }
   };
   const explain = async () => {
-    if (threadId === null || reason.trim() === '') {
+    if (threadIds.length === 0 || reason.trim() === '') {
       return;
     }
-    await resolveGithubThread(sessionId, threadId, { reason: reason.trim() });
+    for (const targetThreadId of threadIds) {
+      await resolveGithubThread(sessionId, targetThreadId, { reason: reason.trim() });
+    }
+  };
+  const dequeueAll = async () => {
+    for (const resolution of pendingResolutions) {
+      await dequeueResolution(sessionId, resolution.threadId);
+    }
   };
 
   if (status === 'committed') {
     return (
       <InspectorSection question="What you can do">
         <div className="flex flex-wrap items-center gap-1.5">
-          {pendingResolution === null ? (
+          {pendingResolutions.length === 0 ? (
             <>
               <ConfirmableButton
                 label="Push & resolve"
@@ -80,7 +109,7 @@ export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) =
               <button
                 type="button"
                 onClick={() => void queue()}
-                disabled={threadId === null || effectiveCommitSha === null || prNumber === null}
+                disabled={queueTargets.length === 0 || prNumber === null}
                 className={SINGLE_ACTION_CLASS}
               >
                 <Clock size={9} aria-hidden />
@@ -91,7 +120,7 @@ export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) =
             <>
               <button
                 type="button"
-                onClick={() => void dequeueResolution(sessionId, pendingResolution.threadId)}
+                onClick={() => void dequeueAll()}
                 className={SINGLE_ACTION_CLASS}
               >
                 <X size={9} aria-hidden />
@@ -146,7 +175,7 @@ export const ActionsSection = ({ agent, sessionId, status, commitSha }: Props) =
             armedLabel="Confirm explanation & close"
             busyLabel="Posting..."
             onConfirm={explain}
-            disabled={threadId === null || reason.trim() === ''}
+            disabled={threadIds.length === 0 || reason.trim() === ''}
             tone="warning"
             icon={<MessageSquareReply size={9} aria-hidden />}
           />

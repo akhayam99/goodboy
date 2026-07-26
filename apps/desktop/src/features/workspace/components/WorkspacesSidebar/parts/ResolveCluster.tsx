@@ -5,6 +5,7 @@ import { openUrl } from '../../../../../shared/lib/editor';
 import type { AgentMetrics } from '../../../../session/hooks/useAgentMetrics';
 import { resolverStatus, type ResolverState, type ResolverStatus } from '../lib';
 import { ResolverRows } from './ResolverRows';
+import { agentThreadIds } from '../../../../session/agentThreadIds';
 
 type ResolveClusterProps = {
   readonly agents: ReadonlyArray<Agent>;
@@ -26,6 +27,7 @@ type ResolveClusterProps = {
   readonly onInspect?: (id: AgentId) => void;
   readonly onForceNext: () => void;
   readonly onResolveThread: (threadId: string) => Promise<void> | void;
+  readonly onResolveAgent: (agentId: AgentId) => Promise<void> | void;
 };
 
 export const ResolveCluster = ({
@@ -48,6 +50,7 @@ export const ResolveCluster = ({
   onInspect,
   onForceNext,
   onResolveThread,
+  onResolveAgent,
 }: ResolveClusterProps) => {
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const statusOf = (a: Agent): ResolverStatus =>
@@ -64,10 +67,11 @@ export const ResolveCluster = ({
   const queuedCount = agents.filter((a) => a.status === 'pending').length;
   const stalled = !anyRunning && queuedCount > 0;
   const jump = (agent: Agent) => {
-    if (agent.sourceThreadId != null && prNumber != null) {
+    const threadId = agentThreadIds(agent)[0];
+    if (threadId != null && prNumber != null) {
       window.dispatchEvent(
         new CustomEvent('goodboy:open-github-session', {
-          detail: { sessionId, prNumber, threadId: agent.sourceThreadId },
+          detail: { sessionId, prNumber, threadId },
         }),
       );
     } else if (agent.sourceCommentUrl != null) {
@@ -144,6 +148,7 @@ export const ResolveCluster = ({
             onInspect={onInspect}
             onJump={jump}
             onResolveThread={onResolveThread}
+            onResolveAgent={onResolveAgent}
           />
           {completedEntries.length > 0 ? (
             <button
@@ -175,6 +180,7 @@ export const ResolveCluster = ({
               onInspect={onInspect}
               onJump={jump}
               onResolveThread={onResolveThread}
+              onResolveAgent={onResolveAgent}
             />
           ) : null}
           <button

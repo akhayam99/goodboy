@@ -12,7 +12,10 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { buildCommentAgentArgs } from '../../../features/chat/spawn-from-comment';
+import {
+  buildCombinedCommentAgentArgs,
+  buildCommentAgentArgs,
+} from '../../../features/chat/spawn-from-comment';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -274,6 +277,40 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(kickoff).toContain('Analysis mode: do not modify or commit any file.');
     expect(kickoff).toContain('Operator notes:\nAvoid schema changes.');
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('persists every combined source thread and the first compatibility thread', async () => {
+    const { spawn } = buildHarness([]);
+    const args = buildCombinedCommentAgentArgs(
+      [
+        { head: COMMENT, replies: [] },
+        {
+          head: {
+            ...COMMENT,
+            id: 'review-2',
+            threadId: 'PRRT_8',
+            url: 'https://github.com/o/r/pull/9108#discussion_r2',
+          },
+          replies: [],
+        },
+      ],
+      PR,
+    );
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'resolver',
+      initialPrompt: args.initialPrompt,
+      sourceThreadIds: args.sourceThreadIds,
+      deferKickoff: true,
+    });
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledOnce();
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceThreadId: 'PRRT_7',
+        sourceThreadIds: ['PRRT_7', 'PRRT_8'],
+      }),
+    );
   });
 
   it('consumes the plan on ad-hoc fan-out so a re-spawn cannot fan out again', async () => {

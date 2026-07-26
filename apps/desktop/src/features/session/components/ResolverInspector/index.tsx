@@ -11,6 +11,7 @@ import { ChangesSection } from './ChangesSection';
 import { ActionsSection } from './ActionsSection';
 import { OriginSection } from './OriginSection';
 import { StateSection } from './StateSection';
+import { agentThreadIds } from '../../agentThreadIds';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,13 +40,14 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
   const position = resolverIndex.links.findIndex((link) => link.agent.id === agentId);
   const link = resolverIndex.links[position] ?? null;
   const agent = link?.agent ?? null;
+  const threadIds = agent === null ? [] : agentThreadIds(agent);
   const changes = useResolverChanges({ agent, worktreePath });
   const diffComment = useMemo(
     () => diffComments.find((comment) => comment.consumedByAgentId === agentId) ?? null,
     [diffComments, agentId],
   );
   const threadComment = useMemo(() => {
-    const threadId = agent?.sourceThreadId ?? null;
+    const threadId = threadIds[0] ?? null;
     if (threadId === null) {
       return null;
     }
@@ -53,7 +55,7 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
       prComments.find((comment) => comment.threadId === threadId && comment.inReplyToId == null) ??
       null
     );
-  }, [prComments, agent?.sourceThreadId]);
+  }, [prComments, threadIds]);
   const runningResolverName = useMemo(
     () => resolverIndex.links.find(({ status }) => status === 'running')?.agent.name ?? null,
     [resolverIndex],
@@ -65,7 +67,7 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
 
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const canOpen =
-    (origin.kind === 'review_comment' && agent.sourceThreadId != null && prNumber != null) ||
+    (origin.kind === 'review_comment' && threadIds.length > 0 && prNumber != null) ||
     (origin.kind === 'issue_comment' && agent.sourceCommentUrl != null) ||
     (origin.kind === 'diff_comment' && worktreePath != null);
   const onOpen = () => {
@@ -77,10 +79,11 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
       );
       return;
     }
-    if (agent.sourceThreadId != null && prNumber != null) {
+    const threadId = threadIds[0];
+    if (threadId != null && prNumber != null) {
       window.dispatchEvent(
         new CustomEvent('goodboy:open-github-session', {
-          detail: { sessionId, prNumber, threadId: agent.sourceThreadId },
+          detail: { sessionId, prNumber, threadId },
         }),
       );
       return;
@@ -89,6 +92,20 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
       void openUrl(agent.sourceCommentUrl);
     }
   };
+  const onOpenThread = (threadId: string) => {
+    if (prNumber === null) {
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-github-session', {
+        detail: { sessionId, prNumber, threadId },
+      }),
+    );
+  };
+  const threadLinks = threadIds.map((threadId, index) => ({
+    threadId,
+    label: `Open review thread ${index + 1}`,
+  }));
   const blockedBy =
     link.status === 'pending' && runningResolverName !== null
       ? `${runningResolverName} is still running`
@@ -105,8 +122,10 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
             origin={origin}
             threadComment={threadComment}
             diffComment={diffComment}
-            openLabel={canOpen ? OPEN_LABEL[origin.kind] : null}
+            openLabel={canOpen && threadIds.length < 2 ? OPEN_LABEL[origin.kind] : null}
             onOpen={onOpen}
+            threadLinks={threadLinks}
+            onOpenThread={onOpenThread}
           />
           <Divider />
           <ActionsSection

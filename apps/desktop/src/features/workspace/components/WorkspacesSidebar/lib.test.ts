@@ -86,6 +86,12 @@ describe('resolverStatus', () => {
     expect(resolverStatus(agent, new Set(['t1']), empty, undefined)).toBe('resolved');
   });
 
+  it('reports combined resolvers as resolved only when every thread is resolved', () => {
+    const agent = { ...makeAgent('completed', 't1'), sourceThreadIds: ['t1', 't2'] };
+    expect(resolverStatus(agent, new Set(['t1']), empty, undefined)).toBe('done');
+    expect(resolverStatus(agent, new Set(['t1', 't2']), empty, undefined)).toBe('resolved');
+  });
+
   it('reports "committed" from the committed resolver state', () => {
     expect(resolverStatus(makeAgent('completed'), empty, empty, 'committed')).toBe('committed');
   });

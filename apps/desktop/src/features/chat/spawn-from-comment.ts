@@ -1,5 +1,6 @@
 import type { AgentSourceKind, PrComment, ProviderId, PullRequestState } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
+import type { CommentThread } from '../github/comment-threads';
 import { kindRouting } from '../session/agent-kind';
 import type { EffortLevel } from './utils/chat-constants';
 
@@ -93,9 +94,76 @@ export type CommentAgentArgs = {
   readonly effort: EffortLevel;
   readonly initialPrompt: string;
   readonly sourceThreadId?: string;
+  readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl: string;
   readonly sourceKind: AgentSourceKind;
   readonly mode?: ResolveMode;
+};
+
+export const buildCombinedCommentAgentPrompt = (
+  comments: ReadonlyArray<CommentThread>,
+  pr: PullRequestState,
+): string => {
+  const lines: Array<string> = [
+    `Context: PR #${pr.number} on branch \`${pr.headBranch}\`.`,
+    '',
+    `Fix all ${comments.length} review threads together in one pass.`,
+  ];
+  for (const [index, thread] of comments.entries()) {
+    const comment = thread.head;
+    lines.push('', `Thread ${index + 1}:`);
+    lines.push(`Comment body from ${comment.author}:`);
+    for (const line of (comment.body.trim() || '(empty body)').split('\n')) {
+      lines.push(`> ${line}`);
+    }
+    if (thread.replies.length > 0) {
+      lines.push('', 'Replies in this thread:');
+      for (const reply of thread.replies) {
+        lines.push(`${reply.author}:`);
+        for (const line of (reply.body.trim() || '(empty body)').split('\n')) {
+          lines.push(`> ${line}`);
+        }
+      }
+    }
+    lines.push('', `Comment URL: ${comment.url}`);
+    lines.push(`Review thread id (for the resolution marker): ${comment.threadId ?? ''}`);
+  }
+  lines.push(
+    '',
+    'After handling every thread, emit exactly one marker per thread, one marker per line.',
+    'Use one of these forms for each thread:',
+    '<<comment-resolved threadId="PRRT_..." commitSha="...">>',
+    '<<comment-wontfix threadId="PRRT_..." reason="...">>',
+    '<<comment-analysis threadId="PRRT_..." verdict="fix" summary="...">>',
+    'Every review thread id above must receive exactly one marker.',
+  );
+  return lines.join('\n');
+};
+
+export const buildCombinedCommentAgentArgs = (
+  threads: ReadonlyArray<CommentThread>,
+  pr: PullRequestState,
+  choice: ResolveModelChoice = {},
+): CommentAgentArgs => {
+  const defaults = kindRouting({ kind: 'resolver' });
+  const first = threads[0];
+  if (first === undefined) {
+    throw new Error('combined resolver requires at least one thread');
+  }
+  const sourceThreadIds = threads.flatMap((thread) =>
+    thread.head.threadId != null ? [thread.head.threadId] : [],
+  );
+  return {
+    name: `resolve: ${threads.length} review threads`,
+    kind: 'resolver',
+    model: choice.model ?? defaults.model,
+    ...(choice.provider !== undefined && { provider: choice.provider }),
+    effort: choice.effort ?? defaults.effort,
+    initialPrompt: buildCombinedCommentAgentPrompt(threads, pr),
+    sourceThreadIds,
+    sourceCommentUrl: first.head.url,
+    sourceKind: 'review_comment',
+  };
 };
 
 export type ResolveModelChoice = {

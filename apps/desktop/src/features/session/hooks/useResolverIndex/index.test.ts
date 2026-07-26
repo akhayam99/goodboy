@@ -11,7 +11,12 @@ const SESSION = 'sess_1' as SessionId;
 
 const makeAgent = (
   id: string,
-  extra: { sourceThreadId?: string; sourceCommentUrl?: string; status?: Agent['status'] } = {},
+  extra: {
+    sourceThreadId?: string;
+    sourceThreadIds?: ReadonlyArray<string>;
+    sourceCommentUrl?: string;
+    status?: Agent['status'];
+  } = {},
 ): Agent => ({
   id: id as AgentId,
   sessionId: SESSION,
@@ -19,6 +24,7 @@ const makeAgent = (
   name: 'resolver',
   status: extra.status ?? 'completed',
   ...(extra.sourceThreadId != null && { sourceThreadId: extra.sourceThreadId }),
+  ...(extra.sourceThreadIds != null && { sourceThreadIds: extra.sourceThreadIds }),
   ...(extra.sourceCommentUrl != null && { sourceCommentUrl: extra.sourceCommentUrl }),
 });
 
@@ -38,6 +44,17 @@ describe('buildResolverIndex', () => {
     expect(idx.byThreadId.get('t1')?.agent.id).toBe('a1');
     expect(idx.byCommentUrl.size).toBe(0);
     expect(idx.byDiffAgentId.size).toBe(0);
+  });
+
+  it('maps every combined thread id to the same resolver', () => {
+    const agent = makeAgent('combined', { sourceThreadIds: ['t1', 't2'] });
+    const index = buildResolverIndex([agent], {
+      resolvedThreadIds: new Set(),
+      pendingThreadIds: new Set(),
+      statusOf: statusFromSets(new Set(), new Set()),
+    });
+    expect(index.byThreadId.get('t1')?.agent.id).toBe('combined');
+    expect(index.byThreadId.get('t2')?.agent.id).toBe('combined');
   });
 
   it('falls back to commentUrl when no threadId', () => {

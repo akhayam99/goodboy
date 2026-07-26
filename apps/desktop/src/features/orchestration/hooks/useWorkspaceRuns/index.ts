@@ -13,6 +13,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore, agentHasUnread } from '../../../../store';
 import { deriveSessionStage, isPrReviewSession } from '../../../../store/slices/session-view';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { agentThreadIds } from '../../../session/agentThreadIds';
 import {
   statusToNodeStatus,
   type SpawnNode,
@@ -357,7 +358,7 @@ export const useWorkspaceRuns = (
         }
         const node = agentToNode(agent, childrenByParentId, costByAgentId, selectedAgentId, 0);
         const nodeActive = isRunningOrPending(node.status);
-        if (agent.sourceThreadId != null) {
+        if (agentThreadIds(agent).length > 0) {
           if (nodeActive) {
             activeResolveQueue.push(node);
           } else {

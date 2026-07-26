@@ -89,6 +89,7 @@ type RawAgentRow = {
   readonly kind: string | null;
   readonly verbosity: string | null;
   readonly sourceThreadId: string | null;
+  readonly sourceThreadIds: string | null;
   readonly sourceCommentUrl: string | null;
   readonly sourceKind: string | null;
 };
@@ -149,7 +150,27 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
   };
 }
 
+const parseSourceThreadIds = ({
+  value,
+}: {
+  readonly value: string | null;
+}): ReadonlyArray<string> => {
+  if (value === null) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((threadId): threadId is string => typeof threadId === 'string');
+  } catch {
+    return [];
+  }
+};
+
 function rowToAgent(row: RawAgentRow): Agent {
+  const sourceThreadIds = parseSourceThreadIds({ value: row.sourceThreadIds });
   return {
     id: row.id as AgentId,
     sessionId: row.sessionId as SessionId,
@@ -170,6 +191,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.kind != null && { kind: row.kind }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
+    ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
     ...(row.sourceKind != null && { sourceKind: row.sourceKind as AgentSourceKind }),
   };
@@ -305,6 +327,7 @@ export type AgentInsertArgs = {
   readonly kind?: string;
   readonly verbosity?: VerbosityLevel;
   readonly sourceThreadId?: string;
+  readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl?: string;
   readonly sourceKind?: AgentSourceKind;
 };
@@ -327,6 +350,8 @@ export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> =>
       kind: run.kind ?? null,
       verbosity: run.verbosity ?? null,
       sourceThreadId: run.sourceThreadId ?? null,
+      sourceThreadIds:
+        run.sourceThreadIds !== undefined ? JSON.stringify(run.sourceThreadIds) : null,
       sourceCommentUrl: run.sourceCommentUrl ?? null,
       sourceKind: run.sourceKind ?? null,
     },

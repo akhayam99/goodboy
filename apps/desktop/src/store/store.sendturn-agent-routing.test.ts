@@ -925,6 +925,66 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(useAppStore.getState().pendingResolverKickoff[AGENT_B]).toBeUndefined();
   });
 
+  it('records every combined resolver thread outcome', async () => {
+    const useAppStore = await importStore();
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { ...buildAgent(AGENT_A, 0), status: 'completed' },
+    ]);
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0)] },
+      selectedAgentId: { [SESSION_ID]: AGENT_A },
+      transcripts: { [AGENT_A]: [] },
+      agentKindOverride: { [AGENT_A]: 'resolver' },
+      agentEffortOverride: {},
+      agentProviderOverride: {},
+      agentModelOverride: {},
+      resolverState: {},
+      resolverThreadOutcomes: {},
+      pendingResolverKickoff: {},
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
+      yield {
+        kind: 'assistant_text' as const,
+        runId: args.runId,
+        delta: [
+          '<<comment-resolved threadId="PRRT_1" commitSha="abc1234">>',
+          '<<comment-resolved threadId="PRRT_2" commitSha="abc1234">>',
+          '<<comment-wontfix threadId="PRRT_3" reason="already handled">>',
+        ].join('\n'),
+        at: NOW,
+      };
+      yield { kind: 'done' as const, runId: args.runId, at: NOW };
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(useAppStore.getState().resolverState[AGENT_A]).toBe('committed');
+    expect(useAppStore.getState().resolverThreadOutcomes[AGENT_A]).toEqual({
+      PRRT_1: { kind: 'resolved', commitSha: 'abc1234' },
+      PRRT_2: { kind: 'resolved', commitSha: 'abc1234' },
+      PRRT_3: { kind: 'wontfix', reason: 'already handled' },
+    });
+  });
+
   it('a resolver that ends without a marker records awaiting and blocks the queue', async () => {
     const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');

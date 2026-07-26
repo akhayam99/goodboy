@@ -11,6 +11,7 @@ import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
 import { resolveGithubThread } from './resolveGithubThread';
+import { resolveAgentThreads } from './resolveAgentThreads';
 import { queueResolution } from './queueResolution';
 import { dequeueResolution } from './dequeueResolution';
 import { loadPendingResolutions } from './loadPendingResolutions';
@@ -27,6 +28,7 @@ export const createGithubSlice = (set: SetFn, get: GetFn) => {
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
     resolveGithubThread: resolveGithubThread(set, get),
+    resolveAgentThreads: resolveAgentThreads(set, get),
     queueResolution: queueResolution(set, get),
     dequeueResolution: dequeueResolution(set, get),
     loadPendingResolutions: loadPendingResolutions(set, get),

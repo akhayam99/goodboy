@@ -3,6 +3,7 @@ import type { AgentId, PrDetail, PullRequestState, SessionId } from '@goodboy/ty
 import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
 import {
+  buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
   type CommentAgentArgs,
   type ResolveModelChoice,
@@ -229,6 +230,7 @@ export const PrDetailPanel = ({
       initialPrompt: args.initialPrompt,
       kindOverride: args.kind,
       ...(args.sourceThreadId !== undefined && { sourceThreadId: args.sourceThreadId }),
+      ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
       sourceCommentUrl: args.sourceCommentUrl,
       sourceKind: args.sourceKind,
       ...(deferKickoff && { deferKickoff: true }),
@@ -299,6 +301,34 @@ export const PrDetailPanel = ({
           true,
         );
       }
+      await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
+      await activateNextResolver(sessionId);
+      onClose();
+    })();
+  };
+
+  const onSpawnCombined = (
+    batch: ReadonlyArray<CommentThread>,
+    choiceById: Readonly<Record<string, ResolveModelChoice>>,
+  ) => {
+    if (!activePr || batch.length < 2 || batch.length > 8) {
+      return;
+    }
+    const fresh = batch.filter((thread) => {
+      const existing = resolverFor(thread);
+      return !existing || existing.status === 'failed';
+    });
+    if (fresh.length < 2) {
+      return;
+    }
+    const first = fresh[0];
+    if (first === undefined) {
+      return;
+    }
+    const choice = choiceById[first.head.id] ?? {};
+    void (async () => {
+      await spawnResolver(buildCombinedCommentAgentArgs(fresh, activePr, choice), choice, true);
       await setCurrentSession(sessionId);
       setActiveLens(sessionId, 'resolve');
       await activateNextResolver(sessionId);
@@ -430,6 +460,7 @@ export const PrDetailPanel = ({
                     resolverFor={resolverFor}
                     onSpawnOne={onSpawnOne}
                     onSpawnBatch={onSpawnBatch}
+                    onSpawnCombined={onSpawnCombined}
                     onOpenResolver={openResolver}
                     roleModels={roleModels}
                     onOpenThread={(threadId) => {

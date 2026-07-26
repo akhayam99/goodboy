@@ -179,6 +179,8 @@ pub struct SessionRow {
     pub workflow_run_id: Option<String>,
     #[serde(rename = "sourceThreadId")]
     pub source_thread_id: Option<String>,
+    #[serde(rename = "sourceThreadIds")]
+    pub source_thread_ids: Option<String>,
     #[serde(rename = "sourceCommentUrl")]
     pub source_comment_url: Option<String>,
     #[serde(rename = "sourceKind")]
@@ -211,6 +213,8 @@ pub struct PhaseRunInsertInput {
     pub workflow_run_id: Option<String>,
     #[serde(rename = "sourceThreadId")]
     pub source_thread_id: Option<String>,
+    #[serde(rename = "sourceThreadIds")]
+    pub source_thread_ids: Option<String>,
     #[serde(rename = "sourceCommentUrl")]
     pub source_comment_url: Option<String>,
     #[serde(rename = "sourceKind")]
@@ -861,7 +865,7 @@ pub fn agent_list_for_session(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
-                parent_agent_id, workflow_run_id, source_thread_id, source_comment_url,
+                parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url,
                 source_kind
          FROM agents
          WHERE session_id = ?1
@@ -888,8 +892,9 @@ pub fn agent_list_for_session(
             parent_agent_id: row.get(16)?,
             workflow_run_id: row.get(17)?,
             source_thread_id: row.get(18)?,
-            source_comment_url: row.get(19)?,
-            source_kind: row.get(20)?,
+            source_thread_ids: row.get(19)?,
+            source_comment_url: row.get(20)?,
+            source_kind: row.get(21)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -907,8 +912,8 @@ pub fn agent_insert(
         "INSERT INTO agents
            (id, session_id, step_id, ordinal, name, status,
             provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
-            parent_agent_id, workflow_run_id, source_thread_id, source_comment_url, source_kind)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+            parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
         rusqlite::params![
             id,
             input.session_id,
@@ -925,6 +930,7 @@ pub fn agent_insert(
             input.parent_agent_id,
             input.workflow_run_id,
             input.source_thread_id,
+            input.source_thread_ids,
             input.source_comment_url,
             input.source_kind,
         ],
@@ -950,6 +956,7 @@ pub fn agent_insert(
         parent_agent_id: input.parent_agent_id,
         workflow_run_id: input.workflow_run_id,
         source_thread_id: input.source_thread_id,
+        source_thread_ids: input.source_thread_ids,
         source_comment_url: input.source_comment_url,
         source_kind: input.source_kind,
     })
@@ -993,7 +1000,7 @@ pub fn agent_update_status(
         "SELECT id, session_id, step_id, ordinal, name, status,
                 provider_run_id, output_summary, started_at, completed_at,
                 provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
-                parent_agent_id, workflow_run_id, source_thread_id, source_comment_url,
+                parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url,
                 source_kind
          FROM agents
          WHERE id = ?1
@@ -1020,8 +1027,9 @@ pub fn agent_update_status(
             parent_agent_id: row.get(16)?,
             workflow_run_id: row.get(17)?,
             source_thread_id: row.get(18)?,
-            source_comment_url: row.get(19)?,
-            source_kind: row.get(20)?,
+            source_thread_ids: row.get(19)?,
+            source_comment_url: row.get(20)?,
+            source_kind: row.get(21)?,
         })
     })?;
     match rows.next() {

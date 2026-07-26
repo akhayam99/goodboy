@@ -102,6 +102,7 @@ export type Agent = Readonly<{
   providerOverride?: string;
   kind?: string;
   sourceThreadId?: string;
+  sourceThreadIds?: ReadonlyArray<string>;
   sourceCommentUrl?: string;
   sourceKind?: AgentSourceKind;
 }>;

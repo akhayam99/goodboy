@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import { buildCommentAgentArgs, buildCommentAgentTitle } from './spawn-from-comment';
+import {
+  buildCombinedCommentAgentArgs,
+  buildCommentAgentArgs,
+  buildCommentAgentTitle,
+} from './spawn-from-comment';
 
 const PR: PullRequestState = {
   number: 9108,
@@ -171,6 +175,32 @@ describe('spawn-from-comment', () => {
     );
     expect(args.initialPrompt).toContain(
       'summary must be one paragraph of plain text with no double quotes',
+    );
+  });
+
+  it('builds one combined resolver with every source thread', () => {
+    const first = makeComment({ id: 'review-1', threadId: 'PRRT_1' });
+    const second = makeComment({
+      id: 'review-2',
+      threadId: 'PRRT_2',
+      body: 'handle the second issue',
+      url: 'https://github.com/o/r/pull/9108#discussion_r2',
+    });
+    const args = buildCombinedCommentAgentArgs(
+      [
+        { head: first, replies: [makeComment({ id: 'reply-1', body: 'first reply' })] },
+        { head: second, replies: [] },
+      ],
+      PR,
+      { provider: 'codex', model: 'gpt-5-codex', effort: 'high' },
+    );
+    expect(args.sourceThreadIds).toEqual(['PRRT_1', 'PRRT_2']);
+    expect(args.sourceCommentUrl).toBe(first.url);
+    expect(args.sourceKind).toBe('review_comment');
+    expect(args.initialPrompt).toContain('first reply');
+    expect(args.initialPrompt).toContain('handle the second issue');
+    expect(args.initialPrompt).toContain(
+      'Every review thread id above must receive exactly one marker',
     );
   });
 });

@@ -331,6 +331,7 @@ export type AppActions = {
       triggeredPlanId?: PlanId;
       kindOverride?: AgentKind;
       sourceThreadId?: string;
+      sourceThreadIds?: ReadonlyArray<string>;
       sourceCommentUrl?: string;
       sourceKind?: AgentSourceKind;
       deferKickoff?: boolean;
@@ -410,6 +411,7 @@ export type AppActions = {
     threadId: string,
     closure?: { commitSha?: string; reason?: string },
   ): Promise<boolean>;
+  resolveAgentThreads(sessionId: SessionId, agentId: AgentId): Promise<boolean>;
   queueResolution(
     sessionId: SessionId,
     args: { threadId: string; commitSha: string; prNumber: number },
@@ -631,6 +633,7 @@ export const initialState: AppState = {
   agentKindOverride: {},
   pendingResolverKickoff: {},
   resolverState: {},
+  resolverThreadOutcomes: {},
   agentDraft: {},
   workflowDrafts: {},
   agentAttachments: {},
