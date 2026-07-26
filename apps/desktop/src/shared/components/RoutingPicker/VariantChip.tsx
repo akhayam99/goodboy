@@ -17,12 +17,6 @@ const TIER_NOTE: Record<CostTier, string> = {
   expensive: 'premium',
 };
 
-const TIER_DOT: Record<CostTier, string> = {
-  cheap: 'bg-success',
-  mid: 'bg-warning',
-  expensive: 'bg-danger',
-};
-
 export const VariantChip = ({ id, active, onSelect }: Props) => {
   const tier = modelTier(id);
   return (
@@ -36,8 +30,8 @@ export const VariantChip = ({ id, active, onSelect }: Props) => {
         active && 'bg-background font-medium text-foreground shadow-sm',
       )}
     >
-      <span className={cn('size-1.5 shrink-0 rounded-full', TIER_DOT[tier])} aria-hidden />
       {parseModelId(id).variantLabel}
+      {tier === 'expensive' && <span className="text-muted-foreground/50">$$</span>}
     </button>
   );
 };
