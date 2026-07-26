@@ -20,18 +20,10 @@ type Props = {
   readonly model: string;
   readonly effort: EffortLevel;
   readonly showEffort: boolean;
-  readonly isModelRecommended: boolean;
   readonly verbosity?: VerbosityLevel;
 };
 
-export const TriggerLabel = ({
-  provider,
-  model,
-  effort,
-  showEffort,
-  isModelRecommended,
-  verbosity,
-}: Props) => {
+export const TriggerLabel = ({ provider, model, effort, showEffort, verbosity }: Props) => {
   const ProviderGlyph = PROVIDER_BRAND[provider].icon;
   return (
     <>
@@ -61,11 +53,6 @@ export const TriggerLabel = ({
             {VERBOSITY_LABEL[verbosity]}
           </span>
         </>
-      )}
-      {isModelRecommended && (
-        <span className="shrink-0 rounded bg-muted px-1 text-[9px] font-medium uppercase leading-tight tracking-wide text-muted-foreground/70">
-          recommended
-        </span>
       )}
     </>
   );
