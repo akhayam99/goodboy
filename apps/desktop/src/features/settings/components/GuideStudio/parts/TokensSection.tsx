@@ -1,4 +1,4 @@
-import { Coins } from 'lucide-react';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
 import { SectionHeader } from './SectionHeader';
@@ -9,7 +9,7 @@ type Props = Record<never, never>;
 export const TokensSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
-      icon={<Coins size={14} aria-hidden className="text-warning" />}
+      icon={<SECTION_ICONS.budget size={14} aria-hidden className="text-warning" />}
       title="Tokens & cost"
       description="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token is about three quarters of an English word."
       tone="warning"

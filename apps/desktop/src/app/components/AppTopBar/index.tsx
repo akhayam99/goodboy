@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { HelpCircle, Moon, Settings, Smartphone, Sun } from 'lucide-react';
+import { Moon, Smartphone, Sun } from 'lucide-react';
 import { cn, Divider, StatusDot, Tooltip, formatUsd } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
+import { SECTION_ICONS } from '../../../shared/components/section-icons';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
 import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
@@ -14,10 +15,11 @@ const TOPBAR_ICON_BTN =
 
 export type AppTopBarProps = {
   onOpenSettings: () => void;
+  onOpenBudget: () => void;
   activeStudio: string | null;
 };
 
-export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
+export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTopBarProps) => {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
@@ -35,9 +37,19 @@ export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
 
         <div className="min-w-0 flex-1" />
 
-        <WorkspaceRollupStrip />
+        <button
+          type="button"
+          onClick={onOpenBudget}
+          title="Open budget"
+          className="rounded px-1.5 py-1 transition-colors hover:bg-muted/50"
+        >
+          <WorkspaceRollupStrip />
+        </button>
+
+        <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 
         <div className="flex shrink-0 items-center gap-0.5">
+          <NotificationCenter />
           <Tooltip content={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}>
             <button
               type="button"
@@ -48,7 +60,7 @@ export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
               {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
             </button>
           </Tooltip>
-          <NotificationCenter />
+          <PairDeviceCta />
           <Tooltip content="getting started">
             <button
               type="button"
@@ -56,11 +68,10 @@ export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
               aria-label="open getting started guide"
               className={TOPBAR_ICON_BTN}
             >
-              <HelpCircle size={14} aria-hidden />
+              <SECTION_ICONS.guide size={14} aria-hidden />
             </button>
           </Tooltip>
           <OnboardingChip />
-          <PairDeviceCta />
           <Tooltip content="settings (⌘,)">
             <button
               type="button"
@@ -73,12 +84,9 @@ export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
             >
-              <Settings size={14} aria-hidden />
+              <SECTION_ICONS.settings size={14} aria-hidden />
             </button>
           </Tooltip>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
-            Beta
-          </span>
         </div>
       </div>
       <Divider />
@@ -86,7 +94,7 @@ export const AppTopBar = ({ onOpenSettings, activeStudio }: AppTopBarProps) => {
   );
 };
 
-function PairDeviceCta() {
+const PairDeviceCta = () => {
   const [linked, setLinked] = useState(false);
 
   useEffect(() => {
@@ -109,7 +117,7 @@ function PairDeviceCta() {
     };
   }, []);
 
-  const label = linked ? 'iPhone linked — manage' : 'Pair your iPhone';
+  const label = linked ? 'iPhone linked, manage' : 'Pair your iPhone';
 
   return (
     <button
@@ -126,9 +134,9 @@ function PairDeviceCta() {
       ) : null}
     </button>
   );
-}
+};
 
-function WorkspaceRollupStrip() {
+const WorkspaceRollupStrip = () => {
   const workspace = useCurrentWorkspace();
   const sessions = useSessions();
   const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions);
@@ -159,4 +167,4 @@ function WorkspaceRollupStrip() {
       </span>
     </div>
   );
-}
+};

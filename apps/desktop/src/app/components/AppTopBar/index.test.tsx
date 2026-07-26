@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 
 const { currentWorkspace } = vi.hoisted(() => ({
@@ -43,19 +43,27 @@ import { AppTopBar } from './index';
 
 describe('AppTopBar', () => {
   it('renders settings button', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} activeStudio={null} />);
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
     expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
   });
 
   it('settings button has active state when settings studio is open', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} activeStudio="settings" />);
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="settings" />);
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).toContain('bg-foreground');
   });
 
   it('settings button is normal when a different studio is open', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} activeStudio="workflow" />);
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="workflow" />);
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).not.toContain('bg-foreground');
+  });
+
+  it('opens budget from the workspace rollup and omits the beta chip', () => {
+    const onOpenBudget = vi.fn();
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={onOpenBudget} activeStudio={null} />);
+    fireEvent.click(screen.getByTitle('Open budget'));
+    expect(onOpenBudget).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Beta')).toBeNull();
   });
 });

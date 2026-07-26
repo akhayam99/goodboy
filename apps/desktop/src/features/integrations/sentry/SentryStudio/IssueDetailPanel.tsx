@@ -1,5 +1,5 @@
 import { Divider, EmptyState, SectionHeader, StatCard, cn } from '@goodboy/ui';
-import { ExternalLink, Layers, MousePointerClick } from 'lucide-react';
+import { ExternalLink, ListTree, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -146,7 +146,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       <section className="flex flex-col gap-3">
         <SectionHeader
           label="stack trace"
-          icon={<Layers size={13} aria-hidden className="text-muted-foreground" />}
+          icon={<ListTree size={13} aria-hidden className="text-muted-foreground" />}
         />
         <SentryStackTrace frames={frames} isLoading={detailLoading} error={detailError} />
       </section>

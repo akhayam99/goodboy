@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
-import { Wallet } from 'lucide-react';
 import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { OverviewPanel } from './OverviewPanel';
 import { ProviderPanel } from './ProviderPanel';
@@ -138,7 +138,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
 
   return (
     <StudioShell
-      icon={Wallet}
+      icon={SECTION_ICONS.budget}
       title="Budget Studio"
       workspaceName={workspaceName}
       closeLabel="close budget studio"

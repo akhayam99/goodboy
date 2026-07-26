@@ -1,8 +1,9 @@
-import { Bot, Workflow } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { Eyebrow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import type { SpawnNode } from '../../../orchestration/components/SpawnTree/lib';
 import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { CompletedAgentRow } from './CompletedAgentRow';
@@ -51,7 +52,7 @@ export const CompletedSection = ({ sessionId, lanes, freeAgents, onSelectLens }:
         ))}
         {hiddenLaneCount > 0 ? (
           <SummaryRow
-            icon={Workflow}
+            icon={SECTION_ICONS.workflows}
             tone="accent"
             label="View all workflows"
             onClick={() => onSelectLens('workflows')}

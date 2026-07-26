@@ -88,7 +88,6 @@ import { NotificationCenter } from '../../features/notifications/components/Noti
 import { BootSplash } from '../../app/components/BootSplash';
 import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
-import { StatusBar } from '../../app/components/StatusBar';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
@@ -134,18 +133,6 @@ describe('a11y smoke, BootSplash', () => {
 describe('a11y smoke, WorkspacesSidebar', () => {
   it('no violations (no workspace selected)', async () => {
     const { container } = render(<WorkspacesSidebar />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
-
-describe('a11y smoke, StatusBar', () => {
-  it('no violations (idle, no session)', async () => {
-    const { container } = render(
-      <ToastProvider>
-        <StatusBar />
-      </ToastProvider>,
-    );
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });

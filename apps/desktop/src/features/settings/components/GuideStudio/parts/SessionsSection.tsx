@@ -1,5 +1,6 @@
-import { Coins, FolderGit2, GitBranch, MessagesSquare } from 'lucide-react';
+import { FolderGit2, GitBranch, MessagesSquare } from 'lucide-react';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
 import { SectionHeader } from './SectionHeader';
@@ -42,7 +43,7 @@ export const SessionsSection = ({}: Props) => (
                 {
                   term: 'budget (optional)',
                   desc: 'Soft cap in USD. Warning at 80%, error at 100%. The session keeps running.',
-                  icon: <Coins size={11} aria-hidden />,
+                  icon: <SECTION_ICONS.budget size={11} aria-hidden />,
                   tone: 'warning' as const,
                 },
               ]

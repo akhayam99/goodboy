@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { AppScopePanel } from './AppScopePanel';
 
@@ -10,7 +10,7 @@ type Props = {
 export const SettingsStudio = ({ initialFocus, onClose }: Props) => {
   return (
     <StudioShell
-      icon={Settings}
+      icon={SECTION_ICONS.settings}
       title="Settings"
       workspaceName="App settings"
       closeLabel="close settings"
