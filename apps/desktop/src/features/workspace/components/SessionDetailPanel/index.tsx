@@ -1,15 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Archive,
-  ArchiveRestore,
-  ArrowLeft,
-  Check,
-  Copy,
-  FolderOpen,
-  Pencil,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Archive, ArchiveRestore, Check, Copy, FolderOpen, Pencil, Trash2, X } from 'lucide-react';
 import { Input, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';

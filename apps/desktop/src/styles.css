@@ -433,23 +433,6 @@ dialog[open]::backdrop {
   animation: cost-chip-pulse 1100ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* Linear-shrinking countdown bar. Used for the delete-arm window in
-   SessionScopePanel so users see how long the confirmation arm stays
-   open before disarming. Duration set inline via --duration. */
-@keyframes shrink-bar {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
-}
-
-.shrink-bar {
-  transform-origin: left center;
-  animation: shrink-bar var(--shrink-duration, 4s) linear forwards;
-}
-
 @keyframes text-shimmer {
   to {
     background-position: -200% center;
