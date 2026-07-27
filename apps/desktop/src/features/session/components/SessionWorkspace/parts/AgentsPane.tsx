@@ -1,5 +1,6 @@
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
+import { SpawnAgentControl } from '../../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
 import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
@@ -31,11 +32,13 @@ export const AgentsPane = ({ session, meta, inspectedAgentId, onInspectAgent }: 
         title="Agents"
         description="Agents you spawn by hand to work this session."
         meta={meta}
+        actions={<SpawnAgentControl sessionId={sessionId} className="pl-0" />}
         width="3xl"
       >
         <AgentsSection
           task={session}
           only="agents"
+          showCreateControl={false}
           inspectedAgentId={inspectedAgentId}
           onInspectAgent={(agentId) => onInspectAgent(agentId)}
         />

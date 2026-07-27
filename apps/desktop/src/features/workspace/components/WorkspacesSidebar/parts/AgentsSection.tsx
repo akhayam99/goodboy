@@ -53,6 +53,7 @@ type Props = {
   workflowRunId?: WorkflowRunId;
   workflowVariant?: 'sidebar' | 'detail';
   showWorkflowAttach?: boolean;
+  showCreateControl?: boolean;
   inspectedResolverId?: AgentId | null;
   onInspectResolver?: (agentId: AgentId) => void;
   inspectedAgentId?: AgentId | null;
@@ -65,6 +66,7 @@ export const AgentsSection = ({
   workflowRunId,
   workflowVariant = 'sidebar',
   showWorkflowAttach = true,
+  showCreateControl = true,
   inspectedResolverId = null,
   onInspectResolver,
   inspectedAgentId = null,
@@ -739,7 +741,7 @@ export const AgentsSection = ({
                   ))}
                 </ul>
               ) : null}
-              <SpawnAgentControl sessionId={task.id} />
+              {showCreateControl ? <SpawnAgentControl sessionId={task.id} /> : null}
               {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}
             </>
           ) : (
