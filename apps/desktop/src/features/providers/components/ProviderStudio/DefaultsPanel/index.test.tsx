@@ -267,6 +267,7 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reviewer routing model' }));
 
