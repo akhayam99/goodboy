@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { PROVIDER_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
 
 type Params = {
@@ -8,9 +8,12 @@ type Params = {
 };
 
 export const recommendationSummary = ({ provider, model }: Params): string => {
-  const resolved =
-    model != null && PROVIDER_CAPABILITIES[provider].models.some((entry) => entry.id === model)
-      ? model
-      : getDefaultTurnModel(provider);
-  return `${PROVIDER_LABEL[provider]} · ${modelLabel(resolved)}`;
+  const label = PROVIDER_LABEL[provider];
+  if (model == null) {
+    return label;
+  }
+  if (!PROVIDER_CAPABILITIES[provider].models.some((entry) => entry.id === model)) {
+    return label;
+  }
+  return `${label} · ${modelLabel(model)}`;
 };
