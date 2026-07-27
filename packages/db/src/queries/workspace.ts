@@ -149,11 +149,26 @@ type UpdateKindParams = {
   readonly db: Database;
   readonly id: WorkspaceId;
   readonly kind: WorkspaceKind;
+  readonly rootPath?: string;
 };
 
-export const updateWorkspaceKind = async ({ db, id, kind }: UpdateKindParams): Promise<void> => {
-  await db.execute('UPDATE workspaces SET kind = ?, updated_at = ? WHERE id = ?', [
+export const updateWorkspaceKind = async ({
+  db,
+  id,
+  kind,
+  rootPath,
+}: UpdateKindParams): Promise<void> => {
+  if (rootPath == null) {
+    await db.execute('UPDATE workspaces SET kind = ?, updated_at = ? WHERE id = ?', [
+      kind,
+      Date.now(),
+      id,
+    ]);
+    return;
+  }
+  await db.execute('UPDATE workspaces SET kind = ?, root_path = ?, updated_at = ? WHERE id = ?', [
     kind,
+    rootPath,
     Date.now(),
     id,
   ]);

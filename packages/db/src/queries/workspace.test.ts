@@ -215,6 +215,18 @@ describe('updateWorkspaceKind', () => {
     expect((await getWorkspaceById(db, other.id))?.kind).toBe('simple');
   });
 
+  it('stores the canonical root path alongside the kind', async () => {
+    const db = await makeDb();
+    const ws = makeWorkspace({ id: 'canonical', rootPath: '/tmp/link/space', kind: 'simple' });
+    await insertWorkspace(db, ws);
+
+    await updateWorkspaceKind({ db, id: ws.id, kind: 'repo', rootPath: '/private/tmp/link/space' });
+
+    const after = await getWorkspaceById(db, ws.id);
+    expect(after?.rootPath).toBe('/private/tmp/link/space');
+    expect(after?.kind).toBe('repo');
+  });
+
   it('bumps updatedAt so the change is observable', async () => {
     const db = await makeDb();
     const ws = makeWorkspace({ id: 'bump', rootPath: '/tmp/bump', kind: 'simple' });
