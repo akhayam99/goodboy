@@ -49,6 +49,7 @@ import {
 } from '../features/workflows/workflows';
 import { invokeParallelPhaseRunSpawn, cancelTurn } from '../features/chat/turn';
 import { inferAgentKindFromName } from '../features/session/agent-kind';
+import { resolveErrorTurnMessage } from './slices/turn/resolveErrorTurnMessage';
 
 export type ParallelBranchInputs = {
   readonly session: Session;
@@ -230,6 +231,7 @@ export type RunParallelBranchDeps = {
   readonly disallowedTools?: ReadonlyArray<string>;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
+  readonly authIdentity: string | null;
   readonly effects: ParallelBranchEffects;
 };
 
@@ -246,7 +248,7 @@ export const runParallelBranch = async (
     maxParallelism,
     workingDir,
   } = inputs;
-  const { now, effects, provider } = deps;
+  const { now, effects, provider, authIdentity } = deps;
 
   const cappedDefs = groupDefs.slice(0, Math.max(1, maxParallelism));
 
@@ -297,11 +299,22 @@ export const runParallelBranch = async (
     });
     listener.registerRun(runId, {
       onEvent: (e) => {
+        const forwarded: TurnEvent =
+          e.kind === 'error'
+            ? {
+                ...e,
+                message: resolveErrorTurnMessage({
+                  message: e.message,
+                  providerId: provider,
+                  identity: authIdentity,
+                }),
+              }
+            : e;
         const cb = progressCallbacks.get(runId);
         if (cb) {
-          cb(e);
+          cb(forwarded);
         }
-        effects.appendTurnEvent(orchestratingAgentId, session.id, e);
+        effects.appendTurnEvent(orchestratingAgentId, session.id, forwarded);
       },
       onSettle: (status, error) => {
         const r = settleResolvers.get(runId);

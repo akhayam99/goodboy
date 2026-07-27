@@ -15,23 +15,29 @@ import type {
   ProviderRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { decodeAuthRequiredMessage } from '../features/chat/turn';
 
 const agentFeaturesMock = { parallelAgents: false, maxParallelism: 4 };
 vi.mock('../shared/lib/features', () => ({
   AGENT_FEATURES: agentFeaturesMock,
 }));
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
-const invokeParallelPhaseRunSpawnSpy = vi.fn();
-
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: cancelTurnSpy,
-  invokeParallelPhaseRunSpawn: (args: unknown) => invokeParallelPhaseRunSpawnSpy(args),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
+const { runTurnSpy, cancelTurnSpy, invokeParallelPhaseRunSpawnSpy } = vi.hoisted(() => ({
+  runTurnSpy: vi.fn(),
+  cancelTurnSpy: vi.fn(),
+  invokeParallelPhaseRunSpawnSpy: vi.fn(),
 }));
+
+vi.mock('../features/chat/turn', async () => {
+  const actual =
+    await vi.importActual<typeof import('../features/chat/turn')>('../features/chat/turn');
+  return {
+    ...actual,
+    runTurn: (args: unknown) => runTurnSpy(args),
+    cancelTurn: cancelTurnSpy,
+    invokeParallelPhaseRunSpawn: (args: unknown) => invokeParallelPhaseRunSpawnSpy(args),
+  };
+});
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -80,6 +86,7 @@ vi.mock('@goodboy/db', () => ({
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
+  updateAgentConfig: vi.fn(),
   updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
   insertOpenQuestion: vi.fn(async () => undefined),
@@ -229,6 +236,12 @@ function buildTemplate(steps: ReadonlyArray<Step>): Workflow {
 function emitEnd(runId: ProviderRunId, exitCode: number = 0): void {
   for (const h of listenHandlers) {
     h({ runId, type: 'end', exit_code: exitCode, stderr: exitCode === 0 ? '' : 'failed' });
+  }
+}
+
+function emitLine(runId: ProviderRunId, line: string): void {
+  for (const h of listenHandlers) {
+    h({ runId, type: 'line', line });
   }
 }
 
@@ -449,5 +462,47 @@ describe('sendTurn, parallel agents branch', () => {
     await turnPromise;
 
     expect(parallelPhaseGroupUpdateCompletedAtSpy).toHaveBeenCalledOnce();
+  });
+
+  it('surfaces a parallel branch stream error carrying the OAuth 401 text as auth_required', async () => {
+    agentFeaturesMock.parallelAgents = true;
+    invokeParallelPhaseRunSpawnSpy.mockImplementation(
+      async (args: { runs: ReadonlyArray<{ runId: string }> }) => args.runs.map((r) => r.runId),
+    );
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore, [
+      buildDef({ id: 'd-a', ordinal: 1, parallelGroup: 5 }),
+      buildDef({ id: 'd-b', ordinal: 2, parallelGroup: 5 }),
+    ]);
+    useAppStore.setState({ transcripts: {} });
+
+    const turnPromise = useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'plan' });
+    await new Promise((r) => setTimeout(r, 5));
+
+    const calls = invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<
+      [{ runs: ReadonlyArray<{ runId: ProviderRunId }> }]
+    >;
+    const runIdA = calls[0]![0].runs[0]!.runId;
+    const runIdB = calls[1]![0].runs[0]!.runId;
+
+    const oauthExpiredMessage =
+      'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth access token has expired. Re-authenticate to continue."},"request_id":null}';
+    emitLine(
+      runIdA,
+      JSON.stringify({ type: 'result', subtype: 'error', error: oauthExpiredMessage }),
+    );
+    emitEnd(runIdA, 1);
+    emitEnd(runIdB, 0);
+
+    await turnPromise;
+
+    const transcript = useAppStore.getState().transcripts['agent-1' as AgentId] ?? [];
+    const errorEvent = transcript.find((e) => e.kind === 'error');
+    const message = errorEvent && 'message' in errorEvent ? errorEvent.message : '';
+    expect(decodeAuthRequiredMessage(message)).toEqual({
+      providerId: 'anthropic',
+      identity: 'test',
+    });
   });
 });

@@ -65,7 +65,7 @@ const AUTH_ERROR_PATTERNS = [
   /please log in/i,
   /please sign in/i,
   /unauthenticated/i,
-  /401/,
+  /\b401\b/,
   /unauthorized/i,
   /login required/i,
   /not signed in/i,

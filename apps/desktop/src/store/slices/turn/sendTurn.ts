@@ -46,11 +46,7 @@ import { invokePermissionRuleList } from '../../../features/permissions/permissi
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
-import {
-  encodeAuthRequiredMessage,
-  isAuthErrorMessage,
-  runTurn,
-} from '../../../features/chat/turn';
+import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
@@ -81,6 +77,7 @@ import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
 import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
+import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import type { GetFn, SetFn } from './types';
 
@@ -745,7 +742,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         : undefined;
 
     try {
-      for await (const event of runTurn({
+      for await (const rawEvent of runTurn({
         runId,
         provider,
         model,
@@ -758,6 +755,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
+        const event: TurnEvent =
+          rawEvent.kind === 'error'
+            ? {
+                ...rawEvent,
+                message: resolveErrorTurnMessage({
+                  message: rawEvent.message,
+                  providerId: provider,
+                  identity: get().authResults?.[provider]?.identity ?? null,
+                }),
+              }
+            : rawEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
         if (event.kind === 'assistant_text') {
           assistantText += event.delta;
@@ -922,13 +930,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     } catch (err) {
       lastError = err;
       const rawMessage = formatError(err);
-      const isAuthErr = isAuthErrorMessage(rawMessage);
-      const message = isAuthErr
-        ? encodeAuthRequiredMessage({
-            providerId: provider,
-            identity: get().authResults?.[provider]?.identity ?? null,
-          })
-        : rawMessage;
+      const message = resolveErrorTurnMessage({
+        message: rawMessage,
+        providerId: provider,
+        identity: get().authResults?.[provider]?.identity ?? null,
+      });
       const errorState: TurnState = {
         kind: 'error',
         message: rawMessage,

@@ -307,7 +307,10 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Create agent/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Scout / }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn Scout' }));
-    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
+    expect(store.spawnAgent).toHaveBeenCalledWith(
+      'sess-1',
+      expect.objectContaining({ kindOverride: 'scout' }),
+    );
   });
 
   it('shows the two aligned start cards once work exists and no resolve start card', () => {
@@ -325,7 +328,10 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Create agent/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Scout / }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn Scout' }));
-    expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
+    expect(store.spawnAgent).toHaveBeenCalledWith(
+      'sess-1',
+      expect.objectContaining({ kindOverride: 'scout' }),
+    );
   });
 
   it('treats discarded workflow runs as not active for freshness', () => {

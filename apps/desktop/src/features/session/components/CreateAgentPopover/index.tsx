@@ -10,14 +10,15 @@ import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import {
   AGENT_KIND_META,
-  kindRouting,
   visibleAgentKinds,
   type AgentKind,
   type AgentKindRouting,
 } from '../../agent-kind';
+import { resolveSpawnRouting } from '../../spawn-routing';
 import { AgentKindGrid } from './AgentKindGrid';
 import { AgentRoutingSections } from './AgentRoutingSections';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
+import { SpawnRoutingSummary } from './SpawnRoutingSummary';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -53,32 +54,25 @@ export const CreateAgentPopover = ({
     ),
   );
   const roleModels = useSessionRoleModels({ sessionId });
-  const recommended = kindRouting({ kind: selectedKind, roleModels });
-  const [viewProvider, setViewProvider] = useState<ProviderId>(recommended.provider);
+  const session = useAppStore((state) => state.sessions?.find((s) => s.id === sessionId) ?? null);
+  const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleModels, session });
+  const effective: AgentKindRouting = routing ?? spawnDefault;
+  const [viewProvider, setViewProvider] = useState<ProviderId>(spawnDefault.provider);
 
   useEffect(() => {
-    if (open) {
-      return;
-    }
-    setViewProvider(routing?.provider ?? recommended.provider);
-  }, [open, routing, recommended.provider]);
+    setViewProvider(routing?.provider ?? spawnDefault.provider);
+  }, [open, selectedKind, routing, spawnDefault.provider]);
 
   const onPickEffort = (effort: AgentKindRouting['effort']) => {
-    setRouting({
-      provider: routing?.provider ?? recommended.provider,
-      model: routing?.model ?? recommended.model,
-      effort,
-    });
+    setRouting({ provider: effective.provider, model: effective.model, effort });
   };
 
   const onCreate = async () => {
     await spawnAgent(sessionId, {
       kindOverride: selectedKind,
-      ...(routing != null && {
-        provider: routing.provider,
-        model: routing.model,
-        effort: routing.effort,
-      }),
+      provider: effective.provider,
+      model: effective.model,
+      effort: effective.effort,
     });
     setKind('generic');
     setRouting(null);
@@ -114,10 +108,20 @@ export const CreateAgentPopover = ({
                 <Divider />
               </>
             )}
+            <SpawnRoutingSummary
+              kind={selectedKind}
+              effective={effective}
+              fallback={spawnDefault}
+              isPinned={routing != null}
+              onReset={() => {
+                setRouting(null);
+                setViewProvider(spawnDefault.provider);
+              }}
+            />
+            <Divider />
             <AgentRoutingSections
               connectedProviders={connectedProviders}
-              recommended={recommended}
-              routing={routing}
+              effective={effective}
               viewProvider={viewProvider}
               onViewProvider={setViewProvider}
               onPickProvider={(provider) => {
@@ -125,25 +129,17 @@ export const CreateAgentPopover = ({
                 setRouting({
                   provider,
                   model,
-                  effort: clampEffort(model, routing?.effort ?? recommended.effort),
+                  effort: clampEffort(model, effective.effort),
                 });
               }}
               onPickModel={(model) => {
-                if (model === '') {
-                  setRouting(null);
-                  return;
-                }
                 setRouting({
                   provider: viewProvider,
                   model,
-                  effort: clampEffort(model, routing?.effort ?? recommended.effort),
+                  effort: clampEffort(model, effective.effort),
                 });
               }}
               onPickEffort={onPickEffort}
-              onUseRecommended={() => {
-                setRouting(null);
-                setViewProvider(recommended.provider);
-              }}
               onConnectProvider={(provider) => {
                 window.dispatchEvent(
                   new CustomEvent('goodboy:open-provider-studio', {

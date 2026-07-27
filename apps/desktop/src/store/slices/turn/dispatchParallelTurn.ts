@@ -20,6 +20,7 @@ import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { runParallelBranch, type ParallelBranchEffects } from '../../parallel-turn';
 import { applySessionUpdate } from '../../session-mutators';
 import { invokeAgentList } from '../../../features/workflows/workflows';
+import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -160,6 +161,7 @@ export const dispatchParallelTurn = async (
         provider,
         providerBinary,
         model,
+        authIdentity: get().authResults?.[provider]?.identity ?? null,
         ...(claudeFlags.permissionMode !== undefined && {
           permissionMode: claudeFlags.permissionMode,
         }),
@@ -196,10 +198,15 @@ export const dispatchParallelTurn = async (
     }
   } catch (err) {
     const rawMessage = formatError(err);
+    const message = resolveErrorTurnMessage({
+      message: rawMessage,
+      providerId: provider,
+      identity: get().authResults?.[provider]?.identity ?? null,
+    });
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
       runId: groupSessionRunId,
-      message: rawMessage,
+      message,
       at: now(),
     });
     const errorState: TurnState = {

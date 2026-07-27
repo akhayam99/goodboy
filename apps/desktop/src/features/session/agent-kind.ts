@@ -261,6 +261,13 @@ export const kindRouting = ({ kind, roleModels }: KindRoutingParams): AgentKindR
   return { provider: role.provider, model: getCheapModel(role.provider), effort: 'low' };
 };
 
+export const isRightSizedKind = ({ kind, roleModels }: KindRoutingParams): boolean => {
+  if (!CHEAP_TIER_KINDS.has(kind)) {
+    return false;
+  }
+  return !resolveRoleRouting({ role: KIND_TO_ROLE[kind], prefs: roleModels }).isOverride;
+};
+
 export const AGENT_KIND_DEFAULTS: Record<
   AgentKind,
   {

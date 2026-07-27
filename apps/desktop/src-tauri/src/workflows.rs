@@ -173,6 +173,11 @@ pub struct SessionRow {
     pub done_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
+    pub effort: Option<String>,
+    #[serde(rename = "modelOverride")]
+    pub model_override: Option<String>,
+    #[serde(rename = "providerOverride")]
+    pub provider_override: Option<String>,
     #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
     #[serde(rename = "workflowRunId")]
@@ -859,49 +864,57 @@ pub fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseErro
 // Commands — agent (= session row) lifecycle
 // ---------------------------------------------------------------------------
 
+const AGENT_SESSION_COLS: &str =
+    "id, session_id, step_id, ordinal, name, status, \
+     provider_run_id, output_summary, started_at, completed_at, \
+     provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity, \
+     effort, model_override, provider_override, \
+     parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, \
+     source_kind, domains_json";
+
+fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite::Error> {
+    Ok(SessionRow {
+        id: row.get(0)?,
+        session_id: row.get(1)?,
+        step_id: row.get(2)?,
+        ordinal: row.get(3)?,
+        name: row.get(4)?,
+        status: row.get(5)?,
+        provider_run_id: row.get(6)?,
+        output_summary: row.get(7)?,
+        started_at: row.get(8)?,
+        completed_at: row.get(9)?,
+        provider_session_id: row.get(10)?,
+        last_finished_at: row.get(11)?,
+        last_viewed_at: row.get(12)?,
+        done_at: row.get(13)?,
+        kind: row.get(14)?,
+        verbosity: row.get(15)?,
+        effort: row.get(16)?,
+        model_override: row.get(17)?,
+        provider_override: row.get(18)?,
+        parent_agent_id: row.get(19)?,
+        workflow_run_id: row.get(20)?,
+        source_thread_id: row.get(21)?,
+        source_thread_ids: row.get(22)?,
+        source_comment_url: row.get(23)?,
+        source_kind: row.get(24)?,
+        domains_json: row.get(25)?,
+    })
+}
+
 #[tauri::command]
 pub fn agent_list_for_session(
     state: State<'_, Db>,
     session_id: String,
 ) -> Result<Vec<SessionRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT id, session_id, step_id, ordinal, name, status,
-                provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
-                parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url,
-                source_kind, domains_json
-         FROM agents
-         WHERE session_id = ?1
-         ORDER BY ordinal ASC",
-    )?;
-    let rows = stmt.query_map(rusqlite::params![session_id], |row| {
-        Ok(SessionRow {
-            id: row.get(0)?,
-            session_id: row.get(1)?,
-            step_id: row.get(2)?,
-            ordinal: row.get(3)?,
-            name: row.get(4)?,
-            status: row.get(5)?,
-            provider_run_id: row.get(6)?,
-            output_summary: row.get(7)?,
-            started_at: row.get(8)?,
-            completed_at: row.get(9)?,
-            provider_session_id: row.get(10)?,
-            last_finished_at: row.get(11)?,
-            last_viewed_at: row.get(12)?,
-            done_at: row.get(13)?,
-            kind: row.get(14)?,
-            verbosity: row.get(15)?,
-            parent_agent_id: row.get(16)?,
-            workflow_run_id: row.get(17)?,
-            source_thread_id: row.get(18)?,
-            source_thread_ids: row.get(19)?,
-            source_comment_url: row.get(20)?,
-            source_kind: row.get(21)?,
-            domains_json: row.get(22)?,
-        })
-    })?;
+    let sql = format!(
+        "SELECT {cols} FROM agents WHERE session_id = ?1 ORDER BY ordinal ASC",
+        cols = AGENT_SESSION_COLS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![session_id], session_row_from_row)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
 }
 
@@ -960,6 +973,9 @@ pub fn agent_insert(
         done_at: None,
         kind: input.kind,
         verbosity: input.verbosity,
+        effort: None,
+        model_override: None,
+        provider_override: None,
         parent_agent_id: input.parent_agent_id,
         workflow_run_id: input.workflow_run_id,
         source_thread_id: input.source_thread_id,
@@ -1004,43 +1020,12 @@ pub fn agent_update_status(
     )?;
 
     // Fetch updated row.
-    let mut stmt = conn.prepare(
-        "SELECT id, session_id, step_id, ordinal, name, status,
-                provider_run_id, output_summary, started_at, completed_at,
-                provider_session_id, last_finished_at, last_viewed_at, done_at, kind, verbosity,
-                parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url,
-                source_kind, domains_json
-         FROM agents
-         WHERE id = ?1
-         LIMIT 1",
-    )?;
-    let mut rows = stmt.query_map(rusqlite::params![input.id], |row| {
-        Ok(SessionRow {
-            id: row.get(0)?,
-            session_id: row.get(1)?,
-            step_id: row.get(2)?,
-            ordinal: row.get(3)?,
-            name: row.get(4)?,
-            status: row.get(5)?,
-            provider_run_id: row.get(6)?,
-            output_summary: row.get(7)?,
-            started_at: row.get(8)?,
-            completed_at: row.get(9)?,
-            provider_session_id: row.get(10)?,
-            last_finished_at: row.get(11)?,
-            last_viewed_at: row.get(12)?,
-            done_at: row.get(13)?,
-            kind: row.get(14)?,
-            verbosity: row.get(15)?,
-            parent_agent_id: row.get(16)?,
-            workflow_run_id: row.get(17)?,
-            source_thread_id: row.get(18)?,
-            source_thread_ids: row.get(19)?,
-            source_comment_url: row.get(20)?,
-            source_kind: row.get(21)?,
-            domains_json: row.get(22)?,
-        })
-    })?;
+    let sql = format!(
+        "SELECT {cols} FROM agents WHERE id = ?1 LIMIT 1",
+        cols = AGENT_SESSION_COLS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let mut rows = stmt.query_map(rusqlite::params![input.id], session_row_from_row)?;
     match rows.next() {
         Some(r) => Ok(r.map_err(PhaseError::Db)?),
         None => Err(PhaseError::RunNotFound(input.id)),
@@ -1162,4 +1147,67 @@ pub fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, Phase
     )?;
     let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn agents_table_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE agents (
+                id TEXT, session_id TEXT, step_id TEXT, ordinal INTEGER, name TEXT, status TEXT,
+                provider_run_id TEXT, output_summary TEXT, started_at TEXT, completed_at TEXT,
+                provider_session_id TEXT, last_finished_at TEXT, last_viewed_at TEXT, done_at TEXT,
+                kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
+                parent_agent_id TEXT, workflow_run_id TEXT, source_thread_id TEXT,
+                source_thread_ids TEXT, source_comment_url TEXT, source_kind TEXT, domains_json TEXT
+            )",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn agent_session_cols_round_trips_routing_fields() {
+        let conn = agents_table_conn();
+        conn.execute(
+            "INSERT INTO agents (id, session_id, ordinal, name, status, effort, model_override, provider_override)
+             VALUES ('a1', 's1', 0, 'scout', 'pending', 'high', 'claude-opus-4-8', 'anthropic')",
+            [],
+        )
+        .unwrap();
+
+        let sql = format!("SELECT {cols} FROM agents WHERE id = ?1", cols = AGENT_SESSION_COLS);
+        let mut stmt = conn.prepare(&sql).unwrap();
+        let row = stmt
+            .query_row(rusqlite::params!["a1"], session_row_from_row)
+            .unwrap();
+
+        assert_eq!(row.effort.as_deref(), Some("high"));
+        assert_eq!(row.model_override.as_deref(), Some("claude-opus-4-8"));
+        assert_eq!(row.provider_override.as_deref(), Some("anthropic"));
+    }
+
+    #[test]
+    fn agent_session_cols_default_routing_fields_to_none() {
+        let conn = agents_table_conn();
+        conn.execute(
+            "INSERT INTO agents (id, session_id, ordinal, name, status)
+             VALUES ('a2', 's1', 1, 'planner', 'pending')",
+            [],
+        )
+        .unwrap();
+
+        let sql = format!("SELECT {cols} FROM agents WHERE id = ?1", cols = AGENT_SESSION_COLS);
+        let mut stmt = conn.prepare(&sql).unwrap();
+        let row = stmt
+            .query_row(rusqlite::params!["a2"], session_row_from_row)
+            .unwrap();
+
+        assert!(row.effort.is_none());
+        assert!(row.model_override.is_none());
+        assert!(row.provider_override.is_none());
+    }
 }
