@@ -11,15 +11,6 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
   openrouter: 'OpenRouter',
 };
 
-export const PROVIDER_TEXT: Record<ProviderId, string> = {
-  anthropic: 'text-[var(--color-provider-anthropic)]',
-  cursor: 'text-[var(--color-provider-cursor)]',
-  codex: 'text-[var(--color-provider-codex)]',
-  gemini: 'text-[var(--color-provider-gemini)]',
-  opencode: 'text-[var(--color-provider-opencode)]',
-  openrouter: 'text-[var(--color-provider-openrouter)]',
-};
-
 export const PROVIDER_DOT: Record<ProviderId, string> = {
   anthropic: 'bg-[var(--color-provider-anthropic)]',
   cursor: 'bg-[var(--color-provider-cursor)]',

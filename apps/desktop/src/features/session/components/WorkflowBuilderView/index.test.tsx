@@ -76,13 +76,13 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
   RoutingPicker: ({
     provider,
     model,
-    recommendedModel,
+    recommendation,
     onProvider,
     onModel,
   }: {
     provider: string;
     model: string;
-    recommendedModel?: string;
+    recommendation?: { provider?: string; model?: string };
     onProvider: (v: string) => void;
     onModel: (v: string) => void;
   }) => (
@@ -93,7 +93,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       <button
         type="button"
         data-provider={provider === '' ? 'default' : provider}
-        data-recommended-model={recommendedModel}
+        data-recommended-model={recommendation?.model}
         onClick={() => onModel('claude-opus-4-6')}
       >
         model:{model === '' ? 'auto' : model}

@@ -19,8 +19,11 @@ import { ModelGrid } from './ModelGrid';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
+import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
-import { resolveRouting } from './resolveRouting';
+import { orderedEffortLevels } from './orderedEffortLevels';
+import { recommendationSummary } from './recommendationSummary';
+import { resolveRouting, type Recommendation } from './resolveRouting';
 
 const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
 const PROVIDER_CHIP_GROUP_CLASS_NAME =
@@ -34,17 +37,23 @@ type PickProviderParams = {
   readonly viewedProvider: ProviderId;
 };
 
+export type EffortSetting =
+  | { readonly editable: false; readonly value?: EffortLevel }
+  | {
+      readonly editable: true;
+      readonly value: EffortLevel;
+      readonly onChange: (effort: EffortLevel) => void;
+    };
+
 export type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly provider: ProviderId | '';
   readonly model: string;
-  readonly effort?: EffortLevel;
+  readonly effort: EffortSetting;
   readonly disabled: boolean;
   readonly onProvider: (provider: ProviderId | '') => void;
   readonly onModel: (model: string) => void;
-  readonly onEffort?: (effort: EffortLevel) => void;
-  readonly recommendedProvider?: ProviderId;
-  readonly recommendedModel?: string;
+  readonly recommendation?: Recommendation;
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
@@ -61,13 +70,11 @@ export const RoutingPicker = ({
   connectedProviders,
   provider,
   model,
-  effort = 'medium',
+  effort,
   disabled,
   onProvider,
   onModel,
-  onEffort,
-  recommendedProvider,
-  recommendedModel,
+  recommendation,
   verbosity,
   onVerbosity,
   onReset,
@@ -86,13 +93,16 @@ export const RoutingPicker = ({
     expectedHeight: 320,
     width: 'w-80 max-w-[calc(100vw-2rem)]',
   });
+  const editableEffort = effort.editable ? effort : null;
+  const effortValue = effort.value ?? 'medium';
+  const recommendedProvider = recommendation?.provider;
+  const recommendedModel = recommendation?.model;
   const routing = resolveRouting({
     providers: PROVIDERS,
     provider,
     model,
-    effort,
-    recommendedProvider,
-    recommendedModel,
+    effort: effortValue,
+    recommendation,
   });
   const [viewProvider, setViewProvider] = useState(routing.provider);
   const [isViewingAuto, setIsViewingAuto] = useState(routing.isProviderRecommended);
@@ -103,24 +113,20 @@ export const RoutingPicker = ({
     PROVIDER_CAPABILITIES[viewProvider].models.some((entry) => entry.id === recommendedModel)
       ? recommendedModel
       : undefined;
-  const viewedLiteralAutoModel = PROVIDER_CAPABILITIES[viewProvider].models.find(
-    (entry) => entry.id === 'auto',
-  )?.id;
   const viewedRouting = resolveRouting({
     providers: PROVIDERS,
     provider: viewProvider,
     model: isViewingRoutingProvider ? model : '',
-    effort,
-    recommendedProvider: isViewingRoutingProvider ? recommendedProvider : undefined,
-    recommendedModel: viewedRecommendedModel,
+    effort: effortValue,
+    recommendation: viewedRecommendedModel != null ? { model: viewedRecommendedModel } : undefined,
   });
+  const gridRecommendedModel = recommendedProvider == null ? viewedRecommendedModel : undefined;
   const isViewProviderConnected = connectedProviders.includes(viewProvider);
-  const showEffort = onEffort != null && routing.effortLevels != null;
-  const showViewedEffort = onEffort != null && viewedRouting.effortLevels != null;
+  const showEffort = editableEffort != null && routing.effortLevels != null;
   const isModelRecommended =
-    isViewingRoutingProvider && routing.isModelRecommended && viewedRecommendedModel != null;
+    isViewingRoutingProvider && routing.isModelRecommended && gridRecommendedModel != null;
   const summary = `${PROVIDER_LABEL[routing.provider]} · ${modelLabel(routing.model)}${
-    showEffort ? ` · ${EFFORT_LABEL[routing.effort]} effort` : ''
+    showEffort ? ` · ${EFFORT_LABEL[routing.effort]}` : ''
   }`;
 
   useEffect(() => {
@@ -162,7 +168,7 @@ export const RoutingPicker = ({
         title={disabled ? disabledTitle : `${summary}. Click to change.`}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
         className={cn(
           'items-center gap-1.5 text-xs transition-colors',
           variant === 'pill'
@@ -205,15 +211,8 @@ export const RoutingPicker = ({
         >
           {defaultSummary != null && (
             <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
-              <span
-                className={cn(
-                  'font-semibold uppercase tracking-wide',
-                  overridden ? 'text-warning' : 'text-muted-foreground/70',
-                )}
-              >
-                {overridden ? 'override' : 'default'}
-              </span>
-              <span className="flex-1 text-muted-foreground">
+              <span className={cn('flex-1', overridden ? 'text-warning' : 'text-muted-foreground')}>
+                {overridden ? 'Overriding default' : 'Using default'} ·{' '}
                 {overridden ? summary : defaultSummary}
               </span>
               {onReset != null && overridden && (
@@ -230,25 +229,25 @@ export const RoutingPicker = ({
               )}
             </div>
           )}
+          {recommendedProvider != null && (
+            <>
+              <RecommendationRow
+                summary={recommendationSummary({
+                  provider: recommendedProvider,
+                  model: recommendedModel,
+                })}
+                active={isViewingAuto}
+                onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
+              />
+              <Divider />
+            </>
+          )}
           <PickerSection label="Provider" hint="Which CLI agent runs the turn">
             <div className={PROVIDER_CHIP_GROUP_CLASS_NAME}>
-              {recommendedProvider != null && (
-                <PickerChip
-                  label="auto"
-                  active={isViewingAuto}
-                  onSelect={() =>
-                    onPickProvider({
-                      next: '',
-                      viewedProvider: routing.provider,
-                    })
-                  }
-                  glyph={<ProviderGlyph id={recommendedProvider} size={15} />}
-                  note={PROVIDER_LABEL[recommendedProvider]}
-                />
-              )}
               {PROVIDERS.map((id) => {
                 const isConnected = connectedProviders.includes(id);
                 const isActive = !isViewingAuto && viewProvider === id;
+                const isRecommendedTab = isViewingAuto && recommendedProvider === id;
                 return (
                   <button
                     key={id}
@@ -267,6 +266,7 @@ export const RoutingPicker = ({
                     className={cn(
                       'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
                       isActive && 'bg-background text-foreground shadow-sm',
+                      isRecommendedTab && 'text-foreground ring-1 ring-inset ring-border-soft',
                     )}
                   >
                     <span className={cn(!isConnected && 'opacity-35')}>
@@ -310,59 +310,52 @@ export const RoutingPicker = ({
                 <ModelGrid
                   ids={viewedRouting.models}
                   value={viewedRouting.model}
-                  recommendedModel={viewedRecommendedModel}
-                  literalAutoModel={viewedLiteralAutoModel}
+                  recommendedModel={gridRecommendedModel}
                   isRecommended={isModelRecommended}
                   onSelect={onModel}
                 />
               </ScrollFade>
             )}
           </PickerSection>
-          {isViewProviderConnected && (
+          {isViewProviderConnected && editableEffort != null && (
             <>
               <Divider />
               <PickerSection label="Effort" hint="How hard the model thinks before answering">
-                {onEffort == null && (
+                {viewedRouting.effortLevels == null && (
                   <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
-                    This task always runs at the model default effort.
+                    {modelLabel(viewedRouting.model)} runs at a fixed effort.
                   </p>
                 )}
-                {onEffort != null && viewedRouting.effortLevels == null && (
-                  <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
-                    {modelLabel(viewedRouting.model)} answers in a single pass, so it has no
-                    thinking levels to set.
-                  </p>
-                )}
-                {showViewedEffort && viewedRouting.effortLevels != null && (
+                {viewedRouting.effortLevels != null && (
                   <div className={CHIP_GROUP_CLASS_NAME}>
-                    {viewedRouting.effortLevels.map((level) => (
+                    {orderedEffortLevels({ levels: viewedRouting.effortLevels }).map((level) => (
                       <PickerChip
                         key={level}
                         label={EFFORT_LABEL[level]}
                         active={viewedRouting.effort === level}
-                        onSelect={() => onEffort(level)}
+                        onSelect={() => editableEffort.onChange(level)}
                       />
                     ))}
                   </div>
                 )}
               </PickerSection>
-              {verbosity != null && onVerbosity != null && (
-                <>
-                  <Divider />
-                  <PickerSection label="Replies" hint="How detailed the answers should be">
-                    <div className={CHIP_GROUP_CLASS_NAME}>
-                      {VERBOSITY_LEVELS.map((level) => (
-                        <PickerChip
-                          key={level}
-                          label={VERBOSITY_LABEL[level]}
-                          active={verbosity === level}
-                          onSelect={() => onVerbosity(level)}
-                        />
-                      ))}
-                    </div>
-                  </PickerSection>
-                </>
-              )}
+            </>
+          )}
+          {isViewProviderConnected && verbosity != null && onVerbosity != null && (
+            <>
+              <Divider />
+              <PickerSection label="Replies" hint="How detailed the answers should be">
+                <div className={CHIP_GROUP_CLASS_NAME}>
+                  {VERBOSITY_LEVELS.map((level) => (
+                    <PickerChip
+                      key={level}
+                      label={VERBOSITY_LABEL[level]}
+                      active={verbosity === level}
+                      onSelect={() => onVerbosity(level)}
+                    />
+                  ))}
+                </div>
+              </PickerSection>
             </>
           )}
         </Popover>

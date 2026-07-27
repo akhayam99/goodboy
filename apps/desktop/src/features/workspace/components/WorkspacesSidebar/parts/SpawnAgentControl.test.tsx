@@ -53,7 +53,7 @@ describe('SpawnAgentControl', () => {
     renderControl();
     const create = screen.getByRole('button', { name: 'Create agent' });
     const role = screen.getByRole('combobox', { name: 'agent role' });
-    const routing = screen.getByRole('button', { name: 'new agent routing' });
+    const routing = screen.getByRole('button', { name: /^new agent routing:/ });
     const row = create.parentElement;
 
     expect(row?.className).toContain('border-dashed');
@@ -86,7 +86,7 @@ describe('SpawnAgentControl', () => {
 
   it('passes a pinned model, provider and effort to the spawn', () => {
     renderControl();
-    fireEvent.click(screen.getByRole('button', { name: 'new agent routing' }));
+    fireEvent.click(screen.getByRole('button', { name: /^new agent routing:/ }));
     fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
     createAgent();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {

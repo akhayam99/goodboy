@@ -462,11 +462,10 @@ function ConfigPanel({
         connectedProviders={connectedProviders}
         provider={config.provider}
         model={config.model}
-        effort={config.effort}
+        effort={{ editable: true, value: config.effort, onChange: onEffort }}
         disabled={false}
         onProvider={onProvider}
         onModel={onModel}
-        onEffort={onEffort}
       />
       <SegmentedControl
         ariaLabel="Resolver mode"
