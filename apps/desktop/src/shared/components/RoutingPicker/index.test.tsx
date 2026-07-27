@@ -43,10 +43,26 @@ describe('RoutingPicker', () => {
   });
 
   it('keeps the full routing in the accessible name and the tooltip', () => {
-    render(<RoutingPicker {...baseProps} />);
+    render(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High');
-    expect(trigger.getAttribute('title')).toContain('Claude · Opus 5 · High');
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Brief');
+    expect(trigger.getAttribute('title')).toContain('Claude · Opus 5 · High · Brief');
+  });
+
+  it('still explains a disabled trigger when the caller gives no reason', () => {
+    render(
+      <RoutingPicker {...baseProps} disabled={true} verbosity="brief" onVerbosity={vi.fn()} />,
+    );
+    expect(screen.getByRole('button', { name: /routing/i }).getAttribute('title')).toBe(
+      'Claude · Opus 5 · High · Brief',
+    );
+  });
+
+  it('prefers the caller reason over the summary on a disabled trigger', () => {
+    render(<RoutingPicker {...baseProps} disabled={true} disabledTitle="the turn is running" />);
+    expect(screen.getByRole('button', { name: /routing/i }).getAttribute('title')).toBe(
+      'the turn is running',
+    );
   });
 
   it('drops the effort segment and explains why for a model without thinking levels', () => {
@@ -116,6 +132,67 @@ describe('RoutingPicker', () => {
     expect(tab.getAttribute('aria-pressed')).toBe('false');
     expect(tab.className).toContain('ring-border-soft');
     expect(tab.className).not.toContain('shadow-sm');
+  });
+
+  it('marks the recommendation row active while a concrete provider still inherits the default', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="anthropic"
+        model=""
+        overridden={false}
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(
+      screen
+        .getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    const tab = screen.getByRole('button', { name: 'Claude' });
+    expect(tab.getAttribute('aria-pressed')).toBe('false');
+    expect(tab.className).toContain('ring-border-soft');
+  });
+
+  it('drops the recommendation row highlight as soon as a concrete model is picked', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="anthropic"
+        model=""
+        overridden={false}
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
+    fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
+    expect(row.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Claude' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('keeps the model grid recommendation chip when the recommendation names no provider', () => {
+    render(
+      <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.getByTitle('Recommended (Sonnet 4.6)')).toBeDefined();
+  });
+
+  it('suppresses the model grid recommendation chip when the recommendation names a provider', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        model=""
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.queryByTitle('Recommended (Sonnet 4.6)')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' })).toBeDefined();
   });
 
   it('renders each provider mark once in the provider row', () => {

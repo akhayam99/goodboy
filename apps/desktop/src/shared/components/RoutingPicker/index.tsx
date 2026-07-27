@@ -37,7 +37,7 @@ type PickProviderParams = {
   readonly viewedProvider: ProviderId;
 };
 
-export type EffortSetting =
+type EffortSetting =
   | { readonly editable: false; readonly value?: EffortLevel }
   | {
       readonly editable: true;
@@ -78,7 +78,7 @@ export const RoutingPicker = ({
   verbosity,
   onVerbosity,
   onReset,
-  overridden = false,
+  overridden,
   defaultSummary,
   variant = 'field',
   align = 'start',
@@ -104,8 +104,11 @@ export const RoutingPicker = ({
     effort: effortValue,
     recommendation,
   });
+  const isOverridden = overridden === true;
+  const isInheritingRecommendation =
+    recommendedProvider != null && (routing.isProviderRecommended || overridden === false);
   const [viewProvider, setViewProvider] = useState(routing.provider);
-  const [isViewingAuto, setIsViewingAuto] = useState(routing.isProviderRecommended);
+  const [isViewingAuto, setIsViewingAuto] = useState(isInheritingRecommendation);
   const isViewingRoutingProvider = viewProvider === routing.provider;
   const viewedRecommendedModel =
     isViewingRoutingProvider &&
@@ -127,15 +130,15 @@ export const RoutingPicker = ({
     isViewingRoutingProvider && routing.isModelRecommended && gridRecommendedModel != null;
   const summary = `${PROVIDER_LABEL[routing.provider]} · ${modelLabel(routing.model)}${
     showEffort ? ` · ${EFFORT_LABEL[routing.effort]}` : ''
-  }`;
+  }${verbosity != null ? ` · ${VERBOSITY_LABEL[verbosity]}` : ''}`;
 
   useEffect(() => {
     if (open) {
       return;
     }
     setViewProvider(routing.provider);
-    setIsViewingAuto(routing.isProviderRecommended);
-  }, [open, routing.isProviderRecommended, routing.provider]);
+    setIsViewingAuto(isInheritingRecommendation);
+  }, [open, isInheritingRecommendation, routing.provider]);
 
   const onPickProvider = ({ next, viewedProvider }: PickProviderParams) => {
     onProvider(next);
@@ -143,12 +146,17 @@ export const RoutingPicker = ({
     setIsViewingAuto(next === '');
   };
 
+  const onPickModel = (next: string) => {
+    setIsViewingAuto(false);
+    onModel(next);
+  };
+
   return (
     <div
       ref={containerRef}
       className={cn('relative flex items-center gap-1', variant === 'field' && 'w-full')}
     >
-      {onReset != null && overridden && !disabled && (
+      {onReset != null && isOverridden && !disabled && (
         <button
           type="button"
           onClick={onReset}
@@ -165,7 +173,7 @@ export const RoutingPicker = ({
         type="button"
         onClick={toggle}
         disabled={disabled}
-        title={disabled ? disabledTitle : `${summary}. Click to change.`}
+        title={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
@@ -179,7 +187,7 @@ export const RoutingPicker = ({
               ? 'border-primary bg-primary/5'
               : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
           variant === 'pill' &&
-            (overridden
+            (isOverridden
               ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
               : 'bg-subtle hover:bg-muted'),
           disabled && 'cursor-not-allowed opacity-60',
@@ -211,11 +219,13 @@ export const RoutingPicker = ({
         >
           {defaultSummary != null && (
             <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
-              <span className={cn('flex-1', overridden ? 'text-warning' : 'text-muted-foreground')}>
-                {overridden ? 'Overriding default' : 'Using default'} ·{' '}
-                {overridden ? summary : defaultSummary}
+              <span
+                className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}
+              >
+                {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
+                {isOverridden ? summary : defaultSummary}
               </span>
-              {onReset != null && overridden && (
+              {onReset != null && isOverridden && (
                 <button
                   type="button"
                   onClick={() => {
@@ -312,7 +322,7 @@ export const RoutingPicker = ({
                   value={viewedRouting.model}
                   recommendedModel={gridRecommendedModel}
                   isRecommended={isModelRecommended}
-                  onSelect={onModel}
+                  onSelect={onPickModel}
                 />
               </ScrollFade>
             )}
