@@ -29,9 +29,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
   const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
     workspace?.rootPath != null ? (getCachedLocalBranches(workspace.rootPath) ?? []) : [],
   );
-  const [isBranchesLoading, setIsBranchesLoading] = useState(() =>
-    workspace?.rootPath != null ? getCachedLocalBranches(workspace.rootPath) == null : false,
-  );
+  const [isBranchesLoading, setIsBranchesLoading] = useState(() => workspace?.rootPath != null);
   const [isBusy, setIsBusy] = useState(false);
   const [isReuseConfirmed, setIsReuseConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +41,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
     const rootPath = workspace.rootPath;
     const cached = getCachedLocalBranches(rootPath);
     setBranches(cached ?? []);
-    setIsBranchesLoading(cached == null);
+    setIsBranchesLoading(true);
     let cancelled = false;
     listLocalBranches(rootPath)
       .then((result) => {

@@ -171,6 +171,10 @@ export const getCachedLocalBranches = (
   repoPath: string,
 ): ReadonlyArray<LocalBranchInfo> | undefined => localBranchesCache.get(repoPath);
 
+export const invalidateLocalBranchesCache = (repoPath: string): void => {
+  localBranchesCache.delete(repoPath);
+};
+
 export const listLocalBranches = async (
   repoPath: string,
 ): Promise<ReadonlyArray<LocalBranchInfo>> => {

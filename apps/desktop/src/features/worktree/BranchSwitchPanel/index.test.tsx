@@ -14,7 +14,10 @@ const { state, listLocalBranches, getCachedLocalBranches, showToast } = vi.hoist
     changeSessionBranch: vi.fn(async () => undefined),
   },
   listLocalBranches: vi.fn(),
-  getCachedLocalBranches: vi.fn(() => undefined),
+  getCachedLocalBranches: vi.fn(
+    (): ReadonlyArray<{ name: string; inUse: boolean; hasUncommitted: boolean }> | undefined =>
+      undefined,
+  ),
   showToast: vi.fn(),
 }));
 
@@ -102,6 +105,36 @@ describe('BranchSwitchPanel', () => {
 
     resolveBranches([{ name: 'main', inUse: false, hasUncommitted: false }]);
     await waitFor(() => screen.getByRole('tab', { name: 'Pick existing' }));
+  });
+
+  it('keeps the submit gate blocked on a warm cache until the background refresh settles', async () => {
+    getCachedLocalBranches.mockReturnValue([{ name: 'main', inUse: false, hasUncommitted: false }]);
+    let resolveBranches: (
+      branches: ReadonlyArray<{ name: string; inUse: boolean; hasUncommitted: boolean }>,
+    ) => void = () => {};
+    listLocalBranches.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveBranches = resolve;
+        }),
+    );
+
+    render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Pick existing (loading)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select main' }));
+
+    const submit = screen.getByRole('button', { name: 'Switch branch' }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    fireEvent.click(submit);
+    expect(state.changeSessionBranch).not.toHaveBeenCalled();
+
+    resolveBranches([{ name: 'main', inUse: false, hasUncommitted: false }]);
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: 'Switch branch' }) as HTMLButtonElement).disabled,
+      ).toBe(false),
+    );
   });
 
   it('switches to a clean existing branch and closes', async () => {
