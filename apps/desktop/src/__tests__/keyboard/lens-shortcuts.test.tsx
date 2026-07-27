@@ -50,9 +50,6 @@ vi.mock('../../features/settings/components/GuideStudio', () => ({ GuideStudio: 
 vi.mock('../../features/workspace/components/WorkspaceSettingsPane', () => ({
   WorkspaceSettingsPane: () => null,
 }));
-vi.mock('../../features/session/components/SessionSettingsPane', () => ({
-  SessionSettingsPane: () => null,
-}));
 vi.mock('../../app/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,

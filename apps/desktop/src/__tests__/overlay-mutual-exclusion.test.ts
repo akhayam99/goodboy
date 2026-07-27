@@ -4,12 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 type SessionStudioKind = 'workflow' | 'github' | 'mr';
 
-type FullPageOverlay = 'newSession' | 'workspaceSettings' | 'sessionSettings';
+type FullPageOverlay = 'newSession' | 'workspaceSettings';
 
 type AppOverlayState = {
   newSessionOpen: boolean;
   workspaceSettingsOpen: boolean;
-  sessionSettingsOpen: boolean;
   sessionStudio: SessionStudioKind | null;
 };
 
@@ -17,7 +16,6 @@ function emptyState(): AppOverlayState {
   return {
     newSessionOpen: false,
     workspaceSettingsOpen: false,
-    sessionSettingsOpen: false,
     sessionStudio: null,
   };
 }
@@ -27,7 +25,6 @@ function openSessionStudio(state: AppOverlayState, kind: SessionStudioKind): App
     ...state,
     newSessionOpen: false,
     workspaceSettingsOpen: false,
-    sessionSettingsOpen: false,
     sessionStudio: kind,
   };
 }
@@ -36,7 +33,6 @@ function openNewSession(state: AppOverlayState): AppOverlayState {
   return {
     ...state,
     workspaceSettingsOpen: false,
-    sessionSettingsOpen: false,
     sessionStudio: null,
     newSessionOpen: true,
   };
@@ -46,26 +42,14 @@ function openWorkspaceSettings(state: AppOverlayState): AppOverlayState {
   return {
     ...state,
     newSessionOpen: false,
-    sessionSettingsOpen: false,
     sessionStudio: null,
     workspaceSettingsOpen: true,
-  };
-}
-
-function openSessionSettings(state: AppOverlayState): AppOverlayState {
-  return {
-    ...state,
-    newSessionOpen: false,
-    workspaceSettingsOpen: false,
-    sessionStudio: null,
-    sessionSettingsOpen: true,
   };
 }
 
 function activeFullPageOverlay(state: AppOverlayState): FullPageOverlay | null {
   if (state.newSessionOpen) return 'newSession';
   if (state.workspaceSettingsOpen) return 'workspaceSettings';
-  if (state.sessionSettingsOpen) return 'sessionSettings';
   return null;
 }
 
@@ -87,8 +71,8 @@ describe('full-page overlay mutual exclusion', () => {
   it('opening a full-page overlay clears the inline studio', () => {
     let s = openSessionStudio(emptyState(), 'github');
     expect(s.sessionStudio).toBe('github');
-    s = openSessionSettings(s);
-    expect(activeFullPageOverlay(s)).toBe('sessionSettings');
+    s = openWorkspaceSettings(s);
+    expect(activeFullPageOverlay(s)).toBe('workspaceSettings');
     expect(s.sessionStudio).toBeNull();
   });
 
@@ -115,23 +99,13 @@ describe('full-page overlay mutual exclusion', () => {
     }
   });
 
-  it('newSession takes priority over workspaceSettings and sessionSettings', () => {
+  it('newSession takes priority over workspaceSettings', () => {
     const s: AppOverlayState = {
       newSessionOpen: true,
       workspaceSettingsOpen: true,
-      sessionSettingsOpen: true,
       sessionStudio: null,
     };
     expect(activeFullPageOverlay(s)).toBe('newSession');
-  });
-
-  it('workspaceSettings takes priority over sessionSettings', () => {
-    const s: AppOverlayState = {
-      ...emptyState(),
-      workspaceSettingsOpen: true,
-      sessionSettingsOpen: true,
-    };
-    expect(activeFullPageOverlay(s)).toBe('workspaceSettings');
   });
 
   it('never renders a full-page overlay and an inline studio at once', () => {
@@ -141,7 +115,6 @@ describe('full-page overlay mutual exclusion', () => {
       (s: AppOverlayState) => openSessionStudio(s, 'workflow'),
       openNewSession,
       openWorkspaceSettings,
-      openSessionSettings,
     ];
     for (const first of transitions) {
       for (const second of transitions) {

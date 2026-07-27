@@ -7,7 +7,6 @@ import {
   Copy,
   FolderOpen,
   Pencil,
-  Settings2,
   Trash2,
   X,
 } from 'lucide-react';
@@ -76,10 +75,9 @@ const ConfirmPill = ({
 
 type SessionDetailPanelProps = {
   session: Session;
-  onOpenSessionSettings: () => void;
 };
 
-export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDetailPanelProps) => {
+export const SessionDetailPanel = ({ session }: SessionDetailPanelProps) => {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[session.id as SessionId]?.[0] ?? null);
   const externalTasks = useAppStore(
     (s) => s.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
@@ -255,15 +253,6 @@ export const SessionDetailPanel = ({ session, onOpenSessionSettings }: SessionDe
           triggerClassName={ICON_BUTTON}
           trigger={<FolderOpen size={13} aria-hidden />}
         />
-        <button
-          type="button"
-          onClick={onOpenSessionSettings}
-          title="Open settings for this session"
-          aria-label="session settings"
-          className={ICON_BUTTON}
-        >
-          <Settings2 size={13} aria-hidden />
-        </button>
         {archived ? (
           <button
             type="button"

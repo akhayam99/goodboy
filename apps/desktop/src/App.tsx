@@ -19,7 +19,6 @@ import { ArchiveSessionDialog } from './features/session/components/ArchiveSessi
 import { SettingsStudio } from './features/settings/components/SettingsStudio';
 import { GuideStudio } from './features/settings/components/GuideStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
-import { SessionSettingsPane } from './features/session/components/SessionSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkspaceHeader } from './features/workspace/components/WorkspaceHeader';
@@ -104,7 +103,6 @@ export const App = () => {
   const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
     undefined,
   );
-  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -221,7 +219,6 @@ export const App = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
       const state = useAppStore.getState();
       state.setFocusedPlanId(detail.sessionId, detail.planId ?? null);
       state.setActiveLens(detail.sessionId, 'plans');
@@ -234,7 +231,6 @@ export const App = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
       useAppStore.getState().setActiveLens(detail.sessionId, 'files');
     };
     const onOpenProviderStudio = (event: Event) => {
@@ -319,7 +315,6 @@ export const App = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
       const state = useAppStore.getState();
       const sid = state.currentSessionId;
       if (sid) {
@@ -371,7 +366,6 @@ export const App = () => {
         return;
       }
       setWorkspaceSettingsFocus(detail?.section);
-      setSessionSettingsOpen(false);
       setNewSessionOpen(false);
       clearSessionStudio();
       setWorkspaceSettingsOpen(true);
@@ -379,22 +373,6 @@ export const App = () => {
     window.addEventListener('goodboy:open-workspace-settings', handler);
     return () => window.removeEventListener('goodboy:open-workspace-settings', handler);
   }, [workspaceSettingsOpen, clearSessionStudio]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (sessionSettingsOpen) {
-        setSessionSettingsOpen(false);
-        return;
-      }
-      setWorkspaceSettingsOpen(false);
-      setWorkspaceSettingsFocus(undefined);
-      setNewSessionOpen(false);
-      clearSessionStudio();
-      setSessionSettingsOpen(true);
-    };
-    window.addEventListener('goodboy:open-session-settings', handler);
-    return () => window.removeEventListener('goodboy:open-session-settings', handler);
-  }, [sessionSettingsOpen, clearSessionStudio]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -407,7 +385,6 @@ export const App = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
       setSessionStudio(detail.sessionId, {
         kind: 'github',
         prNumber: detail.prNumber,
@@ -427,7 +404,6 @@ export const App = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
       setSessionStudio(detail.sessionId, { kind: 'mr' });
     };
     window.addEventListener('goodboy:open-gitlab-mr', handler);
@@ -440,7 +416,6 @@ export const App = () => {
       if (detail?.sessionId) {
         setWorkspaceSettingsOpen(false);
         setWorkspaceSettingsFocus(undefined);
-        setSessionSettingsOpen(false);
         setNewSessionOpen(false);
         setSessionStudio(detail.sessionId, { kind: 'workflow' });
       }
@@ -456,7 +431,6 @@ export const App = () => {
       }
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      setSessionSettingsOpen(false);
       clearSessionStudio();
       setNewSessionOpen(true);
     };
@@ -483,10 +457,6 @@ export const App = () => {
   useEffect(() => {
     setKeepAliveIds([]);
   }, [currentWorkspace?.id]);
-
-  useEffect(() => {
-    setSessionSettingsOpen(false);
-  }, [currentSession?.id]);
 
   useEffect(() => {
     setWorkspaceSettingsOpen(false);
@@ -884,11 +854,6 @@ export const App = () => {
                 setWorkspaceSettingsOpen(false);
                 setWorkspaceSettingsFocus(undefined);
               }}
-            />
-          ) : sessionSettingsOpen && currentSession ? (
-            <SessionSettingsPane
-              session={currentSession}
-              onClose={() => setSessionSettingsOpen(false)}
             />
           ) : undefined
         }
