@@ -50,7 +50,7 @@ export const FieldRow = ({
   const associate = labelable && children.props.id === undefined;
 
   const labelBlock = (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className="flex min-w-40 shrink flex-col gap-0.5">
       {associate ? (
         <label htmlFor={controlId} className="text-xs font-medium text-foreground">
           {label}
@@ -81,7 +81,7 @@ export const FieldRow = ({
       )}
     >
       {labelBlock}
-      <div className="shrink-0">{control}</div>
+      <div className="min-w-0 shrink">{control}</div>
     </div>
   );
 };
