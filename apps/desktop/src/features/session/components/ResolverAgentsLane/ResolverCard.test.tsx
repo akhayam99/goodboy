@@ -4,19 +4,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
 }));
 
-vi.mock('../../../../session/components/ForceResolveAction', () => ({
+vi.mock('../ForceResolveAction', () => ({
   ForceResolveAction: () => null,
 }));
 
-vi.mock('../../../../session/components/ForceCloseResolverAction', () => ({
+vi.mock('../ForceCloseResolverAction', () => ({
   ForceCloseResolverAction: () => null,
 }));
 
-import { ResolveClusterRow } from './ResolveClusterRow';
+import { ResolverCard } from './ResolverCard';
 
 const SID = 'sess-1' as SessionId;
 
@@ -43,13 +43,13 @@ const telemetry = {
 } as TelemetryRecord;
 
 type Params = {
-  readonly onSelect?: () => void;
+  readonly onOpenChat?: () => void;
   readonly onInspect?: () => void;
 };
 
-const renderRow = ({ onSelect = () => undefined, onInspect }: Params = {}) =>
+const renderCard = ({ onOpenChat = () => undefined, onInspect = () => undefined }: Params = {}) =>
   render(
-    <ResolveClusterRow
+    <ResolverCard
       agent={agent}
       status="done"
       threadComment={null}
@@ -63,10 +63,12 @@ const renderRow = ({ onSelect = () => undefined, onInspect }: Params = {}) =>
       turnsLoading={false}
       isSelected={false}
       isTaskActive
+      isInspected={false}
+      isMuted={false}
       canJump={false}
-      onSelect={onSelect}
-      onJump={() => undefined}
+      onOpenChat={onOpenChat}
       onInspect={onInspect}
+      onJump={() => undefined}
       onResolveThread={() => undefined}
       onResolveAgent={() => undefined}
     />,
@@ -74,9 +76,9 @@ const renderRow = ({ onSelect = () => undefined, onInspect }: Params = {}) =>
 
 afterEach(cleanup);
 
-describe('ResolveClusterRow', () => {
+describe('ResolverCard', () => {
   it('shows model, cost, context share and turns without being selected', () => {
-    renderRow();
+    renderCard();
     expect(screen.getByTestId('agent-metrics-inline')).toBeTruthy();
     expect(screen.getByText('haiku 4.5')).toBeTruthy();
     expect(screen.getByText('2t')).toBeTruthy();
@@ -84,7 +86,7 @@ describe('ResolveClusterRow', () => {
   });
 
   it('shows the token split, duration and context gauge without being selected', () => {
-    const { container } = renderRow();
+    const { container } = renderCard();
     expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
     expect(screen.getByTitle('in: 400 tokens (cumulative)')).toBeTruthy();
     expect(screen.getByTitle('out: 40 tokens (cumulative)')).toBeTruthy();
@@ -92,38 +94,26 @@ describe('ResolveClusterRow', () => {
     expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
   });
 
-  it('prints cost, turns and duration exactly once', () => {
-    const { container } = renderRow();
-    expect(container.querySelectorAll('[title^="in: "]')).toHaveLength(1);
-    expect(container.querySelectorAll('[title^="out: "]')).toHaveLength(1);
-    expect(screen.getAllByText('2t')).toHaveLength(1);
-    expect(screen.getAllByTitle(/^started 2026-05-28/)).toHaveLength(1);
-  });
-
-  it('keeps the resolver name readable alongside the metrics, without an ordinal position', () => {
-    renderRow();
+  it('keeps the resolver name and its origin readable alongside the metrics', () => {
+    renderCard();
     expect(screen.getByText('resolve comment 12')).toBeTruthy();
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
   });
 
-  it('opens details from the row and keeps chat behind an explicit button', () => {
+  it('opens the chat from the card body and keeps details behind an explicit action', () => {
+    const onOpenChat = vi.fn();
     const onInspect = vi.fn();
-    const onSelect = vi.fn();
-    renderRow({ onInspect, onSelect });
+    renderCard({ onOpenChat, onInspect });
 
-    fireEvent.click(screen.getByRole('button', { name: 'resolve comment 12 details' }));
-    expect(onInspect).toHaveBeenCalledOnce();
-    expect(onSelect).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'resolve comment 12' }));
+    expect(onOpenChat).toHaveBeenCalledOnce();
+    expect(onInspect).not.toHaveBeenCalled();
 
-    expect(screen.getByRole('button', { name: 'Toggle resolver details' }).textContent).toContain(
-      'Details',
-    );
-    const openChat = screen.getByRole('button', { name: 'Open resolver chat' });
-    fireEvent.keyDown(openChat, { key: 'Enter' });
+    expect(screen.queryByRole('button', { name: 'Open resolver chat' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle resolver details' }));
     expect(onInspect).toHaveBeenCalledOnce();
-    fireEvent.click(openChat);
-    expect(onSelect).toHaveBeenCalledOnce();
-    expect(onInspect).toHaveBeenCalledOnce();
+    expect(onOpenChat).toHaveBeenCalledOnce();
   });
 });

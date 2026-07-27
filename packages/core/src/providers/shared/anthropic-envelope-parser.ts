@@ -1,6 +1,7 @@
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 import { createPermissionRequestEvent } from '../../permissions/events';
+import { blockBoundaryPrefix, resetTextBoundary } from './text-boundary';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
@@ -187,6 +188,7 @@ export const parseAnthropicEnvelopeLine = (
       } else {
         events.push({ kind: 'done', runId: ctx.runId, at });
       }
+      resetTextBoundary({ runId: ctx.runId });
       return events;
     }
 
@@ -235,7 +237,13 @@ function parseAssistant(
 
   for (const block of blocks) {
     if (block.type === 'text' && block.text.length > 0) {
-      events.push({ kind: 'assistant_text', runId: ctx.runId, delta: block.text, at });
+      const prefix = blockBoundaryPrefix({ runId: ctx.runId, text: block.text });
+      events.push({
+        kind: 'assistant_text',
+        runId: ctx.runId,
+        delta: `${prefix}${block.text}`,
+        at,
+      });
     } else if (block.type === 'tool_use') {
       events.push({
         kind: 'tool_call_start',

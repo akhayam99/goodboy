@@ -7,7 +7,6 @@ export const STORAGE_KEYS = {
   sessionsSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   lensColumnWidth: `${PREFIX}lens-column-width`,
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
-  agentOverlayListWidth: `${PREFIX}agent-overlay-list-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   planListWidth: `${PREFIX}plan-list-width`,
   workflowsRailWidth: `${PREFIX}workflows-rail-width`,

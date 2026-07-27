@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { MARKER_ACCENT } from '../marker-accents';
 import { TranscriptShell } from '../TranscriptShell';
 import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
+import { clusterBody } from '../SpawnedAgentList/clusterBody';
 import { selectInlineClusterRuns } from '../ChatView/clusterDashboard';
 
 type Props = {
@@ -38,10 +39,7 @@ export const ClustersCard = ({ assistantText, sessionId }: Props) => {
     index: i,
     total,
     name: link.agent?.name ?? link.title,
-    body:
-      link.agent && link.agent.status === 'completed'
-        ? (link.agent.outputSummary ?? link.instructions)
-        : link.instructions,
+    body: clusterBody({ agent: link.agent ?? null, instructions: link.instructions }),
     status: link.agent ? link.agent.status : 'planned',
     agentId: link.agent?.id ?? null,
   }));

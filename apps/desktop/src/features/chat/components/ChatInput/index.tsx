@@ -128,6 +128,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   const scope = useScopeNudge({ session, activeAgentKind, isRunning });
   const rightSize = useRightSizeNudge({
+    sessionId: session.id,
     isFirstTurnForAgent,
     value,
     attachments,
@@ -205,7 +206,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     dispatch.setLastFailedTurn(null);
 
     if (await scope.checkAndInterceptScope(content, atts)) return;
-    if (!isRunning && rightSize.checkAndInterceptRightSize(content, atts)) return;
+    if (!isRunning && (await rightSize.checkAndInterceptRightSize(content, atts))) return;
 
     setValue('');
     setAttachments([]);
@@ -251,6 +252,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setValue('');
     setAttachments([]);
     if (suggested !== null) routing.setSelectedModel(suggested);
+    await rightSize.recordRightSizeOutcome({ outcome: 'accepted' });
     await sendWith(pending.content, pending.attachments, suggested);
   };
 
@@ -261,12 +263,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     rightSize.setRightSizeDismissed(true);
     setValue('');
     setAttachments([]);
+    await rightSize.recordRightSizeOutcome({ outcome: 'overridden' });
     await sendWith(pending.content, pending.attachments, null);
   };
 
-  const onChangeModel = () => {
+  const onChangeModel = async () => {
     rightSize.setRightSizePending(null);
     rightSize.setRightSizeDismissed(true);
+    await rightSize.recordRightSizeOutcome({ outcome: 'dismissed' });
   };
 
   const suggestions = useSuggestionCards({

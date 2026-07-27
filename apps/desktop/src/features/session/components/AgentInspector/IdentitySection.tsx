@@ -3,7 +3,7 @@ import type { AgentKind } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentDuration } from '../AgentMetricsBlock/AgentDuration';
 import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly agent: Agent;

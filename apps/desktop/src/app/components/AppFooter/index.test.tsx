@@ -34,12 +34,14 @@ describe('AppFooter', () => {
     const onOpenWorkflows = vi.fn();
     const onOpenProviders = vi.fn();
     const onOpenBudget = vi.fn();
+    const onOpenImpact = vi.fn();
     render(
       <AppFooter
         activeStudio={null}
         onOpenWorkflows={onOpenWorkflows}
         onOpenProviders={onOpenProviders}
         onOpenBudget={onOpenBudget}
+        onOpenImpact={onOpenImpact}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -65,11 +67,48 @@ describe('AppFooter', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'open budget studio' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'see how orchestration changed the way this workspace works',
+      }),
+    );
 
     expect(beta.className).toContain('absolute inset-x-0 mx-auto w-fit');
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenBudget).toHaveBeenCalledOnce();
+    expect(onOpenImpact).toHaveBeenCalledOnce();
+  });
+
+  it('tints each studio button and keeps the active one inverted', () => {
+    render(
+      <AppFooter
+        activeStudio="impact"
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
+        githubEnabled={false}
+        linearEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled={false}
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
+      />,
+    );
+
+    const budget = screen.getByRole('button', { name: 'open budget studio' });
+    const impact = screen.getByRole('button', {
+      name: 'see how orchestration changed the way this workspace works',
+    });
+
+    expect(budget.className).toContain('text-warning');
+    expect(impact.className).toContain('bg-foreground text-background');
+    expect(impact.className).not.toContain('text-success');
   });
 
   it('renders every disconnected integration and opens its studio', () => {
@@ -81,6 +120,7 @@ describe('AppFooter', () => {
         onOpenWorkflows={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -119,6 +159,7 @@ describe('AppFooter', () => {
         onOpenWorkflows={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -157,6 +198,7 @@ describe('AppFooter', () => {
         onOpenWorkflows={vi.fn()}
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}

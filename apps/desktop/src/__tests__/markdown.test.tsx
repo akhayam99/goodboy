@@ -56,4 +56,15 @@ describe('Markdown', () => {
     const { container } = render(<Markdown text={'line1\nline2'} />);
     expect(container.querySelector('p')?.textContent).toBe('line1\nline2');
   });
+
+  it('renders a pipe table as a real table with header and aligned cells', () => {
+    const { container } = render(
+      <Markdown text={'| File | Role |\n| --- | ---: |\n| a.ts | edited |'} />,
+    );
+    expect(container.querySelector('table')).not.toBeNull();
+    expect(container.querySelectorAll('th').length).toBe(2);
+    const cells = container.querySelectorAll('td');
+    expect(cells[0]?.textContent).toBe('a.ts');
+    expect(container.querySelector('th:last-child')?.className).toContain('text-right');
+  });
 });

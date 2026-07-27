@@ -68,4 +68,11 @@ describe('Markdown html handling', () => {
     const out = textOf('a&nbsp;b');
     expect(out).toContain('a b');
   });
+
+  it('renders a block control marker as a labeled callout, not raw text', () => {
+    const { container } = render(<Markdown text="<<output>>ran the tests<</output>>" />);
+    expect(container.textContent).not.toContain('<<');
+    expect(container.textContent).toContain('ran the tests');
+    expect(container.textContent).toContain('output');
+  });
 });

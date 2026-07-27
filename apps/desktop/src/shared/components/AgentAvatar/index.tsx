@@ -23,8 +23,6 @@ const KIND_IMAGE: Record<AgentKind, string | null> = {
   resolver: null,
 };
 
-// Per-agent identity colors as design tokens (oklch). Kept here rather than as
-// raw bg-*-400 Tailwind literals so each kind has one semantic source of truth.
 const KIND_COLOR: Record<AgentKind, string> = {
   generic: 'oklch(0.71 0.16 17)',
   scout: 'oklch(0.74 0.13 233)',
@@ -52,10 +50,6 @@ export type AgentVisual = {
   readonly color: string;
 };
 
-/**
- * Resolve the shared identity visual (portrait + token color) for an agent kind.
- * Single source of truth for both the avatar dot and the empty-state hero.
- */
 export const getAgentVisual = (kind: AgentKind): AgentVisual => ({
   image: KIND_IMAGE[kind],
   color: KIND_COLOR[kind],

@@ -2,7 +2,7 @@ import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
 import type { Agent, SessionId } from '@goodboy/types';
 import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import { useAppStore } from '../../../../store';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly agent: Agent;

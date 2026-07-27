@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Divider } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import type { AgentHomeLens } from '../../../agent-kind';
-import { ChatHeaderBack } from './ChatHeaderBack';
+import { AgentBreadcrumb } from './AgentBreadcrumb';
 import { ChatWorkflowHeader } from './ChatWorkflowHeader';
 
 type Params = {
@@ -20,6 +20,7 @@ export const agentOverlayHeader = ({
   session,
   sessionId,
   selectedAgentId,
+  overlayHome,
   overlayHomeLabel,
   showWorkflowStrip,
   onBack,
@@ -38,7 +39,13 @@ export const agentOverlayHeader = ({
   return (
     <>
       <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-2 px-3">
-        <ChatHeaderBack label={overlayHomeLabel} onClick={onBack} />
+        <AgentBreadcrumb
+          sessionId={sessionId}
+          selectedAgentId={selectedAgentId}
+          overlayHome={overlayHome}
+          homeLabel={overlayHomeLabel}
+          onHome={onBack}
+        />
       </div>
       <Divider className="shrink-0" />
     </>

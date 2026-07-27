@@ -135,6 +135,14 @@ vi.mock('../../../context/components/ContextPanel/strips/PendingResolutionsStrip
   PendingResolutionsStrip: () => <div data-testid="pending-resolutions-strip" />,
 }));
 
+vi.mock('./EditorMenu', () => ({
+  EditorMenu: () => <div data-testid="editor-menu" />,
+}));
+
+vi.mock('./ConnectedIntegrationGlyphs', () => ({
+  ConnectedIntegrationGlyphs: () => <div data-testid="connected-integration-glyphs" />,
+}));
+
 import { SessionOverviewPane } from './index';
 
 const standaloneAgent = (status = 'running') => ({
@@ -244,6 +252,8 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
     expect(screen.getByText('Building')).toBeDefined();
     expect(screen.getByText('agents are working')).toBeDefined();
     expect(screen.getByText('My workspace')).toBeDefined();
+    expect(screen.getByTestId('connected-integration-glyphs')).toBeDefined();
+    expect(screen.getByTestId('editor-menu')).toBeDefined();
   });
 
   it('falls back to Untitled session when the goal is blank', () => {
@@ -272,7 +282,7 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     expect(screen.getByText('Start')).toBeDefined();
     expect(screen.getByText('Choose how to start')).toBeDefined();
     expect(screen.getByRole('button', { name: /Workflow/ })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Create agent/ })).toBeDefined();
     expect(screen.getByText('recommended')).toBeDefined();
     expect(screen.queryByText('At a glance')).toBeNull();
   });
@@ -294,10 +304,9 @@ describe('SessionOverviewPane start row (cluster B)', () => {
 
   it('spawns the selected kind from the fresh agent control', () => {
     renderPane();
-    fireEvent.change(screen.getByRole('combobox', { name: 'agent role' }), {
-      target: { value: 'scout' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Create agent/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Scout / }));
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Scout' }));
     expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 
@@ -306,17 +315,16 @@ describe('SessionOverviewPane start row (cluster B)', () => {
     renderPane();
     expect(screen.queryByText('Choose how to start')).toBeNull();
     expect(screen.getByRole('button', { name: 'New workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Create agent/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
   it('spawns the selected kind from the non-fresh agent control', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
     renderPane();
-    fireEvent.change(screen.getByRole('combobox', { name: 'agent role' }), {
-      target: { value: 'scout' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Create agent/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Scout / }));
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Scout' }));
     expect(store.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'scout' });
   });
 

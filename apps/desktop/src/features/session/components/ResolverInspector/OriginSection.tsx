@@ -4,7 +4,7 @@ import { CommentSnippet } from '../CommentSnippet';
 import type { ResolverOrigin } from '../../resolver-origin';
 import { diffCommentLocation } from '../../diff-comment-location';
 import { prCommentLocation } from '../../pr-comment-location';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly origin: ResolverOrigin;

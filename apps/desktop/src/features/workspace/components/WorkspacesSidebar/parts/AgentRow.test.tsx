@@ -34,6 +34,8 @@ const telemetry = {
 } as TelemetryRecord;
 
 const markDone = vi.fn();
+const remove = vi.fn();
+const inspect = vi.fn();
 
 const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
   render(
@@ -61,7 +63,8 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
         onRenameStart={() => undefined}
         onRenameCommit={() => undefined}
         onRenameCancel={() => undefined}
-        onDelete={() => undefined}
+        onDelete={remove}
+        onInspect={inspect}
         onMarkDone={markDone}
       />
     </ul>,
@@ -123,5 +126,38 @@ describe('AgentRow', () => {
   it('hides mark done while the agent is running', () => {
     renderRow(false, { status: 'running' });
     expect(screen.queryByRole('button', { name: 'mark agent done' })).toBeNull();
+  });
+
+  it('keeps the row actions mounted at rest and reveals them by opacity', () => {
+    renderRow(false);
+    const remove = screen.getByRole('button', { name: 'delete agent' });
+    const done = screen.getByRole('button', { name: 'mark agent done' });
+
+    expect(remove.className).toContain('opacity-0');
+    expect(remove.className).toContain('group-hover/agent-card:opacity-100');
+    expect(remove.className).toContain('group-focus-within/agent-card:opacity-100');
+    expect(remove.className).not.toContain('hidden');
+    expect(done.className).not.toContain('hidden');
+    expect(screen.getByRole('button', { name: 'Toggle agent details' })).toBeTruthy();
+  });
+
+  it('arms the delete confirm without resizing the action slot', () => {
+    renderRow(false);
+    const slot = screen.getByRole('group', { name: 'agent actions' });
+    const before = slot.className;
+
+    fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
+
+    expect(screen.getByRole('button', { name: 'confirm delete agent' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'cancel delete agent' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'agent actions' }).className).toBe(before);
+  });
+
+  it('deletes only after the confirm step', () => {
+    renderRow(false);
+    fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
+    expect(remove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'confirm delete agent' }));
+    expect(remove).toHaveBeenCalledOnce();
   });
 });

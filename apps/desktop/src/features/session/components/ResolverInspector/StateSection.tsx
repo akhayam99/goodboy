@@ -3,7 +3,7 @@ import { ResolverStateBadge, resolverBadgeState } from '../ResolverStateBadge';
 import { ForceCloseResolverAction } from '../ForceCloseResolverAction';
 import { ForceResolveAction } from '../ForceResolveAction';
 import type { ResolverStatus } from '../../resolver-linkage';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly agent: Agent;

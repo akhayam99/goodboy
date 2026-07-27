@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { parseJsonLine, type ParseContext } from './parser';
+import { resetTextBoundary } from '../shared/text-boundary';
 
 const at = '2026-05-13T00:00:00.000Z' as IsoDateTime;
 const ctx: ParseContext = {
@@ -113,6 +114,45 @@ describe('parseJsonLine (codex v0.130.0)', () => {
       }),
     );
     expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }]);
+  });
+
+  it('inserts a blank line between two agent_message items in the same turn', () => {
+    resetTextBoundary({ runId: ctx.runId });
+    parse(
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'item_1', type: 'agent_message', text: 'final report.' },
+      }),
+    );
+    const events = parse(
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'item_2', type: 'agent_message', text: 'Now let me read the file.' },
+      }),
+    );
+    expect(events).toEqual([
+      { kind: 'assistant_text', runId: ctx.runId, delta: '\n\nNow let me read the file.', at },
+    ]);
+  });
+
+  it('resets the boundary state after turn.completed so the next turn starts fresh', () => {
+    resetTextBoundary({ runId: ctx.runId });
+    parse(
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'item_1', type: 'agent_message', text: 'done.' },
+      }),
+    );
+    parse(JSON.stringify({ type: 'turn.completed', usage: {} }));
+    const events = parse(
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'item_2', type: 'agent_message', text: 'new turn text' },
+      }),
+    );
+    expect(events).toEqual([
+      { kind: 'assistant_text', runId: ctx.runId, delta: 'new turn text', at },
+    ]);
   });
 
   it('skips agent_message with empty text', () => {

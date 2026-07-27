@@ -25,27 +25,43 @@ differently depending on where the user is:
   (`features/session/components/SessionWorkspace/sessionBreadcrumb.ts`) renders
   an in-content trail, at most three crumbs deep, always rooted at a clickable
   `Overview`. Shapes: `Overview > {LensName}`,
-  `Overview > {AgentListLens} > {AgentName}`,
   `Overview > Workflows > {WorkflowName}`, `Overview > Plans > {PlanTitle}`,
   and for the session studios `Overview > Workflows > Create`,
   `Overview > Pull request > PR #{n}`, `Overview > Pull request > Merge request`.
-  The last crumb is the current location and is never clickable.
+  The last crumb is the current location and is never clickable. With an agent
+  open this trail is replaced entirely by the agent-overlay breadcrumb (see
+  below), never nested inside it.
 
 ### In-session crumb precedence
 
-With an agent open, the middle crumb is that agent's home lens, resolved by
-`resolveOverlayHome` (same folder). If the active lens is one that hosts an
-agent list (`agents`, `resolve`, `workflows`), the active lens wins; otherwise
-the selected agent's own home lens is used, falling back to `agents`. Standing
-in Agents with a workflow-step agent selected therefore keeps the crumb on
-Agents: before this rule, an auto-advancing workflow step renamed the crumb
-while the user was standing in another lens.
+With an agent open, `AgentOverlay` replaces the lens content (transcript plus
+inspector, no separate agent-list column) and its own header renders
+`AgentBreadcrumb` (`SessionWorkspace/parts/AgentBreadcrumb.tsx`, crumbs built by
+`agentOverlayCrumbs.ts`) instead of the `Overview > ...` trail above. Shape:
+`{HomeLensName} > {AgentName}`, e.g. `Agents > {AgentName}`; never rooted at
+`Overview`, at most two crumbs. The overlay used to carry a dedicated
+agent-list column with its own back button (`ChatHeaderBack.tsx`) and a
+persisted width (`STORAGE_KEYS.agentOverlayListWidth`); both are gone, and
+`AgentBreadcrumb` is the sole navigation control in the header now.
 
-The workflow is surfaced in the chat header instead of the crumb. When the home
-lens is Workflows the header shows the stepper strip, and the agent crumb is
-dropped so the trail ends at `Overview > Workflows > {WorkflowName}`. When it is
-not, the header shows a "Part of {WorkflowName}" line that opens the workflows
-lens on that run.
+The first crumb is that agent's home lens, resolved by `resolveOverlayHome`
+(same folder). If the active lens is one that hosts an agent list (`agents`,
+`resolve`, `workflows`), the active lens wins; otherwise the selected agent's
+own home lens is used, falling back to `agents`. Standing in Agents with a
+workflow-step agent selected therefore keeps the crumb on Agents: before this
+rule, an auto-advancing workflow step renamed the crumb while the user was
+standing in another lens.
+
+The last crumb is plain text when the agent has no sibling agent sharing the
+same home lens; otherwise it is a button that opens a popover listing those
+siblings (avatar, name, status) to switch the open agent in place, via
+`selectAgent`.
+
+The workflow case swaps the label instead of dropping the crumb: when the home
+lens is Workflows, `ChatWorkflowHeader` renders the same `AgentBreadcrumb`, with
+the workflow's kind name as the home label (falling back to "Workflows"),
+followed by the `WorkflowStepper` strip alongside it in the same header row.
+There is no separate "Part of {WorkflowName}" line.
 
 ### Crumb trails
 
@@ -77,13 +93,13 @@ crumbs navigate via `toOverview` / `toWorkspaceLauncher` / `toWorkspaceBoard`.
 
 `BreadcrumbChrome` is the visual wrapper applied to the breadcrumb row. States:
 
-| State                | Trigger                                                                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `none`               | Default                                                                                                                       |
-| `workspace-launcher` | `switcherOpen`                                                                                                                |
-| `workspace-create`   | `addWorkspaceOpen`                                                                                                            |
-| `pull-request`       | `githubStudioOpen`                                                                                                            |
-| `resolve`            | Supported by the builder; not yet wired to a global flag. `ResolveCluster` lives in the sidebar for now; this is future work. |
+| State                | Trigger                                                                                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `none`               | Default                                                                                                                                                         |
+| `workspace-launcher` | `switcherOpen`                                                                                                                                                  |
+| `workspace-create`   | `addWorkspaceOpen`                                                                                                                                              |
+| `pull-request`       | `githubStudioOpen`                                                                                                                                              |
+| `resolve`            | Supported by the builder; not yet wired to a global flag. The live resolve surface is the session's Resolve lens (`ResolverAgentsLane`), not a sidebar cluster. |
 
 ## App-chrome header
 
@@ -107,7 +123,9 @@ Layout:
 
 - Left: integration tools (GitHub, GitLab, Linear, Sentry), each gated by
   enablement.
-- Right: common studios (workflows, providers, budget).
+- Right: common studios (workflows, providers, budget, impact), each with its
+  own tone (`primary`, `info`, `warning`, `success` respectively) applied to
+  its icon and label while inactive.
 
 Studio buttons show an inverted active state (`bg-foreground text-background`
 with a transition) when their studio is open. Opening any studio closes the
@@ -132,9 +150,9 @@ is either `leftHidden` (at Overview) or at its persisted width.
 
 ### Utility studios
 
-Settings, budget, providers, Linear, Sentry, GitLab, workflow, guide are
-modal overlays. They are not part of the breadcrumb IA and are exited via
-their close button or Esc.
+Settings, budget, providers, impact, Linear, Sentry, GitLab, workflow, guide
+are modal overlays, all built on `StudioShell`'s fullscreen variant. They are
+not part of the breadcrumb IA and are exited via their close button or Esc.
 
 ### Workspace creation
 
@@ -153,16 +171,23 @@ does not do.
 
 ### Sibling panels inside a lens
 
-Three surfaces open their detail to the right of the content instead of taking a
-studio rail: `ResolverInspector` (from a resolver row in the Resolve lens),
-`PlanListPanel` in `PlanStudio` (the "Other plans (N)" trigger in the pane
-header, rendered only when the session holds more than one plan), and
-`SlotHistoryPanel` in `SlotPane` (the history trigger in the pane header of the
-Goal, Decisions, and Session summary lenses, rendered only when that slot has
-history). The shared pattern: the pane is a flex row, the panel is a fixed-width
-sibling column behind a vertical `<Divider>`, open state is local to the pane,
-the panel loads or refreshes its data when it opens, and it closes from its own
-header. Reuse it for the next detail surface rather than adding a rail.
+Four surfaces open their detail to the right of the content instead of taking a
+studio rail: `ResolverInspector` (from a resolver row's "Details" action in the
+Resolve lens), `AgentInspector` (from an agent row's "Details" action in the
+Agents lens), `SlotHistoryPanel` in `SlotPane` (the history trigger in the pane
+header of the Goal, Decisions, and Session summary lenses, rendered only when
+that slot has history), and `PlanListPanel` in `PlanStudio` (the "Other plans
+(N)" trigger in the pane header, rendered only when the session holds more than
+one plan).
+
+`ResolverInspector`, `AgentInspector`, and `SlotHistoryPanel` share one
+primitive, `InspectorSplit` (`SessionWorkspace/parts/InspectorSplit/`): the pane
+is a flex row, the panel is a sibling column resizable via a `ResizeHandle`
+(width persisted at `STORAGE_KEYS.inspectorPanelWidth`), open state is local to
+the pane, the panel loads or refreshes its data when it opens, and it closes
+from its own header. `PlanListPanel` predates this primitive and stays a
+fixed-width column behind a plain `<Divider>`. Reuse `InspectorSplit` for the
+next detail surface rather than adding a rail.
 
 ## New session form
 
@@ -207,9 +232,9 @@ things:
 | `ForceCloseResolverAction` | Cancels the running turn, stamps the agent `skipped`, marks it stopped, then activates the next queued resolver. Does not touch the code host.                          | The resolver or its agent is running                                                               |
 | `ForceResolveAction`       | Resolves the thread on the code host (optional note) and refreshes the PR detail. Never cancels a turn or stops a process, and the resolver keeps whatever state it had | The resolver has a source thread, no turn is running, and it is awaiting, failed, done, or stopped |
 
-`ForceResolveAction` also appears in the chat header when the open agent's home
-lens is Resolve. Both arm on first click and act on the second, so neither fires
-by accident.
+Both also appear on the resolver's card footer in the Resolve lens
+(`ResolverCardFooter`), so they are reachable without opening the inspector.
+Both arm on first click and act on the second, so neither fires by accident.
 
 ## Workflow advance from the chat
 
@@ -227,13 +252,14 @@ has auto-run enabled; with auto-run off nothing advances without a click.
 
 ## Agent-kind picker
 
-The `AGENT_KIND` role picker is exposed from `AgentsSection` via
-`SpawnAgentControl`, so it lives in the lens that lists agents. The picker hides
-kinds flagged `visible: false` (today `resolver`, which only the resolve UI
-spawns). New-session creation does not include an agent-kind picker: agents are
-spawned after the session exists. It does carry the "Set up workflow next"
-toggle described above, but no workflow or step is chosen in the form; the
-workflow is built after creation.
+The `AGENT_KIND` role picker is `CreateAgentPopover`'s agent-kind grid
+(`AgentKindGrid`), embedded in `StandaloneAgentsLane` and shared by
+`AgentsSection` (sidebar) and the Agents lens pane, so it lives wherever agents
+are listed. The grid hides kinds flagged `visible: false` (today `resolver`,
+which only the resolve UI spawns). New-session creation does not include an
+agent-kind picker: agents are spawned after the session exists. It does carry
+the "Set up workflow next" toggle described above, but no workflow or step is
+chosen in the form; the workflow is built after creation.
 
 ## Session activity bar
 

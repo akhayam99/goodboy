@@ -5,7 +5,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { resolveRootAgent } from '../../../agent-kind';
-import { ChatHeaderBack } from './ChatHeaderBack';
+import { AgentBreadcrumb } from './AgentBreadcrumb';
 import { ChatWorkflowAdvance } from './ChatWorkflowAdvance';
 import { WorkflowStepper } from './WorkflowStepper';
 
@@ -35,9 +35,12 @@ export const ChatWorkflowHeader = ({
   return (
     <>
       <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-2 px-3">
-        <ChatHeaderBack
-          label={attached == null ? 'Workflows' : workflowKindName(attached.workflow)}
-          onClick={onOpenWorkflow}
+        <AgentBreadcrumb
+          sessionId={sessionId}
+          selectedAgentId={selectedAgentId}
+          overlayHome="workflows"
+          homeLabel={attached == null ? 'Workflows' : workflowKindName(attached.workflow)}
+          onHome={onOpenWorkflow}
         />
         <Divider orientation="vertical" className="h-4 shrink-0" />
         <WorkflowStepper

@@ -59,6 +59,8 @@ A statement that fails with "already exists" or "duplicate column name" is treat
 
 `registry.test.ts` is the guard. It fails CI on a duplicate version, a gap in the range, or a filename that disagrees with its registered version, and it asserts that upgrading from every intermediate version reaches the exact schema of a fresh install.
 
+`m086-impact-indexes.ts` adds `idx_telemetry_recorded_at` on `telemetry_records(recorded_at)`, the index Impact Studio's aggregate queries (`packages/db/src/queries/impact.ts`) filter on for the last-30-days / all-time window toggle. Impact Studio also reads the existing `nudge_events` table (`m035`, kind `model-rightsize`) to show right-size nudge outcomes; it adds no new columns there.
+
 ## VS Code integration
 
 - Workspaces open in VS Code via `code /path/to/worktree`.

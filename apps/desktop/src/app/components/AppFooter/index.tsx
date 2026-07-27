@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { cn, Divider } from '@goodboy/ui';
-import { FolderGit2 } from 'lucide-react';
+import { cn, Divider, tintClasses, type Tone } from '@goodboy/ui';
+import { FolderGit2, TrendingUp } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
 import { SECTION_ICONS } from '../../../shared/components/section-icons';
@@ -13,6 +13,7 @@ type FooterButtonProps = {
   pulse?: boolean;
   active?: boolean;
   connected?: boolean;
+  tone?: Tone;
 };
 
 const FooterButton = ({
@@ -23,6 +24,7 @@ const FooterButton = ({
   pulse,
   active,
   connected,
+  tone,
 }: FooterButtonProps) => (
   <button
     type="button"
@@ -35,7 +37,10 @@ const FooterButton = ({
         ? 'bg-foreground text-background'
         : pulse
           ? 'animate-soft-pulse text-info hover:bg-info/10'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          : cn(
+              tone == null ? 'text-muted-foreground hover:text-foreground' : tintClasses(tone).text,
+              'hover:bg-muted/50',
+            ),
       connected === false && 'opacity-40',
     )}
   >
@@ -55,6 +60,7 @@ type Props = {
   onOpenWorkflows: () => void;
   onOpenProviders: () => void;
   onOpenBudget: () => void;
+  onOpenImpact: () => void;
   onOpenGithub: () => void;
   onOpenLinear: () => void;
   onOpenSentry: () => void;
@@ -72,6 +78,7 @@ export const AppFooter = ({
   onOpenWorkflows,
   onOpenProviders,
   onOpenBudget,
+  onOpenImpact,
   onOpenGithub,
   onOpenLinear,
   onOpenSentry,
@@ -152,6 +159,7 @@ export const AppFooter = ({
             title="open the workflow library for this workspace"
             onClick={onOpenWorkflows}
             active={activeStudio === 'workflow'}
+            tone="primary"
           />
           <FooterButton
             icon={<SECTION_ICONS.providers size={12} aria-hidden />}
@@ -160,6 +168,7 @@ export const AppFooter = ({
             onClick={onOpenProviders}
             pulse={noProviderConnected && activeStudio !== 'provider'}
             active={activeStudio === 'provider'}
+            tone="info"
           />
           <FooterButton
             icon={<SECTION_ICONS.budget size={12} aria-hidden />}
@@ -167,6 +176,15 @@ export const AppFooter = ({
             title="open budget studio"
             onClick={onOpenBudget}
             active={activeStudio === 'budget'}
+            tone="warning"
+          />
+          <FooterButton
+            icon={<TrendingUp size={12} aria-hidden />}
+            label="Impact"
+            title="see how orchestration changed the way this workspace works"
+            onClick={onOpenImpact}
+            active={activeStudio === 'impact'}
+            tone="success"
           />
         </div>
       </div>

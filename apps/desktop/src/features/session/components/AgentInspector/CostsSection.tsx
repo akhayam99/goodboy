@@ -4,7 +4,7 @@ import {
   ContextWindowBar,
   type ProviderContextUsage,
 } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly aggregate: AgentAggregate | null;
