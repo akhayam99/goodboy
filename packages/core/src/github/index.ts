@@ -20,6 +20,8 @@ export {
 
 export { listOpenPrsForRepo, type RepoPullRequest } from './repo-prs';
 
+export { listOwnedRepos, type GithubRepoRef } from './repos';
+
 export { fetchPrDiff, parseUnifiedDiff } from './diff';
 
 export { fetchPrDetail } from './details';
