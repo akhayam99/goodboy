@@ -25,8 +25,9 @@ const ITEMS: ReadonlyArray<Qa> = [
     q: 'Do I need API keys?',
     a: (
       <>
-        <B>No.</B> Goodboy drives the command-line tools you already installed and signed into:
-        Claude, Cursor, Codex, and Gemini.
+        No, except OpenRouter. Goodboy drives the command-line tools you already installed and
+        signed into: Claude, Cursor, Codex, Gemini and OpenCode. OpenRouter runs through the{' '}
+        <B>OpenCode runtime</B> on an API key you provide.
       </>
     ),
   },
