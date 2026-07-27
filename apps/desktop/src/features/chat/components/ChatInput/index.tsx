@@ -304,7 +304,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
   const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined;
   const overrideDisabledTitle = !routing.allowOverride
-    ? 'override disabled in session settings'
+    ? 'this session was created without per-turn routing overrides'
     : undefined;
 
   return (

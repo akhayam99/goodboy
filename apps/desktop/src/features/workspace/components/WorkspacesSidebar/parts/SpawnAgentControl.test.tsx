@@ -62,6 +62,19 @@ describe('SpawnAgentControl', () => {
     expect(create.className).not.toContain('border-dashed');
   });
 
+  it('wraps and truncates instead of overflowing a narrow header', () => {
+    renderControl();
+    const create = screen.getByRole('button', { name: 'Create agent' });
+    const row = create.parentElement;
+
+    expect(row?.className).toContain('flex-wrap');
+    expect(row?.className).toContain('min-w-0');
+    expect(row?.className).toContain('min-h-8');
+    expect(create.className).toContain('min-w-0');
+    expect(create.querySelector('span')?.className).toContain('truncate');
+    expect(row?.parentElement?.className).toContain('min-w-0');
+  });
+
   it('spawns a generic agent with untouched defaults', () => {
     renderControl();
     createAgent();

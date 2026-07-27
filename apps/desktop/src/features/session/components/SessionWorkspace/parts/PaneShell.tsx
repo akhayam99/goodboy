@@ -25,8 +25,8 @@ export const PaneShell = ({
 }: Props) => (
   <ScrollFade className="h-full" viewportClassName="px-6 py-5" fadeSize={24}>
     <div className={cn('mx-auto flex flex-col gap-5 motion-safe:animate-studio-in', WIDTH[width])}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-baseline gap-2">
             <h1 className="text-xl font-semibold leading-snug text-foreground">{title}</h1>
             {meta ? (
@@ -36,7 +36,9 @@ export const PaneShell = ({
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? (
-          <div className="flex shrink-0 items-center gap-1.5 pt-0.5">{actions}</div>
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+            {actions}
+          </div>
         ) : null}
       </div>
       {children}

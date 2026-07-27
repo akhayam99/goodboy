@@ -17,6 +17,8 @@ import type { PrCheckRun, PullRequestStateKind, Session, SessionId } from '@good
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
+import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
+import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
@@ -108,6 +110,16 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const workspaceIntegrations = useAppStore(
+    (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
+  );
+  const remoteKind = useRemoteHostKind(session.workspaceId);
+  const isGithubConnected = resolveIntegrationConnection({
+    provider: 'github',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+  }).isConnected;
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
   const linkedIssues = github?.linkedIssues ?? [];
@@ -120,6 +132,14 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const openStudio = () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
+
+  if (!pr && !isGithubConnected) {
+    return (
+      <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
+        <MissingGithubRemoteEmptyState />
+      </div>
+    );
+  }
 
   if (!pr && isPrReview) {
     return (

@@ -11,12 +11,7 @@ export const SessionTopBar = ({ session }: SessionTopBarProps) => {
     <>
       <div className="flex w-full items-center gap-3 bg-background pr-3">
         <div className="min-w-0 flex-1">
-          <SessionDetailPanel
-            session={session}
-            onOpenSessionSettings={() =>
-              window.dispatchEvent(new CustomEvent('goodboy:open-session-settings'))
-            }
-          />
+          <SessionDetailPanel session={session} />
         </div>
       </div>
       <Divider />

@@ -65,26 +65,19 @@ afterEach(cleanup);
 
 describe('SessionDetailPanel', () => {
   it('renders the session goal text', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     expect(screen.getByText(/refactor auth/i)).toBeDefined();
   });
 
-  it('opens session settings from the gear button', () => {
-    const onOpenSessionSettings = vi.fn();
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={onOpenSessionSettings} />);
-    fireEvent.click(screen.getByRole('button', { name: /session settings/i }));
-    expect(onOpenSessionSettings).toHaveBeenCalledOnce();
-  });
-
   it('renders the open-worktree folder trigger plus archive and delete actions', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     expect(screen.getByRole('button', { name: /open worktree/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /archive session/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
   });
 
   it('arms then confirms archive inline without firing on the first click', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     fireEvent.click(screen.getByRole('button', { name: /archive session/i }));
     expect(state.archiveTask).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /^archive session$/i }));
@@ -92,7 +85,7 @@ describe('SessionDetailPanel', () => {
   });
 
   it('arms then confirms delete inline without firing on the first click', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
     expect(state.deleteTask).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /^delete session$/i }));
@@ -100,7 +93,7 @@ describe('SessionDetailPanel', () => {
   });
 
   it('cancel disarms the confirm without deleting', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
     fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
     expect(state.deleteTask).not.toHaveBeenCalled();
@@ -108,7 +101,7 @@ describe('SessionDetailPanel', () => {
   });
 
   it('does not render an external task chip when none is mapped', () => {
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     expect(screen.queryByRole('button', { name: /studio/i })).toBeNull();
   });
 
@@ -126,7 +119,7 @@ describe('SessionDetailPanel', () => {
         },
       ],
     };
-    render(<SessionDetailPanel session={session} onOpenSessionSettings={vi.fn()} />);
+    render(<SessionDetailPanel session={session} />);
     expect(screen.getByRole('button', { name: /open GB-9 in Linear studio/i })).toBeDefined();
     expect(screen.getByText('GB-9')).toBeDefined();
     expect(screen.getByText('wire metadata')).toBeDefined();

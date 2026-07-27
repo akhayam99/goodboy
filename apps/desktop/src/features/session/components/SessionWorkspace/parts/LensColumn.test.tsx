@@ -348,28 +348,38 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'GitLab 1' })).toBeDefined();
   });
 
-  it('opens the studio from a disconnected integration row', () => {
-    store.workspaceIntegrations = {};
-    remote.kind = null;
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-gitlab-studio', listener);
+  it.each([
+    ['GitHub', 'pr', 'goodboy:open-github-studio'],
+    ['GitLab', 'gitlab_issues', 'goodboy:open-gitlab-studio'],
+    ['Linear', 'linear', 'goodboy:open-linear-studio'],
+    ['Sentry', 'sentry', 'goodboy:open-sentry-studio'],
+  ] as const)(
+    'selects the inline %s pane when disconnected instead of opening the studio',
+    (label, lens, studioEvent) => {
+      store.workspaceIntegrations = {};
+      remote.kind = null;
+      const listener = vi.fn();
+      window.addEventListener(studioEvent, listener);
+      const onSelect = vi.fn();
 
-    render(
-      <LensColumn
-        session={SESSION}
-        activeLens={null}
-        onSelectOverview={vi.fn()}
-        onSelect={vi.fn()}
-        filesCount={0}
-      />,
-    );
-    const gitlab = screen.getByRole('button', { name: 'GitLab' });
-    fireEvent.click(gitlab);
+      render(
+        <LensColumn
+          session={SESSION}
+          activeLens={null}
+          onSelectOverview={vi.fn()}
+          onSelect={onSelect}
+          filesCount={0}
+        />,
+      );
+      const row = screen.getByRole('button', { name: label });
+      fireEvent.click(row);
 
-    expect(gitlab.className).toContain('opacity-40');
-    expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-gitlab-studio', listener);
-  });
+      expect(row.className).toContain('opacity-40');
+      expect(onSelect).toHaveBeenCalledWith(lens);
+      expect(listener).not.toHaveBeenCalled();
+      window.removeEventListener(studioEvent, listener);
+    },
+  );
 
   it('shows the review board lens only for PR review sessions', () => {
     render(
