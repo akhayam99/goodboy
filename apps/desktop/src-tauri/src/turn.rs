@@ -202,6 +202,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 v.push("--session".to_string());
                 v.push(session_id.to_string());
             }
+            v.push("--".to_string());
             v.push(args.prompt.to_string());
             v
         }
@@ -676,6 +677,7 @@ mod tests {
                 "high",
                 "--session",
                 "ses_123",
+                "--",
                 "hi",
             ]
         );
@@ -698,6 +700,7 @@ mod tests {
                 "--dir",
                 "/tmp",
                 "--dangerously-skip-permissions",
+                "--",
                 "hi",
             ]
         );

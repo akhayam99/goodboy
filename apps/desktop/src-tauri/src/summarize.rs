@@ -124,7 +124,9 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
                 cli_args.push("--dir".to_string());
                 cli_args.push(working_dir.to_string());
             }
-            cli_args.push("--dangerously-skip-permissions".to_string());
+            cli_args.push("--agent".to_string());
+            cli_args.push("plan".to_string());
+            cli_args.push("--".to_string());
             cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
             Ok(cli_args)
         }
@@ -181,7 +183,9 @@ mod tests {
                 "cheap-model",
                 "--dir",
                 "/tmp/project",
-                "--dangerously-skip-permissions",
+                "--agent",
+                "plan",
+                "--",
                 "you summarize\n\nsummarize this",
             ]
         );
