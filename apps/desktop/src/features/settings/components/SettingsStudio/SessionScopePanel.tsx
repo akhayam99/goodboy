@@ -211,6 +211,8 @@ const SESSION_PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
   'cursor',
   'codex',
   'gemini',
+  'opencode',
+  'openrouter',
 ];
 
 function CapProgress({ spent, softCapUsd }: { spent: number; softCapUsd: number }) {

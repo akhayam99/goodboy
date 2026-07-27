@@ -40,6 +40,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
+import { isApiProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -416,9 +417,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
     const boundCredentialId = { ...wsBindings, ...sessBindings }[provider];
+    const effectiveCredentialId =
+      isApiProvider({ id: provider }) &&
+      (boundCredentialId === undefined || boundCredentialId === CLI_CREDENTIAL)
+        ? get().providerCredentials.find((credential) => credential.providerId === provider)?.id
+        : boundCredentialId;
+    const apiKeyEnv = PROVIDER_API_KEY_ENV[provider];
     const apiKeyBinding =
-      boundCredentialId && boundCredentialId !== CLI_CREDENTIAL
-        ? { apiKeyEnv: PROVIDER_API_KEY_ENV[provider], credentialId: boundCredentialId }
+      effectiveCredentialId !== undefined &&
+      effectiveCredentialId !== CLI_CREDENTIAL &&
+      apiKeyEnv !== undefined
+        ? { apiKeyEnv, credentialId: effectiveCredentialId }
         : undefined;
 
     const authState = get().authResults?.[provider] ?? null;

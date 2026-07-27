@@ -17,8 +17,10 @@ const ANTHROPIC_DOCS = 'https://docs.claude.com/en/docs/claude-code/overview';
 const CURSOR_DOCS = 'https://docs.cursor.com/en/cli/installation';
 const CODEX_DOCS = 'https://github.com/openai/codex#installation';
 const GEMINI_DOCS = 'https://antigravity.google/cli';
+const OPENCODE_DOCS = 'https://opencode.ai/docs';
+const OPENROUTER_DOCS = 'https://openrouter.ai/docs';
 
-const INSTALL_GUIDES: Record<ProviderId, ProviderGuide> = {
+const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
   anthropic: {
     headline: 'Install Claude Code',
     subscription: 'Claude Pro or Max subscription on claude.ai.',
@@ -99,9 +101,25 @@ const INSTALL_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Antigravity CLI docs',
   },
+  opencode: {
+    headline: 'Install OpenCode',
+    subscription: 'OpenCode includes a curated set of zero-key models.',
+    steps: [
+      {
+        title: 'npm global install',
+        body: 'The installer adds the `opencode` command to your PATH.',
+      },
+      {
+        title: 'Then sign in',
+        body: 'Goodboy moves to the login step so you can connect an OpenCode account.',
+      },
+    ],
+    docsUrl: OPENCODE_DOCS,
+    docsLabel: 'OpenCode docs',
+  },
 };
 
-const LOGIN_GUIDES: Record<ProviderId, ProviderGuide> = {
+const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
   anthropic: {
     headline: 'Sign in to Claude',
     subscription: 'Your Claude Pro or Max account.',
@@ -166,9 +184,25 @@ const LOGIN_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Antigravity CLI auth',
   },
+  opencode: {
+    headline: 'Connect OpenCode',
+    subscription: 'Your OpenCode account.',
+    steps: [
+      {
+        title: 'Choose a provider',
+        body: '`opencode auth login` opens an interactive provider login flow in the terminal.',
+      },
+      {
+        title: 'Return when complete',
+        body: 'Goodboy checks the OpenCode runtime again after the login process exits.',
+      },
+    ],
+    docsUrl: OPENCODE_DOCS,
+    docsLabel: 'OpenCode authentication',
+  },
 };
 
-const LOGOUT_GUIDES: Record<ProviderId, ProviderGuide> = {
+const LOGOUT_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
   anthropic: {
     headline: 'Sign out of Claude',
     subscription: '',
@@ -217,6 +251,35 @@ const LOGOUT_GUIDES: Record<ProviderId, ProviderGuide> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Antigravity CLI docs',
   },
+  opencode: {
+    headline: 'Disconnect OpenCode',
+    subscription: '',
+    steps: [
+      {
+        title: 'Choose an account',
+        body: '`opencode auth logout` removes the selected local provider credentials.',
+      },
+    ],
+    docsUrl: OPENCODE_DOCS,
+    docsLabel: 'OpenCode docs',
+  },
+};
+
+const API_PROVIDER_GUIDE: ProviderGuide = {
+  headline: 'Connect with an API key',
+  subscription: 'Runs use the OpenCode runtime with your provider API key.',
+  steps: [
+    {
+      title: 'Install the runtime',
+      body: 'Install OpenCode first, then return to Provider Studio.',
+    },
+    {
+      title: 'Add an API key',
+      body: 'Paste a key in Provider Studio to link the provider.',
+    },
+  ],
+  docsUrl: OPENROUTER_DOCS,
+  docsLabel: 'OpenRouter docs',
 };
 
 export const guideFor = (
@@ -224,10 +287,10 @@ export const guideFor = (
   action: ProviderLifecycleAction,
 ): ProviderGuide => {
   if (action === 'install') {
-    return INSTALL_GUIDES[providerId];
+    return INSTALL_GUIDES[providerId] ?? API_PROVIDER_GUIDE;
   }
   if (action === 'login') {
-    return LOGIN_GUIDES[providerId];
+    return LOGIN_GUIDES[providerId] ?? API_PROVIDER_GUIDE;
   }
-  return LOGOUT_GUIDES[providerId];
+  return LOGOUT_GUIDES[providerId] ?? API_PROVIDER_GUIDE;
 };

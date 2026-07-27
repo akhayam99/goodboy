@@ -134,6 +134,14 @@ const CODEX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'error',
 ]);
 
+const OPENCODE_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'step_start',
+  'text',
+  'tool',
+  'step_finish',
+  'error',
+]);
+
 const hasEventOfType = (
   lines: ReadonlyArray<Record<string, unknown>>,
   known: ReadonlySet<string>,
@@ -217,6 +225,57 @@ const extractCodexStream = (lines: ReadonlyArray<Record<string, unknown>>): AuxO
   };
 };
 
+const readOpenCodeUsage = (value: unknown): AuxUsage => {
+  const part = asRecord(value);
+  const tokens = asRecord(part?.['tokens']);
+  const cache = asRecord(tokens?.['cache']);
+  return {
+    inputTokens: asCount(tokens?.['input']),
+    outputTokens: asCount(tokens?.['output']) + asCount(tokens?.['reasoning']),
+    cachedInputTokens: asCount(cache?.['read']) + asCount(cache?.['write']),
+  };
+};
+
+const readOpenCodeError = (value: unknown): string => {
+  const error = asRecord(value);
+  const data = asRecord(error?.['data']);
+  return (
+    asString(data?.['message']) ?? asString(error?.['message']) ?? 'opencode reported an error'
+  );
+};
+
+const extractOpenCodeStream = (lines: ReadonlyArray<Record<string, unknown>>): AuxOutput => {
+  const textByPart = new Map<string, string>();
+  let usage = ZERO_USAGE;
+  let isError = false;
+  let errorMessage: string | null = null;
+  for (const payload of lines) {
+    if (payload['type'] === 'text') {
+      const part = asRecord(payload['part']);
+      const id = asString(part?.['id']);
+      const text = asString(part?.['text']);
+      if (id !== null && text !== null) {
+        textByPart.set(id, text);
+      }
+    }
+    if (payload['type'] === 'step_finish') {
+      usage = readOpenCodeUsage(payload['part']);
+    }
+    if (payload['type'] === 'error') {
+      isError = true;
+      errorMessage = readOpenCodeError(payload['error']);
+    }
+  }
+  const text = [...textByPart.values()].join('').trim();
+  return {
+    text,
+    usage,
+    isError,
+    errorMessage,
+    envelopeDecoded: text.length > 0 || isError,
+  };
+};
+
 export const extractAuxOutput = ({ providerId, stdout }: Params): AuxOutput => {
   const trimmed = stdout.trim();
   switch (providerId) {
@@ -237,6 +296,14 @@ export const extractAuxOutput = ({ providerId, stdout }: Params): AuxOutput => {
         return plainText({ text: trimmed, envelopeDecoded: true });
       }
       return extractCodexStream(lines);
+    }
+    case 'opencode':
+    case 'openrouter': {
+      const lines = readJsonLines(trimmed);
+      if (!hasEventOfType(lines, OPENCODE_EVENT_TYPES)) {
+        return plainText({ text: trimmed, envelopeDecoded: true });
+      }
+      return extractOpenCodeStream(lines);
     }
     default: {
       const exhaustive: never = providerId;

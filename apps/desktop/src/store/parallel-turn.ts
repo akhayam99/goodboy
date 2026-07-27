@@ -20,6 +20,7 @@ import {
   parseCursorStreamLine,
   parseCodexJsonLine,
   parseGeminiJsonLine,
+  parseOpenCodeJsonLine,
 } from '@goodboy/core';
 import type {
   IsoDateTime,
@@ -132,6 +133,9 @@ function parseProviderLine(
       return parseCodexJsonLine(line, ctx);
     case 'gemini':
       return parseGeminiJsonLine(line, ctx);
+    case 'opencode':
+    case 'openrouter':
+      return parseOpenCodeJsonLine({ line, ctx });
     default:
       return parseStreamJsonLine(line, ctx);
   }

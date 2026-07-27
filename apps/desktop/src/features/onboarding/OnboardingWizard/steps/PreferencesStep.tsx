@@ -22,7 +22,14 @@ type Props = {
   readonly workspaceKind?: WorkspaceKind | null;
 };
 
-const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+  'openrouter',
+];
 
 const sanitizePrefix = (input: string): string =>
   input

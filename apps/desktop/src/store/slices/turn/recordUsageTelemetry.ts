@@ -3,6 +3,7 @@ import {
   computeCodexCostUsd,
   computeCursorCostUsd,
   computeGeminiCostUsd,
+  computeOpenCodeCostUsd,
 } from '@goodboy/core';
 import {
   insertTelemetry,
@@ -53,6 +54,9 @@ export const recordUsageTelemetry = async (
     }
     if (provider === 'gemini') {
       return computeGeminiCostUsd(event.usage, model, getGeminiPriceOverride(null, model));
+    }
+    if (provider === 'opencode' || provider === 'openrouter') {
+      return computeOpenCodeCostUsd({ usage: event.usage, model });
     }
     return computeCostUsd(event.usage, model);
   })();

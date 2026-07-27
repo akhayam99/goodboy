@@ -44,6 +44,9 @@ export const resolveLifecycleCommand = (
   platform: ProviderPlatform = currentPlatform(),
 ): string => {
   const entry = PROVIDER_LIFECYCLE_COMMANDS[providerId];
+  if (entry === undefined) {
+    throw new Error(`no lifecycle commands for provider: ${providerId}`);
+  }
   if (action === 'install') {
     return entry.install[platform];
   }

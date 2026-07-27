@@ -1,7 +1,14 @@
 import type { ModelTier, ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
-const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'gemini', 'cursor'];
+const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'codex',
+  'gemini',
+  'cursor',
+  'opencode',
+  'openrouter',
+];
 
 const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelTier> = (() => {
   const map = new Map<string, ModelTier>();

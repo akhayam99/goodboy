@@ -46,6 +46,8 @@ const PROVIDER_LABELS: Record<ProviderId, string> = {
   cursor: 'cursor-agent',
   codex: 'OpenAI Codex',
   gemini: 'Google Gemini',
+  opencode: 'OpenCode',
+  openrouter: 'OpenRouter',
 };
 
 function formatError(err: unknown): string {
@@ -69,7 +71,14 @@ function formatError(err: unknown): string {
   return String(err);
 }
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini'];
+const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+  'openrouter',
+];
 
 function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
   for (const id of PROVIDER_ORDER) {

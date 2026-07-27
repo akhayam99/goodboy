@@ -31,7 +31,14 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('../../../../features/chat/utils/chat-constants', () => ({
-  PROVIDER_LABEL: { anthropic: 'Claude', cursor: 'Cursor', codex: 'Codex', gemini: 'Gemini' },
+  PROVIDER_LABEL: {
+    anthropic: 'Claude',
+    cursor: 'Cursor',
+    codex: 'Codex',
+    gemini: 'Gemini',
+    opencode: 'OpenCode',
+    openrouter: 'OpenRouter',
+  },
 }));
 
 vi.mock('../../../../features/providers/components/provider-brand', () => ({
@@ -40,6 +47,8 @@ vi.mock('../../../../features/providers/components/provider-brand', () => ({
     cursor: { icon: () => null },
     codex: { icon: () => null },
     gemini: { icon: () => null },
+    opencode: { icon: () => null },
+    openrouter: { icon: () => null },
   },
   brandColor: () => '#000000',
 }));

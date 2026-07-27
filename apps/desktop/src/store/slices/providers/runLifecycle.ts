@@ -88,8 +88,30 @@ function statusSlotPatch(
   if (providerId === 'codex') {
     return { codexStatus: status };
   }
-  return { geminiStatus: status };
+  if (providerId === 'gemini') {
+    return { geminiStatus: status };
+  }
+  return {};
 }
+
+type StoredStatusParams = {
+  readonly providerId: ProviderId;
+  readonly providers: ReturnType<GetFn>['providers'];
+};
+
+const storedStatus = ({ providerId, providers }: StoredStatusParams): ProviderStatus | null => {
+  const info = providers.find((provider) => provider.id === providerId);
+  if (info === undefined) {
+    return null;
+  }
+  return {
+    id: providerId,
+    binary: info.binary,
+    available: info.connection !== 'missing' && info.connection !== 'error',
+    version: info.version,
+    error: info.error,
+  };
+};
 
 export type RunLifecycleArgs = {
   readonly providerId: ProviderId;
@@ -181,20 +203,26 @@ export const runLifecycle = async (
         cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
         codex: providerId === 'codex' ? payload.status : state.codexStatus,
         gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
+        opencode:
+          providerId === 'opencode'
+            ? payload.status
+            : storedStatus({ providerId: 'opencode', providers: state.providers }),
+        openrouter:
+          providerId === 'opencode'
+            ? { ...payload.status, id: 'openrouter' }
+            : storedStatus({ providerId: 'openrouter', providers: state.providers }),
       };
       const authResults: ProviderAuthResults = {
-        ...(state.authResults ?? {
-          anthropic: null,
-          cursor: null,
-          codex: null,
-          gemini: null,
-        }),
+        ...(state.authResults ?? {}),
         [providerId]: payload.auth,
       };
+      const credentialProviderIds = new Set(
+        state.providerCredentials.map((item) => item.providerId),
+      );
       return {
         ...statusSlotPatch(providerId, payload.status),
         authResults,
-        providers: buildProviderList(statuses, authResults),
+        providers: buildProviderList(statuses, authResults, credentialProviderIds),
         providerLifecycle: {
           ...state.providerLifecycle,
           [providerId]: {

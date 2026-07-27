@@ -177,6 +177,34 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             v.push(args.prompt.to_string());
             v
         }
+        "opencode" | "openrouter" => {
+            let _ = (
+                args.permission_mode,
+                args.allowed_tools,
+                args.disallowed_tools,
+                args.system_prompt,
+            );
+            let mut v = vec![
+                "run".to_string(),
+                "--format".to_string(),
+                "json".to_string(),
+                "-m".to_string(),
+                args.model.to_string(),
+                "--dir".to_string(),
+                args.working_dir.to_string(),
+                "--dangerously-skip-permissions".to_string(),
+            ];
+            if let Some(effort) = args.effort {
+                v.push("--variant".to_string());
+                v.push(effort.to_string());
+            }
+            if let Some(session_id) = args.resume_session_id {
+                v.push("--session".to_string());
+                v.push(session_id.to_string());
+            }
+            v.push(args.prompt.to_string());
+            v
+        }
         _ => {
             let mut v: Vec<String> = Vec::new();
             // --resume must precede -p so claude restores the prior session
@@ -624,6 +652,55 @@ mod tests {
         let args = make_args(None, None, &empty);
         let cli = build_provider_cli_args("codex", &args);
         assert!(!cli.iter().any(|a| a.starts_with("model_reasoning_effort")));
+    }
+
+    #[test]
+    fn opencode_args_include_variant_and_session() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(Some("ses_123"), None, &empty);
+        args.model = "opencode/big-pickle";
+        args.effort = Some("high");
+        let cli = build_provider_cli_args("opencode", &args);
+        assert_eq!(
+            cli,
+            vec![
+                "run",
+                "--format",
+                "json",
+                "-m",
+                "opencode/big-pickle",
+                "--dir",
+                "/tmp",
+                "--dangerously-skip-permissions",
+                "--variant",
+                "high",
+                "--session",
+                "ses_123",
+                "hi",
+            ]
+        );
+    }
+
+    #[test]
+    fn openrouter_args_keep_the_pre_slugged_model() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.model = "openrouter/openai/gpt-5.4";
+        let cli = build_provider_cli_args("openrouter", &args);
+        assert_eq!(
+            cli,
+            vec![
+                "run",
+                "--format",
+                "json",
+                "-m",
+                "openrouter/openai/gpt-5.4",
+                "--dir",
+                "/tmp",
+                "--dangerously-skip-permissions",
+                "hi",
+            ]
+        );
     }
 
     #[test]

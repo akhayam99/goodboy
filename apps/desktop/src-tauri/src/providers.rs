@@ -32,6 +32,8 @@ pub struct CodexState(pub Mutex<ProviderStatus>);
 
 pub struct GeminiState(pub Mutex<ProviderStatus>);
 
+pub struct OpencodeState(pub Mutex<ProviderStatus>);
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthStateKind {
@@ -60,6 +62,10 @@ pub fn detect_codex() -> ProviderStatus {
 
 pub fn detect_gemini() -> ProviderStatus {
     detect_binary("gemini", "agy")
+}
+
+pub fn detect_opencode() -> ProviderStatus {
+    detect_binary("opencode", "opencode")
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
@@ -557,6 +563,23 @@ pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
     refresh_status(&state.0, detect_gemini)
 }
 
+#[tauri::command]
+pub fn get_opencode_status(state: State<'_, OpencodeState>) -> ProviderStatus {
+    get_status(&state.0, "opencode", "opencode")
+}
+
+#[tauri::command]
+pub fn get_openrouter_status(state: State<'_, OpencodeState>) -> ProviderStatus {
+    let mut status = get_status(&state.0, "openrouter", "opencode");
+    status.id = "openrouter".to_string();
+    status
+}
+
+#[tauri::command]
+pub fn refresh_opencode_status(state: State<'_, OpencodeState>) -> ProviderStatus {
+    refresh_status(&state.0, detect_opencode)
+}
+
 fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> ProviderStatus {
     state.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
         id: id.to_string(),
@@ -587,6 +610,10 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
         "cursor" => check_cursor_auth(),
         "codex" => check_codex_auth(),
         "gemini" => check_gemini_auth(),
+        "opencode" | "openrouter" => AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        },
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,

@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::providers::{
     check_provider_auth_blocking, detect_claude, detect_codex, detect_cursor, detect_gemini,
-    AuthState, ProviderStatus,
+    detect_opencode, AuthState, ProviderStatus,
 };
 
 // ---------------------------------------------------------------------------
@@ -99,6 +99,7 @@ fn refresh_provider(provider_id: &str) -> (ProviderStatus, AuthState) {
         "cursor" => detect_cursor(),
         "codex" => detect_codex(),
         "gemini" => detect_gemini(),
+        "opencode" => detect_opencode(),
         _ => ProviderStatus {
             id: provider_id.to_string(),
             binary: provider_id.to_string(),

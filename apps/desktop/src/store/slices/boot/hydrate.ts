@@ -9,6 +9,8 @@ import {
   getCodexStatus,
   getCursorStatus,
   getGeminiStatus,
+  getOpenCodeStatus,
+  getOpenRouterStatus,
   getProviderStatus,
   type ProviderAuthResults,
   type ProviderStatuses,
@@ -64,17 +66,28 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         });
 
         set({ bootPhase: 'detecting-cli' });
-        const [providerStatus, cursorStatus, codexStatus, geminiStatus] = await Promise.all([
+        const [
+          providerStatus,
+          cursorStatus,
+          codexStatus,
+          geminiStatus,
+          opencodeStatus,
+          openrouterStatus,
+        ] = await Promise.all([
           getProviderStatus('anthropic'),
           getCursorStatus(),
           getCodexStatus(),
           getGeminiStatus(),
+          getOpenCodeStatus(),
+          getOpenRouterStatus(),
         ]);
         const statuses: ProviderStatuses = {
           anthropic: providerStatus,
           cursor: cursorStatus,
           codex: codexStatus,
           gemini: geminiStatus,
+          opencode: opencodeStatus,
+          openrouter: openrouterStatus,
         };
         set({
           providerStatus,
@@ -84,17 +97,22 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           providers: buildProviderList(statuses),
         });
 
-        const [anthropicAuth, cursorAuth, codexAuth, geminiAuth] = await Promise.all([
-          checkProviderAuth('anthropic'),
-          checkProviderAuth('cursor'),
-          checkProviderAuth('codex'),
-          checkProviderAuth('gemini'),
-        ]);
+        const [anthropicAuth, cursorAuth, codexAuth, geminiAuth, opencodeAuth, openrouterAuth] =
+          await Promise.all([
+            checkProviderAuth('anthropic'),
+            checkProviderAuth('cursor'),
+            checkProviderAuth('codex'),
+            checkProviderAuth('gemini'),
+            checkProviderAuth('opencode'),
+            checkProviderAuth('openrouter'),
+          ]);
         const authResults: ProviderAuthResults = {
           anthropic: anthropicAuth,
           cursor: cursorAuth,
           codex: codexAuth,
           gemini: geminiAuth,
+          opencode: opencodeAuth,
+          openrouter: openrouterAuth,
         };
         set({ authResults, providers: buildProviderList(statuses, authResults) });
 
@@ -102,6 +120,12 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await get()
           .loadCredentials()
           .catch(() => {});
+        const credentialProviderIds = new Set(
+          get().providerCredentials.map((item) => item.providerId),
+        );
+        set({
+          providers: buildProviderList(statuses, authResults, credentialProviderIds),
+        });
         const workspaces = await listWorkspaces(tauriDatabase);
         set({ workspaces });
         await Promise.all(

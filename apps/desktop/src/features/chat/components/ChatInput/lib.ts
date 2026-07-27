@@ -19,6 +19,8 @@ export const VALID_PROVIDERS: ReadonlyArray<ProviderId> = [
   'cursor',
   'codex',
   'gemini',
+  'opencode',
+  'openrouter',
 ];
 
 export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;

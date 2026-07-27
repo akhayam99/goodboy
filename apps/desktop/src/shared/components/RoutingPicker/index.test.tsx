@@ -8,7 +8,14 @@ import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from './index';
 
 const baseProps = {
-  connectedProviders: ['anthropic', 'cursor', 'codex', 'gemini'] as ReadonlyArray<ProviderId>,
+  connectedProviders: [
+    'anthropic',
+    'cursor',
+    'codex',
+    'gemini',
+    'opencode',
+    'openrouter',
+  ] as ReadonlyArray<ProviderId>,
   provider: 'anthropic' as ProviderId,
   model: 'claude-opus-5',
   effort: 'high' as const,

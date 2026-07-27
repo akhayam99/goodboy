@@ -8,6 +8,8 @@ const PROVIDER_DOT: Record<string, string> = {
   cursor: 'bg-[var(--color-provider-cursor)]',
   codex: 'bg-[var(--color-provider-codex)]',
   gemini: 'bg-[var(--color-provider-gemini)]',
+  opencode: 'bg-[var(--color-provider-opencode)]',
+  openrouter: 'bg-[var(--color-provider-openrouter)]',
 };
 
 export const TelemetryPill = () => {

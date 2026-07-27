@@ -82,6 +82,7 @@ import { m081RoleCleanup } from './m081-role-cleanup';
 import { m082AgentSourceThreads } from './m082-agent-source-threads';
 import { m083AgentDomains } from './m083-agent-domains';
 import { m084WorkspaceProviderPool } from './m084-workspace-provider-pool';
+import { m085OpencodeOpenrouterProviderRuns } from './m085-opencode-openrouter-provider-runs';
 
 export type Migration = {
   readonly version: number;
@@ -173,4 +174,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 82, sql: m082AgentSourceThreads },
   { version: 83, sql: m083AgentDomains },
   { version: 84, sql: m084WorkspaceProviderPool },
+  { version: 85, sql: m085OpencodeOpenrouterProviderRuns },
 ];

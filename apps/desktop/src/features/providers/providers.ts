@@ -4,6 +4,7 @@ import type {
   ProviderInfo as ProviderInfoBase,
   ProviderId,
 } from '@goodboy/types';
+import { isApiProvider } from '@goodboy/types';
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
@@ -33,6 +34,8 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   cursor: 'cursor',
   codex: 'codex',
   gemini: 'gemini',
+  opencode: 'opencode',
+  openrouter: 'openrouter',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -40,6 +43,8 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
   gemini: 'https://antigravity.google/cli',
+  opencode: 'https://opencode.ai/docs',
+  openrouter: 'https://openrouter.ai/docs',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
@@ -47,6 +52,8 @@ const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   cursor: 'cursor-agent',
   codex: 'codex',
   gemini: 'agy',
+  opencode: 'opencode',
+  openrouter: 'opencode',
 };
 
 const TAURI_GET_CMD: Record<ProviderId, string> = {
@@ -54,6 +61,8 @@ const TAURI_GET_CMD: Record<ProviderId, string> = {
   cursor: 'get_cursor_status',
   codex: 'get_codex_status',
   gemini: 'get_gemini_status',
+  opencode: 'get_opencode_status',
+  openrouter: 'get_openrouter_status',
 };
 
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
@@ -70,12 +79,29 @@ export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus>
 export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
 export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
 export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
+export const getOpenCodeStatus = (): Promise<ProviderStatus> => getProviderStatus('opencode');
+export const getOpenRouterStatus = (): Promise<ProviderStatus> => getProviderStatus('openrouter');
 
 export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthState> => {
   return invoke<AuthState>('check_provider_auth', { providerId });
 };
 
-export type ProviderAuthResults = Readonly<Record<ProviderId, AuthState | null>>;
+export type ProviderAuthResults = Partial<Readonly<Record<ProviderId, AuthState | null>>>;
+
+type ApiConnectionParams = {
+  readonly status: ProviderStatus | null;
+  readonly hasCredential: boolean;
+};
+
+export const connectionForApiProvider = ({
+  status,
+  hasCredential,
+}: ApiConnectionParams): ProviderConnectionState => {
+  if (status?.available !== true) {
+    return 'missing';
+  }
+  return hasCredential ? 'connected' : 'installed_disconnected';
+};
 
 function connectionFromDetectionAndAuth(
   available: boolean,
@@ -126,17 +152,50 @@ function providerInfoFromStatus(
   return { ...base, connection, version: status.version, error: null };
 }
 
+type ApiInfoParams = {
+  readonly id: ProviderId;
+  readonly status: ProviderStatus | null;
+  readonly hasCredential: boolean;
+};
+
+const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): ProviderInfo => {
+  const isAvailable = status?.available === true;
+  return {
+    id,
+    label: PROVIDER_LABEL_LOWER[id],
+    binary: PROVIDER_DEFAULT_BINARY[id],
+    capabilities: EMPTY_CAPABILITIES,
+    identity: null,
+    docsUrl: PROVIDER_DOCS[id],
+    connection: connectionForApiProvider({ status, hasCredential }),
+    version: isAvailable ? (status.version ?? null) : null,
+    error: isAvailable ? null : (status?.error ?? null),
+  };
+};
+
 export type ProviderStatuses = {
   readonly anthropic: ProviderStatus | null;
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
   readonly gemini: ProviderStatus | null;
+  readonly opencode: ProviderStatus | null;
+  readonly openrouter: ProviderStatus | null;
 };
 
 export const buildProviderList = (
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
+  credentialProviderIds: ReadonlySet<ProviderId> = new Set(),
 ): ReadonlyArray<ProviderInfo> => {
-  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini'];
-  return ids.map((id) => providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null));
+  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode', 'openrouter'];
+  return ids.map((id) => {
+    if (isApiProvider({ id })) {
+      return apiProviderInfo({
+        id,
+        status: statuses[id],
+        hasCredential: credentialProviderIds.has(id),
+      });
+    }
+    return providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null);
+  });
 };

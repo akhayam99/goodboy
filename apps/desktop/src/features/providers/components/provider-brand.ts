@@ -5,6 +5,8 @@ import {
   CursorIcon,
   GeminiIcon,
   OpenAIIcon,
+  OpencodeIcon,
+  OpenrouterIcon,
 } from '../../../shared/components/brand-icons';
 
 export type ProviderBrand = {
@@ -17,6 +19,8 @@ export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   cursor: { icon: CursorIcon, cssVar: '--color-provider-cursor' },
   codex: { icon: OpenAIIcon, cssVar: '--color-provider-codex' },
   gemini: { icon: GeminiIcon, cssVar: '--color-provider-gemini' },
+  opencode: { icon: OpencodeIcon, cssVar: '--color-provider-opencode' },
+  openrouter: { icon: OpenrouterIcon, cssVar: '--color-provider-openrouter' },
 };
 
 export const brandColor = (providerId: ProviderId): string => {

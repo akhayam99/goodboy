@@ -40,6 +40,18 @@ const core = vi.hoisted(() => {
     cursor: { models: [{ id: 'composer-2', label: 'Composer 2', tier: 'turn' }] },
     codex: { models: [{ id: 'gpt-5-codex', label: 'Codex', tier: 'turn' }] },
     gemini: { models: [{ id: 'gemini-2-pro', label: 'Gemini Pro', tier: 'turn' }] },
+    opencode: {
+      models: [{ id: 'opencode/big-pickle', label: 'Big Pickle', tier: 'turn' }],
+    },
+    openrouter: {
+      models: [
+        {
+          id: 'openrouter/anthropic/claude-sonnet-4.5',
+          label: 'Claude Sonnet 4.5',
+          tier: 'turn',
+        },
+      ],
+    },
   } as Record<string, { models: Array<{ id: string; label: string; tier: string }> }>;
   return {
     isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
@@ -57,7 +69,14 @@ const core = vi.hoisted(() => {
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
 vi.mock('@goodboy/core', () => core);
 vi.mock('../providers/providers', () => ({
-  PROVIDER_LABEL_LOWER: { anthropic: 'claude', cursor: 'cursor', codex: 'codex', gemini: 'gemini' },
+  PROVIDER_LABEL_LOWER: {
+    anthropic: 'claude',
+    cursor: 'cursor',
+    codex: 'codex',
+    gemini: 'gemini',
+    opencode: 'OpenCode',
+    openrouter: 'OpenRouter',
+  },
 }));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -184,7 +203,14 @@ describe('queryProviders (read-only menu RPC)', () => {
     const res = await executeBridgeCommand(cmd('queryProviders', {}));
     expect(res.ok).toBe(true);
     const providers = (res.data as { providers: Array<{ id: string }> }).providers;
-    expect(providers.map((p) => p.id)).toEqual(['anthropic', 'cursor', 'codex', 'gemini']);
+    expect(providers.map((p) => p.id)).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+      'openrouter',
+    ]);
   });
 
   it('reflects live connection state from the store and lists models per provider', async () => {

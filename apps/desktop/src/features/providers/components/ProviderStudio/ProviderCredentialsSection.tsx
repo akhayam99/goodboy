@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, Input, SectionHeader } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
-import { PROVIDER_API_KEY_ENV, type ProviderId } from '@goodboy/types';
+import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -12,6 +12,8 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const credentials = useAppStore((s) => s.providerCredentials);
   const createCredential = useAppStore((s) => s.createCredential);
   const deleteCredential = useAppStore((s) => s.deleteCredential);
+  const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const apiKeyEnv = PROVIDER_API_KEY_ENV[providerId];
 
   const mine = useMemo(
     () => credentials.filter((c) => c.providerId === providerId),
@@ -39,19 +41,32 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
     setError(null);
     try {
       await createCredential(providerId, label, apiKey);
+      await refreshProviders();
       reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }, [apiKey, label, providerId, createCredential, reset]);
+  }, [apiKey, label, providerId, createCredential, refreshProviders, reset]);
+
+  const onDelete = useCallback(
+    async (credentialId: CredentialId) => {
+      await deleteCredential(credentialId);
+      await refreshProviders();
+    },
+    [deleteCredential, refreshProviders],
+  );
+
+  if (apiKeyEnv === undefined) {
+    return null;
+  }
 
   return (
     <section className="flex flex-col gap-2">
       <SectionHeader
         label="API keys"
-        hint={`Add one or more ${PROVIDER_API_KEY_ENV[providerId]} keys, then assign one to a workspace below to bill its runs to that key instead of the CLI login.`}
+        hint={`Add one or more ${apiKeyEnv} keys, then assign one to a workspace below.`}
         action={
           !adding ? (
             <button
@@ -93,7 +108,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
               <button
                 type="button"
                 aria-label={`Remove ${c.label}`}
-                onClick={() => void deleteCredential(c.id)}
+                onClick={() => void onDelete(c.id)}
                 className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
               >
                 <Trash2 size={13} aria-hidden />
@@ -115,7 +130,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={`${PROVIDER_API_KEY_ENV[providerId]} value`}
+            placeholder={`${apiKeyEnv} value`}
           />
           {error ? <p className="text-2xs text-danger">{error}</p> : null}
           <div className="flex items-center justify-end gap-2">
