@@ -285,6 +285,7 @@ export {
   type GhRunOptions,
   type GhRunner,
   type GithubRepoRef,
+  type OwnedReposResult,
   type PostedPullRequestReview,
   type PostedThreadReply,
   type PrCacheDeps,

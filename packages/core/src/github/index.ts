@@ -20,7 +20,7 @@ export {
 
 export { listOpenPrsForRepo, type RepoPullRequest } from './repo-prs';
 
-export { listOwnedRepos, type GithubRepoRef } from './repos';
+export { listOwnedRepos, type GithubRepoRef, type OwnedReposResult } from './repos';
 
 export { fetchPrDiff, parseUnifiedDiff } from './diff';
 
