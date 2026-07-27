@@ -60,6 +60,7 @@ import { refreshPricingTable } from '../../../features/providers/provider-pricin
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
@@ -131,7 +132,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
     const workspace =
       before.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null;
-    if (workspace?.kind === 'simple') {
+    const isPlainSessionDir = isBranchlessSession({
+      workspaceKind: workspace?.kind,
+      branch: before.sessionBranches[sessionId],
+    });
+    if (workspace != null && isPlainSessionDir) {
       const exists = await simpleSessionDirExists({ path: workingDir });
       if (!exists) {
         const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
@@ -687,10 +692,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
     const scopeWorkspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    const isSimpleWorkspace = scopeWorkspace?.kind === 'simple';
+    const isSessionDirScope = isBranchlessSession({
+      workspaceKind: scopeWorkspace?.kind,
+      branch: get().sessionBranches[sessionId],
+    });
     const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
     const scopeGuard = (
-      isSimpleWorkspace
+      isSessionDirScope
         ? [
             '[session-directory-scope]',
             `You are operating inside this session directory: ${workingDir}`,
@@ -890,7 +898,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // The existing `files_touched` slot is left untouched (mobile falls back
         // to it, paths-only, when this slot is absent). Best-effort: a git failure
         // must not fail the turn.
-        if (!isSimpleWorkspace) {
+        if (!isSessionDirScope) {
           try {
             const changed = await worktreeChangedFiles(workingDir);
             await upsertContextSlot(

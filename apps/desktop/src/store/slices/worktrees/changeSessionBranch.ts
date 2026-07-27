@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { changeWorktreeBranch } from '../../../features/worktree/worktree';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { GetFn, SetFn } from './types';
 
 type Args = {
@@ -15,7 +16,12 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
     const workspace = session
       ? get().workspaces.find((candidate) => candidate.id === session.workspaceId)
       : null;
-    if (workspace?.kind === 'simple') {
+    if (
+      isBranchlessSession({
+        workspaceKind: workspace?.kind,
+        branch: get().sessionBranches[sessionId],
+      })
+    ) {
       return;
     }
     const target = branch.trim();

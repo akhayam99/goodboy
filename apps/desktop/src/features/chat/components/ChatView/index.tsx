@@ -34,6 +34,7 @@ import {
 } from '../../../../features/permissions/components/MergeDialog';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { ChatEmptyState } from './ChatEmptyState';
 import { ClusterProgressDashboard } from './ClusterProgressDashboard';
 import { selectClusterDashboard } from './clusterDashboard';
@@ -112,9 +113,11 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   ]);
 
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
-  const isSimple = useAppStore(
-    (s) =>
-      s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind === 'simple',
+  const isBranchless = useAppStore((s) =>
+    isBranchlessSession({
+      workspaceKind: s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind,
+      branch: s.sessionBranches[session.id],
+    }),
   );
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -201,8 +204,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
   const diffLoader = useMemo(
-    () => (worktreePath && !isSimple ? () => worktreeDiff(worktreePath) : undefined),
-    [isSimple, worktreePath],
+    () => (worktreePath && !isBranchless ? () => worktreeDiff(worktreePath) : undefined),
+    [isBranchless, worktreePath],
   );
 
   const handleOpenDiff = useCallback((filePath: string) => {

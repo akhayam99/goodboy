@@ -169,7 +169,7 @@ describe('LensColumn', () => {
     ]);
   });
 
-  it('renders only shared-context lenses for a simple workspace', () => {
+  it('renders only shared-context lenses for a branchless session', () => {
     render(
       <LensColumn
         session={SESSION}
@@ -177,7 +177,7 @@ describe('LensColumn', () => {
         onSelectOverview={vi.fn()}
         onSelect={vi.fn()}
         filesCount={3}
-        workspaceKind="simple"
+        isBranchless
       />,
     );
 

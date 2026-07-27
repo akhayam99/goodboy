@@ -35,6 +35,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
 import { buildProviderSpendBreakdown } from '../budget';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { relinkSimpleSessionDirectories } from './relinkSimpleSessionDirectories';
 import type { GetFn, SetFn } from './types';
 
@@ -124,8 +125,13 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         listAgentsForSessions(tauriDatabase, sessionIds),
         listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
       ]);
+      const hasPlainSessionDir = [...loadedWorktreesBySession.values()].some((rows) =>
+        rows.some((row) =>
+          isBranchlessSession({ workspaceKind: workspace?.kind, branch: row.branch }),
+        ),
+      );
       const worktreesBySession =
-        workspace?.kind === 'simple'
+        workspace != null && hasPlainSessionDir
           ? await relinkSimpleSessionDirectories({
               rootPath: workspace.rootPath,
               workspaceId: id,
