@@ -4,7 +4,7 @@ import type { WorkspaceScript } from '@goodboy/types';
 import { OverflowMenu } from '../../../../shared/components/OverflowMenu';
 import type { ScriptRunStatus } from '../../scripts';
 
-type ScriptRowProps = {
+type Props = {
   readonly script: WorkspaceScript;
   readonly status: ScriptRunStatus;
   readonly selected: boolean;
@@ -18,7 +18,11 @@ type ScriptRowProps = {
   readonly onDelete: () => void;
 };
 
-const extractPreviewLine = ({ body }: { body: string }): string => {
+type Params = {
+  readonly body: string;
+};
+
+const extractPreviewLine = ({ body }: Params): string => {
   const lines = body.split('\n');
   for (const line of lines) {
     const trimmed = line.trim();
@@ -45,7 +49,7 @@ export const ScriptRow = ({
   onCancel,
   onCopy,
   onDelete,
-}: ScriptRowProps) => {
+}: Props) => {
   const preview = extractPreviewLine({ body: script.body });
   const isPending = status === 'pending';
 

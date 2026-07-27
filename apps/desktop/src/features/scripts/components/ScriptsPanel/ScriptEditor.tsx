@@ -5,7 +5,7 @@ import type { ScriptRunRecord } from '../../scripts';
 import { ScriptRunOutput } from './ScriptRunOutput';
 import type { Draft } from './types';
 
-type ScriptEditorProps = {
+type Props = {
   readonly draft: Draft;
   readonly dirty: boolean;
   readonly error: string | null;
@@ -27,7 +27,7 @@ export const ScriptEditor = ({
   onBodyChange,
   onSave,
   onCancel,
-}: ScriptEditorProps) => {
+}: Props) => {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

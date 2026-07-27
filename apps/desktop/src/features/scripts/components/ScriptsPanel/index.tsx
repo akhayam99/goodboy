@@ -16,6 +16,10 @@ type Props = {
   readonly worktreePath?: string | null;
 };
 
+type Params = {
+  readonly action: PendingAction | null;
+};
+
 export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
   const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
   const loadScripts = useAppStore((s) => s.loadScripts);
@@ -79,7 +83,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
   }, []);
 
   const applyPendingTransition = useCallback(
-    ({ action }: { action: PendingAction | null }) => {
+    ({ action }: Params) => {
       if (action === null) {
         closeNow();
         return;

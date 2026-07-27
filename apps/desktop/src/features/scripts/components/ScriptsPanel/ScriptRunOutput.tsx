@@ -3,7 +3,7 @@ import { ScrollFade, StatusDot, type Tone } from '@goodboy/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { ScriptRunRecord, ScriptRunStatus } from '../../scripts';
 
-type ScriptRunOutputProps = {
+type Props = {
   readonly run: ScriptRunRecord;
   readonly completedAt: number | undefined;
 };
@@ -16,7 +16,7 @@ const STATUS_TONE = {
   cancelled: 'neutral',
 } satisfies Record<ScriptRunStatus, Tone>;
 
-export const ScriptRunOutput = ({ run, completedAt }: ScriptRunOutputProps) => {
+export const ScriptRunOutput = ({ run, completedAt }: Props) => {
   const [open, setOpen] = useState(true);
   const result = run.result;
 

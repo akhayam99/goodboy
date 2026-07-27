@@ -1,18 +1,13 @@
 import { Button, Dialog } from '@goodboy/ui';
 
-type DiscardDraftDialogProps = {
+type Props = {
   readonly open: boolean;
   readonly onSave: () => void;
   readonly onDiscard: () => void;
   readonly onCancel: () => void;
 };
 
-export const DiscardDraftDialog = ({
-  open,
-  onSave,
-  onDiscard,
-  onCancel,
-}: DiscardDraftDialogProps) => {
+export const DiscardDraftDialog = ({ open, onSave, onDiscard, onCancel }: Props) => {
   return (
     <Dialog
       open={open}
