@@ -49,6 +49,7 @@ export const createSessionDir = async ({
 
 export type SimpleSessionScanEntry = {
   readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
   readonly path: string;
 };
 
