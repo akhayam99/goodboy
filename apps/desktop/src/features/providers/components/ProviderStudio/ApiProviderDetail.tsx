@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Divider, IconTile, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
 import { CircleCheck, RotateCw, Terminal, TriangleAlert } from 'lucide-react';
 import { PROVIDER_BETA } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -31,9 +31,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-8 py-4">
-        <IconTile size="lg" color={color}>
-          <Icon size={22} aria-hidden />
-        </IconTile>
+        <Icon size={20} aria-hidden className="shrink-0" style={{ color }} />
         <div className="flex min-w-0 flex-col">
           <span className="flex items-center gap-2">
             <span className="text-base font-semibold text-foreground">{info.label}</span>
