@@ -83,11 +83,12 @@ const session: Session = {
 
 type Params = {
   readonly sessions?: ReadonlyArray<Session>;
+  readonly agents?: ReadonlyArray<Agent>;
 };
 
-const buildHarness = ({ sessions = [session] }: Params = {}) => {
+const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) => {
   const state = {
-    sessionPhaseRuns: { [SESSION_ID]: [agent] },
+    sessionPhaseRuns: { [SESSION_ID]: agents },
     sessions,
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
@@ -214,6 +215,35 @@ describe('finalizeWorkflowStep output summary', () => {
       AGENT_ID,
       expect.objectContaining({ outputSummary: 'timeout output' }),
     );
+  });
+
+  it('ignores a step-done marker that names a different step', async () => {
+    const sibling: Agent = { ...agent, id: 'agent-2' as AgentId, ordinal: 1, name: 'Review' };
+    invokeAgentListSpy.mockResolvedValue([agent, sibling]);
+    const finalize = buildHarness({ agents: [agent, sibling] });
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      'done here <<step-done id="agent-2">>',
+      false,
+    );
+
+    expect(result).toEqual({ shouldAutoAdvance: false });
+  });
+
+  it('accepts a step-done marker whose id matches no known agent', async () => {
+    summarizeStepOutputSpy.mockResolvedValue('Did the thing.');
+    const finalize = buildHarness();
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      'all done <<step-done id="agent-1-truncated">>',
+      false,
+    );
+
+    expect(result).toEqual({ shouldAutoAdvance: true });
   });
 
   it('does not fail the step when the agent stopped to ask an open question', async () => {

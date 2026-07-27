@@ -59,7 +59,10 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       return { shouldAutoAdvance: false };
     }
 
-    const hasMarker = extractStepDone(assistantText)?.id === agentId;
+    const markerId = extractStepDone(assistantText)?.id ?? null;
+    const claimsAnotherStep =
+      markerId !== null && markerId !== agentId && runs.some((r) => r.id === markerId);
+    const hasMarker = markerId !== null && !claimsAnotherStep;
     const satisfied = !!opts?.force || hasMarker || planCapturedThisTurn;
     if (!satisfied) {
       const askedQuestion = extractMarkers(assistantText).questions.length > 0;
