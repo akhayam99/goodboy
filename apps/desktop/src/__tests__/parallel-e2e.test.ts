@@ -173,6 +173,7 @@ function makeDeps(effects: ParallelBranchEffects) {
     provider: 'anthropic' as ProviderId,
     providerBinary: 'claude',
     model: 'claude-sonnet-4-6',
+    authIdentity: null,
     effects,
   };
 }

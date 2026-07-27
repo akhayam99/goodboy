@@ -25,7 +25,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-import { runTurn } from './turn';
+import { runTurn, isAuthErrorMessage } from './turn';
 
 afterEach(() => {
   capturedListeners.length = 0;
@@ -52,5 +52,22 @@ describe('runTurn', () => {
 
     await expect(iterator.next()).rejects.toThrow('provider emitted no events');
     expect(unlistenMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe('isAuthErrorMessage', () => {
+  it('matches the real claude CLI expired-OAuth-token 401 message', () => {
+    const message =
+      'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth access token has expired. Re-authenticate to continue."},"request_id":null}';
+
+    expect(isAuthErrorMessage(message)).toBe(true);
+  });
+
+  it('does not match an unrelated message that merely contains the digits 401', () => {
+    expect(isAuthErrorMessage('processed 4010 records before the connection dropped')).toBe(false);
+  });
+
+  it('still matches a plain "401" status embedded in other provider error text', () => {
+    expect(isAuthErrorMessage('request failed with status 401')).toBe(true);
   });
 });

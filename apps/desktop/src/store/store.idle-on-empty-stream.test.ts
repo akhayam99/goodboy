@@ -9,16 +9,22 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
+import { decodeAuthRequiredMessage } from '../features/chat/turn';
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
-
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: cancelTurnSpy,
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
+const { runTurnSpy, cancelTurnSpy } = vi.hoisted(() => ({
+  runTurnSpy: vi.fn(),
+  cancelTurnSpy: vi.fn(),
 }));
+
+vi.mock('../features/chat/turn', async () => {
+  const actual =
+    await vi.importActual<typeof import('../features/chat/turn')>('../features/chat/turn');
+  return {
+    ...actual,
+    runTurn: (args: unknown) => runTurnSpy(args),
+    cancelTurn: cancelTurnSpy,
+  };
+});
 
 vi.mock('../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -63,6 +69,7 @@ vi.mock('@goodboy/db', () => ({
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
   updateProviderRunStatus: vi.fn(),
+  updateAgentConfig: vi.fn(),
   updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
   insertOpenQuestion: vi.fn(async () => undefined),
@@ -181,6 +188,37 @@ async function* throwingStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
     at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
   };
   throw new Error('provider crashed mid-stream');
+}
+
+const OAUTH_EXPIRED_MESSAGE =
+  'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth access token has expired. Re-authenticate to continue."},"request_id":null}';
+
+async function* authErrorEventStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
+  yield {
+    kind: 'error',
+    runId,
+    message: OAUTH_EXPIRED_MESSAGE,
+    at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
+  };
+}
+
+async function* throwingAuthErrorStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
+  yield {
+    kind: 'assistant_text',
+    runId,
+    delta: 'partial',
+    at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
+  };
+  throw new Error(OAUTH_EXPIRED_MESSAGE);
+}
+
+async function* nonAuthErrorEventStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
+  yield {
+    kind: 'error',
+    runId,
+    message: 'connection reset by peer',
+    at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
+  };
 }
 
 describe('sendTurn, terminal state guarantees', () => {
@@ -340,5 +378,62 @@ describe('sendTurn, terminal state guarantees', () => {
       (c) => (c[2] as { kind: string }).kind,
     );
     expect(statuses).toContain('failed');
+  });
+
+  it('encodes a stream error event carrying the OAuth 401 text as auth_required, not a raw error item', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+      authErrorEventStream(args.runId),
+    );
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const errorEvent = transcript.find((e) => e.kind === 'error');
+    const message = errorEvent && 'message' in errorEvent ? errorEvent.message : '';
+    expect(decodeAuthRequiredMessage(message)).toEqual({
+      providerId: 'anthropic',
+      identity: 'test',
+    });
+  });
+
+  it('encodes a thrown OAuth 401 error the same way as a stream error event', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+      throwingAuthErrorStream(args.runId),
+    );
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
+    ).rejects.toThrow();
+
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const errorEvent = transcript.find((e) => e.kind === 'error');
+    const message = errorEvent && 'message' in errorEvent ? errorEvent.message : '';
+    expect(decodeAuthRequiredMessage(message)).toEqual({
+      providerId: 'anthropic',
+      identity: 'test',
+    });
+  });
+
+  it('leaves a non-auth provider error event message verbatim', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+      nonAuthErrorEventStream(args.runId),
+    );
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const errorEvent = transcript.find((e) => e.kind === 'error');
+    expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toBe(
+      'connection reset by peer',
+    );
   });
 });
