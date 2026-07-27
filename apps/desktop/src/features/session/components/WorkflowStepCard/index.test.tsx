@@ -112,7 +112,7 @@ describe('WorkflowStepCard (expanded)', () => {
   it('changes verbosity through the routing picker', () => {
     const onVerbosity = vi.fn();
     render(<WorkflowStepCard {...baseProps} expanded={true} onVerbosity={onVerbosity} />);
-    fireEvent.click(screen.getByRole('button', { name: 'routing for step 1' }));
+    fireEvent.click(screen.getByRole('button', { name: /^routing for step 1:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Verbose' }));
     expect(onVerbosity).toHaveBeenCalledWith('verbose');
   });

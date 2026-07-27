@@ -279,7 +279,15 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
 }
 
 #[tauri::command]
-pub fn worktree_list_local_branches(repo_path: String) -> Result<Vec<BranchInfo>, WorktreeError> {
+pub async fn worktree_list_local_branches(
+    repo_path: String,
+) -> Result<Vec<BranchInfo>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || list_local_branches_blocking(repo_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn list_local_branches_blocking(repo_path: String) -> Result<Vec<BranchInfo>, WorktreeError> {
     let p = Path::new(&repo_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(repo_path));
@@ -293,6 +301,7 @@ pub fn worktree_list_local_branches(repo_path: String) -> Result<Vec<BranchInfo>
         .iter()
         .filter_map(|w| w.branch.clone())
         .collect();
+    let uncommitted = uncommitted_status_by_branch(&worktrees, &in_use_branches);
     let mut branches = Vec::new();
     for line in raw.lines() {
         let name = line.trim();
@@ -300,11 +309,7 @@ pub fn worktree_list_local_branches(repo_path: String) -> Result<Vec<BranchInfo>
             continue;
         }
         let in_use = in_use_branches.contains(name);
-        let has_uncommitted = if in_use {
-            branch_worktree_has_uncommitted(&worktrees, name).unwrap_or(false)
-        } else {
-            false
-        };
+        let has_uncommitted = uncommitted.get(name).copied().unwrap_or(false);
         branches.push(BranchInfo {
             name: name.to_string(),
             in_use,
@@ -314,10 +319,34 @@ pub fn worktree_list_local_branches(repo_path: String) -> Result<Vec<BranchInfo>
     Ok(branches)
 }
 
-fn branch_worktree_has_uncommitted(worktrees: &[WorktreeInfo], branch: &str) -> Option<bool> {
-    let wt = worktrees.iter().find(|w| w.branch.as_deref() == Some(branch))?;
-    let stdout = git(Path::new(&wt.path), &["status", "--porcelain"]).ok()?;
-    Some(!stdout.trim().is_empty())
+fn uncommitted_status_by_branch(
+    worktrees: &[WorktreeInfo],
+    in_use_branches: &std::collections::HashSet<String>,
+) -> std::collections::HashMap<String, bool> {
+    let targets: Vec<(&str, &str)> = worktrees
+        .iter()
+        .filter_map(|w| {
+            let branch = w.branch.as_deref()?;
+            in_use_branches
+                .contains(branch)
+                .then_some((branch, w.path.as_str()))
+        })
+        .collect();
+    std::thread::scope(|scope| {
+        targets
+            .iter()
+            .map(|(branch, path)| (*branch, scope.spawn(move || worktree_has_uncommitted(path))))
+            .collect::<Vec<_>>()
+            .into_iter()
+            .map(|(branch, handle)| (branch.to_string(), handle.join().unwrap_or(false)))
+            .collect()
+    })
+}
+
+fn worktree_has_uncommitted(path: &str) -> bool {
+    git(Path::new(path), &["status", "--porcelain"])
+        .map(|out| !out.trim().is_empty())
+        .unwrap_or(false)
 }
 
 #[tauri::command]

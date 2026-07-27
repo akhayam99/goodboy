@@ -988,9 +988,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               connectedProviders={connectedProviders}
                               provider={plannerProviderOverride}
                               model={plannerModelOverride}
-                              effort={PLANNER_EFFORT}
-                              recommendedProvider={resolvedPlanTaskModel.providerId}
-                              recommendedModel={plannerRecommendedModel}
+                              effort={{ editable: false, value: PLANNER_EFFORT }}
+                              recommendation={{
+                                provider: resolvedPlanTaskModel.providerId,
+                                model: plannerRecommendedModel,
+                              }}
                               disabled={blocked}
                               onProvider={(next) => {
                                 setPlannerProviderOverride(next);

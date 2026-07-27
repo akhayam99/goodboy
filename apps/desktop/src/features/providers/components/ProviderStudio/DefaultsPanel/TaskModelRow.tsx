@@ -54,7 +54,8 @@ export const TaskModelRow = ({
             connectedProviders={availableProviderIds}
             provider={providerId}
             model={model}
-            recommendedModel={recommendedModel}
+            effort={{ editable: false }}
+            recommendation={{ model: recommendedModel }}
             disabled={disabled}
             onProvider={(next) => {
               if (next === '') {

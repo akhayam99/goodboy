@@ -47,11 +47,14 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className }: Props
         connectedProviders={connectedProviders}
         provider={value.provider}
         model={value.model}
-        effort={value.effort}
+        effort={{
+          editable: true,
+          value: value.effort,
+          onChange: (effort) => onChange({ ...value, effort }),
+        }}
         disabled={disabled}
         onProvider={onProvider}
         onModel={(model) => onChange({ ...value, model, effort: clampEffort(model, value.effort) })}
-        onEffort={(effort) => onChange({ ...value, effort })}
       />
       <textarea
         aria-label="Agent hint"
