@@ -130,4 +130,18 @@ describe('AppTopBar', () => {
     expect(store.setCurrentSession).toHaveBeenCalledWith(ATTENTION_SESSION_ID);
     expect(screen.queryByText('PR #42: CI failed')).toBeNull();
   });
+
+  it('closes the needs-you dialog on Escape', () => {
+    hooks.sessions = [ATTENTION_SESSION];
+    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
+    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
+    expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: 'Sessions needing attention' })).toBeNull();
+  });
 });

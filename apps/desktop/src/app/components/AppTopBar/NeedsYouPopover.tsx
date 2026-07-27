@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Divider, Popover, ScrollFade, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
@@ -32,6 +32,19 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [coordinates, setCoordinates] = useState<PopoverCoordinates | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen]);
 
   useLayoutEffect(() => {
     if (!isOpen) {
@@ -92,6 +105,8 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
             <>
               <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} aria-hidden />
               <Popover
+                role="dialog"
+                ariaLabel="Sessions needing attention"
                 className="fixed z-40 w-80"
                 style={{
                   top: coordinates.top,
