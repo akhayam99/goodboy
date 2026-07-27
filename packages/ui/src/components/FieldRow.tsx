@@ -81,7 +81,7 @@ export const FieldRow = ({
       )}
     >
       {labelBlock}
-      <div className="min-w-0 shrink">{control}</div>
+      <div className="shrink-0">{control}</div>
     </div>
   );
 };

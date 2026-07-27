@@ -325,6 +325,14 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByText('Summaries')).toBeNull();
   });
 
+  it('bounds the default provider and routing pool chip rows so they wrap instead of squeezing the label', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    const anthropicChips = screen.getAllByRole('button', { name: 'anthropic' });
+    expect(anthropicChips[0]!.parentElement?.className).toContain('max-w-64');
+    expect(anthropicChips[1]!.parentElement?.className).toContain('max-w-64');
+  });
+
   it('shows the override count for each group in its tab label', () => {
     state.workspaceOverrides = {
       'ws-1': {

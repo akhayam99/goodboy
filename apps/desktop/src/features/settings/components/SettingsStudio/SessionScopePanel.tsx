@@ -118,7 +118,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col divide-y divide-border-soft/50">
           <FieldRow label="Default provider" help="Runs new agents and workflow steps.">
-            <div className="flex flex-wrap justify-end gap-1">
+            <div className="flex max-w-64 flex-wrap justify-end gap-1">
               {SESSION_PROVIDER_OPTIONS.map((id) => (
                 <ProviderChip
                   key={id}
@@ -143,7 +143,7 @@ export const SessionScopePanel = ({ sessionId }: Props) => {
             {connectedProviderIds.length === 0 ? (
               <span className="text-2xs text-muted-foreground">No providers connected.</span>
             ) : (
-              <div className="flex flex-wrap justify-end gap-1">
+              <div className="flex max-w-64 flex-wrap justify-end gap-1">
                 {connectedProviderIds.map((id) => {
                   const enabled = (
                     session.providerPreference.enabledProviders ?? connectedProviderIds

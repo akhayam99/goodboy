@@ -108,4 +108,16 @@ describe('SessionScopePanel', () => {
     expect(screen.queryByRole('button', { name: /^archive$/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /^delete$/i })).toBeNull();
   });
+
+  it('bounds the default provider and routing pool chip rows so they wrap instead of squeezing the label', () => {
+    state.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected' },
+    ];
+    render(<SessionScopePanel sessionId={'sess-1' as never} />);
+
+    const claudeChips = screen.getAllByRole('button', { name: /claude/i });
+    expect(claudeChips[0]!.parentElement?.className).toContain('max-w-64');
+    expect(claudeChips[1]!.parentElement?.className).toContain('max-w-64');
+  });
 });

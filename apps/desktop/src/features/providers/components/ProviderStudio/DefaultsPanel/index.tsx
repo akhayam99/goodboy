@@ -151,7 +151,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               hint="Governs every task and role below unless it has its own override."
             />
             <FieldRow label="Default provider" help="New sessions start on it and can override it.">
-              <div className="flex flex-wrap justify-end gap-1">
+              <div className="flex max-w-64 flex-wrap justify-end gap-1">
                 {PROVIDER_ORDER.map((providerId) => (
                   <ProviderChip
                     key={providerId}
@@ -181,7 +181,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               {connectedProviderIds.length === 0 ? (
                 <span className="text-2xs text-muted-foreground">No providers connected</span>
               ) : (
-                <div className="flex flex-wrap justify-end gap-1">
+                <div className="flex max-w-64 flex-wrap justify-end gap-1">
                   {connectedProviderIds.map((providerId) => {
                     const isDefaultProvider = providerId === defaultProviderId;
                     return (
