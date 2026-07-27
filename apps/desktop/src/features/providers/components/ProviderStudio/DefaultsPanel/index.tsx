@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import type {
   AgentRole,
@@ -12,6 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
+import { SegmentedControl } from '../../../../../shared/components/SegmentedControl';
 import { PROVIDER_ORDER } from '../providerOrder';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
@@ -24,6 +26,8 @@ type Props = {
 type ProviderParams = {
   readonly providerId: ProviderId;
 };
+
+type DefaultsGroup = 'task' | 'role';
 
 const TASKS: ReadonlyArray<{
   readonly id: AuxTaskId;
@@ -94,6 +98,14 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       overrides,
     });
 
+  const [group, setGroup] = useState<DefaultsGroup>('task');
+  const taskOverrideCount = Object.keys(overrides.taskModels ?? {}).length;
+  const roleOverrideCount = Object.keys(overrides.roleModels ?? {}).length;
+  const groupOptions = [
+    { value: 'task' as const, label: `Task models (${taskOverrideCount})` },
+    { value: 'role' as const, label: `Agent roles (${roleOverrideCount})` },
+  ];
+
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
     const enabledProviders =
       overrides.enabledProviders == null
@@ -134,6 +146,10 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       <ScrollFade className="flex-1" fadeFrom="background">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-8 py-6">
           <section className="flex flex-col gap-1">
+            <SectionHeader
+              label="Provider routing"
+              hint="Governs every task and role below unless it has its own override."
+            />
             <FieldRow label="Default provider" help="New sessions start on it and can override it.">
               <div className="flex flex-wrap justify-end gap-1">
                 {PROVIDER_ORDER.map((providerId) => (
@@ -191,49 +207,56 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             </FieldRow>
           </section>
 
-          <section className="flex flex-col gap-2">
-            <SectionHeader label="Task models" />
-            <div className="flex flex-col">
-              {TASKS.map((task, index) => (
-                <div key={task.id} className="flex flex-col">
-                  {index > 0 ? <Divider /> : null}
-                  <TaskModelRow
-                    task={task.id}
-                    label={task.label}
-                    help={task.help}
-                    preference={overrides.taskModels?.[task.id] ?? null}
-                    defaultProviderId={defaultProviderId}
-                    connectedProviderIds={connectedProviderIds}
-                    disabled={busy}
-                    onChange={(preference) => persistTaskModel({ task: task.id, preference })}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-2">
-            <SectionHeader
-              label="Agent roles"
-              hint="Applies to every agent spawned in this role unless pinned per agent or per step"
+          <section className="flex flex-col gap-3">
+            <SegmentedControl
+              ariaLabel="Defaults group"
+              options={groupOptions}
+              value={group}
+              onChange={setGroup}
             />
-            <div className="flex flex-col">
-              {ROLES.map((role, index) => (
-                <div key={role} className="flex flex-col">
-                  {index > 0 ? <Divider /> : null}
-                  <RoleModelRow
-                    role={role}
-                    label={ROLE_LABEL[role]}
-                    help={ROLE_DEFAULTS[role].description}
-                    preference={overrides.roleModels?.[role] ?? null}
-                    defaultProviderId={defaultProviderId}
-                    connectedProviderIds={connectedProviderIds}
-                    disabled={busy}
-                    onChange={(preference) => persistRoleModel({ role, preference })}
-                  />
+
+            {group === 'task' ? (
+              <div className="flex flex-col">
+                {TASKS.map((task, index) => (
+                  <div key={task.id} className="flex flex-col">
+                    {index > 0 ? <Divider /> : null}
+                    <TaskModelRow
+                      task={task.id}
+                      label={task.label}
+                      help={task.help}
+                      preference={overrides.taskModels?.[task.id] ?? null}
+                      defaultProviderId={defaultProviderId}
+                      connectedProviderIds={connectedProviderIds}
+                      disabled={busy}
+                      onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-2xs text-muted-foreground/70">
+                  Applies to every agent spawned in this role unless pinned per agent or per step.
+                </p>
+                <div className="flex flex-col">
+                  {ROLES.map((role, index) => (
+                    <div key={role} className="flex flex-col">
+                      {index > 0 ? <Divider /> : null}
+                      <RoleModelRow
+                        role={role}
+                        label={ROLE_LABEL[role]}
+                        help={ROLE_DEFAULTS[role].description}
+                        preference={overrides.roleModels?.[role] ?? null}
+                        defaultProviderId={defaultProviderId}
+                        connectedProviderIds={connectedProviderIds}
+                        disabled={busy}
+                        onChange={(preference) => persistRoleModel({ role, preference })}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </section>
 
           {error != null ? <p className="text-xs text-danger">{error}</p> : null}

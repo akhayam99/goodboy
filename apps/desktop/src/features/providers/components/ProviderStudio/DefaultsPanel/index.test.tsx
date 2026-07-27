@@ -108,6 +108,8 @@ afterEach(cleanup);
 
 const TASK_LABELS = ['Summaries', 'Branch names', 'Planning', 'Agent titles', 'PR and MR drafts'];
 
+const openRolesTab = () => fireEvent.click(screen.getByRole('tab', { name: /Agent roles/ }));
+
 describe('DefaultsPanel', () => {
   it('uses connected providers as the routing pool and locks the default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
@@ -167,6 +169,8 @@ describe('DefaultsPanel', () => {
       );
     }
     expect(screen.getByLabelText('Summaries routing status: default')).toBeDefined();
+
+    openRolesTab();
     expect(screen.getByLabelText('Planner routing status: default')).toBeDefined();
   });
 
@@ -202,6 +206,7 @@ describe('DefaultsPanel', () => {
 
   it('renders a row per agent role', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
 
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.getByText('Debugger')).toBeDefined();
@@ -212,6 +217,7 @@ describe('DefaultsPanel', () => {
 
   it('reads a role with no override as its compiled default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
       'claude-opus-5 auto',
@@ -220,6 +226,7 @@ describe('DefaultsPanel', () => {
 
   it('persists a role model with an effort the model supports', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Scout routing model' }));
 
@@ -235,6 +242,7 @@ describe('DefaultsPanel', () => {
 
   it('pins a role to a cheap model with no effort ladder instead of clearing it', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Debugger routing cheap model' }));
 
@@ -259,6 +267,7 @@ describe('DefaultsPanel', () => {
       },
     };
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Reviewer routing model' }).textContent).toBe(
       'claude-opus-5',
@@ -298,5 +307,40 @@ describe('DefaultsPanel', () => {
         },
       }),
     );
+  });
+
+  it('keeps the default provider and routing pool rows visible while switching groups', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByText('Default provider')).toBeDefined();
+    expect(screen.getByText('Routing pool')).toBeDefined();
+    expect(screen.getByText('Summaries')).toBeDefined();
+    expect(screen.queryByText('Scout')).toBeNull();
+
+    openRolesTab();
+
+    expect(screen.getByText('Default provider')).toBeDefined();
+    expect(screen.getByText('Routing pool')).toBeDefined();
+    expect(screen.getByText('Scout')).toBeDefined();
+    expect(screen.queryByText('Summaries')).toBeNull();
+  });
+
+  it('shows the override count for each group in its tab label', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        taskModels: {
+          summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
+        },
+        roleModels: {
+          scout: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'low' },
+          reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('tab', { name: 'Task models (1)' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Agent roles (2)' })).toBeDefined();
   });
 });
