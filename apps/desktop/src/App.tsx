@@ -26,6 +26,7 @@ import { WorkspaceHeader } from './features/workspace/components/WorkspaceHeader
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
+import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
 import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
 import { isMainWindow } from './features/workspace/window';
@@ -110,6 +111,7 @@ export const App = () => {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
@@ -795,6 +797,8 @@ export const App = () => {
           currentWorkspace ? (
             <AppFooter
               activeStudio={activeStudio}
+              isSimpleWorkspace={currentWorkspace.kind === 'simple'}
+              onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
               githubEnabled={remoteKind === 'github'}
               linearEnabled={hasLinear}
               sentryEnabled={hasSentry}
@@ -921,6 +925,13 @@ export const App = () => {
       ) : null}
       {addWorkspaceOpen ? (
         <WorkspaceLinkDialog open onClose={() => setAddWorkspaceOpen(false)} />
+      ) : null}
+      {currentWorkspace ? (
+        <ConvertWorkspaceDialog
+          open={convertWorkspaceOpen}
+          workspace={currentWorkspace}
+          onClose={() => setConvertWorkspaceOpen(false)}
+        />
       ) : null}
       {workflowStudioOpen && currentWorkspace ? (
         <WorkflowStudio
