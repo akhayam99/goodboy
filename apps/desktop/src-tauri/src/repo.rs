@@ -3,11 +3,14 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub const CONVERSION_IGNORE_ENTRIES: [&str; 2] = [".goodboy/", "sessions/"];
+const CONVERSION_IGNORE_ENTRIES: [&str; 2] = ["/.goodboy", "/sessions/"];
+
+const IGNORE_PROBE_PATHS: [&str; 3] = [".goodboy", ".goodboy/worktrees/probe", "sessions/probe"];
 
 const INITIAL_COMMIT_MESSAGE: &str = "chore: track this project with git";
 const FALLBACK_AUTHOR_NAME: &str = "Goodboy";
 const FALLBACK_AUTHOR_EMAIL: &str = "goodboy@localhost";
+const DEFAULT_BRANCH: &str = "main";
 
 #[derive(Debug, Serialize)]
 pub struct GitRepoCheck {
@@ -24,8 +27,14 @@ pub enum RepoInitError {
     DirNotFound(String),
     #[error("already a git repository: {0}")]
     AlreadyRepo(String),
+    #[error("this folder is already inside the git repository at {0}. open that repository as the workspace instead")]
+    NestedRepo(String),
     #[error("not a usable git remote url: {0}")]
     InvalidRemote(String),
+    #[error("git still does not ignore {0}, so the first commit could carry session data")]
+    IgnoreNotApplied(String),
+    #[error("{message}")]
+    RollbackFailed { message: String },
     #[error("git failed: {message}")]
     Git { message: String },
     #[error("io error: {0}")]
@@ -39,7 +48,10 @@ impl RepoInitError {
         match self {
             RepoInitError::DirNotFound(_) => "dir_not_found",
             RepoInitError::AlreadyRepo(_) => "already_repo",
+            RepoInitError::NestedRepo(_) => "nested_repo",
             RepoInitError::InvalidRemote(_) => "invalid_remote",
+            RepoInitError::IgnoreNotApplied(_) => "ignore_not_applied",
+            RepoInitError::RollbackFailed { .. } => "rollback_failed",
             RepoInitError::Git { .. } => "git",
             RepoInitError::Io(_) => "io",
         }
@@ -60,6 +72,17 @@ pub struct InitializedRepo {
     #[serde(rename = "remoteUrl")]
     pub remote_url: String,
     pub branch: String,
+}
+
+enum RepoState {
+    Absent,
+    AtRoot,
+    Nested(String),
+}
+
+struct GitignoreSnapshot {
+    existed: bool,
+    content: Option<String>,
 }
 
 #[tauri::command]
@@ -114,7 +137,10 @@ pub fn is_supported_remote_url(url: &str) -> bool {
     }
     for scheme in ["https://", "http://", "ssh://", "git://"] {
         if let Some(rest) = trimmed.strip_prefix(scheme) {
-            return rest.contains('/') && !rest.starts_with('/');
+            let Some((authority, path)) = rest.split_once('/') else {
+                return false;
+            };
+            return is_supported_authority(authority) && !path.is_empty();
         }
     }
     let Some((user_host, path)) = trimmed.split_once(':') else {
@@ -123,7 +149,19 @@ pub fn is_supported_remote_url(url: &str) -> bool {
     let Some((user, host)) = user_host.split_once('@') else {
         return false;
     };
-    !user.is_empty() && !host.is_empty() && !path.is_empty() && !user_host.contains('/')
+    !user.is_empty()
+        && !path.is_empty()
+        && !user_host.contains('/')
+        && is_supported_authority(user_host)
+        && !host.is_empty()
+}
+
+fn is_supported_authority(authority: &str) -> bool {
+    if authority.is_empty() || authority.starts_with('-') {
+        return false;
+    }
+    let host = authority.rsplit('@').next().unwrap_or(authority);
+    !host.is_empty() && !host.starts_with('-')
 }
 
 #[tauri::command]
@@ -132,47 +170,142 @@ pub fn repo_init_with_remote(args: RepoInitArgs) -> Result<InitializedRepo, Repo
     if !root.is_dir() {
         return Err(RepoInitError::DirNotFound(args.path.clone()));
     }
-    if root.join(".git").exists() {
-        return Err(RepoInitError::AlreadyRepo(args.path.clone()));
-    }
     let remote_url = args.remote_url.trim().to_string();
     if !is_supported_remote_url(&remote_url) {
         return Err(RepoInitError::InvalidRemote(args.remote_url.clone()));
     }
     let root = std::fs::canonicalize(&root)?;
 
-    run_git(&root, &["init"])?;
-    match scaffold_repo(&root, &remote_url) {
+    match repo_state(&root)? {
+        RepoState::Nested(toplevel) => Err(RepoInitError::NestedRepo(toplevel)),
+        RepoState::AtRoot => adopt_repo(&root, &remote_url),
+        RepoState::Absent => create_repo(&root, &remote_url),
+    }
+}
+
+fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
+    let check = validate_git_repo(root.to_string_lossy().into_owned());
+    let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
+        if root.join(".git").exists() {
+            return Err(RepoInitError::AlreadyRepo(
+                root.to_string_lossy().into_owned(),
+            ));
+        }
+        return Ok(RepoState::Absent);
+    };
+    let resolved = std::fs::canonicalize(&toplevel).unwrap_or_else(|_| PathBuf::from(&toplevel));
+    if resolved == root {
+        return Ok(RepoState::AtRoot);
+    }
+    Ok(RepoState::Nested(toplevel))
+}
+
+fn create_repo(root: &Path, remote_url: &str) -> Result<InitializedRepo, RepoInitError> {
+    let snapshot = GitignoreSnapshot::capture(root);
+    run_git(root, &["init"])?;
+    match scaffold_repo(root, remote_url) {
         Ok(()) => Ok(InitializedRepo {
             root_path: root.to_string_lossy().into_owned(),
-            remote_url,
-            branch: "main".to_string(),
+            remote_url: remote_url.to_string(),
+            branch: DEFAULT_BRANCH.to_string(),
         }),
-        Err(err) => {
-            let _ = std::fs::remove_dir_all(root.join(".git"));
-            Err(err)
-        }
+        Err(err) => Err(undo_creation(root, &snapshot, err)),
     }
 }
 
 fn scaffold_repo(root: &Path, remote_url: &str) -> Result<(), RepoInitError> {
     run_git(root, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
-    for entry in CONVERSION_IGNORE_ENTRIES {
-        crate::worktree::ensure_gitignore_entry(root, entry)
-            .map_err(|err| RepoInitError::Git {
-                message: err.to_string(),
-            })?;
-    }
-    run_git(root, &["add", "-A"])?;
-    commit_initial(root)?;
+    apply_ignore_entries(root)?;
+    commit_ignore_file(root)?;
     run_git(root, &["remote", "add", "origin", remote_url])?;
     Ok(())
 }
 
-fn commit_initial(root: &Path) -> Result<(), RepoInitError> {
+fn adopt_repo(root: &Path, remote_url: &str) -> Result<InitializedRepo, RepoInitError> {
+    let snapshot = GitignoreSnapshot::capture(root);
+    if let Err(err) = apply_ignore_entries(root) {
+        return Err(undo_ignore(root, &snapshot, err));
+    }
+    if !has_commit(root) {
+        run_git(root, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
+        commit_ignore_file(root)?;
+    }
+    let origin = match current_origin(root) {
+        Some(existing) => existing,
+        None => {
+            run_git(root, &["remote", "add", "origin", remote_url])?;
+            remote_url.to_string()
+        }
+    };
+    Ok(InitializedRepo {
+        root_path: root.to_string_lossy().into_owned(),
+        remote_url: origin,
+        branch: current_branch(root),
+    })
+}
+
+fn apply_ignore_entries(root: &Path) -> Result<(), RepoInitError> {
+    write_ignore_entries(root)?;
+    for probe in IGNORE_PROBE_PATHS {
+        if !is_path_ignored(root, probe)? {
+            return Err(RepoInitError::IgnoreNotApplied(probe.to_string()));
+        }
+    }
+    Ok(())
+}
+
+fn write_ignore_entries(root: &Path) -> Result<(), RepoInitError> {
+    let path = root.join(".gitignore");
+    let mut next = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut added = false;
+    for entry in CONVERSION_IGNORE_ENTRIES {
+        if next.lines().any(|line| line.trim() == entry) {
+            continue;
+        }
+        if !next.is_empty() && !next.ends_with('\n') {
+            next.push('\n');
+        }
+        next.push_str(entry);
+        next.push('\n');
+        added = true;
+    }
+    if !added {
+        return Ok(());
+    }
+    std::fs::write(&path, next)?;
+    Ok(())
+}
+
+fn is_path_ignored(root: &Path, probe: &str) -> Result<bool, RepoInitError> {
+    let output = crate::path_env::command("git")
+        .args(["check-ignore", "--no-index", "-q", "--", probe])
+        .current_dir(root)
+        .output()?;
+    match output.status.code() {
+        Some(0) => Ok(true),
+        Some(1) => Ok(false),
+        _ => Err(RepoInitError::Git {
+            message: format!(
+                "git check-ignore {probe} failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ),
+        }),
+    }
+}
+
+fn commit_ignore_file(root: &Path) -> Result<(), RepoInitError> {
+    run_git(root, &["add", "--", ".gitignore"])?;
     let plain = run_git(
         root,
-        &["commit", "--allow-empty", "-m", INITIAL_COMMIT_MESSAGE],
+        &[
+            "commit",
+            "--only",
+            "--allow-empty",
+            "-m",
+            INITIAL_COMMIT_MESSAGE,
+            "--",
+            ".gitignore",
+        ],
     );
     if plain.is_ok() {
         return Ok(());
@@ -187,12 +320,93 @@ fn commit_initial(root: &Path) -> Result<(), RepoInitError> {
             "-c",
             &format!("user.email={FALLBACK_AUTHOR_EMAIL}"),
             "commit",
+            "--only",
             "--allow-empty",
             "-m",
             INITIAL_COMMIT_MESSAGE,
+            "--",
+            ".gitignore",
         ],
     )?;
     Ok(())
+}
+
+fn has_commit(root: &Path) -> bool {
+    run_git(root, &["rev-parse", "--verify", "HEAD"]).is_ok()
+}
+
+fn current_origin(root: &Path) -> Option<String> {
+    let found = run_git(root, &["config", "--get", "remote.origin.url"]).ok()?;
+    let trimmed = found.trim().to_string();
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some(trimmed)
+}
+
+fn current_branch(root: &Path) -> String {
+    let Ok(found) = run_git(root, &["rev-parse", "--abbrev-ref", "HEAD"]) else {
+        return DEFAULT_BRANCH.to_string();
+    };
+    let trimmed = found.trim();
+    if trimmed.is_empty() || trimmed == "HEAD" {
+        return DEFAULT_BRANCH.to_string();
+    }
+    trimmed.to_string()
+}
+
+impl GitignoreSnapshot {
+    fn capture(root: &Path) -> Self {
+        let path = root.join(".gitignore");
+        Self {
+            existed: path.exists(),
+            content: std::fs::read_to_string(&path).ok(),
+        }
+    }
+
+    fn restore(&self, root: &Path) -> std::io::Result<()> {
+        let path = root.join(".gitignore");
+        if !self.existed {
+            return match std::fs::remove_file(&path) {
+                Err(err) if err.kind() != std::io::ErrorKind::NotFound => Err(err),
+                _ => Ok(()),
+            };
+        }
+        let Some(previous) = self.content.as_ref() else {
+            return Ok(());
+        };
+        if std::fs::read_to_string(&path).ok().as_ref() == Some(previous) {
+            return Ok(());
+        }
+        std::fs::write(&path, previous)
+    }
+}
+
+fn undo_creation(root: &Path, snapshot: &GitignoreSnapshot, cause: RepoInitError) -> RepoInitError {
+    let mut failures: Vec<String> = Vec::new();
+    if let Err(err) = std::fs::remove_dir_all(root.join(".git")) {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            failures.push(format!("could not remove .git: {err}"));
+        }
+    }
+    if let Err(err) = snapshot.restore(root) {
+        failures.push(format!("could not restore .gitignore: {err}"));
+    }
+    if failures.is_empty() {
+        return cause;
+    }
+    RepoInitError::RollbackFailed {
+        message: format!("{cause}. {} left behind", failures.join(", ")),
+    }
+}
+
+fn undo_ignore(root: &Path, snapshot: &GitignoreSnapshot, cause: RepoInitError) -> RepoInitError {
+    let Err(err) = snapshot.restore(root) else {
+        return cause;
+    };
+    RepoInitError::RollbackFailed {
+        message: format!("{cause}. could not restore .gitignore: {err}"),
+    }
 }
 
 fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
@@ -227,47 +441,59 @@ mod tests {
         String::from_utf8(out.stdout).unwrap().trim().to_string()
     }
 
+    fn git_ignores(cwd: &std::path::Path, path: &str) -> bool {
+        crate::path_env::command("git")
+            .args(["check-ignore", "--no-index", "-q", "--", path])
+            .current_dir(cwd)
+            .output()
+            .unwrap()
+            .status
+            .success()
+    }
+
+    fn convert(
+        root: &std::path::Path,
+        remote_url: &str,
+    ) -> Result<super::InitializedRepo, RepoInitError> {
+        repo_init_with_remote(RepoInitArgs {
+            path: root.to_string_lossy().into_owned(),
+            remote_url: remote_url.to_string(),
+        })
+    }
+
     #[test]
-    fn initializes_a_repo_with_one_commit_and_an_origin() {
+    fn commits_only_the_ignore_file_and_leaves_the_folder_untracked() {
         let root = test_root("repo-init");
         std::fs::write(root.join("notes.md"), "hello").unwrap();
+        std::fs::write(root.join(".env"), "SECRET=1").unwrap();
         std::fs::create_dir_all(root.join("sessions").join("plan-1")).unwrap();
         std::fs::write(root.join("sessions").join("plan-1").join(".goodboy"), "{}").unwrap();
 
-        let created = repo_init_with_remote(RepoInitArgs {
-            path: root.to_string_lossy().into_owned(),
-            remote_url: "https://github.com/acme/widgets.git".to_string(),
-        })
-        .unwrap();
+        let created = convert(&root, "https://github.com/acme/widgets.git").unwrap();
 
         assert_eq!(created.branch, "main");
-        assert!(root.join(".git").is_dir());
         assert_eq!(
             git_output(&root, &["config", "--get", "remote.origin.url"]),
             "https://github.com/acme/widgets.git"
         );
-        assert_eq!(git_output(&root, &["rev-parse", "--abbrev-ref", "HEAD"]), "main");
-        assert!(!git_output(&root, &["rev-parse", "HEAD"]).is_empty());
-        let tracked = git_output(&root, &["ls-files"]);
-        assert!(tracked.contains("notes.md"));
-        assert!(!tracked.contains("sessions/"));
+        assert_eq!(git_output(&root, &["ls-files"]), ".gitignore");
+        assert!(git_output(&root, &["status", "--porcelain"]).contains("?? notes.md"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn excludes_session_data_through_the_gitignore() {
+    fn anchors_the_ignore_entries_to_the_workspace_root() {
         let root = test_root("repo-init-ignore");
         std::fs::write(root.join(".gitignore"), "node_modules\n").unwrap();
 
-        repo_init_with_remote(RepoInitArgs {
-            path: root.to_string_lossy().into_owned(),
-            remote_url: "git@gitlab.com:acme/widgets.git".to_string(),
-        })
-        .unwrap();
+        convert(&root, "git@gitlab.com:acme/widgets.git").unwrap();
 
         let ignore = std::fs::read_to_string(root.join(".gitignore")).unwrap();
         let lines: Vec<&str> = ignore.lines().collect();
-        assert_eq!(lines, vec!["node_modules", ".goodboy/", "sessions/"]);
+        assert_eq!(lines, vec!["node_modules", "/.goodboy", "/sessions/"]);
+        assert!(git_ignores(&root, "sessions/plan-1/.goodboy"));
+        assert!(git_ignores(&root, ".goodboy"));
+        assert!(!git_ignores(&root, "src/app/sessions/page.ts"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -276,13 +502,98 @@ mod tests {
         let root = test_root("repo-init-existing");
         std::fs::create_dir_all(root.join(".git")).unwrap();
 
-        let err = repo_init_with_remote(RepoInitArgs {
-            path: root.to_string_lossy().into_owned(),
-            remote_url: "https://github.com/acme/widgets.git".to_string(),
-        })
-        .unwrap_err();
+        let err = convert(&root, "https://github.com/acme/widgets.git").unwrap_err();
 
         assert!(matches!(err, RepoInitError::AlreadyRepo(_)));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_a_folder_nested_inside_another_repository() {
+        let root = test_root("repo-init-nested");
+        crate::path_env::command("git")
+            .args(["init"])
+            .current_dir(&root)
+            .output()
+            .unwrap();
+        let nested = root.join("notes");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let err = convert(&nested, "https://github.com/acme/widgets.git").unwrap_err();
+
+        assert!(matches!(err, RepoInitError::NestedRepo(_)));
+        assert!(!nested.join(".git").exists());
+        assert!(!nested.join(".gitignore").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn adopts_a_repository_a_failed_conversion_left_behind() {
+        let root = test_root("repo-init-adopt");
+        convert(&root, "https://github.com/acme/widgets.git").unwrap();
+
+        let adopted = convert(&root, "https://github.com/acme/other.git").unwrap();
+
+        assert_eq!(adopted.remote_url, "https://github.com/acme/widgets.git");
+        assert_eq!(adopted.branch, "main");
+        assert_eq!(git_output(&root, &["rev-list", "--count", "HEAD"]), "1");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn adopts_a_repository_the_user_created_without_a_remote() {
+        let root = test_root("repo-init-adopt-plain");
+        crate::path_env::command("git")
+            .args(["init"])
+            .current_dir(&root)
+            .output()
+            .unwrap();
+        std::fs::write(root.join("notes.md"), "hello").unwrap();
+        crate::path_env::command("git")
+            .args(["add", "--", "notes.md"])
+            .current_dir(&root)
+            .output()
+            .unwrap();
+
+        let adopted = convert(&root, "https://github.com/acme/widgets.git").unwrap();
+
+        assert_eq!(adopted.remote_url, "https://github.com/acme/widgets.git");
+        assert_eq!(
+            git_output(&root, &["ls-tree", "--name-only", "HEAD"]),
+            ".gitignore"
+        );
+        assert!(git_output(&root, &["status", "--porcelain"]).contains("A  notes.md"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_to_commit_when_git_still_does_not_ignore_session_data() {
+        let root = test_root("repo-init-unignored");
+        std::fs::write(root.join(".gitignore"), "/sessions/\n!/sessions/\n").unwrap();
+
+        let err = convert(&root, "https://github.com/acme/widgets.git").unwrap_err();
+
+        assert!(matches!(err, RepoInitError::IgnoreNotApplied(_)));
+        assert!(!root.join(".git").exists());
+        assert_eq!(
+            std::fs::read_to_string(root.join(".gitignore")).unwrap(),
+            "/sessions/\n!/sessions/\n"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn removes_the_ignore_file_it_created_when_the_conversion_fails() {
+        let root = test_root("repo-init-rollback");
+        std::os::unix::fs::symlink(root.join("missing").join("target"), root.join(".gitignore"))
+            .unwrap();
+
+        let err = convert(&root, "https://github.com/acme/widgets.git").unwrap_err();
+
+        assert!(matches!(err, RepoInitError::Io(_)));
+        assert!(!root.join(".git").exists());
+        assert!(std::fs::symlink_metadata(root.join(".gitignore")).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -290,11 +601,7 @@ mod tests {
     fn refuses_a_remote_url_it_cannot_hand_to_git() {
         let root = test_root("repo-init-remote");
 
-        let err = repo_init_with_remote(RepoInitArgs {
-            path: root.to_string_lossy().into_owned(),
-            remote_url: "--upload-pack=touch /tmp/pwned".to_string(),
-        })
-        .unwrap_err();
+        let err = convert(&root, "--upload-pack=touch /tmp/pwned").unwrap_err();
 
         assert!(matches!(err, RepoInitError::InvalidRemote(_)));
         assert!(!root.join(".git").exists());
@@ -303,12 +610,26 @@ mod tests {
 
     #[test]
     fn accepts_only_remote_urls_git_understands() {
-        assert!(is_supported_remote_url("https://github.com/acme/widgets.git"));
-        assert!(is_supported_remote_url("ssh://git@example.com/acme/widgets"));
+        assert!(is_supported_remote_url(
+            "https://github.com/acme/widgets.git"
+        ));
+        assert!(is_supported_remote_url(
+            "ssh://git@example.com/acme/widgets"
+        ));
         assert!(is_supported_remote_url("git@github.com:acme/widgets.git"));
         assert!(!is_supported_remote_url(""));
         assert!(!is_supported_remote_url("acme/widgets"));
         assert!(!is_supported_remote_url("https://github.com"));
         assert!(!is_supported_remote_url("https://github.com/acme/wid gets"));
+    }
+
+    #[test]
+    fn rejects_a_remote_url_whose_host_looks_like_a_flag() {
+        assert!(!is_supported_remote_url("ssh://-oProxyCommand=x/y"));
+        assert!(!is_supported_remote_url("ssh://git@-oProxyCommand=x/y"));
+        assert!(!is_supported_remote_url(
+            "git@-oProxyCommand=x:acme/widgets.git"
+        ));
+        assert!(!is_supported_remote_url("https:///acme/widgets.git"));
     }
 }
