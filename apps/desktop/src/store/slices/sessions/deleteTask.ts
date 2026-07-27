@@ -3,6 +3,7 @@ import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeWorktree } from '../../../features/worktree/worktree';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
@@ -32,7 +33,11 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (workspace && workspace.kind !== 'simple') {
+    const isBranchless = isBranchlessSession({
+      workspaceKind: workspace?.kind,
+      branch: get().sessionBranches[sessionId],
+    });
+    if (workspace && !isBranchless) {
       for (const worktreePath of paths) {
         try {
           await removeWorktree(workspace.rootPath, worktreePath);

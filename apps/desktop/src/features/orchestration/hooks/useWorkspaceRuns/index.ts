@@ -12,6 +12,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentHasUnread } from '../../../../store';
 import { deriveSessionStage, isPrReviewSession } from '../../../../store/slices/session-view';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
 import { agentThreadIds } from '../../../session/agentThreadIds';
 import {
@@ -197,8 +198,7 @@ export const useWorkspaceRuns = (
   const stageBySession = useAppStore(
     useShallow((s) => {
       const out: Record<string, SessionStage> = {};
-      const workspaceKind =
-        s.workspaces?.find((workspace) => workspace.id === workspaceId)?.kind ?? 'repo';
+      const workspaceKind = s.workspaces?.find((workspace) => workspace.id === workspaceId)?.kind;
       for (const session of sessions) {
         if (session.workspaceId !== workspaceId) {
           continue;
@@ -221,7 +221,7 @@ export const useWorkspaceRuns = (
           openQuestionCount,
           hasRunningAgent,
           isPrReview: isPrReviewSession({ agents: runs ?? [] }),
-          workspaceKind,
+          isBranchless: isBranchlessSession({ workspaceKind, branch: s.sessionBranches[id] }),
         }).stage;
       }
       return out;

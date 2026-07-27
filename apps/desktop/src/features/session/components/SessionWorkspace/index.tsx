@@ -42,6 +42,7 @@ import { SessionOverviewSkeleton } from './parts/SessionOverviewSkeleton';
 import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -88,9 +89,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const workspaceKind = useAppStore(
     (s) => s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo',
   );
-  const isSimple = workspaceKind === 'simple';
+  const sessionBranch = useAppStore((s) => s.sessionBranches[sessionId]);
+  const isBranchless = isBranchlessSession({ workspaceKind, branch: sessionBranch });
   const activeLens =
-    isSimple && storedActiveLens != null && !SIMPLE_LENSES.has(storedActiveLens)
+    isBranchless && storedActiveLens != null && !SIMPLE_LENSES.has(storedActiveLens)
       ? null
       : storedActiveLens;
   const setActiveLens = useAppStore((s) => s.setActiveLens);
@@ -105,7 +107,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
-  const filesTouched = useFilesTouched(sessionId, isActive && !isSimple);
+  const filesTouched = useFilesTouched(sessionId, isActive && !isBranchless);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -122,7 +124,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [activeLens, sessionId, setActiveLens]);
 
   useEffect(() => {
-    if (!isActive || !workingDir || isSimple) return;
+    if (!isActive || !workingDir || isBranchless) return;
     let cancelled = false;
     worktreeStatus(workingDir)
       .then((status) => {
@@ -134,7 +136,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () => {
       cancelled = true;
     };
-  }, [isActive, workingDir, sessionId, filesTouched.count, isSimple, reconcileSessionBranch]);
+  }, [isActive, workingDir, sessionId, filesTouched.count, isBranchless, reconcileSessionBranch]);
 
   const lens: LensKind | null = activeLens ?? null;
   const isOverviewLoading = sessionLoading?.agents === true || sessionLoading?.plans === true;
@@ -328,7 +330,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             onSelectOverview={onSelectOverview}
             onSelect={onSelectLens}
             filesCount={filesTouched.count}
-            workspaceKind={workspaceKind}
+            isBranchless={isBranchless}
           />
         </div>
         <ResizeHandle
@@ -439,7 +441,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               />
             ) : null}
 
-            {!isSimple ? (
+            {!isBranchless ? (
               <div
                 className={cn(
                   'absolute inset-0 z-10 flex flex-col',

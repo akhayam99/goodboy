@@ -88,6 +88,7 @@ const baseState = (over: Partial<StoreState> = {}): StoreState => ({
   selectedAgentId: {},
   phaseTemplates: { [WS]: [workflow] },
   sessionGithub: {},
+  sessionBranches: {},
   sessionOpenQuestions: {},
   currentSessionId: null,
   ...over,

@@ -18,6 +18,8 @@ import {
   resolveRootAgent,
   selectNonResolverStandaloneAgents,
   selectStandaloneAgents,
+  visibleAgentKinds,
+  visibleAgentRoles,
 } from './agent-kind';
 
 const agentOf = (over: Partial<Agent> = {}): Agent => ({
@@ -565,5 +567,18 @@ describe('boundary systemPrompts', () => {
 
   it('generic prompt has no restrictions', () => {
     expect(AGENT_KIND_DEFAULTS['generic'].systemPrompt).toContain('no role restrictions');
+  });
+});
+
+describe('visibility by workspace kind', () => {
+  it('reduces roles and kinds while the workspace has no repository', () => {
+    expect(visibleAgentRoles({ workspaceKind: 'simple' })).toEqual(['scout', 'planner', 'custom']);
+    expect(visibleAgentKinds({ workspaceKind: 'simple' })).toEqual(['generic']);
+  });
+
+  it('restores every role and kind once the workspace is a dev project', () => {
+    expect(visibleAgentRoles({ workspaceKind: 'repo' }).length).toBeGreaterThan(3);
+    expect(visibleAgentKinds({ workspaceKind: 'repo' })).toContain('implementer');
+    expect(visibleAgentKinds({ workspaceKind: 'repo' })).toContain('reviewer');
   });
 });

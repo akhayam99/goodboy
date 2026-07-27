@@ -25,6 +25,7 @@ import type {
 } from '@goodboy/types';
 import type { Workspace } from '@goodboy/types';
 import type { TerminalTab } from '../shared/types/terminal';
+import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
 import type { AppState, SessionLoadingFlags, SummarizerSessionStatus } from './types';
 import {
@@ -96,8 +97,11 @@ function sessionHasRunningAgentIn(state: AppState, sessionId: SessionId): boolea
 
 function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
   const sessionId = session.id as SessionId;
-  const workspaceKind =
-    state.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo';
+  const isBranchless = isBranchlessSession({
+    workspaceKind: state.workspaces?.find((workspace) => workspace.id === session.workspaceId)
+      ?.kind,
+    branch: state.sessionBranches[sessionId],
+  });
   return deriveSessionStage({
     session,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
@@ -105,7 +109,7 @@ function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
-    workspaceKind,
+    isBranchless,
   });
 }
 

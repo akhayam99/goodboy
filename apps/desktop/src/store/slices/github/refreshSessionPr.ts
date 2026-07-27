@@ -3,6 +3,7 @@ import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { createTauriPrCacheStore, tauriGhRunner } from '../../../features/github/github';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -25,7 +26,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
       return;
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace || workspace.kind === 'simple') {
+    if (!workspace || isBranchlessSession({ workspaceKind: workspace.kind, branch })) {
       return;
     }
     set((state) => ({

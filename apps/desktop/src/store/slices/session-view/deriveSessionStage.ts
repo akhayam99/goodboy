@@ -1,4 +1,4 @@
-import type { PullRequestState, Session, SessionStageInfo, WorkspaceKind } from '@goodboy/types';
+import type { PullRequestState, Session, SessionStageInfo } from '@goodboy/types';
 
 type Params = {
   session: Session;
@@ -7,7 +7,7 @@ type Params = {
   openQuestionCount: number;
   hasRunningAgent?: boolean;
   isPrReview?: boolean;
-  workspaceKind?: WorkspaceKind;
+  isBranchless?: boolean;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
@@ -23,9 +23,9 @@ export const deriveSessionStage = ({
   openQuestionCount,
   hasRunningAgent = false,
   isPrReview = false,
-  workspaceKind = 'repo',
+  isBranchless = false,
 }: Params): SessionStageInfo => {
-  if (workspaceKind === 'simple') {
+  if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
       return { stage: 'running', reason: 'agent running' };
     }
