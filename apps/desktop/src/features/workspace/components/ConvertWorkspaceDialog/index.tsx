@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Dialog, Input, SegmentedTabs, Select, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { listOwnedRepos, type GithubRepoRef } from '@goodboy/core';
+import { listOwnedRepos, type GithubRepoRef, type OwnedReposResult } from '@goodboy/core';
 import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -14,6 +14,8 @@ type Props = {
 };
 
 type Host = 'github' | 'gitlab';
+
+type ReposState = OwnedReposResult | { readonly kind: 'idle' } | { readonly kind: 'loading' };
 
 const HOST_NAME: Record<Host, string> = {
   github: 'GitHub',
@@ -32,9 +34,11 @@ const HOST_URL_PLACEHOLDER: Record<Host, string> = {
 
 const MANUAL_REPO = '__manual__';
 
+const NO_REPOS: ReadonlyArray<GithubRepoRef> = [];
+
 export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const convertWorkspaceToRepo = useAppStore((s) => s.convertWorkspaceToRepo);
-  const isGithubConnected = useAppStore((s) => s.githubStatus?.available === true);
+  const isGithubCliAvailable = useAppStore((s) => s.githubStatus?.available === true);
   const isGitlabConnected = useAppStore((s) =>
     (s.workspaceIntegrations[workspace.id] ?? []).some(
       (integration) => integration.provider === 'gitlab',
@@ -42,8 +46,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   );
 
   const [host, setHost] = useState<Host>('github');
-  const [repos, setRepos] = useState<ReadonlyArray<GithubRepoRef>>([]);
-  const [areReposLoading, setAreReposLoading] = useState(false);
+  const [reposState, setReposState] = useState<ReposState>({ kind: 'idle' });
   const [selectedRepo, setSelectedRepo] = useState(MANUAL_REPO);
   const [manualUrl, setManualUrl] = useState('');
   const [isBusy, setIsBusy] = useState(false);
@@ -51,6 +54,9 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const [isConverted, setIsConverted] = useState(false);
   const keepDraftRef = useRef(false);
 
+  const repos = reposState.kind === 'ok' ? reposState.repos : NO_REPOS;
+  const areReposLoading = reposState.kind === 'loading';
+  const isGithubConnected = isGithubCliAvailable && reposState.kind !== 'unauthenticated';
   const isConnected = host === 'github' ? isGithubConnected : isGitlabConnected;
 
   useEffect(() => {
@@ -62,6 +68,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       return;
     }
     setHost('github');
+    setReposState({ kind: 'idle' });
     setSelectedRepo(MANUAL_REPO);
     setManualUrl('');
     setIsBusy(false);
@@ -70,34 +77,38 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   }, [open]);
 
   useEffect(() => {
-    if (!open || host !== 'github' || !isGithubConnected) {
+    if (!open || host !== 'github' || !isGithubCliAvailable) {
       return;
     }
     let cancelled = false;
-    setAreReposLoading(true);
+    setReposState({ kind: 'loading' });
     listOwnedRepos(tauriGhRunner)
-      .then((found) => {
+      .then((result) => {
         if (!cancelled) {
-          setRepos(found);
+          setReposState(result);
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (!cancelled) {
-          setRepos([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setAreReposLoading(false);
+          setReposState({ kind: 'failed', message: formatError(err) });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [open, host, isGithubConnected]);
+  }, [open, host, isGithubCliAvailable]);
 
-  const picked = repos.find((repo) => repo.nameWithOwner === selectedRepo) ?? null;
+  const picked =
+    host === 'github' ? (repos.find((repo) => repo.nameWithOwner === selectedRepo) ?? null) : null;
   const remoteUrl = picked?.url ?? manualUrl.trim();
+
+  const onHostChange = useCallback((next: Host) => {
+    setHost(next);
+    setReposState({ kind: 'idle' });
+    setSelectedRepo(MANUAL_REPO);
+    setManualUrl('');
+    setError(null);
+  }, []);
 
   const onConnect = useCallback(() => {
     keepDraftRef.current = true;
@@ -158,7 +169,8 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           </span>
           <p className="text-xs leading-relaxed text-muted-foreground">
             New sessions get their own branch and worktree. The sessions you already have keep
-            working as plain folders.
+            working as plain folders, and nothing of yours was committed: add what you want tracked
+            when you are ready.
           </p>
         </div>
       ) : (
@@ -170,7 +182,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
               { value: 'gitlab', label: 'GitLab' },
             ]}
             value={host}
-            onChange={setHost}
+            onChange={onHostChange}
             fill
           />
 
@@ -183,7 +195,9 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <StatusDot tone="warning" size="sm" />
-                {HOST_NAME[host]} is not connected yet
+                {reposState.kind === 'unauthenticated'
+                  ? 'the GitHub CLI is installed but not signed in'
+                  : `${HOST_NAME[host]} is not connected yet`}
               </span>
               <Button size="sm" variant="secondary" onClick={onConnect}>
                 Connect {HOST_NAME[host]}
@@ -210,6 +224,16 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                   </option>
                 ))}
               </Select>
+              {reposState.kind === 'ok' && repos.length === 0 && (
+                <span className="text-xs text-muted-foreground">
+                  this account owns no repositories yet
+                </span>
+              )}
+              {reposState.kind === 'failed' && (
+                <span className="text-xs text-muted-foreground">
+                  gh could not list your repositories: {reposState.message}
+                </span>
+              )}
             </div>
           )}
 
@@ -235,8 +259,9 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                 <GitBranch size={11} aria-hidden className="shrink-0" />
                 git starts tracking {workspace.rootPath}
               </li>
+              <li>the first commit holds a .gitignore and nothing else</li>
+              <li>your files stay untracked until you add them yourself</li>
               <li>your session folders and .goodboy stay out of version control</li>
-              <li>one first commit is made so sessions can get their own worktree</li>
               <li>the repository you picked becomes the origin remote</li>
             </ul>
           </div>

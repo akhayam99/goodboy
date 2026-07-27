@@ -23,18 +23,23 @@ export const convertWorkspaceToRepo = (set: SetFn, get: GetFn) => {
       throw new Error('pick a repository or paste its remote url');
     }
 
-    await initRepoWithRemote({ path: workspace.rootPath, remoteUrl: trimmedRemote });
+    const initialized = await initRepoWithRemote({
+      path: workspace.rootPath,
+      remoteUrl: trimmedRemote,
+    });
 
-    const check = await validateGitRepo(workspace.rootPath);
+    const check = await validateGitRepo(initialized.rootPath);
     if (!check.isRepo) {
       throw new Error(check.error ?? 'the folder is still not a git repository');
     }
+    const rootPath = check.rootPath ?? initialized.rootPath;
 
-    await updateWorkspaceKind({ db: tauriDatabase, id: workspaceId, kind: 'repo' });
+    await updateWorkspaceKind({ db: tauriDatabase, id: workspaceId, kind: 'repo', rootPath });
 
     const converted: Workspace = {
       ...workspace,
       kind: 'repo',
+      rootPath,
       updatedAt: new Date().toISOString() as IsoDateTime,
     };
     set((state) => ({

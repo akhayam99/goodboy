@@ -762,9 +762,39 @@ describe('store contract', () => {
         db: expect.anything(),
         id: WS_ID,
         kind: 'repo',
+        rootPath: '/tmp/study-space',
       });
       expect(converted.kind).toBe('repo');
       expect(store.getState().workspaces[0]?.kind).toBe('repo');
+    });
+
+    it('persists the canonical root path git reported', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
+        isRepo: true,
+        rootPath: '/private/tmp/study-space',
+        error: null,
+      });
+      store.setState({
+        workspaces: [buildWorkspace({ rootPath: '/tmp/study-space', kind: 'simple' })],
+      });
+
+      const converted = await store.getState().convertWorkspaceToRepo({
+        workspaceId: WS_ID,
+        remoteUrl: 'https://github.com/acme/widgets.git',
+      });
+
+      expect(db.updateWorkspaceKind).toHaveBeenCalledWith({
+        db: expect.anything(),
+        id: WS_ID,
+        kind: 'repo',
+        rootPath: '/private/tmp/study-space',
+      });
+      expect(converted.rootPath).toBe('/private/tmp/study-space');
+      expect(store.getState().workspaces[0]?.rootPath).toBe('/private/tmp/study-space');
     });
 
     it('leaves the kind alone when the folder is still not a repository', async () => {
@@ -937,6 +967,37 @@ describe('store contract', () => {
       expect(writeSimpleSessionMarkerSpy).not.toHaveBeenCalled();
       expect(db.updateSessionWorktreePath).not.toHaveBeenCalled();
       expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([storedPath]);
+    });
+
+    it('never marks the git worktrees of a converted workspace as session folders', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const plainPath = '/tmp/study-space/sessions/study-plan';
+      const worktreePath = '/tmp/study-space/.goodboy/worktrees/feat-x';
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
+        new Map([
+          [SESSION_ID, [buildWorktree(SESSION_ID, plainPath, '')]],
+          [SESSION_ID_2, [buildWorktree(SESSION_ID_2, worktreePath, 'ak/feat-x')]],
+        ]),
+      );
+      scanSimpleSessionsSpy.mockResolvedValueOnce([]);
+      store.setState({
+        workspaces: [buildWorkspace({ rootPath: '/tmp/study-space', kind: 'repo' })],
+      });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(writeSimpleSessionMarkerSpy).toHaveBeenCalledTimes(1);
+      expect(writeSimpleSessionMarkerSpy).toHaveBeenCalledWith({
+        path: plainPath,
+        sessionId: SESSION_ID,
+        workspaceId: WS_ID,
+      });
+      expect(store.getState().sessionWorktrees[SESSION_ID_2]).toEqual([worktreePath]);
     });
 
     it('setCurrentWorkspace(null) clears the active workspace and resets workspaceSummary etc.', async () => {

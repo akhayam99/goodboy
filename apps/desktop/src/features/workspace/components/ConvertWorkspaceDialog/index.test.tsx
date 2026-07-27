@@ -36,14 +36,17 @@ beforeEach(() => {
   state.convertWorkspaceToRepo.mockReset();
   state.convertWorkspaceToRepo.mockResolvedValue(undefined);
   listOwnedRepos.mockReset();
-  listOwnedRepos.mockResolvedValue([
-    {
-      nameWithOwner: 'acme/widgets',
-      url: 'https://github.com/acme/widgets',
-      sshUrl: 'git@github.com:acme/widgets.git',
-      isPrivate: false,
-    },
-  ]);
+  listOwnedRepos.mockResolvedValue({
+    kind: 'ok',
+    repos: [
+      {
+        nameWithOwner: 'acme/widgets',
+        url: 'https://github.com/acme/widgets',
+        sshUrl: 'git@github.com:acme/widgets.git',
+        isPrivate: false,
+      },
+    ],
+  });
 });
 
 afterEach(cleanup);
@@ -91,6 +94,48 @@ describe('ConvertWorkspaceDialog', () => {
         remoteUrl: 'git@gitlab.com:acme/widgets.git',
       }),
     );
+  });
+
+  it('never sends the GitHub selection after the user switches to GitLab', async () => {
+    state.workspaceIntegrations = { 'ws-1': [{ provider: 'gitlab' }] };
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    await waitFor(() => screen.getByRole('option', { name: 'acme/widgets' }));
+    fireEvent.change(screen.getByLabelText('repository'), { target: { value: 'acme/widgets' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
+    ).toBe(true);
+
+    fireEvent.change(screen.getByPlaceholderText('https://gitlab.com/owner/repo.git'), {
+      target: { value: 'git@gitlab.com:acme/widgets.git' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
+
+    await waitFor(() =>
+      expect(state.convertWorkspaceToRepo).toHaveBeenCalledWith({
+        workspaceId: 'ws-1',
+        remoteUrl: 'git@gitlab.com:acme/widgets.git',
+      }),
+    );
+  });
+
+  it('says the cli is signed out instead of pretending the account is empty', async () => {
+    listOwnedRepos.mockResolvedValue({ kind: 'unauthenticated' });
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    await waitFor(() => screen.getByText('the GitHub CLI is installed but not signed in'));
+    expect(
+      screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
+  it('says the account owns no repositories when gh answers with an empty list', async () => {
+    listOwnedRepos.mockResolvedValue({ kind: 'ok', repos: [] });
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+
+    await waitFor(() => screen.getByText('this account owns no repositories yet'));
   });
 
   it('keeps the draft when the user leaves to connect the host', () => {
