@@ -165,10 +165,24 @@ export type LocalBranchInfo = {
   readonly hasUncommitted: boolean;
 };
 
+const localBranchesCache = new Map<string, ReadonlyArray<LocalBranchInfo>>();
+
+export const getCachedLocalBranches = (
+  repoPath: string,
+): ReadonlyArray<LocalBranchInfo> | undefined => localBranchesCache.get(repoPath);
+
+export const invalidateLocalBranchesCache = (repoPath: string): void => {
+  localBranchesCache.delete(repoPath);
+};
+
 export const listLocalBranches = async (
   repoPath: string,
 ): Promise<ReadonlyArray<LocalBranchInfo>> => {
-  return invoke<ReadonlyArray<LocalBranchInfo>>('worktree_list_local_branches', { repoPath });
+  const branches = await invoke<ReadonlyArray<LocalBranchInfo>>('worktree_list_local_branches', {
+    repoPath,
+  });
+  localBranchesCache.set(repoPath, branches);
+  return branches;
 };
 
 export type ChangeBranchArgs = {
