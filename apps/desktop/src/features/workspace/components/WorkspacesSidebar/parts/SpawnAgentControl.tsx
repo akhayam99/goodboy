@@ -116,9 +116,20 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
             connectedProviders={connectedProviders}
             provider={routing?.provider ?? ''}
             model={routing?.model ?? ''}
-            effort={routing?.effort ?? recommendedRouting.effort}
-            recommendedProvider={recommendedRouting.provider}
-            recommendedModel={recommendedRouting.model}
+            effort={{
+              editable: true,
+              value: routing?.effort ?? recommendedRouting.effort,
+              onChange: (effort) =>
+                setRouting({
+                  provider: routing?.provider ?? recommendedRouting.provider,
+                  model: routing?.model ?? recommendedRouting.model,
+                  effort,
+                }),
+            }}
+            recommendation={{
+              provider: recommendedRouting.provider,
+              model: recommendedRouting.model,
+            }}
             disabled={false}
             overridden={routing != null}
             onProvider={onProvider}
@@ -133,13 +144,6 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
                 effort: clampEffort(model, routing?.effort ?? recommendedRouting.effort),
               });
             }}
-            onEffort={(effort) =>
-              setRouting({
-                provider: routing?.provider ?? recommendedRouting.provider,
-                model: routing?.model ?? recommendedRouting.model,
-                effort,
-              })
-            }
           />
         </div>
       </div>

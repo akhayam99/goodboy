@@ -828,7 +828,11 @@ export const DiffViewerContent = ({
               connectedProviders={connectedProviderIds}
               provider={resolverRouting.provider}
               model={resolverRouting.model}
-              effort={resolverRouting.effort}
+              effort={{
+                editable: true,
+                value: resolverRouting.effort,
+                onChange: (effort) => setResolverRouting({ ...resolverRouting, effort }),
+              }}
               disabled={spawning}
               onProvider={(next) => {
                 if (next === '') {
@@ -848,7 +852,6 @@ export const DiffViewerContent = ({
                   effort: clampEffort(model, resolverRouting.effort),
                 })
               }
-              onEffort={(effort) => setResolverRouting({ ...resolverRouting, effort })}
             />
           }
         />

@@ -6,13 +6,17 @@ import {
   type EffortLevel,
 } from '../../../features/chat/utils/chat-constants';
 
+export type Recommendation = {
+  readonly provider?: ProviderId;
+  readonly model?: string;
+};
+
 type Params = {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly provider: ProviderId | '';
   readonly model: string;
   readonly effort: EffortLevel;
-  readonly recommendedProvider?: ProviderId;
-  readonly recommendedModel?: string;
+  readonly recommendation?: Recommendation;
 };
 
 export type ResolvedRouting = {
@@ -30,15 +34,14 @@ export const resolveRouting = ({
   provider,
   model,
   effort,
-  recommendedProvider,
-  recommendedModel,
+  recommendation,
 }: Params): ResolvedRouting => {
   const resolvedProvider =
     provider !== ''
       ? provider
-      : (recommendedProvider ?? getModelProvider(model) ?? providers[0] ?? 'anthropic');
+      : (recommendation?.provider ?? getModelProvider(model) ?? providers[0] ?? 'anthropic');
   const resolvedModel =
-    model !== '' ? model : (recommendedModel ?? getDefaultTurnModel(resolvedProvider));
+    model !== '' ? model : (recommendation?.model ?? getDefaultTurnModel(resolvedProvider));
   const ids = PROVIDER_CAPABILITIES[resolvedProvider].models.map((entry) => entry.id);
   return {
     provider: resolvedProvider,

@@ -4,8 +4,6 @@ import { PROVIDER_BRAND, brandColor } from '../../../features/providers/componen
 import {
   EFFORT_LABEL,
   EFFORT_TEXT,
-  PROVIDER_LABEL,
-  PROVIDER_TEXT,
   TIER_TEXT,
   VERBOSITY_TEXT,
   modelLabel,
@@ -33,10 +31,6 @@ export const TriggerLabel = ({ provider, model, effort, showEffort, verbosity }:
         style={{ color: brandColor(provider) }}
         aria-hidden
       />
-      <span className={cn('shrink-0 font-medium', PROVIDER_TEXT[provider])}>
-        {PROVIDER_LABEL[provider]}
-      </span>
-      <TriggerSeparator />
       <span className={cn('min-w-0 truncate font-mono font-medium', TIER_TEXT[modelTier(model)])}>
         {modelLabel(model)}
       </span>

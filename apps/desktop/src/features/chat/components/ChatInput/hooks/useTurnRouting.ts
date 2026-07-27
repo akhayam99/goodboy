@@ -157,6 +157,17 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     [storeSetSessionConfig, storeSetAgentConfig, session.id, selectedAgentId],
   );
 
+  const realignEffort = useCallback(
+    (model: string) => {
+      const clamped = clampEffort(model, effort);
+      if (clamped === effort) {
+        return;
+      }
+      setEffort(clamped);
+    },
+    [effort, setEffort],
+  );
+
   const onSelectProvider = useCallback(
     (id: ProviderId) => {
       if (!allowOverride || isRunning) return;
@@ -169,6 +180,7 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
           modelOverride: null,
         });
       }
+      realignEffort(id === defaultProvider ? defaultModel : getDefaultTurnModel(id));
     },
     [
       allowOverride,
@@ -177,6 +189,9 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
       storeSetAgentConfig,
       session.id,
       selectedAgentId,
+      realignEffort,
+      defaultProvider,
+      defaultModel,
     ],
   );
 
@@ -184,8 +199,9 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     (id: string) => {
       if (!allowOverride || isRunning) return;
       setSelectedModel(id);
+      realignEffort(id);
     },
-    [allowOverride, isRunning, setSelectedModel],
+    [allowOverride, isRunning, setSelectedModel, realignEffort],
   );
 
   const onResetTurnOverride = useCallback(() => {
