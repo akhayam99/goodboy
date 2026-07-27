@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Plus, Search, Unplug } from 'lucide-react';
+import { Button, Dialog, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
+import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
@@ -12,10 +13,13 @@ export const WorkspaceLauncher = () => {
   const workspaces = useWorkspaces();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
+  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
   const reopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [disconnectTarget, setDisconnectTarget] = useState<Workspace | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -36,6 +40,19 @@ export const WorkspaceLauncher = () => {
 
   const addWorkspace = () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
 
+  const confirmDisconnect = async () => {
+    if (!disconnectTarget) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      await deleteWorkspace(disconnectTarget.id);
+      setDisconnectTarget(null);
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -53,7 +70,10 @@ export const WorkspaceLauncher = () => {
   };
 
   return (
-    <div className="flex h-full w-full items-center justify-center overflow-y-auto bg-background px-6 py-10">
+    <div className="relative flex h-full w-full items-center justify-center overflow-y-auto bg-background px-6 py-10">
+      <div data-tauri-drag-region="false" className="absolute right-4 top-3">
+        <UpdateIndicator variant="bar" />
+      </div>
       <div className="w-full max-w-xl motion-safe:animate-fade-in">
         <div className="mb-8 flex flex-col items-center text-center">
           <DogMascot size={56} className="mb-4 text-primary" />
@@ -86,13 +106,23 @@ export const WorkspaceLauncher = () => {
             </li>
           ) : (
             filtered.map((w, i) => (
-              <li key={w.id}>
+              <li key={w.id} className="group/launcher relative">
                 <WorkspaceRow
                   workspace={w}
                   density="card"
                   highlighted={i === activeIndex}
                   onOpen={() => select(w)}
                 />
+                <button
+                  type="button"
+                  data-tauri-drag-region="false"
+                  aria-label={`Disconnect ${w.name}`}
+                  title={`Disconnect ${w.name}`}
+                  onClick={() => setDisconnectTarget(w)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
+                >
+                  <Unplug size={13} aria-hidden />
+                </button>
               </li>
             ))
           )}
@@ -117,6 +147,38 @@ export const WorkspaceLauncher = () => {
           Reopen last workspace on launch
         </label>
       </div>
+      <Dialog
+        open={disconnectTarget !== null}
+        onClose={() => setDisconnectTarget(null)}
+        size="sm"
+        title="Disconnect workspace?"
+        description={disconnectTarget?.name ?? ''}
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDisconnectTarget(null)}
+              disabled={disconnecting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => void confirmDisconnect()}
+              disabled={disconnecting}
+            >
+              Disconnect
+            </Button>
+          </>
+        }
+      >
+        <p className="leading-relaxed text-muted-foreground">
+          Hides it from this list. Nothing on disk is deleted, re-add the same path to bring it back
+          with all its sessions.
+        </p>
+      </Dialog>
     </div>
   );
 };
