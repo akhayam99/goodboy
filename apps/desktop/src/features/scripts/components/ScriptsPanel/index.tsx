@@ -214,12 +214,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
       if (sessionId == null || worktreePath == null) {
         return;
       }
-      if (draft?.id !== script.id) {
+      if (draft?.id !== script.id && !dirty) {
         openExistingNow(script);
       }
       void runScript(sessionId, script.id, worktreePath);
     },
-    [runScript, sessionId, worktreePath, draft, openExistingNow],
+    [runScript, sessionId, worktreePath, draft, dirty, openExistingNow],
   );
 
   const onCancel = useCallback(

@@ -159,6 +159,56 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledTimes(1);
   });
 
+  it('starts a chained run and activates its first step in the same pass', async () => {
+    const CHAINED_ID = 'run-2' as WorkflowRunId;
+    const predAgent = makeAgent('s0', 'completed', 0);
+    const chainedAgent: Agent = {
+      id: `${CHAINED_ID}-s0` as AgentId,
+      sessionId: SESSION_ID,
+      stepId: 's0' as StepId,
+      workflowRunId: CHAINED_ID,
+      ordinal: 0,
+      name: 'chained step',
+      status: 'pending',
+    };
+    const session = makeSession();
+    const state = baseState(['s0'], [predAgent, chainedAgent]);
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: [
+          ...session.workflowRuns,
+          {
+            id: CHAINED_ID,
+            workflowId: WF_ID,
+            ordinal: 1,
+            currentStep: 0,
+            autoRun: true,
+            triggerMode: 'after_run',
+            chainAfterId: RUN_ID,
+          },
+        ],
+      },
+    ];
+    state['startWorkflowRun'] = vi.fn(async () => {
+      const [current] = state['sessions'] as ReadonlyArray<Session>;
+      state['sessions'] = [
+        {
+          ...(current as Session),
+          workflowRuns: (current as Session).workflowRuns.map((r) =>
+            r.id === CHAINED_ID ? { ...r, triggerMode: 'immediate' as const } : r,
+          ),
+        },
+      ];
+    });
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['startWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, CHAINED_ID);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, `${CHAINED_ID}-s0`);
+  });
+
   it('holds while the summarizer runs and advances once it finishes', async () => {
     const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
     state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };

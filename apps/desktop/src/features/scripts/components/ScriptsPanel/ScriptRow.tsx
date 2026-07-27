@@ -84,8 +84,8 @@ export const ScriptRow = ({
           <button
             type="button"
             onClick={onCancel}
-            title="stop script"
-            aria-label="stop script"
+            title="Stop script"
+            aria-label="Stop script"
             className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
           >
             <Square size={11} fill="currentColor" aria-hidden />
@@ -95,8 +95,8 @@ export const ScriptRow = ({
             type="button"
             onClick={onRun}
             disabled={!canRun}
-            title="run script"
-            aria-label="run script"
+            title="Run script"
+            aria-label="Run script"
             className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Play size={13} aria-hidden />
@@ -107,8 +107,8 @@ export const ScriptRow = ({
       <button
         type="button"
         onClick={onCopy}
-        title="copy script"
-        aria-label="copy script"
+        title="Copy script"
+        aria-label="Copy script"
         className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         {copied ? (
@@ -119,7 +119,7 @@ export const ScriptRow = ({
       </button>
 
       <OverflowMenu
-        label="script actions"
+        label="Script actions"
         items={[
           {
             kind: 'item',

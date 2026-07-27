@@ -44,17 +44,24 @@ describe('PrStatusLine', () => {
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/pull/9304');
   });
 
-  it('shows failing checks in danger tone and approved review in muted green', () => {
-    render(<PrStatusLine pr={basePr({ checks: 'failure', reviewDecision: 'approved' })} />);
-    expect(screen.getByTitle('checks failing')).toBeDefined();
-    expect(screen.getByText('approved').className).toContain('text-success/80');
+  it('marks failing checks in the danger tone', () => {
+    render(<PrStatusLine pr={basePr({ checks: 'failure' })} />);
+    expect(screen.getByTitle('Checks failing')).toBeDefined();
   });
 
   it('shows changes requested in amber and omits the checks indicator when unknown', () => {
     render(<PrStatusLine pr={basePr({ reviewDecision: 'changes_requested' })} />);
-    expect(screen.getByText('changes requested').className).toContain('text-warning');
-    expect(screen.queryByTitle('checks failing')).toBeNull();
-    expect(screen.queryByTitle('checks passing')).toBeNull();
+    expect(screen.getByText('Changes requested').className).toContain('text-warning');
+    expect(screen.queryByTitle('Checks failing')).toBeNull();
+    expect(screen.queryByTitle('Checks passing')).toBeNull();
+  });
+
+  it('keeps the approved and queued pill states distinct', () => {
+    render(<PrStatusLine pr={basePr({ state: 'approved' })} />);
+    expect(screen.getByText('Approved')).toBeDefined();
+    cleanup();
+    render(<PrStatusLine pr={basePr({ state: 'queued' })} />);
+    expect(screen.getByText('Queued')).toBeDefined();
   });
 
   it('renders the base and head branches', () => {

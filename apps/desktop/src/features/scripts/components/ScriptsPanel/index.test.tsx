@@ -119,7 +119,7 @@ describe('ScriptsPanel', () => {
   it('deletes a script from its overflow menu', async () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: 'script actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Script actions' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
     });
@@ -151,7 +151,7 @@ describe('ScriptsPanel', () => {
         worktreePath="/tmp/work"
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'run script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run script' }));
     expect(state.runScript).toHaveBeenCalledWith('session-1', 's1', '/tmp/work');
   });
 });
