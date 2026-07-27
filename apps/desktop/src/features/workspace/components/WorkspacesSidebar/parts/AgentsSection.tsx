@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { EmptyState, SectionHeader, cn } from '@goodboy/ui';
-import { ArrowUpRight, CheckCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, CheckCheck } from 'lucide-react';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { SegmentedControl } from '../../../../../shared/components/SegmentedControl';
 import type {
   Agent,
   AgentId,
@@ -41,7 +42,13 @@ import { WorkflowStartButton } from './WorkflowStartButton';
 import { CollapsedSummary } from './CollapsedSummary';
 import { AdHocRow } from './AdHocRow';
 import { WorkflowRow } from './WorkflowRow';
-import { pluralize, workflowKindName, type ResolverState } from '../lib';
+import {
+  defaultCompletionTab,
+  pluralize,
+  workflowKindName,
+  type CompletionTab,
+  type ResolverState,
+} from '../lib';
 
 const LIST_CLASS = 'flex flex-col gap-1 pl-2';
 const FIRST_HEADER_CLASS = 'pb-1.5';
@@ -183,7 +190,6 @@ export const AgentsSection = ({
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId?.[task.id] ?? null);
   const toggleWorkflowExpand = useAppStore((s) => s.toggleWorkflowExpand);
   const [resolveExpanded, setResolveExpanded] = useState(true);
-  const [doneExpanded, setDoneExpanded] = useState(false);
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
   const [clusterExpand, setClusterExpand] = useState<ReadonlyMap<string, boolean>>(new Map());
@@ -382,6 +388,17 @@ export const AgentsSection = ({
       only === 'agents' ? standaloneAgents.filter((agent) => agent.doneAt != null) : EMPTY_ARRAY,
     [only, standaloneAgents],
   );
+  const showCompletedAgentsTab = only === 'agents' && doneStandaloneAgents.length > 0;
+  const [agentsTab, setAgentsTab] = useState<CompletionTab>(() =>
+    defaultCompletionTab({
+      activeCount: activeStandaloneAgents.length,
+      completedCount: doneStandaloneAgents.length,
+    }),
+  );
+  const visibleStandaloneAgents =
+    showCompletedAgentsTab && agentsTab === 'completed'
+      ? doneStandaloneAgents
+      : activeStandaloneAgents;
   const commentByThreadId = useMemo(() => {
     const map = new Map<string, PrComment>();
     for (const c of prComments) {
@@ -493,6 +510,39 @@ export const AgentsSection = ({
   const wfExpanded = forceExpanded || workflowExpanded;
   const agExpanded = forceExpanded || agentsExpanded;
 
+  const standaloneAgentList = (
+    <ul className={LIST_CLASS}>
+      {visibleStandaloneAgents.map((run, index) => (
+        <AdHocRow
+          key={run.id}
+          run={run}
+          index={index}
+          firstUserTextByAgentId={firstUserTextByAgentId}
+          agentKindOverride={agentKindOverride}
+          childrenByParentId={childrenByParentId}
+          latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
+          aggregatesByAgentId={metrics.aggregatesByAgentId}
+          providerUsageByAgentId={metrics.providerUsageByAgentId}
+          turnsByAgentId={metrics.turnsByAgentId}
+          selectedAgentId={selectedAgentId}
+          isTranscriptLoading={loading.transcript}
+          isTaskActive={isTaskActive}
+          editingId={editingId}
+          setEditingId={setEditingId}
+          clusterExpand={clusterExpand}
+          toggleClusterExpand={toggleClusterExpand}
+          onPickAgent={onPickAgent}
+          onRenameCommit={onRenameCommit}
+          onDeleteAgent={onDeleteAgent}
+          isInspected={run.id === inspectedAgentId}
+          onInspectAgent={onInspectAgent}
+          onMarkDone={(id) => void setAgentDone(task.id, id)}
+          isMuted={agentsTab === 'completed'}
+        />
+      ))}
+    </ul>
+  );
+
   return (
     <section className="flex flex-col">
       {showWorkflows ? (
@@ -596,37 +646,22 @@ export const AgentsSection = ({
           )}
           {agExpanded ? (
             <>
+              {showCompletedAgentsTab ? (
+                <div className="px-2 pb-1">
+                  <SegmentedControl
+                    ariaLabel="Filter agents by status"
+                    options={[
+                      { value: 'active', label: `Active (${activeStandaloneAgents.length})` },
+                      { value: 'completed', label: `Completed (${doneStandaloneAgents.length})` },
+                    ]}
+                    value={agentsTab}
+                    onChange={setAgentsTab}
+                  />
+                </div>
+              ) : null}
               {hasAnyWorkflow ? (
-                activeStandaloneAgents.length > 0 ? (
-                  <ul className={LIST_CLASS}>
-                    {activeStandaloneAgents.map((run, index) => (
-                      <AdHocRow
-                        key={run.id}
-                        run={run}
-                        index={index}
-                        firstUserTextByAgentId={firstUserTextByAgentId}
-                        agentKindOverride={agentKindOverride}
-                        childrenByParentId={childrenByParentId}
-                        latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
-                        aggregatesByAgentId={metrics.aggregatesByAgentId}
-                        providerUsageByAgentId={metrics.providerUsageByAgentId}
-                        turnsByAgentId={metrics.turnsByAgentId}
-                        selectedAgentId={selectedAgentId}
-                        isTranscriptLoading={loading.transcript}
-                        isTaskActive={isTaskActive}
-                        editingId={editingId}
-                        setEditingId={setEditingId}
-                        clusterExpand={clusterExpand}
-                        toggleClusterExpand={toggleClusterExpand}
-                        onPickAgent={onPickAgent}
-                        onRenameCommit={onRenameCommit}
-                        onDeleteAgent={onDeleteAgent}
-                        isInspected={run.id === inspectedAgentId}
-                        onInspectAgent={onInspectAgent}
-                        onMarkDone={(id) => void setAgentDone(task.id, id)}
-                      />
-                    ))}
-                  </ul>
+                visibleStandaloneAgents.length > 0 ? (
+                  standaloneAgentList
                 ) : null
               ) : standaloneAgents.length === 0 ? (
                 loading.agents ? (
@@ -661,83 +696,8 @@ export const AgentsSection = ({
                     </p>
                   )
                 ) : null
-              ) : (
-                <ul className={LIST_CLASS}>
-                  {activeStandaloneAgents.map((run, index) => (
-                    <AdHocRow
-                      key={run.id}
-                      run={run}
-                      index={index}
-                      firstUserTextByAgentId={firstUserTextByAgentId}
-                      agentKindOverride={agentKindOverride}
-                      childrenByParentId={childrenByParentId}
-                      latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
-                      aggregatesByAgentId={metrics.aggregatesByAgentId}
-                      providerUsageByAgentId={metrics.providerUsageByAgentId}
-                      turnsByAgentId={metrics.turnsByAgentId}
-                      selectedAgentId={selectedAgentId}
-                      isTranscriptLoading={loading.transcript}
-                      isTaskActive={isTaskActive}
-                      editingId={editingId}
-                      setEditingId={setEditingId}
-                      clusterExpand={clusterExpand}
-                      toggleClusterExpand={toggleClusterExpand}
-                      onPickAgent={onPickAgent}
-                      onRenameCommit={onRenameCommit}
-                      onDeleteAgent={onDeleteAgent}
-                      isInspected={run.id === inspectedAgentId}
-                      onInspectAgent={onInspectAgent}
-                      onMarkDone={(id) => void setAgentDone(task.id, id)}
-                    />
-                  ))}
-                </ul>
-              )}
-              {doneStandaloneAgents.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setDoneExpanded((current) => !current)}
-                  aria-expanded={doneExpanded}
-                  className="flex items-center gap-1 self-start rounded px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {doneExpanded ? (
-                    <ChevronDown size={11} aria-hidden className="shrink-0" />
-                  ) : (
-                    <ChevronRight size={11} aria-hidden className="shrink-0" />
-                  )}
-                  Done ({doneStandaloneAgents.length})
-                </button>
-              ) : null}
-              {doneExpanded ? (
-                <ul className={LIST_CLASS}>
-                  {doneStandaloneAgents.map((run, index) => (
-                    <AdHocRow
-                      key={run.id}
-                      run={run}
-                      index={activeStandaloneAgents.length + index}
-                      firstUserTextByAgentId={firstUserTextByAgentId}
-                      agentKindOverride={agentKindOverride}
-                      childrenByParentId={childrenByParentId}
-                      latestTelemetryByAgentId={metrics.latestTelemetryByAgentId}
-                      aggregatesByAgentId={metrics.aggregatesByAgentId}
-                      providerUsageByAgentId={metrics.providerUsageByAgentId}
-                      turnsByAgentId={metrics.turnsByAgentId}
-                      selectedAgentId={selectedAgentId}
-                      isTranscriptLoading={loading.transcript}
-                      isTaskActive={isTaskActive}
-                      editingId={editingId}
-                      setEditingId={setEditingId}
-                      clusterExpand={clusterExpand}
-                      toggleClusterExpand={toggleClusterExpand}
-                      onPickAgent={onPickAgent}
-                      onRenameCommit={onRenameCommit}
-                      onDeleteAgent={onDeleteAgent}
-                      isInspected={run.id === inspectedAgentId}
-                      onInspectAgent={onInspectAgent}
-                      onMarkDone={(id) => void setAgentDone(task.id, id)}
-                      isMuted
-                    />
-                  ))}
-                </ul>
+              ) : visibleStandaloneAgents.length > 0 ? (
+                standaloneAgentList
               ) : null}
               <SpawnAgentControl sessionId={task.id} />
               {spawnError ? <p className="mt-1 px-2 text-2xs text-danger">{spawnError}</p> : null}

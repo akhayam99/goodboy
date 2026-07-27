@@ -47,6 +47,31 @@ vi.mock('@goodboy/ui', () => ({
     </div>
   ),
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
+  SegmentedTabs: ({
+    options,
+    value,
+    onChange,
+    ariaLabel,
+  }: {
+    options: ReadonlyArray<{ value: string; label: string }>;
+    value: string;
+    onChange: (value: string) => void;
+    ariaLabel: string;
+  }) => (
+    <div role="tablist" aria-label={ariaLabel}>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="tab"
+          aria-selected={option.value === value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock('./SectionToggle', () => ({
@@ -259,7 +284,7 @@ describe('AgentsSection collapse defaults', () => {
     expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
   });
 
-  it('partitions user-completed agents into a collapsed done group', () => {
+  it('filters standalone agents to the active tab by default, hiding completed ones', () => {
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [
         buildAgent({ id: 'active' as AgentId, name: 'active agent' }),
@@ -271,13 +296,14 @@ describe('AgentsSection collapse defaults', () => {
 
     expect(screen.getByText('active agent')).toBeDefined();
     expect(screen.queryByText('done agent')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Done (1)' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Completed (1)' }));
+    expect(screen.queryByText('active agent')).toBeNull();
     expect(screen.getByText('done agent').closest('[data-muted]')?.getAttribute('data-muted')).toBe(
       'true',
     );
   });
 
-  it('renders active and done standalone agents newest-first', () => {
+  it('renders active and completed standalone agents newest-first within their own tab', () => {
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [
         buildAgent({ id: 'active-old' as AgentId, name: 'active old', ordinal: 0 }),
@@ -288,11 +314,34 @@ describe('AgentsSection collapse defaults', () => {
     };
 
     render(<AgentsSection task={buildSession()} only="agents" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Done (2)' }));
 
     expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
       'active new',
       'active old',
+    ]);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Completed (2)' }));
+
+    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
+      'done new',
+      'done old',
+    ]);
+  });
+
+  it('opens on the completed tab by default when there are no active agents', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({ id: 'done-old' as AgentId, name: 'done old', ordinal: 0, doneAt: NOW }),
+        buildAgent({ id: 'done-new' as AgentId, name: 'done new', ordinal: 1, doneAt: NOW }),
+      ],
+    };
+
+    render(<AgentsSection task={buildSession()} only="agents" />);
+
+    expect(screen.getByRole('tab', { name: 'Completed (2)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
       'done new',
       'done old',
     ]);
