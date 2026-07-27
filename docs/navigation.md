@@ -171,23 +171,30 @@ does not do.
 
 ### Sibling panels inside a lens
 
-Four surfaces open their detail to the right of the content instead of taking a
+Five surfaces open their detail to the right of the content instead of taking a
 studio rail: `ResolverInspector` (from a resolver row's "Details" action in the
 Resolve lens), `AgentInspector` (from an agent row's "Details" action in the
 Agents lens), `SlotHistoryPanel` in `SlotPane` (the history trigger in the pane
 header of the Goal, Decisions, and Session summary lenses, rendered only when
-that slot has history), and `PlanListPanel` in `PlanStudio` (the "Other plans
-(N)" trigger in the pane header, rendered only when the session holds more than
-one plan).
+that slot has history), `ScriptEditor` in `ScriptsPanel` (opened by clicking any
+script row, and the only way to edit a script since the list rows collapsed to
+one line), and `PlanListPanel` in `PlanStudio` (the "Other plans (N)" trigger in
+the pane header, rendered only when the session holds more than one plan).
 
-`ResolverInspector`, `AgentInspector`, and `SlotHistoryPanel` share one
-primitive, `InspectorSplit` (`SessionWorkspace/parts/InspectorSplit/`): the pane
-is a flex row, the panel is a sibling column resizable via a `ResizeHandle`
-(width persisted at `STORAGE_KEYS.inspectorPanelWidth`), open state is local to
-the pane, the panel loads or refreshes its data when it opens, and it closes
-from its own header. `PlanListPanel` predates this primitive and stays a
-fixed-width column behind a plain `<Divider>`. Reuse `InspectorSplit` for the
-next detail surface rather than adding a rail.
+`ResolverInspector`, `AgentInspector`, `SlotHistoryPanel`, and `ScriptEditor`
+share one primitive, `InspectorSplit`
+(`SessionWorkspace/parts/InspectorSplit/`): the pane is a flex row, the panel is
+a sibling column resizable via a `ResizeHandle` (width persisted at
+`STORAGE_KEYS.inspectorPanelWidth`), open state is local to the pane, the panel
+loads or refreshes its data when it opens, and it closes from its own header.
+`PlanListPanel` predates this primitive and stays a fixed-width column behind a
+plain `<Divider>`. Reuse `InspectorSplit` for the next detail surface rather
+than adding a rail.
+
+`ScriptsPanel` is the one consumer that nests the split _inside_ its
+`PaneShell` rather than wrapping it, because the same component also mounts in
+Workspace settings where there is no `PaneShell`. Its lens therefore runs at
+`width="5xl"` so the list and the editor each keep a usable column.
 
 ## New session form
 

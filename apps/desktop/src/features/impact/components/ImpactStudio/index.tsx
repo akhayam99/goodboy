@@ -46,7 +46,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, onClose }: Props) => 
     >
       {() => (
         <ScrollFade className="min-h-0 flex-1">
-          <div className="flex flex-col gap-5 px-6 py-5">
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-6 py-5">
             <HeroBand overview={overview} allTimeOverview={allTimeOverview} />
             {isWorkspaceEmpty ? (
               <EmptyState

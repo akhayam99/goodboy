@@ -13,6 +13,7 @@ import {
   SquareTerminal,
   Target,
   Terminal,
+  Unplug,
 } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
@@ -240,6 +241,15 @@ export const LensColumn = ({
       isConnected: sentryConnection.isConnected,
     },
   ];
+  const sortedIntegrationRows: ReadonlyArray<LensRow> = [...integrationRows].sort((a, b) => {
+    if (a.isConnected === false && b.isConnected !== false) {
+      return 1;
+    }
+    if (b.isConnected === false && a.isConnected !== false) {
+      return -1;
+    }
+    return 0;
+  });
 
   const repoGroups: ReadonlyArray<LensGroup> = [
     {
@@ -336,7 +346,7 @@ export const LensColumn = ({
     },
     {
       label: 'Integrations',
-      rows: integrationRows,
+      rows: sortedIntegrationRows,
     },
     {
       label: 'Infra',
@@ -477,7 +487,8 @@ export const LensColumn = ({
                     row.isCountLoading === true ||
                     (row.count != null && row.count > 0) ||
                     row.dot != null ||
-                    row.secondaryDot === true;
+                    row.secondaryDot === true ||
+                    row.isConnected === false;
                   return (
                     <button
                       key={row.kind}
@@ -531,32 +542,45 @@ export const LensColumn = ({
                             <span data-testid={`lens-count-loading-${row.kind}`}>
                               <Skeleton className="h-4 w-6 rounded-full" />
                             </span>
-                          ) : row.count != null && row.count > 0 ? (
-                            <span className="flex shrink-0 items-center gap-1.5">
-                              {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
-                              {row.dot === 'running' ? (
-                                <StatusDot tone="info" size="sm" pulsing />
+                          ) : (
+                            <>
+                              {row.count != null && row.count > 0 ? (
+                                <span className="flex shrink-0 items-center gap-1.5">
+                                  {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                                  {row.dot === 'running' ? (
+                                    <StatusDot tone="info" size="sm" pulsing />
+                                  ) : null}
+                                  <span
+                                    className={cn(
+                                      'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
+                                      row.dot === 'attention'
+                                        ? 'bg-warning/15 text-warning'
+                                        : 'bg-muted text-muted-foreground',
+                                    )}
+                                  >
+                                    {row.count}
+                                  </span>
+                                </span>
+                              ) : row.dot ? (
+                                <StatusDot
+                                  tone={row.dot === 'attention' ? 'warning' : 'info'}
+                                  size="sm"
+                                  pulsing={row.dot === 'running'}
+                                />
+                              ) : row.secondaryDot ? (
+                                <StatusDot tone="accent" size="sm" />
                               ) : null}
-                              <span
-                                className={cn(
-                                  'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                                  row.dot === 'attention'
-                                    ? 'bg-warning/15 text-warning'
-                                    : 'bg-muted text-muted-foreground',
-                                )}
-                              >
-                                {row.count}
-                              </span>
-                            </span>
-                          ) : row.dot ? (
-                            <StatusDot
-                              tone={row.dot === 'attention' ? 'warning' : 'info'}
-                              size="sm"
-                              pulsing={row.dot === 'running'}
-                            />
-                          ) : row.secondaryDot ? (
-                            <StatusDot tone="accent" size="sm" />
-                          ) : null}
+                              {row.isConnected === false ? (
+                                <span
+                                  aria-hidden
+                                  title={`${row.label} disconnected`}
+                                  className="flex shrink-0 items-center text-muted-foreground"
+                                >
+                                  <Unplug size={12} />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
                         </span>
                       ) : null}
                       {shortcut != null ? (

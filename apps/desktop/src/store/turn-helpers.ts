@@ -135,6 +135,7 @@ const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
     const next = queue.queued;
     if (next == null) {
       queue.inFlight = false;
+      void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
     queue.queued = null;

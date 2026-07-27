@@ -44,14 +44,14 @@ export const PlanSection = ({ plan, context, windowId }: Props) => {
         hint="How much shared brief every agent starts from"
       />
       {plan === null ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Skeleton className="h-24 rounded-lg" />
           <Skeleton className="h-24 rounded-lg" />
         </div>
       ) : plan.sessionCount === 0 && windowId === 'last30' ? (
         <WindowEmptyState what="planning activity" />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <MetricCard
             label="planned sessions"
             measure="Sessions where an agent consumed a plan, over every session active in the window"

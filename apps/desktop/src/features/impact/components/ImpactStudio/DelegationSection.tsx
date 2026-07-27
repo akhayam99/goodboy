@@ -25,7 +25,7 @@ export const DelegationSection = ({ delegation, windowId }: Props) => {
     return (
       <section className="flex flex-col gap-3">
         <SectionHeader label="Delegation and flow" hint="How work gets handed off and closed out" />
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
           <Skeleton className="h-24 rounded-lg" />
           <Skeleton className="h-24 rounded-lg" />
           <Skeleton className="h-24 rounded-lg" />
@@ -54,7 +54,7 @@ export const DelegationSection = ({ delegation, windowId }: Props) => {
       {isWindowEmpty ? (
         <WindowEmptyState what="delegated work" />
       ) : (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             label="workflow-driven"
             measure="Sessions with a workflow run that was not discarded, over every session active in the window"

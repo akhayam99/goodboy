@@ -45,6 +45,7 @@ import { StartTileContent } from './StartTileContent';
 import { SummaryRow } from './SummaryRow';
 import { ConnectedIntegrationGlyphs } from './ConnectedIntegrationGlyphs';
 import { EditorMenu } from './EditorMenu';
+import { PrStatusLine } from './PrStatusLine';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -93,6 +94,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
   const sessionList = useMemo(() => [session], [session]);
   const runs = useWorkspaceRuns(session.workspaceId, sessionList);
   const branch = useAppStore((s) => s.sessionBranches[session.id as SessionId] ?? null);
+  const pullRequest = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr ?? null);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
   const rawStandalone = selectStandaloneAgents(
@@ -265,7 +267,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
               </button>
             </div>
           )}
-          {stage.reason ? (
+          {pullRequest != null ? (
+            <PrStatusLine pr={pullRequest} />
+          ) : stage.reason ? (
             <p className="text-sm leading-relaxed text-muted-foreground">{stage.reason}</p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">

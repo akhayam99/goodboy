@@ -19,5 +19,6 @@ export const dismissOpenQuestion = (set: SetFn, get: GetFn) => {
     if (slotChanged) {
       await get().loadSessionSlots(sessionId);
     }
+    void get().maybeAutoAdvanceWorkflow(sessionId);
   };
 };

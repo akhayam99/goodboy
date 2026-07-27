@@ -136,6 +136,21 @@ describe('LensColumn', () => {
     expect(onSelectOverview).toHaveBeenCalledOnce();
   });
 
+  it('marks a disconnected integration and leaves connected ones unmarked', () => {
+    const { container } = render(
+      <LensColumn
+        session={SESSION}
+        activeLens="agents"
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(container.querySelector('[title="GitLab disconnected"]')).not.toBeNull();
+    expect(container.querySelector('[title="Linear disconnected"]')).toBeNull();
+  });
+
   it('orders the regrouped lens sections and rows', () => {
     render(
       <LensColumn
@@ -174,9 +189,9 @@ describe('LensColumn', () => {
       'Decisions',
       'Session summary',
       'GitHub',
-      'GitLab',
       'Linear',
       'Sentry',
+      'GitLab',
       'Terminal',
     ]);
   });
