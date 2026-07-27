@@ -43,14 +43,14 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     ariaLabel,
     provider,
     model,
-    recommendedModel,
+    recommendation,
     onProvider,
     onModel,
   }: {
     ariaLabel: string;
     provider: string;
     model: string;
-    recommendedModel: string;
+    recommendation?: { provider?: string; model?: string };
     onProvider: (provider: string) => void;
     onModel: (model: string) => void;
   }) => (
@@ -67,7 +67,7 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
         aria-label={`${ariaLabel} model`}
         onClick={() => onModel('claude-sonnet-4-6')}
       >
-        {model === '' ? `${recommendedModel} auto` : model}
+        {model === '' ? (recommendation?.model ?? '') : model}
       </button>
       <button
         type="button"
@@ -158,14 +158,15 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('PR and MR drafts')).toBeDefined();
   });
 
-  it('shows the resolved model for automatic task preferences', () => {
+  it('shows the resolved model for automatic task preferences, never the word auto', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        'claude-haiku-4-5 auto',
+        'claude-haiku-4-5',
       );
     }
+    expect(screen.queryByText(/auto/)).toBeNull();
     expect(screen.getByLabelText('Summaries routing status: default')).toBeDefined();
     expect(screen.getByLabelText('Planner routing status: default')).toBeDefined();
   });
@@ -174,7 +175,7 @@ describe('DefaultsPanel', () => {
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByLabelText('Summaries routing status: default')).toBeDefined();
-    fireEvent.click(screen.getAllByText('claude-haiku-4-5 auto')[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Summaries routing model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
@@ -214,7 +215,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
-      'claude-opus-5 auto',
+      'claude-opus-5',
     );
   });
 
@@ -243,6 +244,29 @@ describe('DefaultsPanel', () => {
       expect.objectContaining({
         roleModels: {
           investigator: { providerId: 'anthropic', model: 'claude-haiku-4-5', effort: 'medium' },
+        },
+      }),
+    );
+  });
+
+  it('drops an effort the newly picked model cannot reach', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reviewer routing model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          reviewer: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
         },
       }),
     );

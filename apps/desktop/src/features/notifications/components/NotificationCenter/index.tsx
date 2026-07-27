@@ -308,7 +308,8 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
           connectedProviders={availableProviderIds}
           provider={providerId}
           model={model}
-          recommendedModel={recommendedModel}
+          effort={{ editable: false }}
+          recommendation={{ model: recommendedModel }}
           disabled={false}
           onProvider={(next) => {
             if (next === '') {
