@@ -14,6 +14,7 @@ export {
   disconnectWorkspace,
   reconnectWorkspace,
   touchWorkspaceLastAccessed,
+  updateWorkspaceKind,
   deleteWorkspace,
 } from './queries/workspace';
 export { insertWorkspaceMembers } from './queries/workspace-member';

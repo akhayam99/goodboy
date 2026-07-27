@@ -11,6 +11,7 @@ import {
   listWorkspaces,
   reconnectWorkspace,
   touchWorkspaceLastAccessed,
+  updateWorkspaceKind,
 } from './workspace';
 
 const iso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
@@ -197,6 +198,33 @@ describe('disconnectWorkspace / reconnectWorkspace', () => {
     await reconnectWorkspace(db, ws.id, iso(Date.now()));
     const row = await getWorkspaceById(db, ws.id);
     expect(row?.disconnectedAt).toBeUndefined();
+  });
+});
+
+describe('updateWorkspaceKind', () => {
+  it('promotes a simple workspace to repo and leaves the others alone', async () => {
+    const db = await makeDb();
+    const simple = makeWorkspace({ id: 'simple', rootPath: '/tmp/simple', kind: 'simple' });
+    const other = makeWorkspace({ id: 'other', rootPath: '/tmp/other', kind: 'simple' });
+    await insertWorkspace(db, simple);
+    await insertWorkspace(db, other);
+
+    await updateWorkspaceKind({ db, id: simple.id, kind: 'repo' });
+
+    expect((await getWorkspaceById(db, simple.id))?.kind).toBe('repo');
+    expect((await getWorkspaceById(db, other.id))?.kind).toBe('simple');
+  });
+
+  it('bumps updatedAt so the change is observable', async () => {
+    const db = await makeDb();
+    const ws = makeWorkspace({ id: 'bump', rootPath: '/tmp/bump', kind: 'simple' });
+    await insertWorkspace(db, ws);
+    const before = await getWorkspaceById(db, ws.id);
+
+    await updateWorkspaceKind({ db, id: ws.id, kind: 'repo' });
+
+    const after = await getWorkspaceById(db, ws.id);
+    expect(Date.parse(after!.updatedAt)).toBeGreaterThanOrEqual(Date.parse(before!.updatedAt));
   });
 });
 

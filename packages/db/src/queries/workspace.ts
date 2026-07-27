@@ -145,6 +145,20 @@ export const reconnectWorkspace = async (
   );
 };
 
+type UpdateKindParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly kind: WorkspaceKind;
+};
+
+export const updateWorkspaceKind = async ({ db, id, kind }: UpdateKindParams): Promise<void> => {
+  await db.execute('UPDATE workspaces SET kind = ?, updated_at = ? WHERE id = ?', [
+    kind,
+    Date.now(),
+    id,
+  ]);
+};
+
 export const touchWorkspaceLastAccessed = async (db: Database, id: WorkspaceId): Promise<void> => {
   await db.execute('UPDATE workspaces SET last_accessed_at = ? WHERE id = ?', [Date.now(), id]);
 };
