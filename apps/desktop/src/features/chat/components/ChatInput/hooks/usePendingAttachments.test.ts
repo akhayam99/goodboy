@@ -6,7 +6,7 @@ type DragHandler = (event: { payload: unknown }) => void;
 
 const { hooks } = vi.hoisted(() => ({
   hooks: {
-    handler: null as DragHandler | null,
+    handlers: [] as DragHandler[],
     zoom: 1,
     read: vi.fn(async (path: string) => ({
       fileName: path.split('/').pop() ?? path,
@@ -19,9 +19,9 @@ const { hooks } = vi.hoisted(() => ({
 vi.mock('@tauri-apps/api/webview', () => ({
   getCurrentWebview: () => ({
     onDragDropEvent: async (cb: DragHandler) => {
-      hooks.handler = cb;
+      hooks.handlers.push(cb);
       return () => {
-        hooks.handler = null;
+        hooks.handlers = hooks.handlers.filter((h) => h !== cb);
       };
     },
   }),
@@ -39,27 +39,45 @@ import { usePendingAttachments } from './usePendingAttachments';
 
 const COMPOSER_RECT = { left: 100, right: 300, top: 400, bottom: 500 };
 
-const mountWithComposer = async (showToast: ReturnType<typeof vi.fn>, enabled = true) => {
+const mountComposer = async (
+  showToast: ReturnType<typeof vi.fn>,
+  rect: { left: number; right: number; top: number; bottom: number },
+  enabled = true,
+) => {
   const rendered = renderHook(() => usePendingAttachments({ showToast, enabled }));
   const el = document.createElement('div');
+  el.setAttribute('data-drop-composer', '');
   document.body.appendChild(el);
   Object.defineProperty(el, 'offsetParent', { value: document.body, configurable: true });
   el.getBoundingClientRect = () =>
-    ({ ...COMPOSER_RECT, width: 200, height: 100, x: 100, y: 400 }) as DOMRect;
+    ({
+      ...rect,
+      width: rect.right - rect.left,
+      height: rect.bottom - rect.top,
+      x: rect.left,
+      y: rect.top,
+    }) as DOMRect;
   await act(async () => {
     (rendered.result.current.composerRef as { current: HTMLDivElement | null }).current = el;
   });
   return rendered;
 };
 
-const drop = async (x: number, y: number, paths: ReadonlyArray<string>) => {
+const mountWithComposer = async (showToast: ReturnType<typeof vi.fn>, enabled = true) =>
+  mountComposer(showToast, COMPOSER_RECT, enabled);
+
+const dispatch = async (payload: unknown) => {
   await act(async () => {
-    hooks.handler?.({ payload: { type: 'drop', position: { x, y }, paths } });
+    hooks.handlers.forEach((h) => h({ payload }));
   });
 };
 
+const drop = async (x: number, y: number, paths: ReadonlyArray<string>) => {
+  await dispatch({ type: 'drop', position: { x, y }, paths });
+};
+
 beforeEach(() => {
-  hooks.handler = null;
+  hooks.handlers = [];
   hooks.zoom = 1;
   hooks.read = vi.fn(async (path: string) => ({
     fileName: path.split('/').pop() ?? path,
@@ -68,30 +86,18 @@ beforeEach(() => {
   }));
   window.devicePixelRatio = 1;
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  document.querySelectorAll('[data-drop-composer]').forEach((el) => el.remove());
+});
 
 describe('usePendingAttachments drop target', () => {
-  it('accepts a drop landing inside the composer', async () => {
-    const showToast = vi.fn();
-    const { result } = await mountWithComposer(showToast);
-    await drop(200, 450, ['/tmp/a.png']);
-    expect(result.current.attachments).toHaveLength(1);
-    expect(result.current.attachments[0]?.fileName).toBe('a.png');
-  });
-
-  it('ignores a drop outside the composer', async () => {
+  it('accepts a drop landing anywhere when it is the sole visible composer', async () => {
     const showToast = vi.fn();
     const { result } = await mountWithComposer(showToast);
     await drop(10, 10, ['/tmp/a.png']);
-    expect(result.current.attachments).toHaveLength(0);
-  });
-
-  it('accounts for the webview zoom factor when hit testing', async () => {
-    hooks.zoom = 2;
-    const showToast = vi.fn();
-    const { result } = await mountWithComposer(showToast);
-    await drop(400, 900, ['/tmp/a.png']);
     expect(result.current.attachments).toHaveLength(1);
+    expect(result.current.attachments[0]?.fileName).toBe('a.png');
   });
 
   it('reports unsupported files instead of dropping them silently', async () => {
@@ -113,16 +119,60 @@ describe('usePendingAttachments drop target', () => {
     );
   });
 
-  it('highlights only while the pointer is over the composer', async () => {
+  it('highlights the sole visible composer no matter where the pointer sits', async () => {
     const showToast = vi.fn();
     const { result } = await mountWithComposer(showToast);
-    await act(async () => {
-      hooks.handler?.({ payload: { type: 'over', position: { x: 10, y: 10 } } });
-    });
-    expect(result.current.isDragging).toBe(false);
-    await act(async () => {
-      hooks.handler?.({ payload: { type: 'over', position: { x: 200, y: 450 } } });
-    });
+    await dispatch({ type: 'over', position: { x: 10, y: 10 } });
     expect(result.current.isDragging).toBe(true);
+  });
+
+  it('accepts a drop at devicePixelRatio 2 using the logical-point candidate', async () => {
+    window.devicePixelRatio = 2;
+    const decoyRect = { left: 600, right: 700, top: 10, bottom: 60 };
+    const showToastA = vi.fn();
+    const showToastB = vi.fn();
+    const target = await mountComposer(showToastA, COMPOSER_RECT);
+    const decoy = await mountComposer(showToastB, decoyRect);
+    await drop(200, 450, ['/tmp/a.png']);
+    expect(target.result.current.attachments).toHaveLength(1);
+    expect(decoy.result.current.attachments).toHaveLength(0);
+  });
+
+  it('accepts a drop at devicePixelRatio 2 with a non-default zoom', async () => {
+    window.devicePixelRatio = 2;
+    hooks.zoom = 1.5;
+    const decoyRect = { left: 500, right: 700, top: 50, bottom: 150 };
+    const showToastA = vi.fn();
+    const showToastB = vi.fn();
+    const target = await mountComposer(showToastA, COMPOSER_RECT);
+    const decoy = await mountComposer(showToastB, decoyRect);
+    await drop(375, 720, ['/tmp/a.png']);
+    expect(target.result.current.attachments).toHaveLength(1);
+    expect(decoy.result.current.attachments).toHaveLength(0);
+  });
+
+  it('routes a multi-composer drop to the composer under the pointer', async () => {
+    const decoyRect = { left: 600, right: 700, top: 10, bottom: 60 };
+    const showToastA = vi.fn();
+    const showToastB = vi.fn();
+    const first = await mountComposer(showToastA, COMPOSER_RECT);
+    const second = await mountComposer(showToastB, decoyRect);
+    await drop(650, 30, ['/tmp/b.png']);
+    expect(first.result.current.attachments).toHaveLength(0);
+    expect(second.result.current.attachments).toHaveLength(1);
+    expect(second.result.current.attachments[0]?.fileName).toBe('b.png');
+  });
+
+  it('warns on an ambiguous miss when several composers are visible but neither candidate hits', async () => {
+    const decoyRect = { left: 600, right: 700, top: 10, bottom: 60 };
+    const showToastA = vi.fn();
+    const showToastB = vi.fn();
+    await mountComposer(showToastA, COMPOSER_RECT);
+    await mountComposer(showToastB, decoyRect);
+    await drop(0, 0, ['/tmp/a.png']);
+    expect(showToastA).toHaveBeenCalledWith(
+      'warning',
+      expect.stringContaining('drop the file on a message box'),
+    );
   });
 });

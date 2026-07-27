@@ -9,7 +9,7 @@ import {
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { isAllowedAttachment, resolveAttachmentMime } from '../../../attachment-kinds';
 import { readDroppedAttachment } from '../../../turn';
-import { currentZoom } from '../../../../../shared/lib/zoom';
+import { resolveDropTarget } from './resolveDropTarget';
 import type { ToastKind } from '../../../../../app/components/Toast';
 import {
   ATTACHMENT_LIMIT,
@@ -129,18 +129,6 @@ export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk
     let cancelled = false;
     let unlisten: (() => void) | null = null;
 
-    const isInsideComposer = (px: number, py: number): boolean => {
-      const el = composerRef.current;
-      if (!el || el.offsetParent === null) {
-        return false;
-      }
-      const rect = el.getBoundingClientRect();
-      const scale = (window.devicePixelRatio || 1) * currentZoom();
-      const x = px / scale;
-      const y = py / scale;
-      return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-    };
-
     const basename = (path: string): string => path.split('/').pop() ?? path;
 
     const ingestDroppedPaths = async (paths: ReadonlyArray<string>) => {
@@ -204,16 +192,35 @@ export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk
         const off = await getCurrentWebview().onDragDropEvent((event) => {
           const p = event.payload;
           switch (p.type) {
-            case 'enter':
-            case 'over':
-              setIsDragging(enabledRef.current && isInsideComposer(p.position.x, p.position.y));
-              break;
             case 'leave':
               setIsDragging(false);
               break;
+            case 'enter':
+            case 'over': {
+              const composer = composerRef.current;
+              if (!composer) {
+                setIsDragging(false);
+                break;
+              }
+              const { hit } = resolveDropTarget({ px: p.position.x, py: p.position.y, composer });
+              setIsDragging(enabledRef.current && hit);
+              break;
+            }
             case 'drop': {
               setIsDragging(false);
-              if (!isInsideComposer(p.position.x, p.position.y)) {
+              const composer = composerRef.current;
+              if (!composer) {
+                return;
+              }
+              const { hit, ambiguousMiss } = resolveDropTarget({
+                px: p.position.x,
+                py: p.position.y,
+                composer,
+              });
+              if (!hit) {
+                if (ambiguousMiss) {
+                  showToastRef.current('warning', 'drop the file on a message box to attach it');
+                }
                 return;
               }
               if (!enabledRef.current) {
@@ -232,6 +239,7 @@ export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk
         }
       } catch (err) {
         console.warn('drag-drop listener registration failed:', err);
+        showToastRef.current('warning', 'file drop is unavailable, use the paperclip instead');
       }
     })();
 

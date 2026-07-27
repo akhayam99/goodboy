@@ -217,6 +217,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
             </header>
             <div
               class="flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors border-border-soft"
+              data-drop-composer="true"
             >
               <input
                 accept="image/*,.pdf,.csv,.tsv,.txt,.log,.md,.markdown,.json,.xml,.yaml,.yml,.docx,.xlsx"
@@ -1088,6 +1089,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
             </header>
             <div
               class="flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors border-border-soft"
+              data-drop-composer="true"
             >
               <input
                 accept="image/*,.pdf,.csv,.tsv,.txt,.log,.md,.markdown,.json,.xml,.yaml,.yml,.docx,.xlsx"

@@ -396,6 +396,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             >
               <div
                 ref={composerRef}
+                data-drop-composer
                 className={cn(
                   'flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors',
                   isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',

@@ -782,6 +782,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     <SectionHeader icon={<Paperclip size={11} aria-hidden />} label="Attachments" />
                     <div
                       ref={composerRef}
+                      data-drop-composer
                       className={cn(
                         'flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
                         isDragging
