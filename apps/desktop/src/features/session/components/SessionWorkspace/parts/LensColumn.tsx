@@ -14,7 +14,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react';
-import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
@@ -39,6 +39,7 @@ import {
   type IntegrationGlyphProvider,
 } from '../../../../integrations/components/IntegrationGlyph';
 import { resolveAttentionLens, selectOpenQuestions } from '../../SessionOverviewPane/lib';
+import { LensColumnFooter } from './LensColumnFooter';
 
 type LensColumnProps = {
   readonly session: Session;
@@ -428,150 +429,154 @@ export const LensColumn = ({
   );
 
   return (
-    <ScrollFade className="min-h-0 flex-1">
-      <nav className="flex flex-col gap-4 px-2 py-3">
-        <button
-          type="button"
-          onClick={onSelectOverview}
-          aria-current={activeLens === null ? 'page' : undefined}
-          className={cn(
-            'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-            activeLens === null
-              ? 'bg-foreground/[0.06] text-foreground'
-              : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
-          )}
-        >
-          <span className="flex w-5 flex-none items-center justify-center text-muted-foreground transition-colors">
-            <LayoutDashboard size={14} aria-hidden />
-          </span>
-          <span
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ScrollFade className="min-h-0 flex-1">
+        <nav className="flex flex-col gap-4 px-2 py-3">
+          <button
+            type="button"
+            onClick={onSelectOverview}
+            aria-current={activeLens === null ? 'page' : undefined}
             className={cn(
-              'min-w-0 flex-1 truncate pr-12 text-[13px]',
-              activeLens === null && 'font-medium',
+              'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              activeLens === null
+                ? 'bg-foreground/[0.06] text-foreground'
+                : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
             )}
           >
-            Overview
-          </span>
-          <KbdPill
-            aria-hidden
-            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
-          >
-            ⌘⇧O
-          </KbdPill>
-        </button>
-        {visibleGroups.map((group) => (
-          <div key={group.label} className="flex flex-col gap-0.5">
-            <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
-              {group.label}
+            <span className="flex w-5 flex-none items-center justify-center text-muted-foreground transition-colors">
+              <LayoutDashboard size={14} aria-hidden />
             </span>
-            {group.rows.length === 0 ? (
-              <></>
-            ) : (
-              group.rows.map((row) => {
-                const active = activeLens === row.kind;
-                const shortcut = LENS_SHORTCUTS[row.kind];
-                const hasBadge =
-                  row.isCountLoading === true ||
-                  (row.count != null && row.count > 0) ||
-                  row.dot != null ||
-                  row.secondaryDot === true;
-                return (
-                  <button
-                    key={row.kind}
-                    type="button"
-                    onClick={() => onSelect(row.kind)}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                      active
-                        ? 'bg-foreground/[0.06] text-foreground'
-                        : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
-                      row.isConnected === false && 'opacity-40 hover:opacity-70',
-                    )}
-                  >
-                    {row.glyph != null ? (
-                      <span
-                        aria-hidden
-                        className="flex w-5 flex-none items-center justify-center transition-colors"
-                      >
-                        <IntegrationGlyph provider={row.glyph} size={14} />
-                      </span>
-                    ) : row.icon != null ? (
-                      <span
-                        className={cn(
-                          'flex w-5 flex-none items-center justify-center transition-colors',
-                          tintClasses(row.tone).icon,
-                        )}
-                      >
-                        <row.icon size={14} aria-hidden />
-                      </span>
-                    ) : null}
-                    <span
+            <span
+              className={cn(
+                'min-w-0 flex-1 truncate pr-12 text-[13px]',
+                activeLens === null && 'font-medium',
+              )}
+            >
+              Overview
+            </span>
+            <KbdPill
+              aria-hidden
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+            >
+              ⌘⇧O
+            </KbdPill>
+          </button>
+          {visibleGroups.map((group) => (
+            <div key={group.label} className="flex flex-col gap-0.5">
+              <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+                {group.label}
+              </span>
+              {group.rows.length === 0 ? (
+                <></>
+              ) : (
+                group.rows.map((row) => {
+                  const active = activeLens === row.kind;
+                  const shortcut = LENS_SHORTCUTS[row.kind];
+                  const hasBadge =
+                    row.isCountLoading === true ||
+                    (row.count != null && row.count > 0) ||
+                    row.dot != null ||
+                    row.secondaryDot === true;
+                  return (
+                    <button
+                      key={row.kind}
+                      type="button"
+                      onClick={() => onSelect(row.kind)}
+                      aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'min-w-0 flex-1 truncate text-[13px]',
-                        shortcut != null && !hasBadge && 'pr-12',
-                        active && 'font-medium',
+                        'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                        active
+                          ? 'bg-foreground/[0.06] text-foreground'
+                          : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
+                        row.isConnected === false && 'opacity-40 hover:opacity-70',
                       )}
                     >
-                      {row.label}
-                    </span>
-                    {hasBadge ? (
+                      {row.glyph != null ? (
+                        <span
+                          aria-hidden
+                          className="flex w-5 flex-none items-center justify-center transition-colors"
+                        >
+                          <IntegrationGlyph provider={row.glyph} size={14} />
+                        </span>
+                      ) : row.icon != null ? (
+                        <span
+                          className={cn(
+                            'flex w-5 flex-none items-center justify-center transition-colors',
+                            tintClasses(row.tone).icon,
+                          )}
+                        >
+                          <row.icon size={14} aria-hidden />
+                        </span>
+                      ) : null}
                       <span
                         className={cn(
-                          'flex shrink-0 items-center gap-1.5 transition-opacity',
-                          shortcut != null &&
-                            'min-w-10 justify-end group-hover:opacity-0 group-focus-visible:opacity-0',
+                          'min-w-0 flex-1 truncate text-[13px]',
+                          shortcut != null && !hasBadge && 'pr-12',
+                          active && 'font-medium',
                         )}
                       >
-                        {row.isCountLoading === true ? (
-                          <span data-testid={`lens-count-loading-${row.kind}`}>
-                            <Skeleton className="h-4 w-6 rounded-full" />
-                          </span>
-                        ) : row.count != null && row.count > 0 ? (
-                          <span className="flex shrink-0 items-center gap-1.5">
-                            {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
-                            {row.dot === 'running' ? (
-                              <StatusDot tone="info" size="sm" pulsing />
-                            ) : null}
-                            <span
-                              className={cn(
-                                'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
-                                row.dot === 'attention'
-                                  ? 'bg-warning/15 text-warning'
-                                  : 'bg-muted text-muted-foreground',
-                              )}
-                            >
-                              {row.count}
-                            </span>
-                          </span>
-                        ) : row.dot ? (
-                          <StatusDot
-                            tone={row.dot === 'attention' ? 'warning' : 'info'}
-                            size="sm"
-                            pulsing={row.dot === 'running'}
-                          />
-                        ) : row.secondaryDot ? (
-                          <StatusDot tone="accent" size="sm" />
-                        ) : null}
+                        {row.label}
                       </span>
-                    ) : null}
-                    {shortcut != null ? (
-                      <KbdPill
-                        aria-hidden
-                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
-                      >
-                        {shortcut}
-                      </KbdPill>
-                    ) : null}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        ))}
-      </nav>
-    </ScrollFade>
+                      {hasBadge ? (
+                        <span
+                          className={cn(
+                            'flex shrink-0 items-center gap-1.5 transition-opacity',
+                            shortcut != null &&
+                              'min-w-10 justify-end group-hover:opacity-0 group-focus-visible:opacity-0',
+                          )}
+                        >
+                          {row.isCountLoading === true ? (
+                            <span data-testid={`lens-count-loading-${row.kind}`}>
+                              <Skeleton className="h-4 w-6 rounded-full" />
+                            </span>
+                          ) : row.count != null && row.count > 0 ? (
+                            <span className="flex shrink-0 items-center gap-1.5">
+                              {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
+                              {row.dot === 'running' ? (
+                                <StatusDot tone="info" size="sm" pulsing />
+                              ) : null}
+                              <span
+                                className={cn(
+                                  'rounded px-1.5 py-0.5 text-2xs font-medium tabular-nums',
+                                  row.dot === 'attention'
+                                    ? 'bg-warning/15 text-warning'
+                                    : 'bg-muted text-muted-foreground',
+                                )}
+                              >
+                                {row.count}
+                              </span>
+                            </span>
+                          ) : row.dot ? (
+                            <StatusDot
+                              tone={row.dot === 'attention' ? 'warning' : 'info'}
+                              size="sm"
+                              pulsing={row.dot === 'running'}
+                            />
+                          ) : row.secondaryDot ? (
+                            <StatusDot tone="accent" size="sm" />
+                          ) : null}
+                        </span>
+                      ) : null}
+                      {shortcut != null ? (
+                        <KbdPill
+                          aria-hidden
+                          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+                        >
+                          {shortcut}
+                        </KbdPill>
+                      ) : null}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          ))}
+        </nav>
+      </ScrollFade>
+      <Divider />
+      <LensColumnFooter session={session} />
+    </div>
   );
 };

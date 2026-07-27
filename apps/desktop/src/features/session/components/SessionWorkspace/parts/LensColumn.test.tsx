@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { hooks, remote, store } = vi.hoisted(() => {
@@ -33,6 +33,9 @@ const { hooks, remote, store } = vi.hoisted(() => {
         'session-1': { agents: false, plans: false },
       },
       sessionOpenQuestions,
+      archiveTask: vi.fn(async () => undefined),
+      deleteTask: vi.fn(async () => undefined),
+      unarchiveTask: vi.fn(async () => undefined),
     },
   };
 });
@@ -79,6 +82,10 @@ vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => remote.kind,
 }));
 
+vi.mock('../../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}));
+
 import { LensColumn } from './LensColumn';
 
 const SESSION = {
@@ -103,6 +110,9 @@ beforeEach(() => {
   };
   store.sessionLoading['session-1'] = { agents: false, plans: false };
   store.sessionOpenQuestions = { 'session-1': [] };
+  store.archiveTask.mockClear();
+  store.deleteTask.mockClear();
+  store.unarchiveTask.mockClear();
 });
 
 afterEach(cleanup);
@@ -143,12 +153,14 @@ describe('LensColumn', () => {
         .map((heading) => heading.textContent),
     ).toEqual(['Work', 'Artifacts', 'Context', 'Integrations', 'Infra']);
     expect(
-      screen.getAllByRole('button').map((button) => {
-        const clone = button.cloneNode(true) as HTMLElement;
-        clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
-        const shortcut = clone.querySelector('kbd')?.textContent ?? '';
-        return clone.textContent?.replace(shortcut, '').trim();
-      }),
+      within(screen.getByRole('navigation'))
+        .getAllByRole('button')
+        .map((button) => {
+          const clone = button.cloneNode(true) as HTMLElement;
+          clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+          const shortcut = clone.querySelector('kbd')?.textContent ?? '';
+          return clone.textContent?.replace(shortcut, '').trim();
+        }),
     ).toEqual([
       'Overview',
       'Workflows',
@@ -185,12 +197,14 @@ describe('LensColumn', () => {
       screen.getAllByText(/^(Work|Artifacts|Context)$/).map((heading) => heading.textContent),
     ).toEqual(['Work', 'Artifacts', 'Context']);
     expect(
-      screen.getAllByRole('button').map((button) => {
-        const clone = button.cloneNode(true) as HTMLElement;
-        clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
-        const shortcut = clone.querySelector('kbd')?.textContent ?? '';
-        return clone.textContent?.replace(shortcut, '').trim();
-      }),
+      within(screen.getByRole('navigation'))
+        .getAllByRole('button')
+        .map((button) => {
+          const clone = button.cloneNode(true) as HTMLElement;
+          clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+          const shortcut = clone.querySelector('kbd')?.textContent ?? '';
+          return clone.textContent?.replace(shortcut, '').trim();
+        }),
     ).toEqual([
       'Overview',
       'Workflows',
@@ -499,5 +513,34 @@ describe('LensColumn', () => {
       expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
     }
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
+  });
+});
+
+describe('LensColumn footer', () => {
+  it('renders the archive and delete controls after the lens navigation, confirming before archiving', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const nav = screen.getByRole('navigation');
+    const archiveButton = screen.getByRole('button', { name: /archive session/i });
+    const deleteButton = screen.getByRole('button', { name: /delete session/i });
+    expect(nav.compareDocumentPosition(archiveButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+      0,
+    );
+    expect(nav.compareDocumentPosition(deleteButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+      0,
+    );
+
+    fireEvent.click(archiveButton);
+    expect(store.archiveTask).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /^archive session$/i }));
+    expect(store.archiveTask).toHaveBeenCalledWith('session-1');
   });
 });

@@ -33,7 +33,7 @@ import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
 import { classifyAgent, selectStandaloneAgents } from '../../agent-kind';
 import { resolveAttentionLens, selectAttention, selectOpenQuestions } from './lib';
-import { SpawnAgentControl } from '../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl';
+import { CreateAgentPopover } from '../CreateAgentPopover';
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
@@ -43,6 +43,8 @@ import { LinkedWorkSection } from './LinkedWorkSection';
 import { StartRowContent } from './StartRowContent';
 import { StartTileContent } from './StartTileContent';
 import { SummaryRow } from './SummaryRow';
+import { ConnectedIntegrationGlyphs } from './ConnectedIntegrationGlyphs';
+import { EditorMenu } from './EditorMenu';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -218,9 +220,15 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
     <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
       <div className="animate-fade-in mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
-            <Eyebrow label={STAGE_LABEL[stage.stage]} />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
+              <Eyebrow label={STAGE_LABEL[stage.stage]} />
+            </div>
+            <div className="flex items-center gap-1">
+              <ConnectedIntegrationGlyphs session={session} onSelectLens={onSelectLens} />
+              <EditorMenu sessionId={session.id as SessionId} />
+            </div>
           </div>
           {rename.renaming ? (
             <div className="flex flex-col gap-1">
@@ -339,7 +347,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                     chip
                   />
                 </button>
-                <SpawnAgentControl sessionId={session.id as SessionId} />
+                <CreateAgentPopover
+                  sessionId={session.id as SessionId}
+                  className={startRowClass()}
+                  description="Spawns one agent on a single task, with the shared session context."
+                />
               </div>
             </div>
           </div>
@@ -354,7 +366,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                   label="New workflow"
                 />
               </button>
-              <SpawnAgentControl sessionId={session.id as SessionId} />
+              <CreateAgentPopover sessionId={session.id as SessionId} />
             </div>
           </div>
         )}
