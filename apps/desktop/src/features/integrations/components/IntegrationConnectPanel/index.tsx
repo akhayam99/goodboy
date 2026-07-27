@@ -11,7 +11,7 @@ export const IntegrationConnectPanel = ({ provider, description, children }: Pro
   <div className="w-full max-w-md rounded-lg border border-border-soft bg-background p-5 shadow-sm">
     <div className="flex flex-col gap-5">
       <div className="flex flex-col items-center gap-2 text-center">
-        <IntegrationGlyph provider={provider} />
+        <IntegrationGlyph provider={provider} size={24} />
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       {children}

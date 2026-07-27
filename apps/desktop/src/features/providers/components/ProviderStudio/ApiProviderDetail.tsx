@@ -63,7 +63,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
           <section className="flex flex-col gap-2">
             <SectionHeader
               label="Runtime"
-              hint="OpenRouter runs through the OpenCode CLI installed on this machine."
+              hint={`Sessions for ${info.label} execute through this locally installed runtime.`}
             />
             <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
               <span

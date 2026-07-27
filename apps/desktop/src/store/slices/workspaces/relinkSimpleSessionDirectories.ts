@@ -27,7 +27,8 @@ export const relinkSimpleSessionDirectories = async ({
     return new Map(worktreesBySession);
   }
 
-  const scannedBySession = new Map(scanned.map((entry) => [entry.sessionId, entry.path]));
+  const workspaceScanned = scanned.filter((entry) => entry.workspaceId === workspaceId);
+  const scannedBySession = new Map(workspaceScanned.map((entry) => [entry.sessionId, entry.path]));
   const resolved = new Map<SessionId, ReadonlyArray<SessionWorktree>>();
 
   await Promise.all(
@@ -43,10 +44,16 @@ export const relinkSimpleSessionDirectories = async ({
           }
 
           if (exists) {
-            const hasMarker = scanned.some(
+            const hasMarker = workspaceScanned.some(
               (entry) => entry.sessionId === sessionId && entry.path === worktree.worktreePath,
             );
             if (!hasMarker) {
+              const hasForeignMarker = scanned.some(
+                (entry) => entry.path === worktree.worktreePath && entry.sessionId !== sessionId,
+              );
+              if (hasForeignMarker) {
+                return worktree;
+              }
               await writeSimpleSessionMarker({
                 path: worktree.worktreePath,
                 sessionId,

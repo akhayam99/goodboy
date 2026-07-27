@@ -63,6 +63,8 @@ struct SessionMarker {
 pub struct SimpleSessionScanEntry {
     #[serde(rename = "sessionId")]
     pub session_id: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
     pub path: String,
 }
 
@@ -109,26 +111,31 @@ fn marker_write(
     Ok(())
 }
 
-fn scan_directory(path: &Path) -> Option<SimpleSessionScanEntry> {
-    if !path.is_dir() {
+fn scan_directory(path: &Path, root: &Path) -> Option<SimpleSessionScanEntry> {
+    let metadata = std::fs::symlink_metadata(path).ok()?;
+    if !metadata.file_type().is_dir() {
+        return None;
+    }
+    let resolved = std::fs::canonicalize(path).ok()?;
+    if !resolved.starts_with(root) {
         return None;
     }
     let marker = std::fs::read(path.join(".goodboy")).ok()?;
     let marker = serde_json::from_slice::<SessionMarker>(&marker).ok()?;
-    let resolved = std::fs::canonicalize(path).ok()?;
     Some(SimpleSessionScanEntry {
         session_id: marker.session_id,
+        workspace_id: marker.workspace_id,
         path: resolved.to_string_lossy().into_owned(),
     })
 }
 
-fn scan_children(path: &Path) -> Vec<SimpleSessionScanEntry> {
+fn scan_children(path: &Path, root: &Path) -> Vec<SimpleSessionScanEntry> {
     let Ok(entries) = std::fs::read_dir(path) else {
         return Vec::new();
     };
     entries
         .filter_map(Result::ok)
-        .filter_map(|entry| scan_directory(&entry.path()))
+        .filter_map(|entry| scan_directory(&entry.path(), root))
         .collect()
 }
 
@@ -171,8 +178,11 @@ pub fn simple_sessions_scan(
     root_path: String,
 ) -> Result<Vec<SimpleSessionScanEntry>, SessionDirError> {
     let root = absolute_path(expand_home(&root_path)?)?;
-    let mut entries = scan_children(&root.join("sessions"));
-    entries.extend(scan_children(&root));
+    let Ok(root) = std::fs::canonicalize(root) else {
+        return Ok(Vec::new());
+    };
+    let mut entries = scan_children(&root.join("sessions"), &root);
+    entries.extend(scan_children(&root, &root));
     Ok(entries)
 }
 
@@ -265,6 +275,47 @@ mod tests {
         assert!(scanned
             .iter()
             .any(|entry| entry.session_id == "session-2" && entry.path == second.worktree_path));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn skips_symlinked_session_directories() {
+        let root = test_root("simple-session-symlink");
+        let outside = test_root("simple-session-outside");
+        let created = session_dir_create(CreateArgs {
+            base_path: outside.to_string_lossy().into_owned(),
+            slug: "Outside Plan".to_string(),
+            session_id: "session-outside".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+        let sessions = root.join("sessions");
+        std::fs::create_dir_all(&sessions).unwrap();
+        std::os::unix::fs::symlink(&created.worktree_path, sessions.join("linked-plan")).unwrap();
+
+        let scanned = simple_sessions_scan(root.to_string_lossy().into_owned()).unwrap();
+
+        assert!(scanned.is_empty());
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(outside).unwrap();
+    }
+
+    #[test]
+    fn scan_entries_include_marker_workspace_id() {
+        let root = test_root("simple-session-workspace-id");
+        session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-marker".to_string(),
+        })
+        .unwrap();
+
+        let scanned = simple_sessions_scan(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(scanned.len(), 1);
+        assert_eq!(scanned[0].workspace_id, "workspace-marker");
         std::fs::remove_dir_all(root).unwrap();
     }
 }

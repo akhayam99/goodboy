@@ -263,7 +263,12 @@ const createWorktreeSpy = vi.fn();
 const removeWorktreeSpy = vi.fn(async () => undefined);
 const changeWorktreeBranchSpy = vi.fn(async () => undefined);
 const scanSimpleSessionsSpy = vi.fn(
-  async () => [] as ReadonlyArray<{ readonly sessionId: SessionId; readonly path: string }>,
+  async () =>
+    [] as ReadonlyArray<{
+      readonly sessionId: SessionId;
+      readonly workspaceId: WorkspaceId;
+      readonly path: string;
+    }>,
 );
 const simpleSessionDirExistsSpy = vi.fn(async () => true);
 const writeSimpleSessionMarkerSpy = vi.fn(async () => undefined);
@@ -707,7 +712,9 @@ describe('store contract', () => {
       vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
         new Map([[SESSION_ID, [buildWorktree(SESSION_ID, storedPath, '')]]]),
       );
-      scanSimpleSessionsSpy.mockResolvedValueOnce([{ sessionId: SESSION_ID, path: movedPath }]);
+      scanSimpleSessionsSpy.mockResolvedValueOnce([
+        { sessionId: SESSION_ID, workspaceId: WS_ID, path: movedPath },
+      ]);
       simpleSessionDirExistsSpy.mockResolvedValueOnce(false);
       store.setState({
         workspaces: [
@@ -727,6 +734,37 @@ describe('store contract', () => {
         worktreePath: movedPath,
       });
       expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([movedPath]);
+    });
+
+    it('ignores a moved simple session directory from another workspace', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const storedPath = '/tmp/study-space/sessions/study-plan';
+      const movedPath = '/tmp/study-space/study-plan';
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
+        new Map([[SESSION_ID, [buildWorktree(SESSION_ID, storedPath, '')]]]),
+      );
+      scanSimpleSessionsSpy.mockResolvedValueOnce([
+        { sessionId: SESSION_ID, workspaceId: WS_ID_2, path: movedPath },
+      ]);
+      simpleSessionDirExistsSpy.mockResolvedValueOnce(false);
+      store.setState({
+        workspaces: [
+          buildWorkspace({
+            rootPath: '/tmp/study-space',
+            kind: 'simple',
+          }),
+        ],
+      });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(db.updateSessionWorktreePath).not.toHaveBeenCalled();
+      expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([storedPath]);
     });
 
     it('backfills a marker for an existing unmarked simple session directory', async () => {
@@ -758,6 +796,37 @@ describe('store contract', () => {
         sessionId: SESSION_ID,
         workspaceId: WS_ID,
       });
+      expect(db.updateSessionWorktreePath).not.toHaveBeenCalled();
+      expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([storedPath]);
+    });
+
+    it('does not overwrite another session marker during backfill', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const storedPath = '/tmp/study-space/sessions/study-plan';
+      vi.mocked(db.listSessionsForWorkspace).mockResolvedValueOnce([
+        buildSession(),
+        buildSession({ id: SESSION_ID_2 }),
+      ]);
+      vi.mocked(db.listWorktreesForSessions).mockResolvedValueOnce(
+        new Map([[SESSION_ID, [buildWorktree(SESSION_ID, storedPath, '')]]]),
+      );
+      scanSimpleSessionsSpy.mockResolvedValueOnce([
+        { sessionId: SESSION_ID_2, workspaceId: WS_ID, path: storedPath },
+      ]);
+      simpleSessionDirExistsSpy.mockResolvedValueOnce(true);
+      store.setState({
+        workspaces: [
+          buildWorkspace({
+            rootPath: '/tmp/study-space',
+            kind: 'simple',
+          }),
+        ],
+      });
+
+      await store.getState().setCurrentWorkspace(WS_ID);
+
+      expect(writeSimpleSessionMarkerSpy).not.toHaveBeenCalled();
       expect(db.updateSessionWorktreePath).not.toHaveBeenCalled();
       expect(store.getState().sessionWorktrees[SESSION_ID]).toEqual([storedPath]);
     });

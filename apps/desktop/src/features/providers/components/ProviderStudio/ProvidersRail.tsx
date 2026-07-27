@@ -83,7 +83,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-sm font-medium text-foreground">{p.label}</span>
                     {PROVIDER_BETA.has(id) ? (
-                      <span className="rounded-md bg-muted px-1 py-0.5 text-[9px] font-medium text-muted-foreground">
+                      <span className="rounded-md bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning">
                         beta
                       </span>
                     ) : null}
