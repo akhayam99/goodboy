@@ -1,5 +1,7 @@
 import { FolderGit2, Plug } from 'lucide-react';
+import { BetaPill } from '../../../../shared/components/BetaPill';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { SetupRow } from './SetupRow';
 
 export const WelcomeStep = () => {
   return (
@@ -11,7 +13,8 @@ export const WelcomeStep = () => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col items-center gap-3">
+        <BetaPill />
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">
           Welcome to Goodboy
         </h2>
@@ -35,25 +38,3 @@ export const WelcomeStep = () => {
     </div>
   );
 };
-
-function SetupRow({
-  icon,
-  title,
-  detail,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-lg border border-border-soft/40 bg-subtle/20 px-3.5 py-3 text-left">
-      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/40">
-        {icon}
-      </span>
-      <div className="flex flex-col gap-0.5">
-        <span className="text-xs font-semibold text-foreground">{title}</span>
-        <span className="text-2xs leading-relaxed text-muted-foreground/80">{detail}</span>
-      </div>
-    </div>
-  );
-}

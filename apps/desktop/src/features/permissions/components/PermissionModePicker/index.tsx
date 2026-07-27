@@ -114,12 +114,9 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           aria-label="permission mode"
           className="absolute bottom-full left-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
         >
-          <div className="flex items-center justify-between px-2.5 pb-0.5 pt-1">
+          <div className="flex items-center px-2.5 pb-0.5 pt-1">
             <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
               Permission mode
-            </span>
-            <span className="rounded-sm bg-warning/15 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
-              Beta
             </span>
           </div>
           {PERMISSION_MODES.map((m) => {

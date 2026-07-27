@@ -3,6 +3,7 @@ import { Plus, Search, Unplug } from 'lucide-react';
 import { Button, Dialog, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
+import { BetaPill } from '../../../../shared/components/BetaPill';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
@@ -74,13 +75,16 @@ export const WorkspaceLauncher = () => {
       <div data-tauri-drag-region="false" className="absolute right-4 top-3">
         <UpdateIndicator variant="bar" />
       </div>
-      <div className="w-full max-w-xl motion-safe:animate-fade-in">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <DogMascot size={56} className="mb-4 text-primary" />
-          <h1 className="text-lg font-semibold text-foreground">Open a workspace</h1>
+      <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
+        <div className="flex flex-col items-center gap-3 pb-2 text-center">
+          <DogMascot size={56} className="text-primary" />
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="text-lg font-semibold text-foreground">Open a workspace</h1>
+            <BetaPill />
+          </div>
         </div>
 
-        <div className="relative mb-6">
+        <div className="relative">
           <Search
             size={15}
             aria-hidden
@@ -96,48 +100,50 @@ export const WorkspaceLauncher = () => {
           />
         </div>
 
-        <p className="mb-2 px-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Recent
-        </p>
-        <ul className="mb-6 flex flex-col gap-0.5">
-          {filtered.length === 0 ? (
-            <li className="px-3 py-8 text-center text-sm text-muted-foreground">
-              No workspaces found
-            </li>
-          ) : (
-            filtered.map((w, i) => (
-              <li key={w.id} className="group/launcher relative">
-                <WorkspaceRow
-                  workspace={w}
-                  density="card"
-                  highlighted={i === activeIndex}
-                  onOpen={() => select(w)}
-                />
-                <button
-                  type="button"
-                  data-tauri-drag-region="false"
-                  aria-label={`Disconnect ${w.name}`}
-                  title={`Disconnect ${w.name}`}
-                  onClick={() => setDisconnectTarget(w)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
-                >
-                  <Unplug size={13} aria-hidden />
-                </button>
+        <div className="flex flex-col gap-2">
+          <p className="px-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Recent
+          </p>
+          <ul className="flex flex-col gap-0.5">
+            {filtered.length === 0 ? (
+              <li className="px-3 py-8 text-center text-sm text-muted-foreground">
+                No workspaces found
               </li>
-            ))
-          )}
-        </ul>
+            ) : (
+              filtered.map((w, i) => (
+                <li key={w.id} className="group/launcher relative">
+                  <WorkspaceRow
+                    workspace={w}
+                    density="card"
+                    highlighted={i === activeIndex}
+                    onOpen={() => select(w)}
+                  />
+                  <button
+                    type="button"
+                    data-tauri-drag-region="false"
+                    aria-label={`Disconnect ${w.name}`}
+                    title={`Disconnect ${w.name}`}
+                    onClick={() => setDisconnectTarget(w)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
+                  >
+                    <Unplug size={13} aria-hidden />
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
 
         <button
           type="button"
           onClick={addWorkspace}
-          className="flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+          className="flex w-fit items-center gap-1.5 rounded-md border border-border-soft px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
         >
           <Plus size={14} aria-hidden />
           New workspace
         </button>
 
-        <label className="mt-6 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
           <input
             type="checkbox"
             checked={reopenLast}
