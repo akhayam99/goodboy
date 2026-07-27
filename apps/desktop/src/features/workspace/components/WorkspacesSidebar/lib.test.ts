@@ -9,7 +9,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { pluralize, resolverStatus, workflowKindName } from './lib';
+import { defaultCompletionTab, pluralize, resolverStatus, workflowKindName } from './lib';
 
 const NOW = '2026-05-15T00:00:00.000Z' as IsoDateTime;
 const SESSION = 'sess_1' as SessionId;
@@ -63,6 +63,21 @@ describe('pluralize', () => {
 
   it('pluralizes counts above one', () => {
     expect(pluralize(3, 'agent')).toBe('3 agents');
+  });
+});
+
+describe('defaultCompletionTab', () => {
+  it('defaults to active when there is anything active', () => {
+    expect(defaultCompletionTab({ activeCount: 1, completedCount: 0 })).toBe('active');
+    expect(defaultCompletionTab({ activeCount: 2, completedCount: 3 })).toBe('active');
+  });
+
+  it('opens on completed when active is empty but completed is not', () => {
+    expect(defaultCompletionTab({ activeCount: 0, completedCount: 1 })).toBe('completed');
+  });
+
+  it('defaults to active when both are empty', () => {
+    expect(defaultCompletionTab({ activeCount: 0, completedCount: 0 })).toBe('active');
   });
 });
 

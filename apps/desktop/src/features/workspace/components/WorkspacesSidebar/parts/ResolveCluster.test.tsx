@@ -48,50 +48,93 @@ const newestCompleted = {
   name: 'Newest completed resolver',
   sourceThreadId: 'PRRT_2',
 } satisfies Agent;
+const finishedUnconfirmed = {
+  id: 'finished-unconfirmed' as AgentId,
+  sessionId: SESSION_ID,
+  ordinal: 0,
+  name: 'Solo resolver',
+  status: 'completed',
+} satisfies Agent;
+
+const baseProps = {
+  sessionId: SESSION_ID,
+  isTaskActive: true,
+  prNumber: null,
+  pendingThreadIds: new Set<string>(),
+  resolverState: {},
+  commentByThreadId: new Map(),
+  diffCommentByAgentId: new Map(),
+  metrics: {
+    latestTelemetryByAgentId: new Map(),
+    aggregatesByAgentId: new Map(),
+    providerUsageByAgentId: new Map(),
+    turnsByAgentId: new Map(),
+  },
+  isTranscriptLoading: false,
+  selectedAgentId: null,
+  expanded: true,
+  onToggle: vi.fn(),
+  onSelect: vi.fn(),
+  onForceNext: vi.fn(),
+  onResolveThread: vi.fn(),
+  onResolveAgent: vi.fn(),
+};
 
 describe('ResolveCluster', () => {
   afterEach(cleanup);
 
-  it('keeps active resolvers visible and completed resolvers collapsed', () => {
+  it('shows only the active resolvers by default and filters to completed via the segmented tab', () => {
     render(
       <ResolveCluster
+        {...baseProps}
         agents={[active, completed, newerActive, newestCompleted]}
-        sessionId={SESSION_ID}
-        isTaskActive
-        prNumber={null}
         resolvedThreadIds={new Set(['PRRT_1', 'PRRT_2'])}
-        pendingThreadIds={new Set()}
-        resolverState={{}}
-        commentByThreadId={new Map()}
-        diffCommentByAgentId={new Map()}
-        metrics={{
-          latestTelemetryByAgentId: new Map(),
-          aggregatesByAgentId: new Map(),
-          providerUsageByAgentId: new Map(),
-          turnsByAgentId: new Map(),
-        }}
-        isTranscriptLoading={false}
-        selectedAgentId={null}
-        expanded
-        onToggle={vi.fn()}
-        onSelect={vi.fn()}
-        onForceNext={vi.fn()}
-        onResolveThread={vi.fn()}
-        onResolveAgent={vi.fn()}
       />,
     );
 
     expect(screen.getByText('Newer active resolver:pending')).toBeDefined();
     expect(screen.getByText('Active resolver:running')).toBeDefined();
     expect(screen.queryByText('Completed resolver:resolved')).toBeNull();
+    expect(screen.queryByText('Newest completed resolver:resolved')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Completed (2)' }));
 
+    expect(screen.queryByText('Newer active resolver:pending')).toBeNull();
+    expect(screen.queryByText('Active resolver:running')).toBeNull();
     expect(screen.getAllByText(/resolver:/).map((row) => row.textContent)).toEqual([
-      'Newer active resolver:pending',
-      'Active resolver:running',
       'Newest completed resolver:resolved',
       'Completed resolver:resolved',
     ]);
+  });
+
+  it('opens on Completed by default when there are no active resolvers', () => {
+    render(
+      <ResolveCluster
+        {...baseProps}
+        agents={[completed, newestCompleted]}
+        resolvedThreadIds={new Set(['PRRT_1', 'PRRT_2'])}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Completed (2)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getAllByText(/resolver:/).map((row) => row.textContent)).toEqual([
+      'Newest completed resolver:resolved',
+      'Completed resolver:resolved',
+    ]);
+  });
+
+  it('does not show a contradictory ratio for a resolver finished without github confirmation', () => {
+    const { container } = render(
+      <ResolveCluster
+        {...baseProps}
+        agents={[finishedUnconfirmed]}
+        resolvedThreadIds={new Set()}
+      />,
+    );
+
+    expect(container.textContent).not.toMatch(/\d+\/\d+/);
+    expect(screen.getByText('Solo resolver:done')).toBeDefined();
   });
 });

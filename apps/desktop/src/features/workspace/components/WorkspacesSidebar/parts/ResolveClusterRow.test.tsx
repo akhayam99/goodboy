@@ -51,8 +51,6 @@ const renderRow = ({ onSelect = () => undefined, onInspect }: Params = {}) =>
   render(
     <ResolveClusterRow
       agent={agent}
-      index={0}
-      total={2}
       status="done"
       threadComment={null}
       diffComment={null}
@@ -102,10 +100,10 @@ describe('ResolveClusterRow', () => {
     expect(screen.getAllByTitle(/^started 2026-05-28/)).toHaveLength(1);
   });
 
-  it('keeps the resolver name and position readable alongside the metrics', () => {
+  it('keeps the resolver name readable alongside the metrics, without an ordinal position', () => {
     renderRow();
     expect(screen.getByText('resolve comment 12')).toBeTruthy();
-    expect(screen.getByText('1/2')).toBeTruthy();
+    expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
   });
 
