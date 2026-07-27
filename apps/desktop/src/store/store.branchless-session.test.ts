@@ -32,7 +32,11 @@ vi.mock('@goodboy/core', () => ({
 
 vi.mock('../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-vi.mock('../features/worktree/worktree', () => ({ changeWorktreeBranch, removeWorktree }));
+vi.mock('../features/worktree/worktree', () => ({
+  changeWorktreeBranch,
+  removeWorktree,
+  invalidateLocalBranchesCache: vi.fn(),
+}));
 
 vi.mock('../features/chat/turn', () => ({ cancelTurn: vi.fn(async () => undefined) }));
 
