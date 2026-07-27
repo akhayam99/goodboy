@@ -6,13 +6,14 @@ type Props = {
   readonly description?: string;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
-  readonly width?: '2xl' | '3xl';
+  readonly width?: '2xl' | '3xl' | '5xl';
   readonly children: ReactNode;
 };
 
-const WIDTH: Record<'2xl' | '3xl', string> = {
+const WIDTH: Record<'2xl' | '3xl' | '5xl', string> = {
   '2xl': 'max-w-2xl',
   '3xl': 'max-w-3xl',
+  '5xl': 'max-w-5xl',
 };
 
 export const PaneShell = ({

@@ -1,0 +1,132 @@
+import { Check, Copy, Play, Square, Trash2 } from 'lucide-react';
+import { StatusDot, cn } from '@goodboy/ui';
+import type { WorkspaceScript } from '@goodboy/types';
+import { OverflowMenu } from '../../../../shared/components/OverflowMenu';
+import type { ScriptRunStatus } from '../../scripts';
+
+type ScriptRowProps = {
+  readonly script: WorkspaceScript;
+  readonly status: ScriptRunStatus;
+  readonly selected: boolean;
+  readonly runnable: boolean;
+  readonly canRun: boolean;
+  readonly copied: boolean;
+  readonly onSelect: () => void;
+  readonly onRun: () => void;
+  readonly onCancel: () => void;
+  readonly onCopy: () => void;
+  readonly onDelete: () => void;
+};
+
+const extractPreviewLine = ({ body }: { body: string }): string => {
+  const lines = body.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === '') {
+      continue;
+    }
+    if (trimmed.startsWith('#!')) {
+      continue;
+    }
+    return trimmed;
+  }
+  return '';
+};
+
+export const ScriptRow = ({
+  script,
+  status,
+  selected,
+  runnable,
+  canRun,
+  copied,
+  onSelect,
+  onRun,
+  onCancel,
+  onCopy,
+  onDelete,
+}: ScriptRowProps) => {
+  const preview = extractPreviewLine({ body: script.body });
+  const isPending = status === 'pending';
+
+  return (
+    <div
+      className={cn(
+        'group flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 transition-colors',
+        selected ? 'border-border bg-muted/50' : 'hover:bg-muted/40',
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={selected}
+        className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left"
+      >
+        <span className="flex min-w-0 items-center gap-1.5">
+          {isPending ? <StatusDot tone="info" pulsing ariaLabel="running" /> : null}
+          <span className="min-w-0 truncate text-sm font-medium text-foreground">
+            {script.name}
+          </span>
+        </span>
+        {preview !== '' ? (
+          <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
+            {preview}
+          </span>
+        ) : null}
+      </button>
+
+      {runnable ? (
+        isPending ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            title="stop script"
+            aria-label="stop script"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
+          >
+            <Square size={11} fill="currentColor" aria-hidden />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onRun}
+            disabled={!canRun}
+            title="run script"
+            aria-label="run script"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Play size={13} aria-hidden />
+          </button>
+        )
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onCopy}
+        title="copy script"
+        aria-label="copy script"
+        className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        {copied ? (
+          <Check size={13} aria-hidden className="text-success" />
+        ) : (
+          <Copy size={13} aria-hidden />
+        )}
+      </button>
+
+      <OverflowMenu
+        label="script actions"
+        items={[
+          {
+            kind: 'item',
+            key: 'delete',
+            label: 'Delete',
+            icon: Trash2,
+            destructive: true,
+            onClick: onDelete,
+          },
+        ]}
+      />
+    </div>
+  );
+};

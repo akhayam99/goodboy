@@ -9,12 +9,21 @@ type Script = {
   readonly body: string;
 };
 
+type RunRecord = {
+  readonly status: 'idle' | 'pending' | 'ok' | 'error' | 'cancelled';
+  readonly result: { stdout: string; stderr: string; exitCode: number } | null;
+  readonly runId: string;
+};
+
 const { state } = vi.hoisted(() => ({
   state: {
     scripts: [] as ReadonlyArray<Script>,
+    scriptRuns: {} as Record<string, Record<string, RunRecord>>,
     loadScripts: vi.fn(async () => undefined),
     saveScript: vi.fn(async () => undefined),
     deleteScript: vi.fn(async () => undefined),
+    runScript: vi.fn(async () => undefined),
+    cancelScript: vi.fn(async () => undefined),
   },
 }));
 
@@ -22,16 +31,22 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(
     selector: (s: {
       workspaceScripts: Record<string, ReadonlyArray<Script>>;
+      scriptRuns: Record<string, Record<string, RunRecord>>;
       loadScripts: typeof state.loadScripts;
       saveScript: typeof state.saveScript;
       deleteScript: typeof state.deleteScript;
+      runScript: typeof state.runScript;
+      cancelScript: typeof state.cancelScript;
     }) => T,
   ) =>
     selector({
       workspaceScripts: { 'ws-1': state.scripts },
+      scriptRuns: { 'session-1': state.scriptRuns['session-1'] ?? {} },
       loadScripts: state.loadScripts,
       saveScript: state.saveScript,
       deleteScript: state.deleteScript,
+      runScript: state.runScript,
+      cancelScript: state.cancelScript,
     }),
 }));
 
@@ -39,9 +54,12 @@ import { ScriptsPanel } from './index';
 
 beforeEach(() => {
   state.scripts = [];
+  state.scriptRuns = {};
   state.loadScripts = vi.fn(async () => undefined);
   state.saveScript = vi.fn(async () => undefined);
   state.deleteScript = vi.fn(async () => undefined);
+  state.runScript = vi.fn(async () => undefined);
+  state.cancelScript = vi.fn(async () => undefined);
 });
 afterEach(cleanup);
 
@@ -79,5 +97,61 @@ describe('ScriptsPanel', () => {
       name: 'copy env',
       body: 'cp ../main/.env .env',
     });
+  });
+
+  it('opens an existing script and saves an edit to its body', async () => {
+    state.scripts = [{ id: 's1', name: 'setup', body: '#!/bin/bash\necho hi' }];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
+    const textarea = screen.getByDisplayValue(/echo hi/);
+    fireEvent.change(textarea, { target: { value: 'echo hi again' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    });
+    expect(state.saveScript).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      id: 's1',
+      name: 'setup',
+      body: 'echo hi again',
+    });
+  });
+
+  it('deletes a script from its overflow menu', async () => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'script actions' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    });
+    expect(state.deleteScript).toHaveBeenCalledWith('s1', 'ws-1');
+  });
+
+  it('prompts before discarding an unsaved edit when switching to another script', () => {
+    state.scripts = [
+      { id: 's1', name: 'setup', body: 'echo one' },
+      { id: 's2', name: 'build', body: 'echo two' },
+    ];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
+    fireEvent.change(screen.getByDisplayValue(/echo one/), {
+      target: { value: 'echo one changed' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /build/i }));
+    expect(screen.getByText(/unsaved changes/i)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    expect(screen.getByDisplayValue(/echo two/)).toBeDefined();
+  });
+
+  it('runs a script from its row and routes output to the session it runs in', () => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    render(
+      <ScriptsPanel
+        workspaceId={'ws-1' as never}
+        sessionId={'session-1' as never}
+        worktreePath="/tmp/work"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'run script' }));
+    expect(state.runScript).toHaveBeenCalledWith('session-1', 's1', '/tmp/work');
   });
 });
