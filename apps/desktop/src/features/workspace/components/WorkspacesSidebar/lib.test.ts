@@ -9,7 +9,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { defaultCompletionTab, pluralize, resolverStatus, workflowKindName } from './lib';
+import { pluralize, resolveCompletionTab, resolverStatus, workflowKindName } from './lib';
 
 const NOW = '2026-05-15T00:00:00.000Z' as IsoDateTime;
 const SESSION = 'sess_1' as SessionId;
@@ -66,18 +66,53 @@ describe('pluralize', () => {
   });
 });
 
-describe('defaultCompletionTab', () => {
-  it('defaults to active when there is anything active', () => {
-    expect(defaultCompletionTab({ activeCount: 1, completedCount: 0 })).toBe('active');
-    expect(defaultCompletionTab({ activeCount: 2, completedCount: 3 })).toBe('active');
+describe('resolveCompletionTab', () => {
+  it('defaults to active when there is anything active and nothing selected', () => {
+    expect(resolveCompletionTab({ activeCount: 1, completedCount: 0, selected: null })).toBe(
+      'active',
+    );
+    expect(resolveCompletionTab({ activeCount: 2, completedCount: 3, selected: null })).toBe(
+      'active',
+    );
   });
 
-  it('opens on completed when active is empty but completed is not', () => {
-    expect(defaultCompletionTab({ activeCount: 0, completedCount: 1 })).toBe('completed');
+  it('opens on completed when active is empty but completed is not and nothing selected', () => {
+    expect(resolveCompletionTab({ activeCount: 0, completedCount: 1, selected: null })).toBe(
+      'completed',
+    );
   });
 
-  it('defaults to active when both are empty', () => {
-    expect(defaultCompletionTab({ activeCount: 0, completedCount: 0 })).toBe('active');
+  it('defaults to active when both are empty and nothing selected', () => {
+    expect(resolveCompletionTab({ activeCount: 0, completedCount: 0, selected: null })).toBe(
+      'active',
+    );
+  });
+
+  it('keeps an explicit selection that still has items', () => {
+    expect(resolveCompletionTab({ activeCount: 2, completedCount: 1, selected: 'completed' })).toBe(
+      'completed',
+    );
+    expect(resolveCompletionTab({ activeCount: 2, completedCount: 1, selected: 'active' })).toBe(
+      'active',
+    );
+  });
+
+  it('falls back to completed when the explicitly selected active tab empties out', () => {
+    expect(resolveCompletionTab({ activeCount: 0, completedCount: 1, selected: 'active' })).toBe(
+      'completed',
+    );
+  });
+
+  it('falls back to active when the explicitly selected completed tab empties out', () => {
+    expect(resolveCompletionTab({ activeCount: 1, completedCount: 0, selected: 'completed' })).toBe(
+      'active',
+    );
+  });
+
+  it('keeps the explicit selection when both tabs are empty', () => {
+    expect(resolveCompletionTab({ activeCount: 0, completedCount: 0, selected: 'completed' })).toBe(
+      'completed',
+    );
   });
 });
 

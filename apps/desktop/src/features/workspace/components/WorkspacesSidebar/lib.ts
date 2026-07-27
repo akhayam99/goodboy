@@ -29,13 +29,26 @@ export type ResolverStatus =
 
 export type CompletionTab = 'active' | 'completed';
 
-export const defaultCompletionTab = ({
+export const resolveCompletionTab = ({
   activeCount,
   completedCount,
+  selected,
 }: {
   readonly activeCount: number;
   readonly completedCount: number;
-}): CompletionTab => (activeCount === 0 && completedCount > 0 ? 'completed' : 'active');
+  readonly selected: CompletionTab | null;
+}): CompletionTab => {
+  if (selected == null) {
+    return activeCount === 0 && completedCount > 0 ? 'completed' : 'active';
+  }
+  const other: CompletionTab = selected === 'active' ? 'completed' : 'active';
+  const selectedCount = selected === 'active' ? activeCount : completedCount;
+  const otherCount = selected === 'active' ? completedCount : activeCount;
+  if (selectedCount === 0 && otherCount > 0) {
+    return other;
+  }
+  return selected;
+};
 
 export const resolverStatus = (
   agent: Agent,

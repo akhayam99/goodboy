@@ -137,4 +137,65 @@ describe('ResolveCluster', () => {
     expect(container.textContent).not.toMatch(/\d+\/\d+/);
     expect(screen.getByText('Solo resolver:done')).toBeDefined();
   });
+
+  it('moves from an empty Active view to Completed when the only resolver finishes while mounted', () => {
+    const solo = {
+      id: 'solo' as AgentId,
+      sessionId: SESSION_ID,
+      ordinal: 0,
+      name: 'Solo resolver',
+      status: 'running',
+    } satisfies Agent;
+
+    const { rerender } = render(
+      <ResolveCluster {...baseProps} agents={[solo]} resolvedThreadIds={new Set()} />,
+    );
+
+    expect(screen.getByText('Solo resolver:running')).toBeDefined();
+    expect(screen.queryByRole('tablist')).toBeNull();
+
+    const soloDone = {
+      ...solo,
+      status: 'completed',
+      sourceThreadId: 'PRRT_9',
+    } satisfies Agent;
+
+    rerender(
+      <ResolveCluster {...baseProps} agents={[soloDone]} resolvedThreadIds={new Set(['PRRT_9'])} />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getByText('Solo resolver:resolved')).toBeDefined();
+    expect(screen.queryByText('Solo resolver:running')).toBeNull();
+  });
+
+  it('keeps the explicitly selected tab when it still has items after props change', () => {
+    const { rerender } = render(
+      <ResolveCluster
+        {...baseProps}
+        agents={[active, completed]}
+        resolvedThreadIds={new Set(['PRRT_1'])}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Completed (1)' }));
+    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+
+    rerender(
+      <ResolveCluster
+        {...baseProps}
+        agents={[active, completed, newerActive]}
+        resolvedThreadIds={new Set(['PRRT_1'])}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getByText('Completed resolver:resolved')).toBeDefined();
+  });
 });

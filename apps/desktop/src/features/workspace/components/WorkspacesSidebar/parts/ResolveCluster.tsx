@@ -5,8 +5,8 @@ import { openUrl } from '../../../../../shared/lib/editor';
 import { SegmentedControl } from '../../../../../shared/components/SegmentedControl';
 import type { AgentMetrics } from '../../../../session/hooks/useAgentMetrics';
 import {
-  defaultCompletionTab,
   pluralize,
+  resolveCompletionTab,
   resolverStatus,
   type CompletionTab,
   type ResolverState,
@@ -74,12 +74,12 @@ export const ResolveCluster = ({
     .map((agent) => ({ agent, status: statusOf(agent) }));
   const completedEntries = entries.filter(({ status }) => COMPLETED_STATUSES.includes(status));
   const activeEntries = entries.filter(({ status }) => !COMPLETED_STATUSES.includes(status));
-  const [tab, setTab] = useState<CompletionTab>(() =>
-    defaultCompletionTab({
-      activeCount: activeEntries.length,
-      completedCount: completedEntries.length,
-    }),
-  );
+  const [selectedTab, setSelectedTab] = useState<CompletionTab | null>(null);
+  const tab = resolveCompletionTab({
+    activeCount: activeEntries.length,
+    completedCount: completedEntries.length,
+    selected: selectedTab,
+  });
   const visibleEntries = tab === 'completed' ? completedEntries : activeEntries;
   const anyRunning = agents.some((a) => a.status === 'running');
   const queuedCount = agents.filter((a) => a.status === 'pending').length;
@@ -157,7 +157,7 @@ export const ResolveCluster = ({
                 { value: 'completed', label: `Completed (${completedEntries.length})` },
               ]}
               value={tab}
-              onChange={setTab}
+              onChange={setSelectedTab}
             />
           ) : null}
           <ResolverRows

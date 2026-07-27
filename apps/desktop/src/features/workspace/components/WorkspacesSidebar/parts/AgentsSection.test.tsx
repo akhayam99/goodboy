@@ -347,6 +347,54 @@ describe('AgentsSection collapse defaults', () => {
     ]);
   });
 
+  it('moves from an empty Active view to Completed when the only agent is marked done while mounted', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [buildAgent({ id: 'solo' as AgentId, name: 'solo agent' })],
+    };
+    const { rerender } = render(<AgentsSection task={buildSession()} only="agents" />);
+
+    expect(screen.getByText('solo agent')).toBeDefined();
+    expect(screen.queryByRole('tablist')).toBeNull();
+
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [buildAgent({ id: 'solo' as AgentId, name: 'solo agent', doneAt: NOW })],
+    };
+    rerender(<AgentsSection task={buildSession()} only="agents" />);
+
+    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getByText('solo agent')).toBeDefined();
+  });
+
+  it('keeps the explicitly selected agents tab when it still has items after props change', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({ id: 'active-1' as AgentId, name: 'active one' }),
+        buildAgent({ id: 'done-1' as AgentId, name: 'done one', doneAt: NOW }),
+      ],
+    };
+    const { rerender } = render(<AgentsSection task={buildSession()} only="agents" />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Completed (1)' }));
+    expect(screen.getByText('done one')).toBeDefined();
+
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({ id: 'active-1' as AgentId, name: 'active one' }),
+        buildAgent({ id: 'active-2' as AgentId, name: 'active two' }),
+        buildAgent({ id: 'done-1' as AgentId, name: 'done one', doneAt: NOW }),
+      ],
+    };
+    rerender(<AgentsSection task={buildSession()} only="agents" />);
+
+    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getByText('done one')).toBeDefined();
+    expect(screen.queryByText('active two')).toBeNull();
+  });
+
   it('workflow unread badge counts step agents and their cluster children', () => {
     const RUN_ID = 'run-1' as WorkflowRunId;
     const workflow = {

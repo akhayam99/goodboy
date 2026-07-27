@@ -43,8 +43,8 @@ import { CollapsedSummary } from './CollapsedSummary';
 import { AdHocRow } from './AdHocRow';
 import { WorkflowRow } from './WorkflowRow';
 import {
-  defaultCompletionTab,
   pluralize,
+  resolveCompletionTab,
   workflowKindName,
   type CompletionTab,
   type ResolverState,
@@ -389,12 +389,12 @@ export const AgentsSection = ({
     [only, standaloneAgents],
   );
   const showCompletedAgentsTab = only === 'agents' && doneStandaloneAgents.length > 0;
-  const [agentsTab, setAgentsTab] = useState<CompletionTab>(() =>
-    defaultCompletionTab({
-      activeCount: activeStandaloneAgents.length,
-      completedCount: doneStandaloneAgents.length,
-    }),
-  );
+  const [selectedAgentsTab, setSelectedAgentsTab] = useState<CompletionTab | null>(null);
+  const agentsTab = resolveCompletionTab({
+    activeCount: activeStandaloneAgents.length,
+    completedCount: doneStandaloneAgents.length,
+    selected: selectedAgentsTab,
+  });
   const visibleStandaloneAgents =
     showCompletedAgentsTab && agentsTab === 'completed'
       ? doneStandaloneAgents
@@ -655,7 +655,7 @@ export const AgentsSection = ({
                       { value: 'completed', label: `Completed (${doneStandaloneAgents.length})` },
                     ]}
                     value={agentsTab}
-                    onChange={setAgentsTab}
+                    onChange={setSelectedAgentsTab}
                   />
                 </div>
               ) : null}
