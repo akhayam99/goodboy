@@ -5,102 +5,125 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import type { GetFn, SetFn } from './types';
 
+const advanceInFlight = new Set<SessionId>();
+
+type Params = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+};
+
+const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
+  const state = get();
+  const session = state.sessions.find((s) => s.id === sessionId);
+  if (session == null) {
+    return;
+  }
+  const templates = state.phaseTemplates[session.workspaceId] ?? [];
+  const runs = state.sessionPhaseRuns[sessionId] ?? [];
+  for (const candidate of session.workflowRuns) {
+    if (
+      candidate.discardedAt != null ||
+      candidate.triggerMode !== 'after_run' ||
+      candidate.chainAfterId == null
+    ) {
+      continue;
+    }
+    const predecessor = session.workflowRuns.find((r) => r.id === candidate.chainAfterId);
+    if (predecessor == null || predecessor.discardedAt != null) {
+      continue;
+    }
+    const predTemplate = templates.find((t) => t.id === predecessor.workflowId);
+    if (predTemplate == null) {
+      continue;
+    }
+    if (isWorkflowComplete(predTemplate, runsForWorkflowRun(runs, predecessor.id))) {
+      await get().startWorkflowRun(sessionId, candidate.id);
+    }
+  }
+};
+
+const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
+  await startChainedRuns({ get, sessionId });
+
+  const state = get();
+  const session = state.sessions.find((s) => s.id === sessionId);
+  if (session == null || session.workflowRuns.length === 0) {
+    return;
+  }
+  const activeRuns = session.workflowRuns.filter(
+    (r) => r.autoRun && r.discardedAt == null && r.triggerMode === 'immediate',
+  );
+  if (activeRuns.length === 0) {
+    return;
+  }
+  if (state.summarizerStatus[sessionId]?.status === 'running') {
+    return;
+  }
+  const exceeded = state.budgetAlerts.some(
+    (a) =>
+      a.dismissedAt === undefined &&
+      ((a.kind === 'session-exceeded' && a.sessionId === sessionId) ||
+        a.kind === 'provider-exceeded'),
+  );
+  if (exceeded) {
+    return;
+  }
+  const templates = state.phaseTemplates[session.workspaceId] ?? [];
+  const runs = state.sessionPhaseRuns[sessionId] ?? [];
+  const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+  const nextPendingAgent = (() => {
+    for (const run of activeRuns) {
+      if (workflowRunHasOpenQuestions(openQuestions, run.id)) {
+        continue;
+      }
+      const template = templates.find((t) => t.id === run.workflowId);
+      if (template == null) {
+        continue;
+      }
+      const runAgents = runsForWorkflowRun(runs, run.id);
+      const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+      for (const step of sortedSteps) {
+        const agent = runAgents.find((r) => r.stepId === step.id);
+        if (agent == null || agent.status !== 'pending') {
+          continue;
+        }
+        const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
+        const allDone = prevSteps.every((s) =>
+          runAgents.some(
+            (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
+          ),
+        );
+        if (allDone) {
+          return agent;
+        }
+        break;
+      }
+    }
+    return null;
+  })();
+  if (nextPendingAgent == null) {
+    return;
+  }
+  await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);
+  void get().emitNotification(
+    'agent-auto-spawn',
+    'info',
+    `agent auto-spawned: ${nextPendingAgent.name}`,
+    undefined,
+    { sessionId },
+  );
+};
+
 export const maybeAutoAdvanceWorkflow = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
-    const state = get();
-    const session = state.sessions.find((s) => s.id === sessionId);
-    if (!session || session.workflowRuns.length === 0) {
+    if (advanceInFlight.has(sessionId)) {
       return;
     }
-    const templates = state.phaseTemplates[session.workspaceId] ?? [];
-    const runs = state.sessionPhaseRuns[sessionId] ?? [];
-
-    let firedChain = false;
-    for (const candidate of session.workflowRuns) {
-      if (
-        candidate.discardedAt ||
-        candidate.triggerMode !== 'after_run' ||
-        !candidate.chainAfterId
-      ) {
-        continue;
-      }
-      const predecessor = session.workflowRuns.find((r) => r.id === candidate.chainAfterId);
-      if (!predecessor || predecessor.discardedAt) {
-        continue;
-      }
-      const predTemplate = templates.find((t) => t.id === predecessor.workflowId);
-      if (!predTemplate) {
-        continue;
-      }
-      if (isWorkflowComplete(predTemplate, runsForWorkflowRun(runs, predecessor.id))) {
-        await get().startWorkflowRun(sessionId, candidate.id);
-        firedChain = true;
-      }
+    advanceInFlight.add(sessionId);
+    try {
+      await runAdvance({ get, sessionId });
+    } finally {
+      advanceInFlight.delete(sessionId);
     }
-    if (firedChain) {
-      return;
-    }
-
-    const activeRuns = session.workflowRuns.filter(
-      (r) => r.autoRun && !r.discardedAt && r.triggerMode === 'immediate',
-    );
-    if (activeRuns.length === 0) {
-      return;
-    }
-    const summarizerBusy = state.summarizerStatus[sessionId]?.status === 'running';
-    if (summarizerBusy) {
-      return;
-    }
-    const exceeded = state.budgetAlerts.some(
-      (a) =>
-        a.dismissedAt === undefined &&
-        ((a.kind === 'session-exceeded' && a.sessionId === sessionId) ||
-          a.kind === 'provider-exceeded'),
-    );
-    if (exceeded) {
-      return;
-    }
-    const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
-    const nextPendingAgent = (() => {
-      for (const run of activeRuns) {
-        if (workflowRunHasOpenQuestions(openQuestions, run.id)) {
-          continue;
-        }
-        const template = templates.find((t) => t.id === run.workflowId);
-        if (!template) {
-          continue;
-        }
-        const runAgents = runsForWorkflowRun(runs, run.id);
-        const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-        for (const step of sortedSteps) {
-          const agent = runAgents.find((r) => r.stepId === step.id);
-          if (!agent || agent.status !== 'pending') {
-            continue;
-          }
-          const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
-          const allDone = prevSteps.every((s) =>
-            runAgents.some(
-              (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
-            ),
-          );
-          if (allDone) {
-            return agent;
-          }
-          break;
-        }
-      }
-      return null;
-    })();
-    if (!nextPendingAgent) {
-      return;
-    }
-    await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'info',
-      `agent auto-spawned: ${nextPendingAgent.name}`,
-      undefined,
-      { sessionId },
-    );
   };
 };
