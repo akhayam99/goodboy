@@ -348,18 +348,19 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'GitLab 1' })).toBeDefined();
   });
 
-  it('opens the studio from a disconnected integration row', () => {
+  it('selects the inline pane for a disconnected integration row instead of opening the studio', () => {
     store.workspaceIntegrations = {};
     remote.kind = null;
     const listener = vi.fn();
     window.addEventListener('goodboy:open-gitlab-studio', listener);
+    const onSelect = vi.fn();
 
     render(
       <LensColumn
         session={SESSION}
         activeLens={null}
         onSelectOverview={vi.fn()}
-        onSelect={vi.fn()}
+        onSelect={onSelect}
         filesCount={0}
       />,
     );
@@ -367,7 +368,8 @@ describe('LensColumn', () => {
     fireEvent.click(gitlab);
 
     expect(gitlab.className).toContain('opacity-40');
-    expect(listener).toHaveBeenCalledOnce();
+    expect(onSelect).toHaveBeenCalledWith('gitlab_issues');
+    expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-gitlab-studio', listener);
   });
 

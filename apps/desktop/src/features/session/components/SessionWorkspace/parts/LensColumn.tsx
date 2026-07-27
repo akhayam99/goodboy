@@ -59,7 +59,6 @@ type LensRow = {
   readonly isCountLoading?: boolean;
   readonly dot?: 'attention' | 'running';
   readonly secondaryDot?: boolean;
-  readonly studioEvent?: string;
   readonly isConnected?: boolean;
 };
 
@@ -212,7 +211,6 @@ export const LensColumn = ({
       glyph: 'github',
       tone: 'accent',
       dot: hasGithubPr ? 'running' : undefined,
-      studioEvent: 'goodboy:open-github-studio',
       isConnected: githubConnection.isConnected,
     },
     {
@@ -222,7 +220,6 @@ export const LensColumn = ({
       tone: 'accent',
       count: gitlabCount,
       dot: hasGitlabMr ? 'running' : undefined,
-      studioEvent: 'goodboy:open-gitlab-studio',
       isConnected: gitlabConnection.isConnected,
     },
     {
@@ -231,7 +228,6 @@ export const LensColumn = ({
       glyph: 'linear',
       tone: 'primary',
       count: linearCount,
-      studioEvent: 'goodboy:open-linear-studio',
       isConnected: linearConnection.isConnected,
     },
     {
@@ -240,7 +236,6 @@ export const LensColumn = ({
       glyph: 'sentry',
       tone: 'warning',
       count: sentryCount,
-      studioEvent: 'goodboy:open-sentry-studio',
       isConnected: sentryConnection.isConnected,
     },
   ];
@@ -476,7 +471,6 @@ export const LensColumn = ({
               group.rows.map((row) => {
                 const active = activeLens === row.kind;
                 const shortcut = LENS_SHORTCUTS[row.kind];
-                const studioEvent = row.studioEvent;
                 const hasBadge =
                   row.isCountLoading === true ||
                   (row.count != null && row.count > 0) ||
@@ -486,11 +480,7 @@ export const LensColumn = ({
                   <button
                     key={row.kind}
                     type="button"
-                    onClick={
-                      studioEvent != null
-                        ? () => window.dispatchEvent(new CustomEvent(studioEvent))
-                        : () => onSelect(row.kind)
-                    }
+                    onClick={() => onSelect(row.kind)}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
