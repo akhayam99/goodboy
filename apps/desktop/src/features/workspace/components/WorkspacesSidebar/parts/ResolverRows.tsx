@@ -8,12 +8,10 @@ import { agentThreadIds } from '../../../../session/agentThreadIds';
 type Entry = {
   readonly agent: Agent;
   readonly status: ResolverStatus;
-  readonly index: number;
 };
 
 type Props = {
   readonly entries: ReadonlyArray<Entry>;
-  readonly total: number;
   readonly isTaskActive: boolean;
   readonly isTranscriptLoading: boolean;
   readonly selectedAgentId: AgentId | null;
@@ -30,7 +28,6 @@ type Props = {
 
 export const ResolverRows = ({
   entries,
-  total,
   isTaskActive,
   isTranscriptLoading,
   selectedAgentId,
@@ -45,7 +42,7 @@ export const ResolverRows = ({
   onResolveAgent,
 }: Props) => (
   <>
-    {entries.map(({ agent, status, index }) => {
+    {entries.map(({ agent, status }) => {
       const threadIds = agentThreadIds(agent);
       const threadId = threadIds[0];
       const diffComment =
@@ -57,8 +54,6 @@ export const ResolverRows = ({
         <ResolveClusterRow
           key={agent.id}
           agent={agent}
-          index={index}
-          total={total}
           status={status}
           threadComment={threadComment}
           diffComment={diffComment}

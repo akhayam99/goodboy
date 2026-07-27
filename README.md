@@ -5,7 +5,7 @@
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&label=ci)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?label=release&color=06b6d4)](https://github.com/akhayam99/goodboy/releases/latest)
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?label=stars&color=06b6d4)](https://github.com/akhayam99/goodboy/stargazers)
-[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini-06b6d4)](#providers)
+[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter-06b6d4)](#providers)
 [![platform](https://img.shields.io/badge/macOS-Intel%20%26%20Apple%20Silicon-111111)](#install)
 [![license](https://img.shields.io/github/license/akhayam99/goodboy?color=06b6d4)](./LICENSE)
 
@@ -17,10 +17,10 @@
 
 <img width="3972" height="2234" alt="Goodboy desktop app" src="https://github.com/user-attachments/assets/4708c589-a8e6-4f6c-a80a-222b32cc237e" />
 
-You have a repo. You have a goal. You also have four CLIs open in four
-windows, each holding a slightly different version of the same task. By
-evening you've spent more time pasting the goal back into the next chat
-than actually building.
+You have a repo. You have a goal. You also have several CLIs open in
+several windows, each holding a slightly different version of the same
+task. By evening you've spent more time pasting the goal back into the
+next chat than actually building.
 
 Goodboy is a desktop app that holds the goal, the plan and the context once,
 then hands them to whichever agent you want to run next. Same brief, same
@@ -29,10 +29,11 @@ a local SQLite on your machine. Your keys, your data, your bandwidth.
 
 ## Why it exists
 
-Switching between `Claude`, `Codex`, `Cursor` and `Gemini` ten times a day was
-eating my afternoons. Every new tab meant rebuilding the same mental
-scratchpad from scratch, then watching the next model run off in a slightly
-different direction. Eventually I got fed up and built this.
+Switching between `Claude`, `Codex`, `Cursor`, `Gemini`, `OpenCode` and
+`OpenRouter` ten times a day was eating my afternoons. Every new tab meant
+rebuilding the same mental scratchpad from scratch, then watching the next
+model run off in a slightly different direction. Eventually I got fed up and
+built this.
 
 Open source. Every feature included. No paywall, no telemetry, no account.
 
@@ -44,7 +45,8 @@ hand when the agents get it wrong. The next agent shows up already briefed.
 
 **Provider swap mid-task, without amnesia.** Each turn is rebuilt from the
 shared context, never resumed from a vendor's session blob. Drop Claude
-halfway, hand the same task to Cursor, Codex or Gemini, watch it pick up clean.
+halfway, hand the same task to Cursor, Codex, Gemini, OpenCode or OpenRouter,
+watch it pick up clean.
 
 **Workflows for the multi-step stuff.** Refactor incoming? Line up a sequence:
 a cheap model to scout the area, a smart one to plan it, a mid one to
@@ -95,14 +97,18 @@ spend.
 ## Providers
 
 Bring the subscription you already pay for. Goodboy drives the official CLIs
-locally, on your existing plan, never on a metered API key.
+locally, on your existing plan. OpenRouter is the one exception: an API-key
+provider that runs through the OpenCode runtime, with the key held in your OS
+keychain.
 
-| Provider                 | CLI                                                            | Subscription     |
-| ------------------------ | -------------------------------------------------------------- | ---------------- |
-| **Anthropic (Claude)**   | `npm i -g @anthropic-ai/claude-code`                           | Claude Max / Pro |
-| **Cursor**               | Cursor desktop app                                             | Cursor Pro       |
-| **OpenAI (Codex)**       | `npm i -g @openai/codex`                                       | ChatGPT Pro      |
-| **Google (Antigravity)** | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` | Google AI Pro    |
+| Provider                 | CLI                                                            | Subscription                   |
+| ------------------------ | -------------------------------------------------------------- | ------------------------------ |
+| **Anthropic (Claude)**   | `npm i -g @anthropic-ai/claude-code`                           | Claude Max / Pro               |
+| **Cursor**               | Cursor desktop app                                             | Cursor Pro                     |
+| **OpenAI (Codex)**       | `npm i -g @openai/codex`                                       | ChatGPT Pro                    |
+| **Google (Antigravity)** | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` | Google AI Pro                  |
+| **OpenCode** (beta)      | `npm i -g opencode-ai`                                         | None, zero-key models included |
+| **OpenRouter** (beta)    | Runs through the OpenCode runtime, no separate install         | OpenRouter API key             |
 
 One connected CLI is enough to start. Full guide:
 [docs/providers.md](./docs/providers.md).

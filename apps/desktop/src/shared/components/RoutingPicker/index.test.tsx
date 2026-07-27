@@ -18,12 +18,11 @@ const baseProps = {
   ] as ReadonlyArray<ProviderId>,
   provider: 'anthropic' as ProviderId,
   model: 'claude-opus-5',
-  effort: 'high' as const,
+  effort: { editable: true, value: 'high', onChange: vi.fn() } as const,
   disabled: false,
   ariaLabel: 'routing',
   onProvider: vi.fn(),
   onModel: vi.fn(),
-  onEffort: vi.fn(),
 };
 const providers = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
@@ -35,31 +34,178 @@ afterEach(() => {
 });
 
 describe('RoutingPicker', () => {
-  it('reads provider, model and effort in the closed trigger', () => {
+  it('reads model and effort in the closed trigger, never the provider name', () => {
     render(<RoutingPicker {...baseProps} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Claude');
     expect(trigger.textContent).toContain('Opus 5');
     expect(trigger.textContent).toContain('High');
+    expect(trigger.textContent).not.toContain('Claude');
+  });
+
+  it('keeps the full routing in the accessible name and the tooltip', () => {
+    render(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
+    const trigger = screen.getByRole('button', { name: /routing/i });
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Brief');
+    expect(trigger.getAttribute('title')).toContain('Claude · Opus 5 · High · Brief');
+  });
+
+  it('still explains a disabled trigger when the caller gives no reason', () => {
+    render(
+      <RoutingPicker {...baseProps} disabled={true} verbosity="brief" onVerbosity={vi.fn()} />,
+    );
+    expect(screen.getByRole('button', { name: /routing/i }).getAttribute('title')).toBe(
+      'Claude · Opus 5 · High · Brief',
+    );
+  });
+
+  it('prefers the caller reason over the summary on a disabled trigger', () => {
+    render(<RoutingPicker {...baseProps} disabled={true} disabledTitle="the turn is running" />);
+    expect(screen.getByRole('button', { name: /routing/i }).getAttribute('title')).toBe(
+      'the turn is running',
+    );
   });
 
   it('drops the effort segment and explains why for a model without thinking levels', () => {
     render(<RoutingPicker {...baseProps} model="claude-haiku-4-5" ariaLabel="routing" />);
-    const trigger = screen.getByRole('button', { name: 'routing' });
+    const trigger = screen.getByRole('button', { name: /^routing:/ });
     expect(trigger.textContent).toContain('Haiku 4.5');
     expect(trigger.textContent).not.toContain('High');
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog').textContent).toContain('no thinking levels');
+    expect(screen.getByRole('dialog').textContent).toContain('runs at a fixed effort');
   });
 
-  it('resolves the recommended state to a concrete model', () => {
-    render(<RoutingPicker {...baseProps} model="" recommendedModel="claude-sonnet-4-6" />);
+  it('drops the whole effort section when the caller cannot edit effort', () => {
+    render(<RoutingPicker {...baseProps} effort={{ editable: false }} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).not.toContain('Effort');
+    expect(dialog.textContent).not.toContain('fixed effort');
+  });
+
+  it('resolves a model recommendation to a concrete model without saying auto', () => {
+    render(
+      <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
+    );
     const trigger = screen.getByRole('button', { name: /routing/i });
     expect(trigger.textContent).toContain('Sonnet 4.6');
-    expect(trigger.textContent).not.toContain('recommended');
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog').textContent).toContain('auto');
-    expect(screen.getByRole('dialog').textContent).not.toContain('recommended');
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).toContain('Recommended');
+    expect(dialog.textContent).not.toContain('auto');
+  });
+
+  it('offers no recommendation chip when the caller passes no recommendation', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.queryByRole('button', { name: /^Recommended/ })).toBeNull();
+  });
+
+  it('puts a provider recommendation in its own row above the provider tabs', () => {
+    const onProvider = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider=""
+        model=""
+        onProvider={onProvider}
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
+    expect(row.querySelector('svg')).toBeNull();
+    fireEvent.click(row);
+    expect(onProvider).toHaveBeenCalledWith('');
+  });
+
+  it('marks the recommended provider tab as secondary, never as selected', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider=""
+        model=""
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const tab = screen.getByRole('button', { name: 'Claude' });
+    expect(tab.getAttribute('aria-pressed')).toBe('false');
+    expect(tab.className).toContain('ring-border-soft');
+    expect(tab.className).not.toContain('shadow-sm');
+  });
+
+  it('marks the recommendation row active while a concrete provider still inherits the default', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="anthropic"
+        model=""
+        overridden={false}
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(
+      screen
+        .getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    const tab = screen.getByRole('button', { name: 'Claude' });
+    expect(tab.getAttribute('aria-pressed')).toBe('false');
+    expect(tab.className).toContain('ring-border-soft');
+  });
+
+  it('drops the recommendation row highlight as soon as a concrete model is picked', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="anthropic"
+        model=""
+        overridden={false}
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
+    fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
+    expect(row.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Claude' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('keeps the model grid recommendation chip when the recommendation names no provider', () => {
+    render(
+      <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.getByTitle('Recommended (Sonnet 4.6)')).toBeDefined();
+  });
+
+  it('suppresses the model grid recommendation chip when the recommendation names a provider', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        model=""
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.queryByTitle('Recommended (Sonnet 4.6)')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' })).toBeDefined();
+  });
+
+  it('renders each provider mark once in the provider row', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider=""
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const providerRow = screen.getByRole('button', { name: 'Cursor' }).parentElement;
+    expect(providerRow?.querySelectorAll('svg')).toHaveLength(providers.length);
   });
 
   it('reports the picked model and keeps the popover open', () => {
@@ -80,26 +226,22 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
-  it('hides auto when the recommendation does not apply to the viewed provider', () => {
-    render(<RoutingPicker {...baseProps} model="" recommendedModel="claude-sonnet-4-6" />);
+  it('hides the recommendation chip when it does not apply to the viewed provider', () => {
+    render(
+      <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
+    );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
-    expect(screen.queryByRole('button', { name: 'auto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Recommended/ })).toBeNull();
   });
 
-  it('hides provider auto when no provider recommendation exists', () => {
-    render(<RoutingPicker {...baseProps} provider="" />);
-    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.queryByRole('button', { name: 'auto' })).toBeNull();
-  });
-
-  it('always offers Cursor literal auto and selects its model id', () => {
+  it('offers Cursor literal auto as a plain model chip', () => {
     const onModel = vi.fn();
     render(
       <RoutingPicker
         {...baseProps}
         model=""
-        recommendedModel="claude-sonnet-4-6"
+        recommendation={{ model: 'claude-sonnet-4-6' }}
         onModel={onModel}
       />,
     );
@@ -110,11 +252,11 @@ describe('RoutingPicker', () => {
   });
 
   it('reports the picked effort and keeps the popover open', () => {
-    const onEffort = vi.fn();
-    render(<RoutingPicker {...baseProps} onEffort={onEffort} />);
+    const onChange = vi.fn();
+    render(<RoutingPicker {...baseProps} effort={{ editable: true, value: 'high', onChange }} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Medium' }));
-    expect(onEffort).toHaveBeenCalledWith('medium');
+    expect(onChange).toHaveBeenCalledWith('medium');
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 

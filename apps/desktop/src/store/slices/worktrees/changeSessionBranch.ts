@@ -1,7 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { changeWorktreeBranch } from '../../../features/worktree/worktree';
+import {
+  changeWorktreeBranch,
+  invalidateLocalBranchesCache,
+} from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { GetFn, SetFn } from './types';
 
@@ -42,6 +45,7 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
       branch: target,
       createNew,
     });
+    invalidateLocalBranchesCache(workspace.rootPath);
     await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, target);
     set((state) => {
       const nextGithub = { ...state.sessionGithub };

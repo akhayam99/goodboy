@@ -324,14 +324,12 @@ export const WorkflowStepCard = ({
                   connectedProviders={connectedProviders}
                   provider={providerValue}
                   model={model}
-                  effort={effort}
-                  recommendedProvider={recommendedProvider}
-                  recommendedModel={recommendedModel}
+                  effort={{ editable: true, value: effort, onChange: onEffort }}
+                  recommendation={{ provider: recommendedProvider, model: recommendedModel }}
                   verbosity={verbosity}
                   disabled={disabled}
                   onProvider={onProvider}
                   onModel={onModel}
-                  onEffort={onEffort}
                   onVerbosity={onVerbosity}
                 />
               </div>

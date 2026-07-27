@@ -27,6 +27,29 @@ export type ResolverStatus =
   | 'stopped'
   | 'done';
 
+export type CompletionTab = 'active' | 'completed';
+
+export const resolveCompletionTab = ({
+  activeCount,
+  completedCount,
+  selected,
+}: {
+  readonly activeCount: number;
+  readonly completedCount: number;
+  readonly selected: CompletionTab | null;
+}): CompletionTab => {
+  if (selected == null) {
+    return activeCount === 0 && completedCount > 0 ? 'completed' : 'active';
+  }
+  const other: CompletionTab = selected === 'active' ? 'completed' : 'active';
+  const selectedCount = selected === 'active' ? activeCount : completedCount;
+  const otherCount = selected === 'active' ? completedCount : activeCount;
+  if (selectedCount === 0 && otherCount > 0) {
+    return other;
+  }
+  return selected;
+};
+
 export const resolverStatus = (
   agent: Agent,
   resolvedThreadIds: ReadonlySet<string>,

@@ -33,7 +33,7 @@ describe('AgentSpawnConfig', () => {
       <AgentSpawnConfig value={DEFAULT_AGENT_SPAWN_CONFIG} onChange={onChange} disabled={false} />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Agent settings' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Agent settings:/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Codex/ }));
     const providerValue = onChange.mock.calls[0]![0];
     expect(providerValue.provider).toBe('codex');
@@ -56,6 +56,6 @@ describe('AgentSpawnConfig', () => {
         disabled={false}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Agent settings' }).textContent).toContain('High');
+    expect(screen.getByRole('button', { name: /^Agent settings:/ }).textContent).toContain('High');
   });
 });

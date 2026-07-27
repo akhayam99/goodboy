@@ -7,7 +7,7 @@ import { formatError } from '../../../shared/lib/errors';
 import { useAppStore, useSessionById } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';
-import { listLocalBranches, type LocalBranchInfo } from '../worktree';
+import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -25,10 +25,12 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
       : null,
   );
   const { showToast } = useToast();
-  const [branchMode, setBranchMode] = useState<'existing' | 'new'>('existing');
+  const [branchMode, setBranchMode] = useState<'existing' | 'new'>('new');
   const [branchTarget, setBranchTarget] = useState('');
-  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
-  const [isBranchesLoading, setIsBranchesLoading] = useState(false);
+  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
+    workspace?.rootPath != null ? (getCachedLocalBranches(workspace.rootPath) ?? []) : [],
+  );
+  const [isBranchesLoading, setIsBranchesLoading] = useState(() => workspace?.rootPath != null);
   const [isBusy, setIsBusy] = useState(false);
   const [isReuseConfirmed, setIsReuseConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +39,30 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
     if (workspace?.rootPath == null) {
       return;
     }
+    const rootPath = workspace.rootPath;
+    const cached = getCachedLocalBranches(rootPath);
+    setBranches(cached ?? []);
     setIsBranchesLoading(true);
-    listLocalBranches(workspace.rootPath)
-      .then(setBranches)
-      .catch(() => setBranches([]))
-      .finally(() => setIsBranchesLoading(false));
+    let cancelled = false;
+    listLocalBranches(rootPath)
+      .then((result) => {
+        if (!cancelled) {
+          setBranches(result);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && cached == null) {
+          setBranches([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsBranchesLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [workspace?.rootPath]);
 
   if (
@@ -103,7 +124,11 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
       <SegmentedTabs
         ariaLabel="branch source"
         options={[
-          { value: 'existing', label: 'Pick existing', disabled: isBusy },
+          {
+            value: 'existing',
+            label: isBranchesLoading ? 'Pick existing (loading)' : 'Pick existing',
+            disabled: isBusy,
+          },
           { value: 'new', label: 'Create new', disabled: isBusy },
         ]}
         value={branchMode}
@@ -131,6 +156,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
         />
       ) : (
         <Input
+          autoFocus
           value={branchTarget}
           onChange={(event) => {
             setBranchTarget(event.target.value);
@@ -166,7 +192,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
         <Button
           size="sm"
           onClick={() => void onChangeBranch()}
-          disabled={isBusy || isBranchesLoading || target === ''}
+          disabled={isBusy || target === '' || (branchMode === 'existing' && isBranchesLoading)}
           variant={needsConfirmation && isReuseConfirmed ? 'warning' : 'primary'}
           className={isBusy ? 'animate-border-pulse' : undefined}
         >

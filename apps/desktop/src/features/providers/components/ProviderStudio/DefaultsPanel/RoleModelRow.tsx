@@ -15,6 +15,7 @@ import { FieldRow } from '@goodboy/ui';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
+  clampEffort,
   modelEffortLevels,
   modelLabel,
 } from '../../../../chat/utils/chat-constants';
@@ -93,9 +94,17 @@ export const RoleModelRow = ({
             connectedProviders={availableProviderIds}
             provider={providerId}
             model={resolved.isOverride ? resolved.model : ''}
-            effort={resolved.effort}
-            recommendedProvider={defaultProviderId}
-            recommendedModel={recommendedModel}
+            effort={{
+              editable: true,
+              value: resolved.effort,
+              onChange: (effort) =>
+                commit({
+                  providerId,
+                  model: resolved.isOverride ? resolved.model : recommendedModel,
+                  effort,
+                }),
+            }}
+            recommendation={{ provider: defaultProviderId, model: recommendedModel }}
             defaultSummary={defaultSummary}
             overridden={resolved.isOverride}
             disabled={disabled}
@@ -108,10 +117,11 @@ export const RoleModelRow = ({
               if (!resolved.isOverride) {
                 return;
               }
+              const nextModel = recommendedModelForRole({ role, provider: next });
               commit({
                 providerId: next,
-                model: recommendedModelForRole({ role, provider: next }),
-                effort: resolved.effort,
+                model: nextModel,
+                effort: clampEffort(nextModel, resolved.effort),
               });
             }}
             onModel={(nextModel) => {
@@ -119,15 +129,12 @@ export const RoleModelRow = ({
                 onChange(null);
                 return;
               }
-              commit({ providerId, model: nextModel, effort: resolved.effort });
-            }}
-            onEffort={(effort) =>
               commit({
                 providerId,
-                model: resolved.isOverride ? resolved.model : recommendedModel,
-                effort,
-              })
-            }
+                model: nextModel,
+                effort: clampEffort(nextModel, resolved.effort),
+              });
+            }}
           />
         </div>
       </div>

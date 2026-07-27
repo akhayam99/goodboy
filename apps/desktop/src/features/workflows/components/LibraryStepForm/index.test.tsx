@@ -35,7 +35,7 @@ describe('LibraryStepForm', () => {
     fireEvent.change(screen.getByPlaceholderText('step name'), {
       target: { value: 'Summarize changes' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'step routing' }));
+    fireEvent.click(screen.getByRole('button', { name: /^step routing:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Verbose' }));
     expect(onCommit).toHaveBeenCalledWith(
       expect.objectContaining({

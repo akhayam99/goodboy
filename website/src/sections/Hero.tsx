@@ -39,7 +39,7 @@ export const Hero = () => (
         <strong className="font-semibold text-foreground">right model</strong> for each step.
         <br className="hidden sm:block" />{' '}
         <strong className="font-semibold text-foreground">One thread</strong>, across Claude,
-        Cursor, Codex, and Gemini.
+        Cursor, Codex, Gemini, OpenCode, and OpenRouter.
       </p>
 
       <div

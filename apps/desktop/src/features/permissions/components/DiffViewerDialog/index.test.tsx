@@ -260,8 +260,8 @@ describe('line comment add (single + multi-line drag)', () => {
         onClose={vi.fn()}
       />,
     );
-    const picker = await screen.findByRole('button', { name: 'resolver routing' });
-    expect(picker.textContent).toContain('Claude');
+    const picker = await screen.findByRole('button', { name: /^resolver routing:/ });
+    expect(picker.getAttribute('aria-label')).toContain('Claude');
     expect(picker.textContent).toContain('Medium');
   });
 });

@@ -450,7 +450,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 openEvent="goodboy:open-model-picker"
                 provider={routing.effectiveProvider}
                 model={routing.effectiveModel}
-                effort={routing.effectiveEffort}
+                effort={{
+                  editable: true,
+                  value: routing.effectiveEffort,
+                  onChange: routing.setEffort,
+                }}
                 verbosity={routing.verbosity}
                 connectedProviders={routing.connectedProviderIds}
                 disabled={!routing.allowOverride || isRunning}
@@ -469,7 +473,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   routing.onSelectProvider(next);
                 }}
                 onModel={routing.onSelectModel}
-                onEffort={routing.setEffort}
                 onVerbosity={routing.setVerbosity}
                 onReset={routing.onResetTurnOverride}
               />

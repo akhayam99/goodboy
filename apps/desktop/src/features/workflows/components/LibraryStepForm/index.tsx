@@ -160,9 +160,15 @@ export const LibraryStepForm = ({
               connectedProviders={connectedProviders}
               provider={providerOverride}
               model={modelOverride}
-              effort={effort}
-              recommendedProvider={recommendedProv}
-              recommendedModel={recommendedMod}
+              effort={{
+                editable: true,
+                value: effort,
+                onChange: (eff) => {
+                  setEffort(eff);
+                  commit({ effort: eff });
+                },
+              }}
+              recommendation={{ provider: recommendedProv, model: recommendedMod }}
               verbosity={verbosity}
               disabled={false}
               onProvider={(p) => {
@@ -178,10 +184,6 @@ export const LibraryStepForm = ({
                   over.effort = clamped;
                 }
                 commit(over);
-              }}
-              onEffort={(eff) => {
-                setEffort(eff);
-                commit({ effort: eff });
               }}
               onVerbosity={(next) => {
                 setVerbosity(next);
