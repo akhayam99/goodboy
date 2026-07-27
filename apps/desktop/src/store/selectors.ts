@@ -71,8 +71,20 @@ export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionVie
 };
 
 const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
+const EMPTY_WORKSPACES: ReadonlyArray<Workspace> = [];
 
-function countOpenQuestions(state: AppState, sessionId: SessionId): number {
+type StageInfoState = Pick<
+  AppState,
+  | 'workspaces'
+  | 'sessionBranches'
+  | 'sessionGithub'
+  | 'sessionOpenQuestions'
+  | 'sessionPhaseRuns'
+  | 'selectedAgentId'
+  | 'currentSessionId'
+>;
+
+function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
   const questions = state.sessionOpenQuestions[sessionId];
   if (!questions) {
     return 0;
@@ -80,7 +92,7 @@ function countOpenQuestions(state: AppState, sessionId: SessionId): number {
   return questions.filter((q) => q.status === 'open').length;
 }
 
-function sessionHasUnreadIn(state: AppState, sessionId: SessionId): boolean {
+function sessionHasUnreadIn(state: StageInfoState, sessionId: SessionId): boolean {
   const runs = state.sessionPhaseRuns[sessionId];
   if (!runs) {
     return false;
@@ -90,16 +102,15 @@ function sessionHasUnreadIn(state: AppState, sessionId: SessionId): boolean {
   return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected));
 }
 
-function sessionHasRunningAgentIn(state: AppState, sessionId: SessionId): boolean {
+function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
   const runs = state.sessionPhaseRuns[sessionId];
   return runs ? runs.some((r) => r.status === 'running') : false;
 }
 
-function stageInfoOf(state: AppState, session: Session): SessionStageInfo {
+function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo {
   const sessionId = session.id as SessionId;
   const isBranchless = isBranchlessSession({
-    workspaceKind: state.workspaces?.find((workspace) => workspace.id === session.workspaceId)
-      ?.kind,
+    workspaceKind: state.workspaces.find((workspace) => workspace.id === session.workspaceId)?.kind,
     branch: state.sessionBranches[sessionId],
   });
   return deriveSessionStage({
@@ -139,8 +150,14 @@ export const useSortedGroupedSessions = (
     needsStage ? s.selectedAgentId : (EMPTY_GITHUB_STATE as typeof s.selectedAgentId),
   );
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
+  const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
+  const sessionBranches = useAppStore((s) =>
+    needsStage ? s.sessionBranches : (EMPTY_GITHUB_STATE as typeof s.sessionBranches),
+  );
   return useMemo(() => {
-    const partial = {
+    const partial: StageInfoState = {
+      workspaces,
+      sessionBranches,
       sessionGithub,
       sessionOpenQuestions,
       sessionPhaseRuns,
@@ -150,7 +167,7 @@ export const useSortedGroupedSessions = (
     const stages: Record<SessionId, SessionStage> = {};
     if (needsStage) {
       for (const session of sessions) {
-        stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage;
+        stages[session.id as SessionId] = stageInfoOf(partial, session).stage;
       }
     }
     return sortAndGroupSessions(sessions, prefs, sessionGithub, stages);
@@ -158,6 +175,8 @@ export const useSortedGroupedSessions = (
     sessions,
     prefs,
     needsStage,
+    workspaces,
+    sessionBranches,
     sessionGithub,
     sessionOpenQuestions,
     sessionPhaseRuns,
@@ -176,8 +195,12 @@ export const useStageGroupedSessions = (
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const workspaces = useAppStore((s) => s.workspaces);
+  const sessionBranches = useAppStore((s) => s.sessionBranches);
   return useMemo(() => {
-    const partial = {
+    const partial: StageInfoState = {
+      workspaces,
+      sessionBranches,
       sessionGithub,
       sessionOpenQuestions,
       sessionPhaseRuns,
@@ -186,7 +209,7 @@ export const useStageGroupedSessions = (
     };
     const stages: Record<SessionId, SessionStage> = {};
     for (const session of sessions) {
-      stages[session.id as SessionId] = stageInfoOf(partial as AppState, session).stage;
+      stages[session.id as SessionId] = stageInfoOf(partial, session).stage;
     }
     return sortAndGroupSessions(
       sessions,
@@ -197,6 +220,8 @@ export const useStageGroupedSessions = (
   }, [
     sessions,
     prefs.sort,
+    workspaces,
+    sessionBranches,
     sessionGithub,
     sessionOpenQuestions,
     sessionPhaseRuns,

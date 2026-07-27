@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
+  Session,
   SessionId,
   StepId,
   TelemetryKind,
   TelemetryRecord,
   WorkflowRunId,
+  Workspace,
+  WorkspaceId,
 } from '@goodboy/types';
 
 type StoreState = Record<string, unknown>;
@@ -21,7 +24,13 @@ vi.mock('./store', () => ({
   useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
 }));
 
-import { sumSessionCost, useLiveTerminalCount, useSessionUnreadLens } from './selectors';
+import {
+  sumSessionCost,
+  useLiveTerminalCount,
+  useSessionUnreadLens,
+  useSortedGroupedSessions,
+  useStageGroupedSessions,
+} from './selectors';
 
 type Params = {
   readonly kind: TelemetryKind;
@@ -64,6 +73,21 @@ const createAgent = ({
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+
+const createSession = (id: SessionId): Session =>
+  ({
+    id,
+    workspaceId: WORKSPACE_ID,
+    goal: 'ship the fix',
+    state: { kind: 'idle', lastActivityAt: '2026-07-27T10:00:00.000Z' },
+    createdAt: '2026-07-27T10:00:00.000Z',
+    updatedAt: '2026-07-27T10:00:00.000Z',
+    workflowRuns: [],
+  }) as unknown as Session;
+
+const createWorkspace = (kind: string): Workspace =>
+  ({ id: WORKSPACE_ID, kind, rootPath: '/tmp/ws' }) as unknown as Workspace;
 
 beforeEach(() => {
   store.state = {
@@ -73,6 +97,12 @@ beforeEach(() => {
     agentKindOverride: {},
     terminalTabs: {},
     terminalSessions: {},
+    sessionGithub: {},
+    sessionOpenQuestions: {},
+    sessionViewPrefs: {},
+    getSessionViewPrefs: vi.fn(),
+    workspaces: [],
+    sessionBranches: {},
   };
 });
 
@@ -213,5 +243,45 @@ describe('useSessionUnreadLens', () => {
     const { result } = renderHook(() => useSessionUnreadLens(SESSION_ID));
 
     expect(result.current).toBe('workflows');
+  });
+});
+
+describe('useSortedGroupedSessions', () => {
+  it('derives stages with the default stage grouping', () => {
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result } = renderHook(() => useSortedGroupedSessions(WORKSPACE_ID, sessions));
+
+    expect(result.current).toEqual([{ key: 'building', sessions }]);
+  });
+});
+
+describe('useStageGroupedSessions', () => {
+  it('groups a repo session by its pull request stage', () => {
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
+    };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+
+    expect(result.current).toEqual([{ key: 'done', sessions }]);
+  });
+
+  it('keeps a branchless simple-workspace session out of the pull request stages', () => {
+    store.state.workspaces = [createWorkspace('simple')];
+    store.state.sessionBranches = { [SESSION_ID]: '' };
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
+    };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+
+    expect(result.current).toEqual([{ key: 'building', sessions }]);
   });
 });
