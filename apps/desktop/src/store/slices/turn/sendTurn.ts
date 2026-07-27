@@ -143,6 +143,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const resolved = await relinkSimpleSessionDirectories({
           rootPath: workspace.rootPath,
           workspaceId: workspace.id,
+          workspaceKind: workspace.kind,
           worktreesBySession: new Map([[sessionId, worktrees]]),
         });
         const relinkedPath = resolved.get(sessionId)?.[0]?.worktreePath ?? workingDir;

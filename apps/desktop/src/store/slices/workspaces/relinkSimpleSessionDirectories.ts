@@ -1,5 +1,5 @@
 import { updateSessionWorktreePath, type SessionWorktree } from '@goodboy/db';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import {
   scanSimpleSessions,
   simpleSessionDirExists,
@@ -7,16 +7,19 @@ import {
   type SimpleSessionScanEntry,
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 
 type Params = {
   readonly rootPath: string;
   readonly workspaceId: WorkspaceId;
+  readonly workspaceKind: WorkspaceKind | undefined;
   readonly worktreesBySession: ReadonlyMap<SessionId, ReadonlyArray<SessionWorktree>>;
 };
 
 export const relinkSimpleSessionDirectories = async ({
   rootPath,
   workspaceId,
+  workspaceKind,
   worktreesBySession,
 }: Params): Promise<Map<SessionId, ReadonlyArray<SessionWorktree>>> => {
   let scanned: ReadonlyArray<SimpleSessionScanEntry>;
@@ -35,6 +38,9 @@ export const relinkSimpleSessionDirectories = async ({
     [...worktreesBySession].map(async ([sessionId, worktrees]) => {
       const nextWorktrees = await Promise.all(
         worktrees.map(async (worktree) => {
+          if (!isBranchlessSession({ workspaceKind, branch: worktree.branch })) {
+            return worktree;
+          }
           let exists;
           try {
             exists = await simpleSessionDirExists({ path: worktree.worktreePath });

@@ -135,6 +135,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           ? await relinkSimpleSessionDirectories({
               rootPath: workspace.rootPath,
               workspaceId: id,
+              workspaceKind: workspace.kind,
               worktreesBySession: loadedWorktreesBySession,
             })
           : loadedWorktreesBySession;
