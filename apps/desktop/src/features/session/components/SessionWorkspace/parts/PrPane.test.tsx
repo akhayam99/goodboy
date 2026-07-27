@@ -14,6 +14,7 @@ type Store = {
   sessionGitlabMr: Record<string, unknown>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
+  workspaceIntegrations: Record<string, ReadonlyArray<{ readonly provider: string }>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
 };
@@ -24,9 +25,11 @@ const h = vi.hoisted(() => ({
     sessionGitlabMr: {},
     sessionExternalTasks: {},
     sessionPhaseRuns: {},
+    workspaceIntegrations: {},
     refreshSessionPr: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
   } satisfies Store,
+  remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -35,7 +38,7 @@ vi.mock('../../../../../store', () => ({
 }));
 
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
-  useRemoteHostKind: () => 'github',
+  useRemoteHostKind: () => h.remoteKind,
 }));
 
 import { PrPane } from './PrPane';
@@ -76,6 +79,8 @@ beforeEach(() => {
   h.store.sessionGitlabMr = {};
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
+  h.store.workspaceIntegrations = {};
+  h.remoteKind = 'github';
 });
 
 afterEach(cleanup);
@@ -181,5 +186,19 @@ describe('PrPane', () => {
     expect(events[0]?.detail).toEqual({ sessionId: SESSION_ID });
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Draft with an agent' })).toBeNull();
+  });
+
+  it('offers a connect action instead of the create-PR state without a GitHub remote', () => {
+    h.remoteKind = null;
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-github-studio', listener);
+
+    render(<PrPane session={session} />);
+    expect(screen.getByText('Connect GitHub')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Open a pull request/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    window.removeEventListener('goodboy:open-github-studio', listener);
+
+    expect(listener).toHaveBeenCalledOnce();
   });
 });
