@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Agent, Session, SessionId, WorkspaceKind } from '@goodboy/types';
+import type { Agent, Session, SessionId } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { classifyAgent, isStandaloneAgent } from '../../../../session/agent-kind';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
@@ -46,7 +46,7 @@ type LensColumnProps = {
   readonly onSelectOverview: () => void;
   readonly onSelect: (lens: LensKind) => void;
   readonly filesCount: number;
-  readonly workspaceKind?: WorkspaceKind;
+  readonly isBranchless?: boolean;
 };
 
 type LensRow = {
@@ -92,7 +92,7 @@ export const LensColumn = ({
   onSelectOverview,
   onSelect,
   filesCount,
-  workspaceKind = 'repo',
+  isBranchless = false,
 }: LensColumnProps) => {
   const sessionId = session.id as SessionId;
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
@@ -422,7 +422,7 @@ export const LensColumn = ({
       ],
     },
   ];
-  const groups = workspaceKind === 'simple' ? simpleGroups : repoGroups;
+  const groups = isBranchless ? simpleGroups : repoGroups;
   const visibleGroups = groups.filter(
     (group) => group.rows.length > 0 || group.label === 'Integrations',
   );

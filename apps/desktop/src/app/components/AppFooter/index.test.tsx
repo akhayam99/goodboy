@@ -48,6 +48,8 @@ describe('AppFooter', () => {
         linearEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
       />,
     );
 
@@ -87,6 +89,8 @@ describe('AppFooter', () => {
         linearEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
       />,
     );
 
@@ -106,6 +110,45 @@ describe('AppFooter', () => {
     expect(onOpenGitlab).toHaveBeenCalledOnce();
   });
 
+  it('replaces the git integrations with the conversion CTA in a simple workspace', () => {
+    const onConvertToDevProject = vi.fn();
+
+    render(
+      <AppFooter
+        activeStudio={null}
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
+        githubEnabled={false}
+        linearEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled={false}
+        isSimpleWorkspace
+        onConvertToDevProject={onConvertToDevProject}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connect Linear' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'open the workflow library for this workspace' }),
+    ).toBeDefined();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'turn this workspace into a dev project backed by a git repository',
+      }),
+    );
+
+    expect(onConvertToDevProject).toHaveBeenCalledOnce();
+  });
+
   it('opens the GitLab studio when GitLab is connected', () => {
     const onOpenGitlab = vi.fn();
     render(
@@ -122,6 +165,8 @@ describe('AppFooter', () => {
         linearEnabled={false}
         sentryEnabled={false}
         gitlabEnabled
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
       />,
     );
 

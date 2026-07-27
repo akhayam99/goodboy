@@ -380,42 +380,42 @@ describe('deriveSessionStage', () => {
     expect(info.stage).toBe('building');
   });
 
-  it('simple sessions derive running from any active agent signal', () => {
+  it('branchless sessions derive running from any active agent signal', () => {
     const info = deriveSessionStage({
       session: base(1),
       pr: null,
       ...signals,
       hasRunningAgent: true,
-      workspaceKind: 'simple',
+      isBranchless: true,
     });
     expect(info).toEqual({ stage: 'running', reason: 'agent running' });
   });
 
-  it('simple sessions derive attention from questions or unread replies', () => {
+  it('branchless sessions derive attention from questions or unread replies', () => {
     const questions = deriveSessionStage({
       session: base(1),
       pr: null,
       hasUnread: false,
       openQuestionCount: 2,
-      workspaceKind: 'simple',
+      isBranchless: true,
     });
     const unread = deriveSessionStage({
       session: base(1),
       pr: null,
       hasUnread: true,
       openQuestionCount: 0,
-      workspaceKind: 'simple',
+      isBranchless: true,
     });
     expect(questions).toEqual({ stage: 'attention', reason: '2 open questions' });
     expect(unread).toEqual({ stage: 'attention', reason: 'unread agent reply' });
   });
 
-  it('simple sessions stay building when agent signals are quiet', () => {
+  it('branchless sessions stay building when agent signals are quiet', () => {
     const info = deriveSessionStage({
       session: base(1),
       pr: makePr({ state: 'merged' }),
       ...signals,
-      workspaceKind: 'simple',
+      isBranchless: true,
     });
     expect(info).toEqual({ stage: 'building', reason: 'ready for work' });
   });

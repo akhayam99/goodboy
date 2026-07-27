@@ -156,6 +156,15 @@ describe('BranchSwitchPanel', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
+  it('renders nothing for a branchless session in a converted workspace', () => {
+    state.sessionBranches = { 'sess-1': '', 'sess-2': 'main' };
+    const { container } = render(
+      <BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
   it('requires a second confirmation for a branch used elsewhere', async () => {
     render(<BranchSwitchPanel sessionId={'sess-1' as never} onDone={vi.fn()} />);
 

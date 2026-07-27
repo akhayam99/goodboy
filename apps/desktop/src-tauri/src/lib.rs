@@ -165,6 +165,7 @@ pub fn run() {
       summarize::summarize_session,
       planner::planner_run,
       repo::validate_git_repo,
+      repo::repo_init_with_remote,
       budget::budget_rule_upsert,
       budget::budget_rule_list,
       budget::budget_rule_delete,

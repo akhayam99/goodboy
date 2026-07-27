@@ -5,6 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import { useToast } from '../../../app/components/Toast';
 import { formatError } from '../../../shared/lib/errors';
 import { useAppStore, useSessionById } from '../../../store';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';
 import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
 
@@ -64,7 +65,11 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
     };
   }, [workspace?.rootPath]);
 
-  if (session == null || workspace == null || workspace.kind === 'simple') {
+  if (
+    session == null ||
+    workspace == null ||
+    isBranchlessSession({ workspaceKind: workspace.kind, branch })
+  ) {
     return null;
   }
 

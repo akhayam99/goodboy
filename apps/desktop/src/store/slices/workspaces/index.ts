@@ -1,6 +1,7 @@
 import { addWorkspace } from './addWorkspace';
 import { addCompositeWorkspace } from './addCompositeWorkspace';
 import { addSimpleWorkspace } from './addSimpleWorkspace';
+import { convertWorkspaceToRepo } from './convertWorkspaceToRepo';
 import { deleteWorkspace } from './deleteWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { wipeLocalDatabase } from './wipeLocalDatabase';
@@ -11,6 +12,7 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     addWorkspace: addWorkspace(set, get),
     addCompositeWorkspace: addCompositeWorkspace(set, get),
     addSimpleWorkspace: addSimpleWorkspace(set, get),
+    convertWorkspaceToRepo: convertWorkspaceToRepo(set, get),
     deleteWorkspace: deleteWorkspace(set, get),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
     wipeLocalDatabase: wipeLocalDatabase(set, get),

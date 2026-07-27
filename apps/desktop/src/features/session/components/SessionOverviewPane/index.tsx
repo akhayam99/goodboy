@@ -27,6 +27,7 @@ import { STAGE_TONE } from '../../session-stage';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
@@ -270,7 +271,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
               <BranchChip
                 branch={branch}
                 sessionId={session.id as SessionId}
-                canEdit={workspace != null && workspace.kind !== 'simple'}
+                canEdit={
+                  workspace != null &&
+                  !isBranchlessSession({ workspaceKind: workspace.kind, branch })
+                }
               />
             ) : null}
             <SessionCostChip sessionId={session.id as SessionId} />

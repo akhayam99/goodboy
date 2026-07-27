@@ -886,7 +886,7 @@ fn find_existing(
 /// worktree directory created by Goodboy doesn't leak into git status. No-ops
 /// when the file is already gitignoring the entry, when no .gitignore exists
 /// and writing fails, or when the entry is already there.
-fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeError> {
+pub(crate) fn ensure_gitignore_entry(repo_path: &Path, entry: &str) -> Result<(), WorktreeError> {
     let gitignore = repo_path.join(".gitignore");
     let existing = std::fs::read_to_string(&gitignore).unwrap_or_default();
     let has_entry = existing
@@ -1015,7 +1015,7 @@ fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
     out
 }
 
-fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
+pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     let output = crate::path_env::command("git")
         .args(args)
         .current_dir(cwd)

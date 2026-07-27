@@ -7,6 +7,7 @@ type Store = {
   activeLens: Record<string, LensKind | null>;
   selectedAgentId: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessionBranches: Record<string, string>;
   sessionStudio: Record<string, null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   focusedWorkflowRunId: Record<string, string | null>;
@@ -37,6 +38,7 @@ const { store, hooks } = vi.hoisted(() => ({
     activeLens: {},
     selectedAgentId: {},
     sessionWorktrees: {},
+    sessionBranches: {},
     sessionStudio: {},
     sessionPhaseRuns: {},
     focusedWorkflowRunId: {},
@@ -193,6 +195,7 @@ beforeEach(() => {
   store.activeLens = { [SESSION_ID]: 'agents' };
   store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
   store.sessionWorktrees = {};
+  store.sessionBranches = {};
   store.sessionStudio = { [SESSION_ID]: null };
   store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
   store.focusedWorkflowRunId = {};

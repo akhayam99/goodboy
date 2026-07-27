@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const chatBreadcrumbMock = vi.hoisted(() => vi.fn());
+const diffViewerMock = vi.hoisted(() => vi.fn());
 
 const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(() => ({
   openQuestions: { current: [] as ReadonlyArray<unknown> },
@@ -18,6 +19,8 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+    sessionBranches: {} as Record<string, string>,
+    workspaces: [] as ReadonlyArray<{ id: string; rootPath: string; kind: string }>,
     authResults: {} as Record<string, unknown>,
     refreshProviders: vi.fn(async () => undefined),
     settings: {} as Record<string, string>,
@@ -82,7 +85,10 @@ vi.mock('../../../../features/permissions/components/MergeDialog', () => ({
 }));
 
 vi.mock('../../../../features/permissions/components/DiffViewerDialog', () => ({
-  DiffViewerDialog: () => null,
+  DiffViewerDialog: (props: { loader?: () => Promise<string> }) => {
+    diffViewerMock(props);
+    return null;
+  },
 }));
 
 vi.mock('../../../../features/worktree/worktree', () => ({
@@ -114,6 +120,8 @@ beforeEach(() => {
   state.transcripts = {};
   state.sessionPhaseRuns = {};
   state.sessionWorktrees = {};
+  state.sessionBranches = {};
+  state.workspaces = [{ id: 'ws-1', rootPath: '/repo', kind: 'repo' }];
   state.authResults = {};
   state.settings = {};
   state.agentTurnState = {};
@@ -125,6 +133,7 @@ beforeEach(() => {
   state.loadSessionAnsweredQuestions.mockClear();
   state.clearOpenQuestionScroll.mockClear();
   chatBreadcrumbMock.mockClear();
+  diffViewerMock.mockClear();
   openQuestions.current = [];
   answeredQuestions.current = [];
   transcriptItems.current = [];
@@ -134,6 +143,22 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ChatView', () => {
+  it('offers the worktree diff to a session that owns a branch', () => {
+    state.sessionWorktrees = { 'sess-1': ['/repo/.goodboy/worktrees/gb-1'] };
+    state.sessionBranches = { 'sess-1': 'gb/thing' };
+    render(<ChatView session={session} />);
+    const props = diffViewerMock.mock.calls.at(-1)?.[0] as { loader?: unknown };
+    expect(props.loader).toBeTypeOf('function');
+  });
+
+  it('offers no worktree diff to a branchless session in a repo workspace', () => {
+    state.sessionWorktrees = { 'sess-1': ['/repo/sessions/study-plan'] };
+    state.sessionBranches = { 'sess-1': '' };
+    render(<ChatView session={session} />);
+    const props = diffViewerMock.mock.calls.at(-1)?.[0] as { loader?: unknown };
+    expect(props.loader).toBeUndefined();
+  });
+
   it('renders without throwing on an empty session', () => {
     const { container } = render(<ChatView session={session} />);
     expect(container.firstChild).not.toBeNull();

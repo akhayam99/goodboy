@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn, Divider } from '@goodboy/ui';
+import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
 import { SECTION_ICONS } from '../../../shared/components/section-icons';
@@ -58,10 +59,12 @@ type Props = {
   onOpenLinear: () => void;
   onOpenSentry: () => void;
   onOpenGitlab: () => void;
+  onConvertToDevProject: () => void;
   githubEnabled: boolean;
   linearEnabled: boolean;
   sentryEnabled: boolean;
   gitlabEnabled: boolean;
+  isSimpleWorkspace: boolean;
 };
 
 export const AppFooter = ({
@@ -73,10 +76,12 @@ export const AppFooter = ({
   onOpenLinear,
   onOpenSentry,
   onOpenGitlab,
+  onConvertToDevProject,
   githubEnabled,
   linearEnabled,
   sentryEnabled,
   gitlabEnabled,
+  isSimpleWorkspace,
 }: Props) => {
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
@@ -87,42 +92,53 @@ export const AppFooter = ({
       <Divider />
       <div className="relative flex h-9 items-center justify-between bg-background px-2">
         <div className="flex items-center gap-0.5">
-          <FooterButton
-            icon={<IntegrationGlyph provider="github" size="xs" />}
-            label="GitHub"
-            title={
-              githubEnabled
-                ? 'review and act on pull requests across this workspace'
-                : 'Connect GitHub'
-            }
-            onClick={onOpenGithub}
-            active={activeStudio === 'github'}
-            connected={githubEnabled}
-          />
-          <FooterButton
-            icon={<IntegrationGlyph provider="gitlab" size="xs" />}
-            label="GitLab"
-            title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
-            onClick={onOpenGitlab}
-            active={activeStudio === 'gitlab'}
-            connected={gitlabEnabled}
-          />
-          <FooterButton
-            icon={<IntegrationGlyph provider="linear" size="xs" />}
-            label="Linear"
-            title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
-            onClick={onOpenLinear}
-            active={activeStudio === 'linear'}
-            connected={linearEnabled}
-          />
-          <FooterButton
-            icon={<IntegrationGlyph provider="sentry" size="xs" />}
-            label="Sentry"
-            title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
-            onClick={onOpenSentry}
-            active={activeStudio === 'sentry'}
-            connected={sentryEnabled}
-          />
+          {isSimpleWorkspace ? (
+            <FooterButton
+              icon={<FolderGit2 size={12} aria-hidden />}
+              label="Add a repo"
+              title="turn this workspace into a dev project backed by a git repository"
+              onClick={onConvertToDevProject}
+            />
+          ) : (
+            <>
+              <FooterButton
+                icon={<IntegrationGlyph provider="github" size="xs" />}
+                label="GitHub"
+                title={
+                  githubEnabled
+                    ? 'review and act on pull requests across this workspace'
+                    : 'Connect GitHub'
+                }
+                onClick={onOpenGithub}
+                active={activeStudio === 'github'}
+                connected={githubEnabled}
+              />
+              <FooterButton
+                icon={<IntegrationGlyph provider="gitlab" size="xs" />}
+                label="GitLab"
+                title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
+                onClick={onOpenGitlab}
+                active={activeStudio === 'gitlab'}
+                connected={gitlabEnabled}
+              />
+              <FooterButton
+                icon={<IntegrationGlyph provider="linear" size="xs" />}
+                label="Linear"
+                title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
+                onClick={onOpenLinear}
+                active={activeStudio === 'linear'}
+                connected={linearEnabled}
+              />
+              <FooterButton
+                icon={<IntegrationGlyph provider="sentry" size="xs" />}
+                label="Sentry"
+                title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
+                onClick={onOpenSentry}
+                active={activeStudio === 'sentry'}
+                connected={sentryEnabled}
+              />
+            </>
+          )}
         </div>
 
         <span className="pointer-events-none absolute inset-x-0 mx-auto w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
