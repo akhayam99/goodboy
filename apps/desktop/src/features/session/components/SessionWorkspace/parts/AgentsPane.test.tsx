@@ -50,4 +50,21 @@ describe('AgentsPane', () => {
     expect(header?.querySelector('[data-testid="header-spawn"]')).not.toBeNull();
     expect(screen.getByTestId('agents-section').getAttribute('data-show-create')).toBe('false');
   });
+
+  it('lets the header actions wrap instead of clipping at a narrow width', () => {
+    render(
+      <AgentsPane
+        session={SESSION}
+        meta={undefined}
+        inspectedAgentId={null}
+        onInspectAgent={vi.fn()}
+      />,
+    );
+
+    const slot = screen.getByTestId('header-spawn').parentElement;
+    expect(slot?.className).toContain('flex-wrap');
+    expect(slot?.className).toContain('min-w-0');
+    expect(slot?.className).not.toContain('shrink-0');
+    expect(slot?.parentElement?.className).toContain('flex-wrap');
+  });
 });

@@ -79,15 +79,15 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
   };
 
   return (
-    <div className={cn('relative overflow-visible pl-2', className)}>
-      <div className="flex h-8 items-center gap-1 rounded-md border border-dashed border-border-soft bg-muted/20">
+    <div className={cn('relative min-w-0 overflow-visible pl-2', className)}>
+      <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-1 rounded-md border border-dashed border-border-soft bg-muted/20">
         <button
           type="button"
           onClick={onCreate}
-          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
         >
-          <Plus size={13} aria-hidden />
-          Create agent
+          <Plus size={13} aria-hidden className="shrink-0" />
+          <span className="truncate">Create agent</span>
         </button>
         {agentKinds.length > 1 && (
           <>
@@ -97,7 +97,7 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
               value={selectedRole}
               onChange={onRoleChange}
               aria-label="agent role"
-              className="h-7 border-0 bg-transparent text-xs text-muted-foreground shadow-none hover:border-transparent hover:bg-muted/50 hover:text-foreground"
+              className="h-7 min-w-0 max-w-28 border-0 bg-transparent text-xs text-muted-foreground shadow-none hover:border-transparent hover:bg-muted/50 hover:text-foreground"
             >
               {agentKinds.map((kind) => (
                 <option key={kind} value={kind} title={AGENT_KIND_META[kind].hint}>
@@ -108,7 +108,7 @@ export const SpawnAgentControl = ({ sessionId, className, onSpawned }: Props) =>
           </>
         )}
         <Divider orientation="vertical" className="h-4 self-auto" />
-        <div className="[&>div>button]:bg-transparent [&>div>button]:ring-0 [&>div>button]:hover:bg-muted/50">
+        <div className="min-w-0 [&>div>button]:max-w-full [&>div>button]:bg-transparent [&>div>button]:ring-0 [&>div>button]:hover:bg-muted/50">
           <RoutingPicker
             variant="pill"
             align="end"
