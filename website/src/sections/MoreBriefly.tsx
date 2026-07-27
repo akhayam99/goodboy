@@ -78,8 +78,9 @@ const ITEMS: ReadonlyArray<Item> = [
     k: 'Integrations',
     v: (
       <>
-        GitHub and GitLab pull requests, Linear issues, and Sentry errors turn into a session with
-        the <B>goal and branch already written</B>.
+        GitHub, GitLab, Linear and Sentry issues turn into a session with the{' '}
+        <B>goal and branch already written</B>. Pull requests and merge requests feed a review inbox
+        instead.
       </>
     ),
   },

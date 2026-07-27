@@ -17,10 +17,10 @@
 
 <img width="3972" height="2234" alt="Goodboy desktop app" src="https://github.com/user-attachments/assets/4708c589-a8e6-4f6c-a80a-222b32cc237e" />
 
-You have a repo. You have a goal. You also have four CLIs open in four
-windows, each holding a slightly different version of the same task. By
-evening you've spent more time pasting the goal back into the next chat
-than actually building.
+You have a repo. You have a goal. You also have several CLIs open in
+several windows, each holding a slightly different version of the same
+task. By evening you've spent more time pasting the goal back into the
+next chat than actually building.
 
 Goodboy is a desktop app that holds the goal, the plan and the context once,
 then hands them to whichever agent you want to run next. Same brief, same
