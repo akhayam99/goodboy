@@ -24,8 +24,6 @@ import { agentThreadIds } from '../../../../session/agentThreadIds';
 
 type Props = {
   readonly agent: Agent;
-  readonly index: number;
-  readonly total: number;
   readonly status: ResolverStatus;
   readonly threadComment: PrComment | null;
   readonly diffComment: DiffComment | null;
@@ -47,8 +45,6 @@ type Props = {
 
 export const ResolveClusterRow = ({
   agent,
-  index,
-  total,
   status,
   threadComment,
   diffComment,
@@ -131,9 +127,6 @@ export const ResolveClusterRow = ({
       )}
     >
       <div className="flex w-full items-center gap-2">
-        <span className="tabular-nums text-muted-foreground/50">
-          {index + 1}/{total}
-        </span>
         <span className="min-w-0 flex-1 truncate text-left" title={agent.name}>
           {agent.name}
         </span>

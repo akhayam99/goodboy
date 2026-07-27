@@ -2,10 +2,25 @@ import { useState } from 'react';
 import { ArrowUpRight, ChevronDown, ChevronRight, MessageSquareReply, Play } from 'lucide-react';
 import type { Agent, AgentId, DiffComment, PrComment, SessionId } from '@goodboy/types';
 import { openUrl } from '../../../../../shared/lib/editor';
+import { SegmentedControl } from '../../../../../shared/components/SegmentedControl';
 import type { AgentMetrics } from '../../../../session/hooks/useAgentMetrics';
-import { resolverStatus, type ResolverState, type ResolverStatus } from '../lib';
+import {
+  pluralize,
+  resolveCompletionTab,
+  resolverStatus,
+  type CompletionTab,
+  type ResolverState,
+  type ResolverStatus,
+} from '../lib';
 import { ResolverRows } from './ResolverRows';
 import { agentThreadIds } from '../../../../session/agentThreadIds';
+
+const COMPLETED_STATUSES: ReadonlyArray<ResolverStatus> = [
+  'resolved',
+  'wontfix',
+  'stopped',
+  'done',
+];
 
 type ResolveClusterProps = {
   readonly agents: ReadonlyArray<Agent>;
@@ -52,19 +67,20 @@ export const ResolveCluster = ({
   onResolveThread,
   onResolveAgent,
 }: ResolveClusterProps) => {
-  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const statusOf = (a: Agent): ResolverStatus =>
     resolverStatus(a, resolvedThreadIds, pendingThreadIds, resolverState[a.id]);
   const entries = [...agents]
     .sort((a, b) => b.ordinal - a.ordinal)
-    .map((agent, index) => ({ agent, index, status: statusOf(agent) }));
-  const completedEntries = entries.filter(({ status }) =>
-    ['resolved', 'wontfix', 'stopped', 'done'].includes(status),
-  );
-  const activeEntries = entries.filter(
-    ({ status }) => !['resolved', 'wontfix', 'stopped', 'done'].includes(status),
-  );
-  const resolvedCount = entries.filter(({ status }) => status === 'resolved').length;
+    .map((agent) => ({ agent, status: statusOf(agent) }));
+  const completedEntries = entries.filter(({ status }) => COMPLETED_STATUSES.includes(status));
+  const activeEntries = entries.filter(({ status }) => !COMPLETED_STATUSES.includes(status));
+  const [selectedTab, setSelectedTab] = useState<CompletionTab | null>(null);
+  const tab = resolveCompletionTab({
+    activeCount: activeEntries.length,
+    completedCount: completedEntries.length,
+    selected: selectedTab,
+  });
+  const visibleEntries = tab === 'completed' ? completedEntries : activeEntries;
   const anyRunning = agents.some((a) => a.status === 'running');
   const queuedCount = agents.filter((a) => a.status === 'pending').length;
   const stalled = !anyRunning && queuedCount > 0;
@@ -105,10 +121,7 @@ export const ResolveCluster = ({
           ) : (
             <ChevronRight size={10} aria-hidden className="shrink-0" />
           )}
-          <span className="tabular-nums">
-            {resolvedCount}/{agents.length}
-          </span>{' '}
-          resolved
+          {pluralize(agents.length, 'resolver')}
         </button>
         {stalled ? (
           <button
@@ -136,9 +149,19 @@ export const ResolveCluster = ({
       </div>
       {expanded ? (
         <>
+          {completedEntries.length > 0 ? (
+            <SegmentedControl
+              ariaLabel="Filter resolvers by status"
+              options={[
+                { value: 'active', label: `Active (${activeEntries.length})` },
+                { value: 'completed', label: `Completed (${completedEntries.length})` },
+              ]}
+              value={tab}
+              onChange={setSelectedTab}
+            />
+          ) : null}
           <ResolverRows
-            entries={activeEntries}
-            total={agents.length}
+            entries={visibleEntries}
             isTaskActive={isTaskActive}
             isTranscriptLoading={isTranscriptLoading}
             selectedAgentId={selectedAgentId}
@@ -152,39 +175,6 @@ export const ResolveCluster = ({
             onResolveThread={onResolveThread}
             onResolveAgent={onResolveAgent}
           />
-          {completedEntries.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setIsCompletedExpanded((current) => !current)}
-              aria-expanded={isCompletedExpanded}
-              className="flex items-center gap-1 self-start rounded px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {isCompletedExpanded ? (
-                <ChevronDown size={11} aria-hidden className="shrink-0" />
-              ) : (
-                <ChevronRight size={11} aria-hidden className="shrink-0" />
-              )}
-              Completed ({completedEntries.length})
-            </button>
-          ) : null}
-          {isCompletedExpanded ? (
-            <ResolverRows
-              entries={completedEntries}
-              total={agents.length}
-              isTaskActive={isTaskActive}
-              isTranscriptLoading={isTranscriptLoading}
-              selectedAgentId={selectedAgentId}
-              inspectedAgentId={inspectedAgentId}
-              commentByThreadId={commentByThreadId}
-              diffCommentByAgentId={diffCommentByAgentId}
-              metrics={metrics}
-              onSelect={onSelect}
-              onInspect={onInspect}
-              onJump={jump}
-              onResolveThread={onResolveThread}
-              onResolveAgent={onResolveAgent}
-            />
-          ) : null}
           <button
             type="button"
             onClick={openResolveBoard}
