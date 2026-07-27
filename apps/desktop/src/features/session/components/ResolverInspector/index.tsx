@@ -128,13 +128,6 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
             onOpenThread={onOpenThread}
           />
           <Divider />
-          <ActionsSection
-            agent={agent}
-            sessionId={sessionId}
-            status={link.status}
-            commitSha={changes.reported[0]?.sha ?? changes.reportedMissingShas[0] ?? null}
-          />
-          <Divider />
           <ChangesSection
             files={changes.files}
             reported={changes.reported}
@@ -150,6 +143,13 @@ export const ResolverInspector = ({ sessionId, agentId, onClose }: Props) => {
             queuePosition={position + 1}
             queueTotal={resolverIndex.links.length}
             blockedBy={blockedBy}
+          />
+          <Divider />
+          <ActionsSection
+            agent={agent}
+            sessionId={sessionId}
+            status={link.status}
+            commitSha={changes.reported[0]?.sha ?? changes.reportedMissingShas[0] ?? null}
           />
         </div>
       </ScrollFade>

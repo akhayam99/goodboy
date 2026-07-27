@@ -12,15 +12,25 @@ vi.mock('@goodboy/ui', () => ({
   cn: (...values: ReadonlyArray<unknown>) => values.filter(Boolean).join(' '),
 }));
 
-vi.mock('../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({
-  AgentsSection: ({ showCreateControl }: { readonly showCreateControl?: boolean }) => (
-    <div data-testid="agents-section" data-show-create={String(showCreateControl)} />
+vi.mock('../../StandaloneAgentsLane', () => ({
+  StandaloneAgentsLane: ({
+    variant,
+    inspectedAgentId,
+  }: {
+    readonly variant?: string;
+    readonly inspectedAgentId?: string | null;
+  }) => (
+    <div
+      data-testid="agents-lane"
+      data-variant={variant}
+      data-inspected={String(inspectedAgentId)}
+    />
   ),
 }));
 
-vi.mock('../../../../workspace/components/WorkspacesSidebar/parts/SpawnAgentControl', () => ({
-  SpawnAgentControl: () => (
-    <button type="button" data-testid="header-spawn">
+vi.mock('../../CreateAgentPopover', () => ({
+  CreateAgentPopover: ({ variant }: { readonly variant?: string }) => (
+    <button type="button" data-testid="header-spawn" data-variant={variant}>
       Create agent
     </button>
   ),
@@ -35,7 +45,7 @@ const SESSION = { id: 'sess-1', workspaceId: 'ws-1' } as unknown as Session;
 afterEach(cleanup);
 
 describe('AgentsPane', () => {
-  it('hosts the create-agent control in the pane header and hides it from the list', () => {
+  it('hosts a single compact create-agent trigger in the pane header', () => {
     render(
       <AgentsPane
         session={SESSION}
@@ -47,24 +57,24 @@ describe('AgentsPane', () => {
 
     const heading = screen.getByRole('heading', { name: 'Agents' });
     const header = heading.parentElement?.parentElement?.parentElement;
-    expect(header?.querySelector('[data-testid="header-spawn"]')).not.toBeNull();
-    expect(screen.getByTestId('agents-section').getAttribute('data-show-create')).toBe('false');
+    const trigger = screen.getByTestId('header-spawn');
+    expect(header?.contains(trigger)).toBe(true);
+    expect(trigger.getAttribute('data-variant')).toBe('compact');
+    expect(screen.getAllByTestId('header-spawn')).toHaveLength(1);
   });
 
-  it('lets the header actions wrap instead of clipping at a narrow width', () => {
+  it('renders the shared agents lane and forwards the inspected agent', () => {
     render(
       <AgentsPane
         session={SESSION}
         meta={undefined}
-        inspectedAgentId={null}
+        inspectedAgentId={'agent-7' as never}
         onInspectAgent={vi.fn()}
       />,
     );
 
-    const slot = screen.getByTestId('header-spawn').parentElement;
-    expect(slot?.className).toContain('flex-wrap');
-    expect(slot?.className).toContain('min-w-0');
-    expect(slot?.className).not.toContain('shrink-0');
-    expect(slot?.parentElement?.className).toContain('flex-wrap');
+    const lane = screen.getByTestId('agents-lane');
+    expect(lane.getAttribute('data-variant')).toBe('lens');
+    expect(lane.getAttribute('data-inspected')).toBe('agent-7');
   });
 });

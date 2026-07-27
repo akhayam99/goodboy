@@ -1,5 +1,5 @@
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
+import { ResolverAgentsLane } from '../../ResolverAgentsLane';
 import { ResolverInspector } from '../../ResolverInspector';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
@@ -33,9 +33,8 @@ export const ResolvePane = ({ session, meta, inspectedResolverId, onInspectResol
         meta={meta}
         width="3xl"
       >
-        <AgentsSection
-          task={session}
-          only="resolve"
+        <ResolverAgentsLane
+          session={session}
           inspectedResolverId={inspectedResolverId}
           onInspectResolver={(agentId) => onInspectResolver(agentId)}
         />

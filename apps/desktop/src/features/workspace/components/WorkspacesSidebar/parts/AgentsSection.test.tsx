@@ -93,7 +93,9 @@ vi.mock('./SectionToggle', () => ({
 vi.mock('./PlanReadySuggestion', () => ({
   PlanReadySuggestion: () => <div data-testid="plan-ready" />,
 }));
-vi.mock('./SpawnAgentControl', () => ({ SpawnAgentControl: () => <div data-testid="spawn" /> }));
+vi.mock('../../../../../features/session/components/CreateAgentPopover', () => ({
+  CreateAgentPopover: () => <div data-testid="spawn" />,
+}));
 vi.mock('./CollapsedSummary', () => ({
   CollapsedSummary: ({ text }: { text: string }) => <div data-testid="collapsed">{text}</div>,
 }));
@@ -120,7 +122,6 @@ vi.mock('./WorkflowStepRow', () => ({
     <div data-testid={`workflow-step-${run.id}`}>{run.name}</div>
   ),
 }));
-vi.mock('./ResolveCluster', () => ({ ResolveCluster: () => null }));
 vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }));
 vi.mock('./ClusterChildRow', () => ({
   ClusterChildRow: ({ child, isSelected }: { child: Agent; isSelected: boolean }) => (
@@ -153,6 +154,8 @@ vi.mock('../../../../../features/session/agent-kind', () => ({
   classifyAgent: () => 'implementer',
   inferAgentKindFromName: () => 'implementer',
   resolveAgentKind: () => 'implementer',
+  isStandaloneAgent: (agent: Agent) =>
+    agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null),
 }));
 vi.mock('../../../../../shared/lib/errors', () => ({ formatError: (e: unknown) => String(e) }));
 
@@ -284,115 +287,21 @@ describe('AgentsSection collapse defaults', () => {
     expect(screen.getByTestId('collapsed').textContent).toBe('1 agent');
   });
 
-  it('filters standalone agents to the active tab by default, hiding completed ones', () => {
+  it('lists every standalone agent in the sidebar, done ones included', () => {
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [
-        buildAgent({ id: 'active' as AgentId, name: 'active agent' }),
-        buildAgent({ id: 'done' as AgentId, name: 'done agent', doneAt: NOW }),
+        buildAgent({ id: 'active' as AgentId, name: 'active agent', ordinal: 0 }),
+        buildAgent({ id: 'done' as AgentId, name: 'done agent', ordinal: 1, doneAt: NOW }),
       ],
     };
 
-    render(<AgentsSection task={buildSession()} only="agents" />);
+    render(<AgentsSection task={buildSession()} />);
 
-    expect(screen.getByText('active agent')).toBeDefined();
-    expect(screen.queryByText('done agent')).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Completed (1)' }));
-    expect(screen.queryByText('active agent')).toBeNull();
-    expect(screen.getByText('done agent').closest('[data-muted]')?.getAttribute('data-muted')).toBe(
-      'true',
-    );
-  });
-
-  it('renders active and completed standalone agents newest-first within their own tab', () => {
-    h.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        buildAgent({ id: 'active-old' as AgentId, name: 'active old', ordinal: 0 }),
-        buildAgent({ id: 'done-old' as AgentId, name: 'done old', ordinal: 1, doneAt: NOW }),
-        buildAgent({ id: 'active-new' as AgentId, name: 'active new', ordinal: 2 }),
-        buildAgent({ id: 'done-new' as AgentId, name: 'done new', ordinal: 3, doneAt: NOW }),
-      ],
-    };
-
-    render(<AgentsSection task={buildSession()} only="agents" />);
-
-    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
-      'active new',
-      'active old',
-    ]);
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Completed (2)' }));
-
-    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
-      'done new',
-      'done old',
-    ]);
-  });
-
-  it('opens on the completed tab by default when there are no active agents', () => {
-    h.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        buildAgent({ id: 'done-old' as AgentId, name: 'done old', ordinal: 0, doneAt: NOW }),
-        buildAgent({ id: 'done-new' as AgentId, name: 'done new', ordinal: 1, doneAt: NOW }),
-      ],
-    };
-
-    render(<AgentsSection task={buildSession()} only="agents" />);
-
-    expect(screen.getByRole('tab', { name: 'Completed (2)' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
-      'done new',
-      'done old',
-    ]);
-  });
-
-  it('moves from an empty Active view to Completed when the only agent is marked done while mounted', () => {
-    h.state.sessionPhaseRuns = {
-      [SESSION_ID]: [buildAgent({ id: 'solo' as AgentId, name: 'solo agent' })],
-    };
-    const { rerender } = render(<AgentsSection task={buildSession()} only="agents" />);
-
-    expect(screen.getByText('solo agent')).toBeDefined();
     expect(screen.queryByRole('tablist')).toBeNull();
-
-    h.state.sessionPhaseRuns = {
-      [SESSION_ID]: [buildAgent({ id: 'solo' as AgentId, name: 'solo agent', doneAt: NOW })],
-    };
-    rerender(<AgentsSection task={buildSession()} only="agents" />);
-
-    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-    expect(screen.getByText('solo agent')).toBeDefined();
-  });
-
-  it('keeps the explicitly selected agents tab when it still has items after props change', () => {
-    h.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        buildAgent({ id: 'active-1' as AgentId, name: 'active one' }),
-        buildAgent({ id: 'done-1' as AgentId, name: 'done one', doneAt: NOW }),
-      ],
-    };
-    const { rerender } = render(<AgentsSection task={buildSession()} only="agents" />);
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Completed (1)' }));
-    expect(screen.getByText('done one')).toBeDefined();
-
-    h.state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        buildAgent({ id: 'active-1' as AgentId, name: 'active one' }),
-        buildAgent({ id: 'active-2' as AgentId, name: 'active two' }),
-        buildAgent({ id: 'done-1' as AgentId, name: 'done one', doneAt: NOW }),
-      ],
-    };
-    rerender(<AgentsSection task={buildSession()} only="agents" />);
-
-    expect(screen.getByRole('tab', { name: 'Completed (1)' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-    expect(screen.getByText('done one')).toBeDefined();
-    expect(screen.queryByText('active two')).toBeNull();
+    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
+      'done agent',
+      'active agent',
+    ]);
   });
 
   it('workflow unread badge counts step agents and their cluster children', () => {

@@ -8,7 +8,7 @@ import { ConfirmableButton } from '../../../../shared/components/ConfirmableButt
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { agentThreadIds } from '../../agentThreadIds';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly agent: Agent;

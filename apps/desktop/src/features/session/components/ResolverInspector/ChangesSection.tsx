@@ -1,7 +1,7 @@
 import { FileText } from 'lucide-react';
 import type { BranchCommit } from '@goodboy/types';
 import { CommitRow } from './CommitRow';
-import { InspectorSection } from './InspectorSection';
+import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly files: ReadonlyArray<string>;

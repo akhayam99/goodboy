@@ -20,6 +20,7 @@ type Store = {
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
   sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
+  selectAgent: ReturnType<typeof vi.fn>;
   setActiveLens: ReturnType<typeof vi.fn>;
   setSessionStudio: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
@@ -51,6 +52,7 @@ const { store, hooks } = vi.hoisted(() => ({
     agentTurnState: {},
     agentKindOverride: {},
     sessionLoading: {},
+    selectAgent: vi.fn(),
     setActiveLens: vi.fn(),
     setSessionStudio: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
@@ -98,27 +100,38 @@ vi.mock('../../../plans/components/PlanStudio', () => ({ PlanStudio: () => null 
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
 vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({
-  AgentsSection: ({
-    only,
-    task,
+  AgentsSection: ({ only }: { only?: string }) => (
+    <div data-testid="agents-section" data-home={only} />
+  ),
+}));
+vi.mock('../ResolverAgentsLane', () => ({
+  ResolverAgentsLane: () => <div data-testid="resolver-lane" />,
+}));
+vi.mock('../StandaloneAgentsLane', () => ({
+  StandaloneAgentsLane: ({
+    session,
     onInspectAgent,
   }: {
-    only: string;
-    task: Session;
+    session: Session;
     onInspectAgent?: (agentId: string) => void;
   }) => (
-    <div data-testid="agents-section" data-home={only}>
-      {only === 'agents'
-        ? (store.sessionPhaseRuns[task.id] ?? []).map((agent) => (
-            <button
-              key={agent.id}
-              type="button"
-              onClick={() => onInspectAgent?.(agent.id)}
-              aria-label={`inspect ${agent.id}`}
-            />
-          ))
-        : null}
+    <div data-testid="agents-lane">
+      {(store.sessionPhaseRuns[session.id] ?? []).map((agent) => (
+        <button
+          key={agent.id}
+          type="button"
+          onClick={() => onInspectAgent?.(agent.id)}
+          aria-label={`inspect ${agent.id}`}
+        />
+      ))}
     </div>
+  ),
+}));
+vi.mock('../CreateAgentPopover', () => ({
+  CreateAgentPopover: () => (
+    <button type="button" data-testid="create-agent">
+      Create agent
+    </button>
   ),
 }));
 vi.mock('../../../../app/components/AppBreadcrumb', () => ({
@@ -218,13 +231,13 @@ afterEach(cleanup);
 describe('SessionWorkspace agent overlay', () => {
   it('uses the full overlay width and workflow stepper for workflow agents', () => {
     store.activeLens = { [SESSION_ID]: 'workflows' };
-    const { container } = render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} isActive />);
     expect(screen.getByTestId('workflow-stepper')).toBeDefined();
     expect(screen.getByTestId('chat-view')).toBeDefined();
     expect(screen.getByTestId('chat-view').contains(screen.getByTestId('workflow-stepper'))).toBe(
       true,
     );
-    expect(container.querySelector('[aria-label="resize agent list"]')).toBeNull();
+    expect(screen.queryByTestId('agents-lane')).toBeNull();
     expect(screen.queryByTestId('agents-section')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'resize agent inspector' })).toBeNull();
   });
@@ -248,9 +261,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
     expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(
-      screen
-        .getByTestId('chat-view')
-        .contains(screen.getAllByRole('button', { name: 'Resolve' })[1]!),
+      screen.getByTestId('chat-view').contains(screen.getByRole('button', { name: 'Resolve' })),
     ).toBe(true);
   });
 
@@ -326,9 +337,9 @@ describe('SessionWorkspace agent overlay', () => {
     hooks.agentHome = 'agents';
     render(<SessionWorkspace session={session} isActive />);
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
-    expect(screen.getByRole('separator', { name: 'resize agent list' })).toBeDefined();
-    expect(screen.getByTestId('agents-section').getAttribute('data-home')).toBe('agents');
-    expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(2);
+    expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
+    expect(screen.queryByTestId('agents-lane')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(1);
     expect(screen.queryByTestId('resolver-inspector')).toBeNull();
     expect(screen.getByTestId('agent-inspector').textContent).toBe(standaloneAgent.id);
     expect(screen.getByRole('separator', { name: 'resize agent inspector' })).toBeDefined();
@@ -623,7 +634,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(screen.queryByTestId('workflow-stepper')).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Resolve' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Resolve' })).toHaveLength(1);
     expect(screen.queryByText('Part of')).toBeNull();
   });
 
