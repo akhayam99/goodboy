@@ -27,6 +27,7 @@ const {
   listConsumptionsForPlanSpy,
   listPlansForSessionSpy,
   fanOutClustersSpy,
+  updateAgentConfigSpy,
 } = vi.hoisted(() => ({
   invokeAgentInsertSpy: vi.fn(),
   invokeAgentListSpy: vi.fn(async () => [] as ReadonlyArray<Agent>),
@@ -34,6 +35,7 @@ const {
   listConsumptionsForPlanSpy: vi.fn(async () => []),
   listPlansForSessionSpy: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
   fanOutClustersSpy: vi.fn(async () => undefined),
+  updateAgentConfigSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../features/workflows/workflows', () => ({
@@ -46,6 +48,11 @@ vi.mock('../../../features/plans/plans', () => ({
   listConsumptionsForPlan: listConsumptionsForPlanSpy,
   listPlansForSession: listPlansForSessionSpy,
 }));
+
+vi.mock('@goodboy/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/db')>();
+  return { ...actual, updateAgentConfig: updateAgentConfigSpy };
+});
 
 vi.mock('../workflows/clusterImplementation', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../workflows/clusterImplementation')>();
@@ -109,7 +116,10 @@ function makePlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
   };
 }
 
-function buildHarness(plans: ReadonlyArray<PlanWithCount>) {
+function buildHarness(
+  plans: ReadonlyArray<PlanWithCount>,
+  sessionOverrides: Partial<Session> = {},
+) {
   listPlansForSessionSpy.mockResolvedValue(plans);
   invokeAgentInsertSpy.mockResolvedValue({
     id: INSERTED_ID,
@@ -137,6 +147,7 @@ function buildHarness(plans: ReadonlyArray<PlanWithCount>) {
     titleUserEdited: false,
     createdAt: NOW,
     updatedAt: NOW,
+    ...sessionOverrides,
   };
   const sendTurn = vi.fn(
     async (_arg: { sessionId: SessionId; agentId: AgentId; content: string }) => undefined,
@@ -215,6 +226,45 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(getState().agentModelOverride[INSERTED_ID]).toBe('claude-sonnet-4-6');
     expect(getState().agentProviderOverride[INSERTED_ID]).toBe('anthropic');
     expect(getState().agentEffortOverride[INSERTED_ID]).toBe('high');
+  });
+
+  it('writes the resolved routing onto the agent row and its db record', async () => {
+    const { getState, spawn } = buildHarness([]);
+    invokeAgentListSpy.mockResolvedValue([
+      {
+        id: INSERTED_ID,
+        sessionId: SESSION_ID,
+        ordinal: 0,
+        name: 'agent 1',
+        status: 'pending',
+      } as Agent,
+    ]);
+
+    await spawn(SESSION_ID, { kindOverride: 'planner' });
+
+    expect(getState().sessionPhaseRuns[SESSION_ID]?.[0]).toMatchObject({
+      providerOverride: 'anthropic',
+      modelOverride: 'claude-opus-5',
+      effort: 'high',
+    });
+    expect(updateAgentConfigSpy).toHaveBeenCalledWith(expect.anything(), INSERTED_ID, {
+      providerOverride: 'anthropic',
+      modelOverride: 'claude-opus-5',
+      effort: 'high',
+    });
+  });
+
+  it('keeps the role default for a programmatic spawn even when the chat pins a model', async () => {
+    const { getState, spawn } = buildHarness([], {
+      providerOverride: 'anthropic',
+      modelOverride: 'claude-opus-5',
+      effort: 'high',
+    });
+
+    await spawn(SESSION_ID, { kindOverride: 'scout' });
+
+    expect(getState().agentModelOverride[INSERTED_ID]).toBe('claude-haiku-4-5');
+    expect(getState().agentEffortOverride[INSERTED_ID]).toBe('low');
   });
 
   it('fans out an explicit (triggeredPlanId) plan with 2+ clusters', async () => {

@@ -10,7 +10,10 @@ import type {
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { updateAgentConfig } from '@goodboy/db';
 import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/workflows';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -107,7 +110,25 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
       ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
     });
-    const refreshed = await invokeAgentList(sessionId);
+    const resolvedProvider = args.provider ?? routing.provider;
+    const resolvedModel = args.model ?? routing.model;
+    const resolvedEffort = EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;
+    await updateAgentConfig(tauriDatabase, inserted.id, {
+      providerOverride: resolvedProvider,
+      modelOverride: resolvedModel,
+      effort: resolvedEffort,
+    });
+    const listed = await invokeAgentList(sessionId);
+    const refreshed = listed.map((agent) =>
+      agent.id === inserted.id
+        ? {
+            ...agent,
+            providerOverride: resolvedProvider,
+            modelOverride: resolvedModel,
+            effort: resolvedEffort,
+          }
+        : agent,
+    );
     set((s) => ({
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
       selectedAgentId: { ...s.selectedAgentId, [sessionId]: inserted.id },
@@ -119,15 +140,15 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
       },
       agentModelOverride: {
         ...s.agentModelOverride,
-        [inserted.id]: args.model ?? routing.model,
+        [inserted.id]: resolvedModel,
       },
       agentProviderOverride: {
         ...s.agentProviderOverride,
-        [inserted.id]: args.provider ?? routing.provider,
+        [inserted.id]: resolvedProvider,
       },
       agentEffortOverride: {
         ...s.agentEffortOverride,
-        [inserted.id]: args.effort ?? routing.effort,
+        [inserted.id]: resolvedEffort,
       },
       ...(args.kindOverride !== undefined && {
         agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },

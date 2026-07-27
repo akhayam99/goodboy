@@ -88,6 +88,9 @@ type RawAgentRow = {
   readonly doneAt: string | null;
   readonly kind: string | null;
   readonly verbosity: string | null;
+  readonly effort: string | null;
+  readonly modelOverride: string | null;
+  readonly providerOverride: string | null;
   readonly sourceThreadId: string | null;
   readonly sourceThreadIds: string | null;
   readonly sourceCommentUrl: string | null;
@@ -192,6 +195,9 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
     ...(row.kind != null && { kind: row.kind }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
+    ...(row.effort != null && { effort: row.effort as AgentEffort }),
+    ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
+    ...(row.providerOverride != null && { providerOverride: row.providerOverride }),
     ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
     ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),

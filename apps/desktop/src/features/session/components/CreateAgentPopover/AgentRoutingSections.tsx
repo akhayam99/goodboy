@@ -6,9 +6,7 @@ import { ModelGrid } from '../../../../shared/components/RoutingPicker/ModelGrid
 import { PickerChip } from '../../../../shared/components/RoutingPicker/PickerChip';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
-import { RecommendationRow } from '../../../../shared/components/RoutingPicker/RecommendationRow';
 import { orderedEffortLevels } from '../../../../shared/components/RoutingPicker/orderedEffortLevels';
-import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { resolveRouting } from '../../../../shared/components/RoutingPicker/resolveRouting';
 import type { AgentKindRouting } from '../../agent-kind';
 
@@ -20,56 +18,41 @@ const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly recommended: AgentKindRouting;
-  readonly routing: AgentKindRouting | null;
+  readonly effective: AgentKindRouting;
   readonly viewProvider: ProviderId;
   readonly onViewProvider: (provider: ProviderId) => void;
   readonly onPickProvider: (provider: ProviderId) => void;
   readonly onPickModel: (model: string) => void;
   readonly onPickEffort: (effort: AgentKindRouting['effort']) => void;
-  readonly onUseRecommended: () => void;
   readonly onConnectProvider: (provider: ProviderId) => void;
 };
 
 export const AgentRoutingSections = ({
   connectedProviders,
-  recommended,
-  routing,
+  effective,
   viewProvider,
   onViewProvider,
   onPickProvider,
   onPickModel,
   onPickEffort,
-  onUseRecommended,
   onConnectProvider,
 }: Props) => {
-  const isAuto = routing == null;
-  const isViewingPicked = !isAuto && routing.provider === viewProvider;
   const viewedRouting = resolveRouting({
     providers: PROVIDERS,
     provider: viewProvider,
-    model: isViewingPicked ? routing.model : '',
-    effort: routing?.effort ?? recommended.effort,
+    model: viewProvider === effective.provider ? effective.model : '',
+    effort: effective.effort,
     recommendation: undefined,
   });
   const isProviderConnected = connectedProviders.includes(viewProvider);
 
   return (
     <>
-      <RecommendationRow
-        summary={recommendationSummary({
-          provider: recommended.provider,
-          model: recommended.model,
-        })}
-        active={isAuto}
-        onSelect={onUseRecommended}
-      />
-      <Divider />
       <PickerSection label="Provider" hint="Which CLI agent runs the turn">
         <div className={PROVIDER_CHIP_GROUP_CLASS}>
           {PROVIDERS.map((id) => {
             const isConnected = connectedProviders.includes(id);
-            const isActive = !isAuto && viewProvider === id;
+            const isActive = viewProvider === id;
             return (
               <button
                 key={id}
@@ -120,7 +103,7 @@ export const AgentRoutingSections = ({
             <ModelGrid
               ids={viewedRouting.models}
               value={viewedRouting.model}
-              isRecommended={isAuto}
+              isRecommended={false}
               onSelect={onPickModel}
             />
           </ScrollFade>
