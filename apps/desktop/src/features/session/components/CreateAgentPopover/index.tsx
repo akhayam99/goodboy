@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { getDefaultTurnModel } from '@goodboy/core';
-import { Button, Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
+import { Button, Divider, Popover, cn } from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore, useCurrentWorkspace } from '../../../../store';
 import { clampEffort } from '../../../chat/utils/chat-constants';
@@ -37,8 +37,8 @@ export const CreateAgentPopover = ({
 }: Props) => {
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({
     align: 'end',
-    expectedHeight: 440,
-    width: 'w-[22rem] max-w-[calc(100vw-2rem)]',
+    expectedHeight: 520,
+    width: 'w-80 max-w-[calc(100vw-2rem)]',
   });
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
@@ -99,57 +99,55 @@ export const CreateAgentPopover = ({
           ariaLabel="create agent"
           className={cn(popupClassName, 'flex flex-col bg-subtle')}
         >
-          <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[26rem]">
-            {agentKinds.length > 1 && (
-              <>
-                <PickerSection label="Agent type" hint="What this agent is allowed to do">
-                  <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
-                </PickerSection>
-                <Divider />
-              </>
-            )}
-            <SpawnRoutingSummary
-              kind={selectedKind}
-              effective={effective}
-              fallback={spawnDefault}
-              isPinned={routing != null}
-              onReset={() => {
-                setRouting(null);
-                setViewProvider(spawnDefault.provider);
-              }}
-            />
-            <Divider />
-            <AgentRoutingSections
-              connectedProviders={connectedProviders}
-              effective={effective}
-              viewProvider={viewProvider}
-              onViewProvider={setViewProvider}
-              onPickProvider={(provider) => {
-                const model = getDefaultTurnModel(provider);
-                setRouting({
-                  provider,
-                  model,
-                  effort: clampEffort(model, effective.effort),
-                });
-              }}
-              onPickModel={(model) => {
-                setRouting({
-                  provider: viewProvider,
-                  model,
-                  effort: clampEffort(model, effective.effort),
-                });
-              }}
-              onPickEffort={onPickEffort}
-              onConnectProvider={(provider) => {
-                window.dispatchEvent(
-                  new CustomEvent('goodboy:open-provider-studio', {
-                    detail: { providerId: provider },
-                  }),
-                );
-                close();
-              }}
-            />
-          </ScrollFade>
+          {agentKinds.length > 1 && (
+            <>
+              <PickerSection label="Agent type" hint="What this agent is allowed to do">
+                <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
+              </PickerSection>
+              <Divider />
+            </>
+          )}
+          <SpawnRoutingSummary
+            kind={selectedKind}
+            effective={effective}
+            fallback={spawnDefault}
+            isPinned={routing != null}
+            onReset={() => {
+              setRouting(null);
+              setViewProvider(spawnDefault.provider);
+            }}
+          />
+          <Divider />
+          <AgentRoutingSections
+            connectedProviders={connectedProviders}
+            effective={effective}
+            viewProvider={viewProvider}
+            onViewProvider={setViewProvider}
+            onPickProvider={(provider) => {
+              const model = getDefaultTurnModel(provider);
+              setRouting({
+                provider,
+                model,
+                effort: clampEffort(model, effective.effort),
+              });
+            }}
+            onPickModel={(model) => {
+              setRouting({
+                provider: viewProvider,
+                model,
+                effort: clampEffort(model, effective.effort),
+              });
+            }}
+            onPickEffort={onPickEffort}
+            onConnectProvider={(provider) => {
+              window.dispatchEvent(
+                new CustomEvent('goodboy:open-provider-studio', {
+                  detail: { providerId: provider },
+                }),
+              );
+              close();
+            }}
+          />
           <Divider />
           <div className="flex items-center justify-end px-2.5 py-2">
             <Button size="sm" onClick={() => void onCreate()}>

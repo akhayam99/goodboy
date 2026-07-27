@@ -99,7 +99,7 @@ export const AgentRoutingSections = ({
           </div>
         )}
         {isProviderConnected && (
-          <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[13rem]">
+          <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
             <ModelGrid
               ids={viewedRouting.models}
               value={viewedRouting.model}
