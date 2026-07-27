@@ -40,4 +40,22 @@ describe('RoleSelect', () => {
       'Custom',
     ]);
   });
+
+  it('offers every role once the workspace becomes a dev project', () => {
+    h.workspaceKind = 'repo';
+    render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
+    const options = within(screen.getByRole('listbox', { name: 'agent role' }));
+
+    expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
+      'Scout',
+      'Planner',
+      'Implementer',
+      'Reviewer',
+      'Tester',
+      'Debugger',
+      'Custom',
+    ]);
+  });
 });

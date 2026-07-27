@@ -76,6 +76,7 @@ vi.mock('@goodboy/db', () => ({
   disconnectWorkspace: vi.fn(async () => undefined),
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
+  updateWorkspaceKind: vi.fn(async () => undefined),
   findWorkspaceByRootPath: vi.fn(async () => null),
   upsertSessionExternalTask: vi.fn(async () => undefined),
   deleteSessionExternalTask: vi.fn(async () => undefined),
@@ -285,6 +286,11 @@ vi.mock('../../../features/worktree/worktree', () => ({
 
 vi.mock('../../../shared/lib/repo', () => ({
   validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
+  initRepoWithRemote: vi.fn(async () => ({
+    rootPath: '/tmp/study-space',
+    remoteUrl: 'https://github.com/acme/widgets.git',
+    branch: 'main',
+  })),
 }));
 
 const prepareSimpleWorkspaceSpy = vi.fn(async ({ path }: { path: string }) => path);
@@ -448,6 +454,23 @@ function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
     updatedAt: NOW,
     ...overrides,
   };
+}
+
+type RepoModule = typeof import('../../../shared/lib/repo');
+
+function resetRepoMocks(repo: RepoModule) {
+  vi.mocked(repo.validateGitRepo).mockReset();
+  vi.mocked(repo.validateGitRepo).mockResolvedValue({
+    isRepo: true,
+    rootPath: '/tmp/study-space',
+    error: null,
+  });
+  vi.mocked(repo.initRepoWithRemote).mockReset();
+  vi.mocked(repo.initRepoWithRemote).mockResolvedValue({
+    rootPath: '/tmp/study-space',
+    remoteUrl: 'https://github.com/acme/widgets.git',
+    branch: 'main',
+  });
 }
 
 async function getStore() {
@@ -698,6 +721,91 @@ describe('store contract', () => {
         workspaceId: WS_ID,
       });
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual(tasks);
+    });
+
+    it('converts a simple workspace into a repo, writing the kind last', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      const calls: string[] = [];
+      vi.mocked(repo.initRepoWithRemote).mockImplementationOnce(async () => {
+        calls.push('init');
+        return {
+          rootPath: '/tmp/study-space',
+          remoteUrl: 'https://github.com/acme/widgets.git',
+          branch: 'main',
+        };
+      });
+      vi.mocked(repo.validateGitRepo).mockImplementationOnce(async () => {
+        calls.push('validate');
+        return { isRepo: true, rootPath: '/tmp/study-space', error: null };
+      });
+      vi.mocked(db.updateWorkspaceKind).mockImplementationOnce(async () => {
+        calls.push('kind');
+      });
+      store.setState({
+        workspaces: [buildWorkspace({ rootPath: '/tmp/study-space', kind: 'simple' })],
+      });
+
+      const converted = await store.getState().convertWorkspaceToRepo({
+        workspaceId: WS_ID,
+        remoteUrl: '  https://github.com/acme/widgets.git  ',
+      });
+
+      expect(calls).toEqual(['init', 'validate', 'kind']);
+      expect(repo.initRepoWithRemote).toHaveBeenCalledWith({
+        path: '/tmp/study-space',
+        remoteUrl: 'https://github.com/acme/widgets.git',
+      });
+      expect(db.updateWorkspaceKind).toHaveBeenCalledWith({
+        db: expect.anything(),
+        id: WS_ID,
+        kind: 'repo',
+      });
+      expect(converted.kind).toBe('repo');
+      expect(store.getState().workspaces[0]?.kind).toBe('repo');
+    });
+
+    it('leaves the kind alone when the folder is still not a repository', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
+        isRepo: false,
+        rootPath: null,
+        error: 'not a git repository',
+      });
+      store.setState({
+        workspaces: [buildWorkspace({ rootPath: '/tmp/study-space', kind: 'simple' })],
+      });
+
+      await expect(
+        store.getState().convertWorkspaceToRepo({
+          workspaceId: WS_ID,
+          remoteUrl: 'https://github.com/acme/widgets.git',
+        }),
+      ).rejects.toThrow('not a git repository');
+
+      expect(db.updateWorkspaceKind).not.toHaveBeenCalled();
+      expect(store.getState().workspaces[0]?.kind).toBe('simple');
+    });
+
+    it('refuses to convert a workspace that already has a repository', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      store.setState({ workspaces: [buildWorkspace({ kind: 'repo' })] });
+
+      await expect(
+        store.getState().convertWorkspaceToRepo({
+          workspaceId: WS_ID,
+          remoteUrl: 'https://github.com/acme/widgets.git',
+        }),
+      ).rejects.toThrow('only a simple workspace can become a dev project');
+
+      expect(repo.initRepoWithRemote).not.toHaveBeenCalled();
     });
 
     it('relinks a moved simple session directory during workspace load', async () => {
