@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { parseStreamJsonLine, type ParseContext } from './parser';
+import { resetTextBoundary } from '../shared/text-boundary';
 
 const at = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 const ctx: ParseContext = {
@@ -46,6 +47,44 @@ describe('parseStreamJsonLine', () => {
       }),
     );
     expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }]);
+  });
+
+  it('inserts a blank line between two text blocks separated by a tool_use, when the first has none', () => {
+    resetTextBoundary({ runId: ctx.runId });
+    parse(
+      JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: 'final report.' }] },
+      }),
+    );
+    const events = parse(
+      JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: 'Now let me read the file.' }] },
+      }),
+    );
+    expect(events).toEqual([
+      { kind: 'assistant_text', runId: ctx.runId, delta: '\n\nNow let me read the file.', at },
+    ]);
+  });
+
+  it('does not double the blank line when the prior block already ends with one', () => {
+    resetTextBoundary({ runId: ctx.runId });
+    parse(
+      JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: 'final report.\n\n' }] },
+      }),
+    );
+    const events = parse(
+      JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: 'Now let me read the file.' }] },
+      }),
+    );
+    expect(events).toEqual([
+      { kind: 'assistant_text', runId: ctx.runId, delta: 'Now let me read the file.', at },
+    ]);
   });
 
   it('emits tool_call_start for tool_use blocks', () => {

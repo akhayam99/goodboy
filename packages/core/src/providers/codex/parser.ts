@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { blockBoundaryPrefix, resetTextBoundary } from '../shared/text-boundary';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
@@ -201,7 +202,8 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
         return commandToTurnEvents(item, 'end', ctx, at);
       }
       if (isAgentMessageItem(item) && typeof item.text === 'string' && item.text.length > 0) {
-        return [{ kind: 'assistant_text', runId: ctx.runId, delta: item.text, at }];
+        const prefix = blockBoundaryPrefix({ runId: ctx.runId, text: item.text });
+        return [{ kind: 'assistant_text', runId: ctx.runId, delta: `${prefix}${item.text}`, at }];
       }
       if (isApplyPatchItem(item)) {
         return applyPatchToTurnEvents(item, ctx, at);
@@ -211,6 +213,7 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
 
     case 'turn.completed': {
       const usage = buildUsage(payload['usage'] as UsagePayload | undefined);
+      resetTextBoundary({ runId: ctx.runId });
       return [{ kind: 'usage', runId: ctx.runId, usage, at }];
     }
 
@@ -219,6 +222,7 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
         typeof payload['message'] === 'string'
           ? (payload['message'] as string)
           : JSON.stringify(payload);
+      resetTextBoundary({ runId: ctx.runId });
       return [{ kind: 'error', runId: ctx.runId, message: msg, at }];
     }
 

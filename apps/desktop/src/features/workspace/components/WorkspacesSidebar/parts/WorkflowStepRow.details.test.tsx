@@ -112,6 +112,37 @@ describe('WorkflowStepRow details', () => {
     expect(screen.queryByRole('button', { name: /details for scout/i })).toBeNull();
   });
 
+  it('strips control markers and renders markdown in what it produced', () => {
+    const { container } = renderRow({
+      showBrief: true,
+      runDef: {
+        ...agent,
+        outputSummary: '<<step-done id="s1">>mapped **12** files\n\n<<ctx-goal>> confirmed',
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /show details for scout/i }));
+
+    expect(container.textContent).not.toContain('step-done');
+    expect(screen.getByText('12').tagName).toBe('STRONG');
+    expect(container.textContent).toContain('goal');
+  });
+
+  it('renders a pipe table in what it produced as a real table', () => {
+    renderRow({
+      showBrief: true,
+      runDef: {
+        ...agent,
+        outputSummary: '| File | Action |\n| --- | --- |\n| a.ts | edited |',
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /show details for scout/i }));
+
+    expect(screen.getByRole('table')).toBeDefined();
+    expect(screen.getByText('a.ts').closest('td')).not.toBeNull();
+  });
+
   it('keeps detail content within the step row below its brief', () => {
     renderRow({
       showBrief: true,

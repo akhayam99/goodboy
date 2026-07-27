@@ -4,6 +4,7 @@ import { ChevronRight, Layers } from 'lucide-react';
 import { useState } from 'react';
 import { MARKER_ACCENT } from '../marker-accents';
 import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
+import { clusterBody } from '../SpawnedAgentList/clusterBody';
 import type { ClusterDashboardItem } from './clusterDashboard';
 
 type Props = {
@@ -35,7 +36,7 @@ export const ClusterProgressDashboard = ({
       index,
       total,
       name: agent.name,
-      body: agent.status === 'completed' ? (agent.outputSummary ?? instructions) : instructions,
+      body: clusterBody({ agent, instructions }),
       status: agent.status,
       agentId: agent.id,
     }),
