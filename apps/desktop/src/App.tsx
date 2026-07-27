@@ -38,6 +38,7 @@ import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
+import { ImpactStudio } from './features/impact/components/ImpactStudio';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -130,6 +131,7 @@ export const App = () => {
   const [githubStudioIssueId, setGithubStudioIssueId] = useState<string | null>(null);
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
+  const [impactStudioOpen, setImpactStudioOpen] = useState(false);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const clearSessionStudio = useCallback(() => {
     const id = useAppStore.getState().currentSessionId;
@@ -268,6 +270,20 @@ export const App = () => {
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
     };
+    const onOpenImpactStudio = () => {
+      setWorkflowStudioOpen(false);
+      setGithubStudioOpen(false);
+      setProviderStudioOpen(false);
+      setBudgetStudioOpen(false);
+      setLinearStudioOpen(false);
+      setSentryStudioOpen(false);
+      setGitlabStudioOpen(false);
+      setAppSettingsOpen(false);
+      setGuideStudioOpen(false);
+      setAddWorkspaceOpen(false);
+      setSwitcherOpen(false);
+      setImpactStudioOpen(true);
+    };
     const onOpenLinearStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
       setWorkflowStudioOpen(false);
@@ -334,6 +350,7 @@ export const App = () => {
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
     window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+    window.addEventListener('goodboy:open-impact-studio', onOpenImpactStudio);
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
@@ -349,6 +366,7 @@ export const App = () => {
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
       window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
       window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
+      window.removeEventListener('goodboy:open-impact-studio', onOpenImpactStudio);
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
@@ -485,6 +503,7 @@ export const App = () => {
     setGithubStudioOpen(false);
     setProviderStudioOpen(false);
     setBudgetStudioOpen(false);
+    setImpactStudioOpen(false);
     setLinearStudioOpen(false);
     setSentryStudioOpen(false);
     setGitlabStudioOpen(false);
@@ -502,17 +521,19 @@ export const App = () => {
         ? 'provider'
         : budgetStudioOpen
           ? 'budget'
-          : linearStudioOpen
-            ? 'linear'
-            : sentryStudioOpen
-              ? 'sentry'
-              : gitlabStudioOpen
-                ? 'gitlab'
-                : appSettingsOpen
-                  ? 'settings'
-                  : guideStudioOpen
-                    ? 'guide'
-                    : null;
+          : impactStudioOpen
+            ? 'impact'
+            : linearStudioOpen
+              ? 'linear'
+              : sentryStudioOpen
+                ? 'sentry'
+                : gitlabStudioOpen
+                  ? 'gitlab'
+                  : appSettingsOpen
+                    ? 'settings'
+                    : guideStudioOpen
+                      ? 'guide'
+                      : null;
 
   const openSettings = useCallback(() => {
     closeAllStudios();
@@ -524,6 +545,10 @@ export const App = () => {
     closeAllStudios();
     setBudgetStudioScope({ kind: 'overview' });
     setBudgetStudioOpen(true);
+  }, [closeAllStudios]);
+  const openImpact = useCallback(() => {
+    closeAllStudios();
+    setImpactStudioOpen(true);
   }, [closeAllStudios]);
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
@@ -784,6 +809,7 @@ export const App = () => {
                 setProviderStudioOpen(true);
               }}
               onOpenBudget={openBudget}
+              onOpenImpact={openImpact}
               onOpenGithub={() => {
                 closeAllStudios();
                 setGithubStudioSession(currentSession?.id ?? null);
@@ -934,6 +960,13 @@ export const App = () => {
           workspaceName={currentWorkspace.name}
           initialScope={budgetStudioScope}
           onClose={() => setBudgetStudioOpen(false)}
+        />
+      ) : null}
+      {impactStudioOpen && currentWorkspace ? (
+        <ImpactStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={() => setImpactStudioOpen(false)}
         />
       ) : null}
       {linearStudioOpen && currentWorkspace ? (

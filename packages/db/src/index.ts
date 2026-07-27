@@ -207,6 +207,22 @@ export {
   type NudgeOutcome,
 } from './queries/nudge-event';
 export {
+  getOrchestrationOverview,
+  getPlanAdoption,
+  getContextHealth,
+  getTurnDistribution,
+  getModelMix,
+  getRightSizeNudgeOutcomes,
+  getDelegationFlow,
+  type OrchestrationOverview,
+  type PlanAdoption,
+  type ContextHealth,
+  type TurnBucket,
+  type ModelMixEntry,
+  type NudgeOutcomeCount,
+  type DelegationFlow,
+} from './queries/impact';
+export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,
