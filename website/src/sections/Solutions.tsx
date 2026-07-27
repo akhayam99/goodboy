@@ -94,8 +94,8 @@ const CARDS: ReadonlyArray<Card> = [
     title: 'Use every agent you pay for',
     body: (
       <>
-        Claude, Cursor, Codex, and Gemini in <B>one session</B>, on your own logins. Set a budget
-        cap and routing falls back when you hit it.
+        Claude, Cursor, Codex, Gemini, OpenCode, and OpenRouter in <B>one session</B>, on your own
+        logins and keys. Set a budget cap and routing falls back when you hit it.
       </>
     ),
   },

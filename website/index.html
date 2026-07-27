@@ -4,11 +4,18 @@
     <meta charset="UTF-8" />
 
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-5NM3VX7Q');</script>
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : '';
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, 'script', 'dataLayer', 'GTM-5NM3VX7Q');
+    </script>
     <!-- End Google Tag Manager -->
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -16,8 +23,14 @@
 
     <!-- Primary -->
     <title>Goodboy: keep the thread across your coding agents</title>
-    <meta name="description" content="Goodboy carries the goal, plan, decisions, and open questions from one coding agent to the next. Compose workflows, run Claude, Cursor, Codex, and Gemini, and watch the spend." />
-    <meta name="keywords" content="keep context, coding agents, shared context, agent workflows, multi-provider, budget routing, syntax-highlighted diffs, stage board, local-first, open source, Tauri desktop app" />
+    <meta
+      name="description"
+      content="Goodboy carries the goal, plan, decisions, and open questions from one coding agent to the next. Compose workflows, run Claude, Cursor, Codex, Gemini, OpenCode, or OpenRouter, and watch the spend."
+    />
+    <meta
+      name="keywords"
+      content="keep context, coding agents, shared context, agent workflows, multi-provider, budget routing, syntax-highlighted diffs, stage board, local-first, open source, Tauri desktop app"
+    />
     <meta name="author" content="Amin Khayam" />
     <link rel="canonical" href="https://goodboy.dev/" />
 
@@ -26,7 +39,10 @@
     <meta property="og:site_name" content="Goodboy" />
     <meta property="og:url" content="https://goodboy.dev/" />
     <meta property="og:title" content="Goodboy: keep the thread across your coding agents" />
-    <meta property="og:description" content="Stop re-explaining the goal to every new agent. Goodboy holds shared context, runs reusable workflows, and drives the CLI tools you already use. Open source, local-first, MIT." />
+    <meta
+      property="og:description"
+      content="Stop re-explaining the goal to every new agent. Goodboy holds shared context, runs reusable workflows, and drives the CLI tools you already use. Open source, local-first, MIT."
+    />
     <meta property="og:image" content="https://goodboy.dev/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -38,7 +54,10 @@
     <meta name="twitter:site" content="@akhayam99" />
     <meta name="twitter:creator" content="@akhayam99" />
     <meta name="twitter:title" content="Goodboy: keep the thread across your coding agents" />
-    <meta name="twitter:description" content="Shared context carried into every agent, workflows you compose once, and Claude, Cursor, Codex, and Gemini in one session. Open source, MIT." />
+    <meta
+      name="twitter:description"
+      content="Shared context carried into every agent, workflows you compose once, and Claude, Cursor, Codex, Gemini, OpenCode, or OpenRouter in one session. Open source, MIT."
+    />
     <meta name="twitter:image" content="https://goodboy.dev/og-image.png" />
     <meta name="twitter:image:alt" content="Goodboy: keep the thread across your coding agents" />
 
@@ -48,103 +67,118 @@
 
     <!-- JSON-LD: SoftwareApplication -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Goodboy",
-      "alternateName": "Goodboy shared context for coding agents",
-      "description": "Goodboy is a local-first desktop app for running coding agents that keeps the thread. It carries shared context into every agent, runs reusable workflows with per-step models, drives the command-line tools you have signed into, and tracks spend with caps that steer routing.",
-      "url": "https://goodboy.dev/",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "macOS",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD",
-        "description": "Open source under MIT license"
-      },
-      "author": {
-        "@type": "Person",
-        "name": "Amin Khayam",
-        "url": "https://github.com/akhayam99"
-      },
-      "license": "https://opensource.org/licenses/MIT",
-      "codeRepository": "https://github.com/akhayam99/goodboy",
-      "keywords": ["shared context", "coding agents", "agent workflows", "multi-provider", "budget routing", "stage board", "local-first", "open source"],
-      "featureList": [
-        "Shared context preamble carried into every agent",
-        "Last-output summarizer that compacts each turn",
-        "Durable plans kept as artifacts",
-        "Tracked open questions clustered by agent",
-        "Reusable workflows with a model and effort per step",
-        "Scout fan-out for large repositories",
-        "Implement clusters that split a big plan",
-        "Runs grouped into lanes with a cost rollup",
-        "Four CLI providers (Claude, Cursor, Codex, Gemini) in one session",
-        "Budget caps that drive provider routing",
-        "Stage board with derived stages",
-        "Syntax-highlighted diffs across twelve languages",
-        "GPU terminal on xterm 6",
-        "Composite workspaces across many repositories",
-        "Mobile companion to act from your phone"
-      ]
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Goodboy",
+        "alternateName": "Goodboy shared context for coding agents",
+        "description": "Goodboy is a local-first desktop app for running coding agents that keeps the thread. It carries shared context into every agent, runs reusable workflows with per-step models, drives the command-line tools you have signed into, and tracks spend with caps that steer routing.",
+        "url": "https://goodboy.dev/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Open source under MIT license"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Amin Khayam",
+          "url": "https://github.com/akhayam99"
+        },
+        "license": "https://opensource.org/licenses/MIT",
+        "codeRepository": "https://github.com/akhayam99/goodboy",
+        "keywords": [
+          "shared context",
+          "coding agents",
+          "agent workflows",
+          "multi-provider",
+          "budget routing",
+          "stage board",
+          "local-first",
+          "open source"
+        ],
+        "featureList": [
+          "Shared context preamble carried into every agent",
+          "Last-output summarizer that compacts each turn",
+          "Durable plans kept as artifacts",
+          "Tracked open questions clustered by agent",
+          "Reusable workflows with a model and effort per step",
+          "Scout fan-out for large repositories",
+          "Implement clusters that split a big plan",
+          "Runs grouped into lanes with a cost rollup",
+          "Six CLI providers (Claude, Cursor, Codex, Gemini, OpenCode, OpenRouter) in one session",
+          "Budget caps that drive provider routing",
+          "Stage board with derived stages",
+          "Syntax-highlighted diffs across twelve languages",
+          "GPU terminal on xterm 6",
+          "Composite workspaces across many repositories",
+          "Mobile companion to act from your phone"
+        ]
+      }
     </script>
 
     <!-- JSON-LD: FAQPage -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Is Goodboy free?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. Goodboy is open source under the MIT license. You bring your own agent logins and plans."
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Goodboy free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Goodboy is open source under the MIT license. You bring your own agent logins and plans."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need API keys?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not for most of them. Goodboy drives the command-line tools you already installed and signed into: Claude, Cursor, Codex, Gemini, and OpenCode. OpenRouter is the exception, an API-key provider that runs through the OpenCode runtime."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where do my credentials live?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Your provider logins stay inside the CLI tools you already signed into. Any optional API key you add to Goodboy lives in your OS keychain, read at spawn and never written to disk."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does my code leave my machine?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Goodboy itself is local-first: your sessions, history, and keys stay on your machine. The agents you run reach their own providers exactly as they do in your terminal."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which platforms does Goodboy support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "macOS today, as a universal build or via Homebrew. Linux and Windows are in progress; you can build from source in the meantime."
+            }
           }
-        },
-        {
-          "@type": "Question",
-          "name": "Do I need API keys?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "No. Goodboy drives the command-line tools you already installed and signed into: Claude, Cursor, Codex, and Gemini."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Where do my credentials live?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Your provider logins stay inside the CLI tools you already signed into. Any optional API key you add to Goodboy lives in your OS keychain, read at spawn and never written to disk."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Does my code leave my machine?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Goodboy itself is local-first: your sessions, history, and keys stay on your machine. The agents you run reach their own providers exactly as they do in your terminal."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Which platforms does Goodboy support?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "macOS today, as a universal build or via Homebrew. Linux and Windows are in progress; you can build from source in the meantime."
-          }
-        }
-      ]
-    }
+        ]
+      }
     </script>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5NM3VX7Q"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-5NM3VX7Q"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
     <div id="root"></div>
