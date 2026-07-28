@@ -193,6 +193,9 @@ async function* throwingStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
 const OAUTH_EXPIRED_MESSAGE =
   'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth access token has expired. Re-authenticate to continue."},"request_id":null}';
 
+const MAX_MODE_MESSAGE =
+  'ActionRequiredError: Max Mode Required  The model "gpt-5.5-high" requires Max Mode to be enabled.';
+
 async function* authErrorEventStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
   yield {
     kind: 'error',
@@ -211,6 +214,16 @@ async function* throwingAuthErrorStream(runId: ProviderRunId): AsyncIterable<Tur
   };
   throw new Error(OAUTH_EXPIRED_MESSAGE);
 }
+
+type ErrorStreamParams = {
+  readonly message: string;
+};
+
+const throwingErrorStream = async function* ({
+  message,
+}: ErrorStreamParams): AsyncIterable<TurnEvent> {
+  throw new Error(message);
+};
 
 async function* nonAuthErrorEventStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
   yield {
@@ -393,6 +406,7 @@ describe('sendTurn, terminal state guarantees', () => {
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvent = transcript.find((e) => e.kind === 'error');
     const message = errorEvent && 'message' in errorEvent ? errorEvent.message : '';
+    expect(message).toMatch(/^__auth_required__:/);
     expect(decodeAuthRequiredMessage(message)).toEqual({
       providerId: 'anthropic',
       identity: 'test',
@@ -418,6 +432,24 @@ describe('sendTurn, terminal state guarantees', () => {
       providerId: 'anthropic',
       identity: 'test',
     });
+  });
+
+  it('surfaces the model and Max Mode action when the child exits with Max Mode stderr', async () => {
+    runTurnSpy.mockImplementation(() => throwingErrorStream({ message: MAX_MODE_MESSAGE }));
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
+    ).rejects.toThrow(MAX_MODE_MESSAGE);
+
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const errorEvent = transcript.find((event) => event.kind === 'error');
+    const message = errorEvent && 'message' in errorEvent ? errorEvent.message : '';
+    expect(message).toContain('gpt-5.5-high');
+    expect(message).toContain('Enable Max Mode');
+    expect(message).not.toContain('CLI is configured correctly');
   });
 
   it('leaves a non-auth provider error event message verbatim', async () => {
