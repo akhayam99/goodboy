@@ -227,14 +227,14 @@ agy -p <PROMPT> --model <MODEL> --sandbox
 
 ## Effort
 
-Effort is the third axis of every model picker, next to provider and model. Only Claude and Codex models carry a ladder, declared per model in `packages/core/src/providers/capabilities.ts`:
+Effort is the third axis of every model picker, next to provider and model. How the picker renders it is owned by [model-picker.md](model-picker.md); this section owns which levels each provider actually accepts. Ladders are declared per model in the provider catalogs under `packages/core/src/providers/<provider>/catalog.ts`:
 
 - **Claude Opus and Fable**: `low`, `medium`, `high`, `extra-high`, `max`.
 - **Claude Sonnet**: `low`, `medium`, `high`.
 - **Codex turn models**: `minimal`, `low`, `medium`, `high`.
 - **`gpt-5.4-mini`**: `minimal`, `low`, `medium`.
 
-Everything else has no ladder and ignores effort: `claude-haiku-4-5`, every Cursor model, every Gemini model. No effort arg is emitted for them at all. Picking a level a model does not support clamps to the top of that model's ladder (`clampEffort` in `apps/desktop/src/features/chat/utils/chat-constants.ts`).
+Cursor is the exception to the ladder shape: effort is baked into the model slug, so each catalog entry lists the combos it has and the reachable levels depend on the Thinking and Fast toggles. `claude-haiku-4-5` and every Gemini model have no ladder at all and emit no effort arg. Picking a level a model does not support clamps to the top of what it supports (`clampEffort` in `packages/core/src/providers/clampEffort.ts`).
 
 The UI label and the emitted value diverge in exactly one place: `extra-high` reads **Very high** in the picker and goes out as `xhigh` on the wire. Every other level is emitted verbatim. claude takes `--effort <level>`, codex takes `-c model_reasoning_effort="<level>"`, both built in `apps/desktop/src-tauri/src/turn.rs`.
 
