@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const AgentKindGrid = ({ kinds, value, onChange }: Props) => (
-  <div className="grid grid-cols-2 gap-1 px-2.5">
+  <div className="grid grid-cols-3 gap-1 px-2.5">
     {kinds.map((kind) => (
       <AgentKindTile
         key={kind}
