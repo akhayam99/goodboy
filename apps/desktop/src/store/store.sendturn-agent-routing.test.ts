@@ -766,7 +766,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   it('passes --effort (mapped) to runTurn when an effort override is set on anthropic', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
-    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'extra-high' } });
+    useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'xhigh' } });
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -804,7 +804,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_A, false, null);
   });
 
-  it('omits effort from runTurn when no override is set (model default preserved)', async () => {
+  it('passes the model default effort when no override is set', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
 
@@ -812,7 +812,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined();
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('medium');
   });
 
   it('passes clamped effort to runTurn when the resolved provider is codex', async () => {
@@ -830,7 +830,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('high');
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('xhigh');
   });
 
   it('omits effort when the resolved provider has no effort axis (gemini)', async () => {
@@ -1150,7 +1150,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     });
 
     const spawnedModel = runTurnSpy.mock.calls[0]?.[0]?.model;
-    expect(PROVIDER_CAPABILITIES.anthropic.models.map((model) => model.id)).toContain(spawnedModel);
+    expect(spawnedModel).toBe('claude-opus-5');
   });
 
   it('keeps the agent kind model pin when no per-turn override is supplied', async () => {
@@ -1191,7 +1191,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
     expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('cursor');
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('composer-2');
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('composer-2.5');
   });
 
   it('maps a workflow phase model override into the routed provider namespace', async () => {

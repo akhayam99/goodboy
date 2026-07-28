@@ -1,7 +1,12 @@
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  modelIdForSelection,
+  resolveModelArgs,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import { EFFORT_LABEL, PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
+import type { ModelSelection, ProviderId } from '@goodboy/types';
+import { EFFORT_LABEL, PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { ModelGrid } from '../../../../shared/components/RoutingPicker/ModelGrid';
 import { PickerChip } from '../../../../shared/components/RoutingPicker/PickerChip';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
@@ -22,9 +27,13 @@ type Props = {
   readonly viewProvider: ProviderId;
   readonly onViewProvider: (provider: ProviderId) => void;
   readonly onPickProvider: (provider: ProviderId) => void;
-  readonly onPickModel: (model: string) => void;
+  readonly onPickModel: (model: string, effort: AgentKindRouting['effort']) => void;
   readonly onPickEffort: (effort: AgentKindRouting['effort']) => void;
   readonly onConnectProvider: (provider: ProviderId) => void;
+};
+
+type PickSelectionParams = {
+  readonly selection: ModelSelection;
 };
 
 export const AgentRoutingSections = ({
@@ -45,6 +54,19 @@ export const AgentRoutingSections = ({
     recommendation: undefined,
   });
   const isProviderConnected = connectedProviders.includes(viewProvider);
+  const onPickSelection = ({ selection }: PickSelectionParams) => {
+    const resolved = resolveModelArgs({ provider: viewProvider, selection });
+    const applied = resolved.clamped?.applied ?? selection.effort ?? effective.effort;
+    onPickModel(modelIdForSelection({ provider: viewProvider, selection }), applied);
+  };
+  const onSelectModel = (model: string) => {
+    const selection = resolveStoredModelSelection({
+      provider: viewProvider,
+      id: model,
+      effort: effective.effort,
+    }).selection;
+    onPickSelection({ selection });
+  };
 
   return (
     <>
@@ -101,38 +123,73 @@ export const AgentRoutingSections = ({
         {isProviderConnected && (
           <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
             <ModelGrid
+              provider={viewProvider}
               ids={viewedRouting.models}
               value={viewedRouting.model}
+              selection={viewedRouting.selection}
               isRecommended={false}
-              onSelect={onPickModel}
+              onSelect={onSelectModel}
+              onSelection={(selection) => onPickSelection({ selection })}
             />
           </ScrollFade>
         )}
       </PickerSection>
-      {isProviderConnected && viewedRouting.effortLevels != null && (
+      {isProviderConnected && (
         <>
           <Divider />
           <PickerSection label="Effort" hint="How hard the model thinks before answering">
             <div className={CHIP_GROUP_CLASS}>
-              {orderedEffortLevels({ levels: viewedRouting.effortLevels }).map((level) => (
+              {viewedRouting.isEffortFixed ? (
+                <PickerChip label="Default" active disabled onSelect={() => undefined} />
+              ) : (
+                orderedEffortLevels({ levels: viewedRouting.effortLevels }).map((level) => (
+                  <PickerChip
+                    key={level}
+                    label={EFFORT_LABEL[level]}
+                    active={viewedRouting.effort === level}
+                    onSelect={() =>
+                      onPickSelection({
+                        selection: { ...viewedRouting.selection, effort: level },
+                      })
+                    }
+                  />
+                ))
+              )}
+              {viewedRouting.hasThinkingToggle && (
                 <PickerChip
-                  key={level}
-                  label={EFFORT_LABEL[level]}
-                  active={viewedRouting.effort === level}
-                  onSelect={() => onPickEffort(level)}
+                  label="Thinking"
+                  active={viewedRouting.selection.toggles?.thinking === true}
+                  onSelect={() =>
+                    onPickSelection({
+                      selection: {
+                        ...viewedRouting.selection,
+                        toggles: {
+                          ...viewedRouting.selection.toggles,
+                          thinking: viewedRouting.selection.toggles?.thinking !== true,
+                        },
+                      },
+                    })
+                  }
                 />
-              ))}
+              )}
+              {viewedRouting.hasFastToggle && (
+                <PickerChip
+                  label="Fast"
+                  active={viewedRouting.selection.toggles?.fast === true}
+                  onSelect={() =>
+                    onPickSelection({
+                      selection: {
+                        ...viewedRouting.selection,
+                        toggles: {
+                          ...viewedRouting.selection.toggles,
+                          fast: viewedRouting.selection.toggles?.fast !== true,
+                        },
+                      },
+                    })
+                  }
+                />
+              )}
             </div>
-          </PickerSection>
-        </>
-      )}
-      {isProviderConnected && viewedRouting.effortLevels == null && (
-        <>
-          <Divider />
-          <PickerSection label="Effort">
-            <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
-              {modelLabel(viewedRouting.model)} runs at a fixed effort.
-            </p>
           </PickerSection>
         </>
       )}

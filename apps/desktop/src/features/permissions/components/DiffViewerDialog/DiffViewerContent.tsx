@@ -838,7 +838,7 @@ export const DiffViewerContent = ({
                 if (next === '') {
                   return;
                 }
-                const model = getDefaultTurnModel(next);
+                const model = getDefaultTurnModel({ id: next });
                 setResolverRouting({
                   provider: next,
                   model,

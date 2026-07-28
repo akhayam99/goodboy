@@ -260,6 +260,7 @@ export type ParallelSpawnArgs = {
   readonly runs: ReadonlyArray<ParallelRunSpec>;
   readonly binary?: string;
   readonly model: string;
+  readonly effort?: string;
   readonly prompt: string;
   readonly permissionMode?: ClaudePermissionMode;
   readonly allowedTools?: ReadonlyArray<string>;

@@ -58,6 +58,7 @@ export const autoModelForRole = ({
 
 export const recommendedModelForRole = ({ role, provider, prefs }: Params): string => {
   return (
-    autoModelForRole({ role, providers: [provider], prefs })?.model ?? getDefaultTurnModel(provider)
+    autoModelForRole({ role, providers: [provider], prefs })?.model ??
+    getDefaultTurnModel({ id: provider })
   );
 };

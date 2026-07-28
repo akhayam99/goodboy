@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, RotateCcw } from 'lucide-react';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import {
+  MODEL_CATALOGS,
+  PROVIDER_CAPABILITIES,
+  modelIdForSelection,
+  remapModelSelection,
+  resolveModelArgs,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import { Button, Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
@@ -35,6 +42,45 @@ const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
 type PickProviderParams = {
   readonly next: ProviderId | '';
   readonly viewedProvider: ProviderId;
+};
+
+type PickSelectionParams = {
+  readonly next: ModelSelection;
+  readonly provider: ProviderId;
+};
+
+type SelectionParams = {
+  readonly model: CatalogModel;
+  readonly effort: EffortLevel;
+};
+
+const selectionForModel = ({ model, effort }: SelectionParams): ModelSelection => {
+  switch (model.provider) {
+    case 'anthropic':
+    case 'opencode':
+    case 'openrouter':
+      return { key: model.key, effort };
+    case 'codex':
+      return { key: model.key, effort, variant: model.variants[0]?.id };
+    case 'cursor': {
+      const combo =
+        model.combos.find((candidate) => candidate.effort === effort) ?? model.combos[0];
+      return {
+        key: model.key,
+        ...(combo?.effort != null && { effort: combo.effort }),
+        toggles: {
+          thinking: combo?.thinking ?? false,
+          fast: combo?.fast ?? false,
+        },
+      };
+    }
+    case 'gemini':
+      return { key: model.key };
+    default: {
+      const exhaustive: never = model;
+      throw new Error(`unknown catalog model: ${String(exhaustive)}`);
+    }
+  }
 };
 
 type EffortSetting =
@@ -110,11 +156,15 @@ export const RoutingPicker = ({
   const [viewProvider, setViewProvider] = useState(routing.provider);
   const [isViewingAuto, setIsViewingAuto] = useState(isInheritingRecommendation);
   const isViewingRoutingProvider = viewProvider === routing.provider;
+  const storedRecommendedModel =
+    recommendedModel != null
+      ? resolveStoredModelSelection({ provider: viewProvider, id: recommendedModel })
+      : null;
   const viewedRecommendedModel =
     isViewingRoutingProvider &&
-    recommendedModel != null &&
-    PROVIDER_CAPABILITIES[viewProvider].models.some((entry) => entry.id === recommendedModel)
-      ? recommendedModel
+    storedRecommendedModel != null &&
+    storedRecommendedModel.report?.kind !== 'unknown'
+      ? storedRecommendedModel.selection.key
       : undefined;
   const viewedRouting = resolveRouting({
     providers: PROVIDERS,
@@ -125,7 +175,7 @@ export const RoutingPicker = ({
   });
   const gridRecommendedModel = recommendedProvider == null ? viewedRecommendedModel : undefined;
   const isViewProviderConnected = connectedProviders.includes(viewProvider);
-  const showEffort = editableEffort != null && routing.effortLevels != null;
+  const showEffort = editableEffort != null && !routing.isEffortFixed;
   const isModelRecommended =
     isViewingRoutingProvider && routing.isModelRecommended && gridRecommendedModel != null;
   const summary = `${PROVIDER_LABEL[routing.provider]} · ${modelLabel(routing.model)}${
@@ -140,15 +190,41 @@ export const RoutingPicker = ({
     setIsViewingAuto(isInheritingRecommendation);
   }, [open, isInheritingRecommendation, routing.provider]);
 
+  const onPickSelection = ({ next, provider: nextProvider }: PickSelectionParams) => {
+    const resolved = resolveModelArgs({ provider: nextProvider, selection: next });
+    onModel(modelIdForSelection({ provider: nextProvider, selection: next }));
+    const applied = resolved.clamped?.applied ?? next.effort;
+    if (editableEffort == null || applied == null || applied === editableEffort.value) {
+      return;
+    }
+    editableEffort.onChange(applied);
+  };
+
   const onPickProvider = ({ next, viewedProvider }: PickProviderParams) => {
     onProvider(next);
     setViewProvider(viewedProvider);
     setIsViewingAuto(next === '');
+    if (next === '') {
+      return;
+    }
+    const remapped = remapModelSelection({
+      sourceProvider: routing.provider,
+      targetProvider: next,
+      selection: routing.selection,
+    });
+    onPickSelection({ next: remapped.selection, provider: next });
   };
 
   const onPickModel = (next: string) => {
     setIsViewingAuto(false);
-    onModel(next);
+    const nextModel = MODEL_CATALOGS[viewProvider].find((candidate) => candidate.key === next);
+    if (nextModel == null) {
+      return;
+    }
+    onPickSelection({
+      next: selectionForModel({ model: nextModel, effort: viewedRouting.effort }),
+      provider: viewProvider,
+    });
   };
 
   return (
@@ -271,7 +347,7 @@ export const RoutingPicker = ({
                       if (!isConnected) {
                         return;
                       }
-                      onProvider(id);
+                      onPickProvider({ next: id, viewedProvider: id });
                     }}
                     className={cn(
                       'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
@@ -318,11 +394,14 @@ export const RoutingPicker = ({
             {isViewProviderConnected && (
               <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
                 <ModelGrid
+                  provider={viewProvider}
                   ids={viewedRouting.models}
                   value={viewedRouting.model}
+                  selection={viewedRouting.selection}
                   recommendedModel={gridRecommendedModel}
                   isRecommended={isModelRecommended}
                   onSelect={onPickModel}
+                  onSelection={(next) => onPickSelection({ next, provider: viewProvider })}
                 />
               </ScrollFade>
             )}
@@ -331,21 +410,103 @@ export const RoutingPicker = ({
             <>
               <Divider />
               <PickerSection label="Effort" hint="How hard the model thinks before answering">
-                {viewedRouting.effortLevels == null && (
-                  <p className="px-2.5 text-2xs leading-relaxed text-muted-foreground/60">
-                    {modelLabel(viewedRouting.model)} runs at a fixed effort.
-                  </p>
-                )}
-                {viewedRouting.effortLevels != null && (
+                {viewedRouting.isEffortFixed ? (
+                  <div className={CHIP_GROUP_CLASS_NAME}>
+                    <PickerChip label="Default" active disabled onSelect={() => undefined} />
+                    {viewedRouting.hasThinkingToggle && (
+                      <PickerChip
+                        label="Thinking"
+                        active={viewedRouting.selection.toggles?.thinking === true}
+                        onSelect={() =>
+                          onPickSelection({
+                            next: {
+                              ...viewedRouting.selection,
+                              toggles: {
+                                ...viewedRouting.selection.toggles,
+                                thinking: viewedRouting.selection.toggles?.thinking !== true,
+                              },
+                            },
+                            provider: viewProvider,
+                          })
+                        }
+                      />
+                    )}
+                    {viewedRouting.hasFastToggle && (
+                      <PickerChip
+                        label="Fast"
+                        active={viewedRouting.selection.toggles?.fast === true}
+                        onSelect={() =>
+                          onPickSelection({
+                            next: {
+                              ...viewedRouting.selection,
+                              toggles: {
+                                ...viewedRouting.selection.toggles,
+                                fast: viewedRouting.selection.toggles?.fast !== true,
+                              },
+                            },
+                            provider: viewProvider,
+                          })
+                        }
+                      />
+                    )}
+                  </div>
+                ) : (
                   <div className={CHIP_GROUP_CLASS_NAME}>
                     {orderedEffortLevels({ levels: viewedRouting.effortLevels }).map((level) => (
                       <PickerChip
                         key={level}
                         label={EFFORT_LABEL[level]}
                         active={viewedRouting.effort === level}
-                        onSelect={() => editableEffort.onChange(level)}
+                        onSelect={() =>
+                          onPickSelection({
+                            next: { ...viewedRouting.selection, effort: level },
+                            provider: viewProvider,
+                          })
+                        }
                       />
                     ))}
+                    {viewedRouting.hasThinkingToggle && (
+                      <PickerChip
+                        label="Thinking"
+                        active={viewedRouting.selection.toggles?.thinking === true}
+                        onSelect={() =>
+                          onPickSelection({
+                            next: {
+                              ...viewedRouting.selection,
+                              toggles: {
+                                ...viewedRouting.selection.toggles,
+                                thinking: viewedRouting.selection.toggles?.thinking !== true,
+                              },
+                            },
+                            provider: viewProvider,
+                          })
+                        }
+                      />
+                    )}
+                    {viewedRouting.hasFastToggle && (
+                      <PickerChip
+                        label="Fast"
+                        active={viewedRouting.selection.toggles?.fast === true}
+                        onSelect={() =>
+                          onPickSelection({
+                            next: {
+                              ...viewedRouting.selection,
+                              toggles: {
+                                ...viewedRouting.selection.toggles,
+                                fast: viewedRouting.selection.toggles?.fast !== true,
+                              },
+                            },
+                            provider: viewProvider,
+                          })
+                        }
+                      />
+                    )}
+                    {viewedRouting.clamped != null && (
+                      <span className="inline-flex items-center rounded-full bg-warning/10 px-2 py-1 text-2xs text-warning">
+                        {EFFORT_LABEL[viewedRouting.clamped.requested]} to{' '}
+                        {EFFORT_LABEL[viewedRouting.clamped.applied]}
+                      </span>
+                    )}
                   </div>
                 )}
               </PickerSection>

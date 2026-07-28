@@ -31,7 +31,7 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className }: Props
     const model =
       provider === defaultModelProvider
         ? DEFAULT_AGENT_SPAWN_CONFIG.model
-        : getDefaultTurnModel(provider);
+        : getDefaultTurnModel({ id: provider });
     onChange({
       ...value,
       provider,

@@ -6,7 +6,9 @@ import {
   buildStepPrompt,
   findReusableAgent,
   isFallbackStepOutputSummary,
+  resolveModelArgs,
   resolveModelForProvider,
+  resolveStoredModelSelection,
   runsForWorkflowRun,
   turnReducer,
   type ClaudeFlagSet,
@@ -47,7 +49,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
-import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
@@ -95,17 +97,6 @@ type Input = {
 // view). Deliberately NOT a SLOT_KEY: it's desktop state mirrored to mobile
 // through the snapshot, not an agent-visible or user-editable slot.
 const FILES_TOUCHED_NUMSTAT_SLOT = 'files_touched_numstat';
-
-const EFFORT_FLAG: Readonly<Record<string, string>> = {
-  minimal: 'minimal',
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-  'extra-high': 'xhigh',
-  max: 'max',
-};
-
-const EFFORT_PROVIDERS: ReadonlySet<string> = new Set(['anthropic', 'codex']);
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   return async ({
@@ -401,21 +392,60 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
           })?.model ?? null)
         : null;
-    const model = resolveModelForProvider({
-      provider,
-      modelId:
-        phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
-          ? phaseDefinition.modelOverride
-          : autoStepModel != null
-            ? autoStepModel
-            : turnOverrideActive
+    const requestedModelId =
+      phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
+        ? phaseDefinition.modelOverride
+        : autoStepModel != null
+          ? autoStepModel
+          : turnOverrideActive
+            ? routingDecision.selectedModel
+            : routingDecision.fallbackUsed
               ? routingDecision.selectedModel
-              : routingDecision.fallbackUsed
-                ? routingDecision.selectedModel
-                : agentModelApplies
-                  ? agentKindModel
-                  : routingDecision.selectedModel,
+              : agentModelApplies
+                ? agentKindModel
+                : routingDecision.selectedModel;
+    const model = resolveModelForProvider({ provider, modelId: requestedModelId });
+    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
+    const requestedEffort = EFFORT_LEVELS.find((level) => level === rawEffort);
+    const requestedStoredSelection = resolveStoredModelSelection({
+      provider,
+      id: requestedModelId,
+      ...(requestedEffort != null && { effort: requestedEffort }),
     });
+    const storedSelection =
+      requestedStoredSelection.report?.kind === 'unknown'
+        ? resolveStoredModelSelection({
+            provider,
+            id: model,
+            ...(requestedEffort != null && { effort: requestedEffort }),
+          }).selection
+        : requestedStoredSelection.selection;
+    const modelSelection =
+      turnOverrideActive && turnOverride?.selection != null
+        ? {
+            ...turnOverride.selection,
+            ...(requestedEffort != null && { effort: requestedEffort }),
+          }
+        : storedSelection;
+    const resolvedModel = resolveModelArgs({ provider, selection: modelSelection });
+    const modelFlag = provider === 'anthropic' || provider === 'cursor' ? '--model' : '-m';
+    const modelFlagIndex = resolvedModel.args.indexOf(modelFlag);
+    const spawnModel = resolvedModel.args[modelFlagIndex + 1];
+    if (spawnModel == null) {
+      throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
+    }
+    const explicitEffortFlag =
+      provider === 'anthropic'
+        ? '--effort'
+        : provider === 'opencode' || provider === 'openrouter'
+          ? '--variant'
+          : null;
+    const effortFlagIndex =
+      explicitEffortFlag == null ? -1 : resolvedModel.args.indexOf(explicitEffortFlag);
+    const codexEffort = resolvedModel.args
+      .find((argument) => argument.startsWith('model_reasoning_effort='))
+      ?.split('"')[1];
+    const effortFlag = effortFlagIndex >= 0 ? resolvedModel.args[effortFlagIndex + 1] : codexEffort;
 
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
@@ -485,7 +515,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         id: runId,
         sessionId,
         provider,
-        model,
+        model: spawnModel,
         status: { kind: 'streaming', startedAt: now() },
         routingDecision,
         createdAt: now(),
@@ -587,7 +617,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         sessionId,
         activeAgentId,
         provider,
-        model,
+        model: spawnModel,
+        effort: effortFlag,
         parallelDispatch,
         claudeFlags,
         apiKeyBinding,
@@ -735,17 +766,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
     }
 
-    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
-    const effortFlag =
-      rawEffort && EFFORT_PROVIDERS.has(provider)
-        ? EFFORT_FLAG[clampEffort(model, rawEffort as EffortLevel)]
-        : undefined;
-
     try {
       for await (const rawEvent of runTurn({
         runId,
         provider,
-        model,
+        model: spawnModel,
         workingDir,
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,

@@ -6,7 +6,7 @@ type ModelPrice = {
   readonly cachedInputPerMtok: number;
 };
 
-export const CURSOR_CHEAP_MODEL = 'composer-2-fast';
+export const CURSOR_CHEAP_MODEL = 'composer-2.5-fast';
 
 const COMPOSER_PRICE: ModelPrice = {
   inputPerMtok: 0.8,
@@ -31,6 +31,7 @@ const GPT5_PRICE: ModelPrice = {
 
 export const CURSOR_PRICES: Record<string, ModelPrice> = {
   [CURSOR_CHEAP_MODEL]: COMPOSER_PRICE,
+  'composer-2-fast': COMPOSER_PRICE,
   'composer-2': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
 

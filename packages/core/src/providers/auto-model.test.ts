@@ -11,21 +11,21 @@ describe('autoModelForRole', () => {
     it('keeps the curated default for a high-tier role', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'claude-opus-5',
+        model: 'opus-5',
       });
     });
 
     it('keeps the curated cheap default for a scout role', () => {
       expect(autoModelForRole({ role: 'scout', providers: ['anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'claude-haiku-4-5',
+        model: 'haiku-4.5',
       });
     });
 
     it('prefers the default provider even when other providers are enabled', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['gemini', 'anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'claude-opus-5',
+        model: 'opus-5',
       });
     });
   });
@@ -81,7 +81,7 @@ describe('autoModelForRole', () => {
 
     it('cursor provider: picks a real expensive slug for a high-tier role', () => {
       const result = autoModelForRole({ role: 'planner', providers: ['cursor'] });
-      expect(result).toEqual({ provider: 'cursor', model: 'claude-opus-4-7-thinking-high' });
+      expect(result).toEqual({ provider: 'cursor', model: 'opus-5' });
     });
   });
 });

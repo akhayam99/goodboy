@@ -20,7 +20,7 @@ describe('resolveRoleRouting', () => {
 
     expect(resolveRoleRouting({ role: 'investigator', prefs })).toEqual({
       provider: 'anthropic',
-      model: 'claude-opus-5',
+      model: 'opus-5',
       effort: 'max',
       isOverride: true,
     });
@@ -53,8 +53,8 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
-    expect(resolved.model).toBe('claude-sonnet-4-6');
-    expect(resolved.effort).toBe(ROLE_DEFAULTS.reviewer.effort);
+    expect(resolved.model).toBe('sonnet-4.6');
+    expect(resolved.effort).toBe('high');
     expect(resolved.isOverride).toBe(true);
   });
 
@@ -65,7 +65,7 @@ describe('resolveRoleRouting', () => {
     const resolved = resolveRoleRouting({ role: 'investigator', prefs });
 
     expect(resolved.provider).toBe('anthropic');
-    expect(resolved.model).toBe('claude-haiku-4-5');
+    expect(resolved.model).toBe('haiku-4.5');
     expect(resolved.isOverride).toBe(true);
   });
 
@@ -76,7 +76,7 @@ describe('resolveRoleRouting', () => {
     const resolved = resolveRoleRouting({ role: 'planner', prefs });
 
     expect(resolved.model).toBe('gpt-5.4-mini');
-    expect(resolved.effort).toBe('medium');
+    expect(resolved.effort).toBe('xhigh');
     expect(resolved.isOverride).toBe(true);
   });
 

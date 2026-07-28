@@ -27,7 +27,7 @@ const PREFIX_AGENT_MODEL = 'goodboy:agent-model:';
 const PREFIX_AGENT_PROVIDER = 'goodboy:agent-provider:';
 
 const VERBOSITY_VALUES = ['brief', 'normal', 'verbose'] as const;
-const EFFORT_VALUES = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
+const EFFORT_VALUES = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 const PROVIDER_VALUES = ['anthropic', 'cursor', 'codex', 'gemini'] as const;
 const LEGACY_VERBOSITY_MAP: Record<string, 'brief' | 'normal' | 'verbose'> = {
   essential: 'brief',
@@ -50,6 +50,9 @@ function normalizeVerbosity(raw: string | null): Verbosity | null {
 }
 
 function asEffort(raw: string | null): Effort | null {
+  if (raw === 'extra-high') {
+    return 'xhigh';
+  }
   return raw && (EFFORT_VALUES as ReadonlyArray<string>).includes(raw) ? (raw as Effort) : null;
 }
 

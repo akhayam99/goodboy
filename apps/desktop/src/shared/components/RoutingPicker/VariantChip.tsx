@@ -1,9 +1,5 @@
 import { cn } from '@goodboy/ui';
-import {
-  modelTier,
-  parseModelId,
-  type CostTier,
-} from '../../../features/chat/utils/chat-constants';
+import { modelLabel, modelTier, type CostTier } from '../../../features/chat/utils/chat-constants';
 
 type Props = {
   readonly id: string;
@@ -51,7 +47,7 @@ export const VariantChip = ({ id, active, onSelect }: Props) => {
         active && 'font-medium',
       )}
     >
-      {parseModelId(id).variantLabel}
+      {modelLabel(id)}
     </button>
   );
 };

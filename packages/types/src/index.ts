@@ -67,6 +67,7 @@ export type {
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
   ModelCostTier,
+  ModelDescriptor,
   ModelEffort,
   ModelFamily,
   ModelTier,
@@ -75,6 +76,26 @@ export type {
   ProviderId,
   ProviderRegistryCapabilities,
 } from './provider-registry';
+export type {
+  AnthropicModel,
+  BaseModel,
+  CatalogModel,
+  CodexModel,
+  CodexVariant,
+  CursorCombo,
+  CursorModel,
+  EffortLevel,
+  GeminiModel,
+  ModelCatalogs,
+  ModelKey,
+  ModelRemapRecord,
+  ModelSelection,
+  OpencodeModel,
+  OpenRouterModel,
+  ResolvedModelArgs,
+  RemappedModelSelection,
+  StoredModelSelection,
+} from './model-catalog';
 export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
 export {

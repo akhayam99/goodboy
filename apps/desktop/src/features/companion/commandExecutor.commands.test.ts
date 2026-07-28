@@ -56,7 +56,7 @@ const core = vi.hoisted(() => {
   return {
     isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
     PROVIDER_CAPABILITIES,
-    getDefaultTurnModel: (id: string) => {
+    getDefaultTurnModel: ({ id }: { id: string }) => {
       const caps = PROVIDER_CAPABILITIES[id]!;
       return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
     },

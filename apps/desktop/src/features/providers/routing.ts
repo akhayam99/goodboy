@@ -19,6 +19,6 @@ export const resolveProviderForTurn = async (
     budgetChecker: {
       checkProviderBudget: (provider, period) => invokeCheckProviderBudget(provider, period),
     },
-    getDefaultModel: (providerId) => getDefaultTurnModel(providerId),
+    getDefaultModel: (providerId) => getDefaultTurnModel({ id: providerId }),
   });
 };

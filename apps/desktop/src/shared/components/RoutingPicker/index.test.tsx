@@ -65,13 +65,20 @@ describe('RoutingPicker', () => {
     );
   });
 
-  it('drops the effort segment and explains why for a model without thinking levels', () => {
-    render(<RoutingPicker {...baseProps} model="claude-haiku-4-5" ariaLabel="routing" />);
+  it('keeps a disabled default effort control for a model without an effort axis', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="gemini"
+        model="gemini-3.5-flash"
+        ariaLabel="routing"
+      />,
+    );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(trigger.textContent).toContain('Haiku 4.5');
+    expect(trigger.textContent).toContain('3.5 Flash');
     expect(trigger.textContent).not.toContain('High');
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog').textContent).toContain('runs at a fixed effort');
+    expect(screen.getByRole('button', { name: 'Default' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('drops the whole effort section when the caller cannot edit effort', () => {
@@ -167,7 +174,7 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
-    fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
+    fireEvent.click(screen.getByTitle(/^opus-5 \(/));
     expect(row.getAttribute('aria-pressed')).toBe('false');
     expect(screen.getByRole('button', { name: 'Claude' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -212,7 +219,7 @@ describe('RoutingPicker', () => {
     const onModel = vi.fn();
     render(<RoutingPicker {...baseProps} onModel={onModel} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    fireEvent.click(screen.getByTitle(/^claude-sonnet-4-6 \(/));
+    fireEvent.click(screen.getByTitle(/^sonnet-4.6 \(/));
     expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
     expect(screen.getByRole('dialog')).toBeDefined();
   });
@@ -247,7 +254,7 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
-    fireEvent.click(screen.getByRole('button', { name: 'auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Auto' }));
     expect(onModel).toHaveBeenCalledWith('auto');
   });
 
@@ -258,6 +265,36 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Medium' }));
     expect(onChange).toHaveBeenCalledWith('medium');
     expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('keeps Codex checkpoints in a secondary variant select', () => {
+    const onModel = vi.fn();
+    render(
+      <RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" onModel={onModel} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const select = screen.getByRole('combobox', { name: 'GPT-5.6 variant' });
+    expect((select as HTMLSelectElement).value).toBe('terra');
+    fireEvent.change(select, { target: { value: 'luna' } });
+    expect(onModel).toHaveBeenCalledWith('gpt-5.6-luna');
+  });
+
+  it('re-filters Cursor effort when thinking changes and reports the clamp', () => {
+    const onModel = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="claude-4.6-sonnet-high"
+        onModel={onModel}
+        effort={{ editable: true, value: 'high', onChange }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thinking' }));
+    expect(onModel).toHaveBeenCalledWith('claude-4.6-sonnet-medium-thinking');
+    expect(onChange).toHaveBeenCalledWith('medium');
   });
 
   it('bounds only the model list as the scroll region', () => {
@@ -336,8 +373,8 @@ describe('RoutingPicker', () => {
   it('tints model variants by cost tier and intensifies the active chip', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const expensiveChip = screen.getByTitle(/^claude-opus-5 \(/);
-    const cheapChip = screen.getByTitle(/^claude-haiku-4-5 \(/);
+    const expensiveChip = screen.getByTitle(/^opus-5 \(/);
+    const cheapChip = screen.getByTitle(/^haiku-4.5 \(/);
     expect(expensiveChip.textContent).not.toContain('$$');
     expect(expensiveChip.className).toContain('bg-danger/20');
     expect(expensiveChip.className).toContain('text-danger');

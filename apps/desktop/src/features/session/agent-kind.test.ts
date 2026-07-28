@@ -327,7 +327,7 @@ describe('AGENT_KIND_DEFAULTS', () => {
       const levels = PROVIDER_CAPABILITIES[provider].models.find(
         (entry) => entry.id === model,
       )?.effort;
-      if (levels != null) {
+      if (levels != null && levels.length > 0) {
         expect(levels, `${kind} → ${model}/${effort}`).toContain(effort);
       }
     }
@@ -349,7 +349,7 @@ describe('kindRouting role overrides', () => {
       },
     });
 
-    expect(routing).toEqual({ provider: 'anthropic', model: 'claude-opus-5', effort: 'max' });
+    expect(routing).toEqual({ provider: 'anthropic', model: 'opus-5', effort: 'max' });
   });
 
   it('lets an override beat the cheap-tier downgrade', () => {
@@ -360,7 +360,7 @@ describe('kindRouting role overrides', () => {
       },
     });
 
-    expect(routing.model).toBe('claude-sonnet-4-6');
+    expect(routing.model).toBe('sonnet-4.6');
     expect(routing.effort).toBe('high');
   });
 
@@ -376,7 +376,7 @@ describe('kindRouting role overrides', () => {
     expect(routing.effort).toBe('low');
   });
 
-  it('keeps a pinned model and defaults the effort the model cannot honor', () => {
+  it('keeps a pinned model and clamps an unsupported effort upward', () => {
     const routing = kindRouting({
       kind: 'reviewer',
       roleModels: {
@@ -384,8 +384,8 @@ describe('kindRouting role overrides', () => {
       },
     });
 
-    expect(routing.model).toBe('claude-opus-5');
-    expect(routing.effort).toBe(ROLE_DEFAULTS.reviewer.effort);
+    expect(routing.model).toBe('opus-5');
+    expect(routing.effort).toBe('low');
   });
 
   it('pins a role to a cheap model that has no effort ladder', () => {
@@ -397,7 +397,7 @@ describe('kindRouting role overrides', () => {
     });
 
     expect(routing.provider).toBe('anthropic');
-    expect(routing.model).toBe('claude-haiku-4-5');
+    expect(routing.model).toBe('haiku-4.5');
   });
 
   it('drops an override whose model the registry no longer ships', () => {

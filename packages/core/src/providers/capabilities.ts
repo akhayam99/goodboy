@@ -1,157 +1,59 @@
-import type { ModelEffort, ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
-import { CURSOR_MODELS } from './cursor/models';
-import { CODEX_MODELS } from './codex/constants';
-import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './gemini/constants';
-import { OPENCODE_MODELS } from './opencode/constants';
-import { OPENROUTER_MODELS } from './openrouter/constants';
-
-const OPUS_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high', 'extra-high', 'max'];
-const SONNET_EFFORT: ReadonlyArray<ModelEffort> = ['low', 'medium', 'high'];
+import type { ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
+import { MODEL_CATALOGS } from './catalogs';
+import { catalogDescriptor } from './catalogDescriptor';
+import { GEMINI_DEFAULT_MODEL } from './gemini/constants';
 
 export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
   anthropic: {
-    models: [
-      {
-        id: 'claude-opus-5',
-        tier: 'turn',
-        contextWindow: 1_000_000,
-        family: 'claude',
-        subfamily: 'opus',
-        label: 'Opus 5',
-        variantLabel: '5',
-        costTier: 'expensive',
-        weight: 85,
-        effort: OPUS_EFFORT,
-      },
-      {
-        id: 'claude-opus-4-8',
-        tier: 'turn',
-        contextWindow: 1_000_000,
-        family: 'claude',
-        subfamily: 'opus',
-        label: 'Opus 4.8',
-        variantLabel: '4.8',
-        costTier: 'expensive',
-        weight: 80,
-        effort: OPUS_EFFORT,
-      },
-      {
-        id: 'claude-fable-5',
-        tier: 'turn',
-        contextWindow: 1_000_000,
-        family: 'claude',
-        subfamily: 'fable',
-        label: 'Fable 5',
-        variantLabel: '5',
-        costTier: 'expensive',
-        weight: 90,
-        effort: OPUS_EFFORT,
-      },
-      {
-        id: 'claude-opus-4-7',
-        tier: 'turn',
-        contextWindow: 1_000_000,
-        family: 'claude',
-        subfamily: 'opus',
-        label: 'Opus 4.7',
-        variantLabel: '4.7',
-        costTier: 'expensive',
-        weight: 75,
-        effort: OPUS_EFFORT,
-      },
-      {
-        id: 'claude-opus-4-6',
-        tier: 'turn',
-        contextWindow: 200_000,
-        family: 'claude',
-        subfamily: 'opus',
-        label: 'Opus 4.6',
-        variantLabel: '4.6',
-        costTier: 'expensive',
-        weight: 60,
-        effort: OPUS_EFFORT,
-      },
-      {
-        id: 'claude-sonnet-4-6',
-        tier: 'turn',
-        contextWindow: 200_000,
-        family: 'claude',
-        subfamily: 'sonnet',
-        label: 'Sonnet 4.6',
-        variantLabel: '4.6',
-        costTier: 'mid',
-        weight: 15,
-        effort: SONNET_EFFORT,
-      },
-      {
-        id: 'claude-sonnet-4-5',
-        tier: 'turn',
-        contextWindow: 200_000,
-        family: 'claude',
-        subfamily: 'sonnet',
-        label: 'Sonnet 4.5',
-        variantLabel: '4.5',
-        costTier: 'mid',
-        weight: 14,
-        effort: SONNET_EFFORT,
-      },
-      {
-        id: 'claude-haiku-4-5',
-        tier: 'cheap',
-        contextWindow: 200_000,
-        family: 'claude',
-        subfamily: 'haiku',
-        label: 'Haiku 4.5',
-        variantLabel: '4.5',
-        costTier: 'cheap',
-        weight: 5,
-        effort: null,
-      },
-    ],
+    models: MODEL_CATALOGS.anthropic.map((model) => catalogDescriptor({ model })),
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
   },
   cursor: {
-    models: CURSOR_MODELS,
+    models: MODEL_CATALOGS.cursor.map((model) => catalogDescriptor({ model })),
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
   },
   codex: {
-    models: CODEX_MODELS,
+    models: MODEL_CATALOGS.codex.map((model) => catalogDescriptor({ model })),
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
   },
   gemini: {
-    models: GEMINI_MODELS,
+    models: MODEL_CATALOGS.gemini.map((model) => catalogDescriptor({ model })),
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
   },
   opencode: {
-    models: OPENCODE_MODELS,
+    models: MODEL_CATALOGS.opencode.map((model) => catalogDescriptor({ model })),
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
   },
   openrouter: {
-    models: OPENROUTER_MODELS,
+    models: MODEL_CATALOGS.openrouter.map((model) => catalogDescriptor({ model })),
     supportsTools: true,
     supportsStream: true,
     supportsCheapModel: true,
   },
 };
 
-export const getCapabilities = (id: ProviderId): ProviderRegistryCapabilities => {
+type Params = {
+  readonly id: ProviderId;
+};
+
+export const getCapabilities = ({ id }: Params): ProviderRegistryCapabilities => {
   return PROVIDER_CAPABILITIES[id];
 };
 
-export const getDefaultTurnModel = (id: ProviderId): string => {
+export const getDefaultTurnModel = ({ id }: Params): string => {
   if (id === 'gemini') {
     return GEMINI_DEFAULT_MODEL;
   }
   const caps = PROVIDER_CAPABILITIES[id];
-  return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
+  return caps.models.find((model) => model.tier === 'turn')?.id ?? caps.models[0]!.id;
 };

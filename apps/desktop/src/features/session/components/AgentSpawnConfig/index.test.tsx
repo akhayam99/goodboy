@@ -45,7 +45,7 @@ describe('AgentSpawnConfig', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent hint' }), {
       target: { value: 'Emphasize the migration path.' },
     });
-    expect(onChange.mock.calls[2]![0].hint).toBe('Emphasize the migration path.');
+    expect(onChange.mock.calls.at(-1)?.[0].hint).toBe('Emphasize the migration path.');
   });
 
   it('shows the effort of the selected model in the trigger', () => {
