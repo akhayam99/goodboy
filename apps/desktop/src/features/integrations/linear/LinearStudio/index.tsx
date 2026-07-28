@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
@@ -73,29 +74,23 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       closeLabel="close linear studio"
       headerAccessory={
         isConnected ? (
-          <button
-            type="button"
+          <IconButton
+            icon={RefreshCw}
+            label="Refresh issues"
             onClick={refetch}
             disabled={loading}
-            title="Refresh issues"
-            aria-label="Refresh issues"
-            className={cn(
-              'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-              'text-muted-foreground transition-colors',
-              'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-              loading && 'animate-border-pulse',
-            )}
-          >
-            <RefreshCw size={13} aria-hidden />
-          </button>
+            busy={loading}
+          />
         ) : null
       }
       onClose={onClose}
     >
       {(requestClose) =>
         isConnected ? (
-          <>
-            <div className="w-72 shrink-0">
+          <StudioRailLayout
+            railLabel="Linear issues"
+            railWidth="standard"
+            rail={
               <IssueInbox
                 groups={groups}
                 focusedIssueId={focused?.id ?? null}
@@ -103,17 +98,16 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 loading={loading}
                 error={error}
               />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
+            }
+            detail={
               <IssueDetailPanel
                 issue={focused}
                 sessionId={focusedRow?.sessionId ?? null}
                 workspaceId={workspaceId}
                 onClose={requestClose}
               />
-            </div>
-          </>
+            }
+          />
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <IntegrationConnectPanel

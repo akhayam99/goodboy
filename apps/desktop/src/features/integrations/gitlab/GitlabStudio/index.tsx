@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
@@ -15,11 +16,6 @@ import { MrInbox } from './MrInbox';
 import { useGitlabIssues } from './useGitlabIssues';
 import { useGitlabMrs } from './useGitlabMrs';
 import type { GitlabIssue, GitlabMergeRequest } from '../client';
-import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
-import {
-  SegmentedControl,
-  type SegmentedOption,
-} from '../../../../shared/components/SegmentedControl';
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
 import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
 
@@ -27,12 +23,12 @@ type Tab = 'issues' | 'merge-requests';
 
 type ReviewScope = 'mine' | 'others' | 'all';
 
-const TABS: ReadonlyArray<StudioTab<Tab>> = [
+const TABS: ReadonlyArray<SegmentedTabOption<Tab>> = [
   { value: 'issues', label: 'Issues' },
   { value: 'merge-requests', label: 'Merge requests' },
 ];
 
-const REVIEW_SCOPES: ReadonlyArray<SegmentedOption<ReviewScope>> = [
+const REVIEW_SCOPES: ReadonlyArray<SegmentedTabOption<ReviewScope>> = [
   { value: 'mine', label: 'Mine' },
   { value: 'others', label: 'Others' },
   { value: 'all', label: 'All' },
@@ -117,21 +113,19 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       headerAccessory={
         isConnected ? (
           <div className="flex items-center gap-2">
-            <StudioTabs ariaLabel="GitLab work" tabs={TABS} value={tab} onChange={setTab} />
-            <button
-              type="button"
+            <SegmentedTabs
+              ariaLabel="GitLab work"
+              options={TABS}
+              value={tab}
+              onChange={setTab}
+              size="sm"
+            />
+            <IconButton
+              icon={RefreshCw}
+              label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
               onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
               disabled={tab === 'issues' ? loading : mergeRequests.loading}
-              title={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-              aria-label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-              className={cn(
-                'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-                'text-muted-foreground transition-colors',
-                'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-              )}
-            >
-              <RefreshCw size={13} aria-hidden />
-            </button>
+            />
           </div>
         ) : null
       }
@@ -148,8 +142,10 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
             </IntegrationConnectPanel>
           </div>
         ) : tab === 'issues' ? (
-          <>
-            <div className="w-72 shrink-0">
+          <StudioRailLayout
+            railLabel="GitLab issues"
+            railWidth="standard"
+            rail={
               <IssueInbox
                 groups={groups}
                 focusedIssueId={focused?.id ?? null}
@@ -157,51 +153,55 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 loading={loading}
                 error={error}
               />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
+            }
+            detail={
               <IssueDetailPanel
                 issue={focused}
                 sessionId={focusedRow?.sessionId ?? null}
                 workspaceId={workspaceId}
                 onClose={requestClose}
               />
-            </div>
-          </>
+            }
+          />
         ) : (
-          <>
-            <div className="flex w-72 shrink-0 flex-col">
-              <div className="shrink-0 px-3 pt-3">
-                <SegmentedControl
-                  ariaLabel="Review inbox filter"
-                  options={REVIEW_SCOPES}
-                  value={reviewScope}
-                  onChange={setReviewScope}
-                />
-              </div>
-              {reviewScope === 'mine' ? (
-                <div className="min-h-0 flex-1">
-                  <MrInbox
-                    groups={mergeRequests.groups}
-                    focusedMrId={focusedMr?.id ?? null}
-                    onSelect={setFocusedMr}
-                    loading={mergeRequests.loading}
-                    error={mergeRequests.error}
+          <StudioRailLayout
+            railLabel="GitLab merge requests"
+            railWidth="standard"
+            rail={
+              <>
+                <div className="shrink-0 px-3 pt-3">
+                  <SegmentedTabs
+                    ariaLabel="Review inbox filter"
+                    options={REVIEW_SCOPES}
+                    value={reviewScope}
+                    onChange={setReviewScope}
+                    size="sm"
+                    fill
                   />
                 </div>
-              ) : (
-                <ReviewInboxList
-                  workspaceId={workspaceId}
-                  provider="gitlab"
-                  scope={reviewScope}
-                  focusedPrId={focusedReviewPr?.id ?? null}
-                  onSelect={setFocusedReviewPr}
-                />
-              )}
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
-              {reviewScope === 'mine' ? (
+                {reviewScope === 'mine' ? (
+                  <div className="min-h-0 flex-1">
+                    <MrInbox
+                      groups={mergeRequests.groups}
+                      focusedMrId={focusedMr?.id ?? null}
+                      onSelect={setFocusedMr}
+                      loading={mergeRequests.loading}
+                      error={mergeRequests.error}
+                    />
+                  </div>
+                ) : (
+                  <ReviewInboxList
+                    workspaceId={workspaceId}
+                    provider="gitlab"
+                    scope={reviewScope}
+                    focusedPrId={focusedReviewPr?.id ?? null}
+                    onSelect={setFocusedReviewPr}
+                  />
+                )}
+              </>
+            }
+            detail={
+              reviewScope === 'mine' ? (
                 <MrDetailPanel
                   mr={focusedMr}
                   workspaceId={workspaceId}
@@ -215,9 +215,9 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                   workspaceId={workspaceId}
                   onClose={requestClose}
                 />
-              )}
-            </div>
-          </>
+              )
+            }
+          />
         )
       }
     </StudioShell>

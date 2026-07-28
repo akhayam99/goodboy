@@ -316,11 +316,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   return (
     <div className="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in">
       <div className="flex w-full max-w-2xl flex-col overflow-hidden">
-        <ScrollFade
-          className="max-h-[70vh] overflow-y-auto"
-          viewportClassName="px-6 py-5"
-          fadeSize={24}
-        >
+        <ScrollFade className="max-h-[70vh]" viewportClassName="px-6 py-5" fadeSize={24}>
           <div className="flex w-full flex-col gap-8">
             {noProviderConnected ? (
               <div

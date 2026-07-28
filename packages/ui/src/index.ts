@@ -24,6 +24,8 @@ export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
 export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
+export { IconButton } from './components/IconButton';
+export type { IconButtonProps } from './components/IconButton';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';

@@ -19,7 +19,16 @@ import {
   Undo2,
   Wand2,
 } from 'lucide-react';
-import { Button, Divider, SectionHeader, SegmentedTabs, Skeleton, Textarea, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  ScrollFade,
+  SectionHeader,
+  SegmentedTabs,
+  Skeleton,
+  Textarea,
+  cn,
+} from '@goodboy/ui';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
   PlannerClient,
@@ -705,7 +714,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
             onJump={jumpStage}
           />
           <Divider />
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <ScrollFade className="min-h-0 flex-1">
             <div
               key={stage}
               className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-7 motion-safe:animate-fade-in"
@@ -1260,7 +1269,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 </>
               ) : null}
             </div>
-          </div>
+          </ScrollFade>
 
           <Divider />
 

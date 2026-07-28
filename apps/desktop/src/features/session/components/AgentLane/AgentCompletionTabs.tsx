@@ -1,4 +1,4 @@
-import { SegmentedControl } from '../../../../shared/components/SegmentedControl';
+import { SegmentedTabs } from '@goodboy/ui';
 import type { CompletionTab } from './completionTab';
 
 type Props = {
@@ -20,7 +20,7 @@ export const AgentCompletionTabs = ({
   value,
   onChange,
 }: Props) => (
-  <SegmentedControl<CompletionTab>
+  <SegmentedTabs<CompletionTab>
     ariaLabel={ariaLabel}
     options={[
       { value: 'active', label: `${activeLabel} (${activeCount})` },
@@ -28,5 +28,7 @@ export const AgentCompletionTabs = ({
     ]}
     value={value}
     onChange={onChange}
+    size="sm"
+    fill
   />
 );
