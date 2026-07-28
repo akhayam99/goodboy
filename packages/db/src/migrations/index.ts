@@ -84,6 +84,7 @@ import { m083AgentDomains } from './m083-agent-domains';
 import { m084WorkspaceProviderPool } from './m084-workspace-provider-pool';
 import { m085OpencodeOpenrouterProviderRuns } from './m085-opencode-openrouter-provider-runs';
 import { m086ImpactIndexes } from './m086-impact-indexes';
+import { m087AgentProviderSessionProvider } from './m087-agent-provider-session-provider';
 
 export type Migration = {
   readonly version: number;
@@ -177,4 +178,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 84, sql: m084WorkspaceProviderPool },
   { version: 85, sql: m085OpencodeOpenrouterProviderRuns },
   { version: 86, sql: m086ImpactIndexes },
+  { version: 87, sql: m087AgentProviderSessionProvider },
 ];

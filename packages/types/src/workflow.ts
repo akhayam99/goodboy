@@ -92,6 +92,7 @@ export type Agent = Readonly<{
   startedAt?: IsoDateTime;
   completedAt?: IsoDateTime;
   providerSessionId?: string;
+  providerSessionProviderId?: ProviderId;
   lastFinishedAt?: IsoDateTime;
   lastViewedAt?: IsoDateTime;
   doneAt?: IsoDateTime;

@@ -685,7 +685,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
 
-    const resumeSessionId = agentRowEarly?.providerSessionId;
+    const resumeSessionId =
+      agentRowEarly?.providerSessionProviderId === provider
+        ? agentRowEarly.providerSessionId
+        : undefined;
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
@@ -755,7 +758,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
-        const event: TurnEvent =
+        const resolvedEvent: TurnEvent =
           rawEvent.kind === 'error'
             ? {
                 ...rawEvent,
@@ -766,6 +769,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                 }),
               }
             : rawEvent;
+        const event: TurnEvent =
+          resolvedEvent.kind === 'provider_session_init'
+            ? { ...resolvedEvent, provider }
+            : resolvedEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
         if (event.kind === 'assistant_text') {
           assistantText += event.delta;
