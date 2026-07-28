@@ -85,10 +85,11 @@ Requires **Cursor Pro**. Goodboy routes turns through Cursor's subscription-base
 
 ### Default models
 
-Cursor surfaces 50+ aliases via `cursor-agent models`. Goodboy exposes a curated subset:
+Cursor surfaces 193 slugs via `cursor-agent --list-models`. Goodboy exposes a curated subset:
 
-- **Turn**: `composer-2`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-high`, `claude-4.6-sonnet-medium`, `gpt-5.5-high`, `gpt-5.5-medium`, `gpt-5.3-codex`.
-- **Cheap**: `auto` (default), `composer-2-fast`.
+- **Turn**: `composer-2.5`, `claude-fable-5-thinking-high`, `claude-opus-5-thinking-high`, `claude-opus-4-7-thinking-high`, `claude-4.6-sonnet-medium-thinking`, `claude-4.6-sonnet-medium`, `gpt-5.6-sol-high`, `gpt-5.5-high`, `gpt-5.5-medium`, `gpt-5.3-codex`.
+- **Cheap**: `auto` (default), `composer-2.5-fast`.
+- Every slug above is pinned against `cursor-agent --list-models` by `packages/core/src/providers/cursor/agent-model-ids.test.ts`. Cursor carries the effort level inside the slug, so it never receives an effort flag.
 
 Cursor is the one provider whose cheap pick is special-cased: `getCheapModel` returns `auto` rather than the first cheap-tier entry (`packages/core/src/providers/cli-defaults.ts`).
 

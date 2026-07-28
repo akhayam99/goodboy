@@ -22,3 +22,21 @@ export const formatRelativeDuration = (fromIso: string, toIso?: string): string 
   const d = Math.floor(h / 24);
   return `${d}d`;
 };
+
+type FormatRelativeAgeParams = {
+  readonly fromIso: string;
+  readonly nowMs?: number;
+};
+
+export const formatRelativeAge = ({ fromIso, nowMs }: FormatRelativeAgeParams): string => {
+  const fromMs = Date.parse(fromIso);
+  if (Number.isNaN(fromMs)) {
+    return '';
+  }
+  const toMs = nowMs ?? Date.now();
+  const seconds = Math.max(0, Math.floor((toMs - fromMs) / 1000));
+  if (seconds < 60) {
+    return 'just now';
+  }
+  return `${formatRelativeDuration(fromIso, new Date(toMs).toISOString())} ago`;
+};

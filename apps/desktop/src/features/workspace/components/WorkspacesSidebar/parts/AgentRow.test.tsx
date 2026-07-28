@@ -43,7 +43,6 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
       <AgentRow
         run={{ ...run, ...runOverride }}
         kind="scout"
-        index={0}
         telemetry={telemetry}
         aggregate={{ inputTokens: 100, outputTokens: 20, estimatedCostUsd: 1.5, turns: 3 }}
         contextUsage={[
@@ -159,5 +158,20 @@ describe('AgentRow', () => {
     expect(remove).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'confirm delete agent' }));
     expect(remove).toHaveBeenCalledOnce();
+  });
+});
+
+describe('AgentRow numbering', () => {
+  afterEach(cleanup);
+
+  it('numbers the row by creation order, not by its position in the list', () => {
+    renderRow(false, { ordinal: 14 });
+    expect(screen.getByText('15.')).toBeDefined();
+  });
+
+  it('keeps the badge and the row tooltip on the same number', () => {
+    renderRow(false, { ordinal: 3 });
+    expect(screen.getByText('4.')).toBeDefined();
+    expect(screen.getAllByTitle(/agent 4/).length).toBeGreaterThan(0);
   });
 });

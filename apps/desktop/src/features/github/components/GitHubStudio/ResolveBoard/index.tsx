@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, ProviderId, RoleModelPreferences } from '@goodboy/types';
-import { cn, EmptyState } from '@goodboy/ui';
+import { cn, EmptyState, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import {
   ArrowUpRight,
   ChevronDown,
@@ -18,10 +18,6 @@ import {
 } from '../../../../chat/utils/chat-constants';
 import { shortModelWithVersion } from '../../../../session/agent-row-format';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
-import {
-  SegmentedControl,
-  type SegmentedOption,
-} from '../../../../../shared/components/SegmentedControl';
 import type { ResolveMode, ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
 import {
@@ -52,7 +48,7 @@ type Props = {
 const isClaimed = (link: ResolverLink | undefined): boolean =>
   link != null && link.status !== 'failed';
 
-const MODE_OPTIONS: ReadonlyArray<SegmentedOption<ResolveMode>> = [
+const MODE_OPTIONS: ReadonlyArray<SegmentedTabOption<ResolveMode>> = [
   { label: 'Fix', value: 'fix' },
   { label: 'Analyze', value: 'analyze' },
 ];
@@ -467,11 +463,13 @@ function ConfigPanel({
         onProvider={onProvider}
         onModel={onModel}
       />
-      <SegmentedControl
+      <SegmentedTabs
         ariaLabel="Resolver mode"
         value={mode}
         options={MODE_OPTIONS}
         onChange={onMode}
+        size="sm"
+        fill
       />
       <textarea
         aria-label="Resolver hint"

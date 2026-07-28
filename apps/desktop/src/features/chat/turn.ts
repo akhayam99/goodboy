@@ -75,6 +75,7 @@ type SpawnArgs = {
   readonly resumeSessionId?: string;
   readonly systemPrompt?: string;
   readonly effort?: string;
+  readonly workspaceId?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
 };
@@ -259,10 +260,12 @@ export type ParallelSpawnArgs = {
   readonly runs: ReadonlyArray<ParallelRunSpec>;
   readonly binary?: string;
   readonly model: string;
+  readonly effort?: string;
   readonly prompt: string;
   readonly permissionMode?: ClaudePermissionMode;
   readonly allowedTools?: ReadonlyArray<string>;
   readonly disallowedTools?: ReadonlyArray<string>;
+  readonly workspaceId?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
 };

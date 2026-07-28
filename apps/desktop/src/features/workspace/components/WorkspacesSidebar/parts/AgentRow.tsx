@@ -14,6 +14,7 @@ import {
   AgentMetricsBlock,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetricsBlock';
+import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
 import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { AgentStatusBadge } from './AgentStatusBadge';
@@ -24,7 +25,6 @@ const COMPACT_ACTIONS_CLASS = 'w-20';
 type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
-  readonly index: number;
   readonly telemetry: TelemetryRecord | null;
   readonly aggregate: AgentAggregate | null;
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
@@ -47,7 +47,6 @@ type Props = {
 export const AgentRow = ({
   run,
   kind,
-  index,
   telemetry,
   aggregate,
   contextUsage,
@@ -99,7 +98,7 @@ export const AgentRow = ({
             aria-hidden
             className="w-4 shrink-0 text-right text-2xs tabular-nums text-muted-foreground/60"
           >
-            {index + 1}.
+            {run.ordinal + 1}.
           </span>
           <AgentKindChip
             kind={kind}
@@ -162,6 +161,7 @@ export const AgentRow = ({
           turnsLoading={turnsLoading}
         />
         <AgentMetricsBlock run={run} aggregate={aggregate} />
+        <AgentLastUpdate agent={run} />
         <ContextWindowBar usage={contextUsage} />
       </div>
     </AgentCard>

@@ -18,6 +18,7 @@ describe('SegmentedTabs', () => {
 
     expect(screen.getAllByRole('tab')).toHaveLength(3);
     expect(screen.getByRole('tab', { name: 'First' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tablist', { name: 'view' })).toBeDefined();
   });
 
   it('changes the selected value on click', () => {

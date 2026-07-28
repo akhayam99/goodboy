@@ -10,14 +10,14 @@ describe('resolveTaskModel', () => {
 
     expect(resolveTaskModel('summarizer', prefs, 'codex')).toEqual({
       providerId: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
     });
   });
 
   it('uses the default provider cheap model when no preference exists', () => {
     expect(resolveTaskModel('branch_naming', null, 'anthropic')).toEqual({
       providerId: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
     });
   });
 
@@ -31,7 +31,7 @@ describe('resolveTaskModel', () => {
 
     expect(resolveTaskModel('plan_generation', prefs, 'anthropic')).toEqual({
       providerId: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
     });
   });
 });

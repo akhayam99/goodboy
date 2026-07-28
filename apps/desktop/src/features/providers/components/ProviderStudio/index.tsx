@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
@@ -52,21 +53,24 @@ export const ProviderStudio = ({
       onClose={onClose}
     >
       {() => (
-        <>
-          <ScrollFade className="w-72 shrink-0" fadeFrom="background">
-            <ProvidersRail
-              providers={ordered}
-              focusedId={focused}
-              onSelect={onSelect}
-              onSelectDefaults={() => {
-                setConnectAction(null);
-                setFocused('defaults');
-              }}
-            />
-          </ScrollFade>
-          <Divider orientation="vertical" />
-          <div className="min-h-0 flex-1">
-            {focused === 'defaults' ? (
+        <StudioRailLayout
+          railLabel="Providers"
+          railWidth="standard"
+          rail={
+            <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+              <ProvidersRail
+                providers={ordered}
+                focusedId={focused}
+                onSelect={onSelect}
+                onSelectDefaults={() => {
+                  setConnectAction(null);
+                  setFocused('defaults');
+                }}
+              />
+            </ScrollFade>
+          }
+          detail={
+            focused === 'defaults' ? (
               <DefaultsPanel workspaceId={workspaceId} />
             ) : selected && connectAction ? (
               <ProviderConnectPane
@@ -76,9 +80,9 @@ export const ProviderStudio = ({
               />
             ) : (
               <ProviderDetailPanel info={selected} onConnect={setConnectAction} />
-            )}
-          </div>
-        </>
+            )
+          }
+        />
       )}
     </StudioShell>
   );

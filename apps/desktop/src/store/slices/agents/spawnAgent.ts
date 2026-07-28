@@ -84,12 +84,11 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
         stepPromptPrefix = step.promptPrefix;
       }
     }
-    if (!resolvedName) {
-      const existing = state.sessionPhaseRuns[sessionId] ?? [];
-      resolvedName = `agent ${existing.length + 1}`;
-    }
     const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
     const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+    if (!resolvedName) {
+      resolvedName = `agent ${nextOrdinal + 1}`;
+    }
     const workspaceVerbositySeed =
       state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
     const resolvedKind = args.kindOverride ?? inferAgentKindFromName(resolvedName);

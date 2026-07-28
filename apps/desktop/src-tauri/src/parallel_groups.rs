@@ -317,6 +317,8 @@ pub struct ParallelSpawnArgs {
     #[serde(default)]
     pub binary: Option<String>,
     pub model: String,
+    #[serde(default)]
+    pub effort: Option<String>,
     pub prompt: String,
     #[serde(default)]
     pub permission_mode: Option<String>,
@@ -328,6 +330,8 @@ pub struct ParallelSpawnArgs {
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
+    #[serde(default)]
+    pub workspace_id: Option<String>,
 }
 
 /// Spawn N child processes concurrently (one per `ParallelRunSpec`).
@@ -366,9 +370,10 @@ pub fn parallel_agent_spawn(
                 disallowed_tools: &args.disallowed_tools,
                 resume_session_id: None,
                 system_prompt: None,
-                effort: None,
+                effort: args.effort.as_deref(),
                 api_key_env: args.api_key_env.as_deref(),
                 credential_id: args.credential_id.as_deref(),
+                workspace_id: args.workspace_id.as_deref(),
             },
         ) {
             Ok(run_id) => run_ids.push(run_id),
@@ -413,6 +418,7 @@ mod tests {
         assert_eq!(parsed.runs[0].run_id, "r1");
         assert_eq!(parsed.runs[1].parallel_index, 1);
         assert!(parsed.binary.is_none());
+        assert!(parsed.effort.is_none());
         assert!(parsed.permission_mode.is_none());
         assert!(parsed.allowed_tools.is_empty());
         assert!(parsed.disallowed_tools.is_empty());

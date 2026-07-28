@@ -37,7 +37,7 @@ const core = vi.hoisted(() => {
         { id: 'claude-haiku', label: 'Haiku', tier: 'utility' },
       ],
     },
-    cursor: { models: [{ id: 'composer-2', label: 'Composer 2', tier: 'turn' }] },
+    cursor: { models: [{ id: 'composer-2.5', label: 'Composer 2.5', tier: 'turn' }] },
     codex: { models: [{ id: 'gpt-5-codex', label: 'Codex', tier: 'turn' }] },
     gemini: { models: [{ id: 'gemini-2-pro', label: 'Gemini Pro', tier: 'turn' }] },
     opencode: {
@@ -56,7 +56,7 @@ const core = vi.hoisted(() => {
   return {
     isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
     PROVIDER_CAPABILITIES,
-    getDefaultTurnModel: (id: string) => {
+    getDefaultTurnModel: ({ id }: { id: string }) => {
       const caps = PROVIDER_CAPABILITIES[id]!;
       return caps.models.find((m) => m.tier === 'turn')?.id ?? caps.models[0]!.id;
     },
@@ -233,7 +233,7 @@ describe('queryProviders (read-only menu RPC)', () => {
     const codex = providers.find((p) => p.id === 'codex')!;
     expect(anthropic.connection).toBe('connected');
     expect(anthropic.defaultModel).toBe('claude-opus-4-8');
-    expect(cursor.defaultModel).toBe('composer-2');
+    expect(cursor.defaultModel).toBe('composer-2.5');
     expect(codex.connection).toBe('missing'); // not in store → falls back
     expect(anthropic.models.length).toBeGreaterThan(0);
   });

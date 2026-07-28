@@ -68,6 +68,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub effort: Option<String>,
     #[serde(default)]
+    pub workspace_id: Option<String>,
+    #[serde(default)]
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
@@ -136,7 +138,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             let mut v = vec![
                 "-p".to_string(),
                 args.prompt.to_string(),
-                "--model".to_string(),
+                "-m".to_string(),
                 args.model.to_string(),
             ];
             if args.permission_mode == "bypassPermissions" {
@@ -158,7 +160,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "exec".to_string(),
                 "--json".to_string(),
                 "--skip-git-repo-check".to_string(),
-                "--model".to_string(),
+                "-m".to_string(),
                 args.model.to_string(),
                 "--cd".to_string(),
                 args.working_dir.to_string(),
@@ -263,6 +265,7 @@ pub struct SpawnOneArgs<'a> {
     pub effort: Option<&'a str>,
     pub api_key_env: Option<&'a str>,
     pub credential_id: Option<&'a str>,
+    pub workspace_id: Option<&'a str>,
 }
 
 /// Spawns one child process, registers it in the registry, and starts the
@@ -283,6 +286,11 @@ pub(crate) fn spawn_one(
         if let Ok(Some(secret)) = crate::secrets::read(&format!("provider_credential.{cred_id}")) {
             command.env(env_name, secret);
         }
+    }
+
+    if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
+        command.env("GH_TOKEN", &token);
+        command.env("GITHUB_TOKEN", &token);
     }
 
     let cli_args = build_provider_cli_args(args.binary, &args);
@@ -369,6 +377,7 @@ pub fn turn_spawn(
             effort: args.effort.as_deref(),
             api_key_env: args.api_key_env.as_deref(),
             credential_id: args.credential_id.as_deref(),
+            workspace_id: args.workspace_id.as_deref(),
         },
     )
 }
@@ -510,6 +519,7 @@ mod tests {
             effort: None,
             api_key_env: None,
             credential_id: None,
+            workspace_id: None,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -535,6 +545,7 @@ mod tests {
             effort: None,
             api_key_env: None,
             credential_id: None,
+            workspace_id: None,
         }
     }
 
@@ -729,6 +740,16 @@ mod tests {
     }
 
     #[test]
+    fn gemini_args_use_short_model_flag() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("agy", &args);
+        let index = cli.iter().position(|arg| arg == "-m").expect("-m");
+        assert_eq!(cli[index + 1], "claude-3");
+        assert!(!cli.iter().any(|arg| arg == "--model"));
+    }
+
+    #[test]
     #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]
     fn codex_real_spawn_emits_json_events() {
         if std::env::var("GOODBOY_TEST_REAL_CODEX")
@@ -753,6 +774,7 @@ mod tests {
             effort: None,
             api_key_env: None,
             credential_id: None,
+            workspace_id: None,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")

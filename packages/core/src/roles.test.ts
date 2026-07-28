@@ -33,7 +33,7 @@ describe('ROLE_DEFAULTS', () => {
         (entry) => entry.id === defaults.model,
       );
       expect(model, `${role} → ${defaults.provider}/${defaults.model}`).toBeDefined();
-      if (model?.effort != null) {
+      if (model?.effort != null && model.effort.length > 0) {
         expect(model.effort, `${role} → ${defaults.model}/${defaults.effort}`).toContain(
           defaults.effort,
         );

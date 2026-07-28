@@ -29,6 +29,7 @@ type Params = {
   activeAgentId: AgentId;
   provider: ProviderId;
   model: string;
+  effort: string | undefined;
   parallelDispatch: {
     template: Workflow;
     currentDef: Step;
@@ -54,6 +55,7 @@ export const dispatchParallelTurn = async (
     activeAgentId,
     provider,
     model,
+    effort,
     parallelDispatch,
     claudeFlags,
     apiKeyBinding,
@@ -161,6 +163,7 @@ export const dispatchParallelTurn = async (
         provider,
         providerBinary,
         model,
+        ...(effort !== undefined && { effort }),
         authIdentity: get().authResults?.[provider]?.identity ?? null,
         ...(claudeFlags.permissionMode !== undefined && {
           permissionMode: claudeFlags.permissionMode,

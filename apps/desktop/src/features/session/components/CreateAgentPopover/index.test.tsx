@@ -103,7 +103,7 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'docs',
       provider: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
       effort: 'low',
     });
   });
@@ -151,7 +151,7 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'scout',
       provider: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
       effort: 'low',
     });
   });
@@ -159,7 +159,7 @@ describe('CreateAgentPopover', () => {
   it('swaps the tag for a reset that names the model it would go back to', () => {
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
+    fireEvent.click(screen.getByTitle(/^opus-5 \(/));
 
     expect(screen.queryByText('recommended')).toBeNull();
 
@@ -172,7 +172,7 @@ describe('CreateAgentPopover', () => {
   it('spawns exactly the pinned model the picker shows', () => {
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByTitle(/^claude-opus-5 \(/));
+    fireEvent.click(screen.getByTitle(/^opus-5 \(/));
 
     expect(screen.getByText('Claude · Opus 5, low effort')).toBeTruthy();
 
@@ -195,7 +195,7 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',
       provider: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
       effort: 'low',
     });
   });

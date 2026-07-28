@@ -662,7 +662,7 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
 
     const model = screen.getAllByRole('button', { name: /^model:auto$/i })[0]!;
     expect(model.dataset['provider']).toBe('cursor');
-    expect(model.dataset['recommendedModel']).toBe('composer-2-fast');
+    expect(model.dataset['recommendedModel']).toBe('auto');
 
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
@@ -736,7 +736,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     goToApproach();
     const modelBtn = screen.getByRole('button', { name: /^model:auto$/i });
-    expect(modelBtn.dataset['recommendedModel']).toBe('claude-haiku-4-5');
+    expect(modelBtn.dataset['recommendedModel']).toBe('haiku-4.5');
     expect(screen.queryByText(/cheap-tier/i)).toBeNull();
   });
 
@@ -751,7 +751,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     await waitFor(() => screen.getByText('Ready'));
 
     expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'anthropic', model: 'claude-haiku-4-5' }),
+      expect.objectContaining({ providerId: 'anthropic', model: 'haiku-4.5' }),
     );
   });
 

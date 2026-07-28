@@ -14,7 +14,7 @@ const run = (invokeFn: InvokeFn) =>
   generateBranchSlug({
     goal: 'refactor the auth domain to extract token validation',
     providerId: 'cursor',
-    model: 'composer-2-fast',
+    model: 'composer-2.5-fast',
     fallbackSlug: HEURISTIC,
     invokeFn,
     timeoutMs: 200,

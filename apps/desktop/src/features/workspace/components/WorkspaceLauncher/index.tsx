@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Unplug } from 'lucide-react';
-import { Button, Dialog, cn } from '@goodboy/ui';
+import { Button, Dialog, ScrollFade, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { BetaPill } from '../../../../shared/components/BetaPill';
@@ -71,7 +71,10 @@ export const WorkspaceLauncher = () => {
   };
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-y-auto bg-background px-6 py-10">
+    <ScrollFade
+      className="h-full w-full"
+      viewportClassName="relative flex items-center justify-center bg-background px-6 py-10"
+    >
       <div data-tauri-drag-region="false" className="absolute right-4 top-3">
         <UpdateIndicator variant="bar" />
       </div>
@@ -185,6 +188,6 @@ export const WorkspaceLauncher = () => {
           with all its sessions.
         </p>
       </Dialog>
-    </div>
+    </ScrollFade>
   );
 };

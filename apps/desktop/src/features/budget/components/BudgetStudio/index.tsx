@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { ScrollFade } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { OverviewPanel } from './OverviewPanel';
 import { ProviderPanel } from './ProviderPanel';
@@ -145,18 +146,21 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
       onClose={onClose}
     >
       {(requestClose) => (
-        <>
-          <ScrollFade className="w-72 shrink-0" fadeSize={24}>
-            <ScopeRail
-              scope={scope}
-              onSelect={setScope}
-              providers={providers}
-              sessions={sessionSpends}
-            />
-          </ScrollFade>
-          <Divider orientation="vertical" />
-          <div className="min-h-0 flex-1">
-            {scope.kind === 'overview' ? (
+        <StudioRailLayout
+          railLabel="Budget scopes"
+          railWidth="standard"
+          rail={
+            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+              <ScopeRail
+                scope={scope}
+                onSelect={setScope}
+                providers={providers}
+                sessions={sessionSpends}
+              />
+            </ScrollFade>
+          }
+          detail={
+            scope.kind === 'overview' ? (
               <OverviewPanel
                 workspaceSummary={workspaceSummary}
                 providers={providers}
@@ -185,9 +189,9 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
                 onSaveCap={(capUsd) => saveSessionCap(selectedSession.id, capUsd)}
                 onOpened={requestClose}
               />
-            ) : null}
-          </div>
-        </>
+            ) : null
+          }
+        />
       )}
     </StudioShell>
   );

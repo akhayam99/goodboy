@@ -1,18 +1,31 @@
 import { Sparkles } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { groupModels } from './groupModels';
-import { VariantChip } from './VariantChip';
+import { ModelChip } from './ModelChip';
 
 type Props = {
+  readonly provider?: ProviderId;
   readonly ids: ReadonlyArray<string>;
   readonly value: string;
+  readonly selection?: ModelSelection;
   readonly recommendedModel?: string;
   readonly isRecommended: boolean;
   readonly onSelect: (model: string) => void;
+  readonly onSelection?: (selection: ModelSelection) => void;
 };
 
-export const ModelGrid = ({ ids, value, recommendedModel, isRecommended, onSelect }: Props) => (
+export const ModelGrid = ({
+  provider,
+  ids,
+  value,
+  selection,
+  recommendedModel,
+  isRecommended,
+  onSelect,
+  onSelection,
+}: Props) => (
   <div className="flex flex-col gap-1">
     {recommendedModel != null && (
       <div className="flex flex-wrap gap-1 px-2.5">
@@ -43,11 +56,14 @@ export const ModelGrid = ({ ids, value, recommendedModel, isRecommended, onSelec
             <div className="flex flex-wrap gap-1 px-2.5">
               {group.subgroups.flatMap((subgroup) =>
                 subgroup.ids.map((id) => (
-                  <VariantChip
+                  <ModelChip
                     key={id}
+                    provider={provider}
                     id={id}
                     active={!isRecommended && value === id}
+                    selection={selection}
                     onSelect={() => onSelect(id)}
+                    onSelection={onSelection}
                   />
                 )),
               )}
@@ -61,11 +77,14 @@ export const ModelGrid = ({ ids, value, recommendedModel, isRecommended, onSelec
                 </span>
                 <div className="flex flex-wrap justify-end gap-1">
                   {subgroup.ids.map((id) => (
-                    <VariantChip
+                    <ModelChip
                       key={id}
+                      provider={provider}
                       id={id}
                       active={!isRecommended && value === id}
+                      selection={selection}
                       onSelect={() => onSelect(id)}
+                      onSelection={onSelection}
                     />
                   ))}
                 </div>

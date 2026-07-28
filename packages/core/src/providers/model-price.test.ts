@@ -20,7 +20,7 @@ describe('getModelPrice', () => {
   });
 
   it('returns cursor composer pricing for a known cursor id', () => {
-    expect(getModelPrice('composer-2-fast')).toEqual({ inputPerMtok: 0.8, outputPerMtok: 4 });
+    expect(getModelPrice('composer-2.5-fast')).toEqual({ inputPerMtok: 0.8, outputPerMtok: 4 });
   });
 
   it('omits the cached-input rate from the summary', () => {
@@ -41,8 +41,8 @@ describe('getModelPrice', () => {
     expect(getModelPrice('claude-vapor-9-9')).toBeNull();
   });
 
-  it('returns cursor composer pricing for composer-2 (no effort suffix)', () => {
-    expect(getModelPrice('composer-2')).toEqual({ inputPerMtok: 0.8, outputPerMtok: 4 });
+  it('returns cursor composer pricing for composer-2.5 (no effort suffix)', () => {
+    expect(getModelPrice('composer-2.5')).toEqual({ inputPerMtok: 0.8, outputPerMtok: 4 });
   });
 
   it('returns cursor gpt pricing for gpt-5.5-high', () => {

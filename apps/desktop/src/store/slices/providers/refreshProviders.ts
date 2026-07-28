@@ -10,10 +10,13 @@ import {
   type ProviderAuthResults,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
+import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import type { GetFn, SetFn } from './types';
 
 export const refreshProviders = (set: SetFn, get: GetFn) => {
   return async () => {
+    const previousCursorIdentity = get().authResults?.cursor?.identity ?? null;
+    const previousCursorState = get().authResults?.cursor?.state ?? null;
     const [
       providerStatus,
       cursorStatus,
@@ -54,6 +57,12 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
       opencode: opencodeAuth,
       openrouter: openrouterAuth,
     };
+    if (
+      previousCursorIdentity !== cursorAuth.identity ||
+      (cursorAuth.state === 'connected' && previousCursorState !== 'connected')
+    ) {
+      cursorMaxModeAdvisory.clearAll({});
+    }
     const credentialProviderIds = new Set(get().providerCredentials.map((item) => item.providerId));
     set({
       providerStatus,

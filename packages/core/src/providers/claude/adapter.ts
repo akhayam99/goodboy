@@ -11,21 +11,17 @@ import type {
 import { computeCostUsd } from './cost';
 import { parseStreamJsonLine } from './parser';
 import { streamChildEvents } from '../shared/stream-events';
+import { resolveModelArgs } from '../resolveModelArgs';
+import { resolveStoredModelSelection } from '../resolveStoredModelSelection';
+import { ANTHROPIC_CATALOG } from './catalog';
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
   contextWindow: 1_000_000,
-  defaultModel: 'claude-opus-5',
-  availableModels: [
-    'claude-opus-5',
-    'claude-opus-4-8',
-    'claude-fable-5',
-    'claude-opus-4-7',
-    'claude-sonnet-4-6',
-    'claude-haiku-4-5',
-  ],
+  defaultModel: ANTHROPIC_CATALOG[0]?.key ?? '',
+  availableModels: ANTHROPIC_CATALOG.map((model) => model.key),
 };
 
 export type ClaudeAdapterDeps = {
@@ -33,6 +29,14 @@ export type ClaudeAdapterDeps = {
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
+};
+
+type SpawnParams = {
+  readonly binary: string;
+  readonly spawnFn: typeof spawn;
+  readonly now: () => IsoDateTime;
+  readonly onUnknown: (type: string, payload: unknown) => void;
+  readonly request: TurnRequest;
 };
 
 export class ClaudeAdapter implements ProviderAdapter {
@@ -90,20 +94,34 @@ export class ClaudeAdapter implements ProviderAdapter {
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    return spawnClaude(this.binary, this.spawnFn, this.now, this.onUnknown, request);
+    return spawnClaude({
+      binary: this.binary,
+      spawnFn: this.spawnFn,
+      now: this.now,
+      onUnknown: this.onUnknown,
+      request,
+    });
   }
 }
 
-async function* spawnClaude(
-  binary: string,
-  spawnFn: typeof spawn,
-  now: () => IsoDateTime,
-  onUnknown: (type: string, payload: unknown) => void,
-  request: TurnRequest,
-): AsyncIterable<TurnEvent> {
+const spawnClaude = async function* ({
+  binary,
+  spawnFn,
+  now,
+  onUnknown,
+  request,
+}: SpawnParams): AsyncIterable<TurnEvent> {
   const prompt = `${request.systemPrompt}\n\n${request.userMessage}`.trim();
   const flags = request.permissionFlags;
   const mode = flags?.mode ?? 'default';
+  const selection =
+    request.selection ??
+    resolveStoredModelSelection({
+      provider: 'anthropic',
+      id: request.model,
+      ...(request.effort != null && { effort: request.effort }),
+    }).selection;
+  const modelArgs = resolveModelArgs({ provider: 'anthropic', selection }).args;
 
   const args = [
     '-p',
@@ -112,8 +130,7 @@ async function* spawnClaude(
     'stream-json',
     '--working-dir',
     request.workingDir,
-    '--model',
-    request.model,
+    ...modelArgs,
     '--permission-mode',
     mode,
   ];
@@ -139,4 +156,4 @@ async function* spawnClaude(
   const ctx = { runId: request.runId, now, onUnknown };
 
   yield* streamChildEvents(child, ctx, parseStreamJsonLine);
-}
+};

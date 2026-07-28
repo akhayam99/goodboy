@@ -53,7 +53,7 @@ describe('resolveSpawnRouting', () => {
 
     expect(routing).toEqual({
       provider: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
       effort: 'low',
       origin: 'right-sized',
     });
@@ -68,7 +68,7 @@ describe('resolveSpawnRouting', () => {
 
     expect(routing).toEqual({
       provider: 'anthropic',
-      model: 'claude-haiku-4-5',
+      model: 'haiku-4.5',
       effort: 'low',
       origin: 'right-sized',
     });
@@ -94,7 +94,7 @@ describe('resolveSpawnRouting', () => {
 
     expect(routing).toEqual({
       provider: 'anthropic',
-      model: 'claude-opus-5',
+      model: 'opus-5',
       effort: 'high',
       origin: 'role-default',
     });

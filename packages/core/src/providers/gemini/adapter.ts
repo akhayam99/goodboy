@@ -12,6 +12,8 @@ import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './constants';
 import { computeGeminiCostUsd, type GeminiModelPriceOverride } from './cost';
 import { parseJsonLine } from './parser';
 import { streamChildEvents } from '../shared/stream-events';
+import { resolveModelArgs } from '../resolveModelArgs';
+import { resolveStoredModelSelection } from '../resolveStoredModelSelection';
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
@@ -28,6 +30,14 @@ export type GeminiAdapterDeps = {
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
   readonly priceOverride?: GeminiModelPriceOverride | null;
+};
+
+type SpawnParams = {
+  readonly binary: string;
+  readonly spawnFn: typeof spawn;
+  readonly now: () => IsoDateTime;
+  readonly onUnknown: (type: string, payload: unknown) => void;
+  readonly request: TurnRequest;
 };
 
 export class GeminiAdapter implements ProviderAdapter {
@@ -79,21 +89,31 @@ export class GeminiAdapter implements ProviderAdapter {
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    return spawnGemini(this.binary, this.spawnFn, this.now, this.onUnknown, request);
+    return spawnGemini({
+      binary: this.binary,
+      spawnFn: this.spawnFn,
+      now: this.now,
+      onUnknown: this.onUnknown,
+      request,
+    });
   }
 }
 
-async function* spawnGemini(
-  binary: string,
-  spawnFn: typeof spawn,
-  now: () => IsoDateTime,
-  onUnknown: (type: string, payload: unknown) => void,
-  request: TurnRequest,
-): AsyncIterable<TurnEvent> {
+const spawnGemini = async function* ({
+  binary,
+  spawnFn,
+  now,
+  onUnknown,
+  request,
+}: SpawnParams): AsyncIterable<TurnEvent> {
   const prompt = request.systemPrompt
     ? `${request.systemPrompt}\n\n${request.userMessage}`
     : request.userMessage;
-  const args = ['-p', prompt, '--model', request.model, '--sandbox'];
+  const selection =
+    request.selection ??
+    resolveStoredModelSelection({ provider: 'gemini', id: request.model }).selection;
+  const modelArgs = resolveModelArgs({ provider: 'gemini', selection }).args;
+  const args = ['-p', prompt, ...modelArgs, '--sandbox'];
 
   const child: ChildProcess = spawnFn(binary, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -109,4 +129,4 @@ async function* spawnGemini(
   yield* streamChildEvents(child, ctx, parseJsonLine, {
     onClose: () => [{ kind: 'done', runId: request.runId, at: now() }],
   });
-}
+};
