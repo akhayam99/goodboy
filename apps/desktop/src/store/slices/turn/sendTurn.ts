@@ -57,6 +57,7 @@ import { slotsForKind } from '../../../features/providers/slot-routing';
 import { refreshPricingTable } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
+import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
@@ -80,6 +81,7 @@ import { persistAttachments } from './persistAttachments';
 import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import type { GetFn, SetFn } from './types';
 
@@ -713,6 +715,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let assistantText = '';
     let lastError: unknown = null;
     let turnWasCancelled = false;
+    let hasProviderError = false;
     let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
 
@@ -780,15 +783,38 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
+        const maxModeFailure =
+          provider === 'cursor' && rawEvent.kind === 'error'
+            ? matchCursorMaxModeFailure({ message: rawEvent.message })
+            : null;
+        if (rawEvent.kind === 'error') {
+          hasProviderError = true;
+        }
+        if (maxModeFailure != null) {
+          const advisorySelection = resolveStoredModelSelection({
+            provider: 'cursor',
+            id: maxModeFailure.model,
+          });
+          cursorMaxModeAdvisory.mark({
+            accountId: get().authResults?.cursor?.identity ?? 'unknown',
+            model:
+              advisorySelection.report?.kind === 'unknown'
+                ? maxModeFailure.model
+                : advisorySelection.selection.key,
+          });
+        }
         const event: TurnEvent =
           rawEvent.kind === 'error'
             ? {
                 ...rawEvent,
-                message: resolveErrorTurnMessage({
-                  message: rawEvent.message,
-                  providerId: provider,
-                  identity: get().authResults?.[provider]?.identity ?? null,
-                }),
+                message:
+                  maxModeFailure != null
+                    ? cursorMaxModeMessage(maxModeFailure)
+                    : resolveErrorTurnMessage({
+                        message: rawEvent.message,
+                        providerId: provider,
+                        identity: get().authResults?.[provider]?.identity ?? null,
+                      }),
               }
             : rawEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
@@ -847,6 +873,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       const wasCancelled = cancelledRunIds.delete(runId);
       turnWasCancelled = wasCancelled;
+      if (
+        provider === 'cursor' &&
+        hasProviderError === false &&
+        wasCancelled === false &&
+        assistantText.length > 0
+      ) {
+        cursorMaxModeAdvisory.clear({
+          accountId: get().authResults?.cursor?.identity ?? 'unknown',
+          model: modelSelection.key,
+        });
+      }
       await updateProviderRunStatus(
         tauriDatabase,
         runId,
@@ -955,11 +992,29 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     } catch (err) {
       lastError = err;
       const rawMessage = formatError(err);
-      const message = resolveErrorTurnMessage({
-        message: rawMessage,
-        providerId: provider,
-        identity: get().authResults?.[provider]?.identity ?? null,
-      });
+      const maxModeFailure =
+        provider === 'cursor' ? matchCursorMaxModeFailure({ message: rawMessage }) : null;
+      if (maxModeFailure != null) {
+        const advisorySelection = resolveStoredModelSelection({
+          provider: 'cursor',
+          id: maxModeFailure.model,
+        });
+        cursorMaxModeAdvisory.mark({
+          accountId: get().authResults?.cursor?.identity ?? 'unknown',
+          model:
+            advisorySelection.report?.kind === 'unknown'
+              ? maxModeFailure.model
+              : advisorySelection.selection.key,
+        });
+      }
+      const message =
+        maxModeFailure != null
+          ? cursorMaxModeMessage(maxModeFailure)
+          : resolveErrorTurnMessage({
+              message: rawMessage,
+              providerId: provider,
+              identity: get().authResults?.[provider]?.identity ?? null,
+            });
       const errorState: TurnState = {
         kind: 'error',
         message: rawMessage,

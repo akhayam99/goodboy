@@ -363,6 +363,7 @@ describe('ChatInput, input wiring', () => {
       modelOverride: null,
     });
 
+    await user.click(screen.getByRole('button', { name: /^model routing:/ }));
     const textarea = screen.getByRole('textbox');
     await user.type(textarea, 'back to claude');
     await user.keyboard('{Enter}');

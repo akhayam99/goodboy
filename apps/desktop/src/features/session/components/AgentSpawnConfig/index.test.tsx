@@ -39,7 +39,7 @@ describe('AgentSpawnConfig', () => {
     expect(providerValue.provider).toBe('codex');
 
     view.rerender(<AgentSpawnConfig value={providerValue} onChange={onChange} disabled={false} />);
-    fireEvent.click(screen.getByTitle(/^gpt-5.4-mini \(/));
+    fireEvent.click(screen.getByRole('button', { name: 'GPT-5.4 Mini' }));
     expect(onChange.mock.calls[1]![0].model).toBe('gpt-5.4-mini');
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent hint' }), {
