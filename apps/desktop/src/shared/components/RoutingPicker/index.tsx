@@ -107,7 +107,7 @@ export const RoutingPicker = ({
     align,
     openEvent,
     expectedHeight: 320,
-    width: 'w-80 max-w-[calc(100vw-2rem)]',
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
   });
   const editableEffort = effort.editable ? effort : null;
   const effortValue = effort.value ?? 'medium';
