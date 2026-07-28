@@ -475,7 +475,7 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
     style="background: radial-gradient(ellipse at center, transparent 0%, transparent 40%, var(--color-background) 100%);"
   />
   <div
-    class="relative flex max-w-2xl flex-col items-center gap-10 text-center"
+    class="flex flex-col items-center gap-10 text-center relative max-w-2xl"
   >
     <div
       class="flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg"

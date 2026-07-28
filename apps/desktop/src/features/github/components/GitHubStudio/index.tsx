@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider, IconButton, ScrollFade } from '@goodboy/ui';
+import {
+  cn,
+  Divider,
+  IconButton,
+  ScrollFade,
+  SegmentedTabs,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { GithubIssue, ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
@@ -9,11 +16,6 @@ import { GithubIssueDetailPanel } from './GithubIssueDetailPanel';
 import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
-import {
-  SegmentedControl,
-  type SegmentedOption,
-} from '../../../../shared/components/SegmentedControl';
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
 import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
@@ -26,12 +28,12 @@ type Tab = 'pull-requests' | 'issues';
 
 type ReviewScope = 'mine' | 'others' | 'all';
 
-const TABS: ReadonlyArray<StudioTab<Tab>> = [
+const TABS: ReadonlyArray<SegmentedTabOption<Tab>> = [
   { value: 'pull-requests', label: 'Pull requests' },
   { value: 'issues', label: 'Issues' },
 ];
 
-const REVIEW_SCOPES: ReadonlyArray<SegmentedOption<ReviewScope>> = [
+const REVIEW_SCOPES: ReadonlyArray<SegmentedTabOption<ReviewScope>> = [
   { value: 'mine', label: 'Mine' },
   { value: 'others', label: 'Others' },
   { value: 'all', label: 'All' },
@@ -136,7 +138,13 @@ export const GitHubStudio = ({
       headerAccessory={
         isConnected ? (
           <div className="flex items-center gap-2">
-            <StudioTabs ariaLabel="GitHub work" tabs={TABS} value={tab} onChange={setTab} />
+            <SegmentedTabs
+              ariaLabel="GitHub work"
+              options={TABS}
+              value={tab}
+              onChange={setTab}
+              size="sm"
+            />
             <IconButton
               icon={RefreshCw}
               label="Refresh issues"
@@ -162,11 +170,13 @@ export const GitHubStudio = ({
           <>
             <div className="flex w-72 shrink-0 flex-col">
               <div className="shrink-0 px-3 pt-3">
-                <SegmentedControl
+                <SegmentedTabs
                   ariaLabel="Review inbox filter"
                   options={REVIEW_SCOPES}
                   value={reviewScope}
                   onChange={setReviewScope}
+                  size="sm"
+                  fill
                 />
               </div>
               {reviewScope === 'mine' ? (

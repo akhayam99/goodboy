@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn, Divider } from '@goodboy/ui';
-import { X, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import { OverlayHeader } from '../OverlayHeader';
 
@@ -38,47 +38,18 @@ export const StudioShell = ({
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
-      {variant === 'slot' ? (
-        <OverlayHeader
-          icon={Icon}
-          title={title}
-          subtitle={workspaceName}
-          beta
-          onClose={requestClose}
-          closeLabel={closeLabel}
-        >
-          {headerAccessory}
-        </OverlayHeader>
-      ) : (
-        <header className="flex shrink-0 items-center gap-3 px-6 py-3">
-          {glyph ??
-            (Icon ? <Icon size={18} className="shrink-0 text-primary" aria-hidden /> : null)}
-          <div className="flex min-w-0 flex-col">
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold text-foreground">{title}</h1>
-              <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
-                beta
-              </span>
-            </div>
-            <span className="truncate text-2xs text-muted-foreground">{workspaceName}</span>
-          </div>
-          <div className="flex-1" />
-          {headerAccessory}
-          <button
-            type="button"
-            onClick={requestClose}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5',
-              'text-xs font-semibold text-muted-foreground transition-colors',
-              'hover:bg-muted hover:text-foreground',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-            )}
-            aria-label={closeLabel}
-          >
-            <X size={13} aria-hidden /> Done
-          </button>
-        </header>
-      )}
+      <OverlayHeader
+        icon={Icon}
+        glyph={glyph}
+        title={title}
+        subtitle={workspaceName}
+        beta
+        onClose={requestClose}
+        closeLabel={closeLabel}
+        variant={variant === 'slot' ? 'compact' : 'fullscreen'}
+      >
+        {headerAccessory}
+      </OverlayHeader>
       <Divider />
 
       <div className="flex min-h-0 flex-1">{children(requestClose)}</div>

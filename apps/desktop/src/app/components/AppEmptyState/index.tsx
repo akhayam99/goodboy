@@ -1,3 +1,4 @@
+import { EmptyState } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 
 type Props = {
@@ -16,29 +17,27 @@ export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
         aria-hidden
       />
 
-      <div className="relative flex max-w-2xl flex-col items-center gap-10 text-center">
-        <div className="flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg">
-          <DogMascot size={56} className="text-foreground" />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            Welcome to Goodboy
-          </h2>
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-            Point at a git repo to create your first workspace. Every session spins up its own
-            worktree and branch, your main checkout stays untouched.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={onAddWorkspace}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
-        >
-          Add workspace
-        </button>
-      </div>
+      <EmptyState
+        illustration={
+          <div className="flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg">
+            <DogMascot size={56} className="text-foreground" />
+          </div>
+        }
+        title="Welcome to Goodboy"
+        description="Point at a git repo to create your first workspace. Every session spins up its own worktree and branch, your main checkout stays untouched."
+        action={
+          <button
+            type="button"
+            onClick={onAddWorkspace}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
+          >
+            Add workspace
+          </button>
+        }
+        size="xl"
+        headingLevel={2}
+        className="relative max-w-2xl"
+      />
     </div>
   );
 };

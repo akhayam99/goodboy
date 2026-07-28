@@ -8,12 +8,11 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
-import { Divider, FieldRow, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { Divider, FieldRow, ScrollFade, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
-import { SegmentedControl } from '../../../../../shared/components/SegmentedControl';
 import { PROVIDER_ORDER } from '../providerOrder';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
@@ -208,11 +207,13 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           </section>
 
           <section className="flex flex-col gap-3">
-            <SegmentedControl
+            <SegmentedTabs
               ariaLabel="Defaults group"
               options={groupOptions}
               value={group}
               onChange={setGroup}
+              size="sm"
+              fill
             />
 
             {group === 'task' ? (

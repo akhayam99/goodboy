@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider, IconButton } from '@goodboy/ui';
+import { cn, Divider, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -15,11 +15,6 @@ import { MrInbox } from './MrInbox';
 import { useGitlabIssues } from './useGitlabIssues';
 import { useGitlabMrs } from './useGitlabMrs';
 import type { GitlabIssue, GitlabMergeRequest } from '../client';
-import { StudioTabs, type StudioTab } from '../../../../shared/components/StudioTabs';
-import {
-  SegmentedControl,
-  type SegmentedOption,
-} from '../../../../shared/components/SegmentedControl';
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
 import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
 
@@ -27,12 +22,12 @@ type Tab = 'issues' | 'merge-requests';
 
 type ReviewScope = 'mine' | 'others' | 'all';
 
-const TABS: ReadonlyArray<StudioTab<Tab>> = [
+const TABS: ReadonlyArray<SegmentedTabOption<Tab>> = [
   { value: 'issues', label: 'Issues' },
   { value: 'merge-requests', label: 'Merge requests' },
 ];
 
-const REVIEW_SCOPES: ReadonlyArray<SegmentedOption<ReviewScope>> = [
+const REVIEW_SCOPES: ReadonlyArray<SegmentedTabOption<ReviewScope>> = [
   { value: 'mine', label: 'Mine' },
   { value: 'others', label: 'Others' },
   { value: 'all', label: 'All' },
@@ -117,7 +112,13 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       headerAccessory={
         isConnected ? (
           <div className="flex items-center gap-2">
-            <StudioTabs ariaLabel="GitLab work" tabs={TABS} value={tab} onChange={setTab} />
+            <SegmentedTabs
+              ariaLabel="GitLab work"
+              options={TABS}
+              value={tab}
+              onChange={setTab}
+              size="sm"
+            />
             <IconButton
               icon={RefreshCw}
               label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
@@ -164,11 +165,13 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
           <>
             <div className="flex w-72 shrink-0 flex-col">
               <div className="shrink-0 px-3 pt-3">
-                <SegmentedControl
+                <SegmentedTabs
                   ariaLabel="Review inbox filter"
                   options={REVIEW_SCOPES}
                   value={reviewScope}
                   onChange={setReviewScope}
+                  size="sm"
+                  fill
                 />
               </div>
               {reviewScope === 'mine' ? (
