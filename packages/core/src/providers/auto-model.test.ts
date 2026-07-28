@@ -81,7 +81,7 @@ describe('autoModelForRole', () => {
 
     it('cursor provider: picks a real expensive slug for a high-tier role', () => {
       const result = autoModelForRole({ role: 'planner', providers: ['cursor'] });
-      expect(result).toEqual({ provider: 'cursor', model: 'claude-opus-4-7-thinking-high' });
+      expect(result).toEqual({ provider: 'cursor', model: 'claude-fable-5-thinking-high' });
     });
   });
 });

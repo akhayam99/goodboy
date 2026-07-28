@@ -1,19 +1,19 @@
 import type { ModelTier } from '@goodboy/types';
 import { CURSOR_CHEAP_MODEL } from './cost';
 
-export const CURSOR_DEFAULT_MODEL = 'composer-2';
+export const CURSOR_DEFAULT_MODEL = 'composer-2.5';
 
 export const CURSOR_AUTO_MODEL = 'auto';
 
 export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
   {
-    id: 'composer-2',
+    id: CURSOR_DEFAULT_MODEL,
     tier: 'turn',
     contextWindow: 200_000,
     family: 'composer',
     subfamily: null,
-    label: 'Composer 2',
-    variantLabel: '2',
+    label: 'Composer 2.5',
+    variantLabel: '2.5',
     costTier: 'mid',
     weight: 12,
     effort: null,
@@ -24,8 +24,8 @@ export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
     contextWindow: 200_000,
     family: 'composer',
     subfamily: null,
-    label: 'Composer 2 Fast',
-    variantLabel: '2 Fast',
+    label: 'Composer 2.5 Fast',
+    variantLabel: '2.5 Fast',
     costTier: 'cheap',
     weight: 5,
     effort: null,
@@ -43,6 +43,30 @@ export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
     effort: null,
   },
   {
+    id: 'claude-fable-5-thinking-high',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    family: 'claude',
+    subfamily: 'fable',
+    label: 'Fable 5 Thinking',
+    variantLabel: '5 thinking',
+    costTier: 'expensive',
+    weight: 90,
+    effort: null,
+  },
+  {
+    id: 'claude-opus-5-thinking-high',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    family: 'claude',
+    subfamily: 'opus',
+    label: 'Opus 5 Thinking',
+    variantLabel: '5 thinking',
+    costTier: 'expensive',
+    weight: 85,
+    effort: null,
+  },
+  {
     id: 'claude-opus-4-7-thinking-high',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -55,13 +79,13 @@ export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
     effort: null,
   },
   {
-    id: 'claude-4.6-sonnet-high',
+    id: 'claude-4.6-sonnet-medium-thinking',
     tier: 'turn',
     contextWindow: 1_000_000,
     family: 'claude',
     subfamily: 'sonnet',
-    label: 'Sonnet 4.6 High',
-    variantLabel: '4.6 high',
+    label: 'Sonnet 4.6 Thinking',
+    variantLabel: '4.6 thinking',
     costTier: 'mid',
     weight: 16,
     effort: null,
@@ -76,6 +100,18 @@ export const CURSOR_MODELS: ReadonlyArray<ModelTier> = [
     variantLabel: '4.6 medium',
     costTier: 'mid',
     weight: 15,
+    effort: null,
+  },
+  {
+    id: 'gpt-5.6-sol-high',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    family: 'gpt',
+    subfamily: 'gpt-5',
+    label: 'GPT-5.6 Sol High',
+    variantLabel: '5.6 sol high',
+    costTier: 'expensive',
+    weight: 28,
     effort: null,
   },
   {

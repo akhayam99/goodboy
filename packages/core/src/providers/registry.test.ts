@@ -119,7 +119,7 @@ describe('getCapabilities', () => {
   });
 
   it('getDefaultTurnModel for cursor returns the composer turn model', () => {
-    expect(getDefaultTurnModel('cursor')).toBe('composer-2');
+    expect(getDefaultTurnModel('cursor')).toBe('composer-2.5');
   });
 
   it('all models have required fields', () => {

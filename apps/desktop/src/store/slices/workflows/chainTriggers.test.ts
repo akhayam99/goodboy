@@ -634,6 +634,6 @@ describe('attachWorkflowToSession trigger modes', () => {
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { autoRun: false });
 
     expect(state.agentProviderOverride['agent-1']).toBe('cursor');
-    expect(state.agentModelOverride['agent-1']).toBe('composer-2-fast');
+    expect(state.agentModelOverride['agent-1']).toBe('composer-2.5-fast');
   });
 });

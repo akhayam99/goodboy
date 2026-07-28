@@ -6,8 +6,8 @@ describe('resolveModelForProvider', () => {
     expect(resolveModelForProvider({ provider: 'anthropic', modelId: 'claude-sonnet-4-6' })).toBe(
       'claude-sonnet-4-6',
     );
-    expect(resolveModelForProvider({ provider: 'cursor', modelId: 'composer-2' })).toBe(
-      'composer-2',
+    expect(resolveModelForProvider({ provider: 'cursor', modelId: 'composer-2.5' })).toBe(
+      'composer-2.5',
     );
   });
 
@@ -43,7 +43,7 @@ describe('resolveModelForProvider', () => {
 
   it('falls back to the default turn model for an unknown id', () => {
     expect(resolveModelForProvider({ provider: 'cursor', modelId: 'totally-unknown-model' })).toBe(
-      'composer-2',
+      'composer-2.5',
     );
     expect(
       resolveModelForProvider({ provider: 'anthropic', modelId: 'totally-unknown-model' }),

@@ -662,7 +662,7 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
 
     const model = screen.getAllByRole('button', { name: /^model:auto$/i })[0]!;
     expect(model.dataset['provider']).toBe('cursor');
-    expect(model.dataset['recommendedModel']).toBe('composer-2-fast');
+    expect(model.dataset['recommendedModel']).toBe('composer-2.5-fast');
 
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());

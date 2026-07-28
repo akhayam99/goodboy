@@ -182,13 +182,13 @@ vi.mock('@goodboy/core', () => {
     },
     cursor: {
       models: [
-        { id: 'composer-2', tier: 'turn', contextWindow: 200_000 },
+        { id: 'composer-2.5', tier: 'turn', contextWindow: 200_000 },
         { id: 'claude-4.6-sonnet-medium', tier: 'turn', contextWindow: 200_000 },
       ],
     },
     codex: { models: [{ id: 'codex-latest', tier: 'turn', contextWindow: 128_000 }] },
   };
-  const defaultTurnModel = (id: string) => (id === 'cursor' ? 'composer-2' : 'claude-sonnet-4-6');
+  const defaultTurnModel = (id: string) => (id === 'cursor' ? 'composer-2.5' : 'claude-sonnet-4-6');
   return {
     buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
     getDefaultTurnModel: defaultTurnModel,
@@ -427,14 +427,14 @@ describe('ChatInput, input wiring', () => {
       1,
       expect.objectContaining({
         content: 'first cursor turn',
-        override: { providerId: 'cursor', model: 'composer-2' },
+        override: { providerId: 'cursor', model: 'composer-2.5' },
       }),
     );
     expect(sendTurnMock).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         content: 'second cursor turn',
-        override: { providerId: 'cursor', model: 'composer-2' },
+        override: { providerId: 'cursor', model: 'composer-2.5' },
       }),
     );
   });
@@ -463,7 +463,7 @@ describe('ChatInput, input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        override: { providerId: 'cursor', model: 'composer-2' },
+        override: { providerId: 'cursor', model: 'composer-2.5' },
       }),
     );
   });

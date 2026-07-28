@@ -1173,7 +1173,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'cursor',
-      selectedModel: 'composer-2',
+      selectedModel: 'composer-2.5',
       reason: 'override',
     });
     useAppStore.setState({
@@ -1191,7 +1191,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
     expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('cursor');
-    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('composer-2');
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('composer-2.5');
   });
 
   it('maps a workflow phase model override into the routed provider namespace', async () => {
@@ -1251,7 +1251,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'cursor',
-      selectedModel: 'composer-2',
+      selectedModel: 'composer-2.5',
       reason: 'override',
     });
 
@@ -1259,7 +1259,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_A,
       content: 'go',
-      override: { providerId: 'cursor', model: 'composer-2' },
+      override: { providerId: 'cursor', model: 'composer-2.5' },
     });
 
     expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('cursor');
