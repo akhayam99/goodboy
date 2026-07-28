@@ -194,7 +194,7 @@ describe('parseModelId', () => {
   it('composer family', () => {
     expect(parseModelId('composer-2.5')).toEqual({
       family: 'composer',
-      subfamily: null,
+      subfamily: 'Composer',
       variantLabel: '2.5',
     });
     expect(parseModelId('composer-2.5-fast')).toEqual({
@@ -208,7 +208,7 @@ describe('parseModelId', () => {
     expect(parseModelId('auto')).toEqual({
       family: 'cursor-auto',
       subfamily: null,
-      variantLabel: 'auto',
+      variantLabel: 'Auto',
     });
   });
 
@@ -228,7 +228,7 @@ describe('parseModelId', () => {
   it('codex coding models group under the codex subfamily', () => {
     expect(parseModelId('gpt-5.3-codex')).toEqual({
       family: 'gpt',
-      subfamily: 'codex',
+      subfamily: 'Codex',
       variantLabel: '5.3',
     });
   });
@@ -236,12 +236,12 @@ describe('parseModelId', () => {
   it('codex turn-tier models cluster under gpt-5 / mini subfamilies', () => {
     expect(parseModelId('gpt-5.4-mini')).toEqual({
       family: 'gpt',
-      subfamily: 'mini',
+      subfamily: 'Mini',
       variantLabel: '5.4',
     });
     expect(parseModelId('gpt-5.5')).toEqual({
       family: 'gpt',
-      subfamily: 'gpt-5',
+      subfamily: 'GPT',
       variantLabel: '5.5',
     });
   });
@@ -254,7 +254,7 @@ describe('parseModelId', () => {
     });
     expect(parseModelId('github-copilot/gpt-5.4')).toEqual({
       family: 'gpt',
-      subfamily: '5.4',
+      subfamily: 'GPT',
       variantLabel: '5.4',
     });
   });

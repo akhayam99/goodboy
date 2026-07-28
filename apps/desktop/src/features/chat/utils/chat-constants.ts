@@ -127,6 +127,14 @@ function stripProviderPrefix(id: string): string {
 
 export const parseModelId = (id: string): ParsedModel => {
   const local = stripProviderPrefix(id);
+  const catalogDescriptor = getModelDescriptor(local);
+  if (catalogDescriptor != null && catalogDescriptor.id === local) {
+    return {
+      family: catalogDescriptor.family,
+      subfamily: catalogDescriptor.subfamily,
+      variantLabel: catalogDescriptor.variantLabel,
+    };
+  }
 
   let m = local.match(/^claude-(haiku|sonnet|opus|fable)-(\d+)(?:-(\d+))?(?:-(.+))?$/i);
   if (m) {

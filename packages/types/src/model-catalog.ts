@@ -1,13 +1,22 @@
-import type { ModelTier, ProviderId } from './provider-registry';
+import type { ModelCostTier, ModelFamily, ModelTier, ProviderId } from './provider-registry';
 
 export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export type ModelKey = string;
 
+export type ModelPresentation = {
+  readonly family: ModelFamily;
+  readonly group: string | null;
+  readonly version: string;
+  readonly order: number;
+  readonly costTier: ModelCostTier;
+};
+
 export type BaseModel = {
   readonly key: ModelKey;
   readonly label: string;
   readonly tier: ModelTier;
+  readonly presentation: ModelPresentation;
 };
 
 export type AnthropicModel = BaseModel & {
@@ -35,6 +44,7 @@ export type CursorCombo = {
   readonly thinking: boolean;
   readonly fast: boolean;
   readonly slug: string;
+  readonly maxMode: boolean;
 };
 
 export type CursorModel = BaseModel & {
@@ -77,6 +87,41 @@ export type ModelSelection = {
     readonly thinking?: boolean;
     readonly fast?: boolean;
   };
+};
+
+export type EffortAxisLevel = {
+  readonly level: EffortLevel;
+  readonly available: boolean;
+};
+
+export type EffortAxis = {
+  readonly label: string;
+  readonly levels: ReadonlyArray<EffortAxisLevel>;
+};
+
+export type VariantAxisOption = {
+  readonly id: string;
+  readonly label: string;
+};
+
+export type VariantAxis = {
+  readonly label: string;
+  readonly options: ReadonlyArray<VariantAxisOption>;
+  readonly activeId: string;
+};
+
+export type ToggleAxis = {
+  readonly id: 'thinking' | 'fast';
+  readonly label: string;
+  readonly active: boolean;
+  readonly canToggle: boolean;
+};
+
+export type ModelAxes = {
+  readonly effort: EffortAxis | null;
+  readonly variant: VariantAxis | null;
+  readonly toggles: ReadonlyArray<ToggleAxis>;
+  readonly requiresMaxMode: boolean;
 };
 
 export type ResolvedModelArgs = {
