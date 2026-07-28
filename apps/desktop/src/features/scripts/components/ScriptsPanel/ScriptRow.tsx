@@ -1,12 +1,11 @@
-import { Check, Copy, Play, Square, Trash2 } from 'lucide-react';
+import { Check, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
 import { StatusDot, cn } from '@goodboy/ui';
 import type { WorkspaceScript } from '@goodboy/types';
-import { OverflowMenu } from '../../../../shared/components/OverflowMenu';
-import type { ScriptRunStatus } from '../../scripts';
+import type { ScriptRunRecord } from '../../scripts';
 
 type Props = {
   readonly script: WorkspaceScript;
-  readonly status: ScriptRunStatus;
+  readonly run: ScriptRunRecord | null;
   readonly selected: boolean;
   readonly runnable: boolean;
   readonly canRun: boolean;
@@ -15,6 +14,7 @@ type Props = {
   readonly onRun: () => void;
   readonly onCancel: () => void;
   readonly onCopy: () => void;
+  readonly onEdit: () => void;
   readonly onDelete: () => void;
 };
 
@@ -39,7 +39,7 @@ const extractPreviewLine = ({ body }: Params): string => {
 
 export const ScriptRow = ({
   script,
-  status,
+  run,
   selected,
   runnable,
   canRun,
@@ -48,10 +48,12 @@ export const ScriptRow = ({
   onRun,
   onCancel,
   onCopy,
+  onEdit,
   onDelete,
 }: Props) => {
   const preview = extractPreviewLine({ body: script.body });
-  const isPending = status === 'pending';
+  const isPending = run?.status === 'pending';
+  const result = run?.result ?? null;
 
   return (
     <div
@@ -68,6 +70,12 @@ export const ScriptRow = ({
       >
         <span className="flex min-w-0 items-center gap-1.5">
           {isPending ? <StatusDot tone="info" pulsing ariaLabel="running" /> : null}
+          {!isPending && result !== null ? (
+            <StatusDot
+              tone={result.exitCode === 0 ? 'success' : 'danger'}
+              ariaLabel={result.exitCode === 0 ? 'Script run succeeded' : 'Script run failed'}
+            />
+          ) : null}
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
             {script.name}
           </span>
@@ -86,7 +94,7 @@ export const ScriptRow = ({
             onClick={onCancel}
             title="Stop script"
             aria-label="Stop script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
+            className="flex size-6 shrink-0 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/10"
           >
             <Square size={11} fill="currentColor" aria-hidden />
           </button>
@@ -97,7 +105,7 @@ export const ScriptRow = ({
             disabled={!canRun}
             title="Run script"
             aria-label="Run script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Play size={13} aria-hidden />
           </button>
@@ -109,7 +117,7 @@ export const ScriptRow = ({
         onClick={onCopy}
         title="Copy script"
         aria-label="Copy script"
-        className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         {copied ? (
           <Check size={13} aria-hidden className="text-success" />
@@ -118,19 +126,25 @@ export const ScriptRow = ({
         )}
       </button>
 
-      <OverflowMenu
-        label="Script actions"
-        items={[
-          {
-            kind: 'item',
-            key: 'delete',
-            label: 'Delete',
-            icon: Trash2,
-            destructive: true,
-            onClick: onDelete,
-          },
-        ]}
-      />
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Edit script"
+        aria-label="Edit script"
+        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Pencil size={13} aria-hidden />
+      </button>
+
+      <button
+        type="button"
+        onClick={onDelete}
+        title="Delete script"
+        aria-label="Delete script"
+        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+      >
+        <Trash2 size={13} aria-hidden />
+      </button>
     </div>
   );
 };

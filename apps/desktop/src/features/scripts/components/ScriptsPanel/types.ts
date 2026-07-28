@@ -1,4 +1,4 @@
-import type { WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
+import type { WorkspaceScriptId } from '@goodboy/types';
 
 export type Draft = {
   readonly id: WorkspaceScriptId | null;
@@ -6,7 +6,11 @@ export type Draft = {
   readonly body: string;
 };
 
-export type PendingAction =
-  | { readonly kind: 'new' }
-  | { readonly kind: 'select'; readonly script: WorkspaceScript }
-  | { readonly kind: 'close' };
+export type PanelState =
+  | { readonly kind: 'closed' }
+  | { readonly kind: 'detail'; readonly scriptId: WorkspaceScriptId }
+  | { readonly kind: 'edit'; readonly draft: Draft };
+
+export type PendingAction = {
+  readonly target: PanelState;
+};
