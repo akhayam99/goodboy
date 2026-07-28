@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core';
 import { PROVIDER_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
 
 type Params = {
@@ -12,8 +12,9 @@ export const recommendationSummary = ({ provider, model }: Params): string => {
   if (model == null) {
     return label;
   }
-  if (!PROVIDER_CAPABILITIES[provider].models.some((entry) => entry.id === model)) {
+  const resolved = resolveStoredModelSelection({ provider, id: model });
+  if (resolved.report?.kind === 'unknown') {
     return label;
   }
-  return `${label} · ${modelLabel(model)}`;
+  return `${label} · ${modelLabel(resolved.selection.key)}`;
 };

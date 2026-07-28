@@ -3,6 +3,7 @@ import type { MessageAttachment } from './message';
 import type { ClaudePermissionMode, PermissionScope } from './permission';
 import type { ProviderName } from './provider';
 import type { ProviderId } from './provider-registry';
+import type { EffortLevel, ModelSelection } from './model-catalog';
 
 export type ProviderCapabilities = {
   readonly streaming: boolean;
@@ -36,6 +37,8 @@ export type TurnRequest = {
   readonly runId: ProviderRunId;
   readonly sessionId: SessionId;
   readonly model: string;
+  readonly selection?: ModelSelection;
+  readonly effort?: EffortLevel;
   readonly workingDir: string;
   readonly systemPrompt: string;
   readonly userMessage: string;
@@ -83,6 +86,7 @@ export type TurnEvent =
       kind: 'provider_session_init';
       runId: ProviderRunId;
       providerSessionId: string;
+      provider?: ProviderId;
       at: IsoDateTime;
     }
   | {

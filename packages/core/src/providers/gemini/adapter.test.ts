@@ -126,7 +126,7 @@ describe('GeminiAdapter.spawn', () => {
     await expect(collect(adapter)).rejects.toThrow('ENOENT gemini');
   });
 
-  it('passes -p <prompt> --model <model> --sandbox with system prompt prepended', async () => {
+  it('passes -p <prompt> -m <model> --sandbox with system prompt prepended', async () => {
     let captured: ReadonlyArray<string> = [];
     let capturedBin = '';
     const child = new FakeChild(['ok']);
@@ -140,7 +140,7 @@ describe('GeminiAdapter.spawn', () => {
     expect(capturedBin).toBe('agy');
     expect(captured[0]).toBe('-p');
     expect(captured[1]).toBe('sys\n\nhi');
-    expect(captured[2]).toBe('--model');
+    expect(captured[2]).toBe('-m');
     expect(captured[3]).toBe(GEMINI_DEFAULT_MODEL);
     expect(captured[4]).toBe('--sandbox');
   });

@@ -3,10 +3,17 @@ import type { ProviderRunId } from '@goodboy/types';
 
 type TurnEnvelope = {
   readonly runId: string;
-  readonly type: 'end';
-  readonly exit_code: number | null;
-  readonly stderr: string;
-};
+} & (
+  | {
+      readonly type: 'line';
+      readonly line: string;
+    }
+  | {
+      readonly type: 'end';
+      readonly exit_code: number | null;
+      readonly stderr: string;
+    }
+);
 
 const { capturedListeners, invokeMock, unlistenMock } = vi.hoisted(() => ({
   capturedListeners: new Array<(payload: TurnEnvelope) => void>(),
@@ -25,7 +32,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-import { runTurn, isAuthErrorMessage } from './turn';
+import { runTurn } from './turn';
 
 afterEach(() => {
   capturedListeners.length = 0;
@@ -50,24 +57,53 @@ describe('runTurn', () => {
       prompt: 'hello',
     })[Symbol.asyncIterator]();
 
-    await expect(iterator.next()).rejects.toThrow('provider emitted no events');
+    await expect(iterator.next()).rejects.toThrow(
+      'provider exited without a response. check that the CLI is configured correctly.',
+    );
     expect(unlistenMock).toHaveBeenCalledOnce();
   });
-});
 
-describe('isAuthErrorMessage', () => {
-  it('matches the real claude CLI expired-OAuth-token 401 message', () => {
+  it('surfaces stderr when a provider exits without parseable events', async () => {
+    const runId = 'max-mode-provider-run' as ProviderRunId;
     const message =
-      'Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth access token has expired. Re-authenticate to continue."},"request_id":null}';
+      'ActionRequiredError: Max Mode Required  The model "gpt-5.5-high" requires Max Mode to be enabled.';
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 1, stderr: message });
+      }
+      return runId;
+    });
 
-    expect(isAuthErrorMessage(message)).toBe(true);
+    const iterator = runTurn({
+      runId,
+      provider: 'cursor',
+      model: 'gpt-5.5-high',
+      workingDir: '/tmp/worktree',
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toThrow(message);
   });
 
-  it('does not match an unrelated message that merely contains the digits 401', () => {
-    expect(isAuthErrorMessage('processed 4010 records before the connection dropped')).toBe(false);
-  });
+  it('surfaces unparseable stdout when a provider exits', async () => {
+    const runId = 'stdout-error-provider-run' as ProviderRunId;
+    const message = 'provider rejected this request';
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({ runId, type: 'line', line: message });
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 1, stderr: '' });
+      }
+      return runId;
+    });
 
-  it('still matches a plain "401" status embedded in other provider error text', () => {
-    expect(isAuthErrorMessage('request failed with status 401')).toBe(true);
+    const iterator = runTurn({
+      runId,
+      provider: 'cursor',
+      model: 'gpt-5.5-high',
+      workingDir: '/tmp/worktree',
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toThrow(message);
   });
 });

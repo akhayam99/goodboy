@@ -9,6 +9,7 @@ import {
   type ParseContext,
 } from '@goodboy/core';
 import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
+import { classifyProviderError } from './classifyProviderError';
 
 function parseForProvider(
   provider: ProviderId,
@@ -55,24 +56,6 @@ export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload 
   } catch {
     return null;
   }
-};
-
-const AUTH_ERROR_PATTERNS = [
-  /not authenticated/i,
-  /not logged in/i,
-  /auth required/i,
-  /authentication required/i,
-  /please log in/i,
-  /please sign in/i,
-  /unauthenticated/i,
-  /\b401\b/,
-  /unauthorized/i,
-  /login required/i,
-  /not signed in/i,
-];
-
-export const isAuthErrorMessage = (text: string): boolean => {
-  return AUTH_ERROR_PATTERNS.some((p) => p.test(text));
 };
 
 const EVENT_NAME = 'turn_event';
@@ -136,7 +119,8 @@ export async function* runTurn(
     }
   };
 
-  let receivedAnyLine = false;
+  let receivedAnyEvent = false;
+  const unparsedOutput: string[] = [];
 
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
     if (event.payload.runId !== args.runId) {
@@ -144,23 +128,38 @@ export async function* runTurn(
     }
 
     switch (event.payload.type) {
-      case 'line':
-        receivedAnyLine = true;
-        for (const ev of parseForProvider(args.provider, event.payload.line, ctx)) {
+      case 'line': {
+        const parsedEvents = parseForProvider(args.provider, event.payload.line, ctx);
+        if (parsedEvents.length > 0) {
+          receivedAnyEvent = true;
+        }
+        if (parsedEvents.length === 0 && event.payload.line.trim() !== '') {
+          unparsedOutput.push(event.payload.line.trim());
+        }
+        for (const ev of parsedEvents) {
           queue.push(ev);
         }
         flush();
         break;
+      }
       case 'end': {
-        const exitCode = event.payload.exit_code;
-        const stderr = event.payload.stderr;
-        if (!receivedAnyLine) {
-          const tail = stderr.trim().split('\n').slice(-5).join('\n');
-          const detail = tail.length > 0 ? `: ${tail}` : '';
+        if (!receivedAnyEvent) {
+          const stderrMessage = event.payload.stderr.trim();
+          const stdoutMessage = unparsedOutput.join('\n');
+          const hasFailedExit = event.payload.exit_code !== null && event.payload.exit_code !== 0;
+          const stdoutClassification = classifyProviderError({ message: stdoutMessage });
+          const providerMessage = [
+            hasFailedExit || stdoutClassification.kind !== 'other' ? stdoutMessage : '',
+            stderrMessage,
+          ]
+            .filter((value) => value !== '')
+            .join('\n');
           error =
-            exitCode !== null && exitCode !== 0
-              ? new Error(`provider exited with code ${exitCode}${detail}`)
-              : new Error(`provider emitted no events${detail}`);
+            providerMessage !== ''
+              ? new Error(providerMessage)
+              : new Error(
+                  'provider exited without a response. check that the CLI is configured correctly.',
+                );
         }
         ended = true;
         flush();
@@ -260,6 +259,7 @@ export type ParallelSpawnArgs = {
   readonly runs: ReadonlyArray<ParallelRunSpec>;
   readonly binary?: string;
   readonly model: string;
+  readonly effort?: string;
   readonly prompt: string;
   readonly permissionMode?: ClaudePermissionMode;
   readonly allowedTools?: ReadonlyArray<string>;

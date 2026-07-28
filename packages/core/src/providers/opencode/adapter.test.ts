@@ -78,6 +78,8 @@ describe('OpenCodeAdapter', () => {
         'json',
         '-m',
         'opencode/big-pickle',
+        '--variant',
+        'medium',
         '--dir',
         '/tmp/project',
         '--dangerously-skip-permissions',

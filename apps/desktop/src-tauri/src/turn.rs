@@ -136,7 +136,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             let mut v = vec![
                 "-p".to_string(),
                 args.prompt.to_string(),
-                "--model".to_string(),
+                "-m".to_string(),
                 args.model.to_string(),
             ];
             if args.permission_mode == "bypassPermissions" {
@@ -158,7 +158,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "exec".to_string(),
                 "--json".to_string(),
                 "--skip-git-repo-check".to_string(),
-                "--model".to_string(),
+                "-m".to_string(),
                 args.model.to_string(),
                 "--cd".to_string(),
                 args.working_dir.to_string(),
@@ -726,6 +726,16 @@ mod tests {
         let cli_codex = build_provider_cli_args("codex", &args);
         assert!(!cli_cursor.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
         assert!(!cli_codex.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
+    }
+
+    #[test]
+    fn gemini_args_use_short_model_flag() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("agy", &args);
+        let index = cli.iter().position(|arg| arg == "-m").expect("-m");
+        assert_eq!(cli[index + 1], "claude-3");
+        assert!(!cli.iter().any(|arg| arg == "--model"));
     }
 
     #[test]

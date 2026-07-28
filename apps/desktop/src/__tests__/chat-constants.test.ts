@@ -174,12 +174,12 @@ describe('parseModelId', () => {
     expect(parseModelId('claude-4.6-sonnet-medium-thinking')).toEqual({
       family: 'claude',
       subfamily: 'sonnet',
-      variantLabel: '4.6 thinking',
+      variantLabel: '4.6 medium thinking',
     });
     expect(parseModelId('claude-opus-5-thinking-high')).toEqual({
       family: 'claude',
       subfamily: 'opus',
-      variantLabel: '5 thinking',
+      variantLabel: '5 high',
     });
   });
 

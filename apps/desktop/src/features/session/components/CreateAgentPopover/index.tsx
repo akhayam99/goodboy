@@ -124,18 +124,18 @@ export const CreateAgentPopover = ({
             viewProvider={viewProvider}
             onViewProvider={setViewProvider}
             onPickProvider={(provider) => {
-              const model = getDefaultTurnModel(provider);
+              const model = getDefaultTurnModel({ id: provider });
               setRouting({
                 provider,
                 model,
                 effort: clampEffort(model, effective.effort),
               });
             }}
-            onPickModel={(model) => {
+            onPickModel={(model, effort) => {
               setRouting({
                 provider: viewProvider,
                 model,
-                effort: clampEffort(model, effective.effort),
+                effort,
               });
             }}
             onPickEffort={onPickEffort}

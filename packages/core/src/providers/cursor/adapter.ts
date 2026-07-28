@@ -12,6 +12,8 @@ import { computeCursorCostUsd } from './cost';
 import { CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './models';
 import { parseCursorStreamLine } from './parser';
 import { streamChildEvents } from '../shared/stream-events';
+import { resolveModelArgs } from '../resolveModelArgs';
+import { resolveStoredModelSelection } from '../resolveStoredModelSelection';
 
 const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
@@ -27,6 +29,14 @@ export type CursorAdapterDeps = {
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
+};
+
+type SpawnParams = {
+  readonly binary: string;
+  readonly spawnFn: typeof spawn;
+  readonly now: () => IsoDateTime;
+  readonly onUnknown: (type: string, payload: unknown) => void;
+  readonly request: TurnRequest;
 };
 
 export class CursorAdapter implements ProviderAdapter {
@@ -84,18 +94,32 @@ export class CursorAdapter implements ProviderAdapter {
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {
-    return spawnCursor(this.binary, this.spawnFn, this.now, this.onUnknown, request);
+    return spawnCursor({
+      binary: this.binary,
+      spawnFn: this.spawnFn,
+      now: this.now,
+      onUnknown: this.onUnknown,
+      request,
+    });
   }
 }
 
-async function* spawnCursor(
-  binary: string,
-  spawnFn: typeof spawn,
-  now: () => IsoDateTime,
-  onUnknown: (type: string, payload: unknown) => void,
-  request: TurnRequest,
-): AsyncIterable<TurnEvent> {
+const spawnCursor = async function* ({
+  binary,
+  spawnFn,
+  now,
+  onUnknown,
+  request,
+}: SpawnParams): AsyncIterable<TurnEvent> {
   const prompt = `${request.systemPrompt}\n\n${request.userMessage}`.trim();
+  const selection =
+    request.selection ??
+    resolveStoredModelSelection({
+      provider: 'cursor',
+      id: request.model,
+      ...(request.effort != null && { effort: request.effort }),
+    }).selection;
+  const modelArgs = resolveModelArgs({ provider: 'cursor', selection }).args;
   const args = [
     '-p',
     prompt,
@@ -103,8 +127,7 @@ async function* spawnCursor(
     'stream-json',
     '--workspace',
     request.workingDir,
-    '--model',
-    request.model,
+    ...modelArgs,
     '--force',
   ];
 
@@ -119,4 +142,4 @@ async function* spawnCursor(
   const ctx = { runId: request.runId, now, onUnknown };
 
   yield* streamChildEvents(child, ctx, parseCursorStreamLine);
-}
+};

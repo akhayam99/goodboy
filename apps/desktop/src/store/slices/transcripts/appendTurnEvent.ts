@@ -20,9 +20,18 @@ export const appendTurnEvent = (set: SetFn) => {
         };
       }
       if (event.kind === 'provider_session_init') {
+        if (event.provider === undefined) {
+          return { transcripts: updatedTranscripts };
+        }
         const runs = state.sessionPhaseRuns[sessionId] ?? [];
         const updatedRuns = runs.map((s) =>
-          s.id === agentId ? { ...s, providerSessionId: event.providerSessionId } : s,
+          s.id === agentId
+            ? {
+                ...s,
+                providerSessionId: event.providerSessionId,
+                providerSessionProviderId: event.provider,
+              }
+            : s,
         );
         return {
           transcripts: updatedTranscripts,
@@ -39,8 +48,12 @@ export const appendTurnEvent = (set: SetFn) => {
       event,
     });
 
-    if (event.kind === 'provider_session_init') {
-      void invokeAgentSetProviderSessionId(agentId, event.providerSessionId).catch((err) => {
+    if (event.kind === 'provider_session_init' && event.provider !== undefined) {
+      void invokeAgentSetProviderSessionId({
+        id: agentId,
+        providerSessionId: event.providerSessionId,
+        providerSessionProviderId: event.provider,
+      }).catch((err) => {
         if (import.meta.env.DEV) {
           const message = formatError(err);
           console.warn(`[turn-events] persist provider_session_id failed: ${message}`);

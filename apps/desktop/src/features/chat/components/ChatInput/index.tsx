@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEven
 import { Paperclip, Send, Square } from 'lucide-react';
 import { Divider, Textarea, cn } from '@goodboy/ui';
 import type { Session, TurnProviderOverride } from '@goodboy/types';
+import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast } from '../../../../app/components/Toast';
@@ -175,10 +176,17 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       modelOverrideId: string | null,
     ) => {
       const override: TurnProviderOverride | undefined = routing.allowOverride
-        ? {
-            providerId: routing.effectiveProvider,
-            model: modelOverrideId ?? routing.effectiveModel,
-          }
+        ? modelOverrideId == null
+          ? routing.routingOverride
+          : {
+              providerId: routing.effectiveProvider,
+              model: modelOverrideId,
+              selection: resolveStoredModelSelection({
+                provider: routing.effectiveProvider,
+                id: modelOverrideId,
+                effort: routing.effectiveEffort,
+              }).selection,
+            }
         : undefined;
 
       if (isRunning) {
@@ -191,7 +199,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     [
       routing.allowOverride,
       routing.effectiveProvider,
-      routing.effectiveModel,
+      routing.effectiveEffort,
+      routing.routingOverride,
       isRunning,
       enqueue,
       dispatch.dispatchTurn,

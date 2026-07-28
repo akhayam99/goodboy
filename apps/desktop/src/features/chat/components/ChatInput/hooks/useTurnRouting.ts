@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel, resolveModelForProvider } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  getDefaultTurnModel,
+  resolveModelForProvider,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
@@ -49,9 +54,7 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     if (persistedModel === null) {
       return null;
     }
-    const initialProvider =
-      selectedProvider ?? agentProviderOverride ?? session.providerPreference.defaultProvider;
-    return resolveModelForProvider({ provider: initialProvider, modelId: persistedModel });
+    return persistedModel;
   });
   const [effort, setEffortState] = useState<EffortLevel>(
     () => asEffortLevel(session.effort) ?? 'medium',
@@ -76,27 +79,42 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
 
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
+  const defaultModelId =
+    agentModelOverride ??
+    session.providerPreference.defaultModel ??
+    getDefaultTurnModel({ id: defaultProvider });
   const defaultModel = resolveModelForProvider({
     provider: defaultProvider,
-    modelId:
-      agentModelOverride ??
-      session.providerPreference.defaultModel ??
-      getDefaultTurnModel(defaultProvider),
+    modelId: defaultModelId,
   });
   const effectiveProvider: ProviderId =
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
+  const effectiveModelId =
+    selectedModel ??
+    session.modelOverride ??
+    (effectiveProvider === defaultProvider
+      ? defaultModelId
+      : getDefaultTurnModel({ id: effectiveProvider }));
   const effectiveModel = resolveModelForProvider({
     provider: effectiveProvider,
-    modelId:
-      selectedModel ??
-      session.modelOverride ??
-      (effectiveProvider === defaultProvider
-        ? defaultModel
-        : getDefaultTurnModel(effectiveProvider)),
+    modelId: effectiveModelId,
   });
   const effectiveEffort = clampEffort(effectiveModel, effort);
+  const storedSelection = resolveStoredModelSelection({
+    provider: effectiveProvider,
+    id: effectiveModelId,
+    effort: effectiveEffort,
+  });
+  const effectiveSelection =
+    storedSelection.report?.kind === 'unknown'
+      ? resolveStoredModelSelection({
+          provider: effectiveProvider,
+          id: effectiveModel,
+          effort: effectiveEffort,
+        }).selection
+      : storedSelection.selection;
   const routingOverride: TurnProviderOverride | undefined = allowOverride
-    ? { providerId: effectiveProvider, model: effectiveModel }
+    ? { providerId: effectiveProvider, model: effectiveModel, selection: effectiveSelection }
     : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);
@@ -180,7 +198,7 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
           modelOverride: null,
         });
       }
-      realignEffort(id === defaultProvider ? defaultModel : getDefaultTurnModel(id));
+      realignEffort(id === defaultProvider ? defaultModel : getDefaultTurnModel({ id }));
     },
     [
       allowOverride,

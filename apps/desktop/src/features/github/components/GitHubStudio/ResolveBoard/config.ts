@@ -26,7 +26,7 @@ type ConfigForParams = {
 };
 
 export const configFor = ({ provider, base }: ConfigForParams): CardConfig => {
-  const model = provider === base.provider ? base.model : getDefaultTurnModel(provider);
+  const model = provider === base.provider ? base.model : getDefaultTurnModel({ id: provider });
   return { provider, model, effort: clampEffort(model, base.effort) };
 };
 

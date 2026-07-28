@@ -35,4 +35,26 @@ describe('resolveErrorTurnMessage', () => {
 
     expect(resolved).toBe(message);
   });
+
+  it('turns a Max Mode failure into an actionable model message', () => {
+    const message =
+      'ActionRequiredError: Max Mode Required  The model "gpt-5.5-high" requires Max Mode to be enabled.';
+
+    const resolved = resolveErrorTurnMessage({ message, providerId: 'cursor', identity: null });
+
+    expect(resolved).toBe(
+      'The model "gpt-5.5-high" requires Max Mode. Enable Max Mode or choose another model.',
+    );
+  });
+
+  it('tells a Codex user to choose a model supported by their account', () => {
+    const message =
+      '{"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The \'gpt-5.6\' model is not supported when using Codex with a ChatGPT account."}}';
+
+    const resolved = resolveErrorTurnMessage({ message, providerId: 'codex', identity: null });
+
+    expect(resolved).toBe(
+      'The model "gpt-5.6" is not available with this Codex account. Choose a model supported by your account.',
+    );
+  });
 });

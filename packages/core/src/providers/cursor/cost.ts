@@ -34,8 +34,8 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'composer-2.5': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
 
-  'claude-fable-5-thinking-high': OPUS_PRICE,
   'claude-opus-5-thinking-high': OPUS_PRICE,
+  'claude-opus-5-low': OPUS_PRICE,
   'claude-opus-4-7-thinking-high': OPUS_PRICE,
   'claude-4.6-sonnet-medium': SONNET_PRICE,
   'claude-4.6-sonnet-medium-thinking': SONNET_PRICE,

@@ -1,32 +1,50 @@
-import type { ModelTier, ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
-import { getModelDescriptor } from './model-display';
+import type { ProviderId } from '@goodboy/types';
+import { defaultModelSelection } from './defaultModelSelection';
+import { MODEL_CATALOGS } from './catalogs';
+import { parseLegacyId } from './parseLegacyId';
+import { remapModelSelection } from './remapModelSelection';
+import { selectionFromCliId } from './selectionFromCliId';
 
 type Params = {
   readonly provider: ProviderId;
   readonly modelId: string;
 };
 
+const PROVIDERS = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+  'openrouter',
+] satisfies ReadonlyArray<ProviderId>;
+
 export const resolveModelForProvider = ({ provider, modelId }: Params): string => {
-  const models = PROVIDER_CAPABILITIES[provider].models;
-  if (models.some((m) => m.id === modelId)) {
-    return modelId;
+  const keyed = MODEL_CATALOGS[provider].find((model) => model.key === modelId);
+  if (keyed != null) {
+    return keyed.key;
   }
-  const descriptor = getModelDescriptor(modelId);
-  if (descriptor === null) {
-    return getDefaultTurnModel(provider);
+  const direct =
+    selectionFromCliId({ provider, id: modelId }) ?? parseLegacyId({ provider, id: modelId });
+  if (direct != null) {
+    return direct.key;
   }
-  const sameSubfamily = models.filter(
-    (m) => m.family === descriptor.family && m.subfamily === descriptor.subfamily,
-  );
-  const sameFamily = models.filter((m) => m.family === descriptor.family);
-  const candidates = sameSubfamily.length > 0 ? sameSubfamily : sameFamily;
-  if (candidates.length > 0) {
-    return candidates.reduce((best, model) =>
-      Math.abs(model.weight - descriptor.weight) < Math.abs(best.weight - descriptor.weight)
-        ? model
-        : best,
-    ).id;
+  for (const sourceProvider of PROVIDERS) {
+    if (sourceProvider === provider) {
+      continue;
+    }
+    const source =
+      selectionFromCliId({ provider: sourceProvider, id: modelId }) ??
+      parseLegacyId({ provider: sourceProvider, id: modelId });
+    if (source == null) {
+      continue;
+    }
+    const remapped = remapModelSelection({
+      sourceProvider,
+      targetProvider: provider,
+      selection: source,
+    });
+    return remapped.selection.key;
   }
-  return getDefaultTurnModel(provider);
+  return defaultModelSelection({ provider }).key;
 };

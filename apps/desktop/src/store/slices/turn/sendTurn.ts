@@ -6,7 +6,9 @@ import {
   buildStepPrompt,
   findReusableAgent,
   isFallbackStepOutputSummary,
+  resolveModelArgs,
   resolveModelForProvider,
+  resolveStoredModelSelection,
   runsForWorkflowRun,
   turnReducer,
   type ClaudeFlagSet,
@@ -47,7 +49,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
-import { clampEffort, type EffortLevel } from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
@@ -55,6 +57,7 @@ import { slotsForKind } from '../../../features/providers/slot-routing';
 import { refreshPricingTable } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
+import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
@@ -78,6 +81,7 @@ import { persistAttachments } from './persistAttachments';
 import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import type { GetFn, SetFn } from './types';
 
@@ -95,17 +99,6 @@ type Input = {
 // view). Deliberately NOT a SLOT_KEY: it's desktop state mirrored to mobile
 // through the snapshot, not an agent-visible or user-editable slot.
 const FILES_TOUCHED_NUMSTAT_SLOT = 'files_touched_numstat';
-
-const EFFORT_FLAG: Readonly<Record<string, string>> = {
-  minimal: 'minimal',
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-  'extra-high': 'xhigh',
-  max: 'max',
-};
-
-const EFFORT_PROVIDERS: ReadonlySet<string> = new Set(['anthropic', 'codex']);
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   return async ({
@@ -401,21 +394,60 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
           })?.model ?? null)
         : null;
-    const model = resolveModelForProvider({
-      provider,
-      modelId:
-        phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
-          ? phaseDefinition.modelOverride
-          : autoStepModel != null
-            ? autoStepModel
-            : turnOverrideActive
+    const requestedModelId =
+      phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
+        ? phaseDefinition.modelOverride
+        : autoStepModel != null
+          ? autoStepModel
+          : turnOverrideActive
+            ? routingDecision.selectedModel
+            : routingDecision.fallbackUsed
               ? routingDecision.selectedModel
-              : routingDecision.fallbackUsed
-                ? routingDecision.selectedModel
-                : agentModelApplies
-                  ? agentKindModel
-                  : routingDecision.selectedModel,
+              : agentModelApplies
+                ? agentKindModel
+                : routingDecision.selectedModel;
+    const model = resolveModelForProvider({ provider, modelId: requestedModelId });
+    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
+    const requestedEffort = EFFORT_LEVELS.find((level) => level === rawEffort);
+    const requestedStoredSelection = resolveStoredModelSelection({
+      provider,
+      id: requestedModelId,
+      ...(requestedEffort != null && { effort: requestedEffort }),
     });
+    const storedSelection =
+      requestedStoredSelection.report?.kind === 'unknown'
+        ? resolveStoredModelSelection({
+            provider,
+            id: model,
+            ...(requestedEffort != null && { effort: requestedEffort }),
+          }).selection
+        : requestedStoredSelection.selection;
+    const modelSelection =
+      turnOverrideActive && turnOverride?.selection != null
+        ? {
+            ...turnOverride.selection,
+            ...(requestedEffort != null && { effort: requestedEffort }),
+          }
+        : storedSelection;
+    const resolvedModel = resolveModelArgs({ provider, selection: modelSelection });
+    const modelFlag = provider === 'anthropic' || provider === 'cursor' ? '--model' : '-m';
+    const modelFlagIndex = resolvedModel.args.indexOf(modelFlag);
+    const spawnModel = resolvedModel.args[modelFlagIndex + 1];
+    if (spawnModel == null) {
+      throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
+    }
+    const explicitEffortFlag =
+      provider === 'anthropic'
+        ? '--effort'
+        : provider === 'opencode' || provider === 'openrouter'
+          ? '--variant'
+          : null;
+    const effortFlagIndex =
+      explicitEffortFlag == null ? -1 : resolvedModel.args.indexOf(explicitEffortFlag);
+    const codexEffort = resolvedModel.args
+      .find((argument) => argument.startsWith('model_reasoning_effort='))
+      ?.split('"')[1];
+    const effortFlag = effortFlagIndex >= 0 ? resolvedModel.args[effortFlagIndex + 1] : codexEffort;
 
     const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
     const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
@@ -485,7 +517,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         id: runId,
         sessionId,
         provider,
-        model,
+        model: spawnModel,
         status: { kind: 'streaming', startedAt: now() },
         routingDecision,
         createdAt: now(),
@@ -587,7 +619,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         sessionId,
         activeAgentId,
         provider,
-        model,
+        model: spawnModel,
+        effort: effortFlag,
         parallelDispatch,
         claudeFlags,
         apiKeyBinding,
@@ -680,12 +713,16 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     let assistantText = '';
+    let receivedProviderError = false;
     let lastError: unknown = null;
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
 
-    const resumeSessionId = agentRowEarly?.providerSessionId;
+    const resumeSessionId =
+      agentRowEarly?.providerSessionProviderId === provider
+        ? agentRowEarly.providerSessionId
+        : undefined;
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
@@ -735,17 +772,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
     }
 
-    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
-    const effortFlag =
-      rawEffort && EFFORT_PROVIDERS.has(provider)
-        ? EFFORT_FLAG[clampEffort(model, rawEffort as EffortLevel)]
-        : undefined;
-
     try {
       for await (const rawEvent of runTurn({
         runId,
         provider,
-        model,
+        model: spawnModel,
         workingDir,
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
@@ -755,18 +786,45 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
-        const event: TurnEvent =
+        const maxModeFailure =
+          provider === 'cursor' && rawEvent.kind === 'error'
+            ? matchCursorMaxModeFailure({ message: rawEvent.message })
+            : null;
+        if (maxModeFailure != null) {
+          const advisorySelection = resolveStoredModelSelection({
+            provider: 'cursor',
+            id: maxModeFailure.model,
+          });
+          cursorMaxModeAdvisory.mark({
+            accountId: get().authResults?.cursor?.identity ?? 'unknown',
+            model:
+              advisorySelection.report?.kind === 'unknown'
+                ? maxModeFailure.model
+                : advisorySelection.selection.key,
+          });
+        }
+        const resolvedEvent: TurnEvent =
           rawEvent.kind === 'error'
             ? {
                 ...rawEvent,
-                message: resolveErrorTurnMessage({
-                  message: rawEvent.message,
-                  providerId: provider,
-                  identity: get().authResults?.[provider]?.identity ?? null,
-                }),
+                message:
+                  maxModeFailure != null
+                    ? cursorMaxModeMessage(maxModeFailure)
+                    : resolveErrorTurnMessage({
+                        message: rawEvent.message,
+                        providerId: provider,
+                        identity: get().authResults?.[provider]?.identity ?? null,
+                      }),
               }
             : rawEvent;
+        const event: TurnEvent =
+          resolvedEvent.kind === 'provider_session_init'
+            ? { ...resolvedEvent, provider }
+            : resolvedEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
+        if (event.kind === 'error') {
+          receivedProviderError = true;
+        }
         if (event.kind === 'assistant_text') {
           assistantText += event.delta;
         }
@@ -810,7 +868,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
         const derived = applyAgentTurnState(set, sessionId, activeAgentId, idleState, now());
         await updateSessionState(tauriDatabase, sessionId, derived, now());
-        if (assistantText.length === 0) {
+        if (assistantText.length === 0 && !receivedProviderError) {
           get().appendTurnEvent(activeAgentId, sessionId, {
             kind: 'error',
             runId,
@@ -822,6 +880,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       const wasCancelled = cancelledRunIds.delete(runId);
       turnWasCancelled = wasCancelled;
+      if (
+        provider === 'cursor' &&
+        receivedProviderError === false &&
+        wasCancelled === false &&
+        assistantText.length > 0
+      ) {
+        cursorMaxModeAdvisory.clear({
+          accountId: get().authResults?.cursor?.identity ?? 'unknown',
+          model: modelSelection.key,
+        });
+      }
       await updateProviderRunStatus(
         tauriDatabase,
         runId,
@@ -930,11 +999,29 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     } catch (err) {
       lastError = err;
       const rawMessage = formatError(err);
-      const message = resolveErrorTurnMessage({
-        message: rawMessage,
-        providerId: provider,
-        identity: get().authResults?.[provider]?.identity ?? null,
-      });
+      const maxModeFailure =
+        provider === 'cursor' ? matchCursorMaxModeFailure({ message: rawMessage }) : null;
+      if (maxModeFailure != null) {
+        const advisorySelection = resolveStoredModelSelection({
+          provider: 'cursor',
+          id: maxModeFailure.model,
+        });
+        cursorMaxModeAdvisory.mark({
+          accountId: get().authResults?.cursor?.identity ?? 'unknown',
+          model:
+            advisorySelection.report?.kind === 'unknown'
+              ? maxModeFailure.model
+              : advisorySelection.selection.key,
+        });
+      }
+      const message =
+        maxModeFailure != null
+          ? cursorMaxModeMessage(maxModeFailure)
+          : resolveErrorTurnMessage({
+              message: rawMessage,
+              providerId: provider,
+              identity: get().authResults?.[provider]?.identity ?? null,
+            });
       const errorState: TurnState = {
         kind: 'error',
         message: rawMessage,
