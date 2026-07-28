@@ -10,12 +10,13 @@ import type {
   TurnEvent,
   TurnRequest,
 } from '@goodboy/types';
-import { opencodeModelArg } from '@goodboy/types';
 import { streamChildEvents } from '../shared/stream-events';
 import { OPENROUTER_MODELS } from '../openrouter/constants';
 import { OPENCODE_MODELS } from './constants';
 import { computeOpenCodeCostUsd } from './cost';
 import { parseJsonLine, resetOpenCodeParseState } from './parser';
+import { resolveModelArgs } from '../resolveModelArgs';
+import { resolveStoredModelSelection } from '../resolveStoredModelSelection';
 
 type OpenCodeProviderId = Extract<ProviderId, 'opencode' | 'openrouter'>;
 
@@ -130,13 +131,19 @@ const spawnOpenCode = async function* ({
     request.systemPrompt.length > 0
       ? `${request.systemPrompt}\n\n${request.userMessage}`
       : request.userMessage;
-  const model = opencodeModelArg({ id: providerId, model: request.model });
+  const selection =
+    request.selection ??
+    resolveStoredModelSelection({
+      provider: providerId,
+      id: request.model,
+      ...(request.effort != null && { effort: request.effort }),
+    }).selection;
+  const modelArgs = resolveModelArgs({ provider: providerId, selection }).args;
   const args = [
     'run',
     '--format',
     'json',
-    '-m',
-    model,
+    ...modelArgs,
     '--dir',
     request.workingDir,
     '--dangerously-skip-permissions',

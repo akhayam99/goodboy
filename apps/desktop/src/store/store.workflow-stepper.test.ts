@@ -378,7 +378,7 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
     const agentId = state.selectedAgentId[session.id];
     expect(agentId).toBeDefined();
     const modelOverride = state.agentModelOverride[agentId!];
-    expect(modelOverride).toBe('claude-haiku-4-5');
+    expect(modelOverride).toBe('haiku-4.5');
   });
 
   it('auto-runs the first workflow agent by triggering a turn (sendTurn fires with promptPrefix)', async () => {

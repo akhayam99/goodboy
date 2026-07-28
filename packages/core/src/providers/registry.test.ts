@@ -79,7 +79,7 @@ describe('createProvider', () => {
 
 describe('getCapabilities', () => {
   it('returns anthropic capabilities with correct flags', () => {
-    const caps = getCapabilities('anthropic');
+    const caps = getCapabilities({ id: 'anthropic' });
     expect(caps.supportsTools).toBe(true);
     expect(caps.supportsStream).toBe(true);
     expect(caps.supportsCheapModel).toBe(true);
@@ -87,44 +87,44 @@ describe('getCapabilities', () => {
   });
 
   it('anthropic has a cheap-tier model', () => {
-    const caps = getCapabilities('anthropic');
+    const caps = getCapabilities({ id: 'anthropic' });
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
   });
 
   it('cursor capabilities have models', () => {
-    const caps = getCapabilities('cursor');
+    const caps = getCapabilities({ id: 'cursor' });
     expect(caps.models.length).toBeGreaterThan(0);
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
   });
 
   it('codex capabilities have models', () => {
-    const caps = getCapabilities('codex');
+    const caps = getCapabilities({ id: 'codex' });
     expect(caps.models.length).toBeGreaterThan(0);
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
   });
 
   it('gemini capabilities have models', () => {
-    const caps = getCapabilities('gemini');
+    const caps = getCapabilities({ id: 'gemini' });
     expect(caps.models.length).toBeGreaterThan(0);
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
   });
 
   it('getDefaultTurnModel for gemini returns the cheap default, not the pro turn model', () => {
-    expect(getDefaultTurnModel('gemini')).toBe(GEMINI_DEFAULT_MODEL);
-    expect(getDefaultTurnModel('gemini')).toBe('gemini-3.5-flash');
+    expect(getDefaultTurnModel({ id: 'gemini' })).toBe(GEMINI_DEFAULT_MODEL);
+    expect(getDefaultTurnModel({ id: 'gemini' })).toBe('gemini-3.5-flash');
   });
 
   it('getDefaultTurnModel for anthropic returns the newest opus', () => {
-    expect(getDefaultTurnModel('anthropic')).toBe('claude-opus-5');
+    expect(getDefaultTurnModel({ id: 'anthropic' })).toBe('opus-5');
   });
 
   it('getDefaultTurnModel for cursor returns the composer turn model', () => {
-    expect(getDefaultTurnModel('cursor')).toBe('composer-2');
+    expect(getDefaultTurnModel({ id: 'cursor' })).toBe('composer-2.5');
   });
 
   it('all models have required fields', () => {
     for (const id of listSupportedProviders()) {
-      const caps = getCapabilities(id);
+      const caps = getCapabilities({ id });
       for (const model of caps.models) {
         expect(typeof model.id).toBe('string');
         expect(['turn', 'cheap']).toContain(model.tier);

@@ -1,4 +1,5 @@
 import type { ProviderId } from './provider-registry';
+import type { ModelSelection } from './model-catalog';
 
 export type SessionProviderPreference = {
   readonly defaultProvider: ProviderId;
@@ -10,6 +11,7 @@ export type SessionProviderPreference = {
 export type TurnProviderOverride = {
   readonly providerId: ProviderId;
   readonly model?: string;
+  readonly selection?: ModelSelection;
 };
 
 export const DEFAULT_SESSION_PROVIDER_PREFERENCE: SessionProviderPreference = {

@@ -11,17 +11,17 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
   openrouter: 'OpenRouter',
 };
 
-export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'extra-high', 'max'] as const;
+export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type EffortLevel = ModelEffort;
 
 const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
-const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'extra-high', 'max'];
+const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'xhigh', 'max'];
 const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
 
 export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null => {
   const descriptor = getModelDescriptor(model);
-  if (descriptor) {
-    return descriptor.effort;
+  if (descriptor != null) {
+    return descriptor.effort != null && descriptor.effort.length > 0 ? descriptor.effort : null;
   }
   if (/claude-opus/i.test(model)) {
     return OPUS_EFFORT;
@@ -37,10 +37,23 @@ export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | n
 
 export const clampEffort = (model: string, effort: EffortLevel): EffortLevel => {
   const levels = modelEffortLevels(model);
-  if (!levels) {
+  if (levels == null || levels.includes(effort)) {
     return effort;
   }
-  return levels.includes(effort) ? effort : (levels[levels.length - 1] ?? effort);
+  const requestedIndex = EFFORT_LEVELS.indexOf(effort);
+  for (let index = requestedIndex - 1; index >= 0; index -= 1) {
+    const candidate = EFFORT_LEVELS[index];
+    if (candidate != null && levels.includes(candidate)) {
+      return candidate;
+    }
+  }
+  for (let index = requestedIndex + 1; index < EFFORT_LEVELS.length; index += 1) {
+    const candidate = EFFORT_LEVELS[index];
+    if (candidate != null && levels.includes(candidate)) {
+      return candidate;
+    }
+  }
+  return effort;
 };
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
@@ -48,7 +61,7 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
-  'extra-high': 'Very high',
+  xhigh: 'Very high',
   max: 'Max',
 };
 
@@ -57,7 +70,7 @@ export const EFFORT_DOT: Record<EffortLevel, string> = {
   low: 'bg-success',
   medium: 'bg-info',
   high: 'bg-warning',
-  'extra-high': 'bg-danger/80',
+  xhigh: 'bg-danger/80',
   max: 'bg-danger',
 };
 
@@ -66,7 +79,7 @@ export const EFFORT_TEXT: Record<EffortLevel, string> = {
   low: 'text-success',
   medium: 'text-info',
   high: 'text-warning',
-  'extra-high': 'text-danger/85',
+  xhigh: 'text-danger/85',
   max: 'text-danger',
 };
 
@@ -113,23 +126,19 @@ function stripProviderPrefix(id: string): string {
 }
 
 export const parseModelId = (id: string): ParsedModel => {
-  const descriptor = getModelDescriptor(id);
-  if (descriptor) {
-    return {
-      family: descriptor.family,
-      subfamily: descriptor.subfamily,
-      variantLabel: descriptor.variantLabel,
-    };
-  }
-
   const local = stripProviderPrefix(id);
 
-  let m = local.match(/^claude-(haiku|sonnet|opus)-(\d+)-(\d+)(?:-(.+))?$/i);
+  let m = local.match(/^claude-(haiku|sonnet|opus|fable)-(\d+)(?:-(\d+))?(?:-(.+))?$/i);
   if (m) {
+    const version = m[3] == null ? m[2]! : `${m[2]}.${m[3]}`;
+    const suffix = m[4]
+      ?.split('-')
+      .filter((part) => part !== 'thinking')
+      .join(' ');
     return {
       family: 'claude',
       subfamily: m[1]!.toLowerCase(),
-      variantLabel: `${m[2]}.${m[3]}`,
+      variantLabel: suffix != null && suffix !== '' ? `${version} ${suffix}` : version,
     };
   }
 
@@ -145,26 +154,52 @@ export const parseModelId = (id: string): ParsedModel => {
 
   m = local.match(/^composer-(.+)$/i);
   if (m) {
-    return { family: 'composer', subfamily: null, variantLabel: m[1]! };
+    const variantLabel = m[1]!
+      .split('-')
+      .map((part) => (part === 'fast' ? 'Fast' : part))
+      .join(' ');
+    return { family: 'composer', subfamily: null, variantLabel };
   }
 
   if (local === 'auto') {
     return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
   }
 
-  m = local.match(/^gpt-(\d+\.\d+)-codex$/i);
+  m = local.match(/^gpt-(\d+\.\d+)-codex(?:-spark)?$/i);
   if (m) {
-    return { family: 'gpt', subfamily: `${m[1]}-codex`, variantLabel: 'codex' };
+    return { family: 'gpt', subfamily: 'codex', variantLabel: m[1]! };
   }
 
-  m = local.match(/^gpt-(\d+\.\d+)-(.+)$/i);
+  m = local.match(/^gpt-(\d+\.\d+)-mini$/i);
   if (m) {
-    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[2]! };
+    return { family: 'gpt', subfamily: 'mini', variantLabel: m[1]! };
+  }
+
+  m = local.match(/^gpt-(\d+\.\d+)-(low|medium|high|xhigh|max)$/i);
+  if (m) {
+    return {
+      family: 'gpt',
+      subfamily: 'gpt-5',
+      variantLabel: `${m[1]} ${m[2]!.toLowerCase()}`,
+    };
   }
 
   m = local.match(/^gpt-(\d+\.\d+)$/i);
   if (m) {
-    return { family: 'gpt', subfamily: m[1]!, variantLabel: m[1]! };
+    return {
+      family: 'gpt',
+      subfamily: id.includes('/') ? m[1]! : 'gpt-5',
+      variantLabel: m[1]!,
+    };
+  }
+
+  const descriptor = getModelDescriptor(id);
+  if (descriptor != null) {
+    return {
+      family: descriptor.family,
+      subfamily: descriptor.subfamily,
+      variantLabel: descriptor.variantLabel,
+    };
   }
 
   m = local.match(/^gpt-(.+)$/i);

@@ -99,6 +99,19 @@ export {
 } from './providers/auto-model';
 
 export { resolveModelForProvider } from './providers/model-map';
+export { MODEL_CATALOGS } from './providers/catalogs';
+export { ANTHROPIC_CATALOG } from './providers/claude/catalog';
+export { CODEX_CATALOG } from './providers/codex/catalog';
+export { CURSOR_CATALOG } from './providers/cursor/catalog';
+export { GEMINI_CATALOG } from './providers/gemini/catalog';
+export { OPENCODE_CATALOG } from './providers/opencode/catalog';
+export { OPENROUTER_CATALOG } from './providers/openrouter/catalog';
+export { defaultModelSelection } from './providers/defaultModelSelection';
+export { modelIdForSelection } from './providers/modelIdForSelection';
+export { parseLegacyId } from './providers/parseLegacyId';
+export { remapModelSelection } from './providers/remapModelSelection';
+export { resolveModelArgs } from './providers/resolveModelArgs';
+export { resolveStoredModelSelection } from './providers/resolveStoredModelSelection';
 
 export { resolveTaskModel } from './providers/task-models';
 

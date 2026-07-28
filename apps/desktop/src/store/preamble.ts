@@ -1,7 +1,7 @@
 import {
   isSlotKey,
   PREAMBLE_SLOT_TOTAL_BUDGET,
-  PROVIDER_CAPABILITIES,
+  getModelDescriptor,
   serializeSlotsBudgeted,
   SLOT_KEYS,
   SLOT_LABELS,
@@ -130,11 +130,5 @@ export const buildPriorTurnsBlock = (
 };
 
 export const getModelContextWindow = (model: string): number | null => {
-  for (const caps of Object.values(PROVIDER_CAPABILITIES)) {
-    const m = caps.models.find((x) => x.id === model);
-    if (m) {
-      return m.contextWindow;
-    }
-  }
-  return null;
+  return getModelDescriptor(model)?.contextWindow ?? null;
 };

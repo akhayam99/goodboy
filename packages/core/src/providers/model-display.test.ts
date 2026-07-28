@@ -4,7 +4,7 @@ import { getModelDescriptor, getModelProvider } from './model-display';
 describe('provider model display', () => {
   it('resolves OpenCode models', () => {
     expect(getModelProvider('opencode/big-pickle')).toBe('opencode');
-    expect(getModelDescriptor('opencode/big-pickle')?.id).toBe('opencode/big-pickle');
+    expect(getModelDescriptor('opencode/big-pickle')?.id).toBe('big-pickle');
   });
 
   it('resolves pre-slugged OpenRouter models', () => {

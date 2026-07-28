@@ -165,7 +165,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        'claude-haiku-4-5',
+        'haiku-4.5',
       );
     }
     expect(screen.queryByText(/auto/)).toBeNull();
@@ -221,7 +221,7 @@ describe('DefaultsPanel', () => {
     openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
-      'claude-opus-5',
+      'opus-5',
     );
   });
 
@@ -235,7 +235,7 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          scout: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'low' },
+          scout: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'low' },
         },
       }),
     );
@@ -251,7 +251,7 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          investigator: { providerId: 'anthropic', model: 'claude-haiku-4-5', effort: 'medium' },
+          investigator: { providerId: 'anthropic', model: 'haiku-4.5', effort: 'medium' },
         },
       }),
     );
@@ -275,7 +275,7 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          reviewer: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+          reviewer: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'high' },
         },
       }),
     );
@@ -295,7 +295,7 @@ describe('DefaultsPanel', () => {
     openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Reviewer routing model' }).textContent).toBe(
-      'claude-opus-5',
+      'opus-5',
     );
     expect(screen.getByLabelText('Reviewer routing status: custom')).toBeDefined();
     const reset = screen.getByRole('button', { name: 'Reset to default' });

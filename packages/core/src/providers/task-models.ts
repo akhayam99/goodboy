@@ -6,6 +6,7 @@ import type {
 } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { getCheapModel } from './cli-defaults';
+import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
 export const resolveTaskModel = (
   task: AuxTaskId,
@@ -13,13 +14,14 @@ export const resolveTaskModel = (
   defaultProviderId: ProviderId,
 ): TaskModelPreference => {
   const preference = prefs?.[task];
-  const isValid =
-    preference != null &&
-    PROVIDER_CAPABILITIES[preference.providerId]?.models.some(
-      (model) => model.id === preference.model,
-    );
-  if (isValid) {
-    return preference;
+  if (preference != null && PROVIDER_CAPABILITIES[preference.providerId] != null) {
+    const stored = resolveStoredModelSelection({
+      provider: preference.providerId,
+      id: preference.model,
+    });
+    if (stored.report?.kind !== 'unknown') {
+      return { providerId: preference.providerId, model: stored.selection.key };
+    }
   }
   return {
     providerId: defaultProviderId,

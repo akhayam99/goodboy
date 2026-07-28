@@ -20,6 +20,7 @@ export const STORAGE_PREFIXES = {
   diffView: `${PREFIX}diff-view:`,
   diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,
+  cursorMaxMode: `${PREFIX}cursor-max-mode:`,
 } as const;
 
 export const wipeLocalStorage = (): void => {

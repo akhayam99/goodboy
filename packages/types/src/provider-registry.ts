@@ -22,11 +22,13 @@ export type ModelFamily =
 
 export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
 
-export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'extra-high' | 'max';
+export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
-export type ModelTier = {
+export type ModelTier = 'turn' | 'cheap';
+
+export type ModelDescriptor = {
   readonly id: string;
-  readonly tier: 'turn' | 'cheap';
+  readonly tier: ModelTier;
   readonly contextWindow: number;
   readonly family: ModelFamily;
   readonly subfamily: string | null;
@@ -38,7 +40,7 @@ export type ModelTier = {
 };
 
 export type ProviderRegistryCapabilities = {
-  readonly models: ReadonlyArray<ModelTier>;
+  readonly models: ReadonlyArray<ModelDescriptor>;
   readonly supportsTools: boolean;
   readonly supportsStream: boolean;
   readonly supportsCheapModel: boolean;

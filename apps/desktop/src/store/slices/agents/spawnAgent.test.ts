@@ -213,7 +213,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { kindOverride: 'planner' });
 
-    expect(getState().agentModelOverride[INSERTED_ID]).toBe('claude-opus-5');
+    expect(getState().agentModelOverride[INSERTED_ID]).toBe('opus-5');
     expect(getState().agentProviderOverride[INSERTED_ID]).toBe('anthropic');
     expect(getState().agentEffortOverride[INSERTED_ID]).toBe('high');
   });
@@ -244,12 +244,12 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expect(getState().sessionPhaseRuns[SESSION_ID]?.[0]).toMatchObject({
       providerOverride: 'anthropic',
-      modelOverride: 'claude-opus-5',
+      modelOverride: 'opus-5',
       effort: 'high',
     });
     expect(updateAgentConfigSpy).toHaveBeenCalledWith(expect.anything(), INSERTED_ID, {
       providerOverride: 'anthropic',
-      modelOverride: 'claude-opus-5',
+      modelOverride: 'opus-5',
       effort: 'high',
     });
   });
@@ -263,7 +263,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { kindOverride: 'scout' });
 
-    expect(getState().agentModelOverride[INSERTED_ID]).toBe('claude-haiku-4-5');
+    expect(getState().agentModelOverride[INSERTED_ID]).toBe('haiku-4.5');
     expect(getState().agentEffortOverride[INSERTED_ID]).toBe('low');
   });
 

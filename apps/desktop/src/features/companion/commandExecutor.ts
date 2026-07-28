@@ -176,7 +176,7 @@ function buildProviderMenu(): {
       id,
       label: info?.label ?? PROVIDER_LABEL_LOWER[id],
       connection: info?.connection ?? 'missing',
-      defaultModel: getDefaultTurnModel(id),
+      defaultModel: getDefaultTurnModel({ id }),
       models: PROVIDER_CAPABILITIES[id].models.map((m) => ({
         id: m.id,
         label: m.label,

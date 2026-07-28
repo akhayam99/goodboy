@@ -16,12 +16,20 @@ import { TriggerSeparator } from './TriggerSeparator';
 type Props = {
   readonly provider: ProviderId;
   readonly model: string;
+  readonly modelDetail?: string;
   readonly effort: EffortLevel;
   readonly showEffort: boolean;
   readonly verbosity?: VerbosityLevel;
 };
 
-export const TriggerLabel = ({ provider, model, effort, showEffort, verbosity }: Props) => {
+export const TriggerLabel = ({
+  provider,
+  model,
+  modelDetail,
+  effort,
+  showEffort,
+  verbosity,
+}: Props) => {
   const ProviderGlyph = PROVIDER_BRAND[provider].icon;
   return (
     <>
@@ -33,6 +41,7 @@ export const TriggerLabel = ({ provider, model, effort, showEffort, verbosity }:
       />
       <span className={cn('min-w-0 truncate font-mono font-medium', TIER_TEXT[modelTier(model)])}>
         {modelLabel(model)}
+        {modelDetail != null ? ` ${modelDetail}` : ''}
       </span>
       {showEffort && (
         <>
