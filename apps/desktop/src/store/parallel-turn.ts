@@ -227,6 +227,7 @@ export type RunParallelBranchDeps = {
   readonly providerBinary: string | undefined;
   readonly model: string;
   readonly effort?: string;
+  readonly cursorMaxMode?: boolean;
   readonly permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
   readonly allowedTools?: ReadonlyArray<string>;
   readonly disallowedTools?: ReadonlyArray<string>;
@@ -371,6 +372,7 @@ export const runParallelBranch = async (
       ...(deps.providerBinary !== undefined && { binary: deps.providerBinary }),
       model: deps.model,
       ...(deps.effort !== undefined && { effort: deps.effort }),
+      ...(deps.cursorMaxMode === true && { cursorMaxMode: true }),
       prompt: promptsByIndex[i]!,
       ...(deps.permissionMode !== undefined && { permissionMode: deps.permissionMode }),
       ...(deps.allowedTools !== undefined && { allowedTools: deps.allowedTools }),

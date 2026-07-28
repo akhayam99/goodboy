@@ -18,4 +18,4 @@ export const matchCursorMaxModeFailure = ({ message }: Params): Match | null => 
 };
 
 export const cursorMaxModeMessage = ({ model }: Match): string =>
-  `Cursor requires Max Mode for "${model}". Goodboy cannot enable Max Mode. Turn it on in the Cursor app, then retry.`;
+  `Cursor rejected Max Mode for "${model}". Check that Max Mode (usage-based pricing) is available on your Cursor account, then retry.`;

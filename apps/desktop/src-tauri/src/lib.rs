@@ -3,6 +3,7 @@ mod aux_spawn;
 mod bridge;
 mod budget;
 mod config_export;
+mod cursor_config;
 mod db;
 mod editor;
 mod external_terminal;

@@ -332,6 +332,8 @@ pub struct ParallelSpawnArgs {
     pub credential_id: Option<String>,
     #[serde(default)]
     pub workspace_id: Option<String>,
+    #[serde(default)]
+    pub cursor_max_mode: bool,
 }
 
 /// Spawn N child processes concurrently (one per `ParallelRunSpec`).
@@ -374,6 +376,7 @@ pub fn parallel_agent_spawn(
                 api_key_env: args.api_key_env.as_deref(),
                 credential_id: args.credential_id.as_deref(),
                 workspace_id: args.workspace_id.as_deref(),
+                cursor_max_mode: args.cursor_max_mode,
             },
         ) {
             Ok(run_id) => run_ids.push(run_id),
@@ -422,6 +425,7 @@ mod tests {
         assert!(parsed.permission_mode.is_none());
         assert!(parsed.allowed_tools.is_empty());
         assert!(parsed.disallowed_tools.is_empty());
+        assert!(!parsed.cursor_max_mode);
     }
 
     #[test]

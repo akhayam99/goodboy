@@ -43,9 +43,6 @@ export const VersionChip = ({
   onSelect,
 }: Props) => {
   const tier = model.presentation.costTier;
-  const alwaysRequiresMaxMode =
-    model.provider === 'cursor' && model.combos.every((combo) => combo.maxMode);
-  const showMaxModeWarning = alwaysRequiresMaxMode || hasMaxModeAdvisory;
   const accessibleName = `${model.label}${isRecommended ? ', Recommended' : ''}`;
   return (
     <button
@@ -62,9 +59,9 @@ export const VersionChip = ({
       )}
     >
       {model.presentation.version}
-      {showMaxModeWarning && (
+      {hasMaxModeAdvisory && (
         <span
-          title="May require Max Mode in the Cursor app"
+          title="Cursor rejected Max Mode for this model"
           className="absolute right-0 top-0 size-1.5 rounded-full bg-warning ring-1 ring-subtle"
         />
       )}

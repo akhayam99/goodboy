@@ -93,6 +93,7 @@ type SpawnArgs = {
   readonly workspaceId?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
+  readonly cursorMaxMode?: boolean;
 };
 
 type RawTurnEnvelope =
@@ -301,6 +302,7 @@ export type ParallelSpawnArgs = {
   readonly workspaceId?: string;
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
+  readonly cursorMaxMode?: boolean;
 };
 
 export const invokeParallelPhaseRunSpawn = async (

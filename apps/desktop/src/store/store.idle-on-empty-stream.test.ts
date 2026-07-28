@@ -439,6 +439,12 @@ describe('sendTurn, terminal state guarantees', () => {
 
     const useAppStore = await importStore();
     setupSession(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      selectedProvider: 'cursor',
+      selectedModel: 'gpt-5.5-high',
+      reason: 'preference',
+    });
 
     await expect(
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
@@ -448,8 +454,11 @@ describe('sendTurn, terminal state guarantees', () => {
     const errorEvent = transcript.find((event) => event.kind === 'error');
     const message = errorEvent && 'message' in errorEvent ? errorEvent.message : '';
     expect(message).toContain('gpt-5.5-high');
-    expect(message).toContain('Enable Max Mode');
+    expect(message).toContain('usage-based pricing');
     expect(message).not.toContain('CLI is configured correctly');
+    expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ model: 'gpt-5.5-high', cursorMaxMode: true }),
+    );
   });
 
   it('leaves a non-auth provider error event message verbatim', async () => {
