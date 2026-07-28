@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  cn,
-  Divider,
-  IconButton,
-  ScrollFade,
-  SegmentedTabs,
-  type SegmentedTabOption,
-} from '@goodboy/ui';
+import { cn, IconButton, ScrollFade, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { GithubIssue, ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
@@ -15,6 +8,7 @@ import { PrDetailPanel } from './PrDetailPanel';
 import { GithubIssueDetailPanel } from './GithubIssueDetailPanel';
 import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
 import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
@@ -167,35 +161,38 @@ export const GitHubStudio = ({
             </IntegrationConnectPanel>
           </div>
         ) : tab === 'pull-requests' ? (
-          <>
-            <div className="flex w-72 shrink-0 flex-col">
-              <div className="shrink-0 px-3 pt-3">
-                <SegmentedTabs
-                  ariaLabel="Review inbox filter"
-                  options={REVIEW_SCOPES}
-                  value={reviewScope}
-                  onChange={setReviewScope}
-                  size="sm"
-                  fill
-                />
-              </div>
-              {reviewScope === 'mine' ? (
-                <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-                  <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
-                </ScrollFade>
-              ) : (
-                <ReviewInboxList
-                  workspaceId={workspaceId}
-                  provider="github"
-                  scope={reviewScope}
-                  focusedPrId={focusedReviewPr?.id ?? null}
-                  onSelect={setFocusedReviewPr}
-                />
-              )}
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
-              {reviewScope === 'mine' ? (
+          <StudioRailLayout
+            railLabel="GitHub pull requests"
+            railWidth="standard"
+            rail={
+              <>
+                <div className="shrink-0 px-3 pt-3">
+                  <SegmentedTabs
+                    ariaLabel="Review inbox filter"
+                    options={REVIEW_SCOPES}
+                    value={reviewScope}
+                    onChange={setReviewScope}
+                    size="sm"
+                    fill
+                  />
+                </div>
+                {reviewScope === 'mine' ? (
+                  <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+                    <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
+                  </ScrollFade>
+                ) : (
+                  <ReviewInboxList
+                    workspaceId={workspaceId}
+                    provider="github"
+                    scope={reviewScope}
+                    focusedPrId={focusedReviewPr?.id ?? null}
+                    onSelect={setFocusedReviewPr}
+                  />
+                )}
+              </>
+            }
+            detail={
+              reviewScope === 'mine' ? (
                 <PrDetailPanel
                   sessionId={focused}
                   initialPrNumber={onInitialSession ? initialPrNumber : null}
@@ -208,12 +205,14 @@ export const GitHubStudio = ({
                   workspaceId={workspaceId}
                   onClose={requestClose}
                 />
-              )}
-            </div>
-          </>
+              )
+            }
+          />
         ) : (
-          <>
-            <div className="w-72 shrink-0">
+          <StudioRailLayout
+            railLabel="GitHub issues"
+            railWidth="standard"
+            rail={
               <IssueInbox
                 groups={issues.groups}
                 focusedIssueNumber={focusedIssue?.number ?? null}
@@ -221,17 +220,16 @@ export const GitHubStudio = ({
                 loading={issues.loading}
                 error={issues.error}
               />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
+            }
+            detail={
               <GithubIssueDetailPanel
                 issue={focusedIssue}
                 sessionId={focusedIssueRow?.sessionId ?? null}
                 workspaceId={workspaceId}
                 onClose={requestClose}
               />
-            </div>
-          </>
+            }
+          />
         )
       }
     </StudioShell>

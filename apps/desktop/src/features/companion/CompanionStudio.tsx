@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react';
-import { Skeleton, cn } from '@goodboy/ui';
+import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { StudioShell } from '../../shared/components/StudioShell';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
 import { clearMobileSharedSessions } from './mobileConfinement';
@@ -16,11 +16,6 @@ function barColorClass(remaining: number, total: number): string {
   return 'bg-success';
 }
 
-/**
- * Full-page pairing surface for Goodboy Mobile, rendered like the Settings
- * studio (StudioShell). Starts the companion bridge, shows a single-use QR with
- * an auto-reminting countdown bar, and lets the human disconnect a paired phone.
- */
 export const CompanionStudio = ({ onClose }: Props) => {
   const [info, setInfo] = useState<QrInfo | null>(null);
   const [status, setStatus] = useState<BridgeStatus | null>(null);
@@ -98,7 +93,10 @@ export const CompanionStudio = ({ onClose }: Props) => {
       onClose={onClose}
     >
       {() => (
-        <div className="flex h-full min-h-0 w-full items-center justify-center overflow-y-auto">
+        <ScrollFade
+          className="h-full min-h-0 w-full"
+          viewportClassName="flex items-center justify-center"
+        >
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-7 px-8 py-10">
             <div className="flex flex-col items-center gap-1.5 text-center">
               <h2 className="text-lg font-semibold tracking-tight text-foreground">Scan to pair</h2>
@@ -143,8 +141,6 @@ export const CompanionStudio = ({ onClose }: Props) => {
                 <div className="flex flex-col items-center gap-3.5">
                   <div
                     className="size-[244px] rounded-lg border border-border-soft bg-white p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] [&>svg]:h-full [&>svg]:w-full"
-                    // QR SVG is generated server-side from a value we control (the
-                    // pairing payload), never from untrusted input.
                     dangerouslySetInnerHTML={{ __html: info.svg }}
                   />
                   <div className="flex w-[244px] flex-col items-center gap-1.5">
@@ -184,26 +180,29 @@ export const CompanionStudio = ({ onClose }: Props) => {
                 </div>
 
                 {enrolled > 0 ? (
-                  <div className="flex w-full flex-col items-center gap-2.5 border-t border-border-soft/60 pt-5">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-2xs font-semibold text-success">
-                      <span aria-hidden className="size-1.5 rounded-full bg-success" />
-                      {enrolled} paired {enrolled === 1 ? 'device' : 'devices'}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={revoking}
-                      onClick={() => void revoke()}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:border-danger/60 hover:bg-danger/15 disabled:opacity-50"
-                    >
-                      <Unplug size={13} aria-hidden />
-                      {revoking ? 'Disconnecting…' : 'Disconnect phone'}
-                    </button>
+                  <div className="flex w-full flex-col gap-5">
+                    <Divider />
+                    <div className="flex w-full flex-col items-center gap-2.5">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-2xs font-semibold text-success">
+                        <span aria-hidden className="size-1.5 rounded-full bg-success" />
+                        {enrolled} paired {enrolled === 1 ? 'device' : 'devices'}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={revoking}
+                        onClick={() => void revoke()}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:border-danger/60 hover:bg-danger/15 disabled:opacity-50"
+                      >
+                        <Unplug size={13} aria-hidden />
+                        {revoking ? 'Disconnecting…' : 'Disconnect phone'}
+                      </button>
+                    </div>
                   </div>
                 ) : null}
               </>
             ) : null}
           </div>
-        </div>
+        </ScrollFade>
       )}
     </StudioShell>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { cn, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
@@ -141,8 +142,10 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
             </IntegrationConnectPanel>
           </div>
         ) : tab === 'issues' ? (
-          <>
-            <div className="w-72 shrink-0">
+          <StudioRailLayout
+            railLabel="GitLab issues"
+            railWidth="standard"
+            rail={
               <IssueInbox
                 groups={groups}
                 focusedIssueId={focused?.id ?? null}
@@ -150,53 +153,55 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 loading={loading}
                 error={error}
               />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
+            }
+            detail={
               <IssueDetailPanel
                 issue={focused}
                 sessionId={focusedRow?.sessionId ?? null}
                 workspaceId={workspaceId}
                 onClose={requestClose}
               />
-            </div>
-          </>
+            }
+          />
         ) : (
-          <>
-            <div className="flex w-72 shrink-0 flex-col">
-              <div className="shrink-0 px-3 pt-3">
-                <SegmentedTabs
-                  ariaLabel="Review inbox filter"
-                  options={REVIEW_SCOPES}
-                  value={reviewScope}
-                  onChange={setReviewScope}
-                  size="sm"
-                  fill
-                />
-              </div>
-              {reviewScope === 'mine' ? (
-                <div className="min-h-0 flex-1">
-                  <MrInbox
-                    groups={mergeRequests.groups}
-                    focusedMrId={focusedMr?.id ?? null}
-                    onSelect={setFocusedMr}
-                    loading={mergeRequests.loading}
-                    error={mergeRequests.error}
+          <StudioRailLayout
+            railLabel="GitLab merge requests"
+            railWidth="standard"
+            rail={
+              <>
+                <div className="shrink-0 px-3 pt-3">
+                  <SegmentedTabs
+                    ariaLabel="Review inbox filter"
+                    options={REVIEW_SCOPES}
+                    value={reviewScope}
+                    onChange={setReviewScope}
+                    size="sm"
+                    fill
                   />
                 </div>
-              ) : (
-                <ReviewInboxList
-                  workspaceId={workspaceId}
-                  provider="gitlab"
-                  scope={reviewScope}
-                  focusedPrId={focusedReviewPr?.id ?? null}
-                  onSelect={setFocusedReviewPr}
-                />
-              )}
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
-              {reviewScope === 'mine' ? (
+                {reviewScope === 'mine' ? (
+                  <div className="min-h-0 flex-1">
+                    <MrInbox
+                      groups={mergeRequests.groups}
+                      focusedMrId={focusedMr?.id ?? null}
+                      onSelect={setFocusedMr}
+                      loading={mergeRequests.loading}
+                      error={mergeRequests.error}
+                    />
+                  </div>
+                ) : (
+                  <ReviewInboxList
+                    workspaceId={workspaceId}
+                    provider="gitlab"
+                    scope={reviewScope}
+                    focusedPrId={focusedReviewPr?.id ?? null}
+                    onSelect={setFocusedReviewPr}
+                  />
+                )}
+              </>
+            }
+            detail={
+              reviewScope === 'mine' ? (
                 <MrDetailPanel
                   mr={focusedMr}
                   workspaceId={workspaceId}
@@ -210,9 +215,9 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                   workspaceId={workspaceId}
                   onClose={requestClose}
                 />
-              )}
-            </div>
-          </>
+              )
+            }
+          />
         )
       }
     </StudioShell>

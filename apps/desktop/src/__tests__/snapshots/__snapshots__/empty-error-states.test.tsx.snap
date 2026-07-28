@@ -105,7 +105,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
     class="flex w-full max-w-2xl flex-col overflow-hidden"
   >
     <div
-      class="relative min-h-0 max-h-[70vh] overflow-y-auto"
+      class="relative min-h-0 max-h-[70vh]"
     >
       <div
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
@@ -977,7 +977,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
     class="flex w-full max-w-2xl flex-col overflow-hidden"
   >
     <div
-      class="relative min-h-0 max-h-[70vh] overflow-y-auto"
+      class="relative min-h-0 max-h-[70vh]"
     >
       <div
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ScrollArea } from '@goodboy/ui';
+import { Divider, ScrollArea } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import type { ReviewState } from '../lib';
 import { buildTree } from './tree';
@@ -28,22 +28,25 @@ export const FileRail = ({
   }, [activePath]);
 
   return (
-    <ScrollArea className="w-[26%] shrink-0 overflow-y-auto border-r border-border-soft bg-muted/10">
-      <div className="py-1">
-        {tree.kind === 'dir' &&
-          tree.children.map((child, i) => (
-            <TreeNodeView
-              key={`${child.kind}-${child.name}-${i}`}
-              node={child}
-              depth={0}
-              activePath={activePath}
-              onSelect={onSelect}
-              selectedRef={selectedRef}
-              reviewStateByPath={reviewStateByPath}
-              commentCounts={commentCounts}
-            />
-          ))}
-      </div>
-    </ScrollArea>
+    <div className="flex min-h-0 w-[26%] shrink-0">
+      <ScrollArea className="min-w-0 flex-1 bg-muted/10">
+        <div className="py-1">
+          {tree.kind === 'dir' &&
+            tree.children.map((child, i) => (
+              <TreeNodeView
+                key={`${child.kind}-${child.name}-${i}`}
+                node={child}
+                depth={0}
+                activePath={activePath}
+                onSelect={onSelect}
+                selectedRef={selectedRef}
+                reviewStateByPath={reviewStateByPath}
+                commentCounts={commentCounts}
+              />
+            ))}
+        </div>
+      </ScrollArea>
+      <Divider orientation="vertical" />
+    </div>
   );
 };

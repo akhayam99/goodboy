@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider, IconButton } from '@goodboy/ui';
+import { cn, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
@@ -86,8 +87,10 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     >
       {(requestClose) =>
         isConnected ? (
-          <>
-            <div className="w-72 shrink-0">
+          <StudioRailLayout
+            railLabel="Linear issues"
+            railWidth="standard"
+            rail={
               <IssueInbox
                 groups={groups}
                 focusedIssueId={focused?.id ?? null}
@@ -95,17 +98,16 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 loading={loading}
                 error={error}
               />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="min-h-0 flex-1">
+            }
+            detail={
               <IssueDetailPanel
                 issue={focused}
                 sessionId={focusedRow?.sessionId ?? null}
                 workspaceId={workspaceId}
                 onClose={requestClose}
               />
-            </div>
-          </>
+            }
+          />
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <IntegrationConnectPanel
