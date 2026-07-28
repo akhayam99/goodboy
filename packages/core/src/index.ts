@@ -110,8 +110,20 @@ export { defaultModelSelection } from './providers/defaultModelSelection';
 export { modelIdForSelection } from './providers/modelIdForSelection';
 export { parseLegacyId } from './providers/parseLegacyId';
 export { remapModelSelection } from './providers/remapModelSelection';
+export { resolveCursorCombo } from './providers/cursorCombo';
+export { modelAxes } from './providers/modelAxes';
 export { resolveModelArgs } from './providers/resolveModelArgs';
 export { resolveStoredModelSelection } from './providers/resolveStoredModelSelection';
+export { selectionRequiresMaxMode } from './providers/selectionRequiresMaxMode';
+export type {
+  EffortAxis,
+  EffortAxisLevel,
+  ModelAxes,
+  ModelPresentation,
+  ToggleAxis,
+  VariantAxis,
+  VariantAxisOption,
+} from '@goodboy/types';
 
 export { resolveTaskModel } from './providers/task-models';
 

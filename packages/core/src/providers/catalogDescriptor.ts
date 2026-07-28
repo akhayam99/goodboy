@@ -1,4 +1,4 @@
-import type { CatalogModel, ModelDescriptor, ModelFamily } from '@goodboy/types';
+import type { CatalogModel, ModelDescriptor } from '@goodboy/types';
 
 type Params = {
   readonly model: CatalogModel;
@@ -21,44 +21,6 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   auto: 4,
   'gemini-3.1-pro': 20,
   'gemini-3.5-flash': 5,
-};
-
-const familyFor = ({ model }: Params): ModelFamily => {
-  if (
-    model.key.startsWith('opus-') ||
-    model.key.startsWith('sonnet-') ||
-    model.key.startsWith('haiku-') ||
-    model.key.startsWith('fable-')
-  ) {
-    return 'claude';
-  }
-  if (model.key.startsWith('gpt-')) {
-    return 'gpt';
-  }
-  if (model.key.startsWith('gemini-')) {
-    return 'gemini';
-  }
-  if (model.key.startsWith('composer-')) {
-    return 'composer';
-  }
-  if (model.key === 'auto') {
-    return 'cursor-auto';
-  }
-  return 'other';
-};
-
-const subfamilyFor = ({ model }: Params): string | null => {
-  const family = familyFor({ model });
-  if (family === 'claude') {
-    return model.key.split('-')[0] ?? null;
-  }
-  if (family === 'gpt') {
-    return model.key.endsWith('-mini') ? 'mini' : 'gpt-5';
-  }
-  if (family === 'gemini') {
-    return model.key.includes('flash') ? 'flash' : 'pro';
-  }
-  return null;
 };
 
 const cliIdFor = ({ model }: Params): string => {
@@ -110,24 +72,16 @@ const effortFor = ({ model }: Params) => {
 };
 
 export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
-  const family = familyFor({ model });
+  const family = model.presentation.family;
   return {
     id: model.key,
     tier: model.tier,
     contextWindow: family === 'gemini' || family === 'claude' ? 1_000_000 : 200_000,
     family,
-    subfamily: subfamilyFor({ model }),
+    subfamily: model.presentation.group,
     label: model.label,
-    variantLabel: model.label,
-    costTier:
-      model.tier === 'cheap'
-        ? 'cheap'
-        : (family === 'claude' &&
-              (model.key.startsWith('opus-') || model.key.startsWith('fable-'))) ||
-            model.key === 'gpt-5.6' ||
-            model.key === 'gpt-5.5'
-          ? 'expensive'
-          : 'mid',
+    variantLabel: model.presentation.version,
+    costTier: model.presentation.costTier,
     weight: WEIGHT_BY_KEY[model.key] ?? 10,
     effort: effortFor({ model }),
   };

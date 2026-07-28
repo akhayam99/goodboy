@@ -84,10 +84,14 @@ export type {
   CodexVariant,
   CursorCombo,
   CursorModel,
+  EffortAxis,
+  EffortAxisLevel,
   EffortLevel,
   GeminiModel,
+  ModelAxes,
   ModelCatalogs,
   ModelKey,
+  ModelPresentation,
   ModelRemapRecord,
   ModelSelection,
   OpencodeModel,
@@ -95,6 +99,9 @@ export type {
   ResolvedModelArgs,
   RemappedModelSelection,
   StoredModelSelection,
+  ToggleAxis,
+  VariantAxis,
+  VariantAxisOption,
 } from './model-catalog';
 export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';

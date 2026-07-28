@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { CatalogModel, EffortLevel, ModelSelection, ProviderId } from '@goodboy/types';
+import type {
+  CatalogModel,
+  EffortLevel,
+  ModelFamily,
+  ModelSelection,
+  ProviderId,
+} from '@goodboy/types';
 import { PROVIDER_IDS } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { MODEL_CATALOGS } from './catalogs';
@@ -102,6 +108,46 @@ describe('model catalogs', () => {
         }
       }
     }
+  });
+
+  it('keeps presentation order unique and grouped models in one family per provider', () => {
+    for (const provider of PROVIDER_IDS) {
+      const catalog = MODEL_CATALOGS[provider];
+      expect(new Set(catalog.map((model) => model.presentation.order)).size).toBe(catalog.length);
+      const familyByGroup = new Map<string, ModelFamily>();
+      for (const model of catalog) {
+        const group = model.presentation.group;
+        if (group == null) {
+          continue;
+        }
+        const family = familyByGroup.get(group);
+        if (family != null) {
+          expect(model.presentation.family).toBe(family);
+          continue;
+        }
+        familyByGroup.set(group, model.presentation.family);
+      }
+    }
+  });
+
+  it('pins the cursor combos that require Max Mode', () => {
+    const maxModeSlugs: Array<string> = [];
+    for (const model of MODEL_CATALOGS.cursor) {
+      for (const combo of model.combos) {
+        if (combo.maxMode) {
+          maxModeSlugs.push(combo.slug);
+        }
+      }
+    }
+    maxModeSlugs.sort();
+    expect(maxModeSlugs).toEqual([
+      'claude-opus-4-7-thinking-high',
+      'claude-opus-5-low',
+      'claude-opus-5-thinking-high',
+      'gpt-5.5-high',
+      'gpt-5.5-medium',
+      'gpt-5.6-sol-high',
+    ]);
   });
 
   it('clamps to the nearest lower effort and reports the change', () => {
