@@ -134,6 +134,10 @@ fn read_token(workspace_id: Option<&str>) -> Option<String> {
     secrets::read(TOKEN_KEY).ok().flatten()
 }
 
+pub(crate) fn token_for_workspace(workspace_id: Option<&str>) -> Option<String> {
+    read_token(workspace_id).filter(|t| !t.is_empty())
+}
+
 fn status_blocking(workspace_id: Option<String>) -> GhStatus {
     let ws = workspace_id.as_deref();
     if !gh_available() {

@@ -780,6 +780,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         workingDir,
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
+        workspaceId: session.workspaceId,
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
         ...(effortFlag !== undefined && { effort: effortFlag }),
