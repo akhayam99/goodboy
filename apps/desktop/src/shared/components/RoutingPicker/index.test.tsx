@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { MODEL_CATALOGS, PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
@@ -295,18 +295,6 @@ describe('RoutingPicker', () => {
     expect(screen.queryByRole('button', { name: 'Sol' })).toBeNull();
   });
 
-  it('selects the matching Codex checkpoint when search finds a variant', () => {
-    const onModel = vi.fn();
-    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.5" onModel={onModel} />);
-    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search models' }), {
-      target: { value: 'terra' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'GPT-5.6, Terra' }));
-    expect(onModel).toHaveBeenCalledWith('gpt-5.6-terra');
-    expect(screen.getByRole('button', { name: 'Terra' }).getAttribute('aria-pressed')).toBe('true');
-  });
-
   it('clamps Cursor effort after a toggle invalidates it and announces the adjustment', () => {
     const onModel = vi.fn();
     const onChange = vi.fn();
@@ -323,7 +311,7 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Thinking' }));
     expect(onModel).toHaveBeenCalledWith('claude-opus-5-thinking-high');
     expect(onChange).toHaveBeenCalledWith('high');
-    expect(screen.getByRole('status').textContent).toContain('adjusted from Low to High');
+    expect(screen.getByText('Effort adjusted from Low to High.')).toBeDefined();
   });
 
   it('keeps unavailable Cursor effort cells disabled with an explanation', () => {
@@ -338,7 +326,9 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const high = screen.getByRole('button', { name: 'High' });
     expect(high.hasAttribute('disabled')).toBe(true);
-    expect(high.getAttribute('title')).toContain('unavailable for Sonnet 4.6');
+    expect(high.getAttribute('title')).toBe(
+      'High is unavailable for this model with the current toggles',
+    );
     expect(
       within(screen.getByRole('group', { name: 'Effort' })).getAllByRole('button'),
     ).toHaveLength(5);
@@ -365,7 +355,29 @@ describe('RoutingPicker', () => {
   });
 
   it('shows a Max Mode advisory after failure and clears it after success', () => {
-    cursorMaxModeAdvisory.mark({ accountId: 'unknown', model: 'gpt-5.5' });
+    cursorMaxModeAdvisory.mark({ accountId: 'unknown', model: 'sonnet-4.6' });
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="claude-4.6-sonnet-medium"
+        effort={{ editable: true, value: 'medium', onChange: vi.fn() }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.getByRole('status', { name: 'Max Mode required previously' })).toBeDefined();
+    const chip = screen.getByRole('button', { name: 'Sonnet 4.6' });
+    expect(within(chip).getByTitle('May require Max Mode in the Cursor app')).toBeDefined();
+
+    act(() => {
+      cursorMaxModeAdvisory.clear({ accountId: 'unknown', model: 'sonnet-4.6' });
+    });
+
+    expect(screen.queryByRole('status', { name: 'Max Mode required previously' })).toBeNull();
+    expect(within(chip).queryByTitle('May require Max Mode in the Cursor app')).toBeNull();
+  });
+
+  it('shows a static Max Mode requirement from the selected Cursor combination', () => {
     render(
       <RoutingPicker
         {...baseProps}
@@ -375,23 +387,29 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('status', { name: 'Max Mode required previously' })).toBeDefined();
-
-    act(() => {
-      cursorMaxModeAdvisory.clear({ accountId: 'unknown', model: 'gpt-5.5' });
-    });
-
+    expect(screen.getByRole('status', { name: 'Max Mode required' })).toBeDefined();
     expect(screen.queryByRole('status', { name: 'Max Mode required previously' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'GPT-5.5' })).toBeDefined();
   });
 
-  it('renders every catalog model as one canonical row', () => {
+  it('renders every anthropic catalog model as a version chip', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const models = screen.getByRole('region', { name: 'Models' });
-    for (const entry of PROVIDER_CAPABILITIES.anthropic.models) {
-      expect(within(models).getByRole('button', { name: entry.label })).toBeDefined();
+    for (const entry of MODEL_CATALOGS.anthropic) {
+      expect(within(models).getByRole('button', { name: entry.label }).textContent).toBe(
+        entry.presentation.version,
+      );
     }
+  });
+
+  it('groups anthropic versions under authored family rows', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const models = screen.getByRole('region', { name: 'Models' });
+    expect(within(models).getByText('Opus')).toBeDefined();
+    expect(within(models).getByText('Haiku')).toBeDefined();
+    expect(within(models).getByRole('button', { name: 'Opus 4.8' }).textContent).toBe('4.8');
+    expect(within(models).getByRole('button', { name: 'Opus 5' }).textContent).toBe('5');
   });
 
   it('offers verbosity only when the caller wires it', () => {
@@ -432,21 +450,10 @@ describe('RoutingPicker', () => {
     window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
   });
 
-  it('always focuses the searchable model list when the popover opens', () => {
-    const view = render(
-      <RoutingPicker
-        {...baseProps}
-        provider="cursor"
-        model={PROVIDER_CAPABILITIES.cursor.models[0]?.id ?? ''}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('textbox', { name: 'Search models' })).toBe(document.activeElement);
-    view.unmount();
-
+  it('focuses the selected model chip when the popover opens', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('textbox', { name: 'Search models' })).toBe(document.activeElement);
+    expect(screen.getByRole('button', { name: 'Opus 5' })).toBe(document.activeElement);
   });
 
   it('shows the exact resolved model arguments in the footer', () => {

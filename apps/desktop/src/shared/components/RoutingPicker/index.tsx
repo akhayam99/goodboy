@@ -3,12 +3,13 @@ import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
   MODEL_CATALOGS,
   PROVIDER_CAPABILITIES,
+  modelAxes,
   modelIdForSelection,
   remapModelSelection,
   resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
-import { Button, Divider, Popover, cn } from '@goodboy/ui';
+import { Button, Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
 import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
 import {
   EFFORT_LABEL,
@@ -22,20 +23,22 @@ import {
   type VerbosityLevel,
 } from '../../../features/settings/verbosity';
 import { useDropdown } from '../../hooks/useDropdown';
-import { ModelList } from './ModelList';
+import { AxesSection } from './AxesSection';
+import { CatalogGrid } from './CatalogGrid';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
 import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
-import { TuningSection } from './TuningSection';
-import { useCursorMaxModeModels } from './useCursorMaxModeModels';
 import { recommendationSummary } from './recommendationSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
+import { selectionForModel } from './selectionForModel';
+import { useCursorMaxModeModels } from './useCursorMaxModeModels';
 
 const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
 const PROVIDER_CHIP_GROUP_CLASS_NAME =
   'flex gap-1.5 bg-subtle px-2.5 [&>button]:h-7 [&>button]:flex-1';
+const EMPTY_MODEL_KEYS: ReadonlySet<string> = new Set();
 const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
@@ -48,38 +51,6 @@ type PickProviderParams = {
 type PickSelectionParams = {
   readonly next: ModelSelection;
   readonly provider: ProviderId;
-};
-
-type SelectionParams = {
-  readonly model: CatalogModel;
-  readonly effort: EffortLevel;
-};
-
-const selectionForModel = ({ model, effort }: SelectionParams): ModelSelection => {
-  switch (model.provider) {
-    case 'anthropic':
-    case 'opencode':
-    case 'openrouter':
-      return { key: model.key, effort };
-    case 'codex':
-      return { key: model.key, effort, variant: model.variants[0]?.id };
-    case 'cursor': {
-      return {
-        key: model.key,
-        effort,
-        toggles: {
-          thinking: false,
-          fast: false,
-        },
-      };
-    }
-    case 'gemini':
-      return { key: model.key };
-    default: {
-      const exhaustive: never = model;
-      throw new Error(`unknown catalog model: ${String(exhaustive)}`);
-    }
-  }
 };
 
 type EffortSetting =
@@ -155,7 +126,6 @@ export const RoutingPicker = ({
   const [viewProvider, setViewProvider] = useState(routing.provider);
   const [isViewingAuto, setIsViewingAuto] = useState(isInheritingRecommendation);
   const [draftSelection, setDraftSelection] = useState<ModelSelection>(routing.selection);
-  const [modelQuery, setModelQuery] = useState('');
   const [clampNotice, setClampNotice] = useState(routing.clamped);
   const viewedRecommendedStored =
     recommendedProvider == null && recommendedModel != null
@@ -200,8 +170,11 @@ export const RoutingPicker = ({
     provider: viewProvider,
     selection: viewedRouting.selection,
   });
+  const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
+  const advisoryKeys = viewProvider === 'cursor' ? maxModeModels : EMPTY_MODEL_KEYS;
+  const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
 
   useEffect(() => {
     if (open) {
@@ -210,7 +183,6 @@ export const RoutingPicker = ({
     setViewProvider(routing.provider);
     setIsViewingAuto(isInheritingRecommendation);
     setDraftSelection(routing.selection);
-    setModelQuery('');
     setClampNotice(routing.clamped);
   }, [
     open,
@@ -221,6 +193,15 @@ export const RoutingPicker = ({
     model,
     provider,
   ]);
+
+  useEffect(() => {
+    if (open === false || isViewProviderConnected === false) {
+      return;
+    }
+    containerRef.current
+      ?.querySelector<HTMLButtonElement>('section[aria-label="Models"] button[aria-pressed="true"]')
+      ?.focus();
+  }, [containerRef, isViewProviderConnected, open]);
 
   const onPickSelection = ({ next, provider: nextProvider }: PickSelectionParams) => {
     const resolved = resolveModelArgs({ provider: nextProvider, selection: next });
@@ -248,7 +229,6 @@ export const RoutingPicker = ({
     onProvider(next);
     setViewProvider(viewedProvider);
     setIsViewingAuto(next === '');
-    setModelQuery('');
     if (next === '') {
       setDraftSelection(routing.selection);
       return;
@@ -266,17 +246,10 @@ export const RoutingPicker = ({
     setClampNotice(remapped.record.clamped);
   };
 
-  const onPickModel = (nextModel: CatalogModel, matchedVariant?: string) => {
+  const onPickModel = (nextModel: CatalogModel) => {
     setIsViewingAuto(false);
-    setModelQuery('');
     const next = selectionForModel({ model: nextModel, effort: viewedRouting.effort });
-    onPickSelection({
-      next:
-        nextModel.provider === 'codex' && matchedVariant != null
-          ? { ...next, variant: matchedVariant }
-          : next,
-      provider: viewProvider,
-    });
+    onPickSelection({ next, provider: viewProvider });
   };
 
   return (
@@ -397,7 +370,6 @@ export const RoutingPicker = ({
                     onClick={() => {
                       setViewProvider(id);
                       setIsViewingAuto(false);
-                      setModelQuery('');
                       if (!isConnected) {
                         const preview = remapModelSelection({
                           sourceProvider: viewProvider,
@@ -455,28 +427,49 @@ export const RoutingPicker = ({
             </section>
           )}
           {isViewProviderConnected && (
-            <ModelList
-              catalog={viewedRouting.catalog}
-              selectedKey={viewedRouting.model}
-              recommendedKey={viewedRecommendedSelection?.key}
-              query={modelQuery}
-              advisoryModels={viewProvider === 'cursor' ? maxModeModels : new Set()}
-              onQuery={setModelQuery}
-              onSelect={onPickModel}
-            />
+            <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
+              <CatalogGrid
+                catalog={viewedRouting.catalog}
+                selectedKey={viewedRouting.model}
+                recommendedKey={viewedRecommendedSelection?.key}
+                advisoryKeys={advisoryKeys}
+                onSelect={onPickModel}
+              />
+            </ScrollFade>
           )}
           {isViewProviderConnected && (
             <>
               <Divider />
-              <TuningSection
-                provider={viewProvider}
-                model={viewedModel}
-                selection={viewedRouting.selection}
-                effort={viewedRouting.effort}
-                effortLevels={viewedRouting.effortLevels}
+              <AxesSection
+                axes={axes}
+                effortValue={viewedRouting.effort}
                 canEditEffort={editableEffort != null}
                 notice={clampNotice}
-                onSelection={(next) => onPickSelection({ next, provider: viewProvider })}
+                hasMaxModeAdvisory={hasMaxModeAdvisory}
+                onEffort={(level) =>
+                  onPickSelection({
+                    next: { ...viewedRouting.selection, effort: level },
+                    provider: viewProvider,
+                  })
+                }
+                onVariant={(id) =>
+                  onPickSelection({
+                    next: { ...viewedRouting.selection, variant: id },
+                    provider: viewProvider,
+                  })
+                }
+                onToggle={(id) =>
+                  onPickSelection({
+                    next: {
+                      ...viewedRouting.selection,
+                      toggles: {
+                        ...viewedRouting.selection.toggles,
+                        [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
+                      },
+                    },
+                    provider: viewProvider,
+                  })
+                }
               />
             </>
           )}
