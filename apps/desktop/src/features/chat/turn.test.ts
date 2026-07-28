@@ -85,6 +85,52 @@ describe('runTurn', () => {
     await expect(iterator.next()).rejects.toThrow(message);
   });
 
+  it('surfaces stderr when the provider dies after emitting only init events', async () => {
+    const runId = 'max-mode-init-provider-run' as ProviderRunId;
+    const message =
+      'ActionRequiredError: Max Mode Required The model "gpt-5.6-sol-high" requires Max Mode to be enabled. Please enable Max Mode and try again.';
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({
+          runId,
+          type: 'line',
+          line: JSON.stringify({
+            type: 'system',
+            subtype: 'init',
+            session_id: 'cursor-session-1',
+          }),
+        });
+        capturedListeners[0]?.({
+          runId,
+          type: 'line',
+          line: JSON.stringify({
+            type: 'user',
+            message: { role: 'user', content: [{ type: 'text', text: 'hello' }] },
+          }),
+        });
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 1, stderr: message });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn({
+      runId,
+      provider: 'cursor',
+      model: 'gpt-5.6-sol-high',
+      workingDir: '/tmp/worktree',
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: {
+        kind: 'provider_session_init',
+        providerSessionId: 'cursor-session-1',
+      },
+    });
+    await expect(iterator.next()).rejects.toThrow(message);
+  });
+
   it('surfaces unparseable stdout when a provider exits', async () => {
     const runId = 'stdout-error-provider-run' as ProviderRunId;
     const message = 'provider rejected this request';
