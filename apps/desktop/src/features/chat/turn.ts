@@ -121,6 +121,7 @@ export async function* runTurn(
   };
 
   let receivedAnyEvent = false;
+  let receivedResponseEvent = false;
   const unparsedOutput: string[] = [];
 
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
@@ -138,6 +139,9 @@ export async function* runTurn(
           unparsedOutput.push(event.payload.line.trim());
         }
         for (const ev of parsedEvents) {
+          if (ev.kind === 'assistant_text' || ev.kind === 'done' || ev.kind === 'error') {
+            receivedResponseEvent = true;
+          }
           queue.push(ev);
         }
         flush();
@@ -161,6 +165,21 @@ export async function* runTurn(
               : new Error(
                   'provider exited without a response. check that the CLI is configured correctly.',
                 );
+        }
+        if (
+          receivedAnyEvent &&
+          !receivedResponseEvent &&
+          event.payload.exit_code !== null &&
+          event.payload.exit_code !== 0
+        ) {
+          const stderrMessage = event.payload.stderr.trim();
+          const stdoutMessage = unparsedOutput.join('\n');
+          const providerMessage = [stdoutMessage, stderrMessage]
+            .filter((value) => value !== '')
+            .join('\n');
+          if (providerMessage !== '') {
+            error = new Error(providerMessage);
+          }
         }
         ended = true;
         flush();
