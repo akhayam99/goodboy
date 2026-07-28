@@ -519,6 +519,7 @@ mod tests {
             effort: None,
             api_key_env: None,
             credential_id: None,
+            workspace_id: None,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -544,6 +545,7 @@ mod tests {
             effort: None,
             api_key_env: None,
             credential_id: None,
+            workspace_id: None,
         }
     }
 
@@ -762,6 +764,7 @@ mod tests {
             effort: None,
             api_key_env: None,
             credential_id: None,
+            workspace_id: None,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")
