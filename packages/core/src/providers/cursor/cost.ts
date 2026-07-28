@@ -31,22 +31,19 @@ const GPT5_PRICE: ModelPrice = {
 
 export const CURSOR_PRICES: Record<string, ModelPrice> = {
   [CURSOR_CHEAP_MODEL]: COMPOSER_PRICE,
-  'composer-2-fast': COMPOSER_PRICE,
-  'composer-2': COMPOSER_PRICE,
+  'composer-2.5': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
 
+  'claude-opus-5-thinking-high': OPUS_PRICE,
+  'claude-opus-5-low': OPUS_PRICE,
   'claude-opus-4-7-thinking-high': OPUS_PRICE,
-  'claude-4.6-opus-high-thinking': OPUS_PRICE,
-  'claude-4.6-opus-high-thinking-fast': OPUS_PRICE,
   'claude-4.6-sonnet-medium': SONNET_PRICE,
-  'claude-4.6-sonnet-high': SONNET_PRICE,
-  'claude-sonnet-4-5': SONNET_PRICE,
-  'claude-sonnet-4-6': SONNET_PRICE,
+  'claude-4.6-sonnet-medium-thinking': SONNET_PRICE,
 
+  'gpt-5.6-sol-high': GPT5_PRICE,
   'gpt-5.5-high': GPT5_PRICE,
   'gpt-5.5-medium': GPT5_PRICE,
   'gpt-5.3-codex': GPT5_PRICE,
-  'gpt-4o': GPT5_PRICE,
 };
 
 const FALLBACK: ModelPrice = COMPOSER_PRICE;

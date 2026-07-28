@@ -42,7 +42,7 @@ describe('computeCursorCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    expect(computeCursorCostUsd(partial, 'claude-sonnet-4-5')).toBeCloseTo(3 + 0.3);
+    expect(computeCursorCostUsd(partial, 'claude-4.6-sonnet-medium')).toBeCloseTo(3 + 0.3);
   });
 
   it('cursorPriceFor returns composer-2-fast fallback for unknown model', () => {

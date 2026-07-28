@@ -171,15 +171,15 @@ describe('parseModelId', () => {
       subfamily: 'sonnet',
       variantLabel: '4.6 medium',
     });
-    expect(parseModelId('claude-4.6-sonnet-high')).toEqual({
+    expect(parseModelId('claude-4.6-sonnet-medium-thinking')).toEqual({
       family: 'claude',
       subfamily: 'sonnet',
-      variantLabel: '4.6 high',
+      variantLabel: '4.6 medium thinking',
     });
-    expect(parseModelId('claude-4.6-opus-high-thinking')).toEqual({
+    expect(parseModelId('claude-opus-5-thinking-high')).toEqual({
       family: 'claude',
       subfamily: 'opus',
-      variantLabel: '4.6 high thinking',
+      variantLabel: '5 high',
     });
   });
 
@@ -192,15 +192,15 @@ describe('parseModelId', () => {
   });
 
   it('composer family', () => {
-    expect(parseModelId('composer-2')).toEqual({
+    expect(parseModelId('composer-2.5')).toEqual({
       family: 'composer',
       subfamily: null,
-      variantLabel: '2',
+      variantLabel: '2.5',
     });
-    expect(parseModelId('composer-2-fast')).toEqual({
+    expect(parseModelId('composer-2.5-fast')).toEqual({
       family: 'composer',
       subfamily: null,
-      variantLabel: '2 Fast',
+      variantLabel: '2.5 Fast',
     });
   });
 

@@ -192,4 +192,4 @@ export const CURSOR_AGENT_MODEL_IDS = [
   'kimi-k3-high',
   'kimi-k3-low',
   'kimi-k3-max',
-] satisfies ReadonlyArray<string>;
+] as const satisfies ReadonlyArray<string>;
