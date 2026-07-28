@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -118,20 +118,12 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
         isConnected ? (
           <div className="flex items-center gap-2">
             <StudioTabs ariaLabel="GitLab work" tabs={TABS} value={tab} onChange={setTab} />
-            <button
-              type="button"
+            <IconButton
+              icon={RefreshCw}
+              label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
               onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
               disabled={tab === 'issues' ? loading : mergeRequests.loading}
-              title={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-              aria-label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-              className={cn(
-                'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-                'text-muted-foreground transition-colors',
-                'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-              )}
-            >
-              <RefreshCw size={13} aria-hidden />
-            </button>
+            />
           </div>
         ) : null
       }

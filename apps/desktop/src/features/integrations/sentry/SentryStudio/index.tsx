@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -66,21 +66,13 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       closeLabel="close sentry studio"
       headerAccessory={
         isConnected ? (
-          <button
-            type="button"
+          <IconButton
+            icon={RefreshCw}
+            label="Refresh issues"
             onClick={refetch}
             disabled={loading}
-            title="Refresh issues"
-            aria-label="Refresh issues"
-            className={cn(
-              'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-              'text-muted-foreground transition-colors',
-              'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-              loading && 'animate-border-pulse',
-            )}
-          >
-            <RefreshCw size={13} aria-hidden />
-          </button>
+            busy={loading}
+          />
         ) : null
       }
       onClose={onClose}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, Divider, ScrollFade } from '@goodboy/ui';
+import { cn, Divider, IconButton, ScrollFade } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { GithubIssue, ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
@@ -137,20 +137,12 @@ export const GitHubStudio = ({
         isConnected ? (
           <div className="flex items-center gap-2">
             <StudioTabs ariaLabel="GitHub work" tabs={TABS} value={tab} onChange={setTab} />
-            <button
-              type="button"
+            <IconButton
+              icon={RefreshCw}
+              label="Refresh issues"
               onClick={issues.refetch}
               disabled={issues.loading}
-              title="Refresh issues"
-              aria-label="Refresh issues"
-              className={cn(
-                'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5',
-                'text-muted-foreground transition-colors',
-                'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
-              )}
-            >
-              <RefreshCw size={13} aria-hidden />
-            </button>
+            />
           </div>
         ) : null
       }
