@@ -299,7 +299,7 @@ export const runParallelBranch = async (
     });
     listener.registerRun(runId, {
       onEvent: (e) => {
-        const forwarded: TurnEvent =
+        const resolvedEvent: TurnEvent =
           e.kind === 'error'
             ? {
                 ...e,
@@ -310,6 +310,10 @@ export const runParallelBranch = async (
                 }),
               }
             : e;
+        const forwarded: TurnEvent =
+          resolvedEvent.kind === 'provider_session_init'
+            ? { ...resolvedEvent, provider }
+            : resolvedEvent;
         const cb = progressCallbacks.get(runId);
         if (cb) {
           cb(forwarded);

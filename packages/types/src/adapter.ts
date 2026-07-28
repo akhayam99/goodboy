@@ -83,6 +83,7 @@ export type TurnEvent =
       kind: 'provider_session_init';
       runId: ProviderRunId;
       providerSessionId: string;
+      provider?: ProviderId;
       at: IsoDateTime;
     }
   | {

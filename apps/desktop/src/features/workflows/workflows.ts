@@ -83,6 +83,7 @@ type RawAgentRow = {
   readonly startedAt: string | null;
   readonly completedAt: string | null;
   readonly providerSessionId: string | null;
+  readonly providerSessionProviderId: string | null;
   readonly lastFinishedAt: string | null;
   readonly lastViewedAt: string | null;
   readonly doneAt: string | null;
@@ -190,6 +191,9 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.startedAt != null && { startedAt: row.startedAt as IsoDateTime }),
     ...(row.completedAt != null && { completedAt: row.completedAt as IsoDateTime }),
     ...(row.providerSessionId != null && { providerSessionId: row.providerSessionId }),
+    ...(row.providerSessionProviderId != null && {
+      providerSessionProviderId: row.providerSessionProviderId as ProviderId,
+    }),
     ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
     ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
@@ -406,13 +410,21 @@ export const invokeAgentUpdateStatus = async (
   return rowToAgent(row);
 };
 
-export const invokeAgentSetProviderSessionId = async (
-  id: AgentId,
-  providerSessionId: string,
-): Promise<void> => {
+type Params = {
+  readonly id: AgentId;
+  readonly providerSessionId: string;
+  readonly providerSessionProviderId: ProviderId;
+};
+
+export const invokeAgentSetProviderSessionId = async ({
+  id,
+  providerSessionId,
+  providerSessionProviderId,
+}: Params): Promise<void> => {
   await invoke<void>('agent_set_provider_session_id', {
     id,
     providerSessionId,
+    providerSessionProviderId,
   });
 };
 
