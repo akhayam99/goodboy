@@ -576,13 +576,19 @@ describe('store contract', () => {
         kind: 'provider_session_init',
         runId: RUN_ID,
         providerSessionId: 'sess-xyz',
+        provider: 'anthropic',
         at: NOW,
       } as TurnEvent;
       store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, ev);
       const run = store.getState().sessionPhaseRuns[SESSION_ID]?.find((r) => r.id === AGENT_ID);
       expect(run?.providerSessionId).toBe('sess-xyz');
+      expect(run?.providerSessionProviderId).toBe('anthropic');
       expect(invokeAgentSetProviderSessionIdSpy).toHaveBeenCalledTimes(1);
-      expect(invokeAgentSetProviderSessionIdSpy).toHaveBeenCalledWith(AGENT_ID, 'sess-xyz');
+      expect(invokeAgentSetProviderSessionIdSpy).toHaveBeenCalledWith({
+        id: AGENT_ID,
+        providerSessionId: 'sess-xyz',
+        providerSessionProviderId: 'anthropic',
+      });
     });
   });
 });

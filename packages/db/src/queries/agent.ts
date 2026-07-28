@@ -27,6 +27,7 @@ type AgentRow = {
   started_at: string | null;
   completed_at: string | null;
   provider_session_id: string | null;
+  provider_session_provider_id: string | null;
   last_finished_at: string | null;
   last_viewed_at: string | null;
   done_at: string | null;
@@ -84,6 +85,9 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     ...(row.started_at && { startedAt: row.started_at as IsoDateTime }),
     ...(row.completed_at && { completedAt: row.completed_at as IsoDateTime }),
     ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
+    ...(row.provider_session_provider_id != null && {
+      providerSessionProviderId: row.provider_session_provider_id as ProviderId,
+    }),
     ...(row.last_finished_at && { lastFinishedAt: row.last_finished_at as IsoDateTime }),
     ...(row.last_viewed_at && { lastViewedAt: row.last_viewed_at as IsoDateTime }),
     ...(row.done_at && { doneAt: row.done_at as IsoDateTime }),
@@ -143,8 +147,8 @@ export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | n
 export const insertAgent = async (db: Database, agent: Agent): Promise<void> => {
   await db.execute(
     `INSERT INTO agents
-      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at, domains_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, session_id, step_id, workflow_run_id, parent_agent_id, ordinal, name, status, provider_run_id, output_summary, started_at, completed_at, provider_session_id, provider_session_provider_id, domains_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       agent.id,
       agent.sessionId,
@@ -158,6 +162,8 @@ export const insertAgent = async (db: Database, agent: Agent): Promise<void> => 
       agent.outputSummary ?? null,
       agent.startedAt ?? null,
       agent.completedAt ?? null,
+      agent.providerSessionId ?? null,
+      agent.providerSessionProviderId ?? null,
       agent.domains !== undefined ? JSON.stringify(agent.domains) : null,
     ],
   );

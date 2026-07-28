@@ -20,6 +20,7 @@ const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
 const invokeSpy = vi.fn();
 const invokeAgentUpdateStatusSpy = vi.fn();
+const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>);
 const invokeAgentSetDoneSpy = vi.fn(async () => undefined);
 
 vi.mock('../features/chat/turn', () => ({
@@ -133,7 +134,7 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeWorkflowList: vi.fn(async () => []),
   invokeWorkflowUpsert: vi.fn(),
   invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: vi.fn(async () => []),
+  invokeAgentList: invokeAgentListSpy,
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
   invokeAgentMarkViewed: vi.fn(async () => undefined),
@@ -206,6 +207,8 @@ describe('sendTurn, agent routing', () => {
     cancelTurnSpy.mockReset();
     invokeSpy.mockReset();
     invokeAgentUpdateStatusSpy.mockReset();
+    invokeAgentListSpy.mockReset();
+    invokeAgentListSpy.mockResolvedValue([]);
     runTurnSpy.mockImplementation(() => emptyStream());
     invokeSpy.mockResolvedValue({
       stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
@@ -315,6 +318,49 @@ describe('sendTurn, agent routing', () => {
     expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('pinned to A');
 
     expect(runTurnSpy).toHaveBeenCalledOnce();
+  });
+
+  it('only resumes a provider session on the provider that created it', async () => {
+    const useAppStore = await importStore();
+    setupTwoAgents(useAppStore, AGENT_A);
+    const agents = [
+      {
+        ...buildAgent(AGENT_A, 0),
+        providerSessionId: 'codex-session',
+        providerSessionProviderId: 'codex',
+      },
+      buildAgent(AGENT_B, 1),
+    ] satisfies ReadonlyArray<Agent>;
+    invokeAgentListSpy.mockResolvedValue(agents);
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION_ID]: agents,
+      },
+    });
+    const routingMod = await import('../features/providers/routing');
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'use claude' });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]).not.toHaveProperty('resumeSessionId');
+
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'codex',
+      selectedModel: 'gpt-5.4',
+      reason: 'preference',
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'use codex' });
+
+    expect(runTurnSpy.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({
+        provider: 'codex',
+        resumeSessionId: 'codex-session',
+      }),
+    );
   });
 
   it('stores deterministic fallback output without an LLM call for a non-workflow agent', async () => {

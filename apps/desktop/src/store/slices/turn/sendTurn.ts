@@ -713,13 +713,16 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     let assistantText = '';
+    let receivedProviderError = false;
     let lastError: unknown = null;
     let turnWasCancelled = false;
-    let hasProviderError = false;
     let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
 
-    const resumeSessionId = agentRowEarly?.providerSessionId;
+    const resumeSessionId =
+      agentRowEarly?.providerSessionProviderId === provider
+        ? agentRowEarly.providerSessionId
+        : undefined;
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
@@ -787,9 +790,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           provider === 'cursor' && rawEvent.kind === 'error'
             ? matchCursorMaxModeFailure({ message: rawEvent.message })
             : null;
-        if (rawEvent.kind === 'error') {
-          hasProviderError = true;
-        }
         if (maxModeFailure != null) {
           const advisorySelection = resolveStoredModelSelection({
             provider: 'cursor',
@@ -803,7 +803,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                 : advisorySelection.selection.key,
           });
         }
-        const event: TurnEvent =
+        const resolvedEvent: TurnEvent =
           rawEvent.kind === 'error'
             ? {
                 ...rawEvent,
@@ -817,7 +817,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                       }),
               }
             : rawEvent;
+        const event: TurnEvent =
+          resolvedEvent.kind === 'provider_session_init'
+            ? { ...resolvedEvent, provider }
+            : resolvedEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
+        if (event.kind === 'error') {
+          receivedProviderError = true;
+        }
         if (event.kind === 'assistant_text') {
           assistantText += event.delta;
         }
@@ -861,7 +868,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
         const derived = applyAgentTurnState(set, sessionId, activeAgentId, idleState, now());
         await updateSessionState(tauriDatabase, sessionId, derived, now());
-        if (assistantText.length === 0) {
+        if (assistantText.length === 0 && !receivedProviderError) {
           get().appendTurnEvent(activeAgentId, sessionId, {
             kind: 'error',
             runId,
@@ -875,7 +882,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       turnWasCancelled = wasCancelled;
       if (
         provider === 'cursor' &&
-        hasProviderError === false &&
+        receivedProviderError === false &&
         wasCancelled === false &&
         assistantText.length > 0
       ) {
