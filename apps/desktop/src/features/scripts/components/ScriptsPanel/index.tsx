@@ -3,12 +3,14 @@ import { Button, EmptyState } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus, SquareTerminal } from 'lucide-react';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
+import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import { DiscardDraftDialog } from './DiscardDraftDialog';
+import { ScriptDetail } from './ScriptDetail';
 import { ScriptEditor } from './ScriptEditor';
 import { ScriptRow } from './ScriptRow';
-import type { Draft, PendingAction } from './types';
+import type { PanelState, PendingAction } from './types';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -16,20 +18,28 @@ type Props = {
   readonly worktreePath?: string | null;
 };
 
-type Params = {
-  readonly action: PendingAction | null;
+type TransitionParams = {
+  readonly target: PanelState;
 };
 
-export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
-  const scripts = useAppStore((s) => s.workspaceScripts[workspaceId]);
-  const loadScripts = useAppStore((s) => s.loadScripts);
-  const saveScript = useAppStore((s) => s.saveScript);
-  const deleteScript = useAppStore((s) => s.deleteScript);
-  const runScript = useAppStore((s) => s.runScript);
-  const cancelScript = useAppStore((s) => s.cancelScript);
-  const runs = useAppStore((s) => (sessionId != null ? s.scriptRuns[sessionId] : undefined));
+type SaveResult =
+  | { readonly kind: 'failed' }
+  | { readonly kind: 'saved'; readonly scriptId: WorkspaceScriptId | null };
 
-  const [draft, setDraft] = useState<Draft | null>(null);
+const CLOSED_PANEL = { kind: 'closed' } satisfies PanelState;
+
+export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
+  const scripts = useAppStore((state) => state.workspaceScripts[workspaceId]);
+  const loadScripts = useAppStore((state) => state.loadScripts);
+  const saveScript = useAppStore((state) => state.saveScript);
+  const deleteScript = useAppStore((state) => state.deleteScript);
+  const runScript = useAppStore((state) => state.runScript);
+  const cancelScript = useAppStore((state) => state.cancelScript);
+  const runs = useAppStore((state) =>
+    sessionId != null ? state.scriptRuns[sessionId] : undefined,
+  );
+
+  const [panelState, setPanelState] = useState<PanelState>(CLOSED_PANEL);
   const [original, setOriginal] = useState<{ name: string; body: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<WorkspaceScriptId | null>(null);
@@ -38,11 +48,22 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
 
   const runnable = sessionId != null;
   const list = scripts ?? [];
+  const draft = panelState.kind === 'edit' ? panelState.draft : null;
   const dirty =
     draft !== null &&
     original !== null &&
     (draft.name !== original.name || draft.body !== original.body);
-  const selectedRun = draft?.id != null ? (runs?.[draft.id] ?? null) : null;
+  const selectedScriptId =
+    panelState.kind === 'detail'
+      ? panelState.scriptId
+      : panelState.kind === 'edit'
+        ? panelState.draft.id
+        : null;
+  const detailScript =
+    panelState.kind === 'detail'
+      ? (list.find((script) => script.id === panelState.scriptId) ?? null)
+      : null;
+  const selectedRun = selectedScriptId !== null ? (runs?.[selectedScriptId] ?? null) : null;
 
   useEffect(() => {
     void loadScripts(workspaceId);
@@ -52,11 +73,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
     if (runs === undefined) {
       return;
     }
-    setCompletedAt((prev) => {
-      let next = prev;
+    setCompletedAt((previous) => {
+      let next = previous;
       for (const record of Object.values(runs)) {
-        if (record.result !== null && prev[record.runId] === undefined) {
-          next = next === prev ? { ...prev } : next;
+        if (record.result !== null && previous[record.runId] === undefined) {
+          next = next === previous ? { ...previous } : next;
           next[record.runId] = Date.now();
         }
       }
@@ -64,104 +85,122 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
     });
   }, [runs]);
 
-  const openNewNow = useCallback(() => {
-    setDraft({ id: null, name: '', body: '' });
-    setOriginal({ name: '', body: '' });
+  const applyTransition = useCallback(({ target }: TransitionParams) => {
+    setPanelState(target);
     setError(null);
-  }, []);
-
-  const openExistingNow = useCallback((script: WorkspaceScript) => {
-    setDraft({ id: script.id, name: script.name, body: script.body });
-    setOriginal({ name: script.name, body: script.body });
-    setError(null);
-  }, []);
-
-  const closeNow = useCallback(() => {
-    setDraft(null);
+    if (target.kind === 'edit') {
+      setOriginal({ name: target.draft.name, body: target.draft.body });
+      return;
+    }
     setOriginal(null);
-    setError(null);
   }, []);
 
-  const applyPendingTransition = useCallback(
-    ({ action }: Params) => {
-      if (action === null) {
-        closeNow();
+  const requestTransition = useCallback(
+    ({ target }: TransitionParams) => {
+      if (dirty) {
+        setPendingAction({ target });
         return;
       }
-      if (action.kind === 'new') {
-        openNewNow();
-        return;
-      }
-      if (action.kind === 'select') {
-        openExistingNow(action.script);
-        return;
-      }
-      closeNow();
+      applyTransition({ target });
     },
-    [closeNow, openNewNow, openExistingNow],
+    [applyTransition, dirty],
   );
+
+  useEffect(() => {
+    if (panelState.kind === 'closed' || pendingAction !== null) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      requestTransition({ target: CLOSED_PANEL });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [panelState.kind, pendingAction, requestTransition]);
 
   const requestOpenNew = useCallback(() => {
-    if (dirty) {
-      setPendingAction({ kind: 'new' });
-      return;
-    }
-    openNewNow();
-  }, [dirty, openNewNow]);
+    requestTransition({
+      target: { kind: 'edit', draft: { id: null, name: '', body: '' } },
+    });
+  }, [requestTransition]);
 
-  const requestSelect = useCallback(
+  const requestDetail = useCallback(
     (script: WorkspaceScript) => {
-      if (draft?.id === script.id) {
-        return;
-      }
-      if (dirty) {
-        setPendingAction({ kind: 'select', script });
-        return;
-      }
-      openExistingNow(script);
+      requestTransition({ target: { kind: 'detail', scriptId: script.id } });
     },
-    [draft, dirty, openExistingNow],
+    [requestTransition],
   );
 
-  const requestClose = useCallback(() => {
-    if (draft === null) {
-      return;
-    }
-    if (dirty) {
-      setPendingAction({ kind: 'close' });
-      return;
-    }
-    closeNow();
-  }, [draft, dirty, closeNow]);
+  const requestEdit = useCallback(
+    (script: WorkspaceScript) => {
+      requestTransition({
+        target: {
+          kind: 'edit',
+          draft: { id: script.id, name: script.name, body: script.body },
+        },
+      });
+    },
+    [requestTransition],
+  );
 
-  const onSaveDraft = useCallback(async (): Promise<boolean> => {
+  const requestCancelEdit = useCallback(() => {
+    if (panelState.kind !== 'edit') {
+      return;
+    }
+    const target =
+      panelState.draft.id === null
+        ? CLOSED_PANEL
+        : ({ kind: 'detail', scriptId: panelState.draft.id } satisfies PanelState);
+    requestTransition({ target });
+  }, [panelState, requestTransition]);
+
+  const requestClose = useCallback(() => {
+    requestTransition({ target: CLOSED_PANEL });
+  }, [requestTransition]);
+
+  const onSaveDraft = useCallback(async (): Promise<SaveResult> => {
     if (draft === null) {
-      return false;
+      return { kind: 'failed' };
     }
     const name = draft.name.trim();
     const body = draft.body.trim();
     if (name === '' || body === '') {
       setError('name and script body are required');
-      return false;
+      return { kind: 'failed' };
     }
     setError(null);
+    const previousIds = new Set(list.map((script) => script.id));
     try {
       await saveScript({ workspaceId, id: draft.id ?? undefined, name, body });
-      return true;
-    } catch (err) {
-      setError(formatError(err));
-      return false;
+      if (draft.id !== null) {
+        return { kind: 'saved', scriptId: draft.id };
+      }
+      const savedScript =
+        useAppStore
+          .getState()
+          .workspaceScripts[workspaceId]?.find((script) => !previousIds.has(script.id)) ?? null;
+      return { kind: 'saved', scriptId: savedScript?.id ?? null };
+    } catch (caughtError) {
+      setError(formatError(caughtError));
+      return { kind: 'failed' };
     }
-  }, [draft, saveScript, workspaceId]);
+  }, [draft, list, saveScript, workspaceId]);
 
   const onEditorSave = useCallback(() => {
     void (async () => {
-      const ok = await onSaveDraft();
-      if (ok) {
-        closeNow();
+      const result = await onSaveDraft();
+      if (result.kind === 'failed') {
+        return;
       }
+      if (result.scriptId === null) {
+        applyTransition({ target: CLOSED_PANEL });
+        return;
+      }
+      applyTransition({ target: { kind: 'detail', scriptId: result.scriptId } });
     })();
-  }, [onSaveDraft, closeNow]);
+  }, [applyTransition, onSaveDraft]);
 
   const onDialogCancel = useCallback(() => {
     setPendingAction(null);
@@ -170,27 +209,33 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
   const onDialogDiscard = useCallback(() => {
     const action = pendingAction;
     setPendingAction(null);
-    applyPendingTransition({ action });
-  }, [pendingAction, applyPendingTransition]);
+    if (action === null) {
+      return;
+    }
+    applyTransition({ target: action.target });
+  }, [applyTransition, pendingAction]);
 
   const onDialogSave = useCallback(() => {
     void (async () => {
-      const ok = await onSaveDraft();
-      if (!ok) {
+      const result = await onSaveDraft();
+      if (result.kind === 'failed') {
         return;
       }
       const action = pendingAction;
       setPendingAction(null);
-      applyPendingTransition({ action });
+      if (action === null) {
+        return;
+      }
+      applyTransition({ target: action.target });
     })();
-  }, [onSaveDraft, pendingAction, applyPendingTransition]);
+  }, [applyTransition, onSaveDraft, pendingAction]);
 
   const onCopy = useCallback((id: WorkspaceScriptId, body: string) => {
     void navigator.clipboard
       .writeText(body)
       .then(() => {
         setCopiedId(id);
-        window.setTimeout(() => setCopiedId((curr) => (curr === id ? null : curr)), 1200);
+        window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1200);
       })
       .catch(() => undefined);
   }, []);
@@ -199,14 +244,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
     async (id: WorkspaceScriptId) => {
       try {
         await deleteScript(id, workspaceId);
-        if (draft?.id === id) {
-          closeNow();
+        if (selectedScriptId === id) {
+          applyTransition({ target: CLOSED_PANEL });
         }
-      } catch (err) {
-        setError(formatError(err));
+      } catch (caughtError) {
+        setError(formatError(caughtError));
       }
     },
-    [deleteScript, workspaceId, draft, closeNow],
+    [applyTransition, deleteScript, selectedScriptId, workspaceId],
   );
 
   const onRun = useCallback(
@@ -214,12 +259,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
       if (sessionId == null || worktreePath == null) {
         return;
       }
-      if (draft?.id !== script.id && !dirty) {
-        openExistingNow(script);
-      }
       void runScript(sessionId, script.id, worktreePath);
     },
-    [runScript, sessionId, worktreePath, draft, dirty, openExistingNow],
+    [runScript, sessionId, worktreePath],
   );
 
   const onCancel = useCallback(
@@ -245,23 +287,58 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
         </Button>
       </div>
 
-      {error !== null && draft === null ? <p className="text-xs text-danger">{error}</p> : null}
+      {error !== null && panelState.kind !== 'edit' ? (
+        <p className="text-xs text-danger">{error}</p>
+      ) : null}
 
       <InspectorSplit
-        open={draft !== null}
+        open={panelState.kind !== 'closed'}
         panel={
-          draft !== null ? (
-            <ScriptEditor
-              draft={draft}
-              dirty={dirty}
-              error={error}
-              run={selectedRun}
-              completedAt={selectedRun !== null ? completedAt[selectedRun.runId] : undefined}
-              onNameChange={(name) => setDraft((d) => (d !== null ? { ...d, name } : d))}
-              onBodyChange={(body) => setDraft((d) => (d !== null ? { ...d, body } : d))}
-              onSave={onEditorSave}
-              onCancel={requestClose}
-            />
+          panelState.kind === 'detail' && detailScript !== null ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <InspectorHeader
+                title={detailScript.name}
+                closeLabel="Close script panel"
+                onClose={requestClose}
+              />
+              <ScriptDetail
+                script={detailScript}
+                run={selectedRun}
+                completedAt={selectedRun !== null ? completedAt[selectedRun.runId] : undefined}
+                onEdit={() => requestEdit(detailScript)}
+              />
+            </div>
+          ) : panelState.kind === 'edit' ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <InspectorHeader
+                title={panelState.draft.id === null ? 'New script' : panelState.draft.name}
+                closeLabel="Close script panel"
+                onClose={requestClose}
+              />
+              <ScriptEditor
+                draft={panelState.draft}
+                dirty={dirty}
+                error={error}
+                run={selectedRun}
+                completedAt={selectedRun !== null ? completedAt[selectedRun.runId] : undefined}
+                onNameChange={(name) =>
+                  setPanelState((current) =>
+                    current.kind === 'edit'
+                      ? { ...current, draft: { ...current.draft, name } }
+                      : current,
+                  )
+                }
+                onBodyChange={(body) =>
+                  setPanelState((current) =>
+                    current.kind === 'edit'
+                      ? { ...current, draft: { ...current.draft, body } }
+                      : current,
+                  )
+                }
+                onSave={onEditorSave}
+                onCancel={requestCancelEdit}
+              />
+            </div>
           ) : null
         }
       >
@@ -280,15 +357,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                 <li key={script.id}>
                   <ScriptRow
                     script={script}
-                    status={runs?.[script.id]?.status ?? 'idle'}
-                    selected={draft?.id === script.id}
+                    run={runs?.[script.id] ?? null}
+                    selected={selectedScriptId === script.id}
                     runnable={runnable}
                     canRun={worktreePath != null}
                     copied={copiedId === script.id}
-                    onSelect={() => requestSelect(script)}
+                    onSelect={() => requestDetail(script)}
                     onRun={() => onRun(script)}
                     onCancel={() => onCancel(script.id)}
                     onCopy={() => onCopy(script.id, script.body)}
+                    onEdit={() => requestEdit(script)}
                     onDelete={() => void onDelete(script.id)}
                   />
                 </li>
