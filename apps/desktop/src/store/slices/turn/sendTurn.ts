@@ -680,6 +680,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     let assistantText = '';
+    let receivedProviderError = false;
     let lastError: unknown = null;
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
@@ -767,6 +768,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               }
             : rawEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
+        if (event.kind === 'error') {
+          receivedProviderError = true;
+        }
         if (event.kind === 'assistant_text') {
           assistantText += event.delta;
         }
@@ -810,7 +814,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
         const derived = applyAgentTurnState(set, sessionId, activeAgentId, idleState, now());
         await updateSessionState(tauriDatabase, sessionId, derived, now());
-        if (assistantText.length === 0) {
+        if (assistantText.length === 0 && !receivedProviderError) {
           get().appendTurnEvent(activeAgentId, sessionId, {
             kind: 'error',
             runId,
