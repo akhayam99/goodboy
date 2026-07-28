@@ -1,22 +1,24 @@
 import {
+  MODEL_CATALOGS,
   PROVIDER_CAPABILITIES,
+  modelAxes,
   modelIdForSelection,
   resolveModelArgs,
-  resolveStoredModelSelection,
 } from '@goodboy/core';
 import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
 import type { ModelSelection, ProviderId } from '@goodboy/types';
-import { EFFORT_LABEL, PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
-import { ModelGrid } from '../../../../shared/components/RoutingPicker/ModelGrid';
-import { PickerChip } from '../../../../shared/components/RoutingPicker/PickerChip';
+import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { AxesSection } from '../../../../shared/components/RoutingPicker/AxesSection';
+import { CatalogGrid } from '../../../../shared/components/RoutingPicker/CatalogGrid';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
-import { orderedEffortLevels } from '../../../../shared/components/RoutingPicker/orderedEffortLevels';
 import { resolveRouting } from '../../../../shared/components/RoutingPicker/resolveRouting';
+import { selectionForModel } from '../../../../shared/components/RoutingPicker/selectionForModel';
+import { useCursorMaxModeModels } from '../../../../shared/components/RoutingPicker/useCursorMaxModeModels';
 import type { AgentKindRouting } from '../../agent-kind';
 
 const PROVIDER_CHIP_GROUP_CLASS = 'flex gap-1.5 px-2.5 [&>button]:h-7 [&>button]:flex-1';
-const CHIP_GROUP_CLASS = 'flex flex-wrap gap-1 px-2.5';
+const EMPTY_MODEL_KEYS: ReadonlySet<string> = new Set();
 const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
@@ -28,7 +30,6 @@ type Props = {
   readonly onViewProvider: (provider: ProviderId) => void;
   readonly onPickProvider: (provider: ProviderId) => void;
   readonly onPickModel: (model: string, effort: AgentKindRouting['effort']) => void;
-  readonly onPickEffort: (effort: AgentKindRouting['effort']) => void;
   readonly onConnectProvider: (provider: ProviderId) => void;
 };
 
@@ -43,7 +44,6 @@ export const AgentRoutingSections = ({
   onViewProvider,
   onPickProvider,
   onPickModel,
-  onPickEffort,
   onConnectProvider,
 }: Props) => {
   const viewedRouting = resolveRouting({
@@ -59,14 +59,17 @@ export const AgentRoutingSections = ({
     const applied = resolved.clamped?.applied ?? selection.effort ?? effective.effort;
     onPickModel(modelIdForSelection({ provider: viewProvider, selection }), applied);
   };
-  const onSelectModel = (model: string) => {
-    const selection = resolveStoredModelSelection({
-      provider: viewProvider,
-      id: model,
-      effort: effective.effort,
-    }).selection;
-    onPickSelection({ selection });
-  };
+  const viewedModel =
+    viewedRouting.catalog.find((candidate) => candidate.key === viewedRouting.model) ??
+    viewedRouting.catalog[0];
+  if (viewedModel == null) {
+    throw new Error(`provider catalog is empty: ${viewProvider}`);
+  }
+  const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
+  const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
+  const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
+  const advisoryKeys = viewProvider === 'cursor' ? maxModeModels : EMPTY_MODEL_KEYS;
+  const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
 
   return (
     <>
@@ -122,14 +125,16 @@ export const AgentRoutingSections = ({
         )}
         {isProviderConnected && (
           <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
-            <ModelGrid
-              provider={viewProvider}
-              ids={viewedRouting.models}
-              value={viewedRouting.model}
-              selection={viewedRouting.selection}
-              isRecommended={false}
-              onSelect={onSelectModel}
-              onSelection={(selection) => onPickSelection({ selection })}
+            <CatalogGrid
+              catalog={viewedRouting.catalog}
+              selectedKey={viewedRouting.model}
+              recommendedKey={undefined}
+              advisoryKeys={advisoryKeys}
+              onSelect={(model) =>
+                onPickSelection({
+                  selection: selectionForModel({ model, effort: viewedRouting.effort }),
+                })
+              }
             />
           </ScrollFade>
         )}
@@ -137,60 +142,34 @@ export const AgentRoutingSections = ({
       {isProviderConnected && (
         <>
           <Divider />
-          <PickerSection label="Effort" hint="How hard the model thinks before answering">
-            <div className={CHIP_GROUP_CLASS}>
-              {viewedRouting.isEffortFixed ? (
-                <PickerChip label="Default" active disabled onSelect={() => undefined} />
-              ) : (
-                orderedEffortLevels({ levels: viewedRouting.effortLevels }).map((level) => (
-                  <PickerChip
-                    key={level}
-                    label={EFFORT_LABEL[level]}
-                    active={viewedRouting.effort === level}
-                    onSelect={() =>
-                      onPickSelection({
-                        selection: { ...viewedRouting.selection, effort: level },
-                      })
-                    }
-                  />
-                ))
-              )}
-              {viewedRouting.hasThinkingToggle && (
-                <PickerChip
-                  label="Thinking"
-                  active={viewedRouting.selection.toggles?.thinking === true}
-                  onSelect={() =>
-                    onPickSelection({
-                      selection: {
-                        ...viewedRouting.selection,
-                        toggles: {
-                          ...viewedRouting.selection.toggles,
-                          thinking: viewedRouting.selection.toggles?.thinking !== true,
-                        },
-                      },
-                    })
-                  }
-                />
-              )}
-              {viewedRouting.hasFastToggle && (
-                <PickerChip
-                  label="Fast"
-                  active={viewedRouting.selection.toggles?.fast === true}
-                  onSelect={() =>
-                    onPickSelection({
-                      selection: {
-                        ...viewedRouting.selection,
-                        toggles: {
-                          ...viewedRouting.selection.toggles,
-                          fast: viewedRouting.selection.toggles?.fast !== true,
-                        },
-                      },
-                    })
-                  }
-                />
-              )}
-            </div>
-          </PickerSection>
+          <AxesSection
+            axes={axes}
+            effortValue={viewedRouting.effort}
+            canEditEffort
+            notice={undefined}
+            hasMaxModeAdvisory={hasMaxModeAdvisory}
+            onEffort={(level) =>
+              onPickSelection({
+                selection: { ...viewedRouting.selection, effort: level },
+              })
+            }
+            onVariant={(id) =>
+              onPickSelection({
+                selection: { ...viewedRouting.selection, variant: id },
+              })
+            }
+            onToggle={(id) =>
+              onPickSelection({
+                selection: {
+                  ...viewedRouting.selection,
+                  toggles: {
+                    ...viewedRouting.selection.toggles,
+                    [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
+                  },
+                },
+              })
+            }
+          />
         </>
       )}
     </>

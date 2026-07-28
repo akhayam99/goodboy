@@ -58,7 +58,7 @@ vi.mock('../../../../store', () => ({
 import { CreateAgentPopover } from './index';
 
 const renderControl = (variant?: 'tile' | 'compact') => {
-  render(<CreateAgentPopover sessionId={SID} variant={variant} onSpawned={vi.fn()} />);
+  return render(<CreateAgentPopover sessionId={SID} variant={variant} onSpawned={vi.fn()} />);
 };
 
 const openPopover = () => {
@@ -72,6 +72,7 @@ const confirm = () => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
   h.workspaceKind = 'repo';
   h.sessions = [makeSession()];
 });
@@ -96,6 +97,7 @@ describe('CreateAgentPopover', () => {
 
     const scout = screen.getByRole('button', { name: /^Scout / });
     expect(scout.getAttribute('title')).toBe('Reads and searches codebase. Never edits files');
+    expect(scout.parentElement?.className).toContain('grid-cols-3');
 
     fireEvent.click(screen.getByRole('button', { name: /^Docs / }));
     confirm();
@@ -159,7 +161,7 @@ describe('CreateAgentPopover', () => {
   it('swaps the tag for a reset that names the model it would go back to', () => {
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByTitle(/^opus-5 \(/));
+    fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
 
     expect(screen.queryByText('recommended')).toBeNull();
 
@@ -172,7 +174,7 @@ describe('CreateAgentPopover', () => {
   it('spawns exactly the pinned model the picker shows', () => {
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByTitle(/^opus-5 \(/));
+    fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
 
     expect(screen.getByText('Claude · Opus 5, low effort')).toBeTruthy();
 
@@ -182,6 +184,36 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'claude-opus-5',
       effort: 'low',
+    });
+  });
+
+  it('renders codex variants as chips without a native select', () => {
+    h.providers = [
+      { id: 'anthropic' as ProviderId, connection: 'connected' },
+      { id: 'codex' as ProviderId, connection: 'connected' },
+    ];
+    h.sessions = [
+      makeSession({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6',
+        effort: 'high',
+      }),
+    ];
+    const { container } = renderControl();
+    openPopover();
+
+    expect(container.querySelector('select')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Sol' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Terra' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Luna' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Terra' }));
+    confirm();
+    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+      kindOverride: 'generic',
+      provider: 'codex',
+      model: 'gpt-5.6-terra',
+      effort: 'high',
     });
   });
 

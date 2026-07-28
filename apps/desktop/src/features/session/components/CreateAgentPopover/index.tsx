@@ -37,8 +37,8 @@ export const CreateAgentPopover = ({
 }: Props) => {
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({
     align: 'end',
-    expectedHeight: 520,
-    width: 'w-80 max-w-[calc(100vw-2rem)]',
+    expectedHeight: 460,
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
   });
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
@@ -62,10 +62,6 @@ export const CreateAgentPopover = ({
   useEffect(() => {
     setViewProvider(routing?.provider ?? spawnDefault.provider);
   }, [open, selectedKind, routing, spawnDefault.provider]);
-
-  const onPickEffort = (effort: AgentKindRouting['effort']) => {
-    setRouting({ provider: effective.provider, model: effective.model, effort });
-  };
 
   const onCreate = async () => {
     await spawnAgent(sessionId, {
@@ -138,7 +134,6 @@ export const CreateAgentPopover = ({
                 effort,
               });
             }}
-            onPickEffort={onPickEffort}
             onConnectProvider={(provider) => {
               window.dispatchEvent(
                 new CustomEvent('goodboy:open-provider-studio', {

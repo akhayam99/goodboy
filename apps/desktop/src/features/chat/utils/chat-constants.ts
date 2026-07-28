@@ -324,25 +324,3 @@ export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
   codex: 'Codex',
   other: 'Other',
 };
-
-const SUBFAMILY_LABEL: Record<string, string> = {
-  haiku: 'Haiku',
-  sonnet: 'Sonnet',
-  opus: 'Opus',
-  fable: 'Fable',
-  'gpt-5': 'GPT-5',
-  codex: 'Codex',
-  mini: 'Mini',
-  pro: 'Pro',
-  flash: 'Flash',
-};
-
-export const subfamilyLabel = (family: ModelFamily, subfamily: string): string => {
-  if (SUBFAMILY_LABEL[subfamily]) {
-    return SUBFAMILY_LABEL[subfamily];
-  }
-  if (family === 'gpt' && subfamily.endsWith('-codex')) {
-    return subfamily.replace('-codex', '-Codex');
-  }
-  return subfamily;
-};
