@@ -59,6 +59,21 @@ export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload 
 };
 
 const EVENT_NAME = 'turn_event';
+const NO_RESPONSE_MESSAGE =
+  'provider exited without a response. check that the CLI is configured correctly.';
+
+type Params = {
+  readonly line: string;
+};
+
+const isJsonProviderFrame = ({ line }: Params): boolean => {
+  try {
+    const value: unknown = JSON.parse(line);
+    return typeof value === 'object' && value !== null;
+  } catch {
+    return false;
+  }
+};
 
 type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
@@ -150,7 +165,9 @@ export async function* runTurn(
       case 'end': {
         if (!receivedAnyEvent) {
           const stderrMessage = event.payload.stderr.trim();
-          const stdoutMessage = unparsedOutput.join('\n');
+          const stdoutMessage = unparsedOutput
+            .filter((line) => !isJsonProviderFrame({ line }))
+            .join('\n');
           const hasFailedExit = event.payload.exit_code !== null && event.payload.exit_code !== 0;
           const stdoutClassification = classifyProviderError({ message: stdoutMessage });
           const providerMessage = [
@@ -160,11 +177,7 @@ export async function* runTurn(
             .filter((value) => value !== '')
             .join('\n');
           error =
-            providerMessage !== ''
-              ? new Error(providerMessage)
-              : new Error(
-                  'provider exited without a response. check that the CLI is configured correctly.',
-                );
+            providerMessage !== '' ? new Error(providerMessage) : new Error(NO_RESPONSE_MESSAGE);
         }
         if (
           receivedAnyEvent &&
@@ -173,13 +186,14 @@ export async function* runTurn(
           event.payload.exit_code !== 0
         ) {
           const stderrMessage = event.payload.stderr.trim();
-          const stdoutMessage = unparsedOutput.join('\n');
+          const stdoutMessage = unparsedOutput
+            .filter((line) => !isJsonProviderFrame({ line }))
+            .join('\n');
           const providerMessage = [stdoutMessage, stderrMessage]
             .filter((value) => value !== '')
             .join('\n');
-          if (providerMessage !== '') {
-            error = new Error(providerMessage);
-          }
+          error =
+            providerMessage !== '' ? new Error(providerMessage) : new Error(NO_RESPONSE_MESSAGE);
         }
         ended = true;
         flush();
