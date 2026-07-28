@@ -328,6 +328,8 @@ pub struct ParallelSpawnArgs {
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
+    #[serde(default)]
+    pub workspace_id: Option<String>,
 }
 
 /// Spawn N child processes concurrently (one per `ParallelRunSpec`).
@@ -369,6 +371,7 @@ pub fn parallel_agent_spawn(
                 effort: None,
                 api_key_env: args.api_key_env.as_deref(),
                 credential_id: args.credential_id.as_deref(),
+                workspace_id: args.workspace_id.as_deref(),
             },
         ) {
             Ok(run_id) => run_ids.push(run_id),

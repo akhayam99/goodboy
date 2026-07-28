@@ -68,6 +68,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub effort: Option<String>,
     #[serde(default)]
+    pub workspace_id: Option<String>,
+    #[serde(default)]
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
@@ -263,6 +265,7 @@ pub struct SpawnOneArgs<'a> {
     pub effort: Option<&'a str>,
     pub api_key_env: Option<&'a str>,
     pub credential_id: Option<&'a str>,
+    pub workspace_id: Option<&'a str>,
 }
 
 /// Spawns one child process, registers it in the registry, and starts the
@@ -283,6 +286,11 @@ pub(crate) fn spawn_one(
         if let Ok(Some(secret)) = crate::secrets::read(&format!("provider_credential.{cred_id}")) {
             command.env(env_name, secret);
         }
+    }
+
+    if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
+        command.env("GH_TOKEN", &token);
+        command.env("GITHUB_TOKEN", &token);
     }
 
     let cli_args = build_provider_cli_args(args.binary, &args);
@@ -369,6 +377,7 @@ pub fn turn_spawn(
             effort: args.effort.as_deref(),
             api_key_env: args.api_key_env.as_deref(),
             credential_id: args.credential_id.as_deref(),
+            workspace_id: args.workspace_id.as_deref(),
         },
     )
 }
