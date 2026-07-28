@@ -8,6 +8,7 @@ import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { AgentCardActions } from '../AgentCard/AgentCardActions';
 import { AgentMetricsBlock, type AgentAggregate } from '../AgentMetricsBlock';
+import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { AgentMetricsInline } from '../AgentMetricsInline';
 import { ResolverStateBadge, resolverBadgeState } from '../ResolverStateBadge';
 import { resolverOrigin } from '../../resolver-origin';
@@ -137,6 +138,7 @@ export const ResolverCard = ({
             turnsLoading={turnsLoading}
           />
           <AgentMetricsBlock run={agent} aggregate={aggregate} />
+          <AgentLastUpdate agent={agent} />
           <ContextWindowBar usage={contextUsage} />
         </div>
         <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />

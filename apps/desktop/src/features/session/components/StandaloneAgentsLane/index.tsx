@@ -45,11 +45,10 @@ export const StandaloneAgentsLane = ({
 
   const list = (
     <ul className="flex flex-col gap-1">
-      {agents.map((run, index) => (
+      {agents.map((run) => (
         <AdHocRow
           key={run.id}
           run={run}
-          index={index}
           firstUserTextByAgentId={lane.firstUserTextByAgentId}
           agentKindOverride={lane.agentKindOverride}
           childrenByParentId={lane.childrenByParentId}

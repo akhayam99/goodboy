@@ -9,7 +9,6 @@ import { ScoutSubtree } from './ScoutSubtree';
 
 type Props = {
   readonly run: Agent;
-  readonly index: number;
   readonly firstUserTextByAgentId: ReadonlyMap<string, string>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
@@ -35,7 +34,6 @@ type Props = {
 
 export const AdHocRow = ({
   run,
-  index,
   firstUserTextByAgentId,
   agentKindOverride,
   childrenByParentId,
@@ -69,7 +67,6 @@ export const AdHocRow = ({
       <AgentRow
         run={run}
         kind={kind}
-        index={index}
         telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
         aggregate={aggregatesByAgentId.get(run.id) ?? null}
         contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
