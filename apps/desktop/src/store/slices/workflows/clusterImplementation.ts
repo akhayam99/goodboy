@@ -13,6 +13,7 @@ import {
   invokeAgentList,
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
+import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -169,18 +170,107 @@ function findClustersPlan(
   return p?.status === 'active' ? p : null;
 }
 
-async function resolveClustersPlan(
-  get: GetFn,
-  sessionId: SessionId,
-  workflowRunId: WorkflowRunId | undefined,
-): Promise<PlanWithCount | null> {
-  const fromStore = selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
-  if (fromStore) {
-    return fromStore;
+type FindConsumedClustersPlanParams = {
+  readonly get: GetFn;
+  readonly plans: ReadonlyArray<PlanWithCount>;
+  readonly containerId: AgentId;
+};
+
+const findConsumedClustersPlan = ({
+  get,
+  plans,
+  containerId,
+}: FindConsumedClustersPlanParams): PlanWithCount | null => {
+  const consumptionsByPlan = get().planConsumptions;
+  for (let i = plans.length - 1; i >= 0; i--) {
+    const plan = plans[i];
+    if (!plan?.clusters || plan.clusters.length < 2) {
+      continue;
+    }
+    if ((consumptionsByPlan[plan.id] ?? []).some((item) => item.agentId === containerId)) {
+      return plan;
+    }
+  }
+  return null;
+};
+
+type HydrateClusterPlanConsumptionsParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly plans: ReadonlyArray<PlanWithCount>;
+};
+
+const hydrateClusterPlanConsumptions = async ({
+  set,
+  get,
+  plans,
+}: HydrateClusterPlanConsumptionsParams): Promise<void> => {
+  const consumptionsByPlan = get().planConsumptions;
+  const missingPlans = plans.filter(
+    (plan) =>
+      plan.clusters != null &&
+      plan.clusters.length >= 2 &&
+      !Object.prototype.hasOwnProperty.call(consumptionsByPlan, plan.id),
+  );
+  if (missingPlans.length === 0) {
+    return;
+  }
+  const entries = await Promise.all(
+    missingPlans.map(async (plan) => {
+      const consumptions = await invokeListConsumptionsForPlan(plan.id);
+      return [plan.id, consumptions] as const;
+    }),
+  );
+  set((state) => ({
+    planConsumptions: {
+      ...state.planConsumptions,
+      ...Object.fromEntries(entries),
+    },
+  }));
+};
+
+type ResolveClustersPlanParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly workflowRunId: WorkflowRunId | undefined;
+};
+
+const resolveClustersPlan = async ({
+  set,
+  get,
+  sessionId,
+  containerId,
+  workflowRunId,
+}: ResolveClustersPlanParams): Promise<PlanWithCount | null> => {
+  let plans = get().sessionPlans[sessionId] ?? [];
+  let consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  await hydrateClusterPlanConsumptions({ set, get, plans });
+  consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  const matchingPlan = selectClustersPlan(plans, workflowRunId);
+  if (matchingPlan != null) {
+    return matchingPlan;
   }
   await get().loadSessionPlans(sessionId);
-  return selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
-}
+  plans = get().sessionPlans[sessionId] ?? [];
+  consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  await hydrateClusterPlanConsumptions({ set, get, plans });
+  consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  return selectClustersPlan(plans, workflowRunId);
+};
 
 export const selectFanOutPlan = (
   get: GetFn,
@@ -209,7 +299,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     const containerId = child.parentAgentId;
-    const plan = await resolveClustersPlan(get, sessionId, child.workflowRunId);
+    const plan = await resolveClustersPlan({
+      set,
+      get,
+      sessionId,
+      containerId,
+      workflowRunId: child.workflowRunId,
+    });
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
     const index = Math.max(

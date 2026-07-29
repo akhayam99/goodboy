@@ -2,6 +2,7 @@ import type {
   Agent,
   AgentId,
   ImplementationCluster,
+  PlanConsumption,
   PlanWithCount,
   SessionId,
   WorkflowRunId,
@@ -19,6 +20,7 @@ const hoisted = vi.hoisted(() => {
     }),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
+    invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
   };
 });
 
@@ -26,6 +28,10 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: hoisted.invokeAgentInsert,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
+}));
+
+vi.mock('../../../features/plans/plans', () => ({
+  listConsumptionsForPlan: hoisted.invokeListConsumptionsForPlan,
 }));
 
 import {
@@ -214,6 +220,7 @@ function makeStore(initial: Record<string, unknown>) {
   const state: Record<string, unknown> = {
     sessionPhaseRuns: {},
     sessionPlans: {},
+    planConsumptions: {},
     sessions: [sessionRow(true)],
     transcripts: {},
     agentTurnState: {},
@@ -250,6 +257,7 @@ afterEach(() => {
   hoisted.insertArgs.length = 0;
   vi.clearAllMocks();
   hoisted.invokeAgentList.mockResolvedValue([]);
+  hoisted.invokeListConsumptionsForPlan.mockResolvedValue([]);
 });
 
 describe('fanOutClusters', () => {
@@ -438,6 +446,96 @@ describe('advanceClusterImplementation', () => {
     expect(call.content).toContain('2/2');
     expect(state.selectedAgentId).toBe(PARENT);
     expect(refreshUnreadWorkspaces).toHaveBeenCalled();
+  });
+
+  it('uses the container plan consumption when the plan has a workflow run and the children do not', async () => {
+    const c0 = childAgent({ id: 'scope0', ordinal: 0 });
+    const c1 = childAgent({ id: 'scope1', ordinal: 1 });
+    const scopedPlan = plan({ id: 'scoped-plan', workflowRunId: 'R' as WorkflowRunId });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [scopedPlan] },
+      planConsumptions: {
+        [scopedPlan.id]: [
+          {
+            id: 'scope-consumption',
+            planId: scopedPlan.id,
+            agentId: PARENT,
+            agentName: 'container',
+            consumedAt: '2026-01-01T00:00:00.000Z',
+          } as PlanConsumption,
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'scope0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, c0.id, done('scope0'));
+
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe(c1.id);
+    expect(call.content).toContain('do 1');
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      c1.id,
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('hydrates the container plan consumption when the plan has no workflow run and the child does', async () => {
+    const c0 = childAgent({
+      id: 'mirror0',
+      ordinal: 0,
+      workflowRunId: 'R' as WorkflowRunId,
+    });
+    const c1 = childAgent({
+      id: 'mirror1',
+      ordinal: 1,
+      workflowRunId: 'R' as WorkflowRunId,
+    });
+    const unscopedPlan = plan({ id: 'unscoped-plan' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [unscopedPlan] },
+    });
+    hoisted.invokeListConsumptionsForPlan.mockResolvedValue([
+      {
+        id: 'mirror-consumption',
+        planId: unscopedPlan.id,
+        agentId: PARENT,
+        agentName: 'container',
+        consumedAt: '2026-01-01T00:00:00.000Z',
+      } as PlanConsumption,
+    ]);
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({
+        id: 'mirror0',
+        ordinal: 0,
+        status: 'completed',
+        workflowRunId: 'R' as WorkflowRunId,
+      }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c0.id, done('mirror0'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(hoisted.invokeListConsumptionsForPlan).toHaveBeenCalledWith(unscopedPlan.id);
+    expect(call.agentId).toBe(c1.id);
+    expect(call.content).toContain('do 1');
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      c1.id,
+      expect.objectContaining({ status: 'failed' }),
+    );
   });
 
   it('force-advances past a missing marker: completes the child and starts the next', async () => {
