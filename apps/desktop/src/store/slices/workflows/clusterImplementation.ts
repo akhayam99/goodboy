@@ -62,6 +62,9 @@ function composeClusterKickoff(
   ].join('\n');
 }
 
+const hasInstructions = (cluster: ImplementationCluster | undefined): boolean =>
+  (cluster?.instructions ?? '').trim().length > 0;
+
 function composeContinuePrompt(
   childId: AgentId,
   cluster: ImplementationCluster | undefined,
@@ -166,6 +169,19 @@ function findClustersPlan(
   return p?.status === 'active' ? p : null;
 }
 
+async function resolveClustersPlan(
+  get: GetFn,
+  sessionId: SessionId,
+  workflowRunId: WorkflowRunId | undefined,
+): Promise<PlanWithCount | null> {
+  const fromStore = selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
+  if (fromStore) {
+    return fromStore;
+  }
+  await get().loadSessionPlans(sessionId);
+  return selectClustersPlan(get().sessionPlans[sessionId] ?? [], workflowRunId);
+}
+
 export const selectFanOutPlan = (
   get: GetFn,
   sessionId: SessionId,
@@ -193,7 +209,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     const containerId = child.parentAgentId;
-    const plan = findClustersPlan(get, sessionId, child.workflowRunId);
+    const plan = await resolveClustersPlan(get, sessionId, child.workflowRunId);
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
     const index = Math.max(
@@ -264,14 +280,29 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
 
     void get().refreshUnreadWorkspaces();
     const next = children[completedCount];
-    if (next) {
-      startChild(
-        set,
-        get,
-        sessionId,
-        next.id,
-        composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
-      );
+    if (!next) {
+      return;
     }
+    if (!hasInstructions(clusters[completedCount])) {
+      await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+      const blocked = await invokeAgentList(sessionId);
+      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
+      void get().refreshUnreadWorkspaces();
+      void get().emitNotification(
+        'error',
+        'warning',
+        `cluster blocked: ${next.name}`,
+        'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        { sessionId },
+      );
+      return;
+    }
+    startChild(
+      set,
+      get,
+      sessionId,
+      next.id,
+      composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
+    );
   };
 };

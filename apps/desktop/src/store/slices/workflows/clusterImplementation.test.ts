@@ -210,6 +210,7 @@ function makeStore(initial: Record<string, unknown>) {
   const emitNotification = vi.fn(async () => undefined);
   const refreshUnreadWorkspaces = vi.fn(async () => undefined);
   const maybeAutoAdvanceWorkflow = vi.fn(async () => undefined);
+  const loadSessionPlans = vi.fn(async () => undefined);
   const state: Record<string, unknown> = {
     sessionPhaseRuns: {},
     sessionPlans: {},
@@ -222,6 +223,7 @@ function makeStore(initial: Record<string, unknown>) {
     emitNotification,
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
+    loadSessionPlans,
     ...initial,
   };
   const get = (() => state) as unknown as GetFn;
@@ -240,6 +242,7 @@ function makeStore(initial: Record<string, unknown>) {
     emitNotification,
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
+    loadSessionPlans,
   };
 }
 
@@ -485,6 +488,79 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
       }),
+    );
+  });
+
+  it('kicks off the next cluster with its instructions even after the plan flipped to consumed', async () => {
+    const c0 = childAgent({ id: 'cu0', ordinal: 0 });
+    const c1 = childAgent({ id: 'cu1', ordinal: 1 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({ status: 'consumed', consumptionCount: 1 })] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'cu0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'cu0' as AgentId, done('cu0'));
+
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { content: string };
+    expect(call.content).toContain('2/2');
+    expect(call.content).toContain('c1');
+    expect(call.content).toContain('do 1');
+    expect(call.content).toContain('Overall goal: goal');
+  });
+
+  it('hydrates the plans from the db when the store has none for the session', async () => {
+    const c0 = childAgent({ id: 'hy0', ordinal: 0 });
+    const c1 = childAgent({ id: 'hy1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: {},
+    });
+    store.state.loadSessionPlans = vi.fn(async () => {
+      store.state.sessionPlans = { [SID]: [plan({ status: 'consumed' })] };
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'hy0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'hy0' as AgentId, done('hy0'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { content: string };
+    expect(call.content).toContain('do 1');
+  });
+
+  it('blocks the next child instead of sending an instruction-less kickoff when no plan is readable', async () => {
+    const c0 = childAgent({ id: 'nb0', ordinal: 0 });
+    const c1 = childAgent({ id: 'nb1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: {},
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'nb0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'nb0' as AgentId, done('nb0'));
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('nb1', {
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      expect.stringContaining('cluster blocked'),
+      expect.stringContaining('no instructions'),
+      { sessionId: SID },
     );
   });
 
