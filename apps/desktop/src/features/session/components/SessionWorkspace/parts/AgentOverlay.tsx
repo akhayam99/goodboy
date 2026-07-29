@@ -3,7 +3,6 @@ import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ChatView } from '../../../../chat/components/ChatView';
 import type { AgentHomeLens } from '../../../agent-kind';
 import { AgentInspector } from '../../AgentInspector';
-import { ResolverInspector } from '../../ResolverInspector';
 import { agentOverlayHeader } from './agentOverlayHeader';
 import { useColumnWidth } from '../../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
@@ -62,7 +61,7 @@ export const AgentOverlay = ({
             ariaLabel="resize resolver inspector"
           />
           <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
-            <ResolverInspector sessionId={sessionId} agentId={inspectedResolverId} />
+            <AgentInspector sessionId={sessionId} agentId={inspectedResolverId} />
           </div>
         </>
       ) : null}

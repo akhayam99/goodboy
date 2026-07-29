@@ -5,9 +5,8 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { resolveRootAgent } from '../../../agent-kind';
-import { AgentBreadcrumb } from './AgentBreadcrumb';
 import { ChatWorkflowAdvance } from './ChatWorkflowAdvance';
-import { WorkflowStepper } from './WorkflowStepper';
+import { WorkflowBreadcrumb } from './WorkflowBreadcrumb';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -34,28 +33,22 @@ export const ChatWorkflowHeader = ({
 
   return (
     <>
-      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-2 px-3">
-        <AgentBreadcrumb
-          sessionId={sessionId}
-          selectedAgentId={selectedAgentId}
-          overlayHome="workflows"
-          homeLabel={attached == null ? 'Workflows' : workflowKindName(attached.workflow)}
-          onHome={onOpenWorkflow}
-        />
-        <Divider orientation="vertical" className="h-4 shrink-0" />
-        <WorkflowStepper
+      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-3 px-3">
+        <WorkflowBreadcrumb
           sessionId={sessionId}
           session={session}
           selectedAgentId={selectedAgentId}
+          homeLabel={attached == null ? 'Workflows' : workflowKindName(attached.workflow)}
+          onHome={onOpenWorkflow}
         />
+        {attached != null && attached.run.discardedAt == null ? (
+          <ChatWorkflowAdvance
+            sessionId={sessionId}
+            workflowRunId={attached.run.id}
+            workflow={attached.workflow}
+          />
+        ) : null}
       </div>
-      {attached != null && attached.run.discardedAt == null ? (
-        <ChatWorkflowAdvance
-          sessionId={sessionId}
-          workflowRunId={attached.run.id}
-          workflow={attached.workflow}
-        />
-      ) : null}
       <Divider className="shrink-0" />
     </>
   );

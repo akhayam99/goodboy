@@ -1,4 +1,4 @@
-import { Check, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
+import { Check, Copy, Play, Square, Trash2 } from 'lucide-react';
 import { StatusDot, cn } from '@goodboy/ui';
 import type { WorkspaceScript } from '@goodboy/types';
 import type { ScriptRunRecord } from '../../scripts';
@@ -14,7 +14,6 @@ type Props = {
   readonly onRun: () => void;
   readonly onCancel: () => void;
   readonly onCopy: () => void;
-  readonly onEdit: () => void;
   readonly onDelete: () => void;
 };
 
@@ -48,7 +47,6 @@ export const ScriptRow = ({
   onRun,
   onCancel,
   onCopy,
-  onEdit,
   onDelete,
 }: Props) => {
   const preview = extractPreviewLine({ body: script.body });
@@ -124,16 +122,6 @@ export const ScriptRow = ({
         ) : (
           <Copy size={13} aria-hidden />
         )}
-      </button>
-
-      <button
-        type="button"
-        onClick={onEdit}
-        title="Edit script"
-        aria-label="Edit script"
-        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        <Pencil size={13} aria-hidden />
       </button>
 
       <button

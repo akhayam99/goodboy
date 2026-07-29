@@ -108,18 +108,17 @@ describe('ChatWorkflowAdvance', () => {
     store.summarizerStatus = { [SESSION_ID]: { status: 'running' } };
     renderStrip();
 
-    expect(screen.getByTestId('workflow-next-step-blocked').textContent).toMatch(
+    expect(screen.getByTestId('workflow-next-step-blocked')).toBeDefined();
+    expect(screen.getByTestId('workflow-next-step-cta').getAttribute('title')).toMatch(
       /step summary is still being written/i,
     );
-    expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
   });
 
-  it('reports the running step and refuses to advance over it', () => {
+  it('hides the CTA while a step is still running', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'running'), agent(1, 'pending')] };
     renderStrip();
 
-    expect(screen.getByTestId('workflow-next-step-blocked').textContent).toMatch(/still working/i);
-    fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
+    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
     expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
   });
 

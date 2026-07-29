@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -72,9 +72,9 @@ describe('ForceResolveAction', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark resolved' }));
     expect(h.resolveGithubThread).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Confirm resolved' })).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm resolved' }));
+    const panel = screen.getByRole('group', { name: 'Mark thread resolved?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Mark resolved' }));
     await waitFor(() =>
       expect(h.resolveGithubThread).toHaveBeenCalledWith(SESSION_ID, 'thread-1', {}),
     );
@@ -87,7 +87,11 @@ describe('ForceResolveAction', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Resolution note' }), {
       target: { value: 'Handled outside this branch' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm resolved' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Mark thread resolved?' })).getByRole('button', {
+        name: 'Mark resolved',
+      }),
+    );
 
     await waitFor(() =>
       expect(h.resolveGithubThread).toHaveBeenCalledWith(SESSION_ID, 'thread-1', {
@@ -148,17 +152,21 @@ describe('ForceResolveAction', () => {
     view.rerender(
       <ForceResolveAction agent={OTHER_AGENT} sessionId={SESSION_ID} status="awaiting" />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Mark resolved' }));
 
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Resolution note' }).value).toBe(
       '',
     );
-    expect(screen.getByRole('button', { name: 'Mark resolved' })).toBeDefined();
   });
 
   it('disappears when the refreshed resolver status becomes resolved', async () => {
     const view = render(<ForceResolveAction agent={AGENT} sessionId={SESSION_ID} status="done" />);
     fireEvent.click(screen.getByRole('button', { name: 'Mark resolved' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm resolved' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Mark thread resolved?' })).getByRole('button', {
+        name: 'Mark resolved',
+      }),
+    );
     await waitFor(() => expect(h.resolveGithubThread).toHaveBeenCalledOnce());
 
     view.rerender(<ForceResolveAction agent={AGENT} sessionId={SESSION_ID} status="resolved" />);

@@ -1,6 +1,6 @@
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ResolverAgentsLane } from '../../ResolverAgentsLane';
-import { ResolverInspector } from '../../ResolverInspector';
+import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
 
@@ -19,7 +19,7 @@ export const ResolvePane = ({ session, meta, inspectedResolverId, onInspectResol
       open={inspectedResolverId !== null}
       panel={
         inspectedResolverId !== null ? (
-          <ResolverInspector
+          <AgentInspector
             sessionId={sessionId}
             agentId={inspectedResolverId}
             onClose={() => onInspectResolver(null)}

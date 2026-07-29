@@ -48,7 +48,6 @@ export const OverviewPanel = ({
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
   const totalSpend = providers.reduce((sum, p) => sum + p.spentUsd, 0);
-  const showProvider = providers.length >= 2;
 
   return (
     <PanelShell
@@ -96,11 +95,11 @@ export const OverviewPanel = ({
         </Widget>
 
         <Widget label="by model" className="lg:col-span-2">
-          <ModelTable entries={models} showProvider={showProvider} />
+          <ModelTable entries={models} />
         </Widget>
       </div>
 
-      <TurnsTable turns={turns} showProvider={showProvider} showSession />
+      <TurnsTable turns={turns} showSession />
     </PanelShell>
   );
 };

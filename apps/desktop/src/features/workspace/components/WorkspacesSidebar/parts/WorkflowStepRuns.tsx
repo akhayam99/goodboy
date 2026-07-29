@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
-import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock';
+import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { ClusterChildRow } from './ClusterChildRow';
 
 type Props = {

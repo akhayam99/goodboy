@@ -7,9 +7,8 @@ import type { ProviderContextUsage } from '../../../workspace/components/Workspa
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { AgentCardActions } from '../AgentCard/AgentCardActions';
-import { AgentMetricsBlock, type AgentAggregate } from '../AgentMetricsBlock';
+import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
-import { AgentMetricsInline } from '../AgentMetricsInline';
 import { ResolverStateBadge, resolverBadgeState } from '../ResolverStateBadge';
 import { resolverOrigin } from '../../resolver-origin';
 import { agentThreadIds } from '../../agentThreadIds';
@@ -130,14 +129,15 @@ export const ResolverCard = ({
     >
       <div className="flex flex-col gap-1">
         <div className="flex flex-col gap-0.5">
-          <AgentMetricsInline
+          <AgentMetrics
+            run={agent}
             telemetry={telemetry}
             aggregate={aggregate}
             contextUsage={contextUsage}
             turns={turns}
             turnsLoading={turnsLoading}
+            density="full"
           />
-          <AgentMetricsBlock run={agent} aggregate={aggregate} />
           <AgentLastUpdate agent={agent} />
           <ContextWindowBar usage={contextUsage} />
         </div>

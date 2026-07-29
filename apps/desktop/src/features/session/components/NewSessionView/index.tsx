@@ -5,6 +5,7 @@ import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goo
 import { AlertTriangle, GitBranch, Inbox, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { ProviderId, SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
 import { resolveTaskModel } from '@goodboy/core';
+import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
@@ -39,15 +40,6 @@ type Props = {
   onClose: () => void;
   workspaceId: WorkspaceId;
   onOpenSettings: () => void;
-};
-
-const PROVIDER_LABELS: Record<ProviderId, string> = {
-  anthropic: 'Claude Code',
-  cursor: 'cursor-agent',
-  codex: 'OpenAI Codex',
-  gemini: 'Google Gemini',
-  opencode: 'OpenCode',
-  openrouter: 'OpenRouter',
 };
 
 function formatError(err: unknown): string {
@@ -328,7 +320,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                   No provider is connected. A session needs at least one of{' '}
                   {PROVIDER_ORDER.map((id, i) => (
                     <span key={id}>
-                      <span className="font-medium">{PROVIDER_LABELS[id]}</span>
+                      <span className="font-medium">{PROVIDER_LABEL[id]}</span>
                       {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
                     </span>
                   ))}{' '}

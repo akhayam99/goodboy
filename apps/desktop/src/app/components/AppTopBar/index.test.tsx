@@ -18,6 +18,10 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
     store: {
       setCurrentSession: vi.fn(async () => undefined),
       setActiveLens: vi.fn(),
+      currentWorkspaceId: workspace.id,
+      workspaceScripts: {} as Record<string, ReadonlyArray<never>>,
+      scriptRuns: {} as Record<string, never>,
+      sessions: [] as ReadonlyArray<Session>,
     },
   };
 });

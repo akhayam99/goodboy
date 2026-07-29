@@ -57,11 +57,14 @@ same home lens; otherwise it is a button that opens a popover listing those
 siblings (avatar, name, status) to switch the open agent in place, via
 `selectAgent`.
 
-The workflow case swaps the label instead of dropping the crumb: when the home
-lens is Workflows, `ChatWorkflowHeader` renders the same `AgentBreadcrumb`, with
-the workflow's kind name as the home label (falling back to "Workflows"),
-followed by the `WorkflowStepper` strip alongside it in the same header row.
-There is no separate "Part of {WorkflowName}" line.
+The workflow case swaps the whole control instead of dropping the crumb: when
+the home lens is Workflows, `ChatWorkflowHeader` renders `WorkflowBreadcrumb`
+(same folder) in place of `AgentBreadcrumb`. It is a single crumb trail
+`{HomeLabel} > {StepName} > {AgentName}`, where the home label is the workflow's
+kind name (falling back to "Workflows"), the step crumb is a popover switching
+step via `selectAgent` on that step's root agent, and the agent crumb appears
+only when the step root has cluster children. There is no separate step strip
+and no "Part of {WorkflowName}" line.
 
 ### Crumb trails
 
@@ -171,18 +174,20 @@ does not do.
 
 ### Sibling panels inside a lens
 
-Five surfaces open their detail to the right of the content instead of taking a
-studio rail: `ResolverInspector` (from a resolver row's "Details" action in the
-Resolve lens), `AgentInspector` (from an agent row's "Details" action in the
-Agents lens), `SlotHistoryPanel` in `SlotPane` (the history trigger in the pane
+Four surfaces open their detail to the right of the content instead of taking a
+studio rail: `AgentInspector` (from an agent row's "Details" action in the Agents
+lens and from a resolver row's "Details" action in the Resolve lens, since it is
+one component for both: it adds `ResolverSections` when the agent classifies as a
+resolver), `SlotHistoryPanel` in `SlotPane` (the history trigger in the pane
 header of the Goal, Decisions, and Session summary lenses, rendered only when
-that slot has history), `ScriptEditor` in `ScriptsPanel` (opened by clicking any
-script row, and the only way to edit a script since the list rows collapsed to
-one line), and `PlanListPanel` in `PlanStudio` (the "Other plans (N)" trigger in
-the pane header, rendered only when the session holds more than one plan).
+that slot has history), `ScriptDetail`/`ScriptEditor` in `ScriptsPanel` (clicking
+a script row opens `ScriptDetail`, whose Edit button swaps the same panel to
+`ScriptEditor`; that is the only route to the editor), and `PlanListPanel` in
+`PlanStudio` (the "Other plans (N)" trigger in the pane header, rendered only
+when the session holds more than one plan).
 
-`ResolverInspector`, `AgentInspector`, `SlotHistoryPanel`, and `ScriptEditor`
-share one primitive, `InspectorSplit`
+`AgentInspector`, `SlotHistoryPanel`, and `ScriptDetail`/`ScriptEditor` share one
+primitive, `InspectorSplit`
 (`SessionWorkspace/parts/InspectorSplit/`): the pane is a flex row, the panel is
 a sibling column resizable via a `ResizeHandle` (width persisted at
 `STORAGE_KEYS.inspectorPanelWidth`), open state is local to the pane, the panel
@@ -231,7 +236,7 @@ Clicking an agent name navigates to that agent.
 
 ## Resolve lens: two force actions
 
-The State section of `ResolverInspector` holds both, and they do different
+The resolver State section of `AgentInspector` holds both, and they do different
 things:
 
 | Action                     | Effect                                                                                                                                                                  | Shown when                                                                                         |

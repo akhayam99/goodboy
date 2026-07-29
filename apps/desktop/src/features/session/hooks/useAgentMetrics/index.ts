@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
-import type { AgentAggregate } from '../../components/AgentMetricsBlock';
+import type { AgentAggregate } from '../../components/AgentMetrics';
 import { computeLatestTelemetryByAgentId } from '../../agent-row-format';
 
 export type AgentMetrics = {

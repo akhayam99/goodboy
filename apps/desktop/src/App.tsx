@@ -14,8 +14,8 @@ import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
 import { NoWorkspaceScreen } from './app/components/AppEmptyState';
 import { StageBoard } from './features/workspace/components/StageBoard';
-import { DeleteSessionDialog } from './features/session/components/DeleteSessionDialog';
-import { ArchiveSessionDialog } from './features/session/components/ArchiveSessionDialog';
+import { DeleteSessionConfirm } from './features/session/components/DeleteSessionConfirm';
+import { ArchiveSessionConfirm } from './features/session/components/ArchiveSessionConfirm';
 import { SettingsStudio } from './features/settings/components/SettingsStudio';
 import { GuideStudio } from './features/settings/components/GuideStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
@@ -1002,10 +1002,14 @@ export const App = () => {
         />
       ) : null}
       {currentSession && deleteOpen ? (
-        <DeleteSessionDialog session={currentSession} open onClose={() => setDeleteOpen(false)} />
+        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+          <DeleteSessionConfirm session={currentSession} onClose={() => setDeleteOpen(false)} />
+        </div>
       ) : null}
       {currentSession && archiveOpen ? (
-        <ArchiveSessionDialog session={currentSession} open onClose={() => setArchiveOpen(false)} />
+        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+          <ArchiveSessionConfirm session={currentSession} onClose={() => setArchiveOpen(false)} />
+        </div>
       ) : null}
       {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
 

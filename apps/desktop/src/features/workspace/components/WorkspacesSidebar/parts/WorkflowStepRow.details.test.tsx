@@ -12,8 +12,8 @@ vi.mock('../../../../../store', () => ({
   useSessionPlans: () => [],
 }));
 
-vi.mock('../../../../session/components/AgentMetricsBlock', () => ({
-  AgentMetricsBlock: () => <div data-testid="metrics" />,
+vi.mock('../../../../session/components/AgentMetrics', () => ({
+  AgentMetrics: () => <div data-testid="metrics" />,
 }));
 
 vi.mock('./ContextWindowBar', () => ({ ContextWindowBar: () => null }));

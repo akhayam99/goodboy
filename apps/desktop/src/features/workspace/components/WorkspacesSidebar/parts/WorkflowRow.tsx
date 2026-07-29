@@ -26,7 +26,7 @@ import {
   type AgentKind,
 } from '../../../../../features/session/agent-kind';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
-import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock';
+import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';

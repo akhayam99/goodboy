@@ -60,16 +60,14 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
   };
 
   return (
-    <div className="flex shrink-0 items-center px-3 pb-2">
-      <WorkflowNextStepCta
-        workflow={workflow}
-        runs={stepAgents}
-        roleModels={roleModels}
-        blockReason={state.kind === 'blocked' ? state.reason : null}
-        onAdvance={(step) => void onAdvance(step)}
-        onForceAdvance={() => void skipStuckStepAndAdvance(sessionId, workflowRunId)}
-        className="w-full max-w-sm"
-      />
-    </div>
+    <WorkflowNextStepCta
+      workflow={workflow}
+      runs={stepAgents}
+      roleModels={roleModels}
+      blockReason={state.kind === 'blocked' ? state.reason : null}
+      onAdvance={(step) => void onAdvance(step)}
+      onForceAdvance={() => void skipStuckStepAndAdvance(sessionId, workflowRunId)}
+      className="ml-auto shrink-0"
+    />
   );
 };

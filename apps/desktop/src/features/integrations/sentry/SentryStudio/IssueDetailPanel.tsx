@@ -151,7 +151,16 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         <SentryStackTrace frames={frames} isLoading={detailLoading} error={detailError} />
       </section>
 
-      <SentryBreadcrumbs breadcrumbs={breadcrumbs} isLoading={detailLoading} error={detailError} />
+      {breadcrumbs.length > 0 && !detailLoading && detailError == null ? (
+        <section className="flex flex-col gap-3">
+          <SectionHeader label="breadcrumbs" />
+          <SentryBreadcrumbs
+            breadcrumbs={breadcrumbs}
+            isLoading={detailLoading}
+            error={detailError}
+          />
+        </section>
+      ) : null}
     </StudioDetailLayout>
   );
 };

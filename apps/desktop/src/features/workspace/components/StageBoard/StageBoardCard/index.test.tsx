@@ -109,6 +109,7 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
   state.loadReviewDrafts.mockClear();
+  nav.selectCard.mockClear();
   hooks.reason = 'no PR yet';
   hooks.agents = [];
   hooks.cost = 0;
@@ -135,6 +136,42 @@ describe('StageBoardCard layout', () => {
     expect(tooltip?.getAttribute('data-tooltip')).toBe(`${session.goal} · no PR yet`);
     expect(screen.queryByTestId('status-dot')).toBeNull();
     expect(screen.queryByText('no PR yet')).toBeNull();
+  });
+});
+
+describe('StageBoardCard selection', () => {
+  it('renders no selection checkbox when the column does not offer selection', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('toggles selection from the checkbox without opening the session', () => {
+    const onToggleSelect = vi.fn();
+    render(
+      <StageBoardCard
+        session={session}
+        nav={nav}
+        onToggleSelect={onToggleSelect}
+        selected={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(onToggleSelect).toHaveBeenCalledWith(SESSION_ID, expect.anything());
+    expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('routes a modifier click on the card to selection instead of navigation', () => {
+    const onModifierClick = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
+    fireEvent.click(screen.getAllByRole('button')[0] as HTMLElement, { metaKey: true });
+    expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
+    expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('navigates on a plain click even when selection is available', () => {
+    render(<StageBoardCard session={session} nav={nav} onModifierClick={vi.fn()} />);
+    fireEvent.click(screen.getAllByRole('button')[0] as HTMLElement);
+    expect(nav.selectCard).toHaveBeenCalledWith(session);
   });
 });
 

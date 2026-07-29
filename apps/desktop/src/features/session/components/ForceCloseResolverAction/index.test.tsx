@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import type { ResolverStatus } from '../../resolver-linkage';
 
@@ -32,7 +32,8 @@ describe('ForceCloseResolverAction', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Force close' }));
     expect(h.forceCloseResolver).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm stop' }));
+    const panel = screen.getByRole('group', { name: 'Force close this resolver?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Force close' }));
     await waitFor(() => expect(h.forceCloseResolver).toHaveBeenCalledWith(SESSION_ID, RUNNING.id));
   });
 

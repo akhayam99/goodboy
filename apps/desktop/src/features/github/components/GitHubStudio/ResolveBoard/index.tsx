@@ -10,13 +10,8 @@ import {
   Sliders,
   Sparkles,
 } from 'lucide-react';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  modelEffortLevels,
-  type EffortLevel,
-} from '../../../../chat/utils/chat-constants';
-import { shortModelWithVersion } from '../../../../session/agent-row-format';
+import { modelEffortLevels, type EffortLevel } from '../../../../chat/utils/chat-constants';
+import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import type { ResolveMode, ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
@@ -149,9 +144,11 @@ export const ResolveBoard = ({
           >
             <Sliders size={12} aria-hidden className="text-muted-foreground" />
             <span className="text-muted-foreground">Resolve all with</span>
-            <span className="font-medium text-foreground">
-              {aggregate === 'mixed' ? 'Customized' : shortModelWithVersion(aggregate.model)}
-            </span>
+            {aggregate === 'mixed' ? (
+              <span className="font-medium text-foreground">Customized</span>
+            ) : (
+              <RoutingBadge provider={aggregate.provider} model={aggregate.model} />
+            )}
             <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
           </button>
           {overrideOpen ? (
@@ -344,14 +341,11 @@ function ResolveCard({
                     className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-2xs transition-colors hover:bg-muted/50"
                   >
                     <span className="text-muted-foreground">Resolve with</span>
-                    <span className="font-medium text-foreground">
-                      {PROVIDER_LABEL[config.provider]} · {shortModelWithVersion(config.model)}
-                    </span>
-                    {modelEffortLevels(config.model) ? (
-                      <span className="text-muted-foreground/70">
-                        · {EFFORT_LABEL[config.effort]}
-                      </span>
-                    ) : null}
+                    <RoutingBadge
+                      provider={config.provider}
+                      model={config.model}
+                      effort={modelEffortLevels(config.model) ? config.effort : null}
+                    />
                     <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
                   </button>
                   {configOpen ? (

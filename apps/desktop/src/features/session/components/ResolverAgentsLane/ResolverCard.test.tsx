@@ -80,7 +80,7 @@ describe('ResolverCard', () => {
   it('shows model, cost, context share and turns without being selected', () => {
     renderCard();
     expect(screen.getByTestId('agent-metrics-inline')).toBeTruthy();
-    expect(screen.getByText('haiku 4.5')).toBeTruthy();
+    expect(screen.getByText('Haiku 4.5')).toBeTruthy();
     expect(screen.getByText('2t')).toBeTruthy();
     expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
   });

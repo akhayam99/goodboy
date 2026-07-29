@@ -18,6 +18,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
     rows: number = 50,
   ) => {
     const runId = crypto.randomUUID();
+    const startedAt = Date.now();
 
     const writeRun = (record: ScriptRunRecord) =>
       set((state) => ({
@@ -27,7 +28,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
         },
       }));
 
-    writeRun({ status: 'pending', result: null, runId });
+    writeRun({ status: 'pending', result: null, runId, startedAt });
 
     let unlistenExit: () => void = () => undefined;
     let unlistenOutput: () => void = () => undefined;
@@ -76,6 +77,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
         status: curr.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
         result,
         runId,
+        startedAt,
       });
       resolveResult(result);
     });
@@ -86,7 +88,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
       unlistenExit();
       unlistenOutput();
       const result: ScriptRunResult = { stdout: '', stderr: formatError(err), exitCode: -1 };
-      writeRun({ status: 'error', result, runId });
+      writeRun({ status: 'error', result, runId, startedAt });
       rejectResult(err);
       return result;
     }

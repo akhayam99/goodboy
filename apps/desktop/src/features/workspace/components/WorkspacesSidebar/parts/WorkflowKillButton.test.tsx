@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { WorkflowKillButton } from './WorkflowKillButton';
 
 describe('WorkflowKillButton', () => {
@@ -9,12 +9,22 @@ describe('WorkflowKillButton', () => {
     const onConfirm = vi.fn();
     render(<WorkflowKillButton onConfirm={onConfirm} />);
 
-    const button = screen.getByRole('button', { name: 'discard workflow' });
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole('button', { name: 'discard workflow' }));
     expect(onConfirm).not.toHaveBeenCalled();
-    expect(button.textContent).toContain('Confirm discard');
 
-    fireEvent.click(button);
+    const panel = screen.getByRole('group', { name: 'Discard workflow?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Discard' }));
     expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('disarms without discarding when the confirmation is cancelled', () => {
+    const onConfirm = vi.fn();
+    render(<WorkflowKillButton onConfirm={onConfirm} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'discard workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'discard workflow' })).toBeDefined();
   });
 });

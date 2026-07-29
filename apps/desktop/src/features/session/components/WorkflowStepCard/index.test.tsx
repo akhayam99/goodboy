@@ -63,10 +63,11 @@ afterEach(() => {
 });
 
 describe('WorkflowStepCard (collapsed)', () => {
-  it('shows resolved model name and provider name in meta chips', () => {
+  it('reads as one dense row: resolved model, no raw id, no picker', () => {
     render(<WorkflowStepCard {...baseProps} />);
     expect(screen.getByText('Haiku 4.5')).toBeDefined();
-    expect(screen.getByText('Claude')).toBeDefined();
+    expect(screen.queryByText('claude-haiku-4-5')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^routing for step 1:/ })).toBeNull();
   });
 
   it('shows the clamped effort for the resolved model', () => {

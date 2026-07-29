@@ -1,15 +1,11 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, ClipboardList } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { AlertTriangle, ClipboardList, Play } from 'lucide-react';
+import { InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
-import {
-  kindRouting,
-  AGENT_KIND_PALETTE,
-  inferAgentKindFromName,
-} from '../../../../features/session/agent-kind';
-import { shortModel } from '../../../../features/session/agent-row-format';
+import { kindRouting, inferAgentKindFromName } from '../../../../features/session/agent-kind';
+import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 
@@ -76,7 +72,6 @@ export const WorkflowNextStepCta = ({
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
   const defaults = kindRouting({ kind, roleModels });
-  const palette = AGENT_KIND_PALETTE[kind];
   const doForce = async () => {
     if (busy) {
       return;
@@ -94,52 +89,36 @@ export const WorkflowNextStepCta = ({
   }
   if (chain.kind === 'blocked') {
     return (
-      <div className={cn('flex flex-col gap-1.5', className)}>
-        {blockReason != null && blockReason !== 'failed-step' ? (
-          <p className="text-2xs text-muted-foreground">{WORKFLOW_BLOCK_COPY[blockReason]}</p>
-        ) : null}
+      <div className={cn('relative', className)}>
+        <button
+          type="button"
+          onClick={() => setPendingForce(true)}
+          disabled={busy}
+          data-testid="workflow-force-next-step-cta"
+          title={`step blocked: ${chain.failedStep.name}`}
+          className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <AlertTriangle size={12} aria-hidden className="shrink-0" />
+          skip blocked step
+        </button>
         {pendingForce ? (
-          <div className="flex flex-col gap-2 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-2xs">
-            <p className="font-medium text-foreground">
-              Skip the blocked step and start the next agent?
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPendingForce(false)}
-                className="rounded border border-border px-2 py-0.5 text-2xs font-semibold text-foreground motion-safe:transition-colors hover:bg-muted"
-              >
-                cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void doForce()}
-                disabled={busy}
-                className="rounded bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground motion-safe:transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                skip and continue
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setPendingForce(true)}
-            disabled={busy}
-            data-testid="workflow-force-next-step-cta"
-            title={`step blocked: ${chain.failedStep.name}`}
-            className="group flex w-full items-center justify-between gap-2 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <span className="flex items-center gap-1.5">
-              <AlertTriangle size={13} aria-hidden className="shrink-0" />
-              <span className="font-semibold">force next step</span>
-            </span>
-          </button>
-        )}
+          <InlineConfirm
+            role="alert"
+            icon={<AlertTriangle size={12} />}
+            title="Skip the blocked step and start the next agent?"
+            description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
+            confirmLabel="skip and continue"
+            cancelLabel="cancel"
+            isBusy={busy}
+            onConfirm={() => void doForce()}
+            onCancel={() => setPendingForce(false)}
+            className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
+          />
+        ) : null}
       </div>
     );
   }
-  if (!next) {
+  if (!next || blockReason === 'turn-running') {
     return null;
   }
   const stepVerbosity = next.verbosity;
@@ -155,7 +134,6 @@ export const WorkflowNextStepCta = ({
       setBusy(false);
     }
   };
-  const isWaiting = blockReason === 'turn-running';
   const onClick = () => {
     if (blockReason != null) {
       setPendingConfirm(true);
@@ -164,73 +142,60 @@ export const WorkflowNextStepCta = ({
     void doAdvance();
   };
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      {blockReason != null ? (
-        <p className="text-2xs text-muted-foreground" data-testid="workflow-next-step-blocked">
-          {WORKFLOW_BLOCK_COPY[blockReason]}
-        </p>
-      ) : null}
+    <div className={cn('relative', className)}>
       <button
         type="button"
         onClick={onClick}
-        disabled={busy || isWaiting}
+        disabled={busy}
         data-testid="workflow-next-step-cta"
-        title={`model: ${defaults.model} · effort: ${defaults.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`}
-        className="group flex w-full items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
-        aria-label={`Start ${next.name} (${defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
+        title={
+          blockReason != null
+            ? WORKFLOW_BLOCK_COPY[blockReason]
+            : `effort: ${defaults.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
+        }
+        className={cn(
+          'flex items-center gap-1.5 rounded-md border px-2 py-1 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          blockReason != null
+            ? 'border-warning/50 bg-warning/10 text-warning hover:border-warning hover:bg-warning/20'
+            : 'border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20',
+        )}
+        aria-label={`Run next step: ${next.name} (${defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
       >
-        <span className="flex items-center gap-1.5">
-          <ArrowRight
-            size={13}
+        {blockReason != null ? (
+          <AlertTriangle
+            size={12}
             aria-hidden
-            className="shrink-0 motion-safe:transition-transform group-hover:translate-x-0.5"
+            className="shrink-0"
+            data-testid="workflow-next-step-blocked"
           />
-          <span className="font-semibold">{next.name}</span>
-          <span
-            className={cn(
-              'rounded px-1 py-0.5 text-2xs font-semibold uppercase leading-none tracking-eyebrow text-background',
-              palette.bg,
-            )}
-            aria-hidden
-          >
-            {palette.label}
+        ) : (
+          <Play size={12} aria-hidden className="shrink-0" />
+        )}
+        <span className="truncate">run next step: {next.name}</span>
+        <RoutingBadge
+          className="shrink-0 opacity-70"
+          model={defaults.model}
+          effort={defaults.effort}
+        />
+        {consumesActivePlan ? (
+          <span className="shrink-0" title="advancing will consume the active plan">
+            <ClipboardList size={11} aria-hidden />
           </span>
-          {consumesActivePlan ? (
-            <span
-              className="inline-flex items-center gap-0.5 rounded bg-primary/15 px-1 py-0.5 text-2xs font-semibold uppercase leading-none tracking-eyebrow text-primary"
-              title="advancing will consume the active plan"
-            >
-              <ClipboardList size={9} aria-hidden />
-              <span>consume plan</span>
-            </span>
-          ) : null}
-        </span>
-        <span className="text-2xs font-normal tabular-nums opacity-60">
-          {shortModel(defaults.model)}
-        </span>
+        ) : null}
       </button>
       {pendingConfirm && blockReason != null ? (
-        <div className="flex flex-col gap-2 rounded border border-warning/50 bg-warning/10 px-2.5 py-2 text-2xs">
-          <p className="font-medium text-foreground">
-            {WORKFLOW_BLOCK_COPY[blockReason]} Start the next agent anyway?
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPendingConfirm(false)}
-              className="rounded bg-warning px-2 py-0.5 text-2xs font-semibold text-warning-foreground motion-safe:transition-opacity hover:opacity-90"
-            >
-              wait
-            </button>
-            <button
-              type="button"
-              onClick={() => void doAdvance()}
-              className="rounded border border-border px-2 py-0.5 text-2xs font-semibold text-foreground motion-safe:transition-colors hover:bg-muted"
-            >
-              start anyway
-            </button>
-          </div>
-        </div>
+        <InlineConfirm
+          role="alert"
+          icon={<AlertTriangle size={12} />}
+          title="Start the next agent anyway?"
+          description={WORKFLOW_BLOCK_COPY[blockReason]}
+          confirmLabel="start anyway"
+          cancelLabel="wait"
+          isBusy={busy}
+          onConfirm={() => void doAdvance()}
+          onCancel={() => setPendingConfirm(false)}
+          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
+        />
       ) : null}
     </div>
   );

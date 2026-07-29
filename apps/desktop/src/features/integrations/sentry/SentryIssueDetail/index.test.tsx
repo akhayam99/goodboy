@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SentryIssueDetail } from '.';
 
@@ -39,7 +39,9 @@ describe('SentryIssueDetail', () => {
 
     expect(screen.getByText(/desktop@1.2.3/)).toBeDefined();
     expect(screen.getByText(/production/)).toBeDefined();
-    expect(screen.getByText('Breadcrumbs (1)').parentElement?.hasAttribute('open')).toBe(false);
+    expect(screen.queryByText('GET /api/items')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Breadcrumbs (1)' }));
     expect(screen.getByText('GET /api/items')).toBeDefined();
   });
 });

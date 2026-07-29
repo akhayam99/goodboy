@@ -386,6 +386,7 @@ export type AppActions = {
   deleteTask(sessionId: SessionId): Promise<void>;
   bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   archiveTask(sessionId: SessionId): Promise<void>;
+  bulkArchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   unarchiveTask(sessionId: SessionId): Promise<void>;
   bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;

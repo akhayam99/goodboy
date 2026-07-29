@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
-import type { Session, SessionStage } from '@goodboy/types';
+import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
-import { StageBoardCard } from '../StageBoardCard';
+import { useMultiSelect } from '../../../../../shared/hooks/useMultiSelect';
+import { BulkActionBar } from '../../BulkActionBar';
+import { StageBoardCard, type CardSelectionEvent } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
@@ -67,6 +69,25 @@ export const StageColumn = ({
   const [collapsed, setCollapsed] = useState(view.collapsible);
   const empty = sessions.length === 0;
 
+  const order = useMemo(() => sessions.map((s) => s.id as SessionId), [sessions]);
+  const selection = useMultiSelect(order);
+  const { clear: clearSelection, isSelected } = selection;
+  const selectedSessions = sessions.filter((s) => isSelected(s.id as SessionId));
+
+  const onToggleSelect = (id: SessionId, event: CardSelectionEvent) => {
+    if (event.shiftKey) {
+      selection.selectRange(id);
+      return;
+    }
+    selection.toggle(id);
+  };
+
+  useEffect(() => {
+    if (collapsed) {
+      clearSelection();
+    }
+  }, [collapsed, clearSelection]);
+
   const header = (
     <span className="flex items-center gap-1.5">
       <Eyebrow label={view.label} tone={view.tone} badge muted={empty} />
@@ -112,6 +133,9 @@ export const StageColumn = ({
                   session={session}
                   nav={nav}
                   archived={view.archived}
+                  selected={isSelected(session.id as SessionId)}
+                  onToggleSelect={onToggleSelect}
+                  onModifierClick={selection.handleItemClick}
                   onArchive={onArchive}
                   onDelete={onDelete}
                   onRestore={onRestore}
@@ -120,6 +144,16 @@ export const StageColumn = ({
             )}
           </div>
         </ScrollFade>
+      )}
+
+      {!collapsed && selectedSessions.length > 0 && (
+        <BulkActionBar
+          scope={view.archived ? 'archived' : 'active'}
+          sessions={selectedSessions}
+          onSelectAll={selection.selectAll}
+          onClear={clearSelection}
+          className="shrink-0"
+        />
       )}
     </div>
   );

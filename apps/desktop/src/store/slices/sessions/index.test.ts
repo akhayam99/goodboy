@@ -641,6 +641,33 @@ describe('store contract', () => {
         } as Session;
       }
 
+      it('bulkArchiveTask archives every selected active session', async () => {
+        const store = await getStore();
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          sessions: [buildSession(), buildSession({ id: SESSION_ID_2, goal: 'two' })],
+        });
+        await store.getState().bulkArchiveTask([SESSION_ID, SESSION_ID_2]);
+        expect(store.getState().sessions).toEqual([]);
+      });
+
+      it('bulkArchiveTask keeps archiving after one session fails and reports the failure', async () => {
+        const store = await getStore();
+        const { archiveSession } = await import('@goodboy/db');
+        (archiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+          new Error('db down'),
+        );
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          sessions: [buildSession(), buildSession({ id: SESSION_ID_2, goal: 'two' })],
+        });
+        await store.getState().bulkArchiveTask([SESSION_ID, SESSION_ID_2]);
+        expect(store.getState().sessions.map((x) => x.id)).toEqual([SESSION_ID]);
+        expect(insertNotificationSpy).toHaveBeenCalled();
+      });
+
       it('bulkUnarchiveTask restores every selected session into the active list', async () => {
         const store = await getStore();
         store.setState({

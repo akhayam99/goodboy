@@ -37,11 +37,11 @@ vi.mock('../../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurfa
 vi.mock('../../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
 vi.mock('../../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
-vi.mock('../../features/session/components/DeleteSessionDialog', () => ({
-  DeleteSessionDialog: () => null,
+vi.mock('../../features/session/components/DeleteSessionConfirm', () => ({
+  DeleteSessionConfirm: () => null,
 }));
-vi.mock('../../features/session/components/ArchiveSessionDialog', () => ({
-  ArchiveSessionDialog: () => null,
+vi.mock('../../features/session/components/ArchiveSessionConfirm', () => ({
+  ArchiveSessionConfirm: () => null,
 }));
 vi.mock('../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: () => null,

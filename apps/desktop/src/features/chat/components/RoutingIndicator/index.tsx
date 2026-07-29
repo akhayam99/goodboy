@@ -7,7 +7,9 @@ import type {
   TurnProviderOverride,
 } from '@goodboy/types';
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
+import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
+import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
 import { MARKER_ACCENT } from '../marker-accents';
 import { TranscriptShell } from '../TranscriptShell';
 
@@ -76,8 +78,7 @@ export const RoutingIndicator = ({
     return null;
   }
 
-  const label = decision.selectedProvider === 'anthropic' ? 'claude' : decision.selectedProvider;
-  const fromLabel = decision.fallbackFrom === 'anthropic' ? 'claude' : decision.fallbackFrom;
+  const fromLabel = PROVIDER_LABEL_LOWER[decision.fallbackFrom];
   const cause =
     decision.reason === 'fallback-budget'
       ? `budget exceeded for ${fromLabel}`
@@ -90,8 +91,10 @@ export const RoutingIndicator = ({
       className={`flex w-fit items-center gap-1.5 text-xs ${warningAccent.text}`}
     >
       <AlertTriangle size={13} aria-hidden className="shrink-0" />
-      <span>
-        fallback: {label} / {decision.selectedModel} ({cause})
+      <span className="flex items-center gap-1.5">
+        fallback to
+        <RoutingBadge provider={decision.selectedProvider} model={decision.selectedModel} />
+        <span>({cause})</span>
       </span>
     </TranscriptShell>
   );

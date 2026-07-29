@@ -1,4 +1,6 @@
-import { CircleCheck, PanelRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
+import { InlineConfirm } from '@goodboy/ui';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
@@ -7,15 +9,13 @@ import { AgentKindChip } from '../../../../../features/session/components/AgentK
 import { AgentCard } from '../../../../../features/session/components/AgentCard';
 import { AgentCardAction } from '../../../../../features/session/components/AgentCard/AgentCardAction';
 import { AgentCardActions } from '../../../../../features/session/components/AgentCard/AgentCardActions';
-import { AgentCardDeleteAction } from '../../../../../features/session/components/AgentCard/AgentCardDeleteAction';
 import { AgentCardTitle } from '../../../../../features/session/components/AgentCard/AgentCardTitle';
 import { agentCardTone } from '../../../../../features/session/components/AgentCard/agentCardTone';
 import {
-  AgentMetricsBlock,
+  AgentMetrics,
   type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetricsBlock';
+} from '../../../../../features/session/components/AgentMetrics';
 import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
-import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { AgentStatusBadge } from './AgentStatusBadge';
 
@@ -65,6 +65,12 @@ export const AgentRow = ({
   onInspect,
   onMarkDone,
 }: Props) => {
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  useEffect(() => {
+    setIsConfirmingDelete(false);
+  }, [isEditing]);
+
   const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
   const titleParts = [
     `agent ${run.ordinal + 1}`,
@@ -141,26 +147,43 @@ export const AgentRow = ({
               />
             )}
           </span>
-          <AgentCardDeleteAction
-            label="delete agent"
-            confirmLabel="confirm delete agent"
-            cancelLabel="cancel delete agent"
-            resetToken={isEditing}
-            reveal
-            onDelete={onDelete}
-          />
+          <span className="flex w-[3.25rem] shrink-0 items-center justify-end">
+            <AgentCardAction
+              icon={Trash2}
+              label="delete agent"
+              tone="danger"
+              active={isConfirmingDelete}
+              reveal={!isConfirmingDelete}
+              onClick={() => setIsConfirmingDelete(true)}
+            />
+          </span>
         </AgentCardActions>
       }
     >
       <div className="flex flex-col gap-0.5">
-        <AgentMetricsInline
+        {isConfirmingDelete && (
+          <InlineConfirm
+            role="danger"
+            icon={<Trash2 size={12} aria-hidden />}
+            title="Delete agent?"
+            description="Removes this agent and its transcript from the session."
+            confirmLabel="Delete"
+            onConfirm={() => {
+              setIsConfirmingDelete(false);
+              onDelete();
+            }}
+            onCancel={() => setIsConfirmingDelete(false)}
+          />
+        )}
+        <AgentMetrics
+          run={run}
           telemetry={telemetry}
           aggregate={aggregate}
           contextUsage={contextUsage}
           turns={turns}
           turnsLoading={turnsLoading}
+          density="full"
         />
-        <AgentMetricsBlock run={run} aggregate={aggregate} />
         <AgentLastUpdate agent={run} />
         <ContextWindowBar usage={contextUsage} />
       </div>

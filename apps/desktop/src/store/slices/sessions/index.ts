@@ -1,5 +1,6 @@
 import { archiveTask } from './archiveTask';
 import { autoTitleSession } from './autoTitleSession';
+import { bulkArchiveTask } from './bulkArchiveTask';
 import { bulkDeleteTask } from './bulkDeleteTask';
 import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
@@ -28,6 +29,7 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     deleteTask: deleteTask(set, get),
     bulkDeleteTask: bulkDeleteTask(set, get),
     archiveTask: archiveTask(set, get),
+    bulkArchiveTask: bulkArchiveTask(set, get),
     unarchiveTask: unarchiveTask(set, get),
     bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),

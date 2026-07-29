@@ -7,6 +7,7 @@ import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/Inspec
 import { ActionsSection } from './ActionsSection';
 import { CostsSection } from './CostsSection';
 import { IdentitySection } from './IdentitySection';
+import { ResolverSections } from './ResolverSections';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -38,6 +39,7 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
   }
 
   const telemetry = metrics.latestTelemetryByAgentId.get(agentId) ?? null;
+  const kind = classifyAgent(agent, kindOverride);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -46,12 +48,18 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
         <div className="flex flex-col gap-4">
           <IdentitySection
             agent={agent}
-            kind={classifyAgent(agent, kindOverride)}
+            kind={kind}
             provider={telemetry?.provider ?? providerOverride}
             model={telemetry?.model ?? modelOverride}
             effort={effortOverride}
           />
           <Divider />
+          {kind === 'resolver' ? (
+            <>
+              <ResolverSections sessionId={sessionId} agent={agent} />
+              <Divider />
+            </>
+          ) : null}
           <CostsSection
             aggregate={metrics.aggregatesByAgentId.get(agentId) ?? null}
             contextUsage={metrics.providerUsageByAgentId.get(agentId) ?? EMPTY_ARRAY}

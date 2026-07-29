@@ -1,20 +1,19 @@
 import { useMemo, useState } from 'react';
 import { cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { ProviderIcon } from '../../../providers/components/ProviderIcon';
+import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { Widget } from './Widget';
-import { formatModel, sortTurns, type SortKey, type WorkspaceTurn } from './lib';
+import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
-  readonly showProvider: boolean;
   readonly showSession: boolean;
 };
 
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 const PAGE_SIZE = 10;
 
-export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
+export const TurnsTable = ({ turns, showSession }: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);
     return stored === 'expensive' ? 'expensive' : 'recent';
@@ -56,7 +55,6 @@ export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
             <thead className="text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 font-medium">type</th>
-                {showProvider ? <th className="w-8 px-1 py-2 font-medium" /> : null}
                 <th className="px-2 py-2 font-medium">model</th>
                 {showSession ? <th className="px-2 py-2 font-medium">session</th> : null}
                 <th className="px-2 py-2 text-right font-medium">in</th>
@@ -79,13 +77,8 @@ export const TurnsTable = ({ turns, showProvider, showSession }: Props) => {
                       {record.kind}
                     </span>
                   </td>
-                  {showProvider ? (
-                    <td className="px-1 py-2">
-                      <ProviderIcon provider={record.provider} size={14} />
-                    </td>
-                  ) : null}
-                  <td className="px-2 py-2 font-mono text-foreground">
-                    {formatModel(record.model)}
+                  <td className="px-2 py-2">
+                    <RoutingBadge provider={record.provider} model={record.model} />
                   </td>
                   {showSession ? (
                     <td

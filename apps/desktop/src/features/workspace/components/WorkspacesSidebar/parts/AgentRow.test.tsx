@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 
 vi.mock('../../../../../store', () => ({
@@ -78,7 +78,7 @@ describe('AgentRow', () => {
   it('shows model, cost, context share and turns without being selected', () => {
     renderRow(false);
     expect(screen.getByTestId('agent-metrics-inline')).toBeTruthy();
-    expect(screen.getByText('sonnet 4.5')).toBeTruthy();
+    expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getByText('3t')).toBeTruthy();
     expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
   });
@@ -106,7 +106,7 @@ describe('AgentRow', () => {
 
   it('shows the same metrics when selected', () => {
     renderRow(true);
-    expect(screen.getByText('sonnet 4.5')).toBeTruthy();
+    expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getAllByTestId('agent-metrics-inline')).toHaveLength(1);
     expect(screen.getAllByTestId('agent-metrics-block')).toHaveLength(1);
   });
@@ -147,8 +147,9 @@ describe('AgentRow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
 
-    expect(screen.getByRole('button', { name: 'confirm delete agent' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'cancel delete agent' })).toBeTruthy();
+    const panel = screen.getByRole('group', { name: 'Delete agent?' });
+    expect(within(panel).getByRole('button', { name: 'Delete' })).toBeTruthy();
+    expect(within(panel).getByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(screen.getByRole('group', { name: 'agent actions' }).className).toBe(before);
   });
 
@@ -156,7 +157,9 @@ describe('AgentRow', () => {
     renderRow(false);
     fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
     expect(remove).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'confirm delete agent' }));
+
+    const panel = screen.getByRole('group', { name: 'Delete agent?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
     expect(remove).toHaveBeenCalledOnce();
   });
 });

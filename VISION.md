@@ -2,27 +2,55 @@
 
 ## The problem
 
-AI-assisted development today is wasteful. Every session starts from zero, context bloats fast, you pay for the same information twice, and switching between tasks means losing everything or cramming unrelated work into one giant thread.
+The IDE was designed around the file. Everything it shows you, the tree, the tabs, the editor, the terminal, assumes the unit of work is a buffer of text. That was true when you wrote the code by hand.
 
-There is no layer between you and the AI agents. No orchestration. No structured way to share learnings between agents. No cost awareness. No plans beyond chat transcripts.
+It is not true anymore. The unit of work is now the task: fix this Sentry issue, ship this Linear ticket, address this review comment, land this PR. Code is what a task produces, not what a task is. Yet every tool still makes you start from the file and reconstruct the task in your head, gathering the issue, the thread, the diff, the review, the deploy, one browser tab at a time.
+
+AI-assisted development made this worse, not better. Every session starts from zero, context bloats fast, you pay for the same information twice, and switching between tasks means losing everything or cramming unrelated work into one giant thread. There is no layer between you and the agents. No orchestration. No structured way to share learnings. No cost awareness. No plans beyond chat transcripts.
 
 ## The mission
 
 **Work better. Spend less. Ship faster. Stay in control.**
 
-Goodboy is a local-first AI workspace orchestrator that sits between you and your AI agents. It doesn't replace your editor or your terminal; it commands them.
+Goodboy is the IDE of the next decade: a local-first workspace where the task is the primary object, the integrations that define the task are second, the code is third, and the chat is only the last mile. It does not replace your editor or your terminal. It commands them.
 
-## Core concepts
+## The layer model
 
-### Workspaces, sessions, agents
+Four layers, in order of primacy. Reading top to bottom is how you work; reading bottom to top is how today's tools are built.
 
-Three nested layers, each doing one thing:
+1. **Task.** The thing you are actually doing. It has an origin (an issue, an alert, a review comment, an idea), a goal, a budget, a state, and a definition of done. Goodboy treats the task as a first-class object with its own worktree, branch, context, and history.
+2. **Integrations.** Where tasks come from and where they go back. GitHub, GitLab, Linear, Sentry today. The task is not complete when the code compiles, it is complete when the issue closes, the PR merges, the alert resolves. Integrations are not a side panel, they are the second layer of the product.
+3. **Code.** The diff, the worktree, the branch, the checks. The artifact the task produces. Goodboy owns the isolation (one worktree per session) and hands editing to your editor.
+4. **Chat.** The last mile. How you and the agents talk while the task moves. Necessary, but the least interesting layer, and the one every other tool mistakes for the whole product.
 
-- A **workspace** is a registered git repository. Sessions live inside it.
-- A **session** is a container for a goal: its own git worktree, branch, budget, shared context, and lifecycle status (wip / waiting / blocked / done). "Refactor authentication domain" is a session.
+Every UI decision follows this order. A surface that shows chat before it shows the task is a surface built upside down.
+
+## Company and workspaces
+
+Above the workspace sits the **company**: the container for everything shared across projects. It is where the integrations that are not project-specific live, because they are not per-repository facts: Slack, Teams, Google Calendar, Meet, Jira. One connection, one identity, available to every workspace under it.
+
+The company layer is not implemented yet. It is the direction: today a workspace connects its own integrations, tomorrow it inherits the company ones and only declares what is genuinely local to the project. Nothing in the current model should assume the workspace is the top of the tree.
+
+Four nested layers:
+
+- A **company** owns the shared integration surface and the people in it. Direction, not yet shipped.
+- A **workspace** is the detail view of a project: a registered git repository plus the integrations specific to it (GitHub or GitLab for code review, Linear for planning, Sentry for production truth). It is the aggregator of every piece of work on that project, not just the sessions you opened today.
+- A **session** is a container for a goal: its own git worktree, branch, budget, and shared context. Its stage (attention / running / review / building / done) is derived from what the session actually holds, never set by hand. "Refactor authentication domain" is a session.
 - An **agent** is an independent chat thread inside a session. You spawn as many as you want, switch between them by clicking, and rename them inline. Each agent has its own provider, model, effort level, verbosity, and kind label.
 
-A session always has at least one agent (auto-spawned at creation). Spawning more is free-form: no workflow required. When a workflow preset is attached, it pre-spawns one agent per step (e.g. scout → planner → implementer → reviewer), but those agents are then independent and live alongside any free agents you add later.
+A session always has at least one agent (auto-spawned at creation). Spawning more is free-form: no workflow required. When a workflow preset is attached, it pre-spawns one agent per step (e.g. scout, planner, implementer, reviewer), but those agents are then independent and live alongside any free agents you add later.
+
+## Integration surface roadmap
+
+The workspace is the aggregator of the project. That means every integration surface has to be readable inside Goodboy, not just linked out to a browser tab.
+
+- **Shipped, workspace scope.** GitHub (PR state, checks, review decisions, comments, diff), GitLab (merge requests), Linear (issues), Sentry (issues and events).
+- **In progress, workspace scope.** One page anatomy for every integration object instead of four hand-rolled scroll views: Linear and Sentry issues already read through it, GitHub and GitLab do not yet. Then actions from inside Goodboy: comment, assign, transition, resolve. Write paths, not just reads.
+- **Later, company scope.** Slack and Teams for the conversation a task came out of, Google Calendar and Meet for the meeting it was decided in, Jira for the organizations that plan there.
+
+The rule for every integration: share the layout, never the logic. A Sentry issue and a GitHub pull request look coherent side by side because the page anatomy is one primitive, not because we pretended their data models are the same. They are not.
+
+## Core concepts
 
 ### Agent kinds
 
@@ -39,24 +67,26 @@ A workflow is a reusable sequence of steps. Attach a preset from the sidebar, or
 
 ### Shared context
 
-Agents inside the same session do **not** share their conversation history. What they share is the **right panel**, the session's detail and work products alongside the context slots: synthetic slots (goal, files touched, decisions, open questions, last summary) that the LLM auto-populates after every turn. You can also edit slots by hand.
+Agents inside the same session do **not** share their conversation history. What they share is the **lens column**, a left rail that lists every view onto the session, grouped Context / Work / Infra / Integrations above a session Overview. Context holds the synthetic slots (goal, decisions, session summary) that the LLM auto-populates after every turn; you can also edit them by hand. Work holds what the session produces (workflows, agents, resolve, questions, diff, plans).
 
-Slots are collapsible, rendered as markdown, and maintain history. Switching between agents swaps the central chat to that agent's transcript. The right panel doesn't move; it's the session's, not the agent's. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
+Each lens opens as the main view, rendered as markdown where it is prose, and slots maintain history. Chat is one destination among the lenses, not the frame around them: switching agents swaps the transcript, the lens column does not move, because it belongs to the session and not to the agent. This is the layer that lets independent agents collaborate on the same goal without cross-contaminating their threads.
 
 Context is a resource, not a dump.
 
 ### Plans
 
-Planner agents emit structured plans wrapped in `<<plan>>...<<plan>>` markers. These become first-class session artifacts, not buried in chat transcripts. Plans have lifecycle status (active / consumed / superseded) and are consumed by other agents who act on them. Consumption is tracked, and plans are viewable in a dedicated studio that renders them as a tree.
+Planner agents emit structured plans wrapped in `<<plan>>...<</plan>>` markers. These become first-class session artifacts, not buried in chat transcripts. Plans have lifecycle status (active / consumed / superseded) and are consumed by other agents who act on them. Consumption is tracked, and plans are viewable in a dedicated studio that renders them as a tree.
 
 ### Provider routing & balance
 
 Register your AI providers (Anthropic, Cursor, Codex, Gemini, OpenCode, OpenRouter). Set priorities. Set budgets. Enable or disable providers per session. Goodboy routes work to the right provider automatically.
 
-- Provider 1 hits 75% budget → fallback to provider 2.
-- Quick task → fast cheap model. Complex architecture → best available model.
+- Provider 1 hits 75% budget, fall back to provider 2.
+- Quick task, fast cheap model. Complex architecture, best available model.
 - Each workflow step picks its model automatically by role, tier, and cost; an explicit pin overrides the auto choice.
 - You see the spend in real time. No surprises at end of month.
+
+Routing is a fact about the work, so it reads like one. A model is shown as its provider mark, its authored name, and its effort, never as a raw catalog id.
 
 ### Telemetry & cost awareness
 
@@ -69,10 +99,6 @@ Every interaction is metered. Goodboy gives you total visibility on what you're 
 
 All metrics are computed and stored locally. Nothing transmitted.
 
-### GitHub integration
-
-Connect via `gh` CLI or personal access token. Goodboy surfaces your PR state (draft, open, approved, merged, closed) alongside CI checks, review decisions, and comments. The diff viewer shows file-level hunks with inline annotations. Reviewer agents can consume diff comments directly. The GitHub card auto-refreshes when an agent creates or updates a PR.
-
 ### Skills & automation
 
 Local skills live with the workspace: markdown files with frontmatter discovered from `<workspace>/.kay/skills/*.md` or `<workspace>/.claude/skills/<name>/SKILL.md`. Invoke from chat via `/skill-name`. Parsed by the skill registry, executable across any connected provider. Per-workspace, not global. Not locked into any single AI provider's ecosystem.
@@ -83,7 +109,7 @@ Goodboy is the brain. Your editor is the hands. When it's time to write code, Go
 
 ## What Goodboy is NOT
 
-- Not an IDE. You already have one.
+- Not a text editor. You already have one, and Goodboy drives it.
 - Not another chat UI. The world has enough.
 - Not a wrapper around one AI provider. It orchestrates all of them.
 - Not a cloud service. It runs on your machine, your data stays local.
@@ -103,9 +129,11 @@ If Goodboy disappeared tomorrow, your data would be untouched, because it was ne
 
 ## Principles
 
-1. **Context is expensive**: never send more than needed.
-2. **Sessions are goals, not threads**: structure work by intent, not by time.
-3. **Automate the repeatable**: if you did it twice, make it a skill.
-4. **Provider agnostic**: no lock-in, ever.
-5. **Local first, local only**: your machine, your keys, your data, full stop.
-6. **Plans over chat**: structure intent as artifacts, not buried in transcripts.
+1. **The task is the unit of work**: files, threads, and diffs are what a task touches, not what it is.
+2. **Context is expensive**: never send more than needed.
+3. **Sessions are goals, not threads**: structure work by intent, not by time.
+4. **Integrations are the product, not a panel**: work starts and ends outside the repo.
+5. **Automate the repeatable**: if you did it twice, make it a skill.
+6. **Provider agnostic**: no lock-in, ever.
+7. **Local first, local only**: your machine, your keys, your data, full stop.
+8. **Plans over chat**: structure intent as artifacts, not buried in transcripts.

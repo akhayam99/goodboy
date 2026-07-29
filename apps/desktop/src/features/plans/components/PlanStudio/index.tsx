@@ -14,6 +14,7 @@ import {
 import {
   Divider,
   EmptyState,
+  InlineConfirm,
   Markdown,
   ScrollFade,
   SegmentedTabs,
@@ -24,7 +25,6 @@ import {
 import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
@@ -54,6 +54,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
+  const [replayArmed, setReplayArmed] = useState(false);
 
   useEffect(() => {
     if (selectedId === null && plans.length > 0) {
@@ -307,19 +308,19 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                         />
                         {selected.status !== 'discarded' ? (
                           selected.status === 'consumed' ? (
-                            <ConfirmableButton
-                              key={selected.id}
-                              label="Replay"
-                              armedLabel="Confirm replay"
-                              busyLabel="Replaying..."
-                              onConfirm={handleTrigger}
+                            <button
+                              type="button"
+                              onClick={() => setReplayArmed(true)}
                               disabled={spawning}
-                              tone="warning"
-                              autoDisarmMs={4000}
                               title="Plan already ran, click to replay and confirm"
-                              icon={<RotateCw size={12} aria-hidden />}
-                              className="rounded-md px-2.5 py-1 text-xs"
-                            />
+                              className={cn(
+                                'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
+                                spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
+                              )}
+                            >
+                              <RotateCw size={12} aria-hidden />
+                              Replay
+                            </button>
                           ) : (
                             <button
                               type="button"
@@ -378,6 +379,23 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                         )}
                       </div>
                     </div>
+                    {replayArmed && (
+                      <InlineConfirm
+                        role="alert"
+                        icon={<RotateCw size={12} aria-hidden />}
+                        title="Replay this plan?"
+                        description="It already ran once. Replaying spawns a new agent to execute it again."
+                        confirmLabel="Replay"
+                        autoDisarmMs={4000}
+                        isBusy={spawning}
+                        onConfirm={async () => {
+                          await handleTrigger();
+                          setReplayArmed(false);
+                        }}
+                        onCancel={() => setReplayArmed(false)}
+                        className="shrink-0"
+                      />
+                    )}
                     <div className="shrink-0 py-2">
                       <Divider />
                     </div>

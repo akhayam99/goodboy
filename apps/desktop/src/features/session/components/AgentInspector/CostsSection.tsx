@@ -1,4 +1,4 @@
-import type { AgentAggregate } from '../AgentMetricsBlock';
+import type { AgentAggregate } from '../AgentMetrics';
 import { formatCost, formatTokens } from '../../agent-row-format';
 import {
   ContextWindowBar,

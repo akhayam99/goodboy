@@ -14,14 +14,6 @@ export const shortModel = (model: string): string => {
   return getModelDescriptor(model)?.label ?? model;
 };
 
-export const shortModelWithVersion = (model: string): string => {
-  const m = model.match(/claude-(haiku|sonnet|opus|fable)-(\d+)(?:-(\d+))?/i);
-  if (m && m[1] && m[2]) {
-    return `${m[1].toLowerCase()} ${m[2]}${m[3] ? `.${m[3]}` : ''}`;
-  }
-  return shortModel(model);
-};
-
 export const computeLatestTelemetryByAgentId = (
   agentIds: ReadonlyArray<{ id: string; runId?: string }>,
   agentRunHistory: Readonly<Record<string, ReadonlyArray<string>>>,

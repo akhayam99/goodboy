@@ -5,16 +5,8 @@ import type { AgentRole, ProviderId } from '@goodboy/types';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { type VerbosityLevel } from '../../../settings/verbosity';
-import {
-  type EffortLevel,
-  EFFORT_DOT,
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  clampEffort,
-  modelLabel,
-} from '../../../chat/utils/chat-constants';
-import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
-import { MODEL_COST_DOT, modelCostTier } from '../dropdown-utils';
+import { type EffortLevel } from '../../../chat/utils/chat-constants';
+import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { RoleSelect } from '../RoleSelect';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
@@ -54,52 +46,6 @@ type Props = {
   readonly onRole?: (role: AgentRole) => void;
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (v: VerbosityLevel) => void;
-};
-
-const CHIP_CLS =
-  'inline-flex items-center gap-1 rounded-md bg-muted/50 px-1.5 py-0.5 text-2xs text-muted-foreground';
-
-const StepMetaRow = ({
-  provider,
-  resolvedModel,
-  effort,
-}: {
-  readonly provider: ProviderId;
-  readonly resolvedModel: string;
-  readonly effort: EffortLevel;
-}) => {
-  const ProviderGlyph = PROVIDER_BRAND[provider].icon;
-  const resolvedEffort = clampEffort(resolvedModel, effort);
-  return (
-    <span className="flex flex-wrap items-center gap-1.5">
-      <span className={CHIP_CLS}>
-        <ProviderGlyph
-          size={11}
-          className="shrink-0"
-          style={{ color: brandColor(provider) }}
-          aria-hidden
-        />
-        {PROVIDER_LABEL[provider]}
-      </span>
-      <span className={cn(CHIP_CLS, 'font-mono')}>
-        <span
-          className={cn(
-            'size-1.5 shrink-0 rounded-full',
-            MODEL_COST_DOT[modelCostTier(resolvedModel)],
-          )}
-          aria-hidden
-        />
-        {modelLabel(resolvedModel)}
-      </span>
-      <span className={CHIP_CLS}>
-        <span
-          className={cn('size-1.5 shrink-0 rounded-full', EFFORT_DOT[resolvedEffort])}
-          aria-hidden
-        />
-        {EFFORT_LABEL[resolvedEffort]}
-      </span>
-    </span>
-  );
 };
 
 const FieldLabel = ({ children }: { readonly children: ReactNode }) => (
@@ -188,7 +134,7 @@ export const WorkflowStepCard = ({
     </button>
   );
 
-  const headerRow = (
+  const headerRow = (trailing?: ReactNode) => (
     <span className="flex min-w-0 items-center gap-2.5">
       <span className="w-4 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/40">
         {String(ordinal + 1).padStart(2, '0')}
@@ -202,6 +148,7 @@ export const WorkflowStepCard = ({
           </span>
         ) : null}
       </span>
+      {trailing}
     </span>
   );
 
@@ -239,18 +186,25 @@ export const WorkflowStepCard = ({
             type="button"
             onClick={onExpand}
             aria-label={`step ${ordinal + 1}: ${displayName}`}
-            className="flex min-w-0 flex-1 flex-col gap-2 py-2.5 pl-1 pr-8 text-left"
+            title="Open this step to edit it"
+            className="flex min-w-0 flex-1 flex-col gap-1 py-2 pl-1 pr-8 text-left"
           >
-            {headerRow}
+            {headerRow(
+              <RoutingBadge
+                className="shrink-0"
+                provider={provider}
+                model={resolvedModel}
+                effort={effort}
+              />,
+            )}
             <span
               className={cn(
-                'line-clamp-2 text-[11px] leading-relaxed',
+                'line-clamp-1 pl-[1.625rem] text-[11px] leading-relaxed',
                 promptPrefix.trim() ? 'text-muted-foreground' : 'italic text-muted-foreground/40',
               )}
             >
               {promptPrefix.trim() || 'Click to add instructions'}
             </span>
-            <StepMetaRow provider={provider} resolvedModel={resolvedModel} effort={effort} />
           </button>
         </div>
       ) : null}
@@ -259,7 +213,7 @@ export const WorkflowStepCard = ({
         <div className="flex items-stretch">
           {grip}
           <div className="flex min-w-0 flex-1 flex-col gap-2.5 py-2.5 pl-1 pr-3">
-            {headerRow}
+            {headerRow()}
             <Input
               value={name}
               onChange={(e) => onName(e.target.value)}

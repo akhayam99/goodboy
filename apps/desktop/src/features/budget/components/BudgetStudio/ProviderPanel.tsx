@@ -64,10 +64,10 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
       />
 
       <Widget label="by model">
-        <ModelTable entries={models} showProvider={false} />
+        <ModelTable entries={models} />
       </Widget>
 
-      <TurnsTable turns={filtered} showProvider={false} showSession />
+      <TurnsTable turns={filtered} showSession />
     </PanelShell>
   );
 };
