@@ -24,9 +24,6 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const diffComments = useDiffComments(sessionId);
   const selectAgent = useAppStore((state) => state.selectAgent);
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
-  const resolveGithubThread = useAppStore((state) => state.resolveGithubThread);
-  const resolveAgentThreads = useAppStore((state) => state.resolveAgentThreads);
-  const dequeueResolution = useAppStore((state) => state.dequeueResolution);
   const loading = useSessionLoading(sessionId);
   const metrics = useAgentMetrics({ sessionId });
 
@@ -92,24 +89,6 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     [prNumber, sessionId],
   );
 
-  const onResolveThread = useCallback(
-    async (threadId: string) => {
-      const didResolve = await resolveGithubThread(sessionId, threadId);
-      if (!didResolve) {
-        return;
-      }
-      await dequeueResolution(sessionId, threadId);
-    },
-    [dequeueResolution, resolveGithubThread, sessionId],
-  );
-
-  const onResolveAgent = useCallback(
-    async (agentId: AgentId) => {
-      await resolveAgentThreads(sessionId, agentId);
-    },
-    [resolveAgentThreads, sessionId],
-  );
-
   const onForceNext = useCallback(() => {
     void activateNextResolver(sessionId);
   }, [activateNextResolver, sessionId]);
@@ -141,8 +120,6 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     onOpenChat,
     onOpenPr,
     onOpenResolveBoard,
-    onResolveAgent,
-    onResolveThread,
     prNumber,
     queuedCount,
     selectedAgentId,

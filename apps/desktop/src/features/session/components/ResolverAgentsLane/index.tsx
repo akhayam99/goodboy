@@ -67,8 +67,6 @@ export const ResolverAgentsLane = ({ session, inspectedResolverId, onInspectReso
         onOpenChat={lane.onOpenChat}
         onInspect={onInspectResolver}
         onJump={lane.onJump}
-        onResolveThread={lane.onResolveThread}
-        onResolveAgent={lane.onResolveAgent}
       />
     </AgentLane>
   );

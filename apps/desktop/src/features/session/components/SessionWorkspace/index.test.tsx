@@ -174,11 +174,6 @@ vi.mock('./parts/WorkflowBreadcrumb', () => ({
     </button>
   ),
 }));
-vi.mock('../ForceResolveAction', () => ({
-  ForceResolveAction: ({ agent }: { agent: Agent }) => (
-    <div data-testid="force-resolve-action">{agent.name}</div>
-  ),
-}));
 vi.mock('../AgentInspector', () => ({
   AgentInspector: ({ agentId }: { agentId: string }) => (
     <div data-testid="agent-inspector">{agentId}</div>
@@ -323,7 +318,6 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('agent-inspector').textContent).toBe('resolver-1');
-    expect(screen.queryByTestId('force-resolve-action')).toBeNull();
   });
 
   it('adds the selected agent inspector to the agents-home overlay', () => {

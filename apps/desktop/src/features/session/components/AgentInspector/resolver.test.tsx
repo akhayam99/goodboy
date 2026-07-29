@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -23,6 +23,8 @@ const h = vi.hoisted(() => {
     forceCloseResolver: vi.fn(async () => undefined),
     resolveGithubThread: vi.fn(async () => true),
     resolveAgentThreads: vi.fn(async () => true),
+    amendSessionCommit: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
+    squashSessionCommits: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
   };
 });
 
@@ -53,7 +55,9 @@ const state = {
   },
   agentKindOverride: {},
   resolverState: {},
-  resolverThreadOutcomes: {},
+  resolverThreadOutcomes: {
+    [RUNNING_ID]: { PRRT_1: { kind: 'resolved', commitSha: 'abc1234def' } },
+  },
   sessionPendingResolutions: {},
   diffComments: { [SESSION_ID]: [] },
   sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
@@ -61,7 +65,7 @@ const state = {
   agentTurnState: {},
   sessionGithub: {
     [SESSION_ID]: {
-      pr: { number: 7 },
+      pr: { number: 7, url: 'https://github.com/x/y/pull/7' },
       detail: {
         comments: [
           {
@@ -81,6 +85,8 @@ const state = {
   forceCloseResolver: h.forceCloseResolver,
   resolveGithubThread: h.resolveGithubThread,
   resolveAgentThreads: h.resolveAgentThreads,
+  amendSessionCommit: h.amendSessionCommit,
+  squashSessionCommits: h.squashSessionCommits,
 };
 
 vi.mock('../../../../store', () => ({
@@ -126,6 +132,27 @@ const COMMIT: BranchCommit = {
   parentSha: null,
 };
 
+const RUN_EPOCH = Math.floor(Date.parse('2026-07-25T09:00:00.000Z') / 1000);
+
+const LOCAL_COMMIT: BranchCommit = { ...COMMIT, timestamp: RUN_EPOCH + 120 };
+
+const OLDER_LOCAL_COMMIT: BranchCommit = {
+  ...COMMIT,
+  sha: 'older12345',
+  shortSha: 'older12',
+  subject: 'wip',
+  timestamp: RUN_EPOCH + 60,
+};
+
+const PUSHED_COMMIT: BranchCommit = {
+  ...COMMIT,
+  sha: 'pushed1234',
+  shortSha: 'pushed1',
+  subject: 'refactor: extract the guard',
+  timestamp: RUN_EPOCH + 30,
+  pushed: true,
+};
+
 describe('AgentInspector (resolver)', () => {
   beforeEach(() => {
     h.runtime.events = [];
@@ -169,12 +196,63 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('src/auth/guard.ts')).toBeDefined();
   });
 
+  it('opens the commit diff filtered on the file the resolver edited', () => {
+    h.runtime.events = [fileEdit];
+    const seen: Array<unknown> = [];
+    const listener = (event: Event) => seen.push((event as CustomEvent).detail);
+    window.addEventListener('goodboy:open-commit-diff', listener);
+
+    render(
+      <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'src/auth/guard.ts' }));
+    window.removeEventListener('goodboy:open-commit-diff', listener);
+
+    expect(seen).toEqual([{ repo: 'x/y', sha: 'abc1234def', file: 'src/auth/guard.ts' }]);
+  });
+
   it('offers force close for the running resolver', () => {
     render(
       <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
     );
 
     expect(screen.getByRole('button', { name: 'Force close' })).toBeDefined();
+  });
+
+  it('rewords the newest local commit of the resolver', async () => {
+    h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT]);
+
+    render(
+      <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
+    );
+    const reword = await screen.findByRole('button', { name: 'Reword' });
+    fireEvent.click(reword);
+    const input = screen.getByLabelText('new message for this commit');
+    fireEvent.change(input, { target: { value: 'fix(auth): guard the session' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save message' }));
+
+    expect(h.amendSessionCommit).toHaveBeenCalledWith(SESSION_ID, {
+      sha: 'abc1234def',
+      message: 'fix(auth): guard the session',
+    });
+  });
+
+  it('squashes from an older local commit and leaves a pushed one alone', async () => {
+    h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT, OLDER_LOCAL_COMMIT, PUSHED_COMMIT]);
+
+    render(
+      <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
+    );
+    const squash = await screen.findByRole('button', { name: 'Squash from here' });
+    fireEvent.click(squash);
+    fireEvent.click(screen.getByRole('button', { name: 'Squash into one' }));
+
+    expect(h.squashSessionCommits).toHaveBeenCalledWith(SESSION_ID, {
+      sha: 'older12345',
+      message: 'wip',
+    });
+    expect(screen.getByText('already pushed')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Squash from here' })).toHaveLength(1);
   });
 
   it('explains why a queued resolver is blocked and where it sits', () => {

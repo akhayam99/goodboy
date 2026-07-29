@@ -18,8 +18,6 @@ type Props = {
   readonly onOpenChat: (agentId: AgentId) => void;
   readonly onInspect: (agentId: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
-  readonly onResolveThread: (threadId: string) => Promise<void> | void;
-  readonly onResolveAgent: (agentId: AgentId) => Promise<void> | void;
 };
 
 export const ResolverRows = ({
@@ -35,8 +33,6 @@ export const ResolverRows = ({
   onOpenChat,
   onInspect,
   onJump,
-  onResolveThread,
-  onResolveAgent,
 }: Props) => (
   <ul className="flex flex-col gap-1">
     {entries.map(({ agent, status }) => {
@@ -67,8 +63,6 @@ export const ResolverRows = ({
           onOpenChat={() => onOpenChat(agent.id)}
           onInspect={() => onInspect(agent.id)}
           onJump={() => onJump(agent)}
-          onResolveThread={onResolveThread}
-          onResolveAgent={onResolveAgent}
         />
       );
     })}

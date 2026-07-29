@@ -6,14 +6,13 @@ import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types'
 
 vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
-}));
-
-vi.mock('../ForceResolveAction', () => ({
-  ForceResolveAction: () => null,
-}));
-
-vi.mock('../ForceCloseResolverAction', () => ({
-  ForceCloseResolverAction: () => null,
+  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
+    selector({
+      agentTurnState: {},
+      sessionGithub: {},
+      sessionPendingResolutions: {},
+      resolverThreadOutcomes: {},
+    }),
 }));
 
 import { ResolverCard } from './ResolverCard';
@@ -69,8 +68,6 @@ const renderCard = ({ onOpenChat = () => undefined, onInspect = () => undefined 
       onOpenChat={onOpenChat}
       onInspect={onInspect}
       onJump={() => undefined}
-      onResolveThread={() => undefined}
-      onResolveAgent={() => undefined}
     />,
   );
 

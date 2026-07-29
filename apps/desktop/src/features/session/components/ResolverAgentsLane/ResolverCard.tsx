@@ -1,6 +1,6 @@
 import { MessageSquareReply, PanelRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { Agent, AgentId, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
+import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../store';
 import { ContextWindowBar } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
@@ -10,10 +10,9 @@ import { AgentCardActions } from '../AgentCard/AgentCardActions';
 import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { ResolverStateBadge, resolverBadgeState } from '../ResolverStateBadge';
+import { ResolverActions } from '../ResolverActions';
 import { resolverOrigin } from '../../resolver-origin';
-import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverStatus } from '../../resolver-linkage';
-import { ResolverCardFooter } from './ResolverCardFooter';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { resolverCardTone } from './resolverCardTone';
 
@@ -37,8 +36,6 @@ type Props = {
   readonly onOpenChat: () => void;
   readonly onInspect: () => void;
   readonly onJump: () => void;
-  readonly onResolveThread: (threadId: string) => Promise<void> | void;
-  readonly onResolveAgent: (agentId: AgentId) => Promise<void> | void;
 };
 
 export const ResolverCard = ({
@@ -59,8 +56,6 @@ export const ResolverCard = ({
   onOpenChat,
   onInspect,
   onJump,
-  onResolveThread,
-  onResolveAgent,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
@@ -118,12 +113,12 @@ export const ResolverCard = ({
         </span>
       }
       footer={
-        <ResolverCardFooter
+        <ResolverActions
           agent={agent}
+          sessionId={agent.sessionId}
           status={status}
-          threadIds={agentThreadIds(agent)}
-          onResolveThread={onResolveThread}
-          onResolveAgent={onResolveAgent}
+          commitSha={null}
+          density="compact"
         />
       }
     >

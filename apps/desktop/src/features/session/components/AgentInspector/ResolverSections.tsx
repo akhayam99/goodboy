@@ -2,12 +2,16 @@ import { useMemo } from 'react';
 import { Divider } from '@goodboy/ui';
 import type { Agent, AgentSourceKind, PrComment, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
+import type { ResolverThreadOutcome } from '../../../../store/types';
 import { openUrl } from '../../../../shared/lib/editor';
+import { githubRepoSlug } from '../../../../shared/lib/githubRepoSlug';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { useResolverChanges } from '../../hooks/useResolverChanges';
 import { resolverOrigin } from '../../resolver-origin';
+import { resolverCommitSha } from '../../resolverCommitSha';
 import { agentThreadIds } from '../../agentThreadIds';
 import { ChangesSection } from './ChangesSection';
+import { LocalHistorySection } from './LocalHistorySection';
 import { OriginSection } from './OriginSection';
 import { ResolverActionsSection } from './ResolverActionsSection';
 import { StateSection } from './StateSection';
@@ -16,6 +20,9 @@ type Props = {
   readonly sessionId: SessionId;
   readonly agent: Agent;
 };
+
+const EMPTY_PENDING: ReadonlyArray<never> = [];
+const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 
 const OPEN_LABEL: Record<AgentSourceKind | 'unknown', string | null> = {
   review_comment: 'Open the review thread',
@@ -32,8 +39,14 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
   );
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
+  const prUrl = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.url ?? null);
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
   const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agent.id] !== undefined);
+  const pendingResolutions =
+    useAppStore((s) => s.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
+  const outcomes = useAppStore((s) => s.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
+  const amendSessionCommit = useAppStore((s) => s.amendSessionCommit);
+  const squashSessionCommits = useAppStore((s) => s.squashSessionCommits);
 
   const position = resolverIndex.links.findIndex((link) => link.agent.id === agent.id);
   const link = resolverIndex.links[position] ?? null;
@@ -56,6 +69,11 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
   const runningResolverName = useMemo(
     () => resolverIndex.links.find(({ status }) => status === 'running')?.agent.name ?? null,
     [resolverIndex],
+  );
+  const localCommits = useMemo(
+    () =>
+      [...changes.reported, ...changes.withinRunWindow].sort((a, b) => b.timestamp - a.timestamp),
+    [changes.reported, changes.withinRunWindow],
   );
 
   if (link === null) {
@@ -99,6 +117,19 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
       }),
     );
   };
+  const commitSha = resolverCommitSha({
+    threadIds,
+    outcomes,
+    pendingResolutions,
+    reportedSha: changes.reported[0]?.sha ?? changes.reportedMissingShas[0] ?? null,
+  });
+  const openCommitDiff = (sha: string, file?: string) => {
+    window.dispatchEvent(
+      new CustomEvent('goodboy:open-commit-diff', {
+        detail: { repo: githubRepoSlug(prUrl), sha, file },
+      }),
+    );
+  };
   const threadLinks = threadIds.map((threadId, index) => ({
     threadId,
     label: `Open review thread ${index + 1}`,
@@ -128,11 +159,23 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
         reportedMissingShas={changes.reportedMissingShas}
         withinRunWindow={changes.withinRunWindow}
         isLoading={changes.isLoading}
+        onOpenCommit={(sha) => openCommitDiff(sha)}
+        onOpenFile={commitSha === null ? undefined : (path) => openCommitDiff(commitSha, path)}
+      />
+      <Divider />
+      <LocalHistorySection
+        commits={localCommits}
+        onAmend={async (sha, message) => {
+          await amendSessionCommit(sessionId, { sha, message });
+          changes.reload();
+        }}
+        onSquash={async (sha, message) => {
+          await squashSessionCommits(sessionId, { sha, message });
+          changes.reload();
+        }}
       />
       <Divider />
       <StateSection
-        agent={agent}
-        sessionId={sessionId}
         status={link.status}
         queuePosition={position + 1}
         queueTotal={resolverIndex.links.length}
@@ -143,7 +186,7 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
         agent={agent}
         sessionId={sessionId}
         status={link.status}
-        commitSha={changes.reported[0]?.sha ?? changes.reportedMissingShas[0] ?? null}
+        commitSha={commitSha}
       />
     </>
   );
