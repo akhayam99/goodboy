@@ -24,6 +24,16 @@ const h = vi.hoisted(() => ({
     unlinkSessionExternalTask: vi.fn(async () => undefined),
   },
   openUrl: vi.fn(async () => undefined),
+  loadCandidates: vi.fn(),
+  candidate: {
+    provider: 'linear',
+    externalId: 'GB-77',
+    identifier: 'GB-77',
+    title: 'Ship the issue picker',
+    url: 'https://linear.app/goodboy/issue/GB-77/ship-the-issue-picker',
+    goal: 'Ship the issue picker',
+    branchSlug: 'ship-the-issue-picker',
+  },
 }));
 
 vi.mock('../../../../../../store', () => ({
@@ -51,6 +61,16 @@ vi.mock('./SentryTaskDetail', () => ({
 
 vi.mock('../PaneShell', () => ({
   PaneShell: ({ children }: Props) => <div>{children}</div>,
+}));
+
+vi.mock('../../../../../integrations/hooks/useIssueCandidates', () => ({
+  useIssueCandidates: () => ({
+    rows: [h.candidate],
+    isLoading: false,
+    isLoaded: true,
+    error: null,
+    load: h.loadCandidates,
+  }),
 }));
 
 import { IntegrationPane } from '.';
@@ -202,4 +222,25 @@ describe('IntegrationPane', () => {
       expect(screen.queryByText(detailText)).toBeNull();
     },
   );
+
+  it('links an issue picked from the assigned-issues search', async () => {
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [{ provider: 'linear' }] };
+
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    fireEvent.focus(screen.getByRole('combobox', { name: 'Issue' }));
+    fireEvent.mouseDown(screen.getByText('Ship the issue picker'));
+
+    await waitFor(() => expect(h.store.linkSessionExternalTask).toHaveBeenCalledOnce());
+    expect(h.store.linkSessionExternalTask).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({
+        provider: 'linear',
+        externalId: 'GB-77',
+        identifier: 'GB-77',
+        title: 'Ship the issue picker',
+        url: 'https://linear.app/goodboy/issue/GB-77/ship-the-issue-picker',
+      }),
+    );
+  });
 });

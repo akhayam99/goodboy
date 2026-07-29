@@ -418,6 +418,7 @@ export type AppActions = {
     sessionId: SessionId,
     opts?: { force?: boolean; silent?: boolean; retries?: number },
   ): Promise<void>;
+  selectSessionPr(sessionId: SessionId, prNumber: number): Promise<void>;
   sweepGithub(opts?: { skipUnknownPr?: boolean }): void;
   resolveGithubThread(
     sessionId: SessionId,
@@ -642,6 +643,7 @@ export const initialState: AppState = {
   sessionPanelExpanded: {},
   githubStatus: null,
   sessionGithub: {},
+  sessionGithubPrs: {},
   sessionGitlabMr: {},
   reviewPrs: {},
   reviewDrafts: {},

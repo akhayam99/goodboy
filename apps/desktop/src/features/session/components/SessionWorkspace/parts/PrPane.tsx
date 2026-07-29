@@ -15,6 +15,7 @@ import {
 import { Button, Eyebrow, cn } from '@goodboy/ui';
 import type { PrCheckRun, PullRequestStateKind, Session, SessionId } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import { PrSwitcher } from '../../../../github/components/GitHubStudio/PrSwitcher';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
@@ -60,12 +61,12 @@ export const PrPane = ({ session }: Props) => {
           : mergeRequest.state === 'closed'
             ? 'closed'
             : 'open';
-  const hasPullRequests = pullRequest != null || mergeRequest != null;
+  const hasBothProviders = pullRequest != null && mergeRequest != null;
 
   return (
     <PaneShell title="Pull requests" description="Review status for this session.">
       <div className="flex flex-col gap-3">
-        {hasPullRequests ? (
+        {hasBothProviders ? (
           <div className="flex flex-col gap-1.5">
             <Eyebrow label="Pull requests" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-1">
@@ -107,6 +108,8 @@ export const PrPane = ({ session }: Props) => {
 const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: boolean }) => {
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
+  const branchPrs = useAppStore((s) => s.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
@@ -204,7 +207,15 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-2">
-            <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
+            {branchPrs.length > 1 ? (
+              <PrSwitcher
+                prs={branchPrs}
+                selected={pr.number}
+                onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+              />
+            ) : (
+              <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
+            )}
             <CiBadge state={ciState} />
           </div>
           <h2 className="text-balance text-sm font-semibold leading-snug text-foreground">

@@ -1,6 +1,10 @@
 import { detectRepoSlug, fetchLinkedIssues, getPrForBranch } from '@goodboy/core';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
-import { createTauriPrCacheStore, tauriGhRunner } from '../../../features/github/github';
+import {
+  createTauriPrCacheStore,
+  ghPrsForBranch,
+  tauriGhRunner,
+} from '../../../features/github/github';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -70,7 +74,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           return;
         }
         const store = createTauriPrCacheStore(tauriDatabase);
-        const pr = await getPrForBranch(
+        const canonicalPr = await getPrForBranch(
           { runner: tauriGhRunner, store },
           {
             repoSlug: slug,
@@ -80,6 +84,15 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
             force: opts?.force === true,
           },
         );
+        const prs = await ghPrsForBranch(workspace.rootPath, branch, session.workspaceId).catch(
+          () => get().sessionGithubPrs[sessionId] ?? [],
+        );
+        const selectedNumber = get().sessionGithub[sessionId]?.pr?.number;
+        const selectedPr =
+          selectedNumber != null && selectedNumber !== canonicalPr?.number
+            ? (prs.find((candidate) => candidate.number === selectedNumber) ?? null)
+            : null;
+        const pr = selectedPr ?? canonicalPr ?? prs[0] ?? null;
         const linked = pr
           ? await fetchLinkedIssues(tauriGhRunner, slug, pr, {
               cwd: workspace.rootPath,
@@ -87,6 +100,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
             })
           : [];
         set((state) => ({
+          sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: prs },
           sessionGithub: {
             ...state.sessionGithub,
             [sessionId]: {

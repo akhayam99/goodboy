@@ -11,6 +11,9 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { openUrl } from '../../../../../../shared/lib/editor';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
+import { IssuePicker } from '../../../../../integrations/components/IssuePicker';
+import { useIssueCandidates } from '../../../../../integrations/hooks/useIssueCandidates';
+import type { IssueCandidate } from '../../../../../integrations/fetchIssueCandidates';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { MissingGithubRemoteEmptyState } from '../../../../../github/components/MissingGithubRemoteEmptyState';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
@@ -67,6 +70,26 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     remoteKind,
     externalTasks,
   });
+  const candidates = useIssueCandidates({ workspaceId, provider });
+
+  const handlePick = async (candidate: IssueCandidate) => {
+    setError(null);
+    setIsLinking(true);
+    try {
+      await linkSessionExternalTask(sessionId, {
+        provider,
+        externalId: candidate.externalId,
+        identifier: candidate.identifier,
+        title: candidate.title,
+        url: candidate.url,
+        createdAt: new Date().toISOString() as IsoDateTime,
+      });
+    } catch (linkError) {
+      setError(formatError(linkError));
+    } finally {
+      setIsLinking(false);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -113,30 +136,44 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <div className="flex flex-col gap-3">
         {connection.isConnected ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-            <label
-              htmlFor={`${provider}-issue-url`}
-              className="text-xs font-medium text-foreground"
-            >
-              Issue URL
-            </label>
-            <div className="flex items-center gap-2">
-              <Input
-                id={`${provider}-issue-url`}
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                placeholder={`Paste a ${meta.label} issue URL`}
-                aria-label={`${meta.label} issue URL`}
-              />
-              <Button type="submit" size="sm" disabled={isLinking}>
-                <Link2 size={13} aria-hidden />
-                Link
-              </Button>
+            <div className="flex items-center justify-between gap-2">
+              <label
+                htmlFor={`${provider}-issue-url`}
+                className="text-xs font-medium text-foreground"
+              >
+                Link an issue
+              </label>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => window.dispatchEvent(new CustomEvent(meta.studioEvent))}
               >
                 Open {meta.label} studio
+              </Button>
+            </div>
+            <IssuePicker
+              rows={candidates.rows}
+              isLoading={candidates.isLoading}
+              isLoaded={candidates.isLoaded}
+              error={candidates.error}
+              value={null}
+              placeholder={`Search ${meta.label} issues assigned to you…`}
+              disabled={isLinking}
+              onOpen={candidates.load}
+              onPick={(candidate) => void handlePick(candidate)}
+              onClear={() => undefined}
+            />
+            <div className="flex items-center gap-2">
+              <Input
+                id={`${provider}-issue-url`}
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder={`Or paste a ${meta.label} issue URL`}
+                aria-label={`${meta.label} issue URL`}
+              />
+              <Button type="submit" size="sm" disabled={isLinking}>
+                <Link2 size={13} aria-hidden />
+                Link
               </Button>
             </div>
             {error != null ? <p className="text-xs text-danger">{error}</p> : null}

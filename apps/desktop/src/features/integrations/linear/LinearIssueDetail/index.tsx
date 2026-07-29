@@ -33,7 +33,9 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
       ),
     },
     { label: 'Assignee', value: issue.assignee?.name },
+    { label: 'Team', value: issue.team.key },
     { label: 'Project', value: issue.project?.name },
+    { label: 'Updated', value: new Date(issue.updatedAt).toLocaleDateString() },
     {
       label: 'Labels',
       wide: true,
@@ -88,7 +90,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
       eyebrow={issue.identifier}
       title={issue.title}
       state={
-        <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
+        <span className="rounded-md bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
           {issue.state.name}
         </span>
       }
