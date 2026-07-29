@@ -151,6 +151,7 @@ pub fn run() {
       providers::get_opencode_status,
       providers::get_openrouter_status,
       providers::refresh_opencode_status,
+      providers::refresh_openrouter_status,
       providers::check_provider_auth,
       provider_credentials::provider_api_key_validate,
       provider_lifecycle::provider_lifecycle_run,

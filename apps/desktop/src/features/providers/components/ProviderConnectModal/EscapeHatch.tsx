@@ -1,19 +1,41 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Terminal } from 'lucide-react';
 import { Tooltip } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { formatError } from '../../../../shared/lib/errors';
+import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly command: string;
+  readonly providerId: ProviderId;
+};
+
+type PollParams = {
+  readonly attempt: number;
+  readonly baseline: string;
+  readonly startedAt: number;
 };
 
 const RESET_AFTER_MS = 1500;
+const POLL_DELAYS_MS = [3_000, 6_000, 12_000, 24_000] as const;
+const MAX_POLL_DELAY_MS = 24_000;
+const POLL_DURATION_MS = 120_000;
 
-export const EscapeHatch = ({ command }: Props) => {
+export const EscapeHatch = ({ command, providerId }: Props) => {
   const [copied, setCopied] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const refreshProviders = useAppStore((state) => state.refreshProviders);
+  const pollTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimer.current !== null) {
+        window.clearTimeout(pollTimer.current);
+      }
+    };
+  }, [providerId]);
 
   const onCopy = async () => {
     try {
@@ -30,6 +52,36 @@ export const EscapeHatch = ({ command }: Props) => {
     setLaunchError(null);
     try {
       await openCommandInExternalTerminal(command);
+      if (pollTimer.current !== null) {
+        window.clearTimeout(pollTimer.current);
+      }
+      const provider = useAppStore.getState().providers.find((item) => item.id === providerId);
+      const baseline = `${provider?.connection ?? 'missing'}:${provider?.identity ?? ''}`;
+      const startedAt = Date.now();
+      const poll = async ({ attempt, baseline: initial, startedAt: start }: PollParams) => {
+        await refreshProviders().catch(() => undefined);
+        const current = useAppStore.getState().providers.find((item) => item.id === providerId);
+        const signature = `${current?.connection ?? 'missing'}:${current?.identity ?? ''}`;
+        if (signature !== initial) {
+          pollTimer.current = null;
+          return;
+        }
+        const nextAttempt = attempt + 1;
+        const delayMs =
+          POLL_DELAYS_MS[Math.min(nextAttempt, POLL_DELAYS_MS.length - 1)] ?? MAX_POLL_DELAY_MS;
+        if (Date.now() - start + delayMs > POLL_DURATION_MS) {
+          pollTimer.current = null;
+          return;
+        }
+        pollTimer.current = window.setTimeout(
+          () => void poll({ attempt: nextAttempt, baseline: initial, startedAt: start }),
+          delayMs,
+        );
+      };
+      pollTimer.current = window.setTimeout(
+        () => void poll({ attempt: 0, baseline, startedAt }),
+        POLL_DELAYS_MS[0],
+      );
     } catch (err) {
       setLaunchError(formatError(err));
     } finally {

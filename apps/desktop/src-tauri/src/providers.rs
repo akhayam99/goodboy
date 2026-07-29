@@ -7,12 +7,8 @@ use tauri::State;
 
 use crate::path_env;
 
-// Tight detection budgets: a CLI that doesn't respond to `--version` in 2s is
-// already broken from the user's POV, and worst-case sum across 4 providers
-// dominates the "refresh providers" UI latency. Auth was previously 5s × N
-// candidate subcommands × N providers, easily 20s+ wall time on cold runs.
 const DETECT_TIMEOUT: Duration = Duration::from_secs(2);
-const AUTH_TIMEOUT: Duration = Duration::from_secs(2);
+const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Debug, Clone, Serialize)]
@@ -571,6 +567,13 @@ pub fn get_opencode_status(state: State<'_, OpencodeState>) -> ProviderStatus {
 #[tauri::command]
 pub fn get_openrouter_status(state: State<'_, OpencodeState>) -> ProviderStatus {
     let mut status = get_status(&state.0, "openrouter", "opencode");
+    status.id = "openrouter".to_string();
+    status
+}
+
+#[tauri::command]
+pub fn refresh_openrouter_status(state: State<'_, OpencodeState>) -> ProviderStatus {
+    let mut status = refresh_status(&state.0, detect_opencode);
     status.id = "openrouter".to_string();
     status
 }

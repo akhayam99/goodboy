@@ -2,7 +2,12 @@ import { useEffect } from 'react';
 import { useAppStore } from '../../../store/store';
 
 const DEBOUNCE_MS = 500;
+const LIFECYCLE_RETRY_MS = 2_000;
 const REFRESH_TTL_MS = 60_000;
+
+type ScheduleParams = {
+  readonly delayMs?: number;
+};
 
 export const useProviderRefreshOnFocus = (): void => {
   const refreshProviders = useAppStore((s) => s.refreshProviders);
@@ -11,7 +16,7 @@ export const useProviderRefreshOnFocus = (): void => {
     let timer: number | null = null;
     let lastRunAt = 0;
 
-    const schedule = (): void => {
+    const schedule = ({ delayMs = DEBOUNCE_MS }: ScheduleParams): void => {
       if (timer !== null) {
         window.clearTimeout(timer);
       }
@@ -19,6 +24,7 @@ export const useProviderRefreshOnFocus = (): void => {
         timer = null;
         const elapsed = Date.now() - lastRunAt;
         if (elapsed < REFRESH_TTL_MS) {
+          schedule({ delayMs: REFRESH_TTL_MS - elapsed });
           return;
         }
 
@@ -28,18 +34,19 @@ export const useProviderRefreshOnFocus = (): void => {
             l.phase === 'installing' || l.phase === 'connecting' || l.phase === 'disconnecting',
         );
         if (inFlight) {
+          schedule({ delayMs: LIFECYCLE_RETRY_MS });
           return;
         }
 
         lastRunAt = Date.now();
         void refreshProviders();
-      }, DEBOUNCE_MS);
+      }, delayMs);
     };
 
-    const onFocus = (): void => schedule();
+    const onFocus = (): void => schedule({});
     const onVisibility = (): void => {
       if (document.visibilityState === 'visible') {
-        schedule();
+        schedule({});
       }
     };
 

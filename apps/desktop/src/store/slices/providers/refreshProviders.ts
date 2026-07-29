@@ -1,12 +1,7 @@
 import {
   buildProviderList,
   checkProviderAuth,
-  getCodexStatus,
-  getCursorStatus,
-  getGeminiStatus,
-  getOpenCodeStatus,
-  getOpenRouterStatus,
-  getProviderStatus,
+  refreshProviderDetection,
   type ProviderAuthResults,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
@@ -25,12 +20,12 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
       opencodeStatus,
       openrouterStatus,
     ] = await Promise.all([
-      getProviderStatus('anthropic'),
-      getCursorStatus(),
-      getCodexStatus(),
-      getGeminiStatus(),
-      getOpenCodeStatus(),
-      getOpenRouterStatus(),
+      refreshProviderDetection({ id: 'anthropic' }),
+      refreshProviderDetection({ id: 'cursor' }),
+      refreshProviderDetection({ id: 'codex' }),
+      refreshProviderDetection({ id: 'gemini' }),
+      refreshProviderDetection({ id: 'opencode' }),
+      refreshProviderDetection({ id: 'openrouter' }),
     ]);
     const statuses: ProviderStatuses = {
       anthropic: providerStatus,

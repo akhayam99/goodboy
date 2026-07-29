@@ -208,7 +208,7 @@ export const runLifecycle = async (
             ? payload.status
             : storedStatus({ providerId: 'opencode', providers: state.providers }),
         openrouter:
-          providerId === 'opencode'
+          providerId === 'opencode' || providerId === 'openrouter'
             ? { ...payload.status, id: 'openrouter' }
             : storedStatus({ providerId: 'openrouter', providers: state.providers }),
       };
@@ -234,6 +234,7 @@ export const runLifecycle = async (
         },
       };
     });
+    void get().refreshProviders();
   });
 
   try {
