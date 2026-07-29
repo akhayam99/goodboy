@@ -1027,7 +1027,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             });
       const errorState: TurnState = {
         kind: 'error',
-        message: rawMessage,
+        message,
         failedAt: now(),
       };
       const derived = applyAgentTurnState(set, sessionId, activeAgentId, errorState, now());

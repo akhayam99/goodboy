@@ -459,6 +459,8 @@ describe('sendTurn, terminal state guarantees', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({ model: 'gpt-5.5-high', cursorMaxMode: true }),
     );
+    const turnState = useAppStore.getState().agentTurnState[AGENT_ID];
+    expect(turnState?.kind === 'error' ? turnState.message : '').toBe(message);
   });
 
   it('leaves a non-auth provider error event message verbatim', async () => {
