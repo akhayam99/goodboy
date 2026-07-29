@@ -366,7 +366,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                     onRun={() => onRun(script)}
                     onCancel={() => onCancel(script.id)}
                     onCopy={() => onCopy(script.id, script.body)}
-                    onDelete={() => void onDelete(script.id)}
+                    onDelete={() => onDelete(script.id)}
                   />
                 </li>
               ))}

@@ -140,11 +140,14 @@ describe('ScriptsPanel', () => {
     expect(screen.getByDisplayValue('echo hi')).toBeDefined();
   });
 
-  it('deletes a script from its inline row action', async () => {
+  it('confirms before deleting a script from its inline row action', async () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+    expect(state.deleteScript).not.toHaveBeenCalled();
+    expect(screen.getByRole('group', { name: 'Delete "setup"?' })).toBeDefined();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete setup' }));
     });
     expect(state.deleteScript).toHaveBeenCalledWith('s1', 'ws-1');
   });

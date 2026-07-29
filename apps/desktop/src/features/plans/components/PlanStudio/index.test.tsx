@@ -32,6 +32,7 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.planConsumptions = {};
   state.plans = [];
+  state.deletePlan.mockClear();
 });
 afterEach(cleanup);
 
@@ -81,6 +82,26 @@ describe('PlanStudio', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText('Implement auth module')).toBeDefined();
     expect(screen.getByText(/active/i)).toBeDefined();
+  });
+
+  it('confirms before deleting an active plan', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Implement auth module',
+        bodyMd: '## Steps',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} initialPlanId={'plan-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete plan' }));
+    expect(state.deletePlan).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Implement auth module' }));
+    expect(state.deletePlan).toHaveBeenCalledWith('sess-1', 'plan-1');
   });
 });
 

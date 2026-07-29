@@ -55,6 +55,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
   const [replayArmed, setReplayArmed] = useState(false);
+  const [deleteArmed, setDeleteArmed] = useState(false);
 
   useEffect(() => {
     if (selectedId === null && plans.length > 0) {
@@ -104,6 +105,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
     setMode('preview');
     setSelectedId(id);
     setListOpen(false);
+    setDeleteArmed(false);
   };
 
   const handleTrigger = async () => {
@@ -369,7 +371,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                           <Tooltip content="Delete plan (soft delete, click restore to recover)">
                             <button
                               type="button"
-                              onClick={() => handleDiscard(selected)}
+                              onClick={() => setDeleteArmed(true)}
                               aria-label="Delete plan"
                               className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
                             >
@@ -379,6 +381,22 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                         )}
                       </div>
                     </div>
+                    {deleteArmed ? (
+                      <InlineConfirm
+                        role="danger"
+                        icon={<Trash2 size={12} aria-hidden />}
+                        title={`Delete "${selected.title}"?`}
+                        description="Moves this plan to discarded plans, where it can still be restored."
+                        confirmLabel={`Delete ${selected.title}`}
+                        autoDisarmMs={4000}
+                        onConfirm={() => {
+                          handleDiscard(selected);
+                          setDeleteArmed(false);
+                        }}
+                        onCancel={() => setDeleteArmed(false)}
+                        className="shrink-0"
+                      />
+                    ) : null}
                     {replayArmed && (
                       <InlineConfirm
                         role="alert"

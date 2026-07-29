@@ -1,15 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, Divider, Input, ScrollFade, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Inbox, Paperclip, Target, Wand2 } from 'lucide-react';
-import type { ProviderId, SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
+import { ScrollFade } from '@goodboy/ui';
+import type { SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
 import { resolveTaskModel } from '@goodboy/core';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
-import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { settingBranchPrefix, DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -19,22 +15,19 @@ import {
   type LocalBranchInfo,
 } from '../../../../features/worktree/worktree';
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
-import { BranchCombobox } from '../../../../features/worktree/BranchCombobox';
 import { useRemoteHostKind } from '../../../../features/worktree/useRemoteHostKind';
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
-import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { isMissingBaseRefError } from '../../../../shared/lib/errors';
+import { formatError } from '../../../../shared/lib/errors';
 import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
 import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
-import { SetupWorkflowToggle } from '../SetupWorkflowToggle';
+import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
 import { useSetupWorkflowPreference } from '../../hooks/useSetupWorkflowPreference';
-import { BranchModeToggle } from './BranchModeToggle';
 import { generateBranchSlug } from './generateBranchSlug';
-import { IssueSourceField } from './IssueSourceField';
-import { Section } from './Section';
+import { NewSessionFooter } from './NewSessionFooter';
+import { NewSessionForm } from './NewSessionForm';
 
 type Props = {
   onClose: () => void;
@@ -42,59 +35,11 @@ type Props = {
   onOpenSettings: () => void;
 };
 
-function formatError(err: unknown): string {
-  if (err instanceof Error) {
-    return err.message;
-  }
-  if (typeof err === 'string') {
-    return err;
-  }
-  if (err && typeof err === 'object') {
-    const maybe = err as { message?: unknown };
-    if (typeof maybe.message === 'string') {
-      return maybe.message;
-    }
-    try {
-      return JSON.stringify(err);
-    } catch {
-      return 'unknown error';
-    }
-  }
-  return String(err);
-}
-
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'opencode',
-  'openrouter',
-];
-
-function pickDefaultProvider(connectedIds: ReadonlySet<ProviderId>): ProviderId {
-  for (const id of PROVIDER_ORDER) {
-    if (connectedIds.has(id)) {
-      return id;
-    }
-  }
-  return 'anthropic';
-}
-
 const SLUG_MAX_LEN = 48;
-
-const slugifyLive = (input: string): string => slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
-
-const sanitizeBranchSlug = (input: string): string =>
-  sanitizeBranchSlugValue({ input, maxLength: SLUG_MAX_LEN });
-
-const sanitizePrefix = (input: string): string => sanitizeBranchPrefix({ input });
 
 const EMPTY_LOCAL_BRANCHES: ReadonlyArray<LocalBranchInfo> = [];
 
 const EMPTY_INTEGRATIONS: ReadonlyArray<WorkspaceIntegration> = [];
-
-const isValidBranchSlug = (slug: string): boolean => validateBranchSlug({ slug });
 
 export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) => {
   const createSession = useAppStore((s) => s.createSession);
@@ -149,7 +94,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const defaultProvider =
     workspaceDefaultProvider != null && connectedProviderIds.has(workspaceDefaultProvider)
       ? workspaceDefaultProvider
-      : pickDefaultProvider(connectedProviderIds);
+      : (PROVIDER_ORDER.find((id) => connectedProviderIds.has(id)) ?? 'anthropic');
 
   useEffect(() => {
     if (isSimple) {
@@ -201,7 +146,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     if (slugTouched) {
       return;
     }
-    setBranchSlug(slugifyLive(goal));
+    setBranchSlug(slugifyBranch({ input: goal, maxLength: SLUG_MAX_LEN }));
   }, [goal, slugTouched]);
 
   const handleGenerateSlug = () => {
@@ -218,7 +163,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     generateBranchSlug({
       goal: trimmed,
       ...taskModel,
-      fallbackSlug: slugifyLive(trimmed),
+      fallbackSlug: slugifyBranch({ input: trimmed, maxLength: SLUG_MAX_LEN }),
       invokeFn: invoke,
       ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
     })
@@ -249,7 +194,9 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   const branchReady =
     isSimple ||
-    (branchMode === 'new' ? isValidBranchSlug(branchSlug) : existingBranch.trim().length > 0);
+    (branchMode === 'new'
+      ? validateBranchSlug({ slug: branchSlug })
+      : existingBranch.trim().length > 0);
   const goalReady = goal.trim().length > 0;
   const canCreate =
     goalReady &&
@@ -278,7 +225,8 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         goal,
         ...(!isSimple
           ? {
-              branchPrefix: sanitizePrefix(branchPrefix).trim() || DEFAULT_BRANCH_PREFIX,
+              branchPrefix:
+                sanitizeBranchPrefix({ input: branchPrefix }).trim() || DEFAULT_BRANCH_PREFIX,
               branchSlug: branchSlug.trim() || undefined,
             }
           : {}),
@@ -309,250 +257,56 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     <div className="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in">
       <div className="flex w-full max-w-2xl flex-col overflow-hidden">
         <ScrollFade className="max-h-[70vh]" viewportClassName="px-6 py-5" fadeSize={24}>
-          <div className="flex w-full flex-col gap-8">
-            {noProviderConnected ? (
-              <div
-                role="alert"
-                className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs"
-              >
-                <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-                <div className="flex-1 leading-relaxed text-foreground">
-                  No provider is connected. A session needs at least one of{' '}
-                  {PROVIDER_ORDER.map((id, i) => (
-                    <span key={id}>
-                      <span className="font-medium">{PROVIDER_LABEL[id]}</span>
-                      {i < PROVIDER_ORDER.length - 1 ? ', ' : ''}
-                    </span>
-                  ))}{' '}
-                  connected to run.
-                  <button
-                    type="button"
-                    onClick={onOpenSettings}
-                    className="ml-1 underline underline-offset-2 hover:text-warning"
-                  >
-                    Open settings
-                  </button>
-                  .
-                </div>
-              </div>
-            ) : null}
-            {!isSimple && issueSources.length > 0 ? (
-              <Section
-                icon={<Inbox size={14} aria-hidden className="text-primary" />}
-                tone="primary"
-                title="Start from an issue"
-                subtitle="Pick an issue assigned to you in any connected tracker. The goal and branch below auto-fill from it."
-              >
-                <IssueSourceField
-                  workspaceId={workspaceId}
-                  sources={issueSources}
-                  value={issue}
-                  disabled={busy}
-                  onPick={onPickIssue}
-                  onClear={() => setIssue(null)}
-                />
-              </Section>
-            ) : null}
-
-            <Section
-              icon={<Target size={14} aria-hidden className="text-primary" />}
-              tone="primary"
-              title="Goal"
-              subtitle="What this session should accomplish. Be specific. This is the agent's primary context."
-            >
-              <Textarea
-                value={goal}
-                placeholder={
-                  isSimple
-                    ? 'Prepare a study plan for next week’s exam…'
-                    : 'Refactor auth domain to extract token validation into a shared module…'
-                }
-                onChange={(e) => setGoal(e.target.value)}
-                autoGrow
-                minRows={4}
-                maxRows={12}
-                autoFocus
-                disabled={busy}
-              />
-            </Section>
-
-            <Section
-              icon={<Paperclip size={14} aria-hidden className="text-primary" />}
-              tone="primary"
-              title="Attachments"
-              subtitle="Images and files the agents can read on demand. Routed to the agents that benefit from each type."
-            >
-              <div
-                ref={composerRef}
-                data-drop-composer
-                className={cn(
-                  'flex flex-col gap-2 rounded-lg border border-dashed px-3 py-3 transition-colors',
-                  isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
-                )}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={ATTACHMENT_ACCEPT}
-                  multiple
-                  hidden
-                  onChange={onFileInputChange}
-                />
-                {attachments.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {attachments.map((a) => (
-                      <AttachmentChip
-                        key={a.id}
-                        attachment={a}
-                        onRemove={() => removeAttachment(a.id)}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={busy}
-                  className={cn(
-                    'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
-                    busy
-                      ? 'cursor-not-allowed text-muted-foreground/40'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )}
-                >
-                  <Paperclip size={13} aria-hidden /> Add files
-                </button>
-              </div>
-            </Section>
-
-            {!isSimple ? (
-              <Section
-                icon={<GitBranch size={14} aria-hidden className="text-success" />}
-                tone="success"
-                title="Branch"
-                subtitle="Each session lives on its own git worktree. Pick a fresh branch or attach to an existing one."
-              >
-                <div className="flex flex-col gap-2">
-                  <BranchModeToggle mode={branchMode} onChange={setBranchMode} disabled={busy} />
-                  {branchMode === 'new' ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="shrink-0 text-xs text-muted-foreground font-mono">
-                        {(sanitizePrefix(branchPrefix) || DEFAULT_BRANCH_PREFIX) + '/'}
-                      </span>
-                      {slugGenerating ? (
-                        <Skeleton className="h-8 flex-1 rounded border border-border" />
-                      ) : (
-                        <Input
-                          value={branchSlug}
-                          onChange={(e) => {
-                            setBranchSlug(sanitizeBranchSlug(e.target.value));
-                            setSlugTouched(true);
-                          }}
-                          placeholder="branch-slug"
-                          className="h-8 flex-1 font-mono text-sm"
-                          disabled={busy}
-                          autoCapitalize="off"
-                          autoCorrect="off"
-                          spellCheck={false}
-                          aria-label="Branch slug"
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleGenerateSlug}
-                        disabled={!goal.trim() || slugGenerating || busy}
-                        title="Generate from goal"
-                        aria-label="Generate branch name"
-                        className={cn(
-                          'shrink-0 rounded-md border border-border px-2 py-1.5 text-xs transition-colors',
-                          goal.trim() && !slugGenerating && !busy
-                            ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            : 'cursor-not-allowed text-muted-foreground/30',
-                        )}
-                      >
-                        <Wand2 size={13} aria-hidden />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-1.5">
-                      <BranchCombobox
-                        branches={existingBranches}
-                        value={existingBranch}
-                        onChange={setExistingBranch}
-                        disabled={busy || branchesLoading}
-                        loading={branchesLoading}
-                      />
-                      {conflictSessionId ? (
-                        <p className="text-2xs leading-relaxed text-muted-foreground">
-                          This branch is already used by an open session. Open it instead of
-                          creating a duplicate.
-                        </p>
-                      ) : conflictWorktreePath ? (
-                        <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
-                          <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0" />
-                          <span>
-                            Checked out in another worktree (
-                            <span className="break-all font-mono">{conflictWorktreePath}</span>).
-                            Creating erases that worktree and recreates it here.
-                          </span>
-                        </p>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              </Section>
-            ) : null}
-          </div>
+          <NewSessionForm
+            workspaceId={workspaceId}
+            isSimple={isSimple}
+            noProviderConnected={noProviderConnected}
+            onOpenSettings={onOpenSettings}
+            issueSources={issueSources}
+            issue={issue}
+            onPickIssue={onPickIssue}
+            onClearIssue={() => setIssue(null)}
+            goal={goal}
+            onGoalChange={setGoal}
+            attachments={attachments}
+            isDragging={isDragging}
+            composerRef={composerRef}
+            fileInputRef={fileInputRef}
+            onFileInputChange={onFileInputChange}
+            onRemoveAttachment={removeAttachment}
+            branchMode={branchMode}
+            onBranchModeChange={setBranchMode}
+            branchPrefix={sanitizeBranchPrefix({ input: branchPrefix })}
+            branchSlug={branchSlug}
+            onBranchSlugChange={(value) => {
+              setBranchSlug(sanitizeBranchSlugValue({ input: value, maxLength: SLUG_MAX_LEN }));
+              setSlugTouched(true);
+            }}
+            slugGenerating={slugGenerating}
+            onGenerateSlug={handleGenerateSlug}
+            existingBranches={existingBranches}
+            existingBranch={existingBranch}
+            onExistingBranchChange={setExistingBranch}
+            branchesLoading={branchesLoading}
+            conflictSessionId={conflictSessionId}
+            conflictWorktreePath={conflictWorktreePath}
+            busy={busy}
+          />
         </ScrollFade>
-
-        {!isSimple && error && isMissingBaseRefError(error) ? (
-          <div className="px-6 pb-2">
-            <BaseBranchGuide />
-          </div>
-        ) : null}
-
-        <Divider />
-
-        <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <SetupWorkflowToggle
-              checked={setupWorkflow}
-              disabled={busy}
-              onChange={setSetupWorkflow}
-            />
-            {error && !isMissingBaseRefError(error) ? (
-              <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
-                <AlertTriangle size={12} aria-hidden />
-                {error}
-              </span>
-            ) : null}
-          </div>
-          <Button variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
-          </Button>
-          {conflictSessionId ? (
-            <Button onClick={() => onOpenConflictSession(conflictSessionId)} disabled={busy}>
-              Open session
-            </Button>
-          ) : conflictWorktreePath ? (
-            <Button
-              variant="danger"
-              onClick={() => void onCreate(conflictWorktreePath)}
-              disabled={busy || !goalReady}
-              className={cn(busy && 'animate-border-pulse')}
-            >
-              {busy ? 'Working…' : 'Erase worktree & create'}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => void onCreate()}
-              disabled={!canCreate}
-              className={cn(busy && 'animate-border-pulse')}
-            >
-              {busy ? 'Creating…' : 'Create session'}
-            </Button>
-          )}
-        </footer>
+        <NewSessionFooter
+          isSimple={isSimple}
+          error={error}
+          setupWorkflow={setupWorkflow}
+          onSetupWorkflowChange={setSetupWorkflow}
+          busy={busy}
+          onClose={onClose}
+          conflictSessionId={conflictSessionId}
+          conflictWorktreePath={conflictWorktreePath}
+          goalReady={goalReady}
+          canCreate={canCreate}
+          onOpenConflictSession={onOpenConflictSession}
+          onCreate={onCreate}
+        />
       </div>
     </div>
   );

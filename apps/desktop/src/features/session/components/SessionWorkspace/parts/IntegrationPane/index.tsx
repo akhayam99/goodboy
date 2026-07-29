@@ -6,7 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { Button, Divider, Input } from '@goodboy/ui';
+import { Button, Divider, InlineConfirm, Input } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { openUrl } from '../../../../../../shared/lib/editor';
@@ -30,6 +30,10 @@ type ProviderMeta = Readonly<{
   studioEvent: string;
 }>;
 
+type UnlinkParams = {
+  readonly externalId: string;
+};
+
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   linear: { label: 'Linear', studioEvent: 'goodboy:open-linear-studio' },
   sentry: { label: 'Sentry', studioEvent: 'goodboy:open-sentry-studio' },
@@ -42,6 +46,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const [error, setError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [unlinkingExternalId, setUnlinkingExternalId] = useState<string | null>(null);
+  const [armedExternalId, setArmedExternalId] = useState<string | null>(null);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
@@ -83,6 +88,19 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       setError(formatError(linkError));
     } finally {
       setIsLinking(false);
+    }
+  };
+
+  const handleUnlink = async ({ externalId }: UnlinkParams) => {
+    setError(null);
+    setUnlinkingExternalId(externalId);
+    try {
+      await unlinkSessionExternalTask(sessionId, provider, externalId);
+      setArmedExternalId(null);
+    } catch (unlinkError) {
+      setError(formatError(unlinkError));
+    } finally {
+      setUnlinkingExternalId(null);
     }
   };
 
@@ -154,18 +172,25 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                   size="sm"
                   disabled={unlinkingExternalId === task.externalId}
                   aria-label={`unlink ${task.identifier}`}
-                  onClick={() => {
-                    setError(null);
-                    setUnlinkingExternalId(task.externalId);
-                    void unlinkSessionExternalTask(sessionId, provider, task.externalId)
-                      .catch((unlinkError: unknown) => setError(formatError(unlinkError)))
-                      .finally(() => setUnlinkingExternalId(null));
-                  }}
+                  onClick={() => setArmedExternalId(task.externalId)}
                 >
                   <Unlink size={13} aria-hidden />
                   Unlink
                 </Button>
               </div>
+              {armedExternalId === task.externalId ? (
+                <InlineConfirm
+                  role="danger"
+                  icon={<Unlink size={12} aria-hidden />}
+                  title={`Unlink ${task.identifier}?`}
+                  description={`Removes the ${meta.label} issue from this session without changing the issue.`}
+                  confirmLabel={`Unlink ${task.identifier}`}
+                  autoDisarmMs={4000}
+                  isBusy={unlinkingExternalId === task.externalId}
+                  onConfirm={() => handleUnlink({ externalId: task.externalId })}
+                  onCancel={() => setArmedExternalId(null)}
+                />
+              ) : null}
               {connection.isConnected && provider === 'linear' ? (
                 <LinearTaskDetail workspaceId={workspaceId} issueId={task.externalId} />
               ) : null}

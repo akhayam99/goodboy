@@ -124,7 +124,7 @@ describe('parseIntegrationTaskUrl', () => {
 });
 
 describe('IntegrationPane', () => {
-  it('opens and unlinks every provider task shown for the session', async () => {
+  it('opens and confirms before unlinking every provider task shown for the session', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Refactor integration storage')).toBeDefined();
@@ -132,6 +132,8 @@ describe('IntegrationPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open GB-42' }));
     expect(h.openUrl).toHaveBeenCalledWith(TASK.url);
     fireEvent.click(screen.getByRole('button', { name: 'unlink GB-42' }));
+    expect(h.store.unlinkSessionExternalTask).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     await waitFor(() =>
       expect(h.store.unlinkSessionExternalTask).toHaveBeenCalledWith(SESSION_ID, 'linear', 'GB-42'),
     );
