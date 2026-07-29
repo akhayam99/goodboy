@@ -59,10 +59,21 @@ describe('OpenQuestionInlineCard', () => {
 
     expect(container.querySelector('[data-oq-anchor="oq-1"]')).toBeTruthy();
     expect(screen.queryByText('send answer')).toBeNull();
-
-    fireEvent.click(screen.getByText('Use Postgres or SQLite?'));
     expect(screen.getByText('You answered:')).toBeTruthy();
     expect(screen.getByText('Postgres')).toBeTruthy();
+  });
+
+  it('keeps the answer readable without expanding the card', () => {
+    const answered: OpenQuestion = {
+      ...baseQuestion,
+      status: 'answered',
+      userAnswer: 'Postgres, because the migration path is shorter',
+      answeredAt: '2026-06-13T00:05:00.000Z',
+    } as unknown as OpenQuestion;
+
+    render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
+
+    expect(screen.getByText('Postgres, because the migration path is shorter')).toBeTruthy();
   });
 
   it('renders the agent-resolved sentinel as a muted variant', () => {

@@ -42,7 +42,11 @@ export const TranscriptRows = ({
     }
     out.push(
       <li key={`oq-${ordinal}`}>
-        <OpenQuestionCluster questions={cards} sessionId={sessionId} />
+        <OpenQuestionCluster
+          questions={cards}
+          sessionId={sessionId}
+          viewerAgentId={selectedAgentId}
+        />
       </li>,
     );
   };

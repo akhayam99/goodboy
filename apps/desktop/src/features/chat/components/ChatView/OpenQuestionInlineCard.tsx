@@ -74,7 +74,7 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
   return (
     <div
       className={cn(
-        'rounded-lg border bg-elevated px-3 py-2 shadow-sm',
+        'flex flex-col gap-1.5 rounded-lg border bg-elevated px-3 py-2 shadow-sm',
         resolvedByAgent ? 'border-border-soft opacity-80' : successAccent.border,
       )}
     >
@@ -110,21 +110,25 @@ export const AnsweredCard = ({ question }: { question: OpenQuestion }) => {
         </div>
       </button>
 
-      {expanded && (
-        <div className="mt-2 pl-[21px]">
-          {resolvedByAgent ? (
-            <p className="text-2xs italic text-muted-foreground">resolved by agent</p>
-          ) : (
-            <>
-              <span className="text-2xs font-medium text-muted-foreground">You answered:</span>
+      <div className="flex flex-col gap-0.5 pl-[21px]">
+        {resolvedByAgent ? (
+          <p className="text-2xs italic text-muted-foreground">resolved by agent</p>
+        ) : (
+          <>
+            <span className="text-2xs font-medium text-muted-foreground">You answered:</span>
+            {expanded ? (
               <Markdown
                 text={question.userAnswer ?? ''}
-                className="mt-0.5 gap-1.5 break-words text-sm leading-relaxed text-foreground"
+                className="gap-1.5 break-words text-sm leading-relaxed text-foreground"
               />
-            </>
-          )}
-        </div>
-      )}
+            ) : (
+              <p className="line-clamp-2 break-words text-xs leading-relaxed text-foreground">
+                {question.userAnswer ?? ''}
+              </p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

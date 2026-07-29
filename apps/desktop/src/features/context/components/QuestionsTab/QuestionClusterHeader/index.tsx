@@ -52,7 +52,7 @@ export const QuestionClusterHeader = ({
         <span className="truncate text-muted-foreground">via {creatorAgentName}</span>
       )}
       {canOpen && (
-        <ChevronRight size={11} aria-hidden className="ml-0.5 shrink-0 text-muted-foreground/60" />
+        <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/60" />
       )}
     </>
   );

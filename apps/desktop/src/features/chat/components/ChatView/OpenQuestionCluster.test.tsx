@@ -8,6 +8,14 @@ const { state } = vi.hoisted(() => ({
   state: {
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
+    selectAgent: vi.fn(async () => undefined),
+    sessionPhaseRuns: {
+      'sess-1': [
+        { id: 'agent-1', name: 'scout', status: 'completed' },
+        { id: 'agent-2', name: 'implementer', status: 'running' },
+      ],
+    } as Record<string, ReadonlyArray<unknown>>,
+    sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
   },
 }));
 
@@ -47,6 +55,7 @@ const cacheQuestion = makeQuestion({
 beforeEach(() => {
   state.answerOpenQuestions.mockClear();
   state.dismissOpenQuestion.mockClear();
+  state.selectAgent.mockClear();
   useOpenQuestions.setState({ drafts: {}, justAnswered: [], pendingUndo: null });
 });
 afterEach(cleanup);
@@ -209,6 +218,32 @@ describe('OpenQuestionCluster', () => {
     fireEvent.click(await screen.findByText('send 2 answers'));
 
     expect(state.answerOpenQuestions).toHaveBeenCalledWith('sess-1', expect.any(Array), 'agent-2');
+  });
+
+  it('names the asking agent and opens its chat when it is not the one being read', () => {
+    render(
+      <OpenQuestionCluster
+        questions={[dbQuestion]}
+        sessionId={'sess-1' as never}
+        viewerAgentId={'agent-2' as never}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('scout'));
+
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-1');
+  });
+
+  it('drops the asking agent line when it is the agent being read', () => {
+    render(
+      <OpenQuestionCluster
+        questions={[dbQuestion]}
+        sessionId={'sess-1' as never}
+        viewerAgentId={'agent-1' as never}
+      />,
+    );
+
+    expect(screen.queryByText('scout')).toBeNull();
   });
 
   it('flashes the submitted ids and clears their drafts on submit', async () => {
