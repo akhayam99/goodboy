@@ -4,7 +4,7 @@ type Params = {
   readonly catalog: ReadonlyArray<CatalogModel>;
 };
 
-export type CatalogRow = {
+type CatalogRow = {
   readonly group: string | null;
   readonly models: ReadonlyArray<CatalogModel>;
 };

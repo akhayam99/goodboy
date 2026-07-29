@@ -15,9 +15,9 @@ export type ResolverActionKind =
 
 export type ResolverActionRole = 'primary' | 'alert' | 'danger' | 'neutral';
 
-export type ResolverActionReason = 'required' | 'optional';
+type ResolverActionReason = 'required' | 'optional';
 
-export type ResolverActionConfirm = {
+type ResolverActionConfirm = {
   readonly role: 'primary' | 'alert' | 'danger';
   readonly title: string;
   readonly description: string;

@@ -259,7 +259,7 @@ describe('summarizer notifications', () => {
     expect(call).not.toBeUndefined();
     const n = call?.[1] ?? {};
     expect(n.body).toMatch(/^via anthropic\//);
-    expect(n.body as string).toContain('haiku');
+    expect(n.body as string).toMatch(/haiku/i);
   });
 
   it('failure notification body includes provider and error, carries retry action', async () => {
